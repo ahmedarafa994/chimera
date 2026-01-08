@@ -15,7 +15,7 @@ Goal: Implement a robust exception hierarchy for the Aegis engine.
     - [ ] Update transformation logic to handle structured errors
 - [ ] Task: Conductor - User Manual Verification 'Structured Error Handling' (Protocol in workflow.md)
 
-## Phase 2: Granular Telemetry Logging
+## Phase 2: Granular Telemetry Logging [checkpoint: a67c78b]
 Goal: Enhance logging and telemetry for Aegis campaigns.
 
 - [x] Task: Implement campaign telemetry collector beeb2f1
