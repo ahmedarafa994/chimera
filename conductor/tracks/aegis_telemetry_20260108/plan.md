@@ -8,7 +8,7 @@ Goal: Implement a robust exception hierarchy for the Aegis engine.
 - [x] Task: Define custom Aegis exceptions (e.g., `AegisSynthesisError`, `AegisTransformationError`) 472e7fc
     - [ ] Write failing unit tests for custom exception propagation
     - [ ] Implement exception classes in the backend
-- [ ] Task: Refactor Aegis core to use structured error handling
+- [x] Task: Refactor Aegis core to use structured error handling 5f942f5
     - [ ] Write failing unit tests for error catching in persona synthesis
     - [ ] Update synthesis logic to raise and handle structured errors
     - [ ] Write failing unit tests for error catching in payload transformation
