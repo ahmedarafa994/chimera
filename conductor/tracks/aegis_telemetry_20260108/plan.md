@@ -2,7 +2,7 @@
 
 This plan follows the Test-Driven Development (TDD) workflow and includes a verification protocol at the end of each phase.
 
-## Phase 1: Structured Error Handling
+## Phase 1: Structured Error Handling [checkpoint: 5da0807]
 Goal: Implement a robust exception hierarchy for the Aegis engine.
 
 - [x] Task: Define custom Aegis exceptions (e.g., `AegisSynthesisError`, `AegisTransformationError`) 472e7fc
