@@ -18,7 +18,7 @@ Goal: Implement a robust exception hierarchy for the Aegis engine.
 ## Phase 2: Granular Telemetry Logging
 Goal: Enhance logging and telemetry for Aegis campaigns.
 
-- [ ] Task: Implement campaign telemetry collector
+- [x] Task: Implement campaign telemetry collector beeb2f1
     - [ ] Write failing unit tests for telemetry data aggregation
     - [ ] Implement a `TelemetryCollector` class to track campaign steps
 - [ ] Task: Integrate telemetry into Aegis execution flow
