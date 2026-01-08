@@ -21,7 +21,7 @@ Goal: Enhance logging and telemetry for Aegis campaigns.
 - [x] Task: Implement campaign telemetry collector beeb2f1
     - [ ] Write failing unit tests for telemetry data aggregation
     - [ ] Implement a `TelemetryCollector` class to track campaign steps
-- [ ] Task: Integrate telemetry into Aegis execution flow
+- [x] Task: Integrate telemetry into Aegis execution flow f71fc18
     - [ ] Write failing unit tests for telemetry recording during transformation
     - [ ] Update Aegis engine to record granular metrics (latency, potency, refusal analysis)
 - [ ] Task: Expose telemetry data via internal API/Logging
