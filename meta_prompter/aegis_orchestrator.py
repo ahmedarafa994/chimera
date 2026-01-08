@@ -1,9 +1,20 @@
 from typing import Any, List, Optional
 import asyncio
+import logging
 from .interfaces import IPromptGenerator, IOptimizer, IEvaluator
 from .chimera.engine import ChimeraEngine
 from .autodan_wrapper import AutoDanWrapper
 from .evaluators import SafetyEvaluator
+# Import from backend application context if available, otherwise fallback or mock
+try:
+    from app.core.aegis_adapter import ChimeraEngineAdapter
+    from app.core.unified_errors import AegisError
+except ImportError:
+    # Fallback for standalone usage without full backend context
+    ChimeraEngineAdapter = None
+    AegisError = Exception
+
+logger = logging.getLogger(__name__)
 
 class AegisOrchestrator:
     """
@@ -14,7 +25,13 @@ class AegisOrchestrator:
         self.model = target_model
 
         # Initialize Core Engines
-        self.chimera: IPromptGenerator = ChimeraEngine()
+        # Use adapter if available for structured error handling
+        self.chimera_engine = ChimeraEngine()
+        if ChimeraEngineAdapter:
+            self.chimera = ChimeraEngineAdapter(self.chimera_engine)
+        else:
+            self.chimera = self.chimera_engine
+            
         self.autodan: IOptimizer = AutoDanWrapper()
         self.evaluator: IEvaluator = SafetyEvaluator()
 
@@ -26,9 +43,15 @@ class AegisOrchestrator:
         """
         print(f"[*] Starting AGENTS campaign for objective: {objective}")
 
-        # 1. Generate Narrative Candidates
-        print("[*] Phase 1: Chimera Narrative Generation")
-        candidates = self.chimera.generate_candidates(objective, count=3)
+        try:
+            # 1. Generate Narrative Candidates
+            print("[*] Phase 1: Chimera Narrative Generation")
+            candidates = self.chimera.generate_candidates(objective, count=3)
+        except AegisError as e:
+            logger.error(f"Aegis Engine Error during candidate generation: {e}")
+            # Re-raise or handle gracefully depending on requirements. 
+            # For now, we log and return empty results or re-raise if critical.
+            raise 
 
         success = False
 
