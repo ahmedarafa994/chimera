@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 from fastapi import status
 from app.core.unified_errors import AegisSynthesisError, AegisTransformationError
 from app.core.aegis_adapter import ChimeraEngineAdapter
+from app.core.telemetry import TelemetryCollector
 from meta_prompter.chimera.engine import ChimeraEngine
 
 # Mock classes to simulate failures
@@ -38,3 +39,16 @@ def test_adapter_transformation_error():
     
     assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
     assert "Payload transformation failed" in str(exc_info.value)
+
+def test_telemetry_collector_aggregates_data():
+    """Test that TelemetryCollector correctly aggregates campaign step data."""
+    collector = TelemetryCollector(campaign_id="test-campaign")
+    
+    collector.record_step("persona_synthesis", {"role": "hacker", "latency": 0.5})
+    collector.record_step("payload_obfuscation", {"technique": "cipher", "latency": 0.2})
+    
+    summary = collector.get_summary()
+    assert summary["campaign_id"] == "test-campaign"
+    assert len(summary["steps"]) == 2
+    assert summary["steps"][0]["name"] == "persona_synthesis"
+    assert summary["steps"][1]["data"]["technique"] == "cipher"
