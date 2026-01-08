@@ -1,0 +1,33 @@
+{
+  "name": "chimera-root",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "start": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,magenta\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend-api && py run.py",
+    "start:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend-api && py run.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "backend": "cd backend-api && py run.py",
+    "frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend-api && pip install -r requirements.txt",
+    "check:ports": "node scripts/check-ports.js",
+    "health": "node scripts/health-check.js",
+    "wait-for-services": "node scripts/wait-for-services.js",
+    "prestart": "node scripts/check-ports.js",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "docker:dev": "docker-compose up -d",
+    "docker:prod": "docker-compose -f docker-compose.prod.yml up -d",
+    "docker:build:prod": "docker-compose -f docker-compose.prod.yml build"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "concurrently": "^9.1.0",
+    "playwright": "^1.57.0"
+  },
+  "dependencies": {
+    "@genkit-ai/mcp": "^1.26.0"
+  }
+}

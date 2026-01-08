@@ -1,0 +1,18 @@
+Flask==2.3.2
+flask-cors==4.0.0
+spacy>=3.8.0
+requests==2.31.0
+google-generativeai
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Caching
+Flask-Limiter
+Flask-Compress
+pydantic
+waitress
+
+# After installing requirements, the SpaCy model must be downloaded.
+# Execute this command in your terminal:
+# python -m spacy download en_core_web_sm
+python-dotenv
+PyJWT==2.8.0

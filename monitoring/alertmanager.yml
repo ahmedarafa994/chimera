@@ -1,0 +1,106 @@
+# Alertmanager Configuration for Project Chimera
+global:
+  # Default settings
+  resolve_timeout: 5m
+
+  # SMTP settings for email notifications (configure as needed)
+  # smtp_smarthost: 'smtp.gmail.com:587'
+  # smtp_from: 'alerts@your-domain.com'
+  # smtp_auth_username: 'your-email@gmail.com'
+  # smtp_auth_password: 'your-app-password'
+
+  # Slack settings (configure as needed)
+  # slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+# Route configuration
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'category', 'severity']
+
+  # Wait before sending first notification for a new group
+  group_wait: 30s
+
+  # Wait before sending updated notifications for a group
+  group_interval: 5m
+
+  # Resend notifications for still-firing alerts
+  repeat_interval: 4h
+
+  # Child routes for specific handling
+  routes:
+    # Critical security alerts - immediate notification
+    - match:
+        severity: critical
+        category: security
+      receiver: 'security-critical'
+      group_wait: 10s
+      repeat_interval: 15m
+
+    # Critical availability alerts
+    - match:
+        severity: critical
+        category: availability
+      receiver: 'oncall'
+      group_wait: 10s
+      repeat_interval: 15m
+
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'default-receiver'
+      group_wait: 1m
+      repeat_interval: 1h
+
+# Receivers
+receivers:
+  # Default receiver - logs to console
+  - name: 'default-receiver'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook'
+        send_resolved: true
+
+  # Security critical - multiple notification channels
+  - name: 'security-critical'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/security'
+        send_resolved: true
+    # Uncomment and configure for Slack
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    #     channel: '#security-alerts'
+    #     title: '🚨 Security Alert: {{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    #     send_resolved: true
+
+  # On-call receiver for critical availability issues
+  - name: 'oncall'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/oncall'
+        send_resolved: true
+    # Uncomment and configure for PagerDuty
+    # pagerduty_configs:
+    #   - service_key: 'your-pagerduty-service-key'
+    #     send_resolved: true
+
+# Inhibition rules - prevent alert storms
+inhibit_rules:
+  # If a critical alert is firing, inhibit warnings of the same type
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'category']
+
+  # If service is down, inhibit performance alerts
+  - source_match:
+      alertname: 'ServiceUnavailable'
+    target_match:
+      category: 'performance'
+    equal: ['job']
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

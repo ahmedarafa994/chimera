@@ -1,0 +1,30 @@
+# Testing Dependencies
+pytest==8.4.2
+pytest-asyncio==1.2.0
+pytest-cov==7.0.0
+pytest-xdist==3.6.1
+pytest-timeout==2.3.1
+pytest-mock==3.14.0
+pytest-playwright==0.6.2
+playwright==1.51.0
+
+# Test utilities
+faker==37.8.0
+hypothesis==6.140.2
+factory-boy==3.3.1
+freezegun==1.5.1
+
+# Code quality
+ruff==0.9.1
+black==24.10.0
+mypy==1.14.1
+coverage==7.6.10
+coverage-badge==1.1.2
+
+# Performance testing
+locust==2.42.5
+
+# Mocking and fixtures
+responses==0.25.3
+fakeredis==2.26.2
+httpx==0.28.1

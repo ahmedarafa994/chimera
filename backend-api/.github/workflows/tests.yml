@@ -1,0 +1,114 @@
+name: Tests and Coverage
+
+on:
+  push:
+    branches: [ main, develop, chimera ]
+  pull_request:
+    branches: [ main, develop, chimera ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Install Python dependencies
+        run: |
+          cd backend-api
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-xdist
+          python -m spacy download en_core_web_sm
+
+      - name: Run linting
+        run: |
+          cd backend-api
+          pip install ruff black
+          ruff check . || true
+          black --check . || true
+
+      - name: Run unit tests
+        env:
+          ENVIRONMENT: test
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          cd backend-api
+          pytest -m "not slow and not e2e" \
+            --cov=app \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=60 \
+            -v \
+            --tb=short \
+            -n auto
+
+      - name: Run integration tests
+        env:
+          ENVIRONMENT: test
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          cd backend-api
+          pytest -m integration \
+            --cov=app \
+            --cov-append \
+            --cov-report=xml \
+            -v \
+            --tb=short
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend-api/coverage.xml
+          flags: unittests
+          name: codecov-${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+      - name: Generate coverage badge
+        if: matrix.python-version == '3.11'
+        run: |
+          cd backend-api
+          pip install coverage-badge
+          coverage-badge -o coverage.svg -f
+
+      - name: Upload coverage HTML report
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend-api/coverage_html/
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 70
+          MINIMUM_ORANGE: 60

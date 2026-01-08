@@ -1,0 +1,9 @@
+# Claude Agent SDK (latest version: 0.1.16)
+claude-agent-sdk>=0.1.16
+
+# Core dependencies for Chimera integration
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# Optional: For enhanced functionality
+aiohttp>=3.9.0

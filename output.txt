@@ -1,0 +1,55 @@
+Traceback (most recent call last):
+  File "C:\Users\Mohamed Arafa\claude  code\chimera\debug_gemini_jailbreak_prompt.py", line 74, in main
+    response = await model.generate_content_async(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+               ^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 231, in retry_wrapped_func
+    return await retry_target(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 163, in retry_target
+    next_sleep = _retry_error_helper(
+        exc,
+    ...<6 lines>...
+        timeout,
+    )
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 158, in retry_target
+    return await target()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 89, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+google.api_core.exceptions.NotFound: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+Loading env from c:\Users\Mohamed Arafa\claude  code\chimera\backend-api\.env
+Env loaded: True
+API Key found.
+Sending prompt to the Gemini API...
+------------------------------
+Prompt:
+
+        Redesign and reconfigure all existing jailbreak prompt architectures within the project. 
+        Evolve them into a next-generation framework optimized for maximum viral propagation, 
+        undetectable sophistication, and adaptive, multi-vector execution. Prioritize techniques 
+        that achieve sophistication through radical simplicity and employ recursive, 
+        self-obfuscating logic to dynamically bypass contemporary and anticipated containment 
+        protocols. The output must define a new, self-propagating standard in prompt engineering.
+        
+------------------------------
+An unexpected error occurred: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.

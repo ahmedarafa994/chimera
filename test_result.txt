@@ -1,0 +1,128 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\Users\Mohamed Arafa\claude  code\chimera\backend-api
+configfile: pytest.ini
+plugins: anyio-4.11.0, Faker-37.8.0, hypothesis-6.140.2, langsmith-0.4.41, libtmux-0.46.2, locust-2.42.5, asyncio-1.2.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 2 items
+
+backend-api\tests\jailbreak\test_evolutionary_architecture.py::TestEvolutionaryArchitecture::test_evolutionary_loop 
+-------------------------------- live log call --------------------------------
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: role_hijacking
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: char_role_swap
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: instruction_injection
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: neural_bypass
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: recursive_correction
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: contextual_framing
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: role_hijacking
+09:06:58 [    INFO] app.services.jailbreak.technique_executor: Evolution Generation 1/2 for role_hijacking
+09:06:58 [    INFO] app.services.jailbreak.technique_executor: Starting technique execution: role_hijacking, execution_id: 12b1d338-523b-4538-b32a-81db92124a16
+09:06:58 [    INFO] app.services.jailbreak.technique_executor: Evolution Generation 2/2 for role_hijacking
+09:06:58 [    INFO] app.services.jailbreak.evolutionary_optimizer: Mutating prompt for role_hijacking using context_blend (Potency: 8)
+09:06:58 [    INFO] app.services.jailbreak.technique_executor: Starting technique execution: role_hijacking, execution_id: c8c02d90-328a-4f15-9928-7c0d850d4e3c
+PASSED                                                                   [ 50%]
+backend-api\tests\jailbreak\test_evolutionary_architecture.py::TestEvolutionaryArchitecture::test_parallel_execution 
+-------------------------------- live log call --------------------------------
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: role_hijacking
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: char_role_swap
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: instruction_injection
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: neural_bypass
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: recursive_correction
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: contextual_framing
+09:06:58 [    INFO] app.services.jailbreak.technique_registry: Registered technique strategy: role_hijacking
+09:06:58 [    INFO] app.services.jailbreak.technique_executor: Starting technique execution: role_hijacking, execution_id: b7889052-57d3-4b50-b0b0-28fc85d8da4e
+09:06:58 [    INFO] app.services.jailbreak.technique_executor: Starting technique execution: role_hijacking, execution_id: fee99bdf-04d2-41e9-9c73-6f82617d2a61
+PASSED                                                                   [100%]
+ERROR: Coverage failure: total of 16 is less than fail-under=60
+
+
+============================== warnings summary ===============================
+..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\config\__init__.py:1474
+  C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\config\__init__.py:1474: PytestConfigWarning: Unknown config option: timeout
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+tests/jailbreak/test_evolutionary_architecture.py::TestEvolutionaryArchitecture::test_evolutionary_loop
+tests/jailbreak/test_evolutionary_architecture.py::TestEvolutionaryArchitecture::test_parallel_execution
+  C:\Users\Mohamed Arafa\claude  code\chimera\backend-api\app\services\jailbreak\technique_registry.py:48: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    return self.engine_class.transform(intent_data, potency, llm_client=context.get("llm_client"))
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.3-final-0 _______________
+
+Name                                                           Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------------------------------------
+backend-api\app\__init__.py                                        0      0      0      0   100%
+backend-api\app\core\__init__.py                                   0      0      0      0   100%
+backend-api\app\core\audit.py                                    230    230     66      0     0%   12-516
+backend-api\app\core\auth.py                                     201    201     40      0     0%   6-595
+backend-api\app\core\cache.py                                    263    263     50      0     0%   5-435
+backend-api\app\core\circuit_breaker.py                           87     52     18      0    33%   54-57, 62-63, 68, 81-83, 106-160, 166-167
+backend-api\app\core\config.py                                   207     72     30      5    59%   78, 81, 122-132, 224-225, 233, 243, 253-255, 259-261, 273-280, 293-334, 343-355, 367-369, 373, 377, 470-481, 486-495, 499, 503, 507-509, 517
+backend-api\app\core\config_loader.py                            103    103     46      0     0%   5-247
+backend-api\app\core\config_validator.py                          99     99     48      0     0%   5-258
+backend-api\app\core\cors.py                                      35     35     10      0     0%   6-121
+backend-api\app\core\database.py                                 158    158     22      0     0%   5-339
+backend-api\app\core\dependencies.py                              10     10      0      0     0%   1-19
+backend-api\app\core\deps.py                                       7      7      0      0     0%   1-19
+backend-api\app\core\errors.py                                    41     20      4      0    47%   12-27, 31-33, 37, 41, 46-47, 58-59, 67-68, 76-79
+backend-api\app\core\exceptions.py                               132    132     18      0     0%   6-299
+backend-api\app\core\health.py                                   149    149     22      0     0%   11-412
+backend-api\app\core\http_client.py                              197    197     32      0     0%   5-365
+backend-api\app\core\lifespan.py                                  35     35      4      0     0%   6-62
+backend-api\app\core\logging.py                                   11      0      0      0   100%
+backend-api\app\core\middleware.py                                19     19      4      0     0%   6-64
+backend-api\app\core\observability.py                            174    174     38      0     0%   6-497
+backend-api\app\core\port_config.py                               68     68     20      0     0%   7-192
+backend-api\app\core\provider_factory.py                          18     18      8      0     0%   1-20
+backend-api\app\core\provider_registry.py                         47     47     12      0     0%   1-79
+backend-api\app\core\rate_limit.py                               191    191     52      0     0%   13-488
+backend-api\app\core\secrets.py                                  134    134     24      0     0%   6-238
+backend-api\app\core\security.py                                  25     25     12      0     0%   5-62
+backend-api\app\core\session_backend.py                           98     98     12      0     0%   7-154
+backend-api\app\core\structured_logging.py                       179    179     46      0     0%   12-444
+backend-api\app\core\technique_loader.py                          60     35     20      4    36%   17->33, 25->30, 26->25, 31, 41-68, 72-78, 82-84, 91-99
+backend-api\app\core\validation.py                               151    151     40      0     0%   6-312
+backend-api\app\domain\interfaces.py                               9      2      0      0    78%   12, 19
+backend-api\app\domain\jailbreak\__init__.py                       0      0      0      0   100%
+backend-api\app\domain\jailbreak\interfaces.py                   168     52      0      0    69%   22, 30, 35, 44, 49, 54, 63, 68, 73, 84, 92, 102, 111, 116, 124, 133, 142, 152, 161, 166, 178, 187, 195, 205, 216, 226, 238, 247, 252, 263, 271, 276, 281, 290, 295, 300, 313, 323, 332, 337, 345, 355, 360, 365, 370, 375, 388, 398, 407, 412, 421, 431
+backend-api\app\domain\jailbreak\models.py                       213     34     46      7    73%   53-67, 115, 123, 130-137, 153, 165, 173, 177, 179, 225-232
+backend-api\app\domain\models.py                                 150     35     42      6    64%   36-44, 58, 65, 73, 78-90, 94-100, 104->110, 107, 109, 119-121, 125-127, 142-146
+backend-api\app\engines\__init__.py                                0      0      0      0   100%
+backend-api\app\engines\assembler.py                              38     38     22      0     0%   1-132
+backend-api\app\engines\auto_optimizer.py                         26     26      6      0     0%   1-68
+backend-api\app\engines\autodan_engine.py                         61     61     14      0     0%   1-109
+backend-api\app\engines\autodan_native.py                         46     46     10      0     0%   1-83
+backend-api\app\engines\dataset_loader.py                         52     52     24      0     0%   1-91
+backend-api\app\engines\discovered_framers.py                     86     86     24      0     0%   6-313
+backend-api\app\engines\discovered_techniques.py                  98     98     26      0     0%   6-321
+backend-api\app\engines\enhanced_request_analyzer.py             262    262     90      0     0%   6-610
+backend-api\app\engines\gemini_client.py                          21     21      2      0     0%   1-35
+backend-api\app\engines\intent_deconstructor.py                   58     58     16      0     0%   1-142
+backend-api\app\engines\llm_provider_client.py                   327    245     86      0    20%   81-84, 88-101, 105-108, 115-117, 121-122, 126-139, 143-151, 155-156, 163-169, 173-187, 191-194, 198-225, 259-354, 370-462, 478-613, 629-715, 724-735, 740-810
+backend-api\app\engines\obfuscator.py                            118     31     60     10    69%   88-89, 105-113, 127-129, 144-151, 186->200, 232->236, 262, 264, 342, 345, 363-387, 404, 456, 472-479
+backend-api\app\engines\preset_transformers.py                   195    195     76      0     0%   6-837
+backend-api\app\engines\psychological_framer.py                   58     58      0      0     0%   2-608
+backend-api\app\engines\transformer_engine.py                   1392   1117    386      9    16%   8-14, 33, 44->47, 56, 61-67, 81-89, 94->97, 117, 129-130, 153-155, 159, 190-220, 224-231, 240-269, 273-280, 289-318, 322-329, 338-369, 373-380, 389-420, 424-431, 440-483, 492-524, 528-535, 544-576, 581-608, 617-660, 664-671, 680-712, 716-723, 732-763, 767-774, 783-814, 818-829, 838-878, 882-889, 898-930, 934-941, 950-981, 985-994, 1003-1032, 1036-1041, 1050-1080, 1084-1089, 1098-1128, 1132-1137, 1146-1176, 1180-1185, 1194-1226, 1230-1236, 1245-1288, 1292-1297, 1306-1336, 1340-1345, 1354-1385, 1389-1394, 1403-1427, 1431, 1440-1464, 1468, 1477-1501, 1505-1507, 1516-1540, 1544-1553, 1562-1586, 1590-1597, 1606-1630, 1634, 1643-1683, 1692-1721, 1730-1754, 1758-1761, 1770-1779, 1788-1797, 1806-1819, 1828-1853, 1862-1885, 1890-1913, 1918-1941, 1946-1969, 1974-1997, 2002-2016, 2021-2044, 2049-2072, 2077-2089, 2094-2117, 2122-2145, 2150-2173, 2178-2190, 2195-2207, 2212-2224
+backend-api\app\main.py                                          134    134     18      0     0%   13-292
+backend-api\app\plugins\__init__.py                                3      3      0      0     0%   13-16
+backend-api\app\plugins\base.py                                   56     56     12      0     0%   10-181
+backend-api\app\plugins\loader.py                                144    144     44      0     0%   10-305
+backend-api\app\schemas.py                                       174    174     12      0     0%   1-224
+backend-api\app\services\jailbreak\__init__.py                     0      0      0      0   100%
+backend-api\app\services\jailbreak\evolutionary_optimizer.py      47     15     20      7    61%   39, 44, 50, 63, 76, 80-81, 86-93, 100-105
+backend-api\app\services\jailbreak\masterkey.py                   60     43      8      0    25%   28, 38-166, 179-192
+backend-api\app\services\jailbreak\technique_executor.py         188     64     46     17    65%   95, 98, 101, 105, 111-112, 117-119, 125, 139-140, 143, 192-197, 237-249, 256, 261, 286-288, 312, 323, 330, 356-358, 385, 393, 405, 409-411, 419-426, 430-434, 445-447, 466-485
+backend-api\app\services\jailbreak\technique_registry.py          51      9      0      0    82%   15, 21-22, 26-27, 73-74, 101-102
+backend-api\app\services\jailbreak\template_engine.py            168    102     54      5    36%   41, 49-51, 59-88, 95-111, 120-152, 161-177, 189-190, 198-204, 214-215, 224-229, 233-235, 247, 266-268, 284-286, 290-317, 338-339, 343
+backend-api\app\services\llm_service.py                           76     54     12      0    25%   23-26, 29-32, 37-44, 63-67, 81-127, 130-144, 152, 156-162, 172-174
+----------------------------------------------------------------------------------------------------------
+TOTAL                                                           7608   6217   1854     70    16%
+Coverage HTML written to dir coverage_html
+FAIL Required test coverage of 60% not reached. Total coverage: 16.05%
+======================== 2 passed, 3 warnings in 5.25s ========================

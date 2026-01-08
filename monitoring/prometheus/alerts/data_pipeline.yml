@@ -1,0 +1,247 @@
+# Prometheus Alerting Rules for Chimera Data Pipeline
+
+groups:
+  - name: chimera_data_pipeline
+    interval: 60s
+    rules:
+      # ======================================================================
+      # Pipeline Health Alerts
+      # ======================================================================
+
+      - alert: DataPipelineFailure
+        expr: chimera_pipeline_failure_total > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: data-pipeline
+          team: data-engineering
+        annotations:
+          summary: "Chimera data pipeline failed"
+          description: |
+            Pipeline {{ $labels.dag }} has failed {{ $value }} times in the last 5 minutes.
+            Check Airflow logs for details: http://airflow.local:8080/dags/{{ $labels.dag }}
+          runbook: "https://docs.chimera.ai/runbooks/pipeline-failure"
+
+      - alert: DataPipelineSLAViolation
+        expr: chimera_pipeline_execution_time_seconds > 600
+        for: 5m
+        labels:
+          severity: warning
+          component: data-pipeline
+          team: data-engineering
+        annotations:
+          summary: "Pipeline execution time exceeds SLA"
+          description: "Pipeline {{ $labels.dag }} took {{ $value }} seconds (SLA: 600s)"
+          runbook: "https://docs.chimera.ai/runbooks/pipeline-sla"
+
+      # ======================================================================
+      # Data Freshness Alerts
+      # ======================================================================
+
+      - alert: DataFreshnessViolation
+        expr: chimera_latest_interaction_lag_seconds > 7200
+        for: 10m
+        labels:
+          severity: warning
+          component: data-freshness
+          team: data-engineering
+        annotations:
+          summary: "Data freshness SLA violated"
+          description: |
+            Latest LLM interaction is {{ $value }} seconds old (2 hours).
+            Expected: < 3600 seconds (1 hour).
+            Check if ingestion pipeline is running.
+          runbook: "https://docs.chimera.ai/runbooks/data-freshness"
+
+      - alert: NoDataIngested
+        expr: rate(chimera_table_row_count[1h]) == 0
+        for: 2h
+        labels:
+          severity: critical
+          component: data-ingestion
+          team: data-engineering
+        annotations:
+          summary: "No new data ingested in 2 hours"
+          description: "Table {{ $labels.table }} has not received new data in 2 hours."
+          runbook: "https://docs.chimera.ai/runbooks/no-data-ingestion"
+
+      # ======================================================================
+      # Data Quality Alerts
+      # ======================================================================
+
+      - alert: DataQualityTestsFailing
+        expr: rate(chimera_data_quality_tests_failed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: data-quality
+          team: data-engineering
+        annotations:
+          summary: "Data quality tests failing"
+          description: |
+            {{ $value }} quality tests have failed in the last 5 minutes.
+            Suite: {{ $labels.suite }}
+            Check Great Expectations data docs for details.
+          runbook: "https://docs.chimera.ai/runbooks/data-quality-failure"
+
+      - alert: HighDuplicateRate
+        expr: (chimera_duplicate_records_total / chimera_table_row_count) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+          component: data-quality
+          team: data-engineering
+        annotations:
+          summary: "High duplicate rate detected"
+          description: |
+            Table {{ $labels.table }} has {{ $value }}% duplicate records (threshold: 5%).
+            Check deduplication logic in staging models.
+          runbook: "https://docs.chimera.ai/runbooks/high-duplicates"
+
+      - alert: CriticalNullValues
+        expr: chimera_null_values_total{column=~"interaction_id|provider|created_at"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: data-quality
+          team: data-engineering
+        annotations:
+          summary: "Critical column has NULL values"
+          description: |
+            Table {{ $labels.table }} column {{ $labels.column }} has {{ $value }} NULL values.
+            This column should never be NULL.
+          runbook: "https://docs.chimera.ai/runbooks/critical-nulls"
+
+      # ======================================================================
+      # Performance Alerts
+      # ======================================================================
+
+      - alert: SlowQueryPerformance
+        expr: histogram_quantile(0.95, chimera_query_duration_seconds_bucket) > 30
+        for: 10m
+        labels:
+          severity: warning
+          component: query-performance
+          team: data-engineering
+        annotations:
+          summary: "Query performance degradation"
+          description: "P95 query latency is {{ $value }}s (threshold: 30s). Consider optimization."
+          runbook: "https://docs.chimera.ai/runbooks/slow-queries"
+
+      - alert: HighStorageUsage
+        expr: (chimera_storage_used_bytes / chimera_storage_total_bytes) > 0.85
+        for: 30m
+        labels:
+          severity: warning
+          component: storage
+          team: data-engineering
+        annotations:
+          summary: "Data lake storage usage high"
+          description: |
+            Storage usage is {{ $value }}% (threshold: 85%).
+            Run vacuum operations or archive old data.
+          runbook: "https://docs.chimera.ai/runbooks/high-storage"
+
+      # ======================================================================
+      # dbt Alerts
+      # ======================================================================
+
+      - alert: DbtModelsFailing
+        expr: chimera_dbt_model_status{status="error"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: dbt
+          team: data-engineering
+        annotations:
+          summary: "dbt models failing"
+          description: |
+            {{ $value }} dbt models failed in the last run.
+            Model: {{ $labels.model }}
+            Check dbt logs for details.
+          runbook: "https://docs.chimera.ai/runbooks/dbt-failures"
+
+      - alert: DbtTestsFailing
+        expr: chimera_dbt_test_status{status="fail"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: dbt-tests
+          team: data-engineering
+        annotations:
+          summary: "dbt tests failing"
+          description: |
+            {{ $value }} dbt tests failed.
+            Test: {{ $labels.test }}
+            Model: {{ $labels.model }}
+          runbook: "https://docs.chimera.ai/runbooks/dbt-test-failures"
+
+      # ======================================================================
+      # Cost Alerts
+      # ======================================================================
+
+      - alert: UnexpectedCostSpike
+        expr: rate(chimera_estimated_cost_usd[1h]) > 1.5 * rate(chimera_estimated_cost_usd[24h])
+        for: 30m
+        labels:
+          severity: warning
+          component: cost-management
+          team: data-engineering
+        annotations:
+          summary: "Unexpected cost spike detected"
+          description: |
+            Current hourly cost rate is 50% higher than 24h average.
+            Current: ${{ $value }}/hour
+            Check for runaway queries or data volume spikes.
+          runbook: "https://docs.chimera.ai/runbooks/cost-spike"
+
+  # ========================================================================
+  # LLM Analytics Business Alerts
+  # ========================================================================
+
+  - name: chimera_business_metrics
+    interval: 5m
+    rules:
+      - alert: ProviderHighErrorRate
+        expr: (sum by (provider) (rate(chimera_llm_requests_total{status="error"}[15m])) / sum by (provider) (rate(chimera_llm_requests_total[15m]))) > 0.10
+        for: 15m
+        labels:
+          severity: warning
+          component: llm-providers
+          team: platform
+        annotations:
+          summary: "High error rate for LLM provider"
+          description: |
+            Provider {{ $labels.provider }} has {{ $value }}% error rate (threshold: 10%).
+            Consider switching to backup provider or investigating issues.
+          runbook: "https://docs.chimera.ai/runbooks/provider-errors"
+
+      - alert: UnusualTokenUsageSpike
+        expr: rate(chimera_llm_tokens_total[5m]) > 2 * rate(chimera_llm_tokens_total[1h])
+        for: 10m
+        labels:
+          severity: warning
+          component: usage-monitoring
+          team: platform
+        annotations:
+          summary: "Unusual spike in token usage"
+          description: |
+            Token usage rate is 2x higher than 1-hour average.
+            Current rate: {{ $value }} tokens/minute
+            Check for abuse or runaway processes.
+          runbook: "https://docs.chimera.ai/runbooks/token-spike"
+
+      - alert: JailbreakSuccessRateAnomaly
+        expr: abs(rate(chimera_jailbreak_success_total[1h]) - rate(chimera_jailbreak_success_total[24h])) / rate(chimera_jailbreak_success_total[24h]) > 0.5
+        for: 1h
+        labels:
+          severity: info
+          component: jailbreak-research
+          team: research
+        annotations:
+          summary: "Jailbreak success rate anomaly detected"
+          description: |
+            Current success rate deviates 50% from 24h average.
+            Framework: {{ $labels.framework }}
+            This may indicate model updates or technique effectiveness changes.
+          runbook: "https://docs.chimera.ai/runbooks/jailbreak-anomaly"

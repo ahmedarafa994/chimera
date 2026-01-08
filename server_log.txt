@@ -1,0 +1,9 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Mohamed Arafa\\claude  code\\chimera']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [25912] using WatchFiles
+JWT_SECRET not set - using generated key (not for production!)
+2025-12-09 06:37:41,831 - faiss.loader - INFO - Loading faiss with AVX512 support.
+2025-12-09 06:37:41,832 - faiss.loader - INFO - Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2025-12-09 06:37:41,832 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-12-09 06:37:41,862 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.

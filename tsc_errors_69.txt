@@ -1,0 +1,69 @@
+﻿next.config.ts(89,5): error TS2353: Object literal may only specify known properties, and 'parallelRouteBuilds' does not exist in type 'ExperimentalConfig'.
+src/app/dashboard/ai-tools/page.tsx(110,31): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/app/dashboard/deepteam/page.tsx(153,42): error TS2345: Argument of type '"/dashboard/deepteam/authorization"' is not assignable to parameter of type 'RouteImpl<"/dashboard/deepteam/authorization">'.
+src/app/dashboard/page.tsx(227,36): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/courses/CourseCard.tsx(154,11): error TS2322: Type '`/courses/${string}`' is not assignable to type 'UrlObject | RouteImpl<`/courses/${string}`>'.
+src/components/courses/CourseCard.tsx(248,19): error TS2322: Type '`/courses/${string}`' is not assignable to type 'UrlObject | RouteImpl<`/courses/${string}`>'.
+src/components/enhanced/NavigationEnhanced.tsx(125,21): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/enhanced/NavigationEnhanced.tsx(167,25): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/gradient-optimizer.tsx(326,36): error TS2339: Property 'response' does not exist on type 'ExecuteResponse'.
+src/components/layout/sidebar.tsx(122,11): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/providers/ProviderSettingsPage.tsx(485,9): error TS2322: Type 'Provider[] | { id: string; name: string; type: ProviderType; status: ProviderStatus; isActive: boolean; hasApiKey: boolean; enabled: boolean; models: { ...; }[]; responseTime: number | undefined; baseUrl: string | undefined; }[]' is not assignable to type 'Provider[]'.
+  Type '{ id: string; name: string; type: ProviderType; status: ProviderStatus; isActive: boolean; hasApiKey: boolean; enabled: boolean; models: { id: string; name: string; contextWindow: number; }[]; responseTime: number | undefined; baseUrl: string | undefined; }[]' is not assignable to type 'Provider[]'.
+    Type '{ id: string; name: string; type: ProviderType; status: ProviderSelectorStatus; isActive: boolean; hasApiKey: boolean; enabled: boolean; models: { id: string; name: string; contextWindow: number; }[]; responseTime: number | undefined; baseUrl: string | undefined; }' is not assignable to type 'Provider'.
+      Types of property 'type' are incompatible.
+        Type 'ProviderType' is not assignable to type '"openai" | "anthropic" | "gemini" | "deepseek" | "google" | "qwen" | "gemini-cli" | "antigravity" | "kiro" | "cursor" | "xai" | "mock"'.
+src/components/unified-attack/AttackDashboard.tsx(248,22): error TS18048: 'paretoData.pareto_front' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(261,35): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/unified-attack/AttackDashboard.tsx(261,38): error TS18048: 'paretoData.pareto_front' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(262,32): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/unified-attack/AttackDashboard.tsx(262,35): error TS18048: 'paretoData.pareto_front' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(269,12): error TS18048: 'paretoData.pareto_front' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(270,24): error TS18048: 'point.mutation_fitness' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(271,24): error TS18048: 'point.obfuscation_fitness' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(290,42): error TS18048: 'point.obfuscation_fitness' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(291,39): error TS18048: 'point.mutation_fitness' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(314,14): error TS18048: 'paretoData.pareto_front' is possibly 'undefined'.
+src/components/unified-attack/AttackDashboard.tsx(320,26): error TS18048: 'paretoData.pareto_front' is possibly 'undefined'.
+src/components/unified-attack/MutationOptimizerUI.tsx(214,53): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/unified-attack/MutationOptimizerUI.tsx(224,26): error TS18048: 'mutation.operator' is possibly 'undefined'.
+src/components/unified-attack/MutationOptimizerUI.tsx(244,22): error TS18048: 'mutation.duration_ms' is possibly 'undefined'.
+src/components/unified-attack/MutationOptimizerUI.tsx(407,18): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/unified-attack/MutationOptimizerUI.tsx(408,15): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/unified-attack/MutationOptimizerUI.tsx(410,13): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/unified-attack/MutationOptimizerUI.tsx(412,13): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/unified-attack/MutationOptimizerUI.tsx(414,15): error TS2538: Type 'undefined' cannot be used as an index type.
+src/components/unified-attack/MutationOptimizerUI.tsx(574,18): error TS18048: 'latestConvergence.current_fitness' is possibly 'undefined'.
+src/components/unified-attack/MutationOptimizerUI.tsx(580,31): error TS18048: 'latestConvergence.current_fitness' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(167,32): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/unified-attack/ReasoningChainViewer.tsx(185,54): error TS18048: 'step.fitness_before' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(187,69): error TS18048: 'step.fitness_after' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(191,33): error TS18048: 'step.fitness_before' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(191,68): error TS18048: 'step.fitness_after' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(197,19): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/unified-attack/ReasoningChainViewer.tsx(283,6): error TS18048: 'metrics.current_fitness' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(311,14): error TS18048: 'metrics.current_fitness' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(351,33): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/unified-attack/ReasoningChainViewer.tsx(356,16): error TS18048: 'step.fitness_after' is possibly 'undefined'.
+src/components/unified-attack/ReasoningChainViewer.tsx(380,56): error TS18048: 'point.fitness' is possibly 'undefined'.
+src/lib/api/client.ts(169,11): error TS18048: 'config' is possibly 'undefined'.
+src/lib/api/client.ts(174,15): error TS18048: 'config.headers' is possibly 'undefined'.
+src/lib/api/core/client.ts(122,7): error TS2353: Object literal may only specify known properties, and 'maxAttempts' does not exist in type 'RetryConfig'.
+src/lib/api/core/client.ts(233,11): error TS2353: Object literal may only specify known properties, and 'maxAttempts' does not exist in type 'RetryConfig'.
+src/lib/api/error-handler.ts(226,12): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/lib/api/query/system-queries.ts(12,3): error TS2614: Module '"../../api-enhanced"' has no exported member 'MetricsResponse'. Did you mean to use 'import MetricsResponse from "../../api-enhanced"' instead?
+src/lib/business-analytics-monitor.ts(647,60): error TS2339: Property 'apiCalls' does not exist on type '{ sessionId: string; metrics: PerformanceMetric[]; componentMetrics: ReactComponentMetric[]; apiMetrics: APICallMetric[]; }'.
+src/lib/optimization/prefetch-manager.tsx(630,44): error TS2314: Generic type 'LinkProps' requires 1 type argument(s).
+src/lib/optimization/prefetch-manager.tsx(649,7): error TS2339: Property 'href' does not exist on type 'PrefetchLinkProps'.
+src/lib/performance/critical-path.ts(182,13): error TS2578: Unused '@ts-expect-error' directive.
+src/lib/performance/web-vitals.ts(68,7): error TS2322: Type 'string' is not assignable to type '"reload" | "navigate" | "prerender" | "back-forward"'.
+src/lib/performance/web-vitals.ts(115,5): error TS2578: Unused '@ts-expect-error' directive.
+src/lib/sync/state-sync.ts(592,23): error TS2554: Expected 4 arguments, but got 3.
+src/lib/sync/state-sync.ts(597,23): error TS2554: Expected 5 arguments, but got 4.
+src/lib/sync/state-sync.ts(732,17): error TS2448: Block-scoped variable 'sync' used before its declaration.
+src/lib/sync/state-sync.ts(732,17): error TS2454: Variable 'sync' is used before being assigned.

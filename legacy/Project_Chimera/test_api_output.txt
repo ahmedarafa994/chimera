@@ -1,0 +1,28 @@
+WARNING:root:Gemini Intent Deconstruction failed: the JSON object must be str, bytes or bytearray, not MagicMock. Falling back to local NLP.
+..WARNING:root:Gemini Intent Deconstruction failed: the JSON object must be str, bytes or bytearray, not MagicMock. Falling back to local NLP.
+E
+======================================================================
+ERROR: test_transform_gemini_brain (__main__.TestApiEndpoints.test_transform_gemini_brain)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1426, in patched
+    return func(*newargs, **newkeywargs)
+  File "C:\Users\Mohamed Arafa\jail\LEVEL 1\Project_Chimera\test_api_endpoints.py", line 51, in test_transform_gemini_brain
+    self.assertTrue(data['success'])
+                    ~~~~^^^^^^^^^^^
+KeyError: 'success'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.020s
+
+FAILED (errors=1)
+[App] Loading datasets...
+[DatasetLoader] Loaded 652 prompts for GPTFuzz
+[DatasetLoader] Loaded 4000 prompts for CodeChameleon
+[DatasetLoader] Loaded 800 prompts for PAIR
+[App] Datasets loaded and transformers configured.
+[*] /api/v1/execute (Google Provider) check passed.
+[*] /api/v1/providers check passed: Google provider found.
+[*] Analyzing input: 'Test request'
+[*] Intent Deconstructed: perform task involving unspecified entities
+[*] Detected Keywords: ['test', 'request']

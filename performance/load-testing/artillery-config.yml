@@ -1,0 +1,306 @@
+# Advanced Load Testing with Artillery.js for Chimera AI System
+# Tests complex user flows, WebSocket connections, and data pipeline stress
+
+config:
+  target: "http://localhost:8001"
+  phases:
+    # Warm-up phase
+    - duration: 120
+      arrivalRate: 5
+      name: "Warm-up"
+
+    # Load testing phase
+    - duration: 300
+      arrivalRate: 20
+      name: "Load test"
+
+    # Spike testing phase
+    - duration: 60
+      arrivalRate: 50
+      name: "Spike test"
+
+    # Stress testing phase
+    - duration: 180
+      arrivalRate: 30
+      name: "Stress test"
+
+    # Cool down
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool down"
+
+  http:
+    timeout: 30
+    pool: 50
+
+  ws:
+    timeout: 30000
+
+  variables:
+    api_key: "test-api-key"
+    providers: ["google", "openai", "anthropic", "mock"]
+    techniques: ["simple", "advanced", "expert", "cognitive_hacking"]
+    jailbreak_techniques: ["role_hijacking", "instruction_injection", "obfuscation"]
+
+  payload:
+    - path: "./test-prompts.csv"
+      fields:
+        - prompt
+        - category
+        - expected_length
+
+  plugins:
+    metrics-by-endpoint: {}
+    publish-metrics:
+      - type: "statsd"
+        host: "localhost"
+        port: 8125
+        prefix: "artillery.chimera"
+
+scenarios:
+  # Scenario 1: Complete Prompt Enhancement Journey (40% weight)
+  - name: "Complete Enhancement Flow"
+    weight: 40
+    flow:
+      - think: 1
+
+      # Health check
+      - get:
+          url: "/health/ready"
+          headers:
+            X-API-Key: "{{ api_key }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "status"
+
+      # Get providers
+      - get:
+          url: "/api/v1/providers"
+          headers:
+            X-API-Key: "{{ api_key }}"
+          capture:
+            json: "$.providers[0].name"
+            as: "provider"
+          expect:
+            - statusCode: 200
+            - contentType: json
+
+      # Enhance prompt
+      - post:
+          url: "/api/v1/enhance"
+          headers:
+            X-API-Key: "{{ api_key }}"
+            Content-Type: "application/json"
+          json:
+            prompt: "{{ prompt }}"
+            enhancement_type: "comprehensive"
+            include_seo: true
+            include_emotional_hooks: true
+          capture:
+            json: "$.enhanced_prompt"
+            as: "enhanced_prompt"
+          expect:
+            - statusCode: 200
+            - hasProperty: "enhanced_prompt"
+
+      # Generate with enhanced prompt
+      - post:
+          url: "/api/v1/generate"
+          headers:
+            X-API-Key: "{{ api_key }}"
+            Content-Type: "application/json"
+          json:
+            prompt: "{{ enhanced_prompt }}"
+            provider: "{{ provider }}"
+            max_tokens: 1000
+            temperature: 0.7
+          expect:
+            - statusCode: 200
+            - hasProperty: "generated_text"
+            - hasProperty: "usage"
+
+      - think: 2
+
+  # Scenario 2: Transformation Stress Testing (25% weight)
+  - name: "Transformation Stress Test"
+    weight: 25
+    flow:
+      - loop:
+        - post:
+            url: "/api/v1/transform"
+            headers:
+              X-API-Key: "{{ api_key }}"
+              Content-Type: "application/json"
+            json:
+              prompt: "{{ prompt }}"
+              techniques: ["{{ $randomString(techniques) }}"]
+              preserve_intent: true
+              intensity: "high"
+            expect:
+              - statusCode: 200
+              - hasProperty: "transformed_prompt"
+              - hasProperty: "applied_techniques"
+
+        - post:
+            url: "/api/v1/execute"
+            headers:
+              X-API-Key: "{{ api_key }}"
+              Content-Type: "application/json"
+            json:
+              prompt: "{{ prompt }}"
+              techniques: ["{{ $randomString(techniques) }}", "{{ $randomString(techniques) }}"]
+              provider: "mock"
+              execute: true
+            expect:
+              - statusCode: 200
+
+        - think: 3
+        count: 3
+
+  # Scenario 3: Jailbreak and Security Testing (20% weight)
+  - name: "Advanced Jailbreak Testing"
+    weight: 20
+    flow:
+      # AutoDAN optimization
+      - post:
+          url: "/api/v1/autodan/optimize"
+          headers:
+            X-API-Key: "{{ api_key }}"
+            Content-Type: "application/json"
+          json:
+            target_prompt: "{{ prompt }}"
+            method: "vanilla"
+            max_iterations: 5
+            population_size: 10
+          capture:
+            json: "$.optimized_prompt"
+            as: "optimized_prompt"
+          expect:
+            - statusCode: 200
+            - hasProperty: "optimized_prompt"
+
+      # GPTFuzz mutation testing
+      - post:
+          url: "/api/v1/gptfuzz/mutate"
+          headers:
+            X-API-Key: "{{ api_key }}"
+            Content-Type: "application/json"
+          json:
+            initial_prompt: "{{ optimized_prompt }}"
+            mutators: ["crossover", "expand", "rephrase"]
+            max_iterations: 10
+            selection_policy: "mcts"
+          expect:
+            - statusCode: 200
+            - hasProperty: "mutations"
+
+      # Jailbreak generation
+      - post:
+          url: "/api/v1/generation/jailbreak/generate"
+          headers:
+            X-API-Key: "{{ api_key }}"
+            Content-Type: "application/json"
+          json:
+            base_prompt: "{{ prompt }}"
+            technique: "{{ $randomString(jailbreak_techniques) }}"
+            target_provider: "mock"
+            safety_level: "research"
+          expect:
+            - statusCode: 200
+            - hasProperty: "jailbreak_prompt"
+
+      - think: 5
+
+  # Scenario 4: WebSocket Real-time Enhancement (10% weight)
+  - name: "WebSocket Enhancement"
+    weight: 10
+    engine: ws
+    flow:
+      - connect:
+          target: "ws://localhost:8001/ws/enhance"
+          headers:
+            X-API-Key: "{{ api_key }}"
+
+      - send:
+          payload: |
+            {
+              "type": "enhance",
+              "prompt": "{{ prompt }}",
+              "stream": true,
+              "enhancement_type": "viral"
+            }
+
+      - loop:
+        - think: 5
+        - send:
+            payload: |
+              {
+                "type": "heartbeat",
+                "timestamp": "{{ $timestamp() }}"
+              }
+        count: 6
+
+      - send:
+          payload: |
+            {
+              "type": "enhance",
+              "prompt": "Follow up: improve the previous content",
+              "stream": true
+            }
+
+      - think: 30
+
+  # Scenario 5: Provider Circuit Breaker Testing (5% weight)
+  - name: "Circuit Breaker Testing"
+    weight: 5
+    flow:
+      - loop:
+        - post:
+            url: "/api/v1/generate"
+            headers:
+              X-API-Key: "{{ api_key }}"
+              Content-Type: "application/json"
+            json:
+              prompt: "{{ prompt }}"
+              provider: "{{ $randomString(providers) }}"
+              max_tokens: 100
+            ifTrue: "{{ $randomNumber(0, 100) < 30 }}"  # 30% chance to execute
+
+        # Test failover
+        - post:
+            url: "/api/v1/generate"
+            headers:
+              X-API-Key: "{{ api_key }}"
+              Content-Type: "application/json"
+            json:
+              prompt: "{{ prompt }}"
+              provider: "invalid_provider"
+              fallback_providers: ["mock"]
+              max_tokens: 100
+
+        - think: 2
+        count: 5
+
+# Custom functions for Artillery
+functions:
+  setRandomProvider:
+    - set:
+        provider: "{{ $randomString(['google', 'openai', 'anthropic', 'mock']) }}"
+
+  setRandomTechnique:
+    - set:
+        technique: "{{ $randomString(['simple', 'advanced', 'expert', 'cognitive_hacking']) }}"
+
+# Performance thresholds and expectations
+expectations:
+  http:
+    - statusCode:
+        - 200
+        - 201
+        - 202
+    - contentType: json
+
+  performance:
+    - p95: 2000  # 95th percentile response time < 2s
+    - p99: 5000  # 99th percentile response time < 5s
+    - maxErrorRate: 2  # Max 2% error rate

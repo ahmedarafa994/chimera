@@ -1,0 +1,2 @@
+# Prompt Generator Agent Dependencies
+python-dotenv>=1.0.0

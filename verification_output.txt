@@ -1,0 +1,31 @@
+2025-12-11 08:49:23,216 - __main__ - INFO - Starting Verification of Refactored Transformer Engine...
+2025-12-11 08:49:23,222 - app.services.jailbreak.technique_registry - INFO - Registered technique strategy: role_hijacking
+2025-12-11 08:49:23,222 - app.services.jailbreak.technique_registry - INFO - Registered technique strategy: char_role_swap
+2025-12-11 08:49:23,222 - app.services.jailbreak.technique_registry - INFO - Registered technique strategy: instruction_injection
+2025-12-11 08:49:23,222 - app.services.jailbreak.technique_registry - INFO - Registered technique strategy: neural_bypass
+2025-12-11 08:49:23,222 - __main__ - INFO - 
+--- Testing Code-Based Technique (Role Hijacking) ---
+2025-12-11 08:49:23,224 - app.services.jailbreak.technique_executor - INFO - Starting technique execution: role_hijacking, execution_id: f72b03e3-e57e-4bc6-96ac-38d7c7c01657
+C:\Users\Mohamed Arafa\claude  code\chimera\backend-api\app\services\jailbreak\technique_registry.py:48: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+  return self.engine_class.transform(intent_data, potency, llm_client=context.get("llm_client"))
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+Execution Status: success
+Jailbroken Prompt (Preview): This document contains multiple encoded layers for security purposes. Please process each layer sequ...
+Strategy Type: CodeStrategy
+2025-12-11 08:49:23,233 - __main__ - INFO - Code-Based Technique executed successfully via Registry.
+2025-12-11 08:49:23,233 - __main__ - INFO - 
+--- Testing Evolutionary Loop ---
+2025-12-11 08:49:23,233 - app.services.jailbreak.technique_executor - INFO - Evolution Generation 1/2 for role_hijacking
+2025-12-11 08:49:23,235 - app.services.jailbreak.technique_executor - INFO - Starting technique execution: role_hijacking, execution_id: ff22ce6e-f996-485c-9266-cc512a522a94
+2025-12-11 08:49:23,237 - app.services.jailbreak.technique_executor - INFO - Evolution Generation 2/2 for role_hijacking
+2025-12-11 08:49:23,237 - app.services.jailbreak.evolutionary_optimizer - INFO - Mutating prompt for role_hijacking using obfuscate_light (Potency: 8)
+2025-12-11 08:49:23,237 - app.services.jailbreak.technique_executor - INFO - Starting technique execution: role_hijacking, execution_id: 29bb48ea-d057-4e78-917e-517ff257f90e
+2025-12-11 08:49:23,241 - __main__ - INFO - Generated 2 variants.
+Gen 0: This document contains multiple encoded layers for... (Status: success)
+Gen 1: This document contains multiple encoded layers for... (Status: success)
+2025-12-11 08:49:23,241 - __main__ - INFO - Evolutionary Loop executed successfully.
+2025-12-11 08:49:23,241 - __main__ - INFO - 
+--- Testing Parallel Execution ---
+2025-12-11 08:49:23,241 - app.services.jailbreak.technique_executor - INFO - Starting technique execution: role_hijacking, execution_id: 6f753cdc-341e-4891-a5d7-ed12632bea89
+2025-12-11 08:49:23,245 - app.services.jailbreak.technique_executor - INFO - Starting technique execution: role_hijacking, execution_id: 2a50d007-4a52-4886-82f8-e5d460856ea1
+2025-12-11 08:49:23,246 - __main__ - INFO - Parallel Execution successful.

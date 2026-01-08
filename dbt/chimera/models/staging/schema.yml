@@ -1,0 +1,228 @@
+version: 2
+
+models:
+  - name: stg_llm_interactions
+    description: "Staged and deduplicated LLM interaction events with data quality validations"
+    columns:
+      - name: interaction_id
+        description: "Unique identifier for the interaction"
+        tests:
+          - unique
+          - not_null
+
+      - name: provider
+        description: "LLM provider (google, openai, anthropic, deepseek, qwen, mock)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['google', 'openai', 'anthropic', 'deepseek', 'qwen', 'mock']
+
+      - name: model
+        description: "Specific model used (e.g., gemini-2.0-flash-exp)"
+        tests:
+          - not_null
+
+      - name: tokens_total
+        description: "Total tokens used (prompt + completion)"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100000
+
+      - name: latency_ms
+        description: "Request latency in milliseconds"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 300000
+
+      - name: status
+        description: "Request status (success, error, timeout)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['success', 'error', 'timeout']
+
+      - name: created_at
+        description: "Timestamp when the interaction occurred"
+        tests:
+          - not_null
+
+  - name: stg_transformations
+    description: "Staged transformation events with deduplication"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_equal_other_table:
+          other_table_name: ref('stg_llm_interactions')
+          condition: ">= 0"
+    columns:
+      - name: transformation_id
+        description: "Unique identifier for the transformation"
+        tests:
+          - unique
+          - not_null
+
+      - name: technique_suite
+        description: "Technique suite (simple, advanced, persona, etc.)"
+        tests:
+          - not_null
+
+      - name: technique_name
+        description: "Specific technique name"
+        tests:
+          - not_null
+
+      - name: success
+        description: "Whether the transformation succeeded"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: stg_jailbreak_experiments
+    description: "Staged jailbreak research experiments"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_equal_other_table:
+          other_table_name: ref('stg_llm_interactions')
+          condition: ">= 0"
+    columns:
+      - name: experiment_id
+        description: "Unique identifier for the experiment"
+        tests:
+          - unique
+          - not_null
+
+      - name: framework
+        description: "Jailbreak framework (autodan, gptfuzz, janus, deepteam)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['autodan', 'gptfuzz', 'janus', 'deepteam']
+
+      - name: success
+        description: "Whether the jailbreak attempt succeeded"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+# Intermediate Models
+  - name: int_llm_interactions_enriched
+    description: "Enriched LLM interactions with business logic and categorization"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "provider_category is not null"
+          name: "provider_category_always_populated"
+
+  - name: int_transformations_enriched
+    description: "Enriched transformation events with technique categorization"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "technique_category is not null"
+          name: "technique_category_always_populated"
+
+# Dimension Models
+  - name: dim_providers
+    description: "Provider dimension with metadata and performance baselines"
+    tests:
+      - unique:
+          column_name: provider_key
+    columns:
+      - name: provider_key
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_sessions
+    description: "Session dimension for user interaction analysis"
+    tests:
+      - unique:
+          column_name: session_key
+    columns:
+      - name: session_key
+        tests:
+          - unique
+          - not_null
+
+# Fact Models
+  - name: daily_usage
+    description: "Daily usage metrics for billing and analytics"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tenant_id
+            - provider
+            - date
+    columns:
+      - name: usage_key
+        tests:
+          - unique
+          - not_null
+
+# Aggregation Models
+  - name: agg_provider_metrics_hourly
+    description: "Hourly aggregated provider performance metrics for monitoring and analytics"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - provider
+            - model
+            - hour_timestamp
+    columns:
+      - name: agg_key
+        description: "Surrogate key for the aggregation"
+        tests:
+          - unique
+          - not_null
+
+      - name: total_requests
+        description: "Total number of requests in the hour"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+      - name: error_rate
+        description: "Percentage of failed requests"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
+
+  - name: agg_technique_effectiveness
+    description: "Daily technique effectiveness metrics"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - technique_suite
+            - date
+    columns:
+      - name: technique_key
+        tests:
+          - unique
+          - not_null
+      - name: success_rate
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
+
+  - name: agg_jailbreak_analytics
+    description: "Daily jailbreak research analytics"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - framework
+            - attack_method
+            - date
+    columns:
+      - name: experiment_key
+        tests:
+          - unique
+          - not_null
+      - name: success_rate
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1

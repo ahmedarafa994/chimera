@@ -1,0 +1,4 @@
+  File "c:\Users\Mohamed", line 1
+    [1FD4:51E4][2024-05-31T01:57:15]i001: Burn v3.10.4.4718, Windows v10.0 (Build 22631: Service Pack 0), path: C:\Windows\Temp\{57837C02-3256-4174-9B14-0ECA6164E4F5}\.cr\VC_redist.x64.exe
+     ^
+SyntaxError: invalid decimal literal

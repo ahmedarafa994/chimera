@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "C:\Users\Mohamed Arafa\jail\LEVEL 1\backend-api\test_import.py", line 9, in <module>
+    from app.services.transformation_service import transformation_engine
+  File "C:\Users\Mohamed Arafa\jail\LEVEL 1\backend-api\app\services\transformation_service.py", line 18, in <module>
+    from app.core.errors import (
+    ...<3 lines>...
+    )
+ImportError: cannot import name 'InvalidPotencyError' from 'app.core.errors' (C:\Users\Mohamed Arafa\jail\LEVEL 1\backend-api\app\core\errors.py)

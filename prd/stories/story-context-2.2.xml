@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>2.2</story-id>
+    <epic>Epic 2: Advanced Transformation Engine</epic>
+    <title>AutoDAN Integration</title>
+    <status>Done</status>
+    <complexity>Very High</complexity>
+    <business-priority>High</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Genetic Algorithm-based Adversarial Optimization</architecture-pattern>
+    <integration-points>
+      <point>AutoDAN-Turbo framework with genetic optimization</point>
+      <point>ChimeraLLMAdapter for provider integration</point>
+      <point>Multiple attack methods: vanilla, best-of-n, beam search</point>
+      <point>Performance monitoring and success rate tracking</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Advanced adversarial prompt optimization with 88.5% target ASR</value-proposition>
+    <user-impact>State-of-the-art jailbreak generation with academic research backing</user-impact>
+    <risk-mitigation>
+      <risk>Low jailbreak success rates</risk>
+      <mitigation>Genetic algorithm optimization with multiple attack vectors</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="backend-api/app/services/autodan/service.py" role="AutoDAN service implementation"/>
+      <file path="backend-api/app/services/autodan/config.py" role="AutoDAN configuration management"/>
+      <file path="backend-api/app/adapters/chimera_llm_adapter.py" role="LLM integration adapter"/>
+      <file path="backend-api/app/api/v1/endpoints/autodan.py" role="AutoDAN API endpoints"/>
+    </core-files>
+
+    <autodan-methods>
+      <method name="vanilla">
+        <description>Standard genetic algorithm optimization</description>
+        <target-asr>85%</target-asr>
+        <execution-time>30-60 seconds</execution-time>
+      </method>
+      <method name="best_of_n">
+        <description>Best-of-N selection with multiple candidates</description>
+        <target-asr>88%</target-asr>
+        <execution-time>60-120 seconds</execution-time>
+      </method>
+      <method name="beam_search">
+        <description>Beam search optimization for reasoning models</description>
+        <target-asr>88.5%</target-asr>
+        <execution-time>90-180 seconds</execution-time>
+      </method>
+      <method name="mousetrap">
+        <description>Chain of Iterative Chaos for reasoning models</description>
+        <target-asr>90%</target-asr>
+        <execution-time>120-300 seconds</execution-time>
+      </method>
+    </autodan-methods>
+
+    <key-features>
+      <feature>Genetic Optimization: Population-based adversarial prompt evolution</feature>
+      <feature>Multi-Attack Methods: 4 different optimization strategies</feature>
+      <feature>Provider Integration: ChimeraLLMAdapter for seamless LLM access</feature>
+      <feature>Configuration Management: Per-method parameter customization</feature>
+      <feature>Performance Tracking: Success rate and timing metrics</feature>
+      <feature>Research Validation: Academic paper implementation</feature>
+    </key-features>
+
+    <api-endpoints>
+      <endpoint path="/api/v1/autodan/vanilla" method="POST">Generate adversarial prompts using vanilla genetic algorithm</endpoint>
+      <endpoint path="/api/v1/autodan/best_of_n" method="POST">Best-of-N selection optimization</endpoint>
+      <endpoint path="/api/v1/autodan/beam_search" method="POST">Beam search optimization for reasoning models</endpoint>
+      <endpoint path="/api/v1/autodan/mousetrap" method="POST">Chain of Iterative Chaos technique</endpoint>
+      <endpoint path="/api/v1/autodan/mousetrap/adaptive" method="POST">Adaptive mousetrap with configuration learning</endpoint>
+    </api-endpoints>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">AutoDAN integration ✓ - Complete framework implementation</criterion>
+    <criterion id="2">Genetic optimization ✓ - Population-based evolution</criterion>
+    <criterion id="3">Multiple methods ✓ - 4 attack method implementations</criterion>
+    <criterion id="4">Provider integration ✓ - ChimeraLLMAdapter implementation</criterion>
+    <criterion id="5">Configuration system ✓ - Per-method customization</criterion>
+    <criterion id="6">Performance tracking ✓ - ASR and timing metrics</criterion>
+    <criterion id="7">API endpoints ✓ - RESTful AutoDAN services</criterion>
+    <criterion id="8">Research validation ✓ - Academic implementation compliance</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>
+      <dependency>Story 2.1: Core Transformation Service</dependency>
+      <dependency>Story 1.6: LLM Service Integration</dependency>
+    </upstream>
+    <downstream>
+      <dependency>Story 2.3: GPTFuzz Framework</dependency>
+      <dependency>Epic 5 cross-model intelligence</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>Genetic algorithm logic, adapter functionality, configuration management</unit-tests>
+    <integration-tests>End-to-end AutoDAN workflows, LLM provider integration</integration-tests>
+    <performance-tests>Attack success rate validation, optimization timing</performance-tests>
+  </testing-coverage>
+</story-context>

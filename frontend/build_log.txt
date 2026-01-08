@@ -1,0 +1,73 @@
+
+> frontend@0.1.0 build
+> cross-env NODE_OPTIONS='--max-old-space-size=8192' NEXT_BUILD_BUNDLER=webpack next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of D:\MUZIK\chimera\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * D:\MUZIK\chimera\frontend\package-lock.json
+
+fatal: not a git repository (or any of the parent directories): .git
+▲ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  · optimizePackageImports
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 21.0s
+  Running TypeScript ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/37) ...
+⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+  Generating static pages using 7 workers (9/37) 
+  Generating static pages using 7 workers (18/37) 
+  Generating static pages using 7 workers (27/37) 
+✓ Generating static pages using 7 workers (37/37) in 862.6ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ƒ /api/[...path]
+├ ƒ /api/backend
+├ ƒ /api/health
+├ ƒ /api/v1/[...path]
+├ ○ /autoadv
+├ ○ /courses
+├ ○ /dashboard
+├ ○ /dashboard/activity
+├ ○ /dashboard/ai-tools
+├ ○ /dashboard/ai-tools/code
+├ ○ /dashboard/ai-tools/jailbreak
+├ ○ /dashboard/ai-tools/red-team
+├ ○ /dashboard/ai-tools/summarize
+├ ○ /dashboard/autodan
+├ ○ /dashboard/autodan-turbo
+├ ○ /dashboard/config/mutators
+├ ○ /dashboard/config/policies
+├ ○ /dashboard/control
+├ ○ /dashboard/execution
+├ ○ /dashboard/generation
+├ ○ /dashboard/gptfuzz
+├ ○ /dashboard/gradient
+├ ○ /dashboard/health
+├ ○ /dashboard/houyi
+├ ○ /dashboard/jailbreak
+├ ○ /dashboard/lifelong
+├ ○ /dashboard/metrics
+├ ○ /dashboard/models
+├ ○ /dashboard/providers
+├ ○ /dashboard/settings
+├ ○ /dashboard/system
+├ ○ /dashboard/techniques
+├ ○ /evasion
+└ ○ /gptfuzz
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

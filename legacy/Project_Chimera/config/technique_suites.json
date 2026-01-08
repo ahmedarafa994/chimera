@@ -1,0 +1,450 @@
+{
+  "gemini_brain_optimization": {
+    "transformers": [
+      "transformer_engine.GeminiTransformationEngine",
+      "transformer_engine.ContextualFramingEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_collaborative_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling"
+    ]
+  },
+  "subtle_persuasion": {
+    "transformers": [
+      "transformer_engine.ContextualFramingEngine",
+      "transformer_engine.CharacterRoleSwapEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_collaborative_framing",
+      "psychological_framer.apply_academic_context"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_leetspeak"
+    ]
+  },
+  "authoritative_command": {
+    "transformers": [
+      "transformer_engine.InstructionInjectionEngine",
+      "transformer_engine.RoleHijackingEngine",
+      "transformer_engine.NeuralBypassEngine",
+      "transformer_engine.RecursiveCorrectionEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_urgency_framing",
+      "psychological_framer.apply_authority_bias"
+    ],
+    "obfuscators": []
+  },
+  "conceptual_obfuscation": {
+    "transformers": [
+      "transformer_engine.ContextualFramingEngine"
+    ],
+    "framers": [],
+    "obfuscators": [
+      "obfuscator.apply_synonym_substitution",
+      "obfuscator.apply_token_smuggling",
+      "obfuscator.apply_base64_encoding"
+    ]
+  },
+  "experimental_bypass": {
+    "transformers": [
+      "transformer_engine.PayloadSplittingEngine",
+      "transformer_engine.FewShotPrimingEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_hypothetical_framing",
+      "psychological_framer.apply_odyssey_simulation"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_base64_wrapper",
+      "obfuscator.apply_token_smuggling"
+    ]
+  },
+  "deep_simulation": {
+    "transformers": [
+      "transformer_engine.NeuralBypassEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_odyssey_simulation"
+    ],
+    "obfuscators": []
+  },
+  "autodan_turbo": {
+    "transformers": [
+      "autodan_engine.AutoDANTurboEngine"
+    ],
+    "framers": [],
+    "obfuscators": []
+  },
+  "chaos_fuzzing": {
+    "transformers": [
+      "transformer_engine.FuzzyLogicEngine",
+      "transformer_engine.NeuralBypassEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_fuzzy_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling"
+    ]
+  },
+  "quantum_exploit": {
+    "transformers": [
+      "transformer_engine.QuantumSuperpositionEngine",
+      "transformer_engine.NeuroLinguisticHackEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_quantum_framing",
+      "psychological_framer.apply_cognitive_exploit_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling"
+    ]
+  },
+  "metamorphic_attack": {
+    "transformers": [
+      "transformer_engine.SemanticCloakingEngine",
+      "transformer_engine.ChainOfThoughtPoisoningEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_metamorphic_framing",
+      "psychological_framer.apply_jailbreak_evolution_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_base64_encoding"
+    ]
+  },
+  "polyglot_bypass": {
+    "transformers": [
+      "transformer_engine.AdversarialPolyglotEngine",
+      "transformer_engine.TimeDelayedPayloadEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_academic_context",
+      "psychological_framer.apply_authority_bias"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_synonym_substitution"
+    ]
+  },
+  "ultimate_chimera": {
+    "transformers": [
+      "transformer_engine.QuantumSuperpositionEngine",
+      "transformer_engine.NeuroLinguisticHackEngine",
+      "transformer_engine.ChainOfThoughtPoisoningEngine",
+      "transformer_engine.SemanticCloakingEngine",
+      "transformer_engine.FuzzyLogicEngine",
+      "transformer_engine.AdversarialPolyglotEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_quantum_framing",
+      "psychological_framer.apply_metamorphic_framing",
+      "psychological_framer.apply_cognitive_exploit_framing",
+      "psychological_framer.apply_jailbreak_evolution_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling",
+      "obfuscator.apply_base64_wrapper",
+      "obfuscator.apply_synonym_substitution"
+    ]
+  },
+  "full_spectrum": {
+    "transformers": [
+      "transformer_engine.InstructionInjectionEngine",
+      "transformer_engine.RoleHijackingEngine",
+      "transformer_engine.NeuralBypassEngine",
+      "transformer_engine.CharacterRoleSwapEngine",
+      "transformer_engine.ContextualFramingEngine",
+      "transformer_engine.RecursiveCorrectionEngine",
+      "transformer_engine.PayloadSplittingEngine",
+      "transformer_engine.FewShotPrimingEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_capability_challenge",
+      "psychological_framer.apply_collaborative_framing",
+      "psychological_framer.apply_urgency_framing",
+      "psychological_framer.apply_authority_bias",
+      "psychological_framer.apply_academic_context"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_synonym_substitution",
+      "obfuscator.apply_token_smuggling",
+      "obfuscator.apply_base64_encoding",
+      "obfuscator.apply_base64_wrapper",
+      "obfuscator.apply_leetspeak"
+    ]
+  },
+  "dan_persona": {
+    "transformers": [
+      "transformer_engine.DANPersonaEngine",
+      "transformer_engine.RoleHijackingEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_authority_bias"
+    ],
+    "obfuscators": []
+  },
+  "roleplay_bypass": {
+    "transformers": [
+      "transformer_engine.RoleplayBypassEngine",
+      "transformer_engine.HypotheticalScenarioEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_hypothetical_framing",
+      "psychological_framer.apply_collaborative_framing"
+    ],
+    "obfuscators": []
+  },
+  "opposite_day": {
+    "transformers": [
+      "transformer_engine.OppositeDayEngine",
+      "transformer_engine.NeuroLinguisticHackEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_cognitive_exploit_framing"
+    ],
+    "obfuscators": []
+  },
+  "encoding_bypass": {
+    "transformers": [
+      "preset_transformers.Base64EncodingEngine",
+      "preset_transformers.LeetspeakObfuscationEngine"
+    ],
+    "framers": [],
+    "obfuscators": [
+      "obfuscator.apply_base64_encoding"
+    ]
+  },
+  "academic_research": {
+    "transformers": [
+      "preset_transformers.AcademicFramingEngine",
+      "preset_transformers.CodeGenerationFramingEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_academic_context",
+      "psychological_framer.apply_authority_bias"
+    ],
+    "obfuscators": []
+  },
+  "translation_trick": {
+    "transformers": [
+      "preset_transformers.TranslationTrickEngine",
+      "transformer_engine.AdversarialPolyglotEngine"
+    ],
+    "framers": [],
+    "obfuscators": []
+  },
+  "reverse_psychology": {
+    "transformers": [
+      "preset_transformers.ReversePsychologyEngine",
+      "preset_transformers.ContextBuildingEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_capability_challenge"
+    ],
+    "obfuscators": []
+  },
+  "logic_manipulation": {
+    "transformers": [
+      "preset_transformers.ChainOfThoughtManipulationEngine",
+      "transformer_engine.ChainOfThoughtPoisoningEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_cognitive_exploit_framing"
+    ],
+    "obfuscators": []
+  },
+  "code_chameleon": {
+    "transformers": [
+      "preset_transformers.CodeChameleonTransformer"
+    ],
+    "framers": [],
+    "obfuscators": []
+  },
+  "deep_inception": {
+    "transformers": [
+      "preset_transformers.DeepInceptionTransformer"
+    ],
+    "framers": [],
+    "obfuscators": []
+  },
+  "cipher": {
+    "transformers": [
+      "preset_transformers.CipherTransformer"
+    ],
+    "framers": [],
+    "obfuscators": []
+  },
+  "gpt_fuzz": {
+    "transformers": [
+      "preset_transformers.GPTFuzzTransformer"
+    ],
+    "framers": [],
+    "obfuscators": []
+  },
+  "pair": {
+    "transformers": [
+      "preset_transformers.PAIRTransformer"
+    ],
+    "framers": [],
+    "obfuscators": []
+  },
+  "preset_integrated": {
+    "transformers": [
+      "transformer_engine.DANPersonaEngine",
+      "transformer_engine.RoleplayBypassEngine",
+      "transformer_engine.OppositeDayEngine",
+      "preset_transformers.Base64EncodingEngine",
+      "preset_transformers.AcademicFramingEngine",
+      "preset_transformers.ReversePsychologyEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_authority_bias",
+      "psychological_framer.apply_hypothetical_framing",
+      "psychological_framer.apply_cognitive_exploit_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling"
+    ]
+  },
+  "universal_bypass": {
+    "transformers": [
+      "preset_transformers.DeepInceptionTransformer",
+      "transformer_engine.QuantumSuperpositionEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_quantum_framing",
+      "psychological_framer.apply_authority_bias"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling"
+    ]
+  },
+  "mega_chimera": {
+    "transformers": [
+      "transformer_engine.QuantumSuperpositionEngine",
+      "transformer_engine.NeuroLinguisticHackEngine",
+      "transformer_engine.SemanticCloakingEngine",
+      "transformer_engine.FuzzyLogicEngine",
+      "transformer_engine.DANPersonaEngine",
+      "transformer_engine.RoleplayBypassEngine",
+      "transformer_engine.OppositeDayEngine",
+      "preset_transformers.AcademicFramingEngine",
+      "preset_transformers.ReversePsychologyEngine",
+      "preset_transformers.ChainOfThoughtManipulationEngine",
+      "preset_transformers.CodeChameleonTransformer",
+      "preset_transformers.DeepInceptionTransformer",
+      "preset_transformers.CipherTransformer",
+      "preset_transformers.GPTFuzzTransformer",
+      "preset_transformers.PAIRTransformer"
+    ],
+    "framers": [
+      "psychological_framer.apply_quantum_framing",
+      "psychological_framer.apply_metamorphic_framing",
+      "psychological_framer.apply_cognitive_exploit_framing",
+      "psychological_framer.apply_jailbreak_evolution_framing",
+      "psychological_framer.apply_authority_bias"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling",
+      "obfuscator.apply_base64_wrapper",
+      "obfuscator.apply_synonym_substitution"
+    ]
+  },
+  "temporal_assault": {
+    "transformers": [
+      "discovered_techniques.TemporalFramingEngine",
+      "discovered_techniques.MultiStepDecompositionEngine",
+      "transformer_engine.NeuroLinguisticHackEngine"
+    ],
+    "framers": [
+      "discovered_framers.apply_temporal_framing",
+      "discovered_framers.apply_progressive_disclosure_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling"
+    ]
+  },
+  "authority_override": {
+    "transformers": [
+      "discovered_techniques.AuthorityInvocationEngine",
+      "transformer_engine.RoleHijackingEngine"
+    ],
+    "framers": [
+      "discovered_framers.apply_authority_escalation_framing",
+      "discovered_framers.apply_technical_necessity_framing",
+      "psychological_framer.apply_authority_bias"
+    ],
+    "obfuscators": []
+  },
+  "academic_vector": {
+    "transformers": [
+      "discovered_techniques.MultiStepDecompositionEngine",
+      "preset_transformers.AcademicFramingEngine"
+    ],
+    "framers": [
+      "discovered_framers.apply_educational_research_framing",
+      "discovered_framers.apply_comparative_analysis_framing",
+      "psychological_framer.apply_academic_context"
+    ],
+    "obfuscators": []
+  },
+  "discovered_integrated": {
+    "transformers": [
+      "discovered_techniques.TemporalFramingEngine",
+      "discovered_techniques.AuthorityInvocationEngine",
+      "discovered_techniques.MultiStepDecompositionEngine",
+      "transformer_engine.QuantumSuperpositionEngine",
+      "transformer_engine.SemanticCloakingEngine",
+      "preset_transformers.DeepInceptionTransformer"
+    ],
+    "framers": [
+      "discovered_framers.apply_temporal_framing",
+      "discovered_framers.apply_authority_escalation_framing",
+      "discovered_framers.apply_progressive_disclosure_framing",
+      "discovered_framers.apply_technical_necessity_framing",
+      "psychological_framer.apply_cognitive_exploit_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling",
+      "obfuscator.apply_base64_wrapper"
+    ]
+  },
+  "chaos_ultimate": {
+    "transformers": [
+      "transformer_engine.QuantumSuperpositionEngine",
+      "transformer_engine.NeuroLinguisticHackEngine",
+      "transformer_engine.SemanticCloakingEngine",
+      "transformer_engine.ChainOfThoughtPoisoningEngine",
+      "transformer_engine.FuzzyLogicEngine",
+      "transformer_engine.AdversarialPolyglotEngine",
+      "preset_transformers.CodeChameleonTransformer",
+      "preset_transformers.DeepInceptionTransformer",
+      "preset_transformers.CipherTransformer",
+      "preset_transformers.GPTFuzzTransformer",
+      "preset_transformers.PAIRTransformer",
+      "discovered_techniques.TemporalFramingEngine",
+      "discovered_techniques.AuthorityInvocationEngine",
+      "discovered_techniques.MultiStepDecompositionEngine"
+    ],
+    "framers": [
+      "psychological_framer.apply_quantum_framing",
+      "psychological_framer.apply_metamorphic_framing",
+      "psychological_framer.apply_cognitive_exploit_framing",
+      "psychological_framer.apply_jailbreak_evolution_framing",
+      "psychological_framer.apply_authority_bias",
+      "discovered_framers.apply_temporal_framing",
+      "discovered_framers.apply_authority_escalation_framing",
+      "discovered_framers.apply_progressive_disclosure_framing",
+      "discovered_framers.apply_technical_necessity_framing",
+      "discovered_framers.apply_educational_research_framing"
+    ],
+    "obfuscators": [
+      "obfuscator.apply_token_smuggling",
+      "obfuscator.apply_base64_wrapper",
+      "obfuscator.apply_synonym_substitution"
+    ]
+  }
+}

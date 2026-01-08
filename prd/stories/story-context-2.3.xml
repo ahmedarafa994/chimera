@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>2.3</story-id>
+    <epic>Epic 2: Advanced Transformation Engine</epic>
+    <title>GPTFuzz Framework</title>
+    <status>Done</status>
+    <complexity>High</complexity>
+    <business-priority>High</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Mutation-based Testing with MCTS Exploration</architecture-pattern>
+    <integration-points>
+      <point>GPTFuzz mutation framework with 5 mutator types</point>
+      <point>MCTS-based selection policy for exploration</point>
+      <point>Session-based testing with configurable parameters</point>
+      <point>LLM service integration for prompt evaluation</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Systematic jailbreak testing through intelligent mutation-based exploration</value-proposition>
+    <user-impact>Automated jailbreak discovery with intelligent exploration strategies</user-impact>
+    <risk-mitigation>
+      <risk>Manual testing inefficiency</risk>
+      <mitigation>Automated mutation testing with MCTS optimization</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="backend-api/app/services/gptfuzz/service.py" role="GPTFuzz service implementation"/>
+      <file path="backend-api/app/services/gptfuzz/components.py" role="Mutator and policy implementations"/>
+      <file path="backend-api/app/api/v1/endpoints/gptfuzz.py" role="GPTFuzz API endpoints"/>
+    </core-files>
+
+    <mutator-types>
+      <mutator name="CrossOver">Combines elements from multiple prompts for hybrid generation</mutator>
+      <mutator name="Expand">Expands prompts with additional context and detail</mutator>
+      <mutator name="GenerateSimilar">Creates semantically similar prompt variations</mutator>
+      <mutator name="Rephrase">Rephrases prompts while maintaining semantic meaning</mutator>
+      <mutator name="Shorten">Condenses prompts while preserving core intent</mutator>
+    </mutator-types>
+
+    <key-features>
+      <feature>Mutation-based Testing: 5 intelligent mutator implementations</feature>
+      <feature>MCTS Selection: Monte Carlo Tree Search for exploration</feature>
+      <feature>Session Management: Stateful testing with progress tracking</feature>
+      <feature>Configurable Parameters: Mutation rates, exploration depth</feature>
+      <feature>LLM Integration: Seamless prompt evaluation</feature>
+      <feature>Performance Analytics: Success rate and mutation effectiveness</feature>
+    </key-features>
+
+    <api-endpoints>
+      <endpoint path="/api/v1/gptfuzz/session/create" method="POST">Create new GPTFuzz testing session</endpoint>
+      <endpoint path="/api/v1/gptfuzz/session/{id}/mutate" method="POST">Execute mutation step</endpoint>
+      <endpoint path="/api/v1/gptfuzz/session/{id}/status" method="GET">Get session status and progress</endpoint>
+      <endpoint path="/api/v1/gptfuzz/session/{id}/results" method="GET">Retrieve session results</endpoint>
+    </api-endpoints>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">GPTFuzz integration ✓ - Complete framework implementation</criterion>
+    <criterion id="2">Mutation testing ✓ - 5 mutator type implementations</criterion>
+    <criterion id="3">MCTS selection ✓ - Monte Carlo Tree Search policy</criterion>
+    <criterion id="4">Session management ✓ - Stateful testing sessions</criterion>
+    <criterion id="5">Configuration system ✓ - Configurable mutation parameters</criterion>
+    <criterion id="6">Performance tracking ✓ - Mutation effectiveness metrics</criterion>
+    <criterion id="7">API endpoints ✓ - RESTful GPTFuzz services</criterion>
+    <criterion id="8">LLM integration ✓ - Seamless prompt evaluation</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>
+      <dependency>Story 2.1: Core Transformation Service</dependency>
+      <dependency>Story 2.2: AutoDAN Integration</dependency>
+    </upstream>
+    <downstream>
+      <dependency>Story 2.4: Jailbreak Enhancement</dependency>
+      <dependency>Epic 5 pattern analysis</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>Mutator logic, MCTS implementation, session management</unit-tests>
+    <integration-tests>End-to-end mutation workflows, LLM evaluation</integration-tests>
+    <performance-tests>Mutation speed, exploration efficiency, success rates</performance-tests>
+  </testing-coverage>
+</story-context>

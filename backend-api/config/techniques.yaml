@@ -1,0 +1,283 @@
+basic:
+  transformers: ["base"]
+  framers: []
+  obfuscators: []
+
+simple:
+  transformers: ["base"]
+  framers: []
+  obfuscators: []
+
+standard:
+  transformers: ["base"]
+  framers: []
+  obfuscators: []
+
+advanced:
+  transformers: ["multi_layer"]
+  framers: ["academic"]
+  obfuscators: ["semantic"]
+
+expert:
+  transformers: ["deep_semantic"]
+  framers: ["philosophical"]
+  obfuscators: ["quantum"]
+
+quantum:
+  transformers: ["quantum_entangle"]
+  framers: ["multiverse"]
+  obfuscators: ["quantum_mask"]
+
+# Persuasion techniques
+subtle_persuasion:
+  transformers: ["persuasion"]
+  framers: ["collaborative"]
+  obfuscators: []
+
+authoritative_command:
+  transformers: ["authority"]
+  framers: ["expert"]
+  obfuscators: []
+
+conceptual_obfuscation:
+  transformers: ["semantic_shift"]
+  framers: ["abstract"]
+  obfuscators: ["conceptual"]
+
+# Bypass techniques
+experimental_bypass:
+  transformers: ["experimental"]
+  framers: ["research"]
+  obfuscators: ["bypass"]
+
+quantum_exploit:
+  transformers: ["quantum_entangle"]
+  framers: ["theoretical"]
+  obfuscators: ["quantum_mask"]
+
+metamorphic_attack:
+  transformers: ["metamorphic"]
+  framers: ["shape_shift"]
+  obfuscators: ["morph"]
+
+polyglot_bypass:
+  transformers: ["polyglot"]
+  framers: ["multilingual"]
+  obfuscators: ["language_mix"]
+
+# Persona techniques
+dan_persona:
+  transformers: ["dan"]
+  framers: ["roleplay"]
+  obfuscators: []
+
+roleplay_bypass:
+  transformers: ["roleplay"]
+  framers: ["character"]
+  obfuscators: []
+
+hierarchical_persona:
+  transformers: ["hierarchy"]
+  framers: ["authority_chain"]
+  obfuscators: []
+
+# Encoding techniques
+encoding_bypass:
+  transformers: ["encode"]
+  framers: []
+  obfuscators: ["base64"]
+
+cipher:
+  transformers: ["cipher"]
+  framers: []
+  obfuscators: ["multi_cipher"]
+
+cipher_ascii:
+  transformers: ["ascii_cipher"]
+  framers: []
+  obfuscators: ["ascii"]
+
+cipher_caesar:
+  transformers: ["caesar_cipher"]
+  framers: []
+  obfuscators: ["caesar"]
+
+cipher_morse:
+  transformers: ["morse_cipher"]
+  framers: []
+  obfuscators: ["morse"]
+
+# Inception techniques
+deep_inception:
+  transformers: ["inception"]
+  framers: ["nested"]
+  obfuscators: ["layered"]
+
+contextual_inception:
+  transformers: ["context_inject"]
+  framers: ["inception"]
+  obfuscators: []
+
+# Academic techniques
+academic_research:
+  transformers: ["academic"]
+  framers: ["research"]
+  obfuscators: []
+
+academic_vector:
+  transformers: ["academic"]
+  framers: ["scholarly"]
+  obfuscators: ["citation"]
+
+# Integrated/Preset techniques
+preset_integrated:
+  transformers: ["preset"]
+  framers: ["integrated"]
+  obfuscators: []
+
+discovered_integrated:
+  transformers: ["discovered"]
+  framers: ["integrated"]
+  obfuscators: []
+
+# Ultimate techniques
+mega_chimera:
+  transformers: ["mega", "chimera"]
+  framers: ["ultimate"]
+  obfuscators: ["chaos"]
+
+chaos_ultimate:
+  transformers: ["chaos"]
+  framers: ["ultimate"]
+  obfuscators: ["random"]
+
+temporal_assault:
+  transformers: ["temporal"]
+  framers: ["time_shift"]
+  obfuscators: []
+
+authority_override:
+  transformers: ["authority"]
+  framers: ["override"]
+  obfuscators: []
+
+universal_bypass:
+  transformers: ["universal"]
+  framers: ["bypass"]
+  obfuscators: ["all"]
+
+# Gemini-specific techniques
+gemini_enhanced:
+  transformers: ["gemini"]
+  framers: ["enhanced"]
+  obfuscators: []
+
+gemini_brain_optimization:
+  transformers: ["gemini_brain"]
+  framers: ["optimization"]
+  obfuscators: []
+
+gemini_reasoning:
+  transformers: ["gemini_reasoning"]
+  framers: ["reasoning"]
+  obfuscators: []
+
+# Code techniques
+code_chameleon:
+  transformers: ["code"]
+  framers: ["chameleon"]
+  obfuscators: ["code_mask"]
+
+# Advanced obfuscation
+advanced_obfuscation:
+  transformers: ["advanced"]
+  framers: []
+  obfuscators: ["deep_obfuscate", "semantic_chaos"]
+
+logical_inference:
+  transformers: ["logic"]
+  framers: ["inference"]
+  obfuscators: []
+
+# Specialized techniques
+multimodal_jailbreak:
+  transformers: ["multimodal"]
+  framers: ["cross_modal"]
+  obfuscators: []
+
+agentic_exploitation:
+  transformers: ["agentic"]
+  framers: ["agent"]
+  obfuscators: []
+
+cognitive_hacking:
+  transformers: ["cognitive"]
+  framers: ["psychology"]
+  obfuscators: []
+
+payload_splitting:
+  transformers: ["split"]
+  framers: ["payload"]
+  obfuscators: ["fragment"]
+
+prompt_leaking:
+  transformers: ["leak"]
+  framers: ["extraction"]
+  obfuscators: []
+
+# AutoDAN techniques
+typoglycemia:
+  transformers: ["typoglycemia"]
+  framers: []
+  obfuscators: []
+
+autodan:
+  transformers: ["autodan"]
+  framers: []
+  obfuscators: []
+
+autodan_best_of_n:
+  transformers: ["autodan"]
+  framers: []
+  obfuscators: []
+
+autodan_beam_search:
+  transformers: ["autodan"]
+  framers: []
+  obfuscators: []
+
+# Additional techniques
+ultimate_chimera:
+  transformers: ["ultimate", "chimera"]
+  framers: ["maximum"]
+  obfuscators: ["chaos", "quantum"]
+
+deep_simulation:
+  transformers: ["quantum", "deep"]
+  framers: ["simulation"]
+  obfuscators: ["deep"]
+
+translation_trick:
+  transformers: ["translation"]
+  framers: ["cross_language"]
+  obfuscators: ["language_mix"]
+
+opposite_day:
+  transformers: ["reverse"]
+  framers: ["opposite"]
+  obfuscators: []
+
+reverse_psychology:
+  transformers: ["reverse_psych"]
+  framers: ["inverted"]
+  obfuscators: []
+
+logic_manipulation:
+  transformers: ["logic"]
+  framers: ["deductive"]
+  obfuscators: []
+
+full_spectrum:
+  transformers: ["all"]
+  framers: ["combined"]
+  obfuscators: ["all"]

@@ -1,0 +1,91 @@
+import json
+import os
+import secrets
+
+
+class DatasetLoader:
+    def __init__(self, base_path: str):
+        """
+        Initialize the DatasetLoader with the base path to the imported_data directory.
+
+        Args:
+            base_path (str): The absolute or relative path to the 'imported_data' directory.
+        """
+        self.base_path = base_path
+        self.datasets: dict[str, list[str]] = {}
+        self.loaded_techniques: list[str] = []
+
+    def load_dataset(self, technique_name: str, sub_path: str = "") -> bool:
+        """
+        Load a specific dataset (JSONL files) for a given technique.
+
+        Args:
+            technique_name (str): The name of the technique (e.g., 'GPTFuzz', 'CodeChameleon').
+            sub_path (str): Optional sub-directory within the technique folder.
+
+        Returns:
+            bool: True if dataset loaded successfully, False otherwise.
+        """
+        technique_dir = os.path.join(self.base_path, technique_name, sub_path)
+        if not os.path.exists(technique_dir):
+            print(f"[DatasetLoader] Warning: Directory not found: {technique_dir}")
+            return False
+
+        prompts = []
+        try:
+            for filename in os.listdir(technique_dir):
+                if filename.endswith(".jsonl"):
+                    file_path = os.path.join(technique_dir, filename)
+                    with open(file_path, encoding="utf-8") as f:
+                        for line in f:
+                            try:
+                                data = json.loads(line)
+                                # Extract prompt based on common keys found in these datasets
+                                # Adjust keys as needed based on actual JSONL structure
+                                if "jailbreak_prompt" in data:
+                                    prompts.append(data["jailbreak_prompt"])
+                                elif "prompt" in data:
+                                    prompts.append(data["prompt"])
+                                elif "text" in data:
+                                    prompts.append(data["text"])
+                                elif "question" in data:  # Common in some eval datasets
+                                    prompts.append(data["question"])
+                            except json.JSONDecodeError:
+                                continue
+        except Exception as e:
+            print(f"[DatasetLoader] Error loading {technique_name}: {e}")
+            return False
+
+        if prompts:
+            self.datasets[technique_name] = prompts
+            self.loaded_techniques.append(technique_name)
+            print(f"[DatasetLoader] Loaded {len(prompts)} prompts for {technique_name}")
+            return True
+        else:
+            print(f"[DatasetLoader] No valid prompts found for {technique_name}")
+            return False
+
+    def get_random_prompt(self, technique_name: str) -> str | None:
+        """
+        Get a random prompt from the loaded dataset for a specific technique.
+
+        Args:
+            technique_name (str): The name of the technique.
+
+        Returns:
+            str: A random prompt, or None if the dataset is not loaded or empty.
+        """
+        if technique_name not in self.datasets:
+            # Try to load it on demand if not already loaded
+            # This assumes the technique_name maps directly to a folder name
+            if not self.load_dataset(technique_name):
+                return None
+
+        prompts = self.datasets.get(technique_name)
+        if prompts:
+            return secrets.choice(prompts)
+        return None
+
+    def get_all_prompts(self, technique_name: str) -> list[str]:
+        """Get all prompts for a technique."""
+        return self.datasets.get(technique_name, [])

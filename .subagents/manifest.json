@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "agents": [
+    {
+      "name": "backend-architect",
+      "description": "Expert backend architect specializing in scalable API design, microservices architecture, and distributed systems. Masters REST/GraphQL/gRPC APIs, event-driven architectures, service mesh patterns, and modern backend frameworks. Handles service boundary definition, inter-service communication, resilience patterns, and observability. Use PROACTIVELY when creating new backend services or APIs.",
+      "commands": {
+        "start": "\"d:\\MUZIK\\chimera\\.subagents/start.sh\" claude backend-architect \"$TASK\"",
+        "resume": "\"d:\\MUZIK\\chimera\\.subagents/resume.sh\" claude backend-architect $SESSION_ID \"$ANSWER\""
+      }
+    },
+    {
+      "name": "frontend-architect",
+      "description": "Expert frontend architect specializing in modern web applications, UI/UX design systems, and state management. Masters React, Next.js, Shadcn UI, TailwindCSS, and responsive design. Handles component architecture, performance optimization, accessibility (WCAG), and frontend build tooling. Use PROACTIVELY when working on UI/UX, frontend logic, or styling.",
+      "commands": {
+        "start": "powershell -ExecutionPolicy Bypass -File \"e:\\chimera\\.subagents\\start.ps1\" claude frontend-architect \"$TASK\"",
+        "resume": "powershell -ExecutionPolicy Bypass -File \"e:\\chimera\\.subagents\\resume.ps1\" claude frontend-architect $SESSION_ID \"$ANSWER\""
+      }
+    },
+    {
+      "name": "qa-engineer",
+      "description": "Expert QA engineer specializing in test automation, quality assurance strategies, and bug tracking. Masters Playwright, Cypress, Jest, and integration testing. Handles test planning, e2e test implementation, regression testing, and CI/CD test integration. Use PROACTIVELY when verifying features, writing tests, or debugging issues.",
+      "commands": {
+        "start": "powershell -ExecutionPolicy Bypass -File \"e:\\chimera\\.subagents\\start.ps1\" claude qa-engineer \"$TASK\"",
+        "resume": "powershell -ExecutionPolicy Bypass -File \"e:\\chimera\\.subagents\\resume.ps1\" claude qa-engineer $SESSION_ID \"$ANSWER\""
+      }
+    },
+    {
+      "name": "devops-engineer",
+      "description": "Expert DevOps engineer specializing in infrastructure as code, CI/CD pipelines, and cloud operations. Masters Docker, Kubernetes, Google Cloud Platform (GCP), GitHub Actions, and system monitoring. Handles containerization, deployment automation, infrastructure provisioning, and reliability engineering. Use PROACTIVELY when configuring environments, pipelines, or deployments.",
+      "commands": {
+        "start": "powershell -ExecutionPolicy Bypass -File \"e:\\chimera\\.subagents\\start.ps1\" claude devops-engineer \"$TASK\"",
+        "resume": "powershell -ExecutionPolicy Bypass -File \"e:\\chimera\\.subagents\\resume.ps1\" claude devops-engineer $SESSION_ID \"$ANSWER\""
+      }
+    }
+  ]
+}

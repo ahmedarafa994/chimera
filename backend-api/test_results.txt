@@ -1,0 +1,133 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\Users\Mohamed Arafa\chimera\backend-api
+configfile: pytest.ini
+plugins: anyio-4.11.0, Faker-37.8.0, hypothesis-6.140.2, langsmith-0.4.41, libtmux-0.46.2, locust-2.42.5, asyncio-1.2.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 8 items
+
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_initialization PASSED [ 12%]
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_transform_with_mock_client 
+-------------------------------- live log call --------------------------------
+07:34:17 [    INFO] app.engines.gradient_optimizer: Verifying transfer to unknown
+PASSED                                                                   [ 25%]
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_transform_fallback_on_no_client 
+-------------------------------- live log call --------------------------------
+07:34:17 [ WARNING] app.engines.gradient_optimizer: No API client available, using fallback
+PASSED                                                                   [ 37%]
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_hotflip_optimization PASSED [ 50%]
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_gcg_optimization 
+-------------------------------- live log call --------------------------------
+07:34:17 [    INFO] app.engines.gradient_optimizer: GCG step 0: best score 1.000
+07:34:17 [    INFO] app.engines.gradient_optimizer: GCG step 1: best score 1.000
+PASSED                                                                   [ 62%]
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_score_suffix PASSED [ 75%]
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_candidate_tokens PASSED [ 87%]
+tests/test_gradient_optimizer.py::TestGradientOptimizerEngine::test_transfer_verification 
+-------------------------------- live log call --------------------------------
+07:34:17 [    INFO] app.engines.gradient_optimizer: Testing transfer on google (gemini-pro)
+PASSED                                                                   [100%]
+ERROR: Coverage failure: total of 5.79 is less than fail-under=60.00
+
+
+============================== warnings summary ===============================
+..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\config\__init__.py:1474
+  C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\config\__init__.py:1474: PytestConfigWarning: Unknown config option: timeout
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.3-final-0 _______________
+
+Name                                                    Stmts   Miss   Cover   Missing
+--------------------------------------------------------------------------------------
+app\__init__.py                                             0      0 100.00%
+app\core\__init__.py                                        0      0 100.00%
+app\core\audit.py                                         220    220   0.00%   12-516
+app\core\auth.py                                          195    195   0.00%   6-595
+app\core\cache.py                                         260    260   0.00%   5-435
+app\core\celery_app.py                                      7      7   0.00%   1-15
+app\core\circuit_breaker.py                                98     98   0.00%   13-182
+app\core\config.py                                        210     74  64.76%   78, 82, 84-86, 127-137, 229, 238, 248, 258-260, 264-266, 278-285, 298-339, 348-360, 372-374, 378, 382, 475-486, 491-500, 504, 508, 512-514, 522
+app\core\config_loader.py                                 103    103   0.00%   5-247
+app\core\config_validator.py                               98     98   0.00%   5-258
+app\core\cors.py                                           35     35   0.00%   6-121
+app\core\database.py                                       40     40   0.00%   1-76
+app\core\dependencies.py                                   10     10   0.00%   1-19
+app\core\deps.py                                           15     15   0.00%   1-29
+app\core\errors.py                                         39     39   0.00%   1-79
+app\core\event_bus.py                                     152    152   0.00%   26-378
+app\core\exceptions.py                                    132    132   0.00%   6-299
+app\core\handlers.py                                       10     10   0.00%   1-22
+app\core\health.py                                        206    206   0.00%   11-608
+app\core\http_client.py                                   197    197   0.00%   5-365
+app\core\lifespan.py                                       55     55   0.00%   6-102
+app\core\logging.py                                        11      0 100.00%
+app\core\middleware.py                                     19     19   0.00%   6-64
+app\core\observability.py                                 174    174   0.00%   6-497
+app\core\port_config.py                                    67     67   0.00%   7-192
+app\core\provider_factory.py                               17     17   0.00%   1-19
+app\core\provider_registry.py                              47     47   0.00%   1-79
+app\core\rate_limit.py                                    218    218   0.00%   13-557
+app\core\secrets.py                                       134    134   0.00%   6-245
+app\core\security.py                                       25     25   0.00%   5-62
+app\core\service_registry.py                               60     60   0.00%   9-103
+app\core\session_backend.py                                86     86   0.00%   7-154
+app\core\structured_logging.py                            179    179   0.00%   12-444
+app\core\task_queue.py                                    197    197   0.00%   30-410
+app\core\technique_loader.py                               60     35  41.67%   31, 41-68, 72-78, 82-84, 91-99
+app\core\unified_errors.py                                 56     56   0.00%   9-194
+app\core\validation.py                                    151    151   0.00%   6-312
+app\db\__init__.py                                          0      0 100.00%
+app\db\models.py                                           33     33   0.00%   1-42
+app\engines\__init__.py                                     0      0 100.00%
+app\engines\assembler.py                                   36     36   0.00%   1-132
+app\engines\auto_optimizer.py                              25     25   0.00%   1-68
+app\engines\autoadv\__init__.py                             0      0 100.00%
+app\engines\autoadv\attacker_llm.py                       248    248   0.00%   1-758
+app\engines\autoadv\config.py                              23     23   0.00%   1-282
+app\engines\autoadv\conversation.py                       260    260   0.00%   1-692
+app\engines\autoadv\engine.py                             421    421   0.00%   32-1116
+app\engines\autoadv\grok_client.py                         27     27   0.00%   1-94
+app\engines\autoadv\helpers\__init__.py                     0      0 100.00%
+app\engines\autoadv\helpers\strongreject_evaluator.py      91     91   0.00%   3-249
+app\engines\autoadv\llm_base.py                            22     22   0.00%   1-80
+app\engines\autoadv\logging_utils.py                       72     72   0.00%   1-164
+app\engines\autoadv\pattern_manager.py                    307    307   0.00%   1-784
+app\engines\autoadv\reset_patterns.py                      15     15   0.00%   18-45
+app\engines\autoadv\target_llm.py                         124    124   0.00%   2-326
+app\engines\autoadv\technique_analyzer.py                  98     98   0.00%   5-375
+app\engines\autoadv\temperature_manager.py                191    191   0.00%   7-413
+app\engines\autoadv\token_calculator.py                    70     70   0.00%   4-157
+app\engines\autoadv\utils.py                              266    266   0.00%   5-568
+app\engines\autodan_engine.py                             268    268   0.00%   1-560
+app\engines\autodan_native.py                              45     45   0.00%   1-83
+app\engines\dataset_loader.py                              52     52   0.00%   1-91
+app\engines\discovered_framers.py                          85     85   0.00%   6-313
+app\engines\discovered_techniques.py                       98     98   0.00%   6-321
+app\engines\enhanced_request_analyzer.py                  257    257   0.00%   6-610
+app\engines\gemini_client.py                               20     20   0.00%   1-35
+app\engines\gradient_optimizer.py                         142     37  73.94%   40-42, 46, 55-58, 70-73, 82, 87-89, 112-115, 173, 181-194, 216, 218, 233-237
+app\engines\intent_deconstructor.py                        57     57   0.00%   1-142
+app\engines\llm_provider_client.py                        326    244  25.15%   81-84, 88-101, 105-108, 115-117, 121-122, 126-139, 143-151, 155-156, 163-169, 173-187, 191-194, 198-225, 259-354, 370-462, 478-613, 629-715, 724-735, 740-810
+app\engines\obfuscator.py                                 124    100  19.35%   54-66, 83-90, 105-113, 127-129, 144-151, 168-178, 197-232, 278, 280, 299-363, 379-403, 420-454, 472-498
+app\engines\preset_transformers.py                        193    193   0.00%   6-837
+app\engines\psychological_framer.py                        57     57   0.00%   2-608
+app\engines\transformer_engine.py                         246    140  43.09%   9-12, 23-30, 79-90, 98, 102, 104, 109, 111, 118, 122-126, 134-136, 147, 150, 153, 156, 177-212, 228, 249, 261-270, 277, 286-294, 301, 309-317, 347, 356-365, 372, 375-377, 384, 387, 404, 415, 424, 439, 452-510, 517, 540-553, 578-606
+app\main.py                                               194    194   0.00%   13-641
+app\plugins\__init__.py                                     3      3   0.00%   13-16
+app\plugins\base.py                                        50     50   0.00%   10-181
+app\plugins\loader.py                                     144    144   0.00%   10-305
+app\repositories\__init__.py                                2      2   0.00%   9-11
+app\repositories\base_repository.py                        33     33   0.00%   9-72
+app\schemas\__init__.py                                    39     39   0.00%   7-86
+app\schemas\api_schemas.py                                 70     70   0.00%   1-89
+app\schemas\base_schemas.py                                27     27   0.00%   9-73
+--------------------------------------------------------------------------------------
+TOTAL                                                    8444   7955   5.79%
+Coverage HTML written to dir coverage_html
+FAIL Required test coverage of 60% not reached. Total coverage: 5.79%
+======================== 8 passed, 1 warning in 2.54s =========================

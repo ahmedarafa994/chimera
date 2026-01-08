@@ -1,0 +1,59 @@
+name: chimera
+version: '1.0.0'
+config-version: 2
+
+profile: 'chimera'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  chimera:
+    # Staging models - incremental, minimal transformation
+    staging:
+      +materialized: view
+      +tags: ["staging"]
+
+    # Intermediate models - business logic and enrichment
+    intermediate:
+      +materialized: view
+      +tags: ["intermediate"]
+
+    # Mart models - analytics-ready dimensional models
+    marts:
+      +materialized: table
+      +tags: ["marts"]
+
+      # Fact tables
+      facts:
+        +materialized: incremental
+        +on_schema_change: "append_new_columns"
+        +unique_key: "id"
+
+      # Dimension tables
+      dimensions:
+        +materialized: table
+
+      # Aggregations
+      aggregations:
+        +materialized: incremental
+        +on_schema_change: "append_new_columns"
+
+vars:
+  # Date range for incremental models
+  start_date: '2026-01-01'
+  # Lookback days for full refresh
+  lookback_days: 30
+
+# Testing
+tests:
+  +store_failures: true
+  +schema: dbt_test_failures

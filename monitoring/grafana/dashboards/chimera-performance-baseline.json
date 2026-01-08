@@ -1,0 +1,436 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Chimera AI Performance Baseline Dashboard",
+    "tags": ["chimera", "performance", "ai", "llm"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Core Web Vitals Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "avg(chimera_frontend_fcp_seconds)",
+            "legendFormat": "First Contentful Paint (FCP)"
+          },
+          {
+            "expr": "avg(chimera_frontend_lcp_seconds)",
+            "legendFormat": "Largest Contentful Paint (LCP)"
+          },
+          {
+            "expr": "avg(chimera_frontend_fid_milliseconds)",
+            "legendFormat": "First Input Delay (FID)"
+          },
+          {
+            "expr": "avg(chimera_frontend_cls_score)",
+            "legendFormat": "Cumulative Layout Shift (CLS)"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 2500
+                },
+                {
+                  "color": "red",
+                  "value": 4000
+                }
+              ]
+            },
+            "unit": "ms"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "API Response Times",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"chimera-backend\"}[5m]))",
+            "legendFormat": "P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"chimera-backend\"}[5m]))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"chimera-backend\"}[5m]))",
+            "legendFormat": "P99"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "LLM Provider Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "avg(chimera_llm_request_duration_seconds) by (provider)",
+            "legendFormat": "{{provider}} - Avg Duration"
+          },
+          {
+            "expr": "rate(chimera_llm_requests_total[5m]) by (provider)",
+            "legendFormat": "{{provider}} - Request Rate"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Transformation Performance",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "sum(rate(chimera_transformation_duration_seconds_bucket[5m])) by (le, technique)",
+            "legendFormat": "{{technique}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 5,
+        "title": "Error Rates",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+            "legendFormat": "HTTP 5xx Rate"
+          },
+          {
+            "expr": "sum(rate(chimera_llm_requests_total{status=\"error\"}[5m])) / sum(rate(chimera_llm_requests_total[5m]))",
+            "legendFormat": "LLM Error Rate"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 0.01
+                },
+                {
+                  "color": "red",
+                  "value": 0.05
+                }
+              ]
+            },
+            "unit": "percentunit"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "chimera_memory_usage_bytes{type=\"rss\"}",
+            "legendFormat": "RSS Memory"
+          },
+          {
+            "expr": "chimera_memory_usage_bytes{type=\"percent\"}",
+            "legendFormat": "Memory Percentage"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "CPU Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "chimera_cpu_usage_percent",
+            "legendFormat": "CPU Usage"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Circuit Breaker Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "chimera_circuit_breaker_state",
+            "legendFormat": "{{provider}}"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 2
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "text": "CLOSED"
+                  },
+                  "1": {
+                    "text": "OPEN"
+                  },
+                  "2": {
+                    "text": "HALF-OPEN"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "WebSocket Connections",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "chimera_websocket_connections",
+            "legendFormat": "Active Connections"
+          },
+          {
+            "expr": "rate(chimera_websocket_messages_total[5m])",
+            "legendFormat": "Message Rate"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        }
+      },
+      {
+        "id": 10,
+        "title": "AutoDAN Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(chimera_autodan_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95 AutoDAN Duration"
+          },
+          {
+            "expr": "rate(chimera_autodan_optimizations_total[5m])",
+            "legendFormat": "AutoDAN Request Rate"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 38
+        }
+      },
+      {
+        "id": 11,
+        "title": "Cache Performance",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(chimera_cache_operations_total{result=\"hit\"}[5m]) / rate(chimera_cache_operations_total{operation=\"get\"}[5m])",
+            "legendFormat": "Cache Hit Rate"
+          },
+          {
+            "expr": "rate(chimera_cache_operations_total{result=\"miss\"}[5m]) / rate(chimera_cache_operations_total{operation=\"get\"}[5m])",
+            "legendFormat": "Cache Miss Rate"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 38
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit"
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Database Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(pg_stat_database_xact_commit[5m])",
+            "legendFormat": "Transactions/sec"
+          },
+          {
+            "expr": "pg_stat_database_numbackends",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 46
+        }
+      },
+      {
+        "id": 13,
+        "title": "Data Pipeline Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(chimera_pipeline_jobs_total[5m]) by (stage)",
+            "legendFormat": "{{stage}} - Job Rate"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(chimera_pipeline_duration_seconds_bucket[5m])) by (stage)",
+            "legendFormat": "{{stage}} - P95 Duration"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 54
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 1,
+    "links": [
+      {
+        "title": "Jaeger Tracing",
+        "url": "http://localhost:16686",
+        "type": "link"
+      },
+      {
+        "title": "Prometheus",
+        "url": "http://localhost:9090",
+        "type": "link"
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "provider",
+          "type": "query",
+          "query": "label_values(chimera_llm_requests_total, provider)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "technique",
+          "type": "query",
+          "query": "label_values(chimera_transformation_requests_total, technique)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "increase(up[1m]) > 0",
+          "titleFormat": "Service Restart",
+          "textFormat": "{{instance}} restarted"
+        }
+      ]
+    }
+  }
+}

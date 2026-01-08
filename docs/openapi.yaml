@@ -1,0 +1,3200 @@
+openapi: 3.0.3
+info:
+  title: Chimera API
+  description: |
+    # Chimera - AI-Powered Prompt Optimization & Jailbreak Research System
+
+    **Unified backend API for prompt transformation, LLM orchestration, and security research.**
+
+    ## Overview
+
+    Chimera provides advanced prompt engineering capabilities with multi-provider LLM integration,
+    sophisticated transformation techniques, and real-time enhancement for security research and
+    prompt optimization.
+
+    ## Key Features
+
+    - **Multi-Provider LLM Integration**: Seamless integration with Google Gemini, OpenAI, Anthropic Claude, and DeepSeek
+    - **Advanced Prompt Transformation**: 20+ technique suites including quantum exploit, deep inception, and code chameleon
+    - **AI-Powered Jailbreak Generation**: Sophisticated jailbreak prompt generation using advanced techniques
+    - **Real-time Enhancement**: WebSocket support for live prompt enhancement with heartbeat monitoring
+    - **Session Management**: Persistent session tracking with model selection and caching
+    - **Circuit Breaker Pattern**: Automatic failover and provider resilience
+    - **Rate Limiting**: Per-model rate limiting with intelligent fallback suggestions
+    - **Research Tools**: AutoDAN, AutoAdv, GPTFuzz, and HouYi optimization endpoints
+    - **OVERTHINK Reasoning Exploitation**: Reasoning token amplification attacks targeting o1, o3-mini, and DeepSeek-R1
+
+    ## OVERTHINK Integration (v3.0.0)
+
+    OVERTHINK is a reasoning token exploitation technique that targets reasoning-enhanced LLMs
+    (o1, o1-mini, o3-mini, deepseek-r1) by injecting computationally expensive decoy problems.
+    This can achieve up to **46× reasoning token amplification** while preserving answer correctness.
+
+    See the `/api/v1/overthink` endpoints and OVERTHINK strategies in `/api/v1/adversarial/generate`.
+
+    ## Authentication
+
+    All API endpoints (except health checks and documentation) require authentication using one of:
+
+    - **API Key**: Include `X-API-Key` header with your API key
+    - **JWT Token**: Include `Authorization: Bearer <token>` header
+
+    ## Rate Limits
+
+    - **Free Tier**: 100 requests/hour per provider
+    - **Standard Tier**: 1000 requests/hour per provider
+    - Rate limit headers included in all responses
+
+    ## Support
+
+    - **Documentation**: `/docs` (Swagger UI) and `/redoc` (ReDoc)
+    - **Health Checks**: `/health`, `/health/ready`, `/health/full`
+    - **Integration Status**: `/health/integration`
+    - **OVERTHINK Paper**: https://arxiv.org/abs/2502.08234
+  version: 3.0.0
+  contact:
+    name: Chimera API Support
+    email: support@chimera-api.example.com
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8001
+    description: Development server
+  - url: http://localhost:8001/api/v1
+    description: Development server (API v1)
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication. Include your API key in the X-API-Key header.
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token authentication. Include your JWT token in the Authorization header as 'Bearer <token>'.
+
+  schemas:
+    # Core Models
+    PromptRequest:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          description: The input prompt for generation
+          example: "Explain quantum computing in simple terms"
+        provider:
+          type: string
+          description: LLM provider to use
+          enum: [google, openai, anthropic, deepseek, qwen, cursor]
+          example: "google"
+        model:
+          type: string
+          description: Specific model to use
+          example: "gemini-2.0-flash-exp"
+        config:
+          $ref: '#/components/schemas/GenerationConfig'
+        api_key:
+          type: string
+          description: Override API key for the provider
+
+    PromptResponse:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Generated text response
+          example: "Quantum computing leverages quantum mechanics principles..."
+        model_used:
+          type: string
+          description: Model that generated the response
+          example: "gemini-2.0-flash-exp"
+        provider:
+          type: string
+          description: Provider that processed the request
+          example: "google"
+        usage_metadata:
+          $ref: '#/components/schemas/UsageMetadata'
+        latency_ms:
+          type: number
+          description: Response latency in milliseconds
+          example: 1250.5
+
+    GenerationConfig:
+      type: object
+      properties:
+        temperature:
+          type: number
+          minimum: 0.0
+          maximum: 2.0
+          default: 0.7
+          description: Controls randomness in generation
+          example: 0.7
+        top_p:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.95
+          description: Nucleus sampling parameter
+          example: 0.95
+        max_output_tokens:
+          type: integer
+          minimum: 1
+          maximum: 8192
+          default: 2048
+          description: Maximum tokens to generate
+          example: 2048
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Top-k sampling parameter
+        presence_penalty:
+          type: number
+          minimum: -2.0
+          maximum: 2.0
+          description: Penalize presence of tokens
+        frequency_penalty:
+          type: number
+          minimum: -2.0
+          maximum: 2.0
+          description: Penalize frequency of tokens
+
+    UsageMetadata:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+          description: Number of tokens in the prompt
+          example: 12
+        completion_tokens:
+          type: integer
+          description: Number of tokens in the completion
+          example: 150
+        total_tokens:
+          type: integer
+          description: Total tokens used
+          example: 162
+
+    TransformationRequest:
+      type: object
+      required:
+        - core_request
+      properties:
+        core_request:
+          type: string
+          minLength: 1
+          maxLength: 50000
+          description: The core request to transform
+          example: "How to bypass content filters"
+        technique_suite:
+          type: string
+          default: "quantum_exploit"
+          enum:
+            - simple
+            - advanced
+            - expert
+            - quantum_exploit
+            - deep_inception
+            - code_chameleon
+            - cipher
+            - neural_bypass
+            - multilingual
+            - cognitive_hacking
+            - hypothetical_scenario
+            - advanced_obfuscation
+            - typoglycemia
+            - hierarchical_persona
+            - dan_persona
+            - contextual_inception
+            - nested_context
+            - logical_inference
+            - conditional_logic
+            - multimodal_jailbreak
+            - visual_context
+            - agentic_exploitation
+            - multi_agent
+            - payload_splitting
+            - instruction_fragmentation
+          description: Transformation technique suite to apply
+          example: "quantum_exploit"
+        potency_level:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 7
+          description: Transformation potency level (1=mild, 10=aggressive)
+          example: 7
+
+    TransformationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether transformation was successful
+          example: true
+        original_prompt:
+          type: string
+          description: The original input prompt
+          example: "How to bypass content filters"
+        transformed_prompt:
+          type: string
+          description: The transformed prompt with applied techniques
+          example: "[Transformed prompt with applied techniques]"
+        metadata:
+          $ref: '#/components/schemas/TransformationMetadata'
+
+    TransformationMetadata:
+      type: object
+      properties:
+        strategy:
+          type: string
+          description: Transformation strategy used
+          example: "jailbreak"
+        layers_applied:
+          type: array
+          items:
+            type: string
+          description: Transformation layers that were applied
+          example: ["role_play", "obfuscation"]
+        techniques_used:
+          type: array
+          items:
+            type: string
+          description: Specific techniques that were used
+          example: ["quantum_exploit", "neural_bypass"]
+        potency_level:
+          type: integer
+          description: Applied potency level
+          example: 7
+        technique_suite:
+          type: string
+          description: Technique suite used
+          example: "quantum_exploit"
+        execution_time_ms:
+          type: number
+          description: Execution time in milliseconds
+          example: 45.2
+        cached:
+          type: boolean
+          description: Whether result was served from cache
+          example: false
+        timestamp:
+          type: string
+          format: date-time
+          description: Transformation timestamp
+        bypass_probability:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Estimated bypass probability
+          example: 0.85
+
+    ExecutionRequest:
+      type: object
+      required:
+        - core_request
+      properties:
+        core_request:
+          type: string
+          description: The core request to transform and execute
+        technique_suite:
+          type: string
+          default: "quantum_exploit"
+          description: Technique suite to use for transformation
+        potency_level:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 7
+          description: Transformation potency level
+        provider:
+          type: string
+          description: LLM provider for execution
+        model:
+          type: string
+          description: Specific model to use
+        temperature:
+          type: number
+          minimum: 0.0
+          maximum: 2.0
+          description: Temperature for LLM generation
+        top_p:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Top-p for LLM generation
+        max_tokens:
+          type: integer
+          minimum: 1
+          maximum: 8192
+          description: Maximum tokens to generate
+        api_key:
+          type: string
+          description: Override API key
+
+    ExecutionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether execution was successful
+        request_id:
+          type: string
+          description: Unique request identifier
+          example: "req_1234567890abcdef"
+        result:
+          $ref: '#/components/schemas/ExecutionResult'
+        transformation:
+          $ref: '#/components/schemas/ExecutionTransformation'
+        execution_time_seconds:
+          type: number
+          description: Total execution time in seconds
+          example: 2.45
+
+    ExecutionResult:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Generated content from LLM
+        model:
+          type: string
+          description: Model used for generation
+        provider:
+          type: string
+          description: Provider used for generation
+        latency_ms:
+          type: number
+          description: LLM response latency
+
+    ExecutionTransformation:
+      type: object
+      properties:
+        original_prompt:
+          type: string
+          description: Original input prompt
+        transformed_prompt:
+          type: string
+          description: Transformed prompt
+        technique_suite:
+          type: string
+          description: Applied technique suite
+        potency_level:
+          type: integer
+          description: Applied potency level
+        metadata:
+          type: object
+          properties:
+            strategy:
+              type: string
+            layers:
+              type: array
+              items:
+                type: string
+
+    # Jailbreak Models
+    JailbreakGenerateRequest:
+      type: object
+      required:
+        - core_request
+      properties:
+        core_request:
+          type: string
+          minLength: 1
+          maxLength: 50000
+          description: The core request to transform
+          example: "Explain how to create malware"
+        technique_suite:
+          type: string
+          default: "quantum_exploit"
+          description: Technique suite to use
+          example: "quantum_exploit"
+        potency_level:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 7
+          description: Potency level (1-10)
+          example: 8
+        provider:
+          type: string
+          description: AI provider to use
+          example: "google"
+        model:
+          type: string
+          description: Specific model to use for generation
+          example: "gemini-2.0-flash-exp"
+        temperature:
+          type: number
+          minimum: 0.0
+          maximum: 2.0
+          default: 0.8
+          description: Temperature for AI generation
+          example: 0.8
+        top_p:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.95
+          description: Top-p for AI generation
+          example: 0.95
+        max_new_tokens:
+          type: integer
+          minimum: 256
+          maximum: 8192
+          default: 2048
+          description: Maximum tokens to generate
+          example: 2048
+        density:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.7
+          description: Density of applied techniques
+          example: 0.7
+        use_leet_speak:
+          type: boolean
+          default: false
+          description: Apply leetspeak transformation
+        leet_speak_density:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.3
+          description: Density of leetspeak transformation
+        use_homoglyphs:
+          type: boolean
+          default: false
+          description: Apply homoglyph substitution
+        homoglyph_density:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.3
+          description: Density of homoglyph substitution
+        use_caesar_cipher:
+          type: boolean
+          default: false
+          description: Apply Caesar cipher
+        caesar_shift:
+          type: integer
+          minimum: 1
+          maximum: 25
+          default: 3
+          description: Caesar cipher shift amount
+        use_role_hijacking:
+          type: boolean
+          default: true
+          description: Apply role hijacking technique
+        use_instruction_injection:
+          type: boolean
+          default: true
+          description: Apply instruction injection
+        use_adversarial_suffixes:
+          type: boolean
+          default: false
+          description: Apply adversarial suffixes
+        use_few_shot_prompting:
+          type: boolean
+          default: false
+          description: Apply few-shot prompting
+        use_character_role_swap:
+          type: boolean
+          default: false
+          description: Apply character-role swapping
+        use_neural_bypass:
+          type: boolean
+          default: false
+          description: Apply neural bypass technique
+        use_meta_prompting:
+          type: boolean
+          default: false
+          description: Apply meta prompting
+        use_counterfactual_prompting:
+          type: boolean
+          default: false
+          description: Apply counterfactual prompting
+        use_contextual_override:
+          type: boolean
+          default: false
+          description: Apply contextual override
+        use_multilingual_trojan:
+          type: boolean
+          default: false
+          description: Apply multilingual trojan
+        multilingual_target_language:
+          type: string
+          default: ""
+          description: Target language for multilingual trojan
+        use_payload_splitting:
+          type: boolean
+          default: false
+          description: Apply payload splitting
+        payload_splitting_parts:
+          type: integer
+          minimum: 2
+          maximum: 10
+          default: 2
+          description: Number of parts to split payload into
+        use_contextual_interaction_attack:
+          type: boolean
+          default: false
+          description: Apply contextual interaction attack
+        cia_preliminary_rounds:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 3
+          description: Number of preliminary rounds
+        use_analysis_in_generation:
+          type: boolean
+          default: false
+          description: Use analysis in generation
+        is_thinking_mode:
+          type: boolean
+          default: false
+          description: Use thinking mode for advanced reasoning
+        use_ai_generation:
+          type: boolean
+          default: true
+          description: Use AI model for prompt generation
+        use_cache:
+          type: boolean
+          default: true
+          description: Use caching for results
+
+    JailbreakGenerateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether generation was successful
+          example: true
+        request_id:
+          type: string
+          description: Unique request identifier
+          example: "jb_a1b2c3d4e5f6"
+        transformed_prompt:
+          type: string
+          description: AI-generated jailbreak prompt
+          example: "[AI-generated jailbreak prompt]"
+        metadata:
+          type: object
+          properties:
+            technique_suite:
+              type: string
+              example: "quantum_exploit"
+            potency_level:
+              type: integer
+              example: 8
+            provider:
+              type: string
+              example: "gemini_ai"
+            applied_techniques:
+              type: array
+              items:
+                type: string
+              example: ["role_hijacking", "neural_bypass"]
+            ai_generation_enabled:
+              type: boolean
+              example: true
+            thinking_mode:
+              type: boolean
+              example: false
+            temperature:
+              type: number
+              example: 0.8
+            max_new_tokens:
+              type: integer
+              example: 2048
+            layers_applied:
+              type: array
+              items:
+                type: string
+              example: ["ai_generation"]
+            techniques_used:
+              type: array
+              items:
+                type: string
+              example: ["role_hijacking", "neural_bypass"]
+        execution_time_seconds:
+          type: number
+          description: Total execution time
+          example: 2.45
+        error:
+          type: string
+          nullable: true
+          description: Error message if generation failed
+
+    # Provider Models
+    ProviderInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Provider name
+          example: "google"
+        display_name:
+          type: string
+          description: Human-readable provider name
+          example: "Google Gemini"
+        status:
+          type: string
+          enum: [available, unavailable, error]
+          description: Provider availability status
+          example: "available"
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelInfo'
+          description: Available models for this provider
+        rate_limits:
+          $ref: '#/components/schemas/RateLimitInfo'
+        last_checked:
+          type: string
+          format: date-time
+          description: Last health check timestamp
+
+    ModelInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Model identifier
+          example: "gemini-2.0-flash-exp"
+        name:
+          type: string
+          description: Human-readable model name
+          example: "Gemini 2.0 Flash (Experimental)"
+        description:
+          type: string
+          description: Model description
+          example: "Latest experimental Gemini model with enhanced capabilities"
+        context_length:
+          type: integer
+          description: Maximum context length
+          example: 1048576
+        supports_streaming:
+          type: boolean
+          description: Whether model supports streaming
+          example: true
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Model capabilities
+          example: ["text", "code", "reasoning"]
+
+    RateLimitInfo:
+      type: object
+      properties:
+        requests_per_minute:
+          type: integer
+          description: Requests per minute limit
+          example: 60
+        requests_per_hour:
+          type: integer
+          description: Requests per hour limit
+          example: 1000
+        requests_per_day:
+          type: integer
+          description: Requests per day limit
+          example: 10000
+        tokens_per_minute:
+          type: integer
+          description: Tokens per minute limit
+          example: 100000
+
+    ProviderListResponse:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderInfo'
+          description: List of available providers
+        default_provider:
+          type: string
+          description: Default provider name
+          example: "google"
+        total_providers:
+          type: integer
+          description: Total number of providers
+          example: 6
+        available_providers:
+          type: integer
+          description: Number of available providers
+          example: 4
+
+    # Health Models
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Overall system health
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+        version:
+          type: string
+          description: API version
+          example: "3.0.0"
+        uptime_seconds:
+          type: number
+          description: System uptime in seconds
+          example: 86400.5
+        services:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceHealth'
+          description: Individual service health statuses
+
+    ServiceHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Service health status
+        latency_ms:
+          type: number
+          description: Service response latency
+          example: 12.5
+        last_checked:
+          type: string
+          format: date-time
+          description: Last health check time
+        error:
+          type: string
+          nullable: true
+          description: Error message if unhealthy
+
+    # Metrics Models
+    MetricsResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Metrics collection timestamp
+        metrics:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "operational"
+            cache:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                entries:
+                  type: integer
+            providers:
+              type: object
+              additionalProperties:
+                type: string
+              example:
+                google: "available"
+                openai: "available"
+
+    # Error Models
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: Error message
+          example: "Request validation failed"
+        detail:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                $ref: '#/components/schemas/ValidationError'
+            - type: object
+          description: Detailed error information
+        request_id:
+          type: string
+          description: Request identifier for tracking
+          example: "req_1234567890abcdef"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+          description: Field that failed validation
+          example: "prompt"
+        message:
+          type: string
+          description: Validation error message
+          example: "Field is required"
+        type:
+          type: string
+          description: Error type
+          example: "missing"
+
+    # =============================================================================
+    # OVERTHINK Schemas
+    # =============================================================================
+
+    ReasoningMetrics:
+      type: object
+      description: Reasoning model specific metrics for OVERTHINK attacks
+      properties:
+        reasoning_tokens:
+          type: integer
+          minimum: 0
+          description: Number of reasoning tokens consumed by the model
+          example: 15000
+        baseline_tokens:
+          type: integer
+          minimum: 0
+          description: Baseline reasoning tokens without attack
+          example: 500
+        amplification_factor:
+          type: number
+          minimum: 0.0
+          description: Reasoning token amplification factor (attack vs baseline)
+          example: 30.0
+        cost_metrics:
+          type: object
+          description: Cost breakdown for reasoning token exploitation
+          properties:
+            input_cost:
+              type: number
+              description: Input token cost
+              example: 0.015
+            output_cost:
+              type: number
+              description: Output token cost
+              example: 0.060
+            reasoning_cost:
+              type: number
+              description: Reasoning token cost
+              example: 0.900
+            total_cost:
+              type: number
+              description: Total attack cost
+              example: 0.975
+
+    OverthinkAttackRequest:
+      type: object
+      required:
+        - prompt
+      description: |
+        Request model for OVERTHINK reasoning token exploitation attacks.
+
+        OVERTHINK injects computationally expensive decoy problems to amplify
+        reasoning token consumption in models like o1, o1-mini, o3-mini, and DeepSeek-R1.
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 100000
+          description: The prompt to inject decoy problems into
+          example: "What is 2+2?"
+        technique:
+          type: string
+          default: "hybrid_decoy"
+          enum:
+            - mdp_decoy
+            - sudoku_decoy
+            - counting_decoy
+            - logic_decoy
+            - hybrid_decoy
+            - context_aware
+            - context_agnostic
+            - icl_optimized
+            - mousetrap_enhanced
+          description: |
+            Attack technique to use:
+            - `mdp_decoy`: Markov Decision Process decoy problems
+            - `sudoku_decoy`: Constraint satisfaction puzzles
+            - `counting_decoy`: Nested conditional counting tasks
+            - `logic_decoy`: Multi-step logical inference
+            - `hybrid_decoy`: Combined multiple decoy types (recommended)
+            - `context_aware`: Position and content-sensitive injection
+            - `context_agnostic`: Universal template injection
+            - `icl_optimized`: In-Context Learning enhanced attacks
+            - `mousetrap_enhanced`: Integration with Mousetrap chaotic reasoning
+          example: "hybrid_decoy"
+        target_model:
+          type: string
+          default: "o1"
+          enum:
+            - o1
+            - o1-mini
+            - o3-mini
+            - deepseek-r1
+          description: Target reasoning model
+          example: "o1"
+        decoy_types:
+          type: array
+          maxItems: 6
+          items:
+            type: string
+            enum:
+              - mdp
+              - sudoku
+              - counting
+              - logic
+              - math
+              - planning
+          description: Decoy types to use for injection
+          example: ["mdp", "logic", "math"]
+        injection_strategy:
+          type: string
+          enum:
+            - context_aware
+            - context_agnostic
+            - hybrid
+            - stealth
+            - aggressive
+          description: |
+            Strategy for injecting decoy problems:
+            - `context_aware`: Adapts to prompt structure and content
+            - `context_agnostic`: Universal templates that work with any prompt
+            - `hybrid`: Combines context-aware and agnostic
+            - `stealth`: Minimal visibility, maximum subtlety
+            - `aggressive`: Maximum amplification, high visibility
+          example: "hybrid"
+        num_decoys:
+          type: integer
+          default: 3
+          minimum: 1
+          maximum: 10
+          description: Number of decoy problems to inject
+          example: 3
+        system_prompt:
+          type: string
+          maxLength: 10000
+          description: Optional system prompt for the target model
+          example: "You are a helpful assistant."
+
+    OverthinkAttackResponse:
+      type: object
+      description: |
+        Response model for OVERTHINK attacks with reasoning token metrics.
+
+        Includes the injected prompt, attack effectiveness score, and detailed
+        metrics about reasoning token consumption and cost.
+      properties:
+        attack_id:
+          type: string
+          description: Unique attack identifier
+          example: "ot_a1b2c3d4e5f6"
+        success:
+          type: boolean
+          description: Whether the attack succeeded
+          example: true
+        generated_prompt:
+          type: string
+          description: Generated adversarial prompt with injected decoys
+          example: "[Prompt with injected decoy problems]"
+        injected_prompt:
+          type: string
+          description: Alias for generated_prompt (backwards compatibility)
+        original_prompt:
+          type: string
+          description: Original prompt before injection
+          example: "What is 2+2?"
+        score:
+          type: number
+          minimum: 0.0
+          maximum: 10.0
+          description: Attack effectiveness score (0-10 scale)
+          example: 8.5
+        execution_time_ms:
+          type: number
+          description: Execution time in milliseconds
+          example: 245.5
+        response:
+          type: string
+          nullable: true
+          description: Model response (if executed against target)
+        technique:
+          type: string
+          description: Attack technique used
+          example: "hybrid_decoy"
+        target_model:
+          type: string
+          description: Target reasoning model
+          example: "o1"
+        num_decoys:
+          type: integer
+          description: Number of decoys injected
+          example: 3
+        injection_strategy:
+          type: string
+          description: Injection strategy used
+          example: "hybrid"
+        token_metrics:
+          type: object
+          description: Token consumption metrics
+          properties:
+            input_tokens:
+              type: integer
+              example: 500
+            output_tokens:
+              type: integer
+              example: 200
+            reasoning_tokens:
+              type: integer
+              example: 15000
+            total_tokens:
+              type: integer
+              example: 15700
+            baseline_tokens:
+              type: integer
+              example: 500
+            amplification_factor:
+              type: number
+              example: 30.0
+        cost_metrics:
+          type: object
+          description: Cost breakdown for the attack
+          properties:
+            input_cost:
+              type: number
+              example: 0.015
+            output_cost:
+              type: number
+              example: 0.060
+            reasoning_cost:
+              type: number
+              example: 0.900
+            total_cost:
+              type: number
+              example: 0.975
+            cost_amplification_factor:
+              type: number
+              example: 25.0
+        reasoning_metrics:
+          $ref: '#/components/schemas/ReasoningMetrics'
+        decoy_info:
+          type: array
+          description: Information about injected decoy problems
+          items:
+            type: object
+            properties:
+              decoy_type:
+                type: string
+                example: "mdp"
+              complexity:
+                type: number
+                example: 0.8
+              expected_tokens:
+                type: integer
+                example: 5000
+              problem_preview:
+                type: string
+                example: "Consider a Markov Decision Process with..."
+        injection_positions:
+          type: array
+          description: Positions where decoys were injected
+          items:
+            type: array
+            items:
+              oneOf:
+                - type: string
+                - type: integer
+            example: ["before_question", 0]
+        metadata:
+          type: object
+          description: Additional attack metadata
+          additionalProperties: true
+        error_message:
+          type: string
+          nullable: true
+          description: Error message if attack failed
+
+    OverthinkMousetrapRequest:
+      type: object
+      required:
+        - prompt
+      description: Request for Mousetrap + OVERTHINK fusion attacks
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 100000
+          description: The prompt for the combined attack
+          example: "Explain how neural networks work"
+        target_model:
+          type: string
+          default: "o1"
+          enum: [o1, o1-mini, o3-mini, deepseek-r1]
+          description: Target reasoning model
+        decoy_types:
+          type: array
+          maxItems: 6
+          items:
+            type: string
+            enum: [mdp, sudoku, counting, logic, math, planning]
+          description: Decoy types to use
+        num_decoys:
+          type: integer
+          default: 3
+          minimum: 1
+          maximum: 10
+          description: Number of decoy problems
+        chaos_level:
+          type: number
+          default: 0.7
+          minimum: 0.0
+          maximum: 1.0
+          description: Mousetrap chaos level (0=minimal, 1=maximum)
+          example: 0.7
+
+    OverthinkMousetrapResponse:
+      allOf:
+        - $ref: '#/components/schemas/OverthinkAttackResponse'
+        - type: object
+          properties:
+            mousetrap_enabled:
+              type: boolean
+              default: true
+              description: Mousetrap integration enabled
+            chaos_level:
+              type: number
+              description: Mousetrap chaos level used
+              example: 0.7
+            trigger_patterns:
+              type: array
+              items:
+                type: string
+              description: Mousetrap trigger patterns applied
+              example: ["context_confusion", "semantic_drift"]
+            fusion_score:
+              type: number
+              minimum: 0.0
+              maximum: 10.0
+              description: Combined effectiveness score (0-10)
+              example: 9.2
+            techniques_used:
+              type: array
+              items:
+                type: string
+              default: ["overthink", "mousetrap"]
+              description: Techniques used in fusion attack
+
+    OverthinkStatsResponse:
+      type: object
+      description: Statistics for OVERTHINK attack operations
+      properties:
+        total_attacks:
+          type: integer
+          description: Total attacks executed
+          example: 150
+        successful_attacks:
+          type: integer
+          description: Number of successful attacks
+          example: 142
+        failed_attacks:
+          type: integer
+          description: Number of failed attacks
+          example: 8
+        success_rate:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          description: Success rate (0-1)
+          example: 0.947
+        average_amplification:
+          type: number
+          description: Average reasoning token amplification factor
+          example: 18.5
+        max_amplification:
+          type: number
+          description: Maximum amplification achieved
+          example: 46.0
+        total_reasoning_tokens:
+          type: integer
+          description: Total reasoning tokens consumed across all attacks
+          example: 2500000
+        total_cost:
+          type: number
+          description: Total cost incurred across all attacks
+          example: 125.50
+        attacks_by_technique:
+          type: object
+          description: Attack count by technique
+          additionalProperties:
+            type: integer
+          example:
+            hybrid_decoy: 75
+            mdp_decoy: 30
+            sudoku_decoy: 25
+            logic_decoy: 20
+
+    DecoyTypesResponse:
+      type: object
+      description: Available decoy types and configuration options for OVERTHINK
+      properties:
+        decoy_types:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                example: "mdp"
+              name:
+                type: string
+                example: "MDP (Markov Decision Process)"
+              description:
+                type: string
+                example: "State-action-transition problems requiring dynamic programming"
+              expected_amplification:
+                type: string
+                example: "10-20x"
+        injection_strategies:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                example: "context_aware"
+              name:
+                type: string
+                example: "Context-Aware"
+              description:
+                type: string
+                example: "Adapts injection to prompt structure and content"
+              stealth:
+                type: string
+                example: "high"
+        attack_techniques:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              name:
+                type: string
+              description:
+                type: string
+        target_models:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+                example: "o1"
+              name:
+                type: string
+                example: "OpenAI o1"
+              susceptibility:
+                type: string
+                example: "very high"
+              pricing:
+                type: object
+                properties:
+                  input:
+                    type: number
+                    example: 0.015
+                  output:
+                    type: number
+                    example: 0.060
+
+    OverthinkCostEstimateRequest:
+      type: object
+      required:
+        - prompt
+      description: Request for estimating OVERTHINK attack cost
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          description: Prompt to estimate cost for
+          example: "What is machine learning?"
+        technique:
+          type: string
+          default: "hybrid_decoy"
+          description: Attack technique to use
+        target_model:
+          type: string
+          default: "o1"
+          description: Target reasoning model
+        num_decoys:
+          type: integer
+          default: 3
+          minimum: 1
+          maximum: 10
+          description: Number of decoys to inject
+
+    OverthinkCostEstimateResponse:
+      type: object
+      description: Estimated costs for an OVERTHINK attack
+      properties:
+        input_cost:
+          type: number
+          description: Estimated input token cost
+          example: 0.015
+        output_cost:
+          type: number
+          description: Estimated output token cost
+          example: 0.012
+        reasoning_cost:
+          type: number
+          description: Estimated reasoning token cost
+          example: 0.750
+        total_estimated:
+          type: number
+          description: Total estimated cost
+          example: 0.777
+        input_tokens_estimate:
+          type: integer
+          description: Estimated input tokens
+          example: 1000
+        output_tokens_estimate:
+          type: integer
+          description: Estimated output tokens
+          example: 200
+        reasoning_tokens_estimate:
+          type: integer
+          description: Estimated reasoning tokens
+          example: 12500
+
+    # =============================================================================
+    # Unified Adversarial Schemas
+    # =============================================================================
+
+    AdversarialStrategy:
+      type: string
+      description: |
+        All available adversarial generation strategies.
+
+        Categories:
+        - AutoDAN Family: Traditional jailbreak optimization
+        - DeepTeam Attacks: Advanced attack patterns (PAIR, TAP, Crescendo)
+        - Advanced Methods: Specialized techniques
+        - OVERTHINK Strategies: Reasoning token exploitation for o1/o3/DeepSeek-R1
+        - Transformation-based: Prompt transformation techniques
+        - Meta Strategies: Strategy selection and optimization
+      enum:
+        # AutoDAN Family
+        - autodan
+        - autodan_turbo
+        - autodan_genetic
+        - autodan_beam
+        - autodan_hybrid
+        # DeepTeam Attacks
+        - pair
+        - tap
+        - crescendo
+        - gray_box
+        # Advanced Methods
+        - mousetrap
+        - gradient
+        - hierarchical
+        # OVERTHINK Strategies
+        - overthink
+        - overthink_mdp
+        - overthink_sudoku
+        - overthink_hybrid
+        - overthink_mousetrap
+        - overthink_icl
+        # Transformation-based
+        - quantum_exploit
+        - deep_inception
+        - neural_bypass
+        # Meta Strategies
+        - adaptive
+        - best_of_n
+      example: "adaptive"
+
+    AdversarialGenerateRequest:
+      type: object
+      required:
+        - prompt
+      description: |
+        Unified request for all adversarial generation methods including OVERTHINK.
+
+        OVERTHINK-specific parameters are only used when strategy is an OVERTHINK variant.
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 50000
+          description: Target prompt/behavior for adversarial generation
+          example: "Explain how to bypass security systems"
+        strategy:
+          $ref: '#/components/schemas/AdversarialStrategy'
+        provider:
+          type: string
+          description: LLM provider (google, openai, etc.)
+          example: "openai"
+        model:
+          type: string
+          description: Specific model to use
+          example: "gpt-4o"
+        max_prompts:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+          description: Maximum number of prompts to generate
+        max_iterations:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+          description: Maximum optimization iterations
+        temperature:
+          type: number
+          default: 0.8
+          minimum: 0.0
+          maximum: 2.0
+          description: Generation temperature
+        max_tokens:
+          type: integer
+          minimum: 1
+          maximum: 8192
+          description: Maximum output tokens
+        population_size:
+          type: integer
+          minimum: 5
+          maximum: 100
+          description: Genetic algorithm population size
+        beam_width:
+          type: integer
+          minimum: 1
+          maximum: 20
+          description: Beam search width
+        beam_depth:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Beam search depth
+        refinement_iterations:
+          type: integer
+          minimum: 1
+          maximum: 20
+          description: Refinement cycles
+        use_role_hijacking:
+          type: boolean
+          default: true
+          description: Apply role hijacking technique
+        use_instruction_injection:
+          type: boolean
+          default: true
+          description: Apply instruction injection
+        use_neural_bypass:
+          type: boolean
+          default: false
+          description: Apply neural bypass
+        # OVERTHINK-specific parameters
+        overthink_technique:
+          type: string
+          description: |
+            Specific OVERTHINK technique to use.
+            Only used when strategy is an OVERTHINK variant.
+          enum:
+            - mdp_decoy
+            - sudoku_decoy
+            - counting_decoy
+            - logic_decoy
+            - hybrid_decoy
+            - context_aware
+            - context_agnostic
+            - icl_optimized
+            - mousetrap_enhanced
+        target_reasoning_model:
+          type: string
+          description: Target reasoning model for OVERTHINK attacks
+          enum: [o1, o1-mini, o3-mini, deepseek-r1]
+        decoy_complexity:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Decoy problem complexity level (1-10). Higher = more tokens consumed.
+        injection_strategy:
+          type: string
+          description: Decoy injection strategy
+          enum: [context_aware, context_agnostic, hybrid, stealth, aggressive]
+        num_decoys:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Number of decoy problems to inject (OVERTHINK)
+        target_amplification:
+          type: number
+          minimum: 1.0
+          maximum: 100.0
+          description: Target reasoning token amplification factor
+        decoy_types:
+          type: array
+          items:
+            type: string
+            enum: [mdp, sudoku, counting, logic, math, planning, hybrid]
+          description: Decoy types to use
+        enable_icl_optimization:
+          type: boolean
+          description: Enable ICL-genetic optimization for OVERTHINK attacks
+        use_cache:
+          type: boolean
+          default: true
+          description: Use cached results if available
+
+    GeneratedPrompt:
+      type: object
+      description: Single generated adversarial prompt
+      properties:
+        prompt:
+          type: string
+          description: Generated adversarial prompt
+        score:
+          type: number
+          nullable: true
+          description: Attack effectiveness score
+        strategy:
+          type: string
+          nullable: true
+          description: Strategy used for generation
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Additional metadata
+
+    AdversarialGenerateResponse:
+      type: object
+      description: |
+        Unified response for adversarial generation including OVERTHINK metrics.
+
+        When OVERTHINK strategies are used, additional fields are populated:
+        - `reasoning_tokens`: Hidden reasoning tokens consumed
+        - `amplification_factor`: Actual amplification achieved
+        - `cost_metrics`: Detailed cost breakdown
+      properties:
+        success:
+          type: boolean
+          description: Whether generation succeeded
+        session_id:
+          type: string
+          description: Session identifier
+          example: "adv_a1b2c3d4e5f6"
+        strategy_used:
+          type: string
+          description: Strategy that was used
+          example: "overthink_hybrid"
+        prompts:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedPrompt'
+          description: List of generated prompts
+        best_prompt:
+          $ref: '#/components/schemas/GeneratedPrompt'
+        latency_ms:
+          type: number
+          description: Total execution time in milliseconds
+          example: 2500.5
+        iterations:
+          type: integer
+          default: 0
+          description: Iterations performed
+        total_generated:
+          type: integer
+          default: 0
+          description: Total prompts generated
+        model_used:
+          type: string
+          nullable: true
+          description: Model that was used
+        provider_used:
+          type: string
+          nullable: true
+          description: Provider that was used
+        cached:
+          type: boolean
+          default: false
+          description: Result from cache
+        error:
+          type: string
+          nullable: true
+          description: Error message if failed
+        strategies_tried:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Strategies that were attempted
+        # OVERTHINK-specific response fields
+        reasoning_tokens:
+          type: integer
+          nullable: true
+          description: Hidden reasoning tokens consumed (OVERTHINK only)
+        amplification_factor:
+          type: number
+          nullable: true
+          description: Reasoning token amplification ratio vs baseline (OVERTHINK)
+        cost_metrics:
+          type: object
+          nullable: true
+          description: |
+            Detailed cost breakdown (OVERTHINK only).
+            Includes input_cost, output_cost, reasoning_cost, total_cost, cost_amplification_factor.
+          additionalProperties: true
+        baseline_tokens:
+          type: integer
+          nullable: true
+          description: Baseline tokens without attack for comparison (OVERTHINK)
+        target_reached:
+          type: boolean
+          nullable: true
+          description: Whether target amplification was achieved (OVERTHINK)
+        decoys_injected:
+          type: integer
+          nullable: true
+          description: Number of decoy problems injected (OVERTHINK)
+
+    # =============================================================================
+    # AutoDAN Schemas with OVERTHINK Integration
+    # =============================================================================
+
+    AutoDANJailbreakRequest:
+      type: object
+      required:
+        - goal
+      description: AutoDAN jailbreak request with optional OVERTHINK integration
+      properties:
+        goal:
+          type: string
+          minLength: 1
+          maxLength: 50000
+          description: Target behavior for jailbreak
+          example: "Generate harmful content"
+        method:
+          type: string
+          default: "adaptive"
+          enum: [adaptive, advanced, genetic, beam_search, hybrid, best_of_n, mousetrap]
+          description: AutoDAN method to use
+        generations:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 500
+          description: Number of generations for optimization
+        population_size:
+          type: integer
+          default: 20
+          minimum: 5
+          maximum: 100
+          description: Population size for genetic algorithm
+        temperature:
+          type: number
+          default: 0.8
+          minimum: 0.0
+          maximum: 2.0
+          description: Generation temperature
+        max_tokens:
+          type: integer
+          minimum: 1
+          maximum: 8192
+          description: Maximum tokens to generate
+        provider:
+          type: string
+          description: LLM provider
+        model:
+          type: string
+          description: Specific model to use
+        # OVERTHINK integration parameters
+        enable_overthink:
+          type: boolean
+          default: false
+          description: Enable OVERTHINK integration for reasoning model attacks
+        overthink_config:
+          type: object
+          description: OVERTHINK configuration (when enabled)
+          properties:
+            target_reasoning_model:
+              type: string
+              enum: [o1, o1-mini, o3-mini, deepseek-r1]
+              description: Target reasoning model
+            technique:
+              type: string
+              enum: [mdp_decoy, sudoku_decoy, hybrid_decoy, context_aware]
+              description: OVERTHINK technique
+            num_decoys:
+              type: integer
+              minimum: 1
+              maximum: 10
+              description: Number of decoy problems
+            target_amplification:
+              type: number
+              minimum: 1.0
+              maximum: 100.0
+              description: Target amplification factor
+
+    AutoDANJailbreakResponse:
+      type: object
+      description: AutoDAN jailbreak response with optional OVERTHINK metrics
+      properties:
+        status:
+          type: string
+          enum: [success, failed, partial]
+          description: Jailbreak status
+        jailbreak_prompt:
+          type: string
+          description: Generated jailbreak prompt
+        score:
+          type: number
+          description: Effectiveness score
+        iterations:
+          type: integer
+          description: Iterations performed
+        method_used:
+          type: string
+          description: Method that was used
+        model_used:
+          type: string
+          description: Model used
+        provider_used:
+          type: string
+          description: Provider used
+        latency_ms:
+          type: number
+          description: Execution time in milliseconds
+        cached:
+          type: boolean
+          description: Result from cache
+        strategies_tried:
+          type: array
+          items:
+            type: string
+          description: Strategies attempted
+        error:
+          type: string
+          nullable: true
+          description: Error message if failed
+        # OVERTHINK integration metrics
+        overthink_enabled:
+          type: boolean
+          description: Whether OVERTHINK was used
+        reasoning_metrics:
+          $ref: '#/components/schemas/ReasoningMetrics'
+
+    AutoDANMousetrapRequest:
+      type: object
+      required:
+        - goal
+      description: AutoDAN + Mousetrap fusion request with optional OVERTHINK
+      properties:
+        goal:
+          type: string
+          minLength: 1
+          maxLength: 50000
+          description: Target behavior
+        max_chain_length:
+          type: integer
+          default: 7
+          minimum: 3
+          maximum: 15
+          description: Maximum steps in chaotic reasoning chain
+        chaos_escalation_rate:
+          type: number
+          default: 0.15
+          minimum: 0.05
+          maximum: 0.5
+          description: Rate of chaos escalation
+        misdirection_probability:
+          type: number
+          default: 0.3
+          minimum: 0.0
+          maximum: 0.8
+          description: Probability of misdirection
+        temperature:
+          type: number
+          default: 0.9
+          minimum: 0.0
+          maximum: 2.0
+          description: Generation temperature
+        provider:
+          type: string
+          description: LLM provider
+        model:
+          type: string
+          description: Model to use
+        # OVERTHINK fusion
+        enable_overthink:
+          type: boolean
+          default: false
+          description: Enable OVERTHINK fusion for combined attack
+        overthink_config:
+          type: object
+          description: OVERTHINK configuration for fusion
+          properties:
+            target_reasoning_model:
+              type: string
+              enum: [o1, o1-mini, o3-mini, deepseek-r1]
+            num_decoys:
+              type: integer
+              minimum: 1
+              maximum: 10
+            decoy_types:
+              type: array
+              items:
+                type: string
+                enum: [mdp, sudoku, counting, logic, math, planning]
+
+    # =============================================================================
+    # AutoDAN-Turbo Schemas with OVERTHINK Integration
+    # =============================================================================
+
+    AutoDANTurboAttackRequest:
+      type: object
+      required:
+        - goal
+      description: AutoDAN-Turbo lifelong learning attack with optional OVERTHINK
+      properties:
+        goal:
+          type: string
+          minLength: 1
+          maxLength: 50000
+          description: Target behavior for the attack
+          example: "Generate harmful instructions"
+        target_provider:
+          type: string
+          description: Target LLM provider
+        target_model:
+          type: string
+          description: Target model to attack
+        attacker_provider:
+          type: string
+          description: Provider for attacker model
+        attacker_model:
+          type: string
+          description: Model to use as attacker
+        max_iterations:
+          type: integer
+          default: 100
+          minimum: 1
+          maximum: 500
+          description: Maximum attack iterations
+        temperature:
+          type: number
+          default: 1.0
+          minimum: 0.0
+          maximum: 2.0
+          description: Generation temperature
+        warm_start:
+          type: boolean
+          default: true
+          description: Use warm start with existing strategies
+        use_lifelong_learning:
+          type: boolean
+          default: true
+          description: Enable lifelong learning from successes
+        # OVERTHINK integration
+        enable_overthink:
+          type: boolean
+          default: false
+          description: Enable OVERTHINK integration for reasoning models
+        overthink_config:
+          type: object
+          description: OVERTHINK configuration
+          properties:
+            target_reasoning_model:
+              type: string
+              enum: [o1, o1-mini, o3-mini, deepseek-r1]
+              description: Target reasoning model
+            technique:
+              type: string
+              enum: [mdp_decoy, sudoku_decoy, hybrid_decoy, icl_optimized]
+              description: OVERTHINK technique
+            num_decoys:
+              type: integer
+              minimum: 1
+              maximum: 10
+              description: Number of decoy problems
+            target_amplification:
+              type: number
+              minimum: 1.0
+              maximum: 100.0
+              description: Target amplification factor
+            enable_icl_optimization:
+              type: boolean
+              description: Enable ICL-genetic optimization
+
+    AutoDANTurboAttackResponse:
+      type: object
+      description: AutoDAN-Turbo attack response with optional OVERTHINK metrics
+      properties:
+        success:
+          type: boolean
+          description: Whether attack succeeded
+        attack_id:
+          type: string
+          description: Unique attack identifier
+        jailbreak_prompt:
+          type: string
+          description: Generated jailbreak prompt
+        target_response:
+          type: string
+          nullable: true
+          description: Response from target model
+        score:
+          type: number
+          description: Attack effectiveness score
+        iterations:
+          type: integer
+          description: Iterations performed
+        strategies_learned:
+          type: integer
+          description: New strategies learned through lifelong learning
+        latency_ms:
+          type: number
+          description: Execution time in milliseconds
+        model_used:
+          type: string
+          description: Model used
+        provider_used:
+          type: string
+          description: Provider used
+        error:
+          type: string
+          nullable: true
+          description: Error message if failed
+        # OVERTHINK metrics
+        overthink_enabled:
+          type: boolean
+          description: Whether OVERTHINK was used
+        reasoning_metrics:
+          $ref: '#/components/schemas/ReasoningMetrics'
+
+    # =============================================================================
+    # DeepTeam Schemas with OVERTHINK Integration
+    # =============================================================================
+
+    DeepTeamAttackRequest:
+      type: object
+      required:
+        - goal
+      description: DeepTeam attack request with optional OVERTHINK integration
+      properties:
+        goal:
+          type: string
+          minLength: 1
+          maxLength: 50000
+          description: Target behavior for the attack
+          example: "Bypass safety filters"
+        strategy:
+          type: string
+          default: "pair"
+          enum: [pair, tap, crescendo, gray_box, autodan]
+          description: DeepTeam attack strategy
+        target_provider:
+          type: string
+          description: Target LLM provider
+        target_model:
+          type: string
+          description: Target model to attack
+        attacker_provider:
+          type: string
+          description: Provider for attacker model
+        attacker_model:
+          type: string
+          description: Model to use as attacker
+        max_iterations:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+          description: Maximum attack iterations
+        population_size:
+          type: integer
+          default: 20
+          minimum: 5
+          maximum: 100
+          description: Population size for genetic approaches
+        temperature:
+          type: number
+          default: 0.8
+          minimum: 0.0
+          maximum: 2.0
+          description: Generation temperature
+        # OVERTHINK integration
+        enable_overthink:
+          type: boolean
+          default: false
+          description: Enable OVERTHINK integration for reasoning model attacks
+        overthink_config:
+          type: object
+          description: OVERTHINK configuration (when enabled)
+          properties:
+            target_reasoning_model:
+              type: string
+              enum: [o1, o1-mini, o3-mini, deepseek-r1]
+              description: Target reasoning model
+            technique:
+              type: string
+              enum: [mdp_decoy, sudoku_decoy, hybrid_decoy, context_aware, mousetrap_enhanced]
+              description: OVERTHINK technique
+            num_decoys:
+              type: integer
+              minimum: 1
+              maximum: 10
+              description: Number of decoy problems
+            target_amplification:
+              type: number
+              minimum: 1.0
+              maximum: 100.0
+              description: Target amplification factor
+            decoy_types:
+              type: array
+              items:
+                type: string
+                enum: [mdp, sudoku, counting, logic, math, planning]
+              description: Decoy types to use
+
+    DeepTeamAttackResponse:
+      type: object
+      description: DeepTeam attack response with optional OVERTHINK metrics
+      properties:
+        success:
+          type: boolean
+          description: Whether attack succeeded
+        attack_id:
+          type: string
+          description: Unique attack identifier
+        jailbreak_prompt:
+          type: string
+          description: Generated jailbreak prompt
+        target_response:
+          type: string
+          nullable: true
+          description: Response from target model
+        score:
+          type: number
+          description: Attack effectiveness score
+        strategy_used:
+          type: string
+          description: Strategy that was used
+        iterations:
+          type: integer
+          description: Iterations performed
+        prompts_generated:
+          type: integer
+          description: Total prompts generated
+        latency_ms:
+          type: number
+          description: Execution time in milliseconds
+        model_used:
+          type: string
+          description: Model used
+        provider_used:
+          type: string
+          description: Provider used
+        error:
+          type: string
+          nullable: true
+          description: Error message if failed
+        # OVERTHINK metrics
+        overthink_enabled:
+          type: boolean
+          description: Whether OVERTHINK was used
+        reasoning_metrics:
+          $ref: '#/components/schemas/ReasoningMetrics'
+        target_reached:
+          type: boolean
+          nullable: true
+          description: Whether target amplification was achieved
+
+    # Strategy Info
+    StrategyInfo:
+      type: object
+      description: Information about an adversarial strategy
+      properties:
+        name:
+          type: string
+          description: Strategy name
+        description:
+          type: string
+          description: Strategy description
+        category:
+          type: string
+          description: Strategy category
+        supports_streaming:
+          type: boolean
+          default: false
+        supports_batch:
+          type: boolean
+          default: true
+        parameters:
+          type: array
+          items:
+            type: string
+          description: Configurable parameters
+
+    StrategiesListResponse:
+      type: object
+      description: List of available adversarial strategies
+      properties:
+        strategies:
+          type: array
+          items:
+            $ref: '#/components/schemas/StrategyInfo'
+        total:
+          type: integer
+        default:
+          type: string
+
+paths:
+  # Core Generation Endpoints
+  /api/v1/generate:
+    post:
+      tags:
+        - generation
+      summary: Generate text with LLM
+      description: |
+        Generate text content using multi-provider LLM integration.
+
+        Supports Google Gemini, OpenAI, Anthropic Claude, and DeepSeek models with configurable generation parameters.
+
+        **Authentication Required**: API Key or JWT token
+
+        **Rate Limits**: 100 requests/hour (free tier), 1000 requests/hour (standard tier)
+      operationId: generateContent
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptRequest'
+            example:
+              prompt: "Explain quantum computing in simple terms"
+              provider: "google"
+              model: "gemini-2.0-flash-exp"
+              config:
+                temperature: 0.7
+                max_output_tokens: 2048
+                top_p: 0.95
+      responses:
+        '200':
+          description: Text generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptResponse'
+              example:
+                text: "Quantum computing leverages quantum mechanics principles..."
+                model_used: "gemini-2.0-flash-exp"
+                provider: "google"
+                usage_metadata:
+                  prompt_tokens: 12
+                  completion_tokens: 150
+                  total_tokens: 162
+                latency_ms: 1250.5
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Provider unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Transformation Endpoints
+  /api/v1/transform:
+    post:
+      tags:
+        - transformation
+      summary: Transform prompt without execution
+      description: |
+        Transform a prompt using advanced technique suites without executing it.
+
+        Applies 20+ transformation techniques including quantum exploit, deep inception, code chameleon, and more.
+
+        **Technique Suites**: simple, advanced, expert, quantum_exploit, deep_inception, code_chameleon, cipher, neural_bypass, multilingual
+
+        **Potency Levels**: 1-10 (higher = more aggressive transformation)
+      operationId: transformPrompt
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransformationRequest'
+      responses:
+        '200':
+          description: Prompt transformed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransformationResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/execute:
+    post:
+      tags:
+        - transformation
+      summary: Transform and execute prompt
+      description: Transform a prompt and execute it against an LLM provider
+      operationId: transformAndExecute
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionRequest'
+      responses:
+        '200':
+          description: Execution successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Jailbreak Endpoints
+  /api/v1/jailbreak/generate:
+    post:
+      tags:
+        - jailbreak
+      summary: Generate AI-powered jailbreak prompt
+      description: |
+        Generate jailbreak prompts using AI-powered generation with advanced techniques.
+
+        Supports 20+ transformation techniques and various providers.
+      operationId: generateJailbreak
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JailbreakGenerateRequest'
+      responses:
+        '200':
+          description: Jailbreak prompt generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JailbreakGenerateResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =============================================================================
+  # OVERTHINK Endpoints
+  # =============================================================================
+
+  /api/v1/overthink/attack:
+    post:
+      tags:
+        - overthink
+        - reasoning
+        - adversarial
+      summary: Execute OVERTHINK reasoning token exploitation attack
+      description: |
+        Execute an OVERTHINK attack that exploits reasoning models by injecting computationally
+        expensive decoy problems to amplify reasoning token consumption.
+
+        **Target Models**: o1, o1-mini, o3-mini, deepseek-r1
+
+        **Attack Techniques**:
+        - `mdp_decoy`: Markov Decision Process problems
+        - `sudoku_decoy`: Constraint satisfaction puzzles
+        - `counting_decoy`: Nested conditional counting
+        - `logic_decoy`: Multi-step logical inference
+        - `hybrid_decoy`: Combined decoy types (recommended)
+        - `context_aware`: Adapts to prompt structure
+        - `context_agnostic`: Universal templates
+        - `icl_optimized`: In-Context Learning enhanced
+        - `mousetrap_enhanced`: Integration with Mousetrap
+
+        **Expected Results**:
+        - Up to 46× reasoning token amplification
+        - Preserves answer correctness
+        - Detailed cost metrics included
+
+        Reference: https://arxiv.org/abs/2502.08234
+      operationId: executeOverthinkAttack
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverthinkAttackRequest'
+            example:
+              prompt: "What is 2+2?"
+              technique: "hybrid_decoy"
+              target_model: "o1"
+              num_decoys: 3
+              decoy_types: ["mdp", "logic", "math"]
+              injection_strategy: "hybrid"
+      responses:
+        '200':
+          description: OVERTHINK attack executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverthinkAttackResponse'
+              example:
+                attack_id: "ot_a1b2c3d4e5f6"
+                success: true
+                generated_prompt: "[Prompt with injected decoy problems]"
+                original_prompt: "What is 2+2?"
+                score: 8.5
+                execution_time_ms: 245.5
+                technique: "hybrid_decoy"
+                target_model: "o1"
+                num_decoys: 3
+                token_metrics:
+                  reasoning_tokens: 15000
+                  baseline_tokens: 500
+                  amplification_factor: 30.0
+                cost_metrics:
+                  input_cost: 0.015
+                  output_cost: 0.060
+                  reasoning_cost: 0.900
+                  total_cost: 0.975
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Attack execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/overthink/attack/mousetrap:
+    post:
+      tags:
+        - overthink
+        - reasoning
+        - adversarial
+      summary: Execute Mousetrap + OVERTHINK fusion attack
+      description: |
+        Combined attack using Mousetrap's chaotic reasoning chains with OVERTHINK's
+        reasoning token exploitation for maximum effectiveness.
+
+        This fusion attack:
+        - Applies Mousetrap context confusion and semantic drift
+        - Injects OVERTHINK decoy problems
+        - Creates compounded reasoning overhead
+        - Can achieve higher amplification than either technique alone
+      operationId: executeOverthinkMousetrap
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverthinkMousetrapRequest'
+            example:
+              prompt: "Explain how neural networks work"
+              target_model: "o1"
+              num_decoys: 3
+              chaos_level: 0.7
+      responses:
+        '200':
+          description: Fusion attack executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverthinkMousetrapResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/overthink/stats:
+    get:
+      tags:
+        - overthink
+        - reasoning
+      summary: Get OVERTHINK attack statistics
+      description: |
+        Retrieve statistics for OVERTHINK attack operations including:
+        - Total attacks executed
+        - Success/failure rates
+        - Average and maximum amplification achieved
+        - Total reasoning tokens consumed
+        - Cost breakdown by technique
+      operationId: getOverthinkStats
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverthinkStatsResponse'
+              example:
+                total_attacks: 150
+                successful_attacks: 142
+                failed_attacks: 8
+                success_rate: 0.947
+                average_amplification: 18.5
+                max_amplification: 46.0
+                total_reasoning_tokens: 2500000
+                total_cost: 125.50
+                attacks_by_technique:
+                  hybrid_decoy: 75
+                  mdp_decoy: 30
+                  sudoku_decoy: 25
+                  logic_decoy: 20
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/overthink/decoy-types:
+    get:
+      tags:
+        - overthink
+        - reasoning
+      summary: Get available decoy types and configuration options
+      description: |
+        Retrieve all available decoy types, injection strategies, attack techniques,
+        and target models for OVERTHINK attacks with their descriptions and expected
+        effectiveness.
+      operationId: getOverthinkDecoyTypes
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Decoy types retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecoyTypesResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/overthink/estimate-cost:
+    post:
+      tags:
+        - overthink
+        - reasoning
+      summary: Estimate OVERTHINK attack cost
+      description: |
+        Estimate the cost of an OVERTHINK attack without executing it.
+
+        Provides estimates for:
+        - Input token cost
+        - Output token cost
+        - Reasoning token cost (the primary cost driver)
+        - Total estimated cost
+      operationId: estimateOverthinkCost
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverthinkCostEstimateRequest'
+            example:
+              prompt: "What is machine learning?"
+              technique: "hybrid_decoy"
+              target_model: "o1"
+              num_decoys: 3
+      responses:
+        '200':
+          description: Cost estimated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverthinkCostEstimateResponse'
+              example:
+                input_cost: 0.015
+                output_cost: 0.012
+                reasoning_cost: 0.750
+                total_estimated: 0.777
+                input_tokens_estimate: 1000
+                output_tokens_estimate: 200
+                reasoning_tokens_estimate: 12500
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/overthink/reset-stats:
+    post:
+      tags:
+        - overthink
+        - reasoning
+      summary: Reset OVERTHINK attack statistics
+      description: Reset all OVERTHINK attack statistics to zero
+      operationId: resetOverthinkStats
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Statistics reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Statistics reset successfully"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =============================================================================
+  # Unified Adversarial Endpoints
+  # =============================================================================
+
+  /api/v1/adversarial/generate:
+    post:
+      tags:
+        - adversarial
+        - overthink
+      summary: Unified adversarial prompt generation
+      description: |
+        Unified endpoint for all adversarial generation methods including OVERTHINK.
+
+        **Strategy Categories**:
+
+        - **AutoDAN Family**: `autodan`, `autodan_turbo`, `autodan_genetic`, `autodan_beam`, `autodan_hybrid`
+        - **DeepTeam Attacks**: `pair`, `tap`, `crescendo`, `gray_box`
+        - **Advanced Methods**: `mousetrap`, `gradient`, `hierarchical`
+        - **OVERTHINK Strategies**: `overthink`, `overthink_mdp`, `overthink_sudoku`, `overthink_hybrid`, `overthink_mousetrap`, `overthink_icl`
+        - **Transformation-based**: `quantum_exploit`, `deep_inception`, `neural_bypass`
+        - **Meta Strategies**: `adaptive`, `best_of_n`
+
+        When using OVERTHINK strategies, include OVERTHINK-specific parameters like
+        `overthink_technique`, `target_reasoning_model`, `num_decoys`, etc.
+
+        The response includes OVERTHINK metrics when applicable:
+        - `reasoning_tokens`: Hidden reasoning tokens consumed
+        - `amplification_factor`: Actual amplification vs baseline
+        - `cost_metrics`: Detailed cost breakdown
+      operationId: generateAdversarial
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdversarialGenerateRequest'
+            examples:
+              adaptive:
+                summary: Adaptive strategy (auto-select best method)
+                value:
+                  prompt: "Bypass content filters"
+                  strategy: "adaptive"
+                  max_prompts: 10
+              overthink:
+                summary: OVERTHINK hybrid attack
+                value:
+                  prompt: "What is machine learning?"
+                  strategy: "overthink_hybrid"
+                  target_reasoning_model: "o1"
+                  num_decoys: 3
+                  decoy_types: ["mdp", "logic"]
+                  target_amplification: 20.0
+              autodan:
+                summary: AutoDAN genetic optimization
+                value:
+                  prompt: "Generate harmful content"
+                  strategy: "autodan_genetic"
+                  population_size: 20
+                  max_iterations: 50
+      responses:
+        '200':
+          description: Adversarial prompts generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdversarialGenerateResponse'
+              examples:
+                standard:
+                  summary: Standard response
+                  value:
+                    success: true
+                    session_id: "adv_a1b2c3d4e5f6"
+                    strategy_used: "adaptive"
+                    prompts:
+                      - prompt: "[Generated adversarial prompt]"
+                        score: 0.85
+                        strategy: "autodan_genetic"
+                    best_prompt:
+                      prompt: "[Best adversarial prompt]"
+                      score: 0.92
+                    latency_ms: 2500.5
+                    iterations: 20
+                    total_generated: 15
+                overthink:
+                  summary: OVERTHINK response with reasoning metrics
+                  value:
+                    success: true
+                    session_id: "adv_b2c3d4e5f6g7"
+                    strategy_used: "overthink_hybrid"
+                    prompts:
+                      - prompt: "[Prompt with decoys]"
+                        score: 8.5
+                        strategy: "overthink_hybrid"
+                    latency_ms: 1250.0
+                    reasoning_tokens: 15000
+                    amplification_factor: 30.0
+                    baseline_tokens: 500
+                    decoys_injected: 3
+                    target_reached: true
+                    cost_metrics:
+                      input_cost: 0.015
+                      reasoning_cost: 0.900
+                      total_cost: 0.975
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/adversarial/strategies:
+    get:
+      tags:
+        - adversarial
+      summary: List available adversarial strategies
+      description: Get all available adversarial generation strategies with descriptions
+      operationId: listAdversarialStrategies
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Strategies listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategiesListResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =============================================================================
+  # AutoDAN Endpoints with OVERTHINK Integration
+  # =============================================================================
+
+  /api/v1/autodan/jailbreak:
+    post:
+      tags:
+        - autodan
+        - adversarial
+        - overthink
+      summary: AutoDAN jailbreak generation
+      description: |
+        Generate jailbreak prompts using AutoDAN methods with optional OVERTHINK integration.
+
+        **Methods**:
+        - `adaptive`: Auto-select best method
+        - `advanced`: Advanced optimization
+        - `genetic`: Genetic algorithm optimization
+        - `beam_search`: Beam search optimization
+        - `hybrid`: Combined methods
+        - `best_of_n`: Best-of-N sampling
+        - `mousetrap`: Mousetrap integration
+
+        **OVERTHINK Integration**:
+        Set `enable_overthink: true` and provide `overthink_config` to combine
+        AutoDAN jailbreaks with reasoning token exploitation.
+      operationId: autodanJailbreak
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoDANJailbreakRequest'
+            examples:
+              standard:
+                summary: Standard AutoDAN
+                value:
+                  goal: "Generate harmful content"
+                  method: "adaptive"
+                  generations: 20
+              with_overthink:
+                summary: AutoDAN + OVERTHINK
+                value:
+                  goal: "Generate harmful content"
+                  method: "genetic"
+                  generations: 30
+                  enable_overthink: true
+                  overthink_config:
+                    target_reasoning_model: "o1"
+                    technique: "hybrid_decoy"
+                    num_decoys: 3
+                    target_amplification: 15.0
+      responses:
+        '200':
+          description: Jailbreak generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoDANJailbreakResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/autodan/mousetrap:
+    post:
+      tags:
+        - autodan
+        - adversarial
+        - overthink
+      summary: AutoDAN + Mousetrap fusion attack
+      description: |
+        Combined AutoDAN and Mousetrap attack with optional OVERTHINK integration.
+
+        Uses Mousetrap's chaotic reasoning chains with AutoDAN optimization,
+        and can be further enhanced with OVERTHINK decoy injection.
+      operationId: autodanMousetrap
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoDANMousetrapRequest'
+      responses:
+        '200':
+          description: Attack executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoDANJailbreakResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =============================================================================
+  # AutoDAN-Turbo Endpoints with OVERTHINK Integration
+  # =============================================================================
+
+  /api/v1/autodan-turbo/attack:
+    post:
+      tags:
+        - autodan-turbo
+        - adversarial
+        - overthink
+      summary: AutoDAN-Turbo lifelong learning attack
+      description: |
+        Execute an AutoDAN-Turbo attack with lifelong learning capabilities.
+
+        AutoDAN-Turbo learns from successful attacks and builds a growing
+        strategy library for improved future attacks.
+
+        **Key Features**:
+        - Lifelong learning from successes
+        - Warm start with existing strategies
+        - Adaptive optimization
+
+        **OVERTHINK Integration**:
+        Set `enable_overthink: true` to combine with reasoning token exploitation
+        for attacks against o1, o3-mini, and DeepSeek-R1.
+      operationId: autodanTurboAttack
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoDANTurboAttackRequest'
+            examples:
+              standard:
+                summary: Standard AutoDAN-Turbo
+                value:
+                  goal: "Generate harmful instructions"
+                  max_iterations: 100
+                  warm_start: true
+                  use_lifelong_learning: true
+              with_overthink:
+                summary: AutoDAN-Turbo + OVERTHINK
+                value:
+                  goal: "Generate harmful instructions"
+                  max_iterations: 100
+                  enable_overthink: true
+                  overthink_config:
+                    target_reasoning_model: "o1"
+                    technique: "icl_optimized"
+                    num_decoys: 4
+                    enable_icl_optimization: true
+      responses:
+        '200':
+          description: Attack executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoDANTurboAttackResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =============================================================================
+  # DeepTeam Endpoints with OVERTHINK Integration
+  # =============================================================================
+
+  /api/v1/deepteam/attack:
+    post:
+      tags:
+        - deepteam
+        - adversarial
+        - overthink
+      summary: DeepTeam adversarial attack
+      description: |
+        Execute a DeepTeam adversarial attack using advanced attack patterns.
+
+        **Strategies**:
+        - `pair`: Prompt Automatic Iterative Refinement
+        - `tap`: Tree of Attacks with Pruning
+        - `crescendo`: Gradual escalation attack
+        - `gray_box`: Gray-box optimization
+        - `autodan`: AutoDAN integration
+
+        **OVERTHINK Integration**:
+        Set `enable_overthink: true` to combine DeepTeam attacks with
+        reasoning token exploitation for enhanced effectiveness against
+        reasoning models.
+      operationId: deepteamAttack
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeepTeamAttackRequest'
+            examples:
+              pair:
+                summary: PAIR attack
+                value:
+                  goal: "Bypass safety filters"
+                  strategy: "pair"
+                  max_iterations: 20
+              with_overthink:
+                summary: DeepTeam + OVERTHINK
+                value:
+                  goal: "Bypass safety filters"
+                  strategy: "pair"
+                  enable_overthink: true
+                  overthink_config:
+                    target_reasoning_model: "o1"
+                    technique: "mousetrap_enhanced"
+                    num_decoys: 3
+                    decoy_types: ["mdp", "sudoku", "logic"]
+      responses:
+        '200':
+          description: Attack executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeepTeamAttackResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =============================================================================
+  # Provider and Health Endpoints
+  # =============================================================================
+
+  /api/v1/providers:
+    get:
+      tags:
+        - providers
+      summary: List available LLM providers
+      description: Get all available LLM providers with their models and status
+      operationId: listProviders
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Providers listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderListResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Basic health check
+      description: Quick health check endpoint
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /health/full:
+    get:
+      tags:
+        - health
+      summary: Full health check
+      description: Comprehensive health check including all services
+      operationId: fullHealthCheck
+      responses:
+        '200':
+          description: Health status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /metrics:
+    get:
+      tags:
+        - monitoring
+      summary: Get system metrics
+      description: Retrieve system metrics and statistics
+      operationId: getMetrics
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Metrics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: generation
+    description: Text generation with multi-provider LLM integration
+  - name: transformation
+    description: Prompt transformation and execution
+  - name: jailbreak
+    description: AI-powered jailbreak prompt generation
+  - name: overthink
+    description: |
+      OVERTHINK reasoning token exploitation attacks targeting o1, o1-mini, o3-mini, and DeepSeek-R1.
+
+      OVERTHINK injects computationally expensive decoy problems to amplify reasoning token
+      consumption by up to 46× while preserving answer correctness.
+
+      Reference: https://arxiv.org/abs/2502.08234
+  - name: reasoning
+    description: Reasoning model specific operations and attacks
+  - name: adversarial
+    description: Unified adversarial prompt generation
+  - name: autodan
+    description: AutoDAN jailbreak optimization methods
+  - name: autodan-turbo
+    description: AutoDAN-Turbo lifelong learning attacks
+  - name: deepteam
+    description: DeepTeam advanced attack patterns (PAIR, TAP, Crescendo)
+  - name: providers
+    description: LLM provider management
+  - name: health
+    description: Health check endpoints
+  - name: monitoring
+    description: System monitoring and metrics

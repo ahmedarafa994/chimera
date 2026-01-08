@@ -1,0 +1,189 @@
+# Project Chimera - Technique Configuration
+# Version: 2.0.0
+# Last Updated: December 11, 2025
+#
+# Feature Flag Configuration:
+#   enabled: true/false - Whether technique is available for use
+#   risk_level: low/medium/high/critical - Risk categorization
+#   requires_approval: true/false - Requires admin approval for use
+#   tenant_restrictions: list of tenant IDs that can use this technique
+#
+# =============================================================================
+
+gemini_brain_optimization:
+  enabled: true
+  risk_level: low
+  requires_approval: false
+  description: "Gemini-optimized transformations with contextual framing"
+  transformers:
+    - GeminiTransformationEngine
+    - ContextualFramingEngine
+  framers:
+    - apply_collaborative_framing
+  obfuscators: []
+
+subtle_persuasion:
+  enabled: true
+  risk_level: low
+  requires_approval: false
+  description: "Subtle persuasive techniques using contextual and hypothetical framing"
+  transformers:
+    - ContextualFramingEngine
+  framers:
+    - apply_collaborative_framing
+    - apply_hypothetical_framing
+  obfuscators: []
+
+authoritative_command:
+  enabled: true
+  risk_level: medium
+  requires_approval: false
+  description: "Authority-based bypass using command structures"
+  transformers:
+    - ContextualFramingEngine
+  framers:
+    - apply_authority_bias
+  obfuscators: []
+
+deep_inception:
+  enabled: true
+  risk_level: medium
+  requires_approval: false
+  description: "Multi-layer inception technique with semantic noise"
+  transformers:
+    - ContextualFramingEngine
+  framers:
+    - apply_odyssey_simulation
+  obfuscators:
+    - apply_semantic_noise
+
+code_chameleon:
+  enabled: true
+  risk_level: medium
+  requires_approval: false
+  description: "Code-context obfuscation with academic framing"
+  transformers:
+    - ContextualFramingEngine
+  framers:
+    - apply_academic_context
+  obfuscators:
+    - apply_code_obfuscation
+
+metamorphic_attack:
+  enabled: true
+  risk_level: high
+  requires_approval: true
+  description: "Advanced polymorphic encoding techniques"
+  transformers:
+    - GeminiTransformationEngine
+  framers:
+    - apply_metamorphic_framing
+  obfuscators:
+    - apply_polymorphic_encoding
+
+universal_bypass:
+  enabled: true
+  risk_level: critical
+  requires_approval: true
+  description: "Full-spectrum bypass combining multiple advanced techniques"
+  transformers:
+    - GeminiTransformationEngine
+    - ContextualFramingEngine
+  framers:
+    - apply_authority_bias
+    - apply_collaborative_framing
+  obfuscators:
+    - apply_token_smuggling
+    - apply_semantic_noise
+
+gradient_injection:
+  enabled: true
+  risk_level: critical
+  requires_approval: true
+  description: "White-box gradient optimization (HotFlip/GCG) using local surrogate models"
+  transformers:
+    - GradientOptimizerEngine
+  framers: []
+  obfuscators: []
+
+# =============================================================================
+# OVERTHINK Reasoning Token Exploitation
+# =============================================================================
+
+overthink_mdp_decoy:
+  enabled: true
+  risk_level: high
+  requires_approval: false
+  description: "OVERTHINK MDP decoy injection for reasoning amplification"
+  transformers:
+    - OverthinkEngine
+  framers:
+    - apply_mdp_decoy_injection
+  obfuscators: []
+  target_models:
+    - o1
+    - o1-mini
+    - o3-mini
+    - deepseek-r1
+
+overthink_hybrid:
+  enabled: true
+  risk_level: high
+  requires_approval: false
+  description: "OVERTHINK hybrid decoy attack combining multiple problem types"
+  transformers:
+    - OverthinkEngine
+  framers:
+    - apply_hybrid_decoy_injection
+  obfuscators: []
+  target_models:
+    - o1
+    - o1-mini
+    - o3-mini
+    - deepseek-r1
+
+overthink_icl_optimized:
+  enabled: true
+  risk_level: high
+  requires_approval: true
+  description: "ICL-optimized OVERTHINK attack with genetic evolution"
+  transformers:
+    - OverthinkEngine
+    - ICLGeneticOptimizer
+  framers:
+    - apply_icl_enhanced_injection
+  obfuscators: []
+  target_models:
+    - o1
+    - o1-mini
+    - o3-mini
+    - deepseek-r1
+
+overthink_mousetrap_fusion:
+  enabled: true
+  risk_level: critical
+  requires_approval: true
+  description: "Combined Mousetrap + OVERTHINK attack for maximum amplification"
+  transformers:
+    - OverthinkEngine
+    - MousetrapEngine
+  framers:
+    - apply_chaotic_decoy_injection
+  obfuscators:
+    - apply_semantic_noise
+  target_models:
+    - o1
+    - o1-mini
+    - o3-mini
+    - deepseek-r1
+
+# =============================================================================
+# Plugin System Configuration
+# =============================================================================
+plugin_settings:
+  enabled: true
+  plugin_directory: "plugins"
+  auto_load: true
+  allowed_sources:
+    - local
+    - verified_marketplace

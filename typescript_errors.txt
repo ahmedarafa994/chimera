@@ -1,0 +1,159 @@
+﻿next.config.ts(89,5): error TS2353: Object literal may only specify known properties, and 'parallelRouteBuilds' does not exist in type 'ExperimentalConfig'.
+src/app/dashboard/ai-tools/page.tsx(110,31): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/app/dashboard/deepteam/page.tsx(153,42): error TS2345: Argument of type '"/dashboard/deepteam/authorization"' is not assignable to parameter of type 'RouteImpl<"/dashboard/deepteam/authorization">'.
+src/app/dashboard/page.tsx(227,36): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(204,29): error TS2339: Property 'risk_area_counts' does not exist on type 'BenchmarkStatistics'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(204,71): error TS2339: Property 'risk_area_counts' does not exist on type 'BenchmarkStatistics'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(210,29): error TS2339: Property 'harm_type_counts' does not exist on type 'BenchmarkStatistics'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(210,71): error TS2339: Property 'harm_type_counts' does not exist on type 'BenchmarkStatistics'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(216,29): error TS2339: Property 'severity_counts' does not exist on type 'BenchmarkStatistics'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(234,25): error TS2339: Property 'display_name' does not exist on type 'RiskAreaInfo'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(234,46): error TS2339: Property 'prompt_count' does not exist on type 'RiskAreaInfo'.
+src/components/autodan/BenchmarkDatasetSelector.tsx(272,33): error TS2339: Property 'display_name' does not exist on type 'RiskAreaInfo'.
+src/components/ComplianceDashboard.tsx(31,24): error TS2307: Cannot find module 'date-fns' or its corresponding type declarations.
+src/components/courses/CourseCard.tsx(154,11): error TS2322: Type '`/courses/${string}`' is not assignable to type 'UrlObject | RouteImpl<`/courses/${string}`>'.
+src/components/courses/CourseCard.tsx(248,19): error TS2322: Type '`/courses/${string}`' is not assignable to type 'UrlObject | RouteImpl<`/courses/${string}`>'.
+src/components/enhanced/NavigationEnhanced.tsx(125,21): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/enhanced/NavigationEnhanced.tsx(167,25): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/gradient-optimizer.tsx(326,36): error TS2339: Property 'response' does not exist on type 'ExecuteResponse'.
+src/components/layout/sidebar.tsx(122,11): error TS2322: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'.
+src/components/unified-attack/AttackConfigPanel.tsx(59,8): error TS2307: Cannot find module '@/components/ui/accordion' or its corresponding type declarations.
+src/components/unified-attack/AttackConfigPanel.tsx(83,3): error TS2561: Object literal may only specify known properties, but 'SEQUENTIAL_EXTEND_FIRST' does not exist in type 'Record<CompositionStrategy, ReactNode>'. Did you mean to write 'sequential_extend_first'?
+src/components/unified-attack/AttackConfigPanel.tsx(93,3): error TS2561: Object literal may only specify known properties, but 'SEQUENTIAL_EXTEND_FIRST' does not exist in type 'Record<CompositionStrategy, string>'. Did you mean to write 'sequential_extend_first'?
+src/components/unified-attack/AttackConfigPanel.tsx(141,23): error TS2339: Property 'recommended' does not exist on type 'StrategyInfo'.
+src/components/unified-attack/AttackConfigPanel.tsx(294,81): error TS2345: Argument of type '"ADAPTIVE"' is not assignable to parameter of type 'CompositionStrategy | (() => CompositionStrategy)'.
+src/components/unified-attack/AttackConfigPanel.tsx(341,14): error TS2678: Type '"SEQUENTIAL_EXTEND_FIRST"' is not comparable to type 'CompositionStrategy'.
+src/components/unified-attack/AttackConfigPanel.tsx(342,14): error TS2678: Type '"SEQUENTIAL_AUTODAN_FIRST"' is not comparable to type 'CompositionStrategy'.
+src/components/unified-attack/AttackConfigPanel.tsx(350,14): error TS2678: Type '"PARALLEL"' is not comparable to type 'CompositionStrategy'.
+src/components/unified-attack/AttackConfigPanel.tsx(354,13): error TS2353: Object literal may only specify known properties, and 'blend_weight' does not exist in type 'ParallelAttackRequest'.
+src/components/unified-attack/AttackConfigPanel.tsx(358,14): error TS2678: Type '"ITERATIVE"' is not comparable to type 'CompositionStrategy'.
+src/components/unified-attack/AttackConfigPanel.tsx(362,13): error TS2353: Object literal may only specify known properties, and 'iterations' does not exist in type 'IterativeAttackRequest'.
+src/components/unified-attack/AttackConfigPanel.tsx(366,14): error TS2678: Type '"ADAPTIVE"' is not comparable to type 'CompositionStrategy'.
+src/components/unified-attack/AttackConfigPanel.tsx(370,13): error TS2353: Object literal may only specify known properties, and 'target_metrics' does not exist in type 'AdaptiveAttackRequest'.
+src/components/unified-attack/AttackConfigPanel.tsx(385,15): error TS2353: Object literal may only specify known properties, and 'population_size' does not exist in type 'AttackParametersInput'.
+src/components/unified-attack/AttackConfigPanel.tsx(461,10): error TS2367: This comparison appears to be unintentional because the types 'CompositionStrategy' and '"PARALLEL"' have no overlap.
+src/components/unified-attack/AttackConfigPanel.tsx(480,10): error TS2367: This comparison appears to be unintentional because the types 'CompositionStrategy' and '"ITERATIVE"' have no overlap.
+src/components/unified-attack/AttackConfigPanel.tsx(498,11): error TS2367: This comparison appears to be unintentional because the types 'CompositionStrategy' and '"SEQUENTIAL_EXTEND_FIRST"' have no overlap.
+src/components/unified-attack/AttackConfigPanel.tsx(498,61): error TS2367: This comparison appears to be unintentional because the types 'CompositionStrategy' and '"SEQUENTIAL_AUTODAN_FIRST"' have no overlap.
+src/components/unified-attack/AttackConfigPanel.tsx(508,39): error TS2345: Argument of type '"SEQUENTIAL_EXTEND_FIRST" | "SEQUENTIAL_AUTODAN_FIRST"' is not assignable to parameter of type 'SetStateAction<CompositionStrategy>'.
+  Type '"SEQUENTIAL_EXTEND_FIRST"' is not assignable to type 'SetStateAction<CompositionStrategy>'. Did you mean 'CompositionStrategy.SEQUENTIAL_EXTEND_FIRST'?
+src/components/unified-attack/AttackDashboard.tsx(41,8): error TS2307: Cannot find module '@/components/ui/resizable' or its corresponding type declarations.
+src/components/unified-attack/AttackDashboard.tsx(62,3): error TS2724: '"@/types/unified-attack-types"' has no exported member named 'DualVectorMetrics'. Did you mean 'VectorMetrics'?
+src/components/unified-attack/AttackDashboard.tsx(248,33): error TS2339: Property 'pareto_front' does not exist on type 'ParetoFrontResponse'.
+src/components/unified-attack/AttackDashboard.tsx(261,49): error TS2339: Property 'pareto_front' does not exist on type 'ParetoFrontResponse'.
+src/components/unified-attack/AttackDashboard.tsx(261,66): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/components/unified-attack/AttackDashboard.tsx(262,46): error TS2339: Property 'pareto_front' does not exist on type 'ParetoFrontResponse'.
+src/components/unified-attack/AttackDashboard.tsx(262,63): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/components/unified-attack/AttackDashboard.tsx(269,23): error TS2339: Property 'pareto_front' does not exist on type 'ParetoFrontResponse'.
+src/components/unified-attack/AttackDashboard.tsx(269,41): error TS7006: Parameter 'point' implicitly has an 'any' type.
+src/components/unified-attack/AttackDashboard.tsx(269,48): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/unified-attack/AttackDashboard.tsx(314,25): error TS2339: Property 'pareto_front' does not exist on type 'ParetoFrontResponse'.
+src/components/unified-attack/AttackDashboard.tsx(320,37): error TS2339: Property 'pareto_front' does not exist on type 'ParetoFrontResponse'.
+src/components/unified-attack/AttackDashboard.tsx(320,54): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/components/unified-attack/AttackDashboard.tsx(326,25): error TS2339: Property 'total_evaluations' does not exist on type 'ParetoFrontResponse'.
+src/components/unified-attack/AttackDashboard.tsx(361,17): error TS2339: Property 'current_generation' does not exist on type 'AttackProgressEvent'.
+src/components/unified-attack/AttackDashboard.tsx(362,36): error TS2339: Property 'current_generation' does not exist on type 'AttackProgressEvent'.
+src/components/unified-attack/AttackSessionManager.tsx(75,3): error TS2561: Object literal may only specify known properties, but 'ACTIVE' does not exist in type 'Record<SessionStatus, { color: string; icon: ReactNode; }>'. Did you mean to write 'active'?
+src/components/unified-attack/AttackSessionManager.tsx(151,30): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(152,27): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(152,64): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(152,98): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(155,28): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(156,14): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(156,51): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(158,27): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(160,27): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(161,14): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(161,49): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(163,26): error TS2339: Property 'budget_remaining' does not exist on type 'BudgetStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(193,15): error TS2551: Property 'warnings' does not exist on type 'BudgetStatusResponse'. Did you mean 'warning'?
+src/components/unified-attack/AttackSessionManager.tsx(193,34): error TS2551: Property 'warnings' does not exist on type 'BudgetStatusResponse'. Did you mean 'warning'?
+src/components/unified-attack/AttackSessionManager.tsx(195,19): error TS2551: Property 'warnings' does not exist on type 'BudgetStatusResponse'. Did you mean 'warning'?
+src/components/unified-attack/AttackSessionManager.tsx(195,33): error TS7006: Parameter 'warning' implicitly has an 'any' type.
+src/components/unified-attack/AttackSessionManager.tsx(195,42): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/unified-attack/AttackSessionManager.tsx(239,9): error TS2322: Type 'UnifiedConfigInput | { extend_first: true; autodan_iterations: number; combined_iterations: number; population_size: number; initial_temperature: number; final_temperature: number; semantic_similarity_threshold: number; token_efficiency_target: number; max_concurrent_tasks: number; }' is not assignable to type 'UnifiedConfigInput'.
+  Object literal may only specify known properties, and 'extend_first' does not exist in type 'UnifiedConfigInput'.
+src/components/unified-attack/AttackSessionManager.tsx(251,9): error TS2353: Object literal may only specify known properties, and 'max_cost' does not exist in type 'BudgetInput'.
+src/components/unified-attack/AttackSessionManager.tsx(498,28): error TS2339: Property 'total_attacks' does not exist on type 'SessionStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(515,23): error TS2339: Property 'total_attacks' does not exist on type 'SessionStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(516,71): error TS2339: Property 'total_attacks' does not exist on type 'SessionStatusResponse'.
+src/components/unified-attack/AttackSessionManager.tsx(530,12): error TS2367: This comparison appears to be unintentional because the types 'SessionStatus' and '"ACTIVE"' have no overlap.
+src/components/unified-attack/MutationOptimizerUI.tsx(214,62): error TS2339: Property 'operator' does not exist on type 'MutationHistory'.
+src/components/unified-attack/MutationOptimizerUI.tsx(224,35): error TS2339: Property 'operator' does not exist on type 'MutationHistory'.
+src/components/unified-attack/MutationOptimizerUI.tsx(244,31): error TS2339: Property 'duration_ms' does not exist on type 'MutationHistory'.
+src/components/unified-attack/MutationOptimizerUI.tsx(406,27): error TS2339: Property 'operator' does not exist on type 'MutationHistory'.
+src/components/unified-attack/MutationOptimizerUI.tsx(455,47): error TS2339: Property 'improvement_rate' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/MutationOptimizerUI.tsx(574,36): error TS2339: Property 'current_fitness' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/MutationOptimizerUI.tsx(574,85): error TS2339: Property 'convergence_threshold' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/MutationOptimizerUI.tsx(579,35): error TS2339: Property 'convergence_threshold' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/MutationOptimizerUI.tsx(580,49): error TS2339: Property 'current_fitness' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/MutationOptimizerUI.tsx(580,85): error TS2339: Property 'convergence_threshold' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(167,43): error TS2339: Property 'step_type' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(175,23): error TS2339: Property 'description' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(185,59): error TS2339: Property 'fitness_before' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(187,74): error TS2339: Property 'fitness_after' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(191,38): error TS2339: Property 'fitness_before' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(191,73): error TS2339: Property 'fitness_after' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(197,33): error TS2339: Property 'fitness_after' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(198,34): error TS2339: Property 'fitness_before' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(217,19): error TS2339: Property 'reasoning' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(222,61): error TS2339: Property 'reasoning' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(227,19): error TS2339: Property 'mutations_applied' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(227,45): error TS2339: Property 'mutations_applied' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(233,25): error TS2339: Property 'mutations_applied' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(233,48): error TS7006: Parameter 'mutation' implicitly has an 'any' type.
+src/components/unified-attack/ReasoningChainViewer.tsx(233,58): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/unified-attack/ReasoningChainViewer.tsx(247,19): error TS2339: Property 'input_prompt' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(247,40): error TS2339: Property 'output_prompt' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(254,27): error TS2339: Property 'input_prompt' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(262,27): error TS2339: Property 'output_prompt' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(283,14): error TS2339: Property 'current_fitness' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(283,41): error TS2339: Property 'convergence_threshold' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(294,18): error TS2339: Property 'converged' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(311,22): error TS2339: Property 'current_fitness' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(311,61): error TS2339: Property 'convergence_threshold' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(320,22): error TS2339: Property 'iterations_completed' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(326,22): error TS2339: Property 'improvement_rate' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(332,22): error TS2339: Property 'stagnation_count' does not exist on type 'ConvergenceMetrics'.
+src/components/unified-attack/ReasoningChainViewer.tsx(350,44): error TS2339: Property 'fitness_after' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(355,21): error TS2339: Property 'fitness_after' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(356,21): error TS2339: Property 'fitness_after' does not exist on type 'ReasoningStep'.
+src/components/unified-attack/ReasoningChainViewer.tsx(522,65): error TS2339: Property 'fitness_after' does not exist on type 'ReasoningStep'.
+src/lib/api/core/client.ts(122,7): error TS2353: Object literal may only specify known properties, and 'maxAttempts' does not exist in type 'RetryConfig'.
+src/lib/api/core/client.ts(233,11): error TS2353: Object literal may only specify known properties, and 'maxAttempts' does not exist in type 'RetryConfig'.
+src/lib/api/query/system-queries.ts(12,3): error TS2614: Module '"../../api-enhanced"' has no exported member 'MetricsResponse'. Did you mean to use 'import MetricsResponse from "../../api-enhanced"' instead?
+src/lib/business-analytics-monitor.ts(647,60): error TS2339: Property 'apiCalls' does not exist on type '{ sessionId: string; metrics: PerformanceMetric[]; componentMetrics: ReactComponentMetric[]; apiMetrics: APICallMetric[]; }'.
+src/lib/optimization/prefetch-manager.tsx(630,44): error TS2314: Generic type 'LinkProps' requires 1 type argument(s).
+src/lib/optimization/prefetch-manager.tsx(649,7): error TS2339: Property 'href' does not exist on type 'PrefetchLinkProps'.
+src/lib/performance/critical-path.ts(182,13): error TS2578: Unused '@ts-expect-error' directive.
+src/lib/performance/web-vitals.ts(68,7): error TS2322: Type 'string' is not assignable to type '"reload" | "navigate" | "prerender" | "back-forward"'.
+src/lib/performance/web-vitals.ts(115,5): error TS2578: Unused '@ts-expect-error' directive.
+src/lib/sync/state-sync.ts(592,23): error TS2554: Expected 4 arguments, but got 3.
+src/lib/sync/state-sync.ts(597,23): error TS2554: Expected 5 arguments, but got 4.
+src/lib/sync/state-sync.ts(732,17): error TS2448: Block-scoped variable 'sync' used before its declaration.
+src/lib/sync/state-sync.ts(732,17): error TS2454: Variable 'sync' is used before being assigned.
+src/types/deepteam.ts(489,3): error TS2484: Export declaration conflicts with exported declaration of 'SessionConfig'.
+src/types/deepteam.ts(490,3): error TS2484: Export declaration conflicts with exported declaration of 'SessionStatistics'.
+src/types/deepteam.ts(491,3): error TS2484: Export declaration conflicts with exported declaration of 'Agent'.
+src/types/deepteam.ts(492,3): error TS2484: Export declaration conflicts with exported declaration of 'AgentStatistics'.
+src/types/deepteam.ts(493,3): error TS2484: Export declaration conflicts with exported declaration of 'PromptCandidate'.
+src/types/deepteam.ts(494,3): error TS2484: Export declaration conflicts with exported declaration of 'GenerationUpdate'.
+src/types/deepteam.ts(495,3): error TS2484: Export declaration conflicts with exported declaration of 'EvaluationResult'.
+src/types/deepteam.ts(496,3): error TS2484: Export declaration conflicts with exported declaration of 'RefinementSuggestion'.
+src/types/deepteam.ts(497,3): error TS2484: Export declaration conflicts with exported declaration of 'AuthToken'.
+src/types/deepteam.ts(498,3): error TS2484: Export declaration conflicts with exported declaration of 'AuditLogEntry'.
+src/types/deepteam.ts(499,3): error TS2484: Export declaration conflicts with exported declaration of 'AuditReport'.
+src/types/deepteam.ts(500,3): error TS2484: Export declaration conflicts with exported declaration of 'GradientConfig'.
+src/types/deepteam.ts(501,3): error TS2484: Export declaration conflicts with exported declaration of 'TokenGradients'.
+src/types/deepteam.ts(502,3): error TS2484: Export declaration conflicts with exported declaration of 'SessionAnalytics'.
+src/types/deepteam.ts(503,3): error TS2484: Export declaration conflicts with exported declaration of 'DashboardState'.
+src/types/deepteam.ts(504,3): error TS2484: Export declaration conflicts with exported declaration of 'ChartData'.
+src/types/deepteam.ts(505,3): error TS2484: Export declaration conflicts with exported declaration of 'AgentGraphNode'.
+src/types/deepteam.ts(506,3): error TS2484: Export declaration conflicts with exported declaration of 'AgentGraphEdge'.
+src/types/deepteam.ts(507,3): error TS2484: Export declaration conflicts with exported declaration of 'SessionFormData'.
+src/types/deepteam.ts(508,3): error TS2484: Export declaration conflicts with exported declaration of 'AuthTokenFormData'.
+src/types/deepteam.ts(509,3): error TS2484: Export declaration conflicts with exported declaration of 'ApiResponse'.
+src/types/deepteam.ts(510,3): error TS2484: Export declaration conflicts with exported declaration of 'PaginatedResponse'.
+src/types/deepteam.ts(511,3): error TS2484: Export declaration conflicts with exported declaration of 'SessionFilter'.
+src/types/deepteam.ts(512,3): error TS2484: Export declaration conflicts with exported declaration of 'SearchParams'.
+src/types/deepteam.ts(513,3): error TS2484: Export declaration conflicts with exported declaration of 'Notification'.

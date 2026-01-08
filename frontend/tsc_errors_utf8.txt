@@ -1,0 +1,4 @@
+﻿src/lib/api/core/client.ts(372,31): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+src/lib/api/core/client.ts(372,42): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/lib/transforms/api-transforms.ts(24,18): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+src/lib/transforms/api-transforms.ts(25,15): error TS7006: Parameter 'err' implicitly has an 'any' type.

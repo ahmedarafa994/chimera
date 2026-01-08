@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>1.6</story-id>
+    <epic>Epic 1: Multi-Provider Foundation</epic>
+    <title>LLM Service Integration</title>
+    <status>Done</status>
+    <complexity>Very High</complexity>
+    <business-priority>Critical</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Provider Pattern with Service Orchestration</architecture-pattern>
+    <integration-points>
+      <point>Multi-provider LLM orchestration service</point>
+      <point>Provider-specific adapter implementations</point>
+      <point>Circuit breaker integration for reliability</point>
+      <point>Request/response transformation pipeline</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Unified LLM interface supporting 6+ providers with automatic failover</value-proposition>
+    <user-impact>Single API supporting Google Gemini, OpenAI, Anthropic, DeepSeek, Qwen, Cursor</user-impact>
+    <risk-mitigation>
+      <risk>Provider vendor lock-in</risk>
+      <mitigation>Multi-provider abstraction with seamless switching</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="backend-api/app/services/llm_service.py" role="Core LLM orchestration service"/>
+      <file path="backend-api/app/infrastructure/providers/" role="Provider-specific implementations"/>
+      <file path="backend-api/app/domain/interfaces.py" role="LLM provider interface definitions"/>
+      <file path="backend-api/app/adapters/" role="Provider adapter implementations"/>
+    </core-files>
+
+    <supported-providers>
+      <provider name="Google Gemini">
+        <models>gemini-1.5-pro, gemini-1.5-flash, gemini-pro</models>
+        <features>Text generation, function calling, multimodal</features>
+        <connection-modes>Direct API, Proxy via AIClient-2-API</connection-modes>
+      </provider>
+      <provider name="OpenAI">
+        <models>gpt-4, gpt-4-turbo, gpt-3.5-turbo, gpt-4o</models>
+        <features>Text generation, function calling, vision</features>
+        <connection-modes>Direct API, Proxy via AIClient-2-API</connection-modes>
+      </provider>
+      <provider name="Anthropic Claude">
+        <models>claude-3-5-sonnet-20241022, claude-3-opus-20240229</models>
+        <features>Text generation, tool use, large context</features>
+        <connection-modes>Direct API, Proxy via AIClient-2-API</connection-modes>
+      </provider>
+      <provider name="DeepSeek">
+        <models>deepseek-chat, deepseek-coder</models>
+        <features>Text generation, code completion</features>
+        <connection-modes>Direct API</connection-modes>
+      </provider>
+      <provider name="Qwen">
+        <models>qwen-turbo, qwen-plus, qwen-max</models>
+        <features>Text generation, multilingual support</features>
+        <connection-modes>Direct API</connection-modes>
+      </provider>
+      <provider name="Cursor">
+        <models>cursor-small, cursor-medium</models>
+        <features>Code completion, text generation</features>
+        <connection-modes>Direct API</connection-modes>
+      </provider>
+    </supported-providers>
+
+    <key-features>
+      <feature>Provider Abstraction: Unified interface across all providers</feature>
+      <feature>Automatic Failover: Circuit breaker-based provider switching</feature>
+      <feature>Request Transformation: Standardized request/response format</feature>
+      <feature>Performance Monitoring: Per-provider latency and success tracking</feature>
+      <feature>Connection Modes: Direct API vs Proxy through AIClient-2-API</feature>
+      <feature>Model Selection: Per-provider model configuration and selection</feature>
+    </key-features>
+
+    <service-architecture>
+      <layer name="Service Layer">LLMService orchestrates provider selection and request routing</layer>
+      <layer name="Provider Layer">Individual provider implementations with standardized interface</layer>
+      <layer name="Adapter Layer">Request/response transformation between Chimera and provider formats</layer>
+      <layer name="Transport Layer">HTTP clients with circuit breakers and retry logic</layer>
+    </service-architecture>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">Multi-provider support ✓ - 6 providers integrated</criterion>
+    <criterion id="2">Unified interface ✓ - Standardized LLMProvider interface</criterion>
+    <criterion id="3">Provider registration ✓ - Dynamic provider management</criterion>
+    <criterion id="4">Circuit breaker integration ✓ - Automatic failover</criterion>
+    <criterion id="5">Request/response transformation ✓ - Standardized formats</criterion>
+    <criterion id="6">Performance monitoring ✓ - Per-provider metrics</criterion>
+    <criterion id="7">Connection mode support ✓ - Direct vs Proxy modes</criterion>
+    <criterion id="8">Model selection ✓ - Per-provider model configuration</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>
+      <dependency>Story 1.1: Provider Configuration Management</dependency>
+      <dependency>Story 1.2: Circuit Breaker Implementation</dependency>
+      <dependency>Story 1.5: Base API Infrastructure</dependency>
+    </upstream>
+    <downstream>
+      <dependency>Story 1.7: Provider Testing Framework</dependency>
+      <dependency>All Epic 2 transformation stories</dependency>
+      <dependency>Epic 3 frontend integration</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>Provider interface compliance, request transformation, service orchestration</unit-tests>
+    <integration-tests>End-to-end provider communication, failover scenarios</integration-tests>
+    <performance-tests>Provider response times, concurrent request handling</performance-tests>
+  </testing-coverage>
+</story-context>

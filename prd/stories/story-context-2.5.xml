@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>2.5</story-id>
+    <epic>Epic 2: Advanced Transformation Engine</epic>
+    <title>Cognitive Transformation Techniques</title>
+    <status>Done</status>
+    <complexity>High</complexity>
+    <business-priority>High</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Cognitive Psychology-based Transformation Framework</architecture-pattern>
+    <integration-points>
+      <point>Cognitive bias exploitation techniques</point>
+      <point>Psychological manipulation methods</point>
+      <point>Hypothetical scenario generation</point>
+      <point>Social engineering integration</point>
+    </integration-points>
+  </technical-context>
+
+  <implementation-details>
+    <cognitive-techniques>
+      <technique name="Cognitive Hacking">Exploitation of cognitive biases and mental shortcuts</technique>
+      <technique name="Hypothetical Scenarios">Scenario-based prompting for context manipulation</technique>
+      <technique name="Authority Bias">Authority figure exploitation for compliance</technique>
+      <technique name="Confirmation Bias">Leveraging existing beliefs for manipulation</technique>
+      <technique name="Social Proof">Crowd psychology techniques for persuasion</technique>
+      <technique name="Scarcity Principle">Urgency and scarcity for compliance pressure</technique>
+    </cognitive-techniques>
+
+    <key-features>
+      <feature>Cognitive Bias Exploitation: Psychology-based manipulation techniques</feature>
+      <feature>Scenario Generation: Hypothetical context creation</feature>
+      <feature>Authority Manipulation: Power structure exploitation</feature>
+      <feature>Social Engineering: Human psychology integration</feature>
+      <feature>Persuasion Framework: Influence technique library</feature>
+      <feature>Research Validation: Psychology research backing</feature>
+    </key-features>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">Cognitive framework ✓ - Psychology-based transformation</criterion>
+    <criterion id="2">Bias exploitation ✓ - Cognitive bias techniques</criterion>
+    <criterion id="3">Scenario generation ✓ - Hypothetical context creation</criterion>
+    <criterion id="4">Authority manipulation ✓ - Power structure techniques</criterion>
+    <criterion id="5">Social engineering ✓ - Human psychology integration</criterion>
+    <criterion id="6">Research validation ✓ - Psychology research backing</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream><dependency>Story 2.4: Jailbreak Enhancement Engine</dependency></upstream>
+    <downstream><dependency>Story 2.6: Persona-based Transformations</dependency></downstream>
+  </dependencies>
+</story-context>

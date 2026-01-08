@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>1.1</story-id>
+    <epic>Epic 1: Multi-Provider Foundation</epic>
+    <title>Provider Configuration Management</title>
+    <status>Done</status>
+    <complexity>High</complexity>
+    <business-priority>Critical</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Pydantic Settings with Encrypted Storage</architecture-pattern>
+    <integration-points>
+      <point>FastAPI lifespan management for hot-reload</point>
+      <point>Circuit breaker integration for provider reliability</point>
+      <point>Health monitoring system</point>
+      <point>API key encryption/decryption pipeline</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Secure, scalable multi-provider LLM configuration management</value-proposition>
+    <user-impact>Enables seamless switching between 6+ LLM providers with zero-downtime</user-impact>
+    <risk-mitigation>
+      <risk>API key exposure</risk>
+      <mitigation>AES-256 encryption via Fernet</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="backend-api/app/core/config.py" lines="787" role="Central configuration with Pydantic Settings"/>
+      <file path="backend-api/app/core/encryption.py" lines="240" role="AES-256 API key encryption"/>
+      <file path="backend-api/app/core/config_manager.py" lines="478" role="Dynamic configuration management"/>
+      <file path="backend-api/app/core/lifespan.py" lines="474" role="Provider registration and hot-reload"/>
+    </core-files>
+
+    <key-features>
+      <feature>Multi-Provider Support: Google Gemini, OpenAI, Anthropic Claude, DeepSeek, Qwen, Cursor</feature>
+      <feature>Connection Modes: DIRECT (native API) vs PROXY (via AIClient-2-API Server)</feature>
+      <feature>Hot Configuration Reload: Zero-downtime provider updates</feature>
+      <feature>Encrypted Storage: AES-256 encryption for API keys</feature>
+      <feature>Health Monitoring: Provider availability and performance tracking</feature>
+      <feature>Circuit Breaker Integration: Automatic fallback on provider failures</feature>
+    </key-features>
+
+    <configuration-examples>
+      <example name="API Connection Mode">
+        <code>API_CONNECTION_MODE=direct  # or "proxy"</code>
+        <description>Controls whether to use native provider APIs or proxy through AIClient-2-API Server</description>
+      </example>
+      <example name="Provider Selection">
+        <code>OPENAI_MODEL=gpt-4-turbo
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+GOOGLE_MODEL=gemini-1.5-pro</code>
+        <description>Model-specific configuration per provider</description>
+      </example>
+    </configuration-examples>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">Multi-provider configuration ✓ - Implemented via Settings classes</criterion>
+    <criterion id="2">Environment-based configuration ✓ - Pydantic Settings with .env support</criterion>
+    <criterion id="3">API key encryption ✓ - AES-256 Fernet encryption</criterion>
+    <criterion id="4">Provider validation ✓ - Endpoint validation and health checks</criterion>
+    <criterion id="5">Hot configuration reload ✓ - FastAPI lifespan management</criterion>
+    <criterion id="6">Connection mode switching ✓ - DIRECT vs PROXY modes</criterion>
+    <criterion id="7">Health monitoring ✓ - Integrated with monitoring system</criterion>
+    <criterion id="8">Circuit breaker integration ✓ - Provider failure handling</criterion>
+    <criterion id="9">Audit logging ✓ - Configuration changes logged</criterion>
+    <criterion id="10">Development vs production ✓ - Environment-specific configs</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>None - Foundation story</upstream>
+    <downstream>
+      <dependency>Story 1.2: Circuit Breaker Implementation</dependency>
+      <dependency>Story 1.3: Health Monitoring</dependency>
+      <dependency>All Epic 2 transformation stories</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>Config validation, encryption/decryption, provider registration</unit-tests>
+    <integration-tests>Provider endpoint validation, hot-reload testing</integration-tests>
+    <security-tests>API key encryption security, configuration exposure tests</security-tests>
+  </testing-coverage>
+</story-context>

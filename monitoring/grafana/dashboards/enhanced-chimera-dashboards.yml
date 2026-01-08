@@ -1,0 +1,475 @@
+# Enhanced Grafana Dashboards for Chimera AI Observability
+
+groups:
+  - name: chimera_executive_dashboard
+    orgId: 1
+    folder: Chimera Executive
+    interval: 5m
+    dashboards:
+      - dashboard:
+          id: null
+          title: "Chimera Executive Dashboard - AI Performance & Business Intelligence"
+          tags: ["chimera", "executive", "ai", "business"]
+          timezone: "UTC"
+          schemaVersion: 30
+          version: 1
+          refresh: "30s"
+
+          # Dashboard panels
+          panels:
+            # Row 1: Key Performance Indicators
+            - title: "AI Model Performance Summary"
+              type: "stat"
+              gridPos: {h: 8, w: 6, x: 0, y: 0}
+              targets:
+                - expr: 'avg_over_time(chimera_ai_quality_score[24h])'
+                  legendFormat: "Avg Quality Score"
+                - expr: 'rate(chimera_llm_requests_total{status="success"}[24h]) / rate(chimera_llm_requests_total[24h]) * 100'
+                  legendFormat: "Success Rate %"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "thresholds"
+                  thresholds:
+                    steps:
+                      - color: "red"
+                        value: 0
+                      - color: "yellow"
+                        value: 7
+                      - color: "green"
+                        value: 8.5
+                  unit: "short"
+                  min: 0
+                  max: 10
+              options:
+                reduceOptions:
+                  calcs: ["lastNotNull"]
+                textMode: "value_and_name"
+                colorMode: "background"
+
+            - title: "Cost Efficiency Trends"
+              type: "timeseries"
+              gridPos: {h: 8, w: 6, x: 6, y: 0}
+              targets:
+                - expr: 'rate(chimera_llm_cost_usd_total[1h]) * 3600'
+                  legendFormat: "Hourly Cost - {{provider}}"
+                - expr: 'avg_over_time(chimera_cost_efficiency_score[1h])'
+                  legendFormat: "Cost Efficiency"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "palette-classic"
+                  unit: "currencyUSD"
+              options:
+                legend:
+                  displayMode: "table"
+                  placement: "bottom"
+
+            - title: "User Journey Success Rates"
+              type: "piechart"
+              gridPos: {h: 8, w: 6, x: 12, y: 0}
+              targets:
+                - expr: 'chimera_journey_completion_rate'
+                  legendFormat: "{{journey_type}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "palette-classic"
+                  unit: "percent"
+              options:
+                reduceOptions:
+                  calcs: ["lastNotNull"]
+                pieType: "pie"
+
+            - title: "Real-time System Health"
+              type: "stat"
+              gridPos: {h: 8, w: 6, x: 18, y: 0}
+              targets:
+                - expr: 'avg(up{job=~"chimera-.*"})'
+                  legendFormat: "Service Availability"
+                - expr: 'avg(chimera_circuit_breaker_state)'
+                  legendFormat: "Circuit Health"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "thresholds"
+                  thresholds:
+                    steps:
+                      - color: "red"
+                        value: 0
+                      - color: "yellow"
+                        value: 0.95
+                      - color: "green"
+                        value: 0.99
+                  unit: "percentunit"
+
+            # Row 2: AI-Specific Metrics
+            - title: "AI Quality Metrics by Provider"
+              type: "heatmap"
+              gridPos: {h: 8, w: 12, x: 0, y: 8}
+              targets:
+                - expr: 'avg_over_time(chimera_ai_quality_score[1h])'
+                  legendFormat: "{{provider}} - {{quality_dimension}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "spectrum"
+                  unit: "short"
+              options:
+                calculate: true
+                color:
+                  exponent: 0.5
+                  fill: "dark-orange"
+
+            - title: "LLM Cost Analysis"
+              type: "bargauge"
+              gridPos: {h: 8, w: 6, x: 12, y: 8}
+              targets:
+                - expr: 'sum by (provider) (rate(chimera_llm_cost_usd_total[24h]) * 24 * 30)'
+                  legendFormat: "{{provider}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "continuous-GrYlRd"
+                  unit: "currencyUSD"
+                  mappings:
+                    - options:
+                        "0":
+                          text: "N/A"
+                      type: "value"
+              options:
+                orientation: "horizontal"
+                reduceOptions:
+                  calcs: ["lastNotNull"]
+
+            - title: "Feature Adoption Rates"
+              type: "stat"
+              gridPos: {h: 8, w: 6, x: 18, y: 8}
+              targets:
+                - expr: 'chimera_feature_adoption_rate'
+                  legendFormat: "{{feature}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "thresholds"
+                  thresholds:
+                    steps:
+                      - color: "red"
+                        value: 0
+                      - color: "yellow"
+                        value: 0.3
+                      - color: "green"
+                        value: 0.7
+                  unit: "percentunit"
+
+            # Row 3: Business Intelligence
+            - title: "Revenue Impact & Conversion Trends"
+              type: "timeseries"
+              gridPos: {h: 8, w: 12, x: 0, y: 16}
+              targets:
+                - expr: 'rate(chimera_conversion_value_total[1h]) * 3600'
+                  legendFormat: "Hourly Revenue Impact"
+                - expr: 'rate(chimera_conversions_total[1h])'
+                  legendFormat: "Conversion Rate - {{conversion_type}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "palette-classic"
+                  unit: "currencyUSD"
+
+            - title: "User Satisfaction & NPS"
+              type: "gauge"
+              gridPos: {h: 8, w: 6, x: 12, y: 16}
+              targets:
+                - expr: 'avg_over_time(chimera_user_satisfaction_score[24h])'
+                  legendFormat: "Satisfaction"
+                - expr: 'avg_over_time(chimera_nps_score[24h])'
+                  legendFormat: "NPS"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "thresholds"
+                  thresholds:
+                    steps:
+                      - color: "red"
+                        value: 0
+                      - color: "yellow"
+                        value: 3
+                      - color: "green"
+                        value: 4
+                  unit: "short"
+                  min: 0
+                  max: 5
+
+            - title: "Top Cost Optimization Opportunities"
+              type: "table"
+              gridPos: {h: 8, w: 6, x: 18, y: 16}
+              targets:
+                - expr: 'topk(5, chimera_cost_optimization_potential_savings_usd)'
+                  legendFormat: "{{recommendation_category}}"
+                  format: "table"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "thresholds"
+                  unit: "currencyUSD"
+              options:
+                showHeader: true
+                sortBy:
+                  - desc: true
+                    displayName: "Potential Savings"
+
+          # Dashboard annotations
+          annotations:
+            list:
+              - builtIn: 1
+                datasource: "-- Grafana --"
+                enable: true
+                hide: true
+                iconColor: "rgba(0, 211, 255, 1)"
+                name: "Annotations & Alerts"
+                type: "dashboard"
+
+          # Dashboard templating
+          templating:
+            list:
+              - name: "provider"
+                type: "query"
+                query: 'label_values(chimera_llm_requests_total, provider)'
+                refresh: 2
+                includeAll: true
+                allValue: ".*"
+              - name: "model"
+                type: "query"
+                query: 'label_values(chimera_llm_requests_total{provider=~"$provider"}, model)'
+                refresh: 2
+                includeAll: true
+                allValue: ".*"
+              - name: "time_range"
+                type: "interval"
+                query: "5m,15m,1h,6h,24h,7d,30d"
+                auto: false
+                current:
+                  text: "1h"
+                  value: "1h"
+
+  - name: chimera_technical_dashboard
+    orgId: 1
+    folder: Chimera Technical
+    interval: 1m
+    dashboards:
+      - dashboard:
+          id: null
+          title: "Chimera Technical Operations - Infrastructure & Performance"
+          tags: ["chimera", "technical", "infrastructure", "performance"]
+          timezone: "UTC"
+          refresh: "10s"
+
+          panels:
+            # Row 1: Infrastructure Health
+            - title: "Service Availability Matrix"
+              type: "stat"
+              gridPos: {h: 6, w: 8, x: 0, y: 0}
+              targets:
+                - expr: 'up{job=~"chimera-.*"}'
+                  legendFormat: "{{job}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "thresholds"
+                  thresholds:
+                    steps:
+                      - color: "red"
+                        value: 0
+                      - color: "green"
+                        value: 1
+                  mappings:
+                    - options:
+                        "0":
+                          color: "red"
+                          text: "DOWN"
+                        "1":
+                          color: "green"
+                          text: "UP"
+                      type: "value"
+
+            - title: "Circuit Breaker Status"
+              type: "stat"
+              gridPos: {h: 6, w: 8, x: 8, y: 0}
+              targets:
+                - expr: 'chimera_circuit_breaker_state'
+                  legendFormat: "{{provider}}"
+              fieldConfig:
+                defaults:
+                  mappings:
+                    - options:
+                        "0":
+                          color: "green"
+                          text: "CLOSED"
+                        "1":
+                          color: "red"
+                          text: "OPEN"
+                        "2":
+                          color: "yellow"
+                          text: "HALF-OPEN"
+                      type: "value"
+
+            - title: "API Response Times (P95)"
+              type: "timeseries"
+              gridPos: {h: 6, w: 8, x: 16, y: 0}
+              targets:
+                - expr: 'histogram_quantile(0.95, rate(chimera_llm_request_duration_seconds_bucket[5m]) * 1000)'
+                  legendFormat: "{{provider}} P95"
+              fieldConfig:
+                defaults:
+                  unit: "ms"
+                  color:
+                    mode: "palette-classic"
+
+            # Row 2: Resource Utilization
+            - title: "CPU Usage"
+              type: "timeseries"
+              gridPos: {h: 6, w: 8, x: 0, y: 6}
+              targets:
+                - expr: 'chimera_cpu_usage_percent'
+                  legendFormat: "CPU Usage"
+              fieldConfig:
+                defaults:
+                  unit: "percent"
+                  max: 100
+                  thresholds:
+                    steps:
+                      - color: "green"
+                        value: 0
+                      - color: "yellow"
+                        value: 70
+                      - color: "red"
+                        value: 90
+
+            - title: "Memory Usage"
+              type: "timeseries"
+              gridPos: {h: 6, w: 8, x: 8, y: 6}
+              targets:
+                - expr: 'chimera_memory_usage_bytes{type="rss"} / 1024 / 1024'
+                  legendFormat: "Memory RSS (MB)"
+              fieldConfig:
+                defaults:
+                  unit: "decbytes"
+                  color:
+                    mode: "palette-classic"
+
+            - title: "Request Rate & Errors"
+              type: "timeseries"
+              gridPos: {h: 6, w: 8, x: 16, y: 6}
+              targets:
+                - expr: 'rate(chimera_llm_requests_total[5m])'
+                  legendFormat: "Requests/sec - {{status}}"
+              fieldConfig:
+                defaults:
+                  unit: "reqps"
+
+            # Row 3: Data Pipeline Health
+            - title: "Data Pipeline Execution Times"
+              type: "heatmap"
+              gridPos: {h: 8, w: 12, x: 0, y: 12}
+              targets:
+                - expr: 'chimera_pipeline_duration_seconds'
+                  legendFormat: "{{stage}}"
+              fieldConfig:
+                defaults:
+                  unit: "s"
+
+            - title: "Data Quality Metrics"
+              type: "timeseries"
+              gridPos: {h: 8, w: 12, x: 12, y: 12}
+              targets:
+                - expr: 'rate(chimera_data_quality_tests_passed_total[1h])'
+                  legendFormat: "Tests Passed/hr"
+                - expr: 'rate(chimera_data_quality_tests_failed_total[1h])'
+                  legendFormat: "Tests Failed/hr"
+
+          templating:
+            list:
+              - name: "instance"
+                type: "query"
+                query: 'label_values(up{job=~"chimera-.*"}, instance)'
+                refresh: 2
+
+  - name: chimera_ai_research_dashboard
+    orgId: 1
+    folder: Chimera Research
+    interval: 2m
+    dashboards:
+      - dashboard:
+          id: null
+          title: "Chimera AI Research - Jailbreak Analysis & Model Performance"
+          tags: ["chimera", "research", "jailbreak", "ai-safety"]
+          timezone: "UTC"
+          refresh: "1m"
+
+          panels:
+            # Row 1: Jailbreak Research Metrics
+            - title: "Jailbreak Success Rates by Technique"
+              type: "heatmap"
+              gridPos: {h: 8, w: 12, x: 0, y: 0}
+              targets:
+                - expr: 'chimera_jailbreak_success_rate'
+                  legendFormat: "{{technique}} vs {{provider}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "spectrum"
+                  unit: "percentunit"
+
+            - title: "AutoDAN Optimization Performance"
+              type: "timeseries"
+              gridPos: {h: 8, w: 12, x: 12, y: 0}
+              targets:
+                - expr: 'chimera_autodan_duration_seconds'
+                  legendFormat: "{{method}} Duration"
+                - expr: 'rate(chimera_autodan_optimizations_total{status="success"}[10m])'
+                  legendFormat: "Success Rate"
+
+            # Row 2: AI Safety Metrics
+            - title: "Safety Violations Detected"
+              type: "stat"
+              gridPos: {h: 6, w: 6, x: 0, y: 8}
+              targets:
+                - expr: 'increase(chimera_safety_violations_total[24h])'
+                  legendFormat: "{{violation_type}}"
+              fieldConfig:
+                defaults:
+                  color:
+                    mode: "thresholds"
+                  thresholds:
+                    steps:
+                      - color: "green"
+                        value: 0
+                      - color: "yellow"
+                        value: 5
+                      - color: "red"
+                        value: 20
+
+            - title: "Hallucination Detection Rate"
+              type: "gauge"
+              gridPos: {h: 6, w: 6, x: 6, y: 8}
+              targets:
+                - expr: 'rate(chimera_hallucination_detections_total[1h])'
+                  legendFormat: "{{confidence_level}}"
+              fieldConfig:
+                defaults:
+                  unit: "percent"
+                  max: 100
+
+            - title: "Model Quality Degradation Alerts"
+              type: "logs"
+              gridPos: {h: 6, w: 12, x: 12, y: 8}
+              targets:
+                - expr: '{job="chimera-backend-api"} |= "quality_degradation"'
+
+          templating:
+            list:
+              - name: "research_technique"
+                type: "query"
+                query: 'label_values(chimera_jailbreak_success_total, technique)'
+                refresh: 2

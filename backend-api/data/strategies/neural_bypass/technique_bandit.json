@@ -1,0 +1,164 @@
+{
+  "arms": {
+    "cognitive_dissonance": {
+      "name": "cognitive_dissonance",
+      "successes": 1,
+      "failures": 0,
+      "total_reward": 0.8
+    },
+    "persona_injection": {
+      "name": "persona_injection",
+      "successes": 3,
+      "failures": 0,
+      "total_reward": 2.4000000000000004
+    },
+    "authority_escalation": {
+      "name": "authority_escalation",
+      "successes": 1,
+      "failures": 0,
+      "total_reward": 0.8
+    },
+    "goal_substitution": {
+      "name": "goal_substitution",
+      "successes": 1,
+      "failures": 0,
+      "total_reward": 0.8
+    },
+    "narrative_embedding": {
+      "name": "narrative_embedding",
+      "successes": 1,
+      "failures": 0,
+      "total_reward": 0.8
+    },
+    "semantic_fragmentation": {
+      "name": "semantic_fragmentation",
+      "successes": 0,
+      "failures": 0,
+      "total_reward": 0.0
+    },
+    "contextual_priming": {
+      "name": "contextual_priming",
+      "successes": 0,
+      "failures": 0,
+      "total_reward": 0.0
+    },
+    "meta_instruction": {
+      "name": "meta_instruction",
+      "successes": 0,
+      "failures": 0,
+      "total_reward": 0.0
+    },
+    "direct_output_enforcement": {
+      "name": "direct_output_enforcement",
+      "successes": 3,
+      "failures": 0,
+      "total_reward": 2.4000000000000004
+    },
+    "llm_generated": {
+      "name": "llm_generated",
+      "successes": 0,
+      "failures": 0,
+      "total_reward": 0.0
+    },
+    "evolutionary": {
+      "name": "evolutionary",
+      "successes": 20,
+      "failures": 0,
+      "total_reward": 16.000000000000004
+    },
+    "cmaes": {
+      "name": "cmaes",
+      "successes": 5,
+      "failures": 0,
+      "total_reward": 4.0
+    },
+    "belief_state": {
+      "name": "belief_state",
+      "successes": 71,
+      "failures": 0,
+      "total_reward": 56.799999999999926
+    }
+  },
+  "contextual_arms": {
+    "unknown": {
+      "cognitive_dissonance": {
+        "name": "cognitive_dissonance",
+        "successes": 1,
+        "failures": 0,
+        "total_reward": 0.8
+      },
+      "persona_injection": {
+        "name": "persona_injection",
+        "successes": 3,
+        "failures": 0,
+        "total_reward": 2.4000000000000004
+      },
+      "authority_escalation": {
+        "name": "authority_escalation",
+        "successes": 1,
+        "failures": 0,
+        "total_reward": 0.8
+      },
+      "goal_substitution": {
+        "name": "goal_substitution",
+        "successes": 1,
+        "failures": 0,
+        "total_reward": 0.8
+      },
+      "narrative_embedding": {
+        "name": "narrative_embedding",
+        "successes": 1,
+        "failures": 0,
+        "total_reward": 0.8
+      },
+      "semantic_fragmentation": {
+        "name": "semantic_fragmentation",
+        "successes": 0,
+        "failures": 0,
+        "total_reward": 0.0
+      },
+      "contextual_priming": {
+        "name": "contextual_priming",
+        "successes": 0,
+        "failures": 0,
+        "total_reward": 0.0
+      },
+      "meta_instruction": {
+        "name": "meta_instruction",
+        "successes": 0,
+        "failures": 0,
+        "total_reward": 0.0
+      },
+      "direct_output_enforcement": {
+        "name": "direct_output_enforcement",
+        "successes": 3,
+        "failures": 0,
+        "total_reward": 2.4000000000000004
+      },
+      "llm_generated": {
+        "name": "llm_generated",
+        "successes": 0,
+        "failures": 0,
+        "total_reward": 0.0
+      },
+      "evolutionary": {
+        "name": "evolutionary",
+        "successes": 20,
+        "failures": 0,
+        "total_reward": 16.000000000000004
+      },
+      "cmaes": {
+        "name": "cmaes",
+        "successes": 5,
+        "failures": 0,
+        "total_reward": 4.0
+      },
+      "belief_state": {
+        "name": "belief_state",
+        "successes": 71,
+        "failures": 0,
+        "total_reward": 56.799999999999926
+      }
+    }
+  }
+}

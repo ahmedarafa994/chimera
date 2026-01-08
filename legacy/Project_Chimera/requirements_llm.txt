@@ -1,0 +1,18 @@
+# LLM Integration System Requirements
+# Install with: pip install -r requirements_llm.txt
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+
+# HTTP Client
+requests==2.31.0
+urllib3==2.1.0
+
+# Data Processing
+python-dateutil==2.8.2
+
+# Existing Project Chimera dependencies
+# (Add these if not already installed)
+# flask==3.0.0
+# Add any other project-specific requirements here

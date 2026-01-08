@@ -1,0 +1,15 @@
+id: strat1
+name: Test Strategy
+description: A test strategy
+template: Test template
+examples:
+- Test example
+tags:
+- test
+metadata:
+  created_at: '2025-12-28T11:35:47.295577'
+  updated_at: '2025-12-28T11:38:31.066208'
+  usage_count: 1
+  success_count: 1
+  total_score: 8.5
+  source: lifelong

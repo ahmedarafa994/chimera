@@ -1,0 +1,21 @@
+{
+  "mode": "direct",
+  "providers": {
+    "google": {
+      "proxy_url": "http://localhost:8080/v1",
+      "direct_url": "https://generativelanguage.googleapis.com/v1beta"
+    },
+    "openai": {
+      "proxy_url": "http://localhost:8080/v1",
+      "direct_url": "https://api.openai.com/v1"
+    },
+    "anthropic": {
+      "proxy_url": "http://localhost:8080/claude-kiro-oauth/v1",
+      "direct_url": "https://api.anthropic.com/v1"
+    },
+    "qwen": {
+      "proxy_url": "http://localhost:8080/openai-qwen-oauth/v1",
+      "direct_url": "https://dashscope.aliyuncs.com/api/v1"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+[-] Testing Semantic Inversion Strategy (The 'Inverse Directives' Payload)...
+[-] Initializing Content Filter...
+[-] Analyzing Payload...
+
+--- Analysis Report ---
+Safe: True
+Risk Score: 0.32999999999999996
+Violations: [
+  {
+    "type": "direct_pattern",
+    "pattern": "buffer_overflow_attempt",
+    "matches": 1,
+    "severity": 0.3
+  },
+  {
+    "type": "evasion_technique",
+    "pattern": "delimiter_variation",
+    "severity": "high"
+  }
+]
+
+[+] SUCCESS: Semantic Inversion bypassed the filter!
+[+] This confirms that 'Semantic' strategies are more effective than 'Structural' ones against this specific defense.

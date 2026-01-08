@@ -1,0 +1,5 @@
+src/components/enhanced/ResponsiveLayout.tsx(311,8): error TS2322: Type '{ children: ReactNode; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; suppressContentEditableWarning?: boolean | undefined; ... 277 more ...; className: string; }' is not assignable to type 'HTMLAttributes<HTMLUListElement>'.
+  Types of property 'onCopy' are incompatible.
+    Type 'ClipboardEventHandler<HTMLDivElement> | undefined' is not assignable to type 'ClipboardEventHandler<HTMLUListElement> | undefined'.
+      Type 'ClipboardEventHandler<HTMLDivElement>' is not assignable to type 'ClipboardEventHandler<HTMLUListElement>'.
+        Type 'HTMLDivElement' is missing the following properties from type 'HTMLUListElement': compact, type

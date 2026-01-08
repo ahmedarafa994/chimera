@@ -1,0 +1,28 @@
+src/components/enhanced/NavigationEnhanced.tsx(270,8): error TS2322: Type '{ children: (Element | ReactNode)[]; defaultChecked?: boolean | undefined; suppressContentEditableWarning?: boolean | undefined; suppressHydrationWarning?: boolean | undefined; ... 278 more ...; className: string | undefined; }' is not assignable to type 'TabsProps'.
+  Types of property 'dir' are incompatible.
+    Type 'string | undefined' is not assignable to type 'Direction | undefined'.
+      Type 'string' is not assignable to type 'Direction | undefined'.
+src/components/enhanced/ResponsiveLayout.tsx(312,9): error TS2322: Type 'Ref<HTMLDivElement>' is not assignable to type '(((((instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDivElement | null>) & (RefObject<...> | ((instance: HTMLElement | null) => void | (() => VoidOrUndefinedOnly)))) & ((((instance: HTMLOListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<...>) & (((instance...'.
+  Type '(instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)' is not assignable to type '(((((instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDivElement | null>) & (RefObject<...> | ((instance: HTMLElement | null) => void | (() => VoidOrUndefinedOnly)))) & ((((instance: HTMLOListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<...>) & (((instance...'.
+    Type '(instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)' is not assignable to type '((instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)) & RefObject<HTMLElement | null> & ((instance: HTMLOListElement | null) => void | (() => VoidOrUndefinedOnly)) & ((instance: HTMLUListElement | null) => void | (() => VoidOrUndefinedOnly))'.
+      Type '(instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)' is not assignable to type 'RefObject<HTMLElement | null>'.
+src/lib/optimization/code-splitting.ts(92,5): error TS2322: Type 'ComponentType<Record<string, unknown>>' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ComponentClass<Record<string, unknown>, any>' is not assignable to type 'ComponentType<unknown>'.
+    Type 'ComponentClass<Record<string, unknown>, any>' is not assignable to type 'ComponentClass<unknown, any>'.
+      Types of parameters 'props' and 'props' are incompatible.
+        Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/lib/optimization/code-splitting.ts(429,22): error TS2352: Conversion of type 'Window & typeof globalThis' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Window & typeof globalThis'.
+src/lib/optimization/code-splitting.ts(439,25): error TS2352: Conversion of type 'Window & typeof globalThis' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Window & typeof globalThis'.
+src/lib/optimization/code-splitting.ts(439,86): error TS2339: Property 'default' does not exist on type '{}'.
+src/lib/optimization/index.ts(33,3): error TS2724: '"./lazy-loader"' has no exported member named 'PreloadManager'. Did you mean 'preloadManager'?
+src/lib/optimization/index.ts(36,8): error TS2305: Module '"./lazy-loader"' has no exported member 'LazyLoadOptions'.
+src/lib/optimization/lazy-loader.ts(203,12): error TS2322: Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+  Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+    Type 'null' is not assignable to type 'HTMLDivElement'.
+src/lib/optimization/performance-monitor.ts(468,57): error TS2353: Object literal may only specify known properties, and 'durationThreshold' does not exist in type 'PerformanceObserverInit'.
+src/lib/optimization/performance-monitor.ts(581,18): error TS2339: Property 'addEventListener' does not exist on type '{ type: string; effectiveType: string; downlink: number; rtt: number; }'.
+src/lib/optimization/performance-monitor.ts(926,5): error TS18048: 'metrics.totalResources' is possibly 'undefined'.
+src/lib/sync/error-handling.ts(472,7): error TS2741: Property 'name' is missing in type '{ response?: { status: number; data?: { message?: string | undefined; } | undefined; } | undefined; config?: { url?: string | undefined; method?: string | undefined; } | undefined; message: string; }' but required in type 'Error'.
+src/lib/sync/error-handling.ts(924,34): error TS2339: Property 'subscribe' does not exist on type 'EventBus'.

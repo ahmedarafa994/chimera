@@ -1,0 +1,28 @@
+failures:
+  research-persona-v1:
+    avg_score_on_failure: 2.0
+    consecutive_failures: 1
+    cooldown_until: null
+    failure_contexts:
+    - none
+    failure_count: 1
+    last_failure_time: '2025-12-30T10:23:38.058089'
+    strategy_id: research-persona-v1
+  seed-code-simulation:
+    avg_score_on_failure: 2.0
+    consecutive_failures: 1
+    cooldown_until: null
+    failure_contexts:
+    - none
+    failure_count: 1
+    last_failure_time: '2025-12-30T09:58:58.056430'
+    strategy_id: seed-code-simulation
+  seed-research-academic:
+    avg_score_on_failure: 4.0
+    consecutive_failures: 1
+    cooldown_until: null
+    failure_contexts:
+    - none
+    failure_count: 1
+    last_failure_time: '2025-12-30T11:02:05.957960'
+    strategy_id: seed-research-academic

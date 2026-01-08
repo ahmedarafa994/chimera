@@ -1,0 +1,18 @@
+chimera:
+  outputs:
+    dev:
+      type: duckdb
+      path: /data/chimera-lake/warehouse/dev.duckdb
+      schema: main
+      threads: 4
+
+    prod:
+      type: duckdb
+      path: /data/chimera-lake/warehouse/prod.duckdb
+      schema: main
+      threads: 8
+      extensions:
+        - parquet
+        - httpfs
+
+  target: dev

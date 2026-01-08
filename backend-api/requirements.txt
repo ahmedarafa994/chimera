@@ -1,0 +1,52 @@
+# Core API
+fastapi>=0.115.0
+uvicorn>=0.30.0
+pydantic>=2.7.0
+python-dotenv>=1.0.1
+aiohttp>=3.9.5
+
+# Database
+sqlalchemy>=2.0.30
+alembic>=1.13.1
+psycopg2-binary>=2.9.9
+
+# AI/ML
+openai>=1.30.0
+google-generativeai>=0.8.0
+google-genai>=1.0.0
+groq>=0.5.0
+anthropic>=0.25.0
+
+# Utilities
+pyyaml>=6.0.1
+requests>=2.31.0
+python-multipart>=0.0.9
+jinja2>=3.1.4
+sse-starlette>=2.0.0  # Server-Sent Events for streaming
+
+# Security
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+
+# Testing
+pytest>=8.2.0
+pytest-asyncio>=0.23.6
+httpx>=0.27.0
+playwright>=1.40.0
+pytest-playwright>=0.4.4
+
+# Performance Testing (PERF-006)
+locust>=2.18.0
+pyinstaller>=6.0.0  # For standalone load test executables
+
+# Red Teaming / Security Testing
+deepteam>=0.1.0
+
+# Redis/Caching
+redis>=5.0.4
+
+# HotFlip / Gradient Optimization
+torch>=2.0.0
+transformers>=4.30.0
+accelerate>=0.20.0
+sentencepiece>=0.1.99

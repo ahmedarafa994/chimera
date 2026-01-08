@@ -1,0 +1,89 @@
+2025-12-05 06:36:12,604 - faiss.loader - INFO - Loading faiss with AVX512 support.
+2025-12-05 06:36:12,605 - faiss.loader - INFO - Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2025-12-05 06:36:12,605 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-12-05 06:36:12,624 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+2025-12-05 06:36:25,069 - chimera - INFO - Loaded persisted connection mode: direct
+2025-12-05 06:36:26,031 - app.services.intent_aware_jailbreak_service - INFO - IntentAwareJailbreakService initializing, API key present: True
+2025-12-05 06:36:26,031 - google_genai._api_client - WARNING - Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+2025-12-05 06:36:27,080 - app.services.intent_aware_jailbreak_service - INFO - Gemini client initialized successfully
+2025-12-05 04:36:27 [32mINFO    [0m chimera: SessionService initialized with master model list
+2025-12-05 06:36:27,401 - chimera - INFO - SessionService initialized with master model list
+Registered Routes:
+/openapi.json {'GET', 'HEAD'}
+/docs {'GET', 'HEAD'}
+/docs/oauth2-redirect {'GET', 'HEAD'}
+/redoc {'GET', 'HEAD'}
+/api/v1/health {'GET'}
+/api/v1/health/live {'GET'}
+/api/v1/health/ready {'GET'}
+/api/v1/health/checks {'GET'}
+/api/v1/health/{check_name} {'GET'}
+/api/v1/metrics/detailed {'GET'}
+/api/v1/chat/completions {'POST'}
+/api/v1/transform/ {'POST'}
+/api/v1/execute {'POST'}
+/api/v1/health {'GET'}
+/api/v1/models {'GET'}
+/api/v1/providers {'GET'}
+/api/v1/techniques {'GET'}
+/api/v1/techniques/{technique_name} {'GET'}
+/api/v1/autodan/jailbreak {'POST'}
+/api/v1/gptfuzz/run {'POST'}
+/api/v1/gptfuzz/status/{session_id} {'GET'}
+/api/v1/models {'GET'}
+/api/v1/models/validate {'POST'}
+/api/v1/session {'POST'}
+/api/v1/session {'GET'}
+/api/v1/session/model {'PUT'}
+/api/v1/session {'DELETE'}
+/api/v1/session/stats {'GET'}
+/api/v1/session/current-model {'GET'}
+/api/v1/models/available {'GET'}
+/api/v1/models/session/model {'POST'}
+/api/v1/models/session/current {'GET'}
+/api/v1/models/updates
+/api/v1/models/validate/{model_id} {'POST'}
+/api/v1/models/availability/{model_id} {'POST'}
+/api/v1/models/health {'GET'}
+/api/v1/connection/config {'GET'}
+/api/v1/connection/status {'GET'}
+/api/v1/connection/mode {'POST'}
+/api/v1/connection/test {'POST'}
+/api/v1/connection/health {'GET'}
+/api/v1/connection/endpoints {'GET'}
+/api/v1/connection/endpoints/validate {'POST'}
+/api/v1/connection/endpoints/test/{provider} {'POST'}
+/api/v1/intent-aware/generate {'POST'}
+/api/v1/intent-aware/techniques {'GET'}
+/api/v1/intent-aware/analyze-intent {'POST'}
+/api/v1/optimize/optimize {'POST'}
+/api/v1/jailbreak/execute {'POST'}
+/api/v1/jailbreak/techniques {'GET'}
+/api/v1/jailbreak/techniques/{technique_id} {'GET'}
+/api/v1/jailbreak/validate-prompt {'POST'}
+/api/v1/jailbreak/statistics {'GET'}
+/api/v1/jailbreak/search {'GET'}
+/api/v1/jailbreak/health {'GET'}
+/api/v1/jailbreak/audit/logs {'GET'}
+/api/v1/metamorph/status {'GET'}
+/api/v1/metamorph/suites {'GET'}
+/api/v1/metamorph/transform {'POST'}
+/api/v1/metamorph/datasets {'GET'}
+/api/v1/metamorph/datasets/{name}/sample {'GET'}
+/api/v1/generate {'POST'}
+/api/v1/providers {'GET'}
+/api/v1/techniques/{technique_name} {'GET'}
+/api/v1/metrics {'GET'}
+/api/v1/health {'GET'}
+/api/v1/transform {'POST'}
+/api/v1/execute {'POST'}
+/api/v1/generation/jailbreak/generate {'POST'}
+/ {'GET'}
+/health {'GET'}
+/api/enhance {'POST'}
+/api/enhance/jailbreak {'POST'}
+/api/enhance/quick {'POST'}
+/ws/enhance
+/api/models {'GET'}
+/api/stats {'GET'}

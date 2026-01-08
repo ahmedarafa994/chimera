@@ -1,0 +1,852 @@
+# =============================================================================
+# Chimera AI Provider Configuration
+# Version: 1.0.0
+# =============================================================================
+# This file defines all AI provider configurations, model parameters,
+# failover chains, and operational settings for the Chimera platform.
+# =============================================================================
+
+# Schema version for migration support
+schema_version: "1.0.0"
+
+# =============================================================================
+# Global Configuration
+# =============================================================================
+global:
+  # Default provider to use when none specified
+  default_provider: "gemini"
+
+  # Default model (must be from default_provider)
+  default_model: "gemini-2.0-flash-exp"
+
+  # Enable automatic failover to backup providers
+  failover_enabled: true
+
+  # Maximum failover attempts before giving up
+  max_failover_attempts: 3
+
+  # Health check interval in seconds
+  health_check_interval: 60
+
+  # Enable response caching
+  cache_enabled: true
+  cache_ttl_seconds: 300
+
+  # Cost tracking settings
+  cost_tracking:
+    enabled: true
+    daily_budget_usd: 100.0
+    alert_threshold_percent: 80
+    hard_limit_enabled: false
+
+  # Rate limiting defaults
+  rate_limiting:
+    enabled: true
+    default_requests_per_minute: 60
+    default_tokens_per_minute: 100000
+
+# =============================================================================
+# Provider Definitions
+# =============================================================================
+providers:
+  # ---------------------------------------------------------------------------
+  # Google Gemini Provider
+  # ---------------------------------------------------------------------------
+  gemini:
+    # Provider metadata
+    type: "google"
+    name: "Google Gemini"
+    description: "Google's Gemini family of multimodal AI models"
+    enabled: true
+
+    # API configuration
+    api:
+      base_url: "https://generativelanguage.googleapis.com/v1beta"
+      key_env_var: "GOOGLE_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+
+    # Priority for failover ordering (higher = tried first)
+    priority: 100
+
+    # Provider capabilities
+    capabilities:
+      supports_streaming: true
+      supports_vision: true
+      supports_function_calling: true
+      supports_json_mode: true
+      supports_system_prompt: true
+      supports_token_counting: true
+      supports_embeddings: true
+
+    # Circuit breaker configuration
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    # Rate limiting
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 1000000
+      requests_per_day: 10000
+
+    # Embedding configuration
+    embedding:
+      enabled: true
+      default_model: "text-embedding-004"
+      models:
+        text-embedding-004:
+          name: "Text Embedding 004"
+          description: "Latest Gemini embedding model"
+          dimensions: 768
+          max_tokens: 2048
+          pricing:
+            cost_per_1k_tokens: 0.00001
+        embedding-001:
+          name: "Embedding 001"
+          description: "First generation Gemini embedding"
+          dimensions: 768
+          max_tokens: 2048
+          pricing:
+            cost_per_1k_tokens: 0.00001
+      # Batch processing settings
+      batch_size: 100
+      max_batch_size: 250
+
+    # Model definitions
+    models:
+      gemini-2.0-flash-exp:
+        name: "Gemini 2.0 Flash Exp"
+        description: "Experimental fast model with strong performance"
+        context_length: 1000000
+        max_output_tokens: 8192
+        supports_streaming: true
+        supports_vision: true
+        is_default: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.0001
+          output_cost_per_1k: 0.0004
+
+      gemini-3-pro-preview:
+        name: "Gemini 3 Pro Preview"
+        description: "Latest flagship model with advanced reasoning"
+        context_length: 1000000
+        max_output_tokens: 8192
+        supports_streaming: true
+        supports_vision: true
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.00025
+          output_cost_per_1k: 0.001
+          cached_input_cost_per_1k: 0.0000625
+
+      gemini-2.5-flash:
+        name: "Gemini 2.5 Flash"
+        description: "Fast and efficient for most tasks"
+        context_length: 1000000
+        max_output_tokens: 8192
+        supports_streaming: true
+        supports_vision: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.000075
+          output_cost_per_1k: 0.0003
+
+      gemini-2.0-flash:
+        name: "Gemini 2.0 Flash"
+        description: "Balanced performance and cost"
+        context_length: 1000000
+        max_output_tokens: 8192
+        supports_streaming: true
+        supports_vision: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.0001
+          output_cost_per_1k: 0.0004
+
+      gemini-1.5-pro:
+        name: "Gemini 1.5 Pro"
+        description: "Stable production model"
+        context_length: 1000000
+        max_output_tokens: 8192
+        supports_streaming: true
+        supports_vision: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.00125
+          output_cost_per_1k: 0.005
+
+    # Failover chain (ordered list of providers to try)
+    failover_chain:
+      - "openai"
+      - "anthropic"
+      - "deepseek"
+
+  # ---------------------------------------------------------------------------
+  # OpenAI Provider
+  # ---------------------------------------------------------------------------
+  openai:
+    type: "openai"
+    name: "OpenAI"
+    description: "OpenAI GPT models including GPT-4o and o1"
+    enabled: true
+
+    api:
+      base_url: "https://api.openai.com/v1"
+      key_env_var: "OPENAI_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+
+    priority: 90
+
+    capabilities:
+      supports_streaming: true
+      supports_vision: true
+      supports_function_calling: true
+      supports_json_mode: true
+      supports_system_prompt: true
+      supports_token_counting: false
+      supports_embeddings: true
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 150000
+      requests_per_day: null
+
+    # Embedding configuration
+    embedding:
+      enabled: true
+      default_model: "text-embedding-3-small"
+      models:
+        text-embedding-3-small:
+          name: "Text Embedding 3 Small"
+          description: "Efficient small embedding model"
+          dimensions: 1536
+          max_tokens: 8191
+          pricing:
+            cost_per_1k_tokens: 0.00002
+        text-embedding-3-large:
+          name: "Text Embedding 3 Large"
+          description: "High-quality large embedding model"
+          dimensions: 3072
+          max_tokens: 8191
+          pricing:
+            cost_per_1k_tokens: 0.00013
+        text-embedding-ada-002:
+          name: "Ada 002"
+          description: "Legacy embedding model"
+          dimensions: 1536
+          max_tokens: 8191
+          pricing:
+            cost_per_1k_tokens: 0.0001
+      # Batch processing settings
+      batch_size: 100
+      max_batch_size: 2048
+
+    models:
+      gpt-4o:
+        name: "GPT-4o"
+        description: "Most capable GPT-4 model for complex tasks"
+        context_length: 128000
+        max_output_tokens: 16384
+        supports_streaming: true
+        supports_vision: true
+        is_default: true
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.0025
+          output_cost_per_1k: 0.01
+
+      gpt-4o-mini:
+        name: "GPT-4o Mini"
+        description: "Smaller, faster, cheaper GPT-4o variant"
+        context_length: 128000
+        max_output_tokens: 16384
+        supports_streaming: true
+        supports_vision: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.00015
+          output_cost_per_1k: 0.0006
+
+      o1:
+        name: "o1"
+        description: "Advanced reasoning model with chain-of-thought"
+        context_length: 200000
+        max_output_tokens: 100000
+        supports_streaming: false
+        supports_vision: false
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.015
+          output_cost_per_1k: 0.06
+          reasoning_cost_per_1k: 0.06
+
+      o1-mini:
+        name: "o1 Mini"
+        description: "Smaller reasoning model for coding tasks"
+        context_length: 128000
+        max_output_tokens: 65536
+        supports_streaming: false
+        supports_vision: false
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.003
+          output_cost_per_1k: 0.012
+          reasoning_cost_per_1k: 0.012
+
+      gpt-3.5-turbo:
+        name: "GPT-3.5 Turbo"
+        description: "Fast and cost-effective for simple tasks"
+        context_length: 16385
+        max_output_tokens: 4096
+        supports_streaming: true
+        supports_vision: false
+        tier: "economy"
+        pricing:
+          input_cost_per_1k: 0.0005
+          output_cost_per_1k: 0.0015
+
+    failover_chain:
+      - "anthropic"
+      - "gemini"
+      - "deepseek"
+
+  # ---------------------------------------------------------------------------
+  # Anthropic Provider
+  # ---------------------------------------------------------------------------
+  anthropic:
+    type: "anthropic"
+    name: "Anthropic"
+    description: "Anthropic Claude models with strong safety features"
+    enabled: true
+
+    api:
+      base_url: "https://api.anthropic.com/v1"
+      key_env_var: "ANTHROPIC_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+      custom_headers:
+        anthropic-version: "2024-01-01"
+
+    priority: 80
+
+    capabilities:
+      supports_streaming: true
+      supports_vision: true
+      supports_function_calling: true
+      supports_json_mode: false
+      supports_system_prompt: true
+      supports_token_counting: false
+      supports_embeddings: false
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    rate_limits:
+      requests_per_minute: 50
+      tokens_per_minute: 100000
+      requests_per_day: null
+
+    models:
+      claude-3-5-sonnet-20241022:
+        name: "Claude 3.5 Sonnet"
+        description: "Balanced capability and speed"
+        context_length: 200000
+        max_output_tokens: 8192
+        supports_streaming: true
+        supports_vision: true
+        is_default: true
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.003
+          output_cost_per_1k: 0.015
+
+      claude-3-5-haiku-20241022:
+        name: "Claude 3.5 Haiku"
+        description: "Fastest Claude model"
+        context_length: 200000
+        max_output_tokens: 8192
+        supports_streaming: true
+        supports_vision: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.001
+          output_cost_per_1k: 0.005
+
+      claude-3-opus-20240229:
+        name: "Claude 3 Opus"
+        description: "Most capable Claude model"
+        context_length: 200000
+        max_output_tokens: 4096
+        supports_streaming: true
+        supports_vision: true
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.015
+          output_cost_per_1k: 0.075
+
+    failover_chain:
+      - "openai"
+      - "gemini"
+      - "deepseek"
+
+  # ---------------------------------------------------------------------------
+  # DeepSeek Provider
+  # ---------------------------------------------------------------------------
+  deepseek:
+    type: "deepseek"
+    name: "DeepSeek"
+    description: "Cost-effective models with strong reasoning capabilities"
+    enabled: true
+
+    api:
+      base_url: "https://api.deepseek.com/v1"
+      key_env_var: "DEEPSEEK_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+
+    priority: 70
+
+    capabilities:
+      supports_streaming: true
+      supports_vision: false
+      supports_function_calling: true
+      supports_json_mode: true
+      supports_system_prompt: true
+      supports_token_counting: false
+      supports_embeddings: false
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 200000
+      requests_per_day: null
+
+    models:
+      deepseek-chat:
+        name: "DeepSeek Chat (V3.2)"
+        description: "Standard chat model with strong performance"
+        context_length: 64000
+        max_output_tokens: 8192
+        supports_streaming: true
+        is_default: true
+        tier: "economy"
+        pricing:
+          input_cost_per_1k: 0.00014
+          output_cost_per_1k: 0.00028
+          cached_input_cost_per_1k: 0.000014
+
+      deepseek-reasoner:
+        name: "DeepSeek Reasoner (V3.2)"
+        description: "Chain-of-thought reasoning model"
+        context_length: 64000
+        max_output_tokens: 8192
+        supports_streaming: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.00055
+          output_cost_per_1k: 0.00219
+          reasoning_cost_per_1k: 0.00219
+
+    failover_chain:
+      - "openai"
+      - "gemini"
+      - "anthropic"
+
+  # ---------------------------------------------------------------------------
+  # Qwen Provider
+  # ---------------------------------------------------------------------------
+  qwen:
+    type: "qwen"
+    name: "Alibaba Qwen"
+    description: "Alibaba Cloud's Qwen model family via DashScope"
+    enabled: true
+
+    api:
+      base_url: "https://dashscope.aliyuncs.com/api/v1"
+      key_env_var: "QWEN_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+
+    priority: 60
+
+    capabilities:
+      supports_streaming: true
+      supports_vision: true
+      supports_function_calling: true
+      supports_json_mode: false
+      supports_system_prompt: true
+      supports_token_counting: false
+      supports_embeddings: true
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 100000
+      requests_per_day: null
+
+    # Embedding configuration
+    embedding:
+      enabled: true
+      default_model: "text-embedding-v2"
+      models:
+        text-embedding-v2:
+          name: "Text Embedding V2"
+          description: "Qwen text embedding model"
+          dimensions: 1536
+          max_tokens: 2048
+          pricing:
+            cost_per_1k_tokens: 0.0007
+        text-embedding-v1:
+          name: "Text Embedding V1"
+          description: "First generation Qwen embedding"
+          dimensions: 1536
+          max_tokens: 2048
+          pricing:
+            cost_per_1k_tokens: 0.0007
+      batch_size: 25
+      max_batch_size: 25
+
+    models:
+      qwen-max:
+        name: "Qwen Max"
+        description: "Most capable Qwen model"
+        context_length: 32768
+        max_output_tokens: 8192
+        supports_streaming: true
+        is_default: true
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.004
+          output_cost_per_1k: 0.012
+
+      qwen-plus:
+        name: "Qwen Plus"
+        description: "Balanced performance model"
+        context_length: 32768
+        max_output_tokens: 8192
+        supports_streaming: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.002
+          output_cost_per_1k: 0.006
+
+      qwen-turbo:
+        name: "Qwen Turbo"
+        description: "Fast and cost-effective"
+        context_length: 8192
+        max_output_tokens: 4096
+        supports_streaming: true
+        tier: "economy"
+        pricing:
+          input_cost_per_1k: 0.0008
+          output_cost_per_1k: 0.002
+
+    failover_chain:
+      - "deepseek"
+      - "gemini"
+      - "openai"
+
+  # ---------------------------------------------------------------------------
+  # BigModel (ZhiPu AI) Provider
+  # ---------------------------------------------------------------------------
+  bigmodel:
+    type: "bigmodel"
+    name: "ZhiPu BigModel"
+    description: "ZhiPu AI's GLM model family"
+    enabled: true
+
+    api:
+      base_url: "https://open.bigmodel.cn/api/paas/v4"
+      key_env_var: "BIGMODEL_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+
+    priority: 40
+
+    capabilities:
+      supports_streaming: true
+      supports_vision: true
+      supports_function_calling: true
+      supports_json_mode: false
+      supports_system_prompt: true
+      supports_token_counting: false
+      supports_embeddings: true
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 100000
+      requests_per_day: null
+
+    # Embedding configuration
+    embedding:
+      enabled: true
+      default_model: "embedding-2"
+      models:
+        embedding-2:
+          name: "Embedding 2"
+          description: "Latest ZhiPu embedding model"
+          dimensions: 1024
+          max_tokens: 512
+          pricing:
+            cost_per_1k_tokens: 0.0005
+        embedding-3:
+          name: "Embedding 3"
+          description: "Third generation embedding model"
+          dimensions: 2048
+          max_tokens: 8192
+          pricing:
+            cost_per_1k_tokens: 0.0005
+      batch_size: 16
+      max_batch_size: 64
+
+    models:
+      glm-4.7:
+        name: "GLM-4.7"
+        description: "Latest flagship GLM model"
+        context_length: 128000
+        max_output_tokens: 8192
+        supports_streaming: true
+        is_default: true
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.001
+          output_cost_per_1k: 0.001
+
+      glm-4.5-flash:
+        name: "GLM-4.5 Flash"
+        description: "Fast and efficient"
+        context_length: 128000
+        max_output_tokens: 8192
+        supports_streaming: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.0001
+          output_cost_per_1k: 0.0001
+
+    failover_chain:
+      - "deepseek"
+      - "qwen"
+      - "gemini"
+
+  # ---------------------------------------------------------------------------
+  # Cursor Provider
+  # ---------------------------------------------------------------------------
+  cursor:
+    type: "cursor"
+    name: "Cursor"
+    description: "Cursor IDE's AI backend (OpenAI-compatible)"
+    enabled: true
+
+    api:
+      base_url: "https://api.openai.com/v1"
+      key_env_var: "CURSOR_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+
+    priority: 50
+
+    capabilities:
+      supports_streaming: true
+      supports_vision: true
+      supports_function_calling: true
+      supports_json_mode: true
+      supports_system_prompt: true
+      supports_token_counting: false
+      supports_embeddings: false
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 150000
+      requests_per_day: null
+
+    models:
+      gpt-4o:
+        name: "GPT-4o (via Cursor)"
+        description: "GPT-4o accessed via Cursor API"
+        context_length: 128000
+        max_output_tokens: 16384
+        supports_streaming: true
+        supports_vision: true
+        is_default: true
+        tier: "premium"
+        pricing:
+          input_cost_per_1k: 0.0025
+          output_cost_per_1k: 0.01
+
+    failover_chain:
+      - "openai"
+      - "anthropic"
+      - "gemini"
+
+  # ---------------------------------------------------------------------------
+  # Routeway Provider
+  # ---------------------------------------------------------------------------
+  routeway:
+    type: "routeway"
+    name: "Routeway"
+    description: "Unified AI Gateway with multi-provider routing"
+    enabled: true
+
+    api:
+      base_url: "https://api.routeway.ai/v1"
+      key_env_var: "ROUTEWAY_API_KEY"
+      timeout_seconds: 120
+      max_retries: 3
+
+    priority: 30
+
+    capabilities:
+      supports_streaming: true
+      supports_vision: true
+      supports_function_calling: true
+      supports_json_mode: true
+      supports_system_prompt: true
+      supports_token_counting: false
+      supports_embeddings: false
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_requests: 3
+
+    rate_limits:
+      requests_per_minute: 60
+      tokens_per_minute: 150000
+      requests_per_day: null
+
+    models:
+      gpt-4o-mini:
+        name: "GPT-4o Mini (via Routeway)"
+        description: "GPT-4o Mini accessed via Routeway"
+        context_length: 128000
+        max_output_tokens: 16384
+        supports_streaming: true
+        is_default: true
+        tier: "standard"
+        pricing:
+          input_cost_per_1k: 0.00015
+          output_cost_per_1k: 0.0006
+
+    failover_chain:
+      - "openai"
+      - "gemini"
+      - "anthropic"
+
+# =============================================================================
+# Provider Aliases
+# =============================================================================
+aliases:
+  google: "gemini"
+  gpt: "openai"
+  gpt-4: "openai"
+  claude: "anthropic"
+  zhipu: "bigmodel"
+  glm: "bigmodel"
+  dashscope: "qwen"
+  alibaba: "qwen"
+
+# =============================================================================
+# Named Failover Chains (Reusable)
+# =============================================================================
+failover_chains:
+  premium:
+    description: "Chain for premium/complex tasks"
+    providers:
+      - "gemini"
+      - "openai"
+      - "anthropic"
+
+  cost_optimized:
+    description: "Chain optimized for cost"
+    providers:
+      - "deepseek"
+      - "qwen"
+      - "bigmodel"
+      - "gemini"
+
+  fast:
+    description: "Chain optimized for speed"
+    providers:
+      - "gemini"
+      - "deepseek"
+      - "openai"
+
+  reasoning:
+    description: "Chain for complex reasoning tasks"
+    providers:
+      - "openai"
+      - "anthropic"
+      - "deepseek"
+
+# =============================================================================
+# Embedding Configuration (Global Settings)
+# =============================================================================
+embedding:
+  # Default embedding provider when none specified
+  default_provider: "openai"
+
+  # Default model for the default provider
+  default_model: "text-embedding-3-small"
+
+  # Caching settings for embeddings
+  cache:
+    enabled: true
+    ttl_seconds: 3600  # 1 hour default TTL
+    max_size: 10000    # Maximum number of cached embeddings
+
+  # Cost tracking for embeddings
+  cost_tracking:
+    enabled: true
+    alert_threshold_usd: 10.0
+
+  # Embedding failover chain (ordered by preference)
+  failover_chain:
+    - "openai"
+    - "gemini"
+    - "qwen"
+    - "bigmodel"
+
+  # Providers that support embeddings (auto-detected from capabilities)
+  # This is for reference and validation
+  supported_providers:
+    - "openai"
+    - "gemini"
+    - "qwen"
+    - "bigmodel"

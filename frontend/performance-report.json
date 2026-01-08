@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-01-01T23:04:22.309Z",
+  "score": 80,
+  "buildTime": 0,
+  "bundles": {},
+  "errors": [
+    "Build failed: Command failed: npm run build"
+  ],
+  "warnings": [],
+  "suggestions": [],
+  "thresholds": {
+    "bundles": {
+      "total": 500,
+      "js": 300,
+      "css": 50,
+      "vendor": 200
+    },
+    "vitals": {
+      "LCP": 2500,
+      "FID": 100,
+      "CLS": 0.1,
+      "FCP": 1800,
+      "TTFB": 800
+    },
+    "build": {
+      "duration": 120000,
+      "memoryUsage": 4096
+    }
+  }
+}

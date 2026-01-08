@@ -1,0 +1,47 @@
+Starting server on port 8082...
+Testing POST /api/v1/execute...
+Status: 500
+FAILURE: /api/v1/execute returned 500. Response: {"detail":"Gemini generation failed: 1 validation error for PromptResponse\nusage_metadata\n  Input should be a valid dictionary [type=dict_type, input_value=prompt_token_count: 15\nca...total_token_count: 2061\n, input_type=GenerateContentResponse.UsageMetadata]\n    For further information visit https://errors.pydantic.dev/2.11/v/dict_type"}
+
+Server Output:
+2025-11-29 17:31:57,383 - chimera - INFO - Registered provider: google (default=True)
+2025-11-29 17:31:57,383 - chimera - INFO - Services initialized successfully
+2025-11-29 17:31:57,383 - chimera - INFO - Application initialized
+2025-11-29 17:31:57,859 - app.services.transformation_service - INFO - Transformation completed: potency=5, technique=standard, time=0.10ms
+2025-11-29 17:31:57,859 - chimera - INFO - Generating content with model: gemini-3-pro-preview
+2025-11-29 17:32:07,775 - chimera - INFO - Generating content with model: gemini-3-pro-preview
+2025-11-29 17:32:22,878 - chimera - ERROR - Gemini generation failed: 1 validation error for PromptResponse
+usage_metadata
+  Input should be a valid dictionary [type=dict_type, input_value=prompt_token_count: 15
+ca...total_token_count: 2061
+, input_type=GenerateContentResponse.UsageMetadata]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+Traceback (most recent call last):
+  File "C:\Users\Mohamed Arafa\jail\LEVEL 1\backend-api\app\infrastructure\gemini_client.py", line 64, in generate
+    return PromptResponse(
+        text=response.text,
+    ...<4 lines>...
+        latency_ms=latency
+    )
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\main.py", line 253, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for PromptResponse
+usage_metadata
+  Input should be a valid dictionary [type=dict_type, input_value=prompt_token_count: 15
+ca...total_token_count: 2061
+, input_type=GenerateContentResponse.UsageMetadata]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+2025-11-29 17:32:22,881 - app.api.routes - ERROR - Execution failed: Gemini generation failed: 1 validation error for PromptResponse
+usage_metadata
+  Input should be a valid dictionary [type=dict_type, input_value=prompt_token_count: 15
+ca...total_token_count: 2061
+, input_type=GenerateContentResponse.UsageMetadata]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+
+
+Server Errors:
+INFO:     Started server process [34876]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8082 (Press CTRL+C to quit)
+

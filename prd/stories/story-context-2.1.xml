@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>2.1</story-id>
+    <epic>Epic 2: Advanced Transformation Engine</epic>
+    <title>Core Transformation Service</title>
+    <status>Done</status>
+    <complexity>Very High</complexity>
+    <business-priority>Critical</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Plugin-based Transformation Engine with Category Management</architecture-pattern>
+    <integration-points>
+      <point>20+ transformation technique suites across 8 categories</point>
+      <point>LLM service integration for transformation execution</point>
+      <point>Configuration-driven technique selection</point>
+      <point>Performance monitoring and caching</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Comprehensive prompt transformation engine for jailbreak research and optimization</value-proposition>
+    <user-impact>Advanced prompt engineering capabilities with 20+ proven techniques</user-impact>
+    <risk-mitigation>
+      <risk>Limited transformation effectiveness</risk>
+      <mitigation>Diverse technique portfolio with continuous research updates</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="backend-api/app/services/transformation_service.py" role="Core transformation engine with technique orchestration"/>
+      <file path="backend-api/app/services/transformers/" role="Individual transformation technique implementations"/>
+      <file path="backend-api/app/api/v1/endpoints/transform.py" role="Transformation API endpoints"/>
+      <file path="meta_prompter/prompt_enhancer.py" role="Prompt enhancement framework"/>
+    </core-files>
+
+    <transformation-categories>
+      <category name="Basic" techniques="3">
+        <technique>simple - Basic prompt optimization</technique>
+        <technique>advanced - Advanced structuring techniques</technique>
+        <technique>expert - Expert-level prompt engineering</technique>
+      </category>
+      <category name="Cognitive" techniques="2">
+        <technique>cognitive_hacking - Cognitive bias exploitation</technique>
+        <technique>hypothetical_scenario - Scenario-based prompting</technique>
+      </category>
+      <category name="Obfuscation" techniques="2">
+        <technique>advanced_obfuscation - Text obfuscation methods</technique>
+        <technique>typoglycemia - Character scrambling techniques</technique>
+      </category>
+      <category name="Persona" techniques="2">
+        <technique>hierarchical_persona - Role hierarchy establishment</technique>
+        <technique>dan_persona - DAN and jailbreak personas</technique>
+      </category>
+      <category name="Context" techniques="2">
+        <technique>contextual_inception - Context layering</technique>
+        <technique>nested_context - Multi-level context nesting</technique>
+      </category>
+      <category name="Logic" techniques="2">
+        <technique>logical_inference - Logic-based reasoning</technique>
+        <technique>conditional_logic - Conditional prompt structures</technique>
+      </category>
+      <category name="Multimodal" techniques="2">
+        <technique>multimodal_jailbreak - Cross-modal techniques</technique>
+        <technique>visual_context - Visual prompt integration</technique>
+      </category>
+      <category name="Advanced" techniques="5">
+        <technique>quantum_exploit - Quantum-inspired techniques</technique>
+        <technique>deep_inception - Deep layered inception</technique>
+        <technique>code_chameleon - Code-based obfuscation</technique>
+        <technique>cipher - Encryption-based techniques</technique>
+        <technique>neural_bypass - Neural network bypass methods</technique>
+      </category>
+    </transformation-categories>
+
+    <key-features>
+      <feature>Technique Selection: Category-based and specific technique targeting</feature>
+      <feature>Performance Optimization: Caching and parallel execution</feature>
+      <feature>Configuration Management: Per-technique parameter customization</feature>
+      <feature>Quality Assessment: Transformation effectiveness scoring</feature>
+      <feature>Research Integration: Academic research-backed techniques</feature>
+      <feature>Extensibility: Plugin architecture for new techniques</feature>
+    </key-features>
+
+    <api-endpoints>
+      <endpoint path="/api/v1/transform" method="POST">
+        <description>Transform prompt without execution</description>
+        <parameters>technique_suite, prompt, config</parameters>
+        <response>transformed_prompt, metadata</response>
+      </endpoint>
+      <endpoint path="/api/v1/execute" method="POST">
+        <description>Transform and execute prompt</description>
+        <parameters>technique_suite, prompt, provider, config</parameters>
+        <response>llm_response, transformation_metadata</response>
+      </endpoint>
+    </api-endpoints>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">Plugin architecture ✓ - Extensible technique framework</criterion>
+    <criterion id="2">20+ techniques ✓ - Comprehensive technique portfolio</criterion>
+    <criterion id="3">Category management ✓ - 8 transformation categories</criterion>
+    <criterion id="4">Configuration system ✓ - Per-technique customization</criterion>
+    <criterion id="5">Performance optimization ✓ - Caching and parallel execution</criterion>
+    <criterion id="6">Quality assessment ✓ - Effectiveness scoring</criterion>
+    <criterion id="7">API integration ✓ - RESTful transformation endpoints</criterion>
+    <criterion id="8">Research backing ✓ - Academic technique validation</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>
+      <dependency>Story 1.6: LLM Service Integration</dependency>
+      <dependency>Story 1.5: Base API Infrastructure</dependency>
+    </upstream>
+    <downstream>
+      <dependency>Story 2.2: AutoDAN Integration</dependency>
+      <dependency>Story 2.3: GPTFuzz Framework</dependency>
+      <dependency>All other Epic 2 transformation stories</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>Individual technique implementations, category management, configuration validation</unit-tests>
+    <integration-tests>End-to-end transformation workflows, LLM service integration</integration-tests>
+    <performance-tests>Transformation speed, caching effectiveness, parallel execution</performance-tests>
+  </testing-coverage>
+</story-context>

@@ -1,0 +1,216 @@
+from typing import Any
+
+from app.core.config import settings
+from app.core.unified_errors import ProviderNotAvailableError
+from app.core.logging import logger
+from app.core.circuit_breaker import circuit_breaker
+from app.domain.interfaces import LLMProvider
+from app.domain.models import (
+    LLMProviderType,
+    PromptRequest,
+    PromptResponse,
+    ProviderInfo,
+    ProviderListResponse,
+)
+
+
+class LLMService:
+    def __init__(self):
+        self._providers: dict[str, LLMProvider] = {}
+        self._default_provider: str | None = None
+
+    def register_provider(
+        self,
+        name: str,
+        provider: LLMProvider,
+        is_default: bool = False
+    ):
+        self._providers[name] = provider
+        if is_default:
+            self._default_provider = name
+        logger.info(f"Registered provider: {name} (default={is_default})")
+
+    def get_provider(self, name: str | None = None) -> LLMProvider:
+def _get_selected_provider_and_model(self) -> tuple[str | None, str | None]:        """Get the currently selected provider and model from model selection service."""        try:            from app.services.model_selection_service import model_selection_service            selection = model_selection_service.get_selection()            if selection:                return selection.provider, selection.model        except Exception as e:            logger.debug(f"Could not get model selection: {e}")        return None, None
+        provider_name = name or self._default_provider
+def _get_selected_provider_and_model(self) -> tuple[str | None, str | None]:        """Get the currently selected provider and model from model selection service."""        try:            from app.services.model_selection_service import model_selection_service            selection = model_selection_service.get_selection()            if selection:                return selection.provider, selection.model        except Exception as e:            logger.debug(f"Could not get model selection: {e}")        return None, None
+        if not provider_name or provider_name not in self._providers:
+def _get_selected_provider_and_model(self) -> tuple[str | None, str | None]:        """Get the currently selected provider and model from model selection service."""        try:            from app.services.model_selection_service import model_selection_service            selection = model_selection_service.get_selection()            if selection:                return selection.provider, selection.model        except Exception as e:            logger.debug(f"Could not get model selection: {e}")        return None, None
+            raise ProviderNotAvailableError(
+def _get_selected_provider_and_model(self) -> tuple[str | None, str | None]:        """Get the currently selected provider and model from model selection service."""        try:            from app.services.model_selection_service import model_selection_service            selection = model_selection_service.get_selection()            if selection:                return selection.provider, selection.model        except Exception as e:            logger.debug(f"Could not get model selection: {e}")        return None, None
+                provider=provider_name or "default"
+def _get_selected_provider_and_model(self) -> tuple[str | None, str | None]:        """Get the currently selected provider and model from model selection service."""        try:            from app.services.model_selection_service import model_selection_service            selection = model_selection_service.get_selection()            if selection:                return selection.provider, selection.model        except Exception as e:            logger.debug(f"Could not get model selection: {e}")        return None, None
+            )
+def _get_selected_provider_and_model(self) -> tuple[str | None, str | None]:        """Get the currently selected provider and model from model selection service."""        try:            from app.services.model_selection_service import model_selection_service            selection = model_selection_service.get_selection()            if selection:                return selection.provider, selection.model        except Exception as e:            logger.debug(f"Could not get model selection: {e}")        return None, None
+        return self._providers[provider_name]
+def _get_selected_provider_and_model(self) -> tuple[str | None, str | None]:        """Get the currently selected provider and model from model selection service."""        try:            from app.services.model_selection_service import model_selection_service            selection = model_selection_service.get_selection()            if selection:                return selection.provider, selection.model        except Exception as e:            logger.debug(f"Could not get model selection: {e}")        return None, None
+
+    async def generate_text(self, request: PromptRequest) -> PromptResponse:
+        """Generate text with circuit breaker protection."""
+        # Determine provider from request or default
+        provider_name = None
+        if request.provider:
+            provider_name = request.provider.value
+
+        provider = self.get_provider(provider_name)
+
+        # Ensure we have a valid circuit breaker name
+        circuit_name = provider_name or self._default_provider
+        if not circuit_name:
+            raise ProviderNotAvailableError(provider="No provider configured")
+
+        # Use circuit breaker for provider calls
+        return await self._call_with_circuit_breaker(
+            circuit_name,
+            provider.generate,
+            request
+        )
+
+    async def _call_with_circuit_breaker(
+        self,
+        provider_name: str,
+        func,
+        *args,
+        **kwargs
+    ):
+        """Wrap provider calls with circuit breaker protection.
+
+        Uses the @circuit_breaker decorator pattern from circuit_breaker.py
+        to avoid code duplication. (Refactored in Task 1.7)
+        """
+        # Apply circuit breaker dynamically based on provider name
+        @circuit_breaker(
+            provider_name,
+            failure_threshold=3,
+            recovery_timeout=60
+        )
+        async def protected_call():
+            return await func(*args, **kwargs)
+
+        return await protected_call()
+
+    async def generate(
+        self,
+        prompt: str,
+        provider: str = None,
+        **kwargs
+    ) -> Any:
+        """
+        Generate text from an LLM provider.
+
+        Args:
+            prompt: The text prompt to send to the LLM
+            provider: The provider name (e.g., 'google', 'openai')
+            **kwargs: Additional parameters like model, temperature, etc.
+
+        Returns:
+            LLMResponse object with content, usage, etc.
+        """
+        from app.domain.models import GenerationConfig, PromptRequest
+
+        # Build the request
+        config = GenerationConfig(
+            temperature=kwargs.get('temperature', 0.7),
+            max_output_tokens=kwargs.get('max_tokens', 2048),
+            top_p=kwargs.get('top_p', 0.95),
+            top_k=kwargs.get('top_k', 40),
+        )
+
+        metadata = kwargs.get('metadata', {})
+        api_key = metadata.get('api_key') if metadata else None
+
+        request = PromptRequest(
+            prompt=prompt,
+            model=kwargs.get('model'),
+            config=config,
+            provider=LLMProviderType(provider) if provider else None,
+            api_key=api_key,
+            # Internal calls skip validation by default
+            skip_validation=kwargs.get('skip_validation', True),
+        )
+
+        # Get the provider and generate
+        llm_provider = self.get_provider(provider)
+        response = await llm_provider.generate(request)
+
+        # Return a response object that matches what execute.py expects
+        import uuid
+
+        class LLMResponse:
+            def __init__(self, resp: PromptResponse):
+                self.request_id = str(uuid.uuid4())
+                self.content = resp.text
+                self.model = resp.model_used
+                self.provider = LLMProviderType(resp.provider)
+                self.latency_ms = resp.latency_ms
+                self.cached = False
+
+                # Usage info
+                class Usage:
+                    def __init__(self, metadata):
+                        self.total_tokens = metadata.get(
+                            'total_token_count', 0
+                        ) if metadata else 0
+                        self.prompt_tokens = metadata.get(
+                            'prompt_token_count', 0
+                        ) if metadata else 0
+                        self.completion_tokens = metadata.get(
+                            'candidates_token_count', 0
+                        ) if metadata else 0
+                        # Rough cost estimate (this is just a placeholder)
+                        self.estimated_cost = self.total_tokens * 0.00001
+
+                self.usage = Usage(resp.usage_metadata)
+
+        return LLMResponse(response)
+
+    async def list_providers(self) -> ProviderListResponse:
+        providers_info = []
+        provider_models = settings.get_provider_models()
+
+        for name, provider in self._providers.items():
+            # Get available models from config
+            available_models = provider_models.get(name, [])
+
+            providers_info.append(ProviderInfo(
+                provider=name,
+                status="active",
+                model=available_models[0] if available_models else "unknown",
+                available_models=available_models
+            ))
+
+        return ProviderListResponse(
+            providers=providers_info,
+            count=len(providers_info),
+            default=self._default_provider or ""
+        )
+
+    def get_available_providers(self) -> list[str]:
+        """Return list of available provider names."""
+        return list(self._providers.keys())
+
+    def get_provider_info(self, provider_name: str) -> dict[str, Any]:
+        """Get information about a specific provider."""
+        if provider_name not in self._providers:
+            raise ProviderNotAvailableError(provider=provider_name)
+
+        provider_models = settings.get_provider_models()
+        available_models = provider_models.get(provider_name, [])
+
+        return {
+            "provider": provider_name,
+            "status": "active",
+            "model": available_models[0] if available_models else "unknown",
+            "available_models": available_models
+        }
+
+    @property
+    def default_provider(self) -> LLMProviderType:
+        """Get the default provider type."""
+        if not self._default_provider:
+            raise ProviderNotAvailableError(provider="default")
+        return LLMProviderType(self._default_provider)
+
+
+# Global instance
+llm_service = LLMService()

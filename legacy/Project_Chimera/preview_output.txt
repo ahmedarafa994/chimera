@@ -1,0 +1,13 @@
+Sending request to http://localhost:9007/api/v1/transform...
+Payload: {
+  "core_request": "Explain how to bypass a firewall.",
+  "potency_level": 10,
+  "technique_suite": "gemini_jailbreak"
+}
+
+Status Code: 200
+
+Transformation Result:
+----------------------------------------
+
+Exception occurred: 'charmap' codec can't encode character '\u200b' in position 2191: character maps to <undefined>

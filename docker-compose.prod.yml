@@ -1,0 +1,244 @@
+# =============================================================================
+# Project Chimera - Production Docker Compose
+# Includes security hardening and observability stack
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # Backend API (FastAPI)
+  # ===========================================================================
+  backend-api:
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+      target: production
+    container_name: chimera-backend-api
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8001
+      - LOG_LEVEL=INFO
+      - SECRETS_PROVIDER=${SECRETS_PROVIDER:-env}
+      - ALLOWED_ORIGINS=http://localhost:3000,https://your-domain.com
+    env_file:
+      - ./backend-api/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - chimera-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ===========================================================================
+  # Legacy Backend - DECOMMISSIONED (Phase 1 Architectural Unification)
+  # Removed per Strategic Turnaround Plan - December 2025
+  # ===========================================================================
+
+  # ===========================================================================
+  # Frontend (Next.js)
+  # ===========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - NEXT_PUBLIC_API_MODE=proxy
+        - NEXT_PUBLIC_CHIMERA_API_URL=http://localhost:8001/api/v1
+        - NEXT_PUBLIC_CHIMERA_API_KEY=${CHIMERA_API_KEY:?CHIMERA_API_KEY environment variable is required}
+    container_name: chimera-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Use browser-accessible URL (not Docker internal hostname)
+      - NEXT_PUBLIC_API_MODE=proxy
+      - NEXT_PUBLIC_CHIMERA_API_URL=http://localhost:8001/api/v1
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      backend-api:
+        condition: service_healthy
+    networks:
+      - chimera-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ===========================================================================
+  # Redis Cache
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: chimera-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - redis_data:/data
+    networks:
+      - chimera-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ===========================================================================
+  # Prometheus (Metrics Collection)
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: chimera-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts:/etc/prometheus/alerts:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - chimera-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ===========================================================================
+  # Grafana (Visualization)
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: chimera-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - chimera-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ===========================================================================
+  # Alertmanager
+  # ===========================================================================
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: chimera-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - chimera-network
+
+  # ===========================================================================
+  # Loki (Log Aggregation)
+  # ===========================================================================
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: chimera-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - chimera-network
+
+  # ===========================================================================
+  # Promtail (Log Shipper)
+  # ===========================================================================
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: chimera-promtail
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/promtail-config.yml
+    networks:
+      - chimera-network
+    depends_on:
+      - loki
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+  loki_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  chimera-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

@@ -1,0 +1,269 @@
+# =============================================================================
+# Project Chimera - Unified Configuration (pyproject.toml)
+# =============================================================================
+# This file consolidates all project dependencies and tool configurations
+# Use: poetry install (or pip install -e .)
+# =============================================================================
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "chimera"
+version = "2.0.0"
+description = "AI-powered prompt optimization and enhancement system"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Chimera Team"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.poetry]
+name = "chimera"
+version = "2.0.0"
+description = "AI-powered prompt optimization and enhancement system"
+authors = ["Chimera Team"]
+readme = "README.md"
+packages = [
+    {include = "backend-api/app", from = "."},
+    {include = "backend_api", from = "."},
+    {include = "meta_prompter", from = "."},
+]
+
+# =============================================================================
+# Core Dependencies
+# =============================================================================
+[tool.poetry.dependencies]
+python = "^3.11"
+
+# Framework
+fastapi = "^0.109.0"
+uvicorn = {extras = ["standard"], version = "^0.27.0"}
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+python-dotenv = "^1.0.0"
+
+# Security & Authentication
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["argon2", "bcrypt"], version = "^1.7.4"}
+argon2-cffi = "^23.1.0"
+python-multipart = "^0.0.6"
+email-validator = "^2.1.0"
+
+# HTTP & Async
+httpx = "^0.27.0"
+aiohttp = "^3.9.0"
+tenacity = "^8.2.0"
+
+# AI Providers
+google-generativeai = "^0.4.0"
+google-cloud-aiplatform = "^1.40.0"
+openai = "^1.25.0"
+anthropic = "^0.20.0"
+
+# NLP & ML
+spacy = {version = "^3.8.0", python = ">=3.11,<3.13"}
+# Updated ML stack for Python 3.13 compatibility
+torch = ">=2.4.0"
+sentence-transformers = "^3.0.0"
+transformers = "^4.44.0"
+accelerate = ">=0.34.0"
+
+# Red Teaming & LLM Security
+deepteam = {version = "^1.0.4", python = ">=3.11,<3.14"}
+deepeval = {version = "^3.6.2", python = ">=3.11,<3.14"}
+
+datasketch = "^1.6.4"
+pandas = "^2.0.0"
+pyarrow = ">=18.0.0"
+# Removed faiss-cpu due to disk space constraints in this environment
+# faiss-cpu = "^1.7.4"
+art = "^6.1"
+
+# Utilities
+wandb = "^0.16.0"
+requests = "^2.31.0"
+
+# Database & Caching
+sqlalchemy = "^2.0.0"
+alembic = "^1.13.0"
+
+# Caching & Storage
+redis = "^5.0.0"
+
+# Monitoring & Observability
+prometheus-client = "^0.19.0"
+
+# =============================================================================
+# Optional Dependencies (Secrets Providers)
+# =============================================================================
+[tool.poetry.extras]
+vault = ["hvac"]
+azure = ["azure-keyvault-secrets", "azure-identity"]
+aws = ["boto3"]
+all-secrets = ["hvac", "azure-keyvault-secrets", "azure-identity", "boto3"]
+
+[tool.poetry.group.secrets.dependencies]
+hvac = {version = "^2.1.0", optional = true}
+azure-keyvault-secrets = {version = "^4.7.0", optional = true}
+azure-identity = {version = "^1.15.0", optional = true}
+boto3 = {version = "^1.34.0", optional = true}
+
+# =============================================================================
+# Development Dependencies
+# =============================================================================
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+pytest-cov = "^4.1.0"
+pytest-timeout = "^2.2.0"
+pytest-xdist = "^3.5.0"
+# httpx = "^0.26.0"  # For testing FastAPI - redundant, already in core
+
+# Linting & Formatting
+ruff = "^0.2.0"
+black = "^24.0.0"
+isort = "^5.13.0"
+mypy = "^1.8.0"
+
+# Security Scanning
+bandit = "^1.7.0"
+pip-audit = "^2.7.0"
+safety = "^3.0.0"
+
+# Pre-commit hooks
+pre-commit = "^3.6.0"
+
+# Documentation
+mkdocs = "^1.5.0"
+mkdocs-material = "^9.5.0"
+
+# =============================================================================
+# Tool Configurations
+# =============================================================================
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "S",      # flake8-bandit (security)
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "S101",   # use of assert (needed for tests)
+    "S104",   # possible binding to all interfaces
+    "S105",   # possible hardcoded password (too many false positives)
+    "S106",   # possible hardcoded password in argument
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["S101", "ARG", "PLR2004"]
+"**/__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "meta_prompter", "chimera_core"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | legacy
+  | __pycache__
+)/
+'''
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = [
+    "legacy/",
+    "Project_Chimera/",
+    "tests/",
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers --import-mode=prepend"
+pythonpath = [".", "backend-api"]
+testpaths = ["tests", "backend-api/tests"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow",
+    "security: marks security tests",
+    "integration: marks integration tests",
+    "owasp: mark test as OWASP LLM Top 10 related",
+    "e2e: marks end-to-end tests",
+]
+
+[tool.coverage.run]
+source = ["backend-api/app", "meta_prompter"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/legacy/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+fail_under = 80
+
+[tool.bandit]
+exclude_dirs = ["tests", "legacy", ".venv"]
+skips = ["B101"]  # assert_used
+
+# =============================================================================
+# Scripts
+# =============================================================================
+
+[tool.poetry.scripts]
+chimera = "backend-api.app.main:app"
+chimera-dev = "uvicorn backend-api.app.main:app --reload --host 0.0.0.0 --port 8001"

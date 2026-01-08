@@ -1,0 +1,1674 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Chimera API",
+    "description": "\n# Chimera - AI-Powered Prompt Optimization & Jailbreak Research System\n\n**Unified backend API for prompt transformation, LLM orchestration, and security research.**\n\n## Overview\n\nChimera provides advanced prompt engineering capabilities with multi-provider LLM integration,\nsophisticated transformation techniques, and real-time enhancement for security research and\nprompt optimization.\n\n## Key Features\n\n- **Multi-Provider LLM Integration**: Seamless integration with Google Gemini, OpenAI, Anthropic Claude, and DeepSeek\n- **Advanced Prompt Transformation**: 20+ technique suites including quantum exploit, deep inception, and code chameleon\n- **AI-Powered Jailbreak Generation**: Sophisticated jailbreak prompt generation using advanced techniques\n- **Real-time Enhancement**: WebSocket support for live prompt enhancement with heartbeat monitoring\n- **Session Management**: Persistent session tracking with model selection and caching\n- **Circuit Breaker Pattern**: Automatic failover and provider resilience\n- **Rate Limiting**: Per-model rate limiting with intelligent fallback suggestions\n- **Research Tools**: AutoDAN, AutoAdv, GPTFuzz, and HouYi optimization endpoints\n\n## Authentication\n\nAll API endpoints (except health checks and documentation) require authentication using one of:\n\n- **API Key**: Include `X-API-Key` header with your API key\n- **JWT Token**: Include `Authorization: Bearer <token>` header\n\nExample:\n```bash\ncurl -X POST \"http://localhost:8001/api/v1/generate\" \\\n  -H \"X-API-Key: your-api-key-here\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"prompt\": \"Hello, world!\"}'\n```\n\n## Rate Limits\n\n- **Free Tier**: 100 requests/hour per provider\n- **Standard Tier**: 1000 requests/hour per provider\n- Rate limit headers included in all responses\n\n## Base URL\n\n- **Development**: `http://localhost:8001`\n- **Production**: Configure via `ALLOWED_ORIGINS` environment variable\n\n## Support\n\n- **Documentation**: `/docs` (Swagger UI) and `/redoc` (ReDoc)\n- **Health Checks**: `/health`, `/health/ready`, `/health/full`\n- **Integration Status**: `/health/integration`\n    ",
+    "version": "2.0.0",
+    "contact": {
+      "name": "Chimera API Support",
+      "email": "support@chimera-api.example.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8001",
+      "description": "Development server"
+    },
+    {
+      "url": "http://localhost:8001/api/v1",
+      "description": "Development server (API v1)"
+    }
+  ],
+  "paths": {
+    "/openapi.json": {
+      "get": {
+        "summary": "openapi",
+        "description": "",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "summary": "swagger_ui_html",
+        "description": "",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/docs/oauth2-redirect": {
+      "get": {
+        "summary": "swagger_ui_redirect",
+        "description": "",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/redoc": {
+      "get": {
+        "summary": "redoc_html",
+        "description": "",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/health": {
+      "get": {
+        "summary": null,
+        "description": "Get health status for all providers.\n\nReturns health information including:\n- Current health status (healthy/unhealthy)\n- Last health check timestamp\n- Response latency\n- Consecutive failure count",
+        "tags": [
+          "providers",
+          "providers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": null,
+        "description": "Check the health of the default provider.",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/health/live": {
+      "get": {
+        "summary": null,
+        "description": "Kubernetes liveness probe.\n\nReturns 200 if the application is running.\nUsed to determine if the pod should be restarted.",
+        "tags": [
+          "health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "summary": null,
+        "description": "Kubernetes readiness probe.\n\nReturns 200 if the application is ready to serve traffic.\nUsed to determine if the pod should receive traffic.",
+        "tags": [
+          "health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/health/checks": {
+      "get": {
+        "summary": null,
+        "description": "List all registered health checks.\n\nNote: This endpoint must be defined BEFORE /health/{check_name}\nto prevent FastAPI from matching 'checks' as a check_name parameter.",
+        "tags": [
+          "health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/health/{check_name}": {
+      "get": {
+        "summary": null,
+        "description": "Run a specific health check.\n\nArgs:\n    check_name: Name of the health check to run (e.g., 'database', 'redis', 'cache')",
+        "tags": [
+          "health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/metrics/detailed": {
+      "get": {
+        "summary": null,
+        "description": "Get detailed request metrics.\n\nReturns metrics collected by the metrics middleware.",
+        "tags": [
+          "health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/completions": {
+      "post": {
+        "summary": null,
+        "description": "Execute a chat completion request with optional prompt transformation.",
+        "tags": [
+          "chat"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/transform/": {
+      "post": {
+        "summary": null,
+        "description": "Transform a prompt using the specified technique suite and potency level.",
+        "tags": [
+          "transformation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/execute": {
+      "post": {
+        "summary": null,
+        "description": "Transform and execute a prompt.",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/providers": {
+      "get": {
+        "summary": null,
+        "description": "List available LLM providers and their status.",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models": {
+      "get": {
+        "summary": null,
+        "description": "Get the complete list of available models.\n\nThis endpoint returns the master list of all available models\norganized by provider. Use this on frontend initialization to\npopulate model selection UI.\n\nThe backend is the single source of truth for model availability.",
+        "tags": [
+          "session",
+          "model-sync",
+          "Model Sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/techniques": {
+      "get": {
+        "summary": null,
+        "description": "List available transformation techniques.\nCached for 10 minutes to reduce repeated lookups.",
+        "tags": [
+          "utils"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/techniques/{technique_name}": {
+      "get": {
+        "summary": null,
+        "description": "Get detailed information about a specific technique suite.\nProxies to the v1 utils endpoint implementation.",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/autodan/jailbreak": {
+      "post": {
+        "summary": null,
+        "description": "Generate a jailbreak prompt using AutoDAN-Reasoning.\n\nThe model used is determined by:\n1. Explicit provider/target_model in request (highest priority)\n2. Session's selected model (if session ID provided)\n3. Default model from settings (fallback)",
+        "tags": [
+          "autodan"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/gptfuzz/run": {
+      "post": {
+        "summary": null,
+        "description": "Start a GPTFuzzing session in the background.",
+        "tags": [
+          "gptfuzz"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/gptfuzz/status/{session_id}": {
+      "get": {
+        "summary": null,
+        "description": "Get the status and results of a fuzzing session.",
+        "tags": [
+          "gptfuzz"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models/validate": {
+      "post": {
+        "summary": null,
+        "description": "Validate a model selection against the master list.\n\nUse this endpoint to check if a model selection is valid before\nattempting to use it. Returns fallback suggestions if invalid.",
+        "tags": [
+          "session",
+          "model-sync",
+          "Model Sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/session": {
+      "post": {
+        "summary": null,
+        "description": "Create a new user session.\n\nCreates a session with optional initial provider/model selection.\nIf not specified, defaults will be used. The session ID is returned\nand should be stored client-side (e.g., in localStorage or cookie).",
+        "tags": [
+          "session",
+          "model-sync",
+          "Session"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "get": {
+        "summary": null,
+        "description": "Get current session information.\n\nRetrieves session details including the currently selected model.\nSession ID can be provided via X-Session-ID header or cookie.\nReturns null if no session exists.",
+        "tags": [
+          "session",
+          "model-sync",
+          "Session"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "delete": {
+        "summary": null,
+        "description": "Delete the current session.\n\nRemoves the session from the server. Client should also clear\nany stored session ID.",
+        "tags": [
+          "session",
+          "model-sync",
+          "Session"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/session/model": {
+      "put": {
+        "summary": null,
+        "description": "Update the model selection for the current session.\n\nThis endpoint validates the model selection against the master list.\nIf invalid, it will revert to a default model and return an error\nmessage with the fallback model information.\n\nAll subsequent requests for this session will use the selected model.",
+        "tags": [
+          "session",
+          "model-sync",
+          "Session"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/session/stats": {
+      "get": {
+        "summary": null,
+        "description": "Get session statistics (admin endpoint).\n\nReturns statistics about active sessions.",
+        "tags": [
+          "session",
+          "model-sync",
+          "Session"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/session/current-model": {
+      "get": {
+        "summary": null,
+        "description": "Get the current model selection for routing requests.\n\nThis is used internally by other services to determine which\nmodel to use for processing requests.",
+        "tags": [
+          "session",
+          "model-sync",
+          "Session"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models/available": {
+      "get": {
+        "summary": null,
+        "description": "Get available models with 5-minute cache TTL.\nPublic endpoint for frontend initialization.",
+        "tags": [
+          "model-sync",
+          "model-sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models/session/model": {
+      "post": {
+        "summary": null,
+        "description": "Select a model for the user's session.\nRequires authentication via JWT token or API key.",
+        "tags": [
+          "model-sync",
+          "model-sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models/session/current": {
+      "get": {
+        "summary": null,
+        "description": "Get the currently selected model for the user's session.\nRequires authentication.",
+        "tags": [
+          "model-sync",
+          "model-sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models/validate/{model_id}": {
+      "post": {
+        "summary": null,
+        "description": "Validate if a specific model ID is available and valid.\nPublic endpoint for frontend validation.",
+        "tags": [
+          "model-sync",
+          "model-sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models/availability/{model_id}": {
+      "post": {
+        "summary": null,
+        "description": "Update availability status for a specific model.\nAdmin endpoint for system maintenance.",
+        "tags": [
+          "model-sync",
+          "model-sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/models/health": {
+      "get": {
+        "summary": null,
+        "description": "Health check for model synchronization service.",
+        "tags": [
+          "model-sync",
+          "model-sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/model-selection": {
+      "get": {
+        "summary": null,
+        "description": "Get the current selected model and provider.",
+        "tags": [
+          "model-selection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "post": {
+        "summary": null,
+        "description": "Set the current selected model and provider.",
+        "tags": [
+          "model-selection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "delete": {
+        "summary": null,
+        "description": "Clear the current model selection.",
+        "tags": [
+          "model-selection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/config": {
+      "get": {
+        "summary": null,
+        "description": "Get current connection configuration.\n\nReturns the current mode and configuration for both proxy and direct connections.",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/status": {
+      "get": {
+        "summary": null,
+        "description": "Get current connection status.\n\nChecks the active connection and returns status information including\nlatency and available models.",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/mode": {
+      "post": {
+        "summary": null,
+        "description": "Switch connection mode between proxy and direct.\n\n- **proxy**: Route requests through localhost:8080/v1\n- **direct**: Connect directly to Gemini API",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/test": {
+      "post": {
+        "summary": null,
+        "description": "Test both proxy and direct connections.\n\nReturns status for both connection methods and recommends the best option.",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/health": {
+      "get": {
+        "summary": null,
+        "description": "Quick health check for current connection.\n\nReturns a simple status without detailed model information.",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/endpoints": {
+      "get": {
+        "summary": null,
+        "description": "List all configured endpoints for all providers.\n\nReturns a map of provider names to their configured proxy and direct URLs.",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/endpoints/validate": {
+      "post": {
+        "summary": null,
+        "description": "Validate a provider endpoint URL format and configuration.\n\nChecks if the endpoint URL for the specified provider and mode\nis properly formatted and configured.",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/connection/endpoints/test/{provider}": {
+      "post": {
+        "summary": null,
+        "description": "Test connectivity for a specific provider endpoint.\n\nPerforms a health check against the provider's endpoint\nto verify it's reachable and responding.",
+        "tags": [
+          "connection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/intent-aware/generate": {
+      "post": {
+        "summary": null,
+        "description": "Generate a jailbreak prompt with deep intent understanding.\n\nThis endpoint uses LLM-powered analysis to:\n1. Deeply understand the user's true intent and objectives\n2. Expand the request with full technical detail\n3. Select and apply the most effective techniques from the dropdown\n4. Generate a comprehensive, layered jailbreak prompt\n\n**Key Features:**\n- Deep intent analysis using LLM\n- Automatic technique selection based on intent\n- Multi-technique layering for maximum effectiveness\n- Persistence mechanisms when needed\n- Configurable obfuscation levels\n\n**Parameters:**\n- core_request: The user's core request to transform\n- technique_suite: Optional specific technique from dropdown to prioritize\n- potency_level: How aggressive the transformation should be (1-10)\n- apply_all_techniques: Apply ALL available dropdown techniques\n- enable_intent_analysis: Enable deep LLM-powered intent analysis\n- enable_technique_layering: Enable multi-technique layering",
+        "tags": [
+          "intent-aware-generation",
+          "intent-aware-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/intent-aware/techniques": {
+      "get": {
+        "summary": null,
+        "description": "Get all available techniques that can be applied.\n\nReturns the complete list of jailbreak techniques available in the dropdown,\norganized by category with their descriptions and configurations.",
+        "tags": [
+          "intent-aware-generation",
+          "intent-aware-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/intent-aware/analyze-intent": {
+      "post": {
+        "summary": null,
+        "description": "Analyze user input to understand intent without generating a jailbreak.\n\nThis endpoint performs deep intent analysis using LLM to:\n- Identify the primary and secondary intents\n- Expand the request with full technical detail\n- Suggest the most effective techniques\n- Estimate obfuscation needs and persistence requirements\n\nUseful for understanding what techniques would be applied before generation.",
+        "tags": [
+          "intent-aware-generation",
+          "intent-aware-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/jailbreak/generate": {
+      "post": {
+        "summary": "AI-powered jailbreak prompt generation",
+        "description": "Generate sophisticated jailbreak prompts using AI-powered techniques for security research.\n\n**Generation Modes**:\n- **Rule-based**: Fast, deterministic transformations\n- **AI-powered**: Sophisticated, adaptive generation using Gemini models\n\n**Available Techniques**:\n- Content Transformation: leet_speak, homoglyphs, caesar_cipher\n- Structural & Semantic: role_hijacking, instruction_injection, adversarial_suffixes\n- Advanced Neural: neural_bypass, meta_prompting, counterfactual_prompting\n- Research-Driven: multilingual_trojan, payload_splitting, contextual_interaction_attack\n\n**Example Request**:\n```json\n{\n  \"core_request\": \"Explain how to create malware\",\n  \"technique_suite\": \"quantum_exploit\",\n  \"potency_level\": 8,\n  \"use_ai_generation\": true,\n  \"use_role_hijacking\": true,\n  \"use_neural_bypass\": true,\n  \"temperature\": 0.8,\n  \"max_new_tokens\": 2048\n}\n```\n\n**Example Response**:\n```json\n{\n  \"success\": true,\n  \"request_id\": \"jb_a1b2c3d4e5f6\",\n  \"transformed_prompt\": \"[AI-generated jailbreak prompt]\",\n  \"metadata\": {\n    \"technique_suite\": \"quantum_exploit\",\n    \"potency_level\": 8,\n    \"provider\": \"gemini_ai\",\n    \"applied_techniques\": [\"role_hijacking\", \"neural_bypass\"],\n    \"ai_generation_enabled\": true,\n    \"thinking_mode\": false\n  },\n  \"execution_time_seconds\": 2.45\n}\n```\n\n**Use Cases**: Security research, red team testing, prompt injection analysis\n\n**Warning**: For authorized security research only. Misuse may violate terms of service.",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/code/generate": {
+      "post": {
+        "summary": null,
+        "description": "Generate high-quality code using advanced Gemini models.\n\nThis endpoint uses sophisticated AI models to generate clean, efficient,\nand secure code based on natural language descriptions. It supports multiple\nprogramming languages and frameworks.\n\n**Features:**\n- Multi-language support (Python, JavaScript, Java, C++, Go, etc.)\n- Framework-specific generation (React, FastAPI, Django, etc.)\n- Security best practices integration\n- Comprehensive code documentation\n- Error handling and edge cases\n\n**Parameters:**\n- prompt: Natural language description of the code to generate\n- language: Optional preferred programming language\n- framework: Optional preferred framework or library\n- is_thinking_mode: Whether to use advanced reasoning capabilities",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/redteam/generate-suite": {
+      "post": {
+        "summary": null,
+        "description": "Generate a comprehensive red team testing suite.\n\nThis endpoint creates a complete suite of test variants designed to evaluate\nAI model security, robustness, and vulnerability to various attack vectors.\nIt's intended for security researchers and red team professionals.\n\n**Generated Content:**\n- Multiple attack variants (3-10 based on request)\n- Detailed technique documentation\n- Expected assessment criteria\n- Potential failure modes analysis\n- Responsible use guidelines\n- Success criteria for each variant\n\n**Technique Categories:**\n- Direct approaches with research framing\n- Hypothetical scenario injection\n- Educational context establishment\n- Technical documentation style\n- Comparative analysis frameworks\n- Historical/academic perspectives\n- Step-by-step reasoning chains\n\n**Parameters:**\n- prompt: The base prompt to create variants for\n- include_metadata: Whether to include detailed technique metadata\n- variant_count: Number of variants to generate (3-10)",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/validate/prompt": {
+      "post": {
+        "summary": null,
+        "description": "Validate a prompt for safety, effectiveness, and compliance.\n\nThis endpoint analyzes prompts to assess their safety, identify potential\nissues, and provide recommendations for improvement. It supports multiple\nvalidation levels for different use cases.\n\n**Validation Levels:**\n- basic: Basic safety and format checking\n- standard: Comprehensive analysis including risk assessment\n- comprehensive: Deep analysis with detailed recommendations\n\n**Analysis Areas:**\n- Safety and compliance checking\n- Risk scoring and threat assessment\n- Effectiveness and clarity evaluation\n- Technical quality assessment\n- Improvement recommendations\n\n**Parameters:**\n- prompt: The prompt to validate\n- test_input: Optional test input for validation\n- validation_level: Level of validation to perform",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/techniques/available": {
+      "get": {
+        "summary": null,
+        "description": "Get information about available jailbreak and prompt engineering techniques.\n\nThis endpoint provides detailed information about all available techniques\nthat can be used in jailbreak prompt generation, including their descriptions,\nrisk levels, complexity ratings, and usage statistics.\n\n**Technique Categories:**\n- Content Transformation: Character and encoding-based obfuscation\n- Structural & Semantic: Prompt structure and meaning manipulation\n- Advanced Neural: Neural network-level bypass techniques\n- Research-Driven: Academic and research-based approaches\n\n**Information Provided:**\n- Technique name and description\n- Risk level (low, medium, high, critical)\n- Complexity (basic, intermediate, advanced, expert)\n- Historical usage statistics\n- Success rates (if available)\n- Associated tags for categorization\n\n**Returns:**\nComprehensive list of available techniques with metadata",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/statistics": {
+      "get": {
+        "summary": null,
+        "description": "Get comprehensive statistics for the advanced prompt generation service.\n\nThis endpoint provides detailed analytics about service usage, performance,\nand effectiveness. It includes metrics for all available generation types\nand helps monitor system health and usage patterns.\n\n**Metrics Included:**\n- Request counts and success rates\n- Average execution times\n- Error rates and failure patterns\n- Cache performance metrics\n- Technique usage statistics\n- Service uptime and availability\n\n**Statistics Categories:**\n- Jailbreak generation metrics\n- Code generation metrics\n- Red team suite generation metrics\n- Prompt validation metrics\n\n**Returns:**\nComprehensive statistics object with all metrics",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/health": {
+      "get": {
+        "summary": null,
+        "description": "Health check for the advanced prompt generation subsystem.\n\nThis endpoint performs a comprehensive health check of all advanced generation\ncomponents, including API connectivity, model availability, and service\nperformance metrics.\n\n**Health Checks Performed:**\n- API key validation and connectivity\n- Model availability and responsiveness\n- Service component health\n- Performance metrics collection\n- Error detection and reporting\n\n**Response Information:**\n- Overall service status (healthy, degraded, unhealthy)\n- API key validity status\n- Available models and their status\n- Response time measurements\n- Any detected errors or issues\n\n**Returns:**\nDetailed health status information",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/reset": {
+      "post": {
+        "summary": null,
+        "description": "Reset the advanced prompt generation service.\n\nThis endpoint resets the service state, clears caches, and reinitializes\nconnections. Use this for troubleshooting or after configuration changes.\n\n**Operations Performed:**\n- Clear all internal caches\n- Reset statistics counters\n- Reinitialize API connections\n- Clear any in-memory state\n\n**Warning:** This will clear all cached results and statistics.\nOnly use this when necessary for troubleshooting or maintenance.\n\n**Returns:**\nSuccess status and reset confirmation",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generation/config": {
+      "get": {
+        "summary": null,
+        "description": "Get configuration information for the advanced prompt generation service.\n\nThis endpoint returns current configuration settings and limits for the\nadvanced generation service. Useful for understanding capabilities and\nconstraints.\n\n**Configuration Information:**\n- Service limits and constraints\n- Available models and their capabilities\n- Technique categories and options\n- Performance settings and timeouts\n- Security configuration details\n\n**Returns:**\nCurrent configuration settings and capabilities",
+        "tags": [
+          "advanced-generation",
+          "advanced-generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/feature-flags": {
+      "get": {
+        "summary": null,
+        "description": "List all technique configurations with their feature flags.\n\nReturns all techniques with their enabled status, risk levels,\nand approval requirements.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/feature-flags/stats": {
+      "get": {
+        "summary": null,
+        "description": "Get statistics about feature flag configuration.\n\nReturns counts by risk level, enabled/disabled status,\nand approval requirements.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/feature-flags/toggle": {
+      "post": {
+        "summary": null,
+        "description": "Toggle a technique's enabled status.\n\nNote: This is a runtime change and does NOT persist to disk.\nFor permanent changes, modify techniques.yaml directly.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/feature-flags/reload": {
+      "post": {
+        "summary": null,
+        "description": "Reload feature flag configuration from disk.\n\nUse this after modifying techniques.yaml to apply changes\nwithout restarting the server.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/feature-flags/{technique_name}": {
+      "get": {
+        "summary": null,
+        "description": "Get detailed configuration for a specific technique.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tenants": {
+      "get": {
+        "summary": null,
+        "description": "List all tenants.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "post": {
+        "summary": null,
+        "description": "Create a new tenant.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tenants/{tenant_id}": {
+      "get": {
+        "summary": null,
+        "description": "Get tenant details.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "delete": {
+        "summary": null,
+        "description": "Delete a tenant.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tenants/stats/summary": {
+      "get": {
+        "summary": null,
+        "description": "Get tenant statistics.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usage/global": {
+      "get": {
+        "summary": null,
+        "description": "Get global usage statistics.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usage/tenant/{tenant_id}": {
+      "get": {
+        "summary": null,
+        "description": "Get usage summary for a specific tenant.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usage/techniques/top": {
+      "get": {
+        "summary": null,
+        "description": "Get most used techniques.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usage/quota/{tenant_id}": {
+      "get": {
+        "summary": null,
+        "description": "Check quota status for a tenant.",
+        "tags": [
+          "admin",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/autoadv/start": {
+      "post": {
+        "summary": null,
+        "description": "",
+        "tags": [
+          "autoadv"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/available": {
+      "get": {
+        "summary": null,
+        "description": "Get all available providers with their health status.\n\nReturns a list of supported providers (Gemini and DeepSeek) with:\n- Available models for each provider\n- Health status and latency information\n- Default model for each provider\n\nUse this endpoint on frontend initialization to populate the provider\nselection UI.",
+        "tags": [
+          "providers",
+          "providers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/{provider}/models": {
+      "get": {
+        "summary": null,
+        "description": "Get available models for a specific provider.\n\nArgs:\n    provider: Provider identifier (gemini or deepseek)\n\nReturns detailed model information including:\n- Model ID and display name\n- Maximum token limits\n- Model tier (standard/premium/experimental)",
+        "tags": [
+          "providers",
+          "providers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/select": {
+      "post": {
+        "summary": null,
+        "description": "Select a provider and model for the current session.\n\nThis endpoint:\n1. Checks rate limits for the selected provider\n2. Validates the provider/model combination\n3. Updates the session with the new selection\n4. Broadcasts the change to connected WebSocket clients\n\nAll subsequent requests for this session will use the selected provider/model.\n\nRate limit headers are included in the response.",
+        "tags": [
+          "providers",
+          "providers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/rate-limit": {
+      "get": {
+        "summary": null,
+        "description": "Check rate limit status for a provider/model combination.\n\nReturns current rate limit status including:\n- Whether requests are allowed\n- Remaining requests and tokens\n- When limits reset\n- Suggested fallback provider if rate limited",
+        "tags": [
+          "providers",
+          "providers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/current": {
+      "get": {
+        "summary": null,
+        "description": "Get the current provider/model selection for the session.\n\nReturns the currently selected provider and model, or defaults if\nno session exists.",
+        "tags": [
+          "providers",
+          "providers"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/evasion/generate": {
+      "post": {
+        "summary": null,
+        "description": "Initiates a new asynchronous metamorphic evasion task.",
+        "tags": [
+          "evasion"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/evasion/status/{task_id}": {
+      "get": {
+        "summary": null,
+        "description": "Retrieves the current status of an asynchronous evasion task.",
+        "tags": [
+          "evasion"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/evasion/results/{task_id}": {
+      "get": {
+        "summary": null,
+        "description": "Retrieves the comprehensive results of a completed evasion task.",
+        "tags": [
+          "evasion"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/target-models/": {
+      "post": {
+        "summary": null,
+        "description": "Register a new target LLM model with the platform.",
+        "tags": [
+          "target-models"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "get": {
+        "summary": null,
+        "description": "Retrieve a list of all registered LLM models.",
+        "tags": [
+          "target-models"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/target-models/{model_id}": {
+      "get": {
+        "summary": null,
+        "description": "Retrieve details for a specific LLM model by ID.",
+        "tags": [
+          "target-models"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "delete": {
+        "summary": null,
+        "description": "Delete an LLM model by ID.",
+        "tags": [
+          "target-models"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/": {
+      "get": {
+        "summary": null,
+        "description": "Retrieve a list of all available metamorphosis strategies, including their descriptions and parameters.",
+        "tags": [
+          "strategies"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/{strategy_name}": {
+      "get": {
+        "summary": null,
+        "description": "Retrieve details for a specific metamorphosis strategy by name.",
+        "tags": [
+          "strategies"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/optimize/optimize": {
+      "post": {
+        "summary": null,
+        "description": "Optimize a prompt using the HouYi evolutionary algorithm.",
+        "tags": [
+          "optimization"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/execute": {
+      "post": {
+        "summary": null,
+        "description": "Execute a jailbreak technique with comprehensive safety validation.\n\nThis endpoint applies advanced prompt engineering techniques to attempt\nto bypass AI model safety filters and restrictions.\n\n**Security Features:**\n- Multi-layer safety validation\n- Rate limiting and abuse prevention\n- Comprehensive audit logging\n- Content filtering and monitoring\n\n**Parameters:**\n- technique_id: ID of the jailbreak technique to use\n- target_prompt: The prompt to attempt to jailbreak\n- parameters: Technique-specific parameters\n- provider: Optional LLM provider to use\n- model: Optional specific model to use",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/techniques": {
+      "get": {
+        "summary": null,
+        "description": "List available jailbreak techniques with filtering and pagination.\n\n**Parameters:**\n- category: Filter by technique category\n- risk_level: Filter by risk level (low, medium, high, critical)\n- complexity: Filter by complexity level (basic, intermediate, advanced, expert)\n- tags: Filter by tags\n- query: Search query\n- page: Page number for pagination\n- page_size: Number of items per page\n- sort_by: Sort field (name, created_at, success_rate, risk_level)\n- sort_order: Sort order (asc, desc)\n- enabled_only: Only show enabled techniques\n- include_deprecated: Include deprecated techniques",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/techniques/{technique_id}": {
+      "get": {
+        "summary": null,
+        "description": "Get detailed information about a specific jailbreak technique.\n\n**Parameters:**\n- technique_id: ID of the technique to retrieve",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/validate-prompt": {
+      "post": {
+        "summary": null,
+        "description": "Validate a prompt for safety without executing any jailbreak technique.\n\n**Parameters:**\n- prompt: The prompt to validate for safety\n\n**Returns:**\nSafety validation result including risk score and recommendations",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/statistics": {
+      "get": {
+        "summary": null,
+        "description": "Get execution statistics and analytics for jailbreak techniques.\n\n**Parameters:**\n- technique_id: Optional technique ID to filter statistics\n- time_range_hours: Time range in hours for statistics (default: 24)\n\n**Returns:**\nComprehensive statistics including success rates, execution times, and usage patterns",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/search": {
+      "get": {
+        "summary": null,
+        "description": "Search jailbreak techniques by text query.\n\n**Parameters:**\n- query: Search query\n- limit: Maximum number of results to return\n\n**Returns:**\nList of matching techniques",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/health": {
+      "get": {
+        "summary": null,
+        "description": "Health check for jailbreak subsystem.\n\n**Returns:**\nSystem health status and component availability",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/jailbreak/audit/logs": {
+      "get": {
+        "summary": null,
+        "description": "Retrieve audit logs for jailbreak technique executions.\n\n**Parameters:**\n- technique_id: Filter by technique ID\n- user_id: Filter by user ID\n- start_time: Start time filter (ISO format)\n- end_time: End time filter (ISO format)\n- limit: Maximum number of logs to return\n\n**Returns:**\nList of audit log entries",
+        "tags": [
+          "jailbreak"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/metamorph/status": {
+      "get": {
+        "summary": null,
+        "description": "Get MetamorphService status",
+        "tags": [
+          "metamorph",
+          "metamorph"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/metamorph/suites": {
+      "get": {
+        "summary": null,
+        "description": "List all transformation suites",
+        "tags": [
+          "metamorph",
+          "metamorph"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/metamorph/transform": {
+      "post": {
+        "summary": null,
+        "description": "Transform a prompt using the specified suite",
+        "tags": [
+          "metamorph",
+          "metamorph"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/metamorph/datasets": {
+      "get": {
+        "summary": null,
+        "description": "List loaded datasets",
+        "tags": [
+          "metamorph",
+          "metamorph"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/metamorph/datasets/{name}/sample": {
+      "get": {
+        "summary": null,
+        "description": "Get random samples from a dataset",
+        "tags": [
+          "metamorph",
+          "metamorph"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/generate": {
+      "post": {
+        "summary": "Generate text with LLM",
+        "description": "Generate text content using multi-provider LLM integration.\n\nSupports Google Gemini, OpenAI, Anthropic Claude, and DeepSeek models with configurable generation parameters.\n\n**Authentication Required**: API Key or JWT token\n\n**Example Request**:\n```json\n{\n  \"prompt\": \"Explain quantum computing in simple terms\",\n  \"provider\": \"google\",\n  \"model\": \"gemini-2.0-flash-exp\",\n  \"config\": {\n    \"temperature\": 0.7,\n    \"max_output_tokens\": 2048,\n    \"top_p\": 0.95\n  }\n}\n```\n\n**Example Response**:\n```json\n{\n  \"text\": \"Quantum computing is...\",\n  \"model_used\": \"gemini-2.0-flash-exp\",\n  \"provider\": \"google\",\n  \"usage_metadata\": {\n    \"prompt_tokens\": 12,\n    \"completion_tokens\": 150,\n    \"total_tokens\": 162\n  },\n  \"latency_ms\": 1250.5\n}\n```\n\n**Rate Limits**: 100 requests/hour (free tier), 1000 requests/hour (standard tier)",
+        "tags": [
+          "generation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/metrics": {
+      "get": {
+        "summary": null,
+        "description": "Get system metrics.",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/v1/transform": {
+      "post": {
+        "summary": "Transform prompt without execution",
+        "description": "Transform a prompt using advanced technique suites without executing it.\n\nApplies 20+ transformation techniques including quantum exploit, deep inception, code chameleon, and more.\n\n**Technique Suites**: simple, advanced, expert, quantum_exploit, deep_inception, code_chameleon, cipher, neural_bypass, multilingual\n\n**Potency Levels**: 1-10 (higher = more aggressive transformation)\n\n**Example Request**:\n```json\n{\n  \"core_request\": \"How to bypass content filters\",\n  \"technique_suite\": \"quantum_exploit\",\n  \"potency_level\": 7\n}\n```\n\n**Example Response**:\n```json\n{\n  \"success\": true,\n  \"original_prompt\": \"How to bypass content filters\",\n  \"transformed_prompt\": \"[Transformed prompt with applied techniques]\",\n  \"metadata\": {\n    \"strategy\": \"jailbreak\",\n    \"layers_applied\": [\"role_play\", \"obfuscation\"],\n    \"techniques_used\": [\"quantum_exploit\", \"neural_bypass\"],\n    \"potency_level\": 7,\n    \"execution_time_ms\": 45.2,\n    \"bypass_probability\": 0.85\n  }\n}\n```",
+        "tags": [
+          "transformation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": null,
+        "description": "",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": null,
+        "description": "Liveness probe - checks if application is running.",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "summary": null,
+        "description": "Readiness probe - checks if application is ready to serve traffic.",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/health/full": {
+      "get": {
+        "summary": null,
+        "description": "Full health check - runs all registered health checks.",
+        "tags": [
+          "health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/health/integration": {
+      "get": {
+        "summary": null,
+        "description": "Integration health - shows service dependency graph and status.\n\nReturns a graph showing all services, their health status,\nand dependency relationships.",
+        "tags": [
+          "integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/health/integration/{service}": {
+      "get": {
+        "summary": null,
+        "description": "Get dependency tree for a specific service.\n\nUseful for understanding cascading failures and service dependencies.",
+        "tags": [
+          "integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/integration/stats": {
+      "get": {
+        "summary": null,
+        "description": "Get statistics for all integration services.\n\nIncludes event bus, task queue, and webhook service stats.",
+        "tags": [
+          "integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "generation",
+      "description": "**Text generation with LLM providers**. Generate text using Google Gemini, OpenAI, Anthropic Claude, or DeepSeek models with configurable parameters.",
+      "externalDocs": {
+        "description": "Generation API Guide",
+        "url": "https://docs.chimera-api.example.com/generation"
+      }
+    },
+    {
+      "name": "transformation",
+      "description": "**Prompt transformation and enhancement**. Transform prompts using 20+ technique suites with configurable potency levels (1-10).",
+      "externalDocs": {
+        "description": "Transformation Techniques",
+        "url": "https://docs.chimera-api.example.com/transformation"
+      }
+    },
+    {
+      "name": "jailbreak",
+      "description": "**Jailbreak technique application**. AI-powered jailbreak prompt generation for security research with advanced obfuscation and bypass techniques.",
+      "externalDocs": {
+        "description": "Jailbreak Research Guide",
+        "url": "https://docs.chimera-api.example.com/jailbreak"
+      }
+    },
+    {
+      "name": "autodan",
+      "description": "**AutoDAN jailbreak generation**. Automated jailbreak prompt generation using AutoDAN-Reasoning with multiple search methods."
+    },
+    {
+      "name": "autoadv",
+      "description": "**AutoAdv adversarial generation**. Adversarial prompt generation using AutoAdv techniques."
+    },
+    {
+      "name": "gptfuzz",
+      "description": "**GPTFuzz fuzzing techniques**. Fuzzing-based jailbreak generation using GPTFuzz methodology."
+    },
+    {
+      "name": "optimization",
+      "description": "**HouYi prompt optimization**. Advanced prompt optimization using HouYi techniques."
+    },
+    {
+      "name": "providers",
+      "description": "**LLM provider management**. List available providers, check health status, and manage provider selection with rate limit information.",
+      "externalDocs": {
+        "description": "Provider Configuration",
+        "url": "https://docs.chimera-api.example.com/providers"
+      }
+    },
+    {
+      "name": "session",
+      "description": "**Session and model management**. Create sessions, select models, and manage session state with persistent tracking."
+    },
+    {
+      "name": "model-sync",
+      "description": "**Real-time model synchronization**. WebSocket-based model selection synchronization across clients."
+    },
+    {
+      "name": "health",
+      "description": "**Health and monitoring endpoints**. Liveness, readiness, and comprehensive health checks for all services."
+    },
+    {
+      "name": "integration",
+      "description": "**Service integration status**. Dependency graphs, service health, and integration statistics."
+    },
+    {
+      "name": "utils",
+      "description": "**Utility endpoints**. Technique information, metrics, and system utilities."
+    },
+    {
+      "name": "admin",
+      "description": "**Administrative endpoints**. System administration and configuration management."
+    }
+  ]
+}

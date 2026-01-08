@@ -1,0 +1,38 @@
+﻿pytest : ERROR: 
+usage: pytest 
+[options] 
+[file_or_dir] 
+[file_or_dir] [...]
+At line:1 char:17
++ cd backend-api; 
+pytest 
+tests/test_api.py -v 
+--tb=short 2>&1 | 
+Out-Fil ...
++                 ~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (ERROR:    
+ usage: p...e_or_    
+dir] [...]:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+pytest: error: 
+unrecognized 
+arguments: --cov=app 
+--cov-report=term-mis
+sing --cov-report=htm
+l:coverage_html 
+--cov-fail-under=60
+  inifile: D:\chimera
+\backend-api\pytest.i
+ni
+  rootdir: D:\chimera
+\backend-api
+

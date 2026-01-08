@@ -1,0 +1,140 @@
+# Security Alert Rules for Project Chimera
+groups:
+  - name: security_alerts
+    interval: 30s
+    rules:
+      # High rate of authentication failures
+      - alert: HighAuthenticationFailureRate
+        expr: |
+          sum(rate(http_requests_total{status="401"}[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High authentication failure rate detected"
+          description: "More than 10 authentication failures per second over the last 5 minutes"
+          runbook: "Check for brute force attacks, review failed auth logs"
+
+      # Potential brute force attack
+      - alert: PotentialBruteForceAttack
+        expr: |
+          sum by (client_ip) (rate(http_requests_total{status="401"}[1m])) > 5
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Potential brute force attack from {{ $labels.client_ip }}"
+          description: "High rate of authentication failures from a single IP"
+          runbook: "Block IP, investigate source, review auth logs"
+
+      # Unusual API access pattern
+      - alert: UnusualAPIAccessPattern
+        expr: |
+          sum(rate(http_requests_total[5m])) > 100
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Unusual API access pattern detected"
+          description: "API request rate significantly higher than normal"
+          runbook: "Review access logs, check for DDoS or scraping"
+
+      # Rate limiting triggered frequently
+      - alert: RateLimitingTriggered
+        expr: |
+          sum(rate(http_requests_total{status="429"}[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Rate limiting being triggered frequently"
+          description: "High number of rate-limited requests"
+          runbook: "Review client behavior, adjust limits if needed"
+
+  - name: application_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) /
+          sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "High error rate detected"
+          description: "More than 5% of requests are failing with 5xx errors"
+          runbook: "Check application logs, review recent deployments"
+
+      # Service unavailable
+      - alert: ServiceUnavailable
+        expr: up{job="chimera-backend-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Backend API service is unavailable"
+          description: "The backend API has been down for more than 1 minute"
+          runbook: "Check container status, restart if needed"
+
+      # High response latency
+      - alert: HighResponseLatency
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High response latency detected"
+          description: "95th percentile response time is above 2 seconds"
+          runbook: "Check for slow queries, resource contention"
+
+      # Memory usage high
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_usage_bytes{name=~"chimera.*"} /
+          container_spec_memory_limit_bytes{name=~"chimera.*"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High memory usage on {{ $labels.name }}"
+          description: "Container memory usage is above 85%"
+          runbook: "Check for memory leaks, consider scaling"
+
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # Redis connection issues
+      - alert: RedisConnectionIssues
+        expr: redis_connected_clients < 1
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Redis connection issues"
+          description: "No clients connected to Redis"
+          runbook: "Check Redis service, network connectivity"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Disk space low on {{ $labels.device }}"
+          description: "Less than 15% disk space remaining"
+          runbook: "Clean up logs, old data, or expand storage"

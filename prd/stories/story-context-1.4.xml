@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>1.4</story-id>
+    <epic>Epic 1: Multi-Provider Foundation</epic>
+    <title>API Security Framework</title>
+    <status>Done</status>
+    <complexity>High</complexity>
+    <business-priority>Critical</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Multi-layer Security with JWT and API Key Authentication</architecture-pattern>
+    <integration-points>
+      <point>FastAPI middleware stack</point>
+      <point>JWT token validation and refresh</point>
+      <point>API key authentication via X-API-Key header</point>
+      <point>Rate limiting and CORS protection</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Enterprise-grade API security with multiple authentication methods</value-proposition>
+    <user-impact>Secure access control preventing unauthorized usage and API abuse</user-impact>
+    <risk-mitigation>
+      <risk>Unauthorized API access</risk>
+      <mitigation>Multi-layer authentication with rate limiting</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="backend-api/app/middleware/auth.py" role="Authentication middleware with JWT and API key support"/>
+      <file path="backend-api/app/core/security.py" role="Security utilities and token management"/>
+      <file path="backend-api/app/core/rate_limit.py" role="Rate limiting implementation"/>
+      <file path="backend-api/app/core/middleware.py" role="Security headers and CORS middleware"/>
+    </core-files>
+
+    <security-features>
+      <feature>JWT Authentication: Token-based authentication with refresh capability</feature>
+      <feature>API Key Authentication: Header-based API key validation</feature>
+      <feature>Rate Limiting: Request throttling per client/endpoint</feature>
+      <feature>CORS Protection: Cross-origin request security</feature>
+      <feature>Security Headers: XSS, clickjacking, and CSP protection</feature>
+      <feature>Input Validation: Comprehensive request validation</feature>
+    </security-features>
+
+    <authentication-methods>
+      <method name="JWT Tokens">
+        <description>Bearer token authentication with configurable expiration</description>
+        <header>Authorization: Bearer [token]</header>
+        <use-case>Web application and mobile app authentication</use-case>
+      </method>
+      <method name="API Keys">
+        <description>Static API key authentication for service-to-service calls</description>
+        <header>X-API-Key: [api-key]</header>
+        <use-case>External integrations and automated systems</use-case>
+      </method>
+    </authentication-methods>
+
+    <security-headers>
+      <header name="X-Content-Type-Options">nosniff</header>
+      <header name="X-Frame-Options">DENY</header>
+      <header name="X-XSS-Protection">1; mode=block</header>
+      <header name="Strict-Transport-Security">max-age=31536000; includeSubDomains</header>
+      <header name="Content-Security-Policy">default-src 'self'</header>
+    </security-headers>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">JWT authentication ✓ - Token validation and refresh</criterion>
+    <criterion id="2">API key authentication ✓ - X-API-Key header validation</criterion>
+    <criterion id="3">Rate limiting ✓ - Request throttling per client</criterion>
+    <criterion id="4">Security headers ✓ - XSS, clickjacking, CSP protection</criterion>
+    <criterion id="5">CORS protection ✓ - Cross-origin request handling</criterion>
+    <criterion id="6">Input validation ✓ - Request body and parameter validation</criterion>
+    <criterion id="7">Error handling ✓ - Secure error responses</criterion>
+    <criterion id="8">Audit logging ✓ - Security event logging</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>
+      <dependency>Story 1.1: Provider Configuration Management</dependency>
+      <dependency>Story 1.3: Health Monitoring</dependency>
+    </upstream>
+    <downstream>
+      <dependency>Story 1.5: Base API Infrastructure</dependency>
+      <dependency>All API endpoint stories</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>Authentication middleware, token validation, rate limiting logic</unit-tests>
+    <integration-tests>End-to-end authentication flows, security header validation</integration-tests>
+    <security-tests>OWASP security validation, penetration testing scenarios</security-tests>
+  </testing-coverage>
+</story-context>

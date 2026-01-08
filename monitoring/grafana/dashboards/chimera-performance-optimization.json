@@ -1,0 +1,521 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Chimera Performance Optimization (PERF-008)",
+    "tags": ["chimera", "performance", "optimization", "cache", "perf-008"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Multi-Level Cache Overview",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Cache Hit Rates by Level",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 1},
+        "targets": [
+          {
+            "expr": "chimera_transformation_cache_hit_rate",
+            "legendFormat": "L1 Hit Rate"
+          },
+          {
+            "expr": "rate(chimera_cache_l2_hits_total[5m]) / rate(chimera_cache_l2_requests_total[5m])",
+            "legendFormat": "L2 Hit Rate"
+          },
+          {
+            "expr": "chimera_cache_multi_level_hit_rate",
+            "legendFormat": "Combined Hit Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 0.5},
+                {"color": "green", "value": 0.7}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Cache Memory Utilization",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 1},
+        "targets": [
+          {
+            "expr": "chimera_transformation_cache_utilization",
+            "legendFormat": "L1 Memory"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 0.7},
+                {"color": "red", "value": 0.9}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Cache Health Status",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 1},
+        "targets": [
+          {
+            "expr": "chimera_transformation_cache_health",
+            "legendFormat": "L1 Health"
+          },
+          {
+            "expr": "chimera_cache_l2_healthy",
+            "legendFormat": "L2 Health"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "0": {"text": "UNHEALTHY", "color": "red"},
+                  "1": {"text": "HEALTHY", "color": "green"}
+                },
+                "type": "value"
+              }
+            ],
+            "color": {"mode": "thresholds"}
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "L2 Cache Performance",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9},
+        "targets": [
+          {
+            "expr": "rate(chimera_cache_l2_misses_total[5m]) / rate(chimera_cache_l2_requests_total[5m])",
+            "legendFormat": "L2 Miss Rate"
+          },
+          {
+            "expr": "rate(chimera_cache_l2_write_failures_total[5m])",
+            "legendFormat": "L2 Write Failures/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Connection Pool Overview",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 17}
+      },
+      {
+        "id": 7,
+        "title": "Connection Pool Utilization",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+        "targets": [
+          {
+            "expr": "chimera_connection_pool_utilization",
+            "legendFormat": "{{provider}} Utilization"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 0.7},
+                {"color": "red", "value": 0.9}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Connection Pool Wait Times",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+        "targets": [
+          {
+            "expr": "chimera_connection_pool_avg_wait_ms",
+            "legendFormat": "{{provider}} Avg Wait"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 50},
+                {"color": "red", "value": 100}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Stale Connections",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 26},
+        "targets": [
+          {
+            "expr": "chimera_connection_pool_stale_connections",
+            "legendFormat": "{{provider}} Stale"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 5},
+                {"color": "red", "value": 10}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Connection Pool Failure Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 26},
+        "targets": [
+          {
+            "expr": "rate(chimera_connection_pool_failed_requests_total[5m]) / rate(chimera_connection_pool_total_requests_total[5m])",
+            "legendFormat": "{{provider}} Failure Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Gradient Optimizer Overview",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32}
+      },
+      {
+        "id": 12,
+        "title": "Gradient Optimizer Duration",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
+        "targets": [
+          {
+            "expr": "chimera_gradient_optimizer_avg_duration_ms",
+            "legendFormat": "Avg Duration"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(chimera_gradient_optimizer_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "P95 Duration"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 300},
+                {"color": "red", "value": 500}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 13,
+        "title": "Worker Pool Queue Backlog",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 33},
+        "targets": [
+          {
+            "expr": "chimera_worker_queue_size",
+            "legendFormat": "{{pool_name}} Queue Size"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 50},
+                {"color": "red", "value": 100}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 14,
+        "title": "Circuit Breaker Overview",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 41}
+      },
+      {
+        "id": 15,
+        "title": "Circuit Breaker State",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 42},
+        "targets": [
+          {
+            "expr": "chimera_circuit_breaker_state{state=\"open\"}",
+            "legendFormat": "{{name}}"
+          },
+          {
+            "expr": "chimera_circuit_breaker_state{state=\"half_open\"}",
+            "legendFormat": "{{name}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "0": {"text": "CLOSED", "color": "green"},
+                  "1": {"text": "OPEN", "color": "red"},
+                  "2": {"text": "HALF_OPEN", "color": "yellow"}
+                },
+                "type": "value"
+              }
+            ],
+            "color": {"mode": "thresholds"}
+          }
+        }
+      },
+      {
+        "id": 16,
+        "title": "Circuit Breaker Trip Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 42},
+        "targets": [
+          {
+            "expr": "rate(chimera_circuit_breaker_trips_total[5m])",
+            "legendFormat": "{{name}} Trip Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 0.05},
+                {"color": "red", "value": 0.1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 17,
+        "title": "Compression Effectiveness",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 48},
+        "targets": [
+          {
+            "expr": "chimera_compression_ratio",
+            "legendFormat": "Compression Ratio"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 0.3},
+                {"color": "green", "value": 0.5}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 18,
+        "title": "SLA Overview",
+        "type": "row",
+        "collapsed": false,
+        "gridPos": {"h": 1, "w": 24, "x": 0, "y": 54}
+      },
+      {
+        "id": 19,
+        "title": "Generation API SLA (P95 < 10s)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 55},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{endpoint=\"/api/v1/generate\"}[5m]))",
+            "legendFormat": "P95 Latency"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "mode": "line",
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 7},
+                {"color": "red", "value": 10}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 20,
+        "title": "Transform API SLA (P95 < 2s)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 55},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{endpoint=\"/api/v1/transform\"}[5m]))",
+            "legendFormat": "P95 Latency"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "mode": "line",
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 1.5},
+                {"color": "red", "value": 2}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 21,
+        "title": "API Throughput",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 63},
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"chimera-backend\"}[5m])",
+            "legendFormat": "RPS"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "thresholds": {
+              "mode": "line",
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 10}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 22,
+        "title": "Timeout Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 63},
+        "targets": [
+          {
+            "expr": "rate(chimera_transformation_timeouts_total[5m])",
+            "legendFormat": "Timeout Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops"
+          }
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "provider",
+          "type": "query",
+          "query": "label_values(chimera_connection_pool_utilization, provider)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "pool_name",
+          "type": "query",
+          "query": "label_values(chimera_worker_queue_size, pool_name)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "links": [
+      {
+        "title": "Prometheus Alerts",
+        "url": "http://localhost:9090/alerts",
+        "type": "link"
+      },
+      {
+        "title": "Performance Baseline",
+        "url": "/d/chimera-performance-baseline",
+        "type": "dashboards"
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Performance Alerts",
+          "datasource": "Prometheus",
+          "expr": "ALERTS{alertname=~\"Chimera.*\"}",
+          "titleFormat": "{{ $labels.alertname }}",
+          "textFormat": "{{ $labels.__value_quantile }}"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,312 @@
+groups:
+- name: chimera-performance
+  rules:
+  - alert: ChimeraAPIDown
+    expr: up{job="chimera-backend"} == 0
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Chimera API is down"
+      description: "The Chimera backend API has been down for more than 30 seconds."
+
+  - alert: ChimeraHighLatency
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="chimera-backend"}[5m])) > 2
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High API latency detected"
+      description: "95th percentile latency is {{ $value }}s for the last 2 minutes."
+
+  - alert: ChimeraHighErrorRate
+    expr: rate(http_requests_total{job="chimera-backend",status=~"5.."}[5m]) > 0.05
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate on Chimera API"
+      description: "Error rate is {{ $value }} errors per second."
+
+  - alert: ChimeraHighMemoryUsage
+    expr: (container_memory_usage_bytes{name="chimera-backend"} / container_spec_memory_limit_bytes{name="chimera-backend"}) > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage on Chimera backend"
+      description: "Memory usage is {{ $value | humanizePercentage }}."
+
+  - alert: ChimeraHighCPUUsage
+    expr: rate(container_cpu_usage_seconds_total{name="chimera-backend"}[5m]) > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on Chimera backend"
+      description: "CPU usage is {{ $value | humanizePercentage }}."
+
+  - alert: ChimeraLLMProviderDown
+    expr: chimera_llm_provider_availability < 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "LLM Provider {{ $labels.provider }} is unavailable"
+      description: "Provider {{ $labels.provider }} has been unavailable for more than 1 minute."
+
+  - alert: ChimeraTransformationTimeout
+    expr: rate(chimera_transformation_timeouts_total[5m]) > 0.01
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High transformation timeout rate"
+      description: "Transformation timeout rate is {{ $value }} per second."
+
+  - alert: ChimeraWebSocketConnections
+    expr: chimera_websocket_connections > 1000
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High number of WebSocket connections"
+      description: "Currently {{ $value }} active WebSocket connections."
+
+- name: chimera-frontend
+  rules:
+  - alert: ChimeraFrontendDown
+    expr: up{job="chimera-frontend"} == 0
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Chimera frontend is down"
+      description: "The Chimera frontend has been down for more than 30 seconds."
+
+  - alert: ChimeraFrontendHighLatency
+    expr: histogram_quantile(0.95, rate(nextjs_request_duration_seconds_bucket[5m])) > 3
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High frontend latency detected"
+      description: "95th percentile page load time is {{ $value }}s."
+
+- name: chimera-infrastructure
+  rules:
+  - alert: HostHighCPU
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host CPU usage is high"
+      description: "Host {{ $labels.instance }} CPU usage is {{ $value }}%."
+
+  - alert: HostHighMemory
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host memory usage is high"
+      description: "Host {{ $labels.instance }} memory usage is {{ $value }}%."
+
+  - alert: HostDiskSpace
+    expr: 100 - ((node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host disk space is running low"
+      description: "Disk {{ $labels.mountpoint }} on {{ $labels.instance }} is {{ $value }}% full."
+
+# PERF-008: Performance optimization alerts
+- name: chimera-performance-cache
+  rules:
+  # Transformation cache health alerts
+  - alert: ChimeraCacheHitRateLow
+    expr: chimera_transformation_cache_hit_rate < 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low transformation cache hit rate"
+      description: "Cache hit rate is {{ $value | humanizePercentage }%, below 50% threshold."
+
+  - alert: ChimeraCacheMemoryHigh
+    expr: chimera_transformation_cache_utilization > 0.9
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Transformation cache memory high"
+      description: "Cache memory utilization is {{ $value | humanizePercentage }}."
+
+  - alert: ChimeraCacheUnhealthy
+    expr: chimera_transformation_cache_health != 1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Transformation cache unhealthy"
+      description: "Cache health status is {{ $value }} (expected: 1)."
+
+  # L2 cache alerts
+  - alert: ChimeraL2CacheMissRateHigh
+    expr: rate(chimera_cache_l2_misses_total[5m]) / rate(chimera_cache_l2_requests_total[5m]) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High L2 cache miss rate"
+      description: "L2 cache miss rate is {{ $value | humanizePercentage }}."
+
+  - alert: ChimeraL2CacheDown
+    expr: chimera_cache_l2_healthy == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "L2 cache (Redis) is down"
+      description: "Redis L2 cache has been unhealthy for more than 2 minutes."
+
+  # Multi-level cache alerts
+  - alert: ChimeraMultiLevelCacheIneffective
+    expr: chimera_cache_multi_level_hit_rate < 0.3
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Multi-level cache ineffective"
+      description: "Combined cache hit rate is {{ $value | humanizePercentage }}."
+
+  - alert: ChimeraL2CacheWriteFailures
+    expr: rate(chimera_cache_l2_write_failures_total[5m]) > 0.01
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "L2 cache write failures increasing"
+      description: "L2 cache write failure rate is {{ $value | humanizePercentage }}."
+
+- name: chimera-performance-connection-pools
+  rules:
+  # Connection pool health alerts
+  - alert: ChimeraConnectionPoolExhaustion
+    expr: chimera_connection_pool_utilization > 0.9
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Connection pool near exhaustion"
+      description: "Provider {{ $labels.provider }} pool utilization is {{ $value | humanizePercentage }}."
+
+  - alert: ChimeraConnectionPoolHighWaitTime
+    expr: chimera_connection_pool_avg_wait_ms > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High connection pool wait time"
+      description: "Provider {{ $labels.provider }} average wait time is {{ $value }}ms."
+
+  - alert: ChimeraConnectionPoolStaleConnections
+    expr: chimera_connection_pool_stale_connections > 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High stale connections in pool"
+      description: "Provider {{ $labels.provider }} has {{ $value }} stale connections."
+
+  - alert: ChimeraConnectionPoolHighFailureRate
+    expr: rate(chimera_connection_pool_failed_requests_total[5m]) / rate(chimera_connection_pool_total_requests_total[5m]) > 0.01
+    for: 3m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High connection pool failure rate"
+      description: "Provider {{ $labels.provider }} failure rate is {{ $value | humanizePercentage }}."
+
+- name: chimera-performance-optimization
+  rules:
+  # Gradient optimizer performance
+  - alert: ChimeraGradientOptimizerSlow
+    expr: chimera_gradient_optimizer_avg_duration_ms > 500
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Gradient optimizer slow"
+      description: "Average gradient optimization time is {{ $value }}ms."
+
+  - alert: ChimeraAsyncQueueBacklog
+    expr: chimera_worker_queue_size > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Worker pool queue backlog"
+      description: "Worker pool {{ $labels.pool_name }} has {{ $value }} pending tasks."
+
+  # Compression effectiveness
+  - alert: ChimeraCompressionIneffective
+    expr: chimera_compression_ratio < 0.5
+    for: 10m
+    labels:
+      severity: info
+    annotations:
+      summary: "Compression less effective than expected"
+      description: "Compression ratio is {{ $value | humanizePercentage }}, expected > 50%."
+
+  # Circuit breaker metrics
+  - alert: ChimeraCircuitBreakerTripping
+    expr: rate(chimera_circuit_breaker_trips_total[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Circuit breaker tripping frequently"
+      description: "Circuit breaker {{ $labels.name }} trip rate is {{ $value | humanizePercentage }}/sec."
+
+  - alert: ChimeraCircuitBreakerOpen
+    expr: chimera_circuit_breaker_state{state="open"} == 1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Circuit breaker is open"
+      description: "Circuit breaker {{ $labels.name }} has been open for more than 1 minute."
+
+- name: chimera-performance-sla
+  rules:
+  # API SLA alerts
+  - alert: ChimeraGenerationSLABreach
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{endpoint="/api/v1/generate"}[5m])) > 10
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Generation API SLA breach"
+      description: "95th percentile latency > 10s for generate endpoint."
+
+  - alert: ChimeraTransformSLABreach
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{endpoint="/api/v1/transform"}[5m])) > 2
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Transform API SLA breach"
+      description: "95th percentile latency > 2s for transform endpoint."
+
+  # Throughput alerts
+  - alert: ChimeraLowThroughput
+    expr: rate(http_requests_total{job="chimera-backend"}[5m]) < 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low API throughput"
+      description: "API throughput is {{ $value }} RPS, below minimum 10 RPS."

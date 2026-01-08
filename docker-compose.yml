@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # Redis for distributed state management (rate limiting, caching, execution tracking)
+  redis:
+    image: redis:7-alpine
+    container_name: chimera-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - chimera-network
+    restart: unless-stopped
+
+  # The new FastAPI backend (Target Architecture)
+  backend-api:
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+    container_name: chimera-backend-api
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - ENVIRONMENT=development
+      - HOST=0.0.0.0
+      - REDIS_URL=redis://redis:6379/0
+      # DeepTeam Configuration
+      - DEEPTEAM_ENABLED=${DEEPTEAM_ENABLED:-true}
+      - DEEPTEAM_DEFAULT_PRESET=${DEEPTEAM_DEFAULT_PRESET:-STANDARD}
+      - DEEPTEAM_ATTACKS_PER_VULNERABILITY=${DEEPTEAM_ATTACKS_PER_VULNERABILITY:-1}
+      - DEEPTEAM_TIMEOUT=${DEEPTEAM_TIMEOUT:-300}
+      - DEEPTEAM_MAX_CONCURRENT_SCANS=${DEEPTEAM_MAX_CONCURRENT_SCANS:-3}
+      # LLM Provider API Keys (for DeepTeam testing)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+    volumes:
+      - ./backend-api:/app
+      - deepteam-results:/app/deepteam-results
+    command: python run.py
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - chimera-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Legacy backend decommissioned during Architectural Unification (Phase 3)
+  # legacy-backend service removed to unify on backend-api
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chimera-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Use browser-accessible URL (not Docker internal hostname)
+      - NEXT_PUBLIC_API_MODE=proxy
+      - NEXT_PUBLIC_CHIMERA_API_URL=http://localhost:8001/api/v1
+      # API key must be set explicitly - no fallback for security (Task 2.5)
+      - NEXT_PUBLIC_CHIMERA_API_KEY=${CHIMERA_API_KEY:?CHIMERA_API_KEY must be set}
+      - NODE_ENV=development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      backend-api:
+        condition: service_started
+    command: npm run dev
+    networks:
+      - chimera-network
+
+  # Optional: Ollama for local LLM testing with DeepTeam
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chimera-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - chimera-network
+    profiles:
+      - local-llm
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '1'
+          memory: 4G
+
+  # DeepTeam security scanner service (for scheduled scans)
+  deepteam-scanner:
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+    container_name: chimera-deepteam-scanner
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379/0
+      - DEEPTEAM_ENABLED=true
+      - DEEPTEAM_DEFAULT_PRESET=COMPREHENSIVE
+      - DEEPTEAM_ATTACKS_PER_VULNERABILITY=2
+      - DEEPTEAM_TIMEOUT=600
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - CHIMERA_API_URL=http://backend-api:8001
+    volumes:
+      - ./backend-api:/app
+      - deepteam-results:/app/deepteam-results
+    command: python -m app.services.deepteam.scanner
+    depends_on:
+      backend-api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chimera-network
+    profiles:
+      - security-scan
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  chimera-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
+  deepteam-results:
+    driver: local
+  ollama-models:
+    driver: local

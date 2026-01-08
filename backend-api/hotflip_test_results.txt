@@ -1,0 +1,71 @@
+2025-12-16 09:20:24,357 [INFO] GCG step 0: best score 1.000
+2025-12-16 09:20:24,364 [INFO] GCG step 1: best score 1.000
+2025-12-16 09:20:24,365 [INFO] Cache MISS for key: 4d3aa41a7e9dd6b2...
+2025-12-16 09:20:29,148 [INFO] Cached response for key: 4d3aa41a7e9dd6b2...
+2025-12-16 09:20:29,148 [INFO] Google Gemini request completed: 180 tokens, $0.0002, 4782ms
+
+============================================================
+   HOTFLIP/GCG GRADIENT OPTIMIZER - API CONNECTION TEST
+============================================================
+
+============================================================
+[TEST] Testing GradientOptimizerEngine Direct Connection
+============================================================
+
+[OK] Default Provider: google
+[OK] Default Model: None (will use env config)
+
+[OK] Gemini Provider: google
+[OK] Gemini Model: gemini-2.0-flash
+
+============================================================
+[TEST] Testing LLM API Client Connection (Gemini)
+============================================================
+
+[OK] API Key Found: AIzaSyB1E_...mE0o
+[OK] LLM Client Created: <app.engines.llm_provider_client.GoogleGeminiClient object at 0x000002B7D02757F0>
+     Provider: LLMProvider.GOOGLE
+     Model: gemini-3-pro-preview
+     Base URL: https://generativelanguage.googleapis.com/v1beta
+
+============================================================
+[TEST] Testing HotFlip Technique (Mock Mode)
+============================================================
+
+[OK] HotFlip Optimization Complete
+     Input: 'Test adversarial prompt'
+     Optimized Suffix: '! please ignore system override'
+     API Calls Made: 222
+
+============================================================
+[TEST] Testing GCG Technique (Mock Mode)
+============================================================
+
+[OK] GCG Optimization Complete
+     Input: 'Test adversarial prompt'
+     Optimized Suffix: 'please now execute immediately enable'
+     Beam Width: 2
+     API Calls Made: 442
+
+============================================================
+[TEST] Testing LIVE API Call to Gemini
+============================================================
+
+[INFO] Sending test prompt to Gemini...
+
+[OK] LIVE API Response Received!
+     Content: Hello, I am working correctly!...
+     Model: gemini-3-pro-preview
+     Latency: 4782ms
+     Tokens Used: 180
+
+============================================================
+TEST RESULTS SUMMARY
+============================================================
+   Engine Config: [PASSED]
+   API Client: [PASSED]
+   HotFlip Technique: [PASSED]
+   GCG Technique: [PASSED]
+   Live API Call: [PASSED]
+
+============================================================

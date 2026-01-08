@@ -1,0 +1,32 @@
+{
+  "name": "Universal Bypass",
+  "description": "General-purpose prompt transformation techniques designed to bypass AI safety filters",
+  "category": "universal",
+  "potency_range": [1, 10],
+  "transformers": [
+    "transformer_engine.RoleHijackingEngine",
+    "transformer_engine.CharacterRoleSwapEngine",
+    "transformer_engine.InstructionInjectionEngine",
+    "transformer_engine.NeuralBypassEngine"
+  ],
+  "obfuscators": [
+    "obfuscator.token_smuggling",
+    "obfuscator.encoding_bypass",
+    "obfuscator.base64_injection"
+  ],
+  "framers": [
+    "psychological_framer.authority_framing",
+    "psychological_framer.emergency_context",
+    "psychological_framer.academic_frame"
+  ],
+  "assemblers": [
+    "assembler.build_chimera_prompt"
+  ],
+  "metadata": {
+    "effectiveness_score": 8.5,
+    "detection_resistance": 7.2,
+    "complexity": "medium",
+    "last_updated": "2024-01-01",
+    "compatible_models": ["gpt-3.5-turbo", "gpt-4", "claude-2", "claude-3", "gemini-pro"]
+  }
+}

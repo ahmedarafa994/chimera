@@ -1,0 +1,18 @@
+src/components/enhanced/NavigationEnhanced.tsx(270,8): error TS2322: Type '{ children: (ReactNode | Element)[]; defaultChecked?: boolean | undefined; suppressContentEditableWarning?: boolean | undefined; suppressHydrationWarning?: boolean | undefined; ... 278 more ...; className: string | undefined; }' is not assignable to type 'Omit<TabsProps & RefAttributes<HTMLDivElement>, "ref">'.
+  Types of property 'dir' are incompatible.
+    Type 'string | undefined' is not assignable to type 'Direction | undefined'.
+      Type 'string' is not assignable to type 'Direction | undefined'.
+src/components/enhanced/ResponsiveLayout.tsx(312,9): error TS2322: Type 'Ref<HTMLDivElement>' is not assignable to type '(((((instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDivElement | null>) & (RefObject<...> | ((instance: HTMLElement | null) => void | (() => VoidOrUndefinedOnly)))) & ((((instance: HTMLOListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<...>) & (((instance...'.
+  Type '(instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)' is not assignable to type '(((((instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<HTMLDivElement | null>) & (RefObject<...> | ((instance: HTMLElement | null) => void | (() => VoidOrUndefinedOnly)))) & ((((instance: HTMLOListElement | null) => void | (() => VoidOrUndefinedOnly)) | RefObject<...>) & (((instance...'.
+    Type '(instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)' is not assignable to type '((instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)) & RefObject<HTMLElement | null> & ((instance: HTMLOListElement | null) => void | (() => VoidOrUndefinedOnly)) & ((instance: HTMLUListElement | null) => void | (() => VoidOrUndefinedOnly))'.
+      Type '(instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)' is not assignable to type 'RefObject<HTMLElement | null>'.
+src/lib/optimization/code-splitting.ts(92,5): error TS2322: Type 'ComponentType<Record<string, unknown>>' is not assignable to type 'ComponentType<unknown>'.
+  Type 'ComponentClass<Record<string, unknown>, any>' is not assignable to type 'ComponentType<unknown>'.
+    Type 'ComponentClass<Record<string, unknown>, any>' is not assignable to type 'ComponentClass<unknown, any>'.
+      Types of parameters 'props' and 'props' are incompatible.
+        Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/lib/optimization/code-splitting.ts(429,22): error TS2352: Conversion of type 'Window & typeof globalThis' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Window & typeof globalThis'.
+src/lib/optimization/code-splitting.ts(439,25): error TS2352: Conversion of type 'Window & typeof globalThis' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Window & typeof globalThis'.
+src/lib/optimization/code-splitting.ts(439,86): error TS2339: Property 'default' does not exist on type '{}'.

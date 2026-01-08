@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>1.5</story-id>
+    <epic>Epic 1: Multi-Provider Foundation</epic>
+    <title>Base API Infrastructure</title>
+    <status>Done</status>
+    <complexity>High</complexity>
+    <business-priority>Critical</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>FastAPI with Modular Router Architecture</architecture-pattern>
+    <integration-points>
+      <point>FastAPI application with middleware stack</point>
+      <point>Versioned API routing with v1 namespace</point>
+      <point>WebSocket support for real-time features</point>
+      <point>OpenAPI documentation generation</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Scalable, maintainable API infrastructure supporting multi-provider operations</value-proposition>
+    <user-impact>High-performance API with auto-generated documentation and real-time capabilities</user-impact>
+    <risk-mitigation>
+      <risk>API scaling bottlenecks</risk>
+      <mitigation>Modular architecture with performance optimization</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="backend-api/app/main.py" role="FastAPI application with middleware and WebSocket setup"/>
+      <file path="backend-api/app/api/api_routes.py" role="Main router aggregating all v1 endpoints"/>
+      <file path="backend-api/app/api/v1/endpoints/" role="Individual endpoint implementations"/>
+      <file path="backend-api/app/domain/models.py" role="Pydantic models for request/response validation"/>
+    </core-files>
+
+    <api-structure>
+      <namespace path="/api/v1/generate" description="Core LLM generation endpoints"/>
+      <namespace path="/api/v1/transform" description="Prompt transformation endpoints"/>
+      <namespace path="/api/v1/autodan" description="AutoDAN adversarial optimization"/>
+      <namespace path="/api/v1/gptfuzz" description="GPTFuzz mutation testing"/>
+      <namespace path="/api/v1/providers" description="Provider management endpoints"/>
+      <namespace path="/health" description="Health monitoring endpoints"/>
+      <namespace path="/ws/enhance" description="WebSocket real-time enhancement"/>
+    </api-structure>
+
+    <key-features>
+      <feature>Versioned APIs: v1 namespace with backward compatibility</feature>
+      <feature>OpenAPI Documentation: Auto-generated Swagger/ReDoc docs</feature>
+      <feature>WebSocket Support: Real-time prompt enhancement</feature>
+      <feature>Middleware Stack: Authentication, CORS, security headers</feature>
+      <feature>Request Validation: Pydantic model validation</feature>
+      <feature>Error Handling: Comprehensive error response system</feature>
+    </key-features>
+
+    <performance-optimizations>
+      <optimization>Async/await throughout the stack for I/O operations</optimization>
+      <optimization>Connection pooling for database and Redis</optimization>
+      <optimization>Response compression via gzip middleware</optimization>
+      <optimization>Request/response logging with performance metrics</optimization>
+    </performance-optimizations>
+
+    <middleware-stack>
+      <middleware order="1">SecurityHeadersMiddleware - Security headers</middleware>
+      <middleware order="2">CORSMiddleware - Cross-origin request handling</middleware>
+      <middleware order="3">GZipMiddleware - Response compression</middleware>
+      <middleware order="4">AuthenticationMiddleware - JWT/API key validation</middleware>
+      <middleware order="5">RateLimitingMiddleware - Request throttling</middleware>
+      <middleware order="6">RequestLoggingMiddleware - Request/response logging</middleware>
+    </middleware-stack>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">FastAPI application ✓ - Full application setup with middleware</criterion>
+    <criterion id="2">Versioned routing ✓ - /api/v1/ namespace implementation</criterion>
+    <criterion id="3">OpenAPI documentation ✓ - Auto-generated Swagger/ReDoc</criterion>
+    <criterion id="4">WebSocket support ✓ - Real-time enhancement endpoint</criterion>
+    <criterion id="5">Request validation ✓ - Pydantic model validation</criterion>
+    <criterion id="6">Error handling ✓ - Comprehensive error response system</criterion>
+    <criterion id="7">Performance optimization ✓ - Async operations and caching</criterion>
+    <criterion id="8">Middleware integration ✓ - Security, CORS, logging middleware</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>
+      <dependency>Story 1.4: API Security Framework</dependency>
+      <dependency>Story 1.3: Health Monitoring</dependency>
+    </upstream>
+    <downstream>
+      <dependency>Story 1.6: LLM Service Integration</dependency>
+      <dependency>All Epic 2 transformation stories</dependency>
+      <dependency>All Epic 3 frontend integration stories</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>API routing, middleware functionality, request validation</unit-tests>
+    <integration-tests>End-to-end API workflows, WebSocket connections</integration-tests>
+    <performance-tests>API response times, concurrent request handling</performance-tests>
+  </testing-coverage>
+</story-context>

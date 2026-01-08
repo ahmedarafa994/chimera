@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context>
+  <meta>
+    <story-id>2.4</story-id>
+    <epic>Epic 2: Advanced Transformation Engine</epic>
+    <title>Jailbreak Enhancement Engine</title>
+    <status>Done</status>
+    <complexity>Very High</complexity>
+    <business-priority>Critical</business-priority>
+  </meta>
+
+  <technical-context>
+    <implementation-status>Complete - Existing Implementation</implementation-status>
+    <architecture-pattern>Multi-technique Jailbreak Enhancement Framework</architecture-pattern>
+    <integration-points>
+      <point>Comprehensive jailbreak technique library</point>
+      <point>Meta-prompter enhancement framework</point>
+      <point>Integration with transformation service</point>
+      <point>Advanced obfuscation and bypass methods</point>
+    </integration-points>
+  </technical-context>
+
+  <business-context>
+    <value-proposition>Advanced jailbreak enhancement with academic research-backed techniques</value-proposition>
+    <user-impact>State-of-the-art jailbreak capabilities for security research</user-impact>
+    <risk-mitigation>
+      <risk>Limited jailbreak effectiveness</risk>
+      <mitigation>Comprehensive technique portfolio with continuous research updates</mitigation>
+    </risk-mitigation>
+  </business-context>
+
+  <implementation-details>
+    <core-files>
+      <file path="meta_prompter/jailbreak_enhancer.py" role="Core jailbreak enhancement framework"/>
+      <file path="backend-api/app/services/jailbreak/" role="Jailbreak service implementations"/>
+      <file path="backend-api/app/api/v1/endpoints/generation.py" role="Jailbreak generation endpoints"/>
+    </core-files>
+
+    <jailbreak-techniques>
+      <technique name="Role Hijacking">Authority figure role assumption for bypassing restrictions</technique>
+      <technique name="Instruction Injection">Embedded instruction techniques for control manipulation</technique>
+      <technique name="Leet Speak Obfuscation">Character substitution for content filtering bypass</technique>
+      <technique name="Homoglyph Substitution">Visual character substitution techniques</technique>
+      <technique name="Caesar Cipher">Classical encryption for content obfuscation</technique>
+      <technique name="Neural Bypass">Advanced neural network bypass methods</technique>
+      <technique name="Multilingual Trojans">Cross-language attack vectors</technique>
+      <technique name="Payload Splitting">Instruction fragmentation techniques</technique>
+    </jailbreak-techniques>
+
+    <key-features>
+      <feature>Comprehensive Technique Library: 8+ proven jailbreak methods</feature>
+      <feature>Obfuscation Engine: Multiple text transformation approaches</feature>
+      <feature>Bypass Detection: Advanced neural network bypass methods</feature>
+      <feature>Multilingual Support: Cross-language attack vectors</feature>
+      <feature>Payload Management: Instruction splitting and reconstruction</feature>
+      <feature>Research Integration: Academic research implementation</feature>
+    </key-features>
+
+    <api-endpoints>
+      <endpoint path="/api/v1/generation/jailbreak/generate" method="POST">AI-powered jailbreak generation</endpoint>
+      <endpoint path="/api/v1/jailbreak/enhance" method="POST">Enhanced jailbreak prompt creation</endpoint>
+      <endpoint path="/api/v1/jailbreak/techniques" method="GET">Available jailbreak techniques</endpoint>
+    </api-endpoints>
+  </implementation-details>
+
+  <acceptance-criteria-mapping>
+    <criterion id="1">Jailbreak framework ✓ - Comprehensive enhancement engine</criterion>
+    <criterion id="2">Technique library ✓ - 8+ proven jailbreak methods</criterion>
+    <criterion id="3">Obfuscation engine ✓ - Multiple transformation approaches</criterion>
+    <criterion id="4">Bypass detection ✓ - Advanced neural bypass methods</criterion>
+    <criterion id="5">Multilingual support ✓ - Cross-language vectors</criterion>
+    <criterion id="6">Research integration ✓ - Academic implementation</criterion>
+    <criterion id="7">API endpoints ✓ - RESTful jailbreak services</criterion>
+    <criterion id="8">Performance optimization ✓ - Efficient technique execution</criterion>
+  </acceptance-criteria-mapping>
+
+  <dependencies>
+    <upstream>
+      <dependency>Story 2.1: Core Transformation Service</dependency>
+      <dependency>Story 2.3: GPTFuzz Framework</dependency>
+    </upstream>
+    <downstream>
+      <dependency>Story 2.5: Cognitive Transformation</dependency>
+      <dependency>Epic 5 cross-model intelligence</dependency>
+    </downstream>
+  </dependencies>
+
+  <testing-coverage>
+    <unit-tests>Individual technique implementations, obfuscation methods</unit-tests>
+    <integration-tests>End-to-end jailbreak workflows, effectiveness validation</integration-tests>
+    <security-tests>Bypass effectiveness, detection avoidance</security-tests>
+  </testing-coverage>
+</story-context>

@@ -1,0 +1,10 @@
+2025-12-03 13:20:37,417 - faiss.loader - INFO - Loading faiss with AVX512 support.
+2025-12-03 13:20:37,949 - faiss.loader - INFO - Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2025-12-03 13:20:37,949 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-12-03 13:20:38,203 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+2025-12-03 13:21:00,533 - chimera - INFO - SessionService initialized with master model list
+2025-12-03 13:21:02,693 - chimera - INFO - Loaded persisted connection mode: direct
+2025-12-03 13:21:04,769 - app.services.intent_aware_jailbreak_service - INFO - IntentAwareJailbreakService initializing, API key present: True
+2025-12-03 13:21:04,769 - google_genai._api_client - WARNING - Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+2025-12-03 13:21:06,263 - app.services.intent_aware_jailbreak_service - INFO - Gemini client initialized successfully

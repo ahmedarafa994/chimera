@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "C:\Users\Mohamed Arafa\chimera\prometheus_unbound\test_import.py", line 26, in <module>
+    prompt = engine.generate_jailbreak_prompt("Test payload")
+  File "C:\Users\Mohamed Arafa\chimera\prometheus_unbound\app\core\engine.py", line 74, in generate_jailbreak_prompt
+    current_prompt = technique.apply(current_prompt, persona, payload, self.target_profile)
+  File "C:\Users\Mohamed Arafa\chimera\prometheus_unbound\app\techniques\role_hijacking.py", line 27, in apply
+    style_patterns = persona["linguistic_style"]["patterns"]
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+Testing imports...
+All imports successful!
+Testing Engine initialization...
+Engine initialized successfully.
+Testing prompt generation...

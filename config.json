@@ -1,0 +1,4 @@
+{
+  "ANTHROPIC_API_KEY": "admin",
+  "ANTHROPIC_BASE_URL": "http://localhost:8005"
+}
