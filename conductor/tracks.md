@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Refine Error Handling and Telemetry in Aegis Engine
+## [~] Track: Refine Error Handling and Telemetry in Aegis Engine
 *Link: [./conductor/tracks/aegis_telemetry_20260108/](./conductor/tracks/aegis_telemetry_20260108/)*
