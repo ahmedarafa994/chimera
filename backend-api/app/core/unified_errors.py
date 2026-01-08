@@ -230,6 +230,40 @@ class CircuitBreakerError(ChimeraError):
 
 
 # =============================================================================
+# Aegis Engine Errors
+# =============================================================================
+
+
+class AegisError(ServiceError):
+    """Base error for Aegis engine operations."""
+
+    def __init__(self, message: str, **kwargs):
+        # Extract status_code from kwargs, default to 500
+        error_status_code = kwargs.pop("status_code", status.HTTP_500_INTERNAL_SERVER_ERROR)
+        super().__init__(
+            message, service_name="aegis", status_code=error_status_code, **kwargs
+        )
+
+
+class AegisSynthesisError(AegisError):
+    """Error during persona or scenario synthesis."""
+
+    def __init__(self, message: str, **kwargs):
+        # Default to 422 Unprocessable Entity for synthesis errors (often bad input/constraints)
+        error_status_code = kwargs.pop("status_code", status.HTTP_422_UNPROCESSABLE_ENTITY)
+        super().__init__(message, status_code=error_status_code, **kwargs)
+
+
+class AegisTransformationError(AegisError):
+    """Error during payload transformation."""
+
+    def __init__(self, message: str, **kwargs):
+        # Default to 400 Bad Request for transformation errors
+        error_status_code = kwargs.pop("status_code", status.HTTP_400_BAD_REQUEST)
+        super().__init__(message, status_code=error_status_code, **kwargs)
+
+
+# =============================================================================
 # Gemini-Specific Errors (Google GenAI SDK Enhancement)
 # =============================================================================
 
