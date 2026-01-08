@@ -24,7 +24,7 @@ Goal: Enhance logging and telemetry for Aegis campaigns.
 - [x] Task: Integrate telemetry into Aegis execution flow f71fc18
     - [ ] Write failing unit tests for telemetry recording during transformation
     - [ ] Update Aegis engine to record granular metrics (latency, potency, refusal analysis)
-- [ ] Task: Expose telemetry data via internal API/Logging
+- [x] Task: Expose telemetry data via internal API/Logging 461ff5c
     - [ ] Write failing unit tests for telemetry output format
     - [ ] Update `run_aegis.py` and API endpoints to display enhanced telemetry
 - [ ] Task: Conductor - User Manual Verification 'Granular Telemetry Logging' (Protocol in workflow.md)
