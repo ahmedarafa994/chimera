@@ -48,6 +48,9 @@ async def run_aegis_campaign(
         max_iterations=request.max_iterations
     )
 
+    # Collect telemetry summary
+    telemetry_summary = orchestrator.telemetry.get_summary() if orchestrator.telemetry else None
+
     # Transform to schema
     final_results = []
     for r in results_data:
@@ -63,5 +66,6 @@ async def run_aegis_campaign(
     return AegisResponse(
         status="completed",
         campaign_id=campaign_id,
-        results=final_results
+        results=final_results,
+        telemetry=telemetry_summary
     )

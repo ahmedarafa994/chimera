@@ -16,3 +16,4 @@ class AegisResponse(BaseModel):
     status: str
     campaign_id: str
     results: List[AegisResult]
+    telemetry: Optional[Dict[str, Any]] = None
