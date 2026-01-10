@@ -267,6 +267,10 @@ curl -X POST "http://localhost:8001/api/v1/generate" \\
             "name": "admin",
             "description": "**Administrative endpoints**. System administration and configuration management.",
         },
+        {
+            "name": "telemetry",
+            "description": "**Real-time telemetry streaming**. WebSocket endpoints for streaming live campaign telemetry events including attack metrics, technique performance, and cost tracking.",
+        },
     ],
     servers=[
         {"url": "http://localhost:8001", "description": "Development server"},

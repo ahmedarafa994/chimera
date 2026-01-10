@@ -18,6 +18,7 @@ from app.api.v1.endpoints import (
     autodan_hierarchical,
     autodan_turbo,
     aegis,
+    aegis_ws,  # Aegis WebSocket telemetry endpoint
     chat,
     connection,
     csrf,
@@ -123,6 +124,11 @@ api_router.include_router(
 
 # --- Project Aegis Red Teaming ---
 api_router.include_router(aegis.router, prefix="/aegis", tags=["aegis", "red-teaming"])
+
+# --- Aegis WebSocket Telemetry (Real-Time Campaign Monitoring) ---
+api_router.include_router(
+    aegis_ws.router, tags=["aegis", "websocket", "telemetry"]
+)
 
 # --- Streaming & Token Counting (Google GenAI SDK Enhancement) ---
 api_router.include_router(streaming.router, tags=["streaming", "generation"])
