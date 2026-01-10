@@ -328,6 +328,20 @@ export default function HomePage() {
           </Button>
         </div>
 
+        {/* Test Button */}
+        <div className="mt-6 animate-fade-in-up" style={{ animationDelay: "1000ms" }}>
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={() => {
+              console.log("Test button clicked!");
+            }}
+            className="gap-2 px-6 h-12 bg-white/[0.05] border border-white/[0.1] hover:bg-white/[0.08] transition-all"
+          >
+            Test Button
+          </Button>
+        </div>
+
         {/* Scroll indicator */}
         <div className="absolute bottom-8 animate-bounce" style={{ animationDuration: "2s" }}>
           <ChevronDown className="w-6 h-6 text-muted-foreground/50" />
