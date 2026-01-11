@@ -25,6 +25,7 @@ from app.api.v1.endpoints import (
     datasets,
     deepteam,
     execute,
+    failover,  # Failover Status Endpoints (Feature: API Key Management & Provider Health Dashboard)
     gptfuzz,
     gradient_optimization,
     health,
@@ -113,6 +114,9 @@ api_router.include_router(api_keys.router, tags=["api-keys", "providers"])
 api_router.include_router(
     provider_health_dashboard.router, tags=["provider-health", "dashboard", "providers"]
 )
+
+# --- Failover Status Endpoints (Feature: API Key Management & Provider Health Dashboard) ---
+api_router.include_router(failover.router, tags=["failover", "api-keys", "providers"])
 
 # --- Admin & Infrastructure ---
 api_router.include_router(admin.router, tags=["admin"])
