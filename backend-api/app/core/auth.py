@@ -36,6 +36,7 @@ class Role(str, Enum):
     """User roles with hierarchical permissions"""
 
     ADMIN = "admin"  # Full system access
+    RESEARCHER = "researcher"  # Create/edit campaigns, execute jailbreaks (no user management)
     OPERATOR = "operator"  # Execute and manage operations
     DEVELOPER = "developer"  # API access for development
     VIEWER = "viewer"  # Read-only access
@@ -71,6 +72,24 @@ class Permission(str, Enum):
 # Role to permissions mapping
 ROLE_PERMISSIONS: dict[Role, list[Permission]] = {
     Role.ADMIN: list(Permission),  # All permissions
+    Role.RESEARCHER: [
+        # Researcher can create/edit campaigns but NOT manage users or system
+        # Read permissions (like Viewer)
+        Permission.READ_PROMPTS,
+        Permission.READ_TECHNIQUES,
+        Permission.READ_PROVIDERS,
+        Permission.READ_METRICS,
+        Permission.READ_LOGS,
+        # Write permissions for campaign creation/editing
+        Permission.WRITE_PROMPTS,
+        Permission.WRITE_TECHNIQUES,
+        # Execute permissions for jailbreak research
+        Permission.EXECUTE_TRANSFORM,
+        Permission.EXECUTE_ENHANCE,
+        Permission.EXECUTE_JAILBREAK,
+        # NOTE: No ADMIN_USERS, ADMIN_SYSTEM, or ADMIN_AUDIT permissions
+        # NOTE: No WRITE_PROVIDERS (system configuration)
+    ],
     Role.OPERATOR: [
         Permission.READ_PROMPTS,
         Permission.READ_TECHNIQUES,

@@ -106,16 +106,16 @@ def _db_role_to_auth_role(db_role: UserRole) -> Role:
     Map database UserRole to auth module Role.
 
     The database uses UserRole enum (admin, researcher, viewer) while
-    the auth module uses Role enum (admin, operator, developer, viewer, api_client).
+    the auth module uses Role enum with additional roles for different contexts.
 
     Mapping:
     - admin -> ADMIN
-    - researcher -> OPERATOR (can execute operations, manage campaigns)
+    - researcher -> RESEARCHER (can execute operations, manage campaigns)
     - viewer -> VIEWER (read-only)
     """
     role_mapping = {
         UserRole.ADMIN: Role.ADMIN,
-        UserRole.RESEARCHER: Role.OPERATOR,  # Researchers have operator-level access
+        UserRole.RESEARCHER: Role.RESEARCHER,  # Direct mapping to RESEARCHER role
         UserRole.VIEWER: Role.VIEWER,
     }
     return role_mapping.get(db_role, Role.VIEWER)
