@@ -17,3 +17,7 @@ export type { SuccessRateCardProps } from "./SuccessRateCard";
 // Success rate trend chart (area chart over time)
 export { SuccessRateTrendChart } from "./SuccessRateTrendChart";
 export type { SuccessRateTrendChartProps } from "./SuccessRateTrendChart";
+
+// Technique performance breakdown (bar chart with metrics)
+export { TechniqueBreakdown } from "./TechniqueBreakdown";
+export type { TechniqueBreakdownProps } from "./TechniqueBreakdown";
