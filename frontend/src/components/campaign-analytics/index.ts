@@ -124,3 +124,18 @@ export {
   type DisplayMode,
   type ProviderSortField,
 } from "./charts/ProviderComparisonChart";
+
+export {
+  PromptEvolutionChart,
+  PromptEvolutionChartSkeleton,
+  PromptEvolutionChartError,
+  PromptEvolutionChartEmpty,
+  SimplePromptEvolutionChart,
+  CompactPromptEvolutionChart,
+  DetailedPromptEvolutionChart,
+  type PromptEvolutionChartProps,
+  type PromptEvolutionDataPoint,
+  type TrendLinePoint,
+  type PromptEvolutionFilter,
+  type CorrelationResult,
+} from "./charts/PromptEvolutionChart";

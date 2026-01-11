@@ -68,3 +68,25 @@ export type {
   DisplayMode,
   ProviderSortField,
 } from "./ProviderComparisonChart";
+
+// =============================================================================
+// Prompt Evolution Charts
+// =============================================================================
+
+export {
+  PromptEvolutionChart,
+  PromptEvolutionChartSkeleton,
+  PromptEvolutionChartError,
+  PromptEvolutionChartEmpty,
+  SimplePromptEvolutionChart,
+  CompactPromptEvolutionChart,
+  DetailedPromptEvolutionChart,
+} from "./PromptEvolutionChart";
+
+export type {
+  PromptEvolutionChartProps,
+  PromptEvolutionDataPoint,
+  TrendLinePoint,
+  PromptEvolutionFilter,
+  CorrelationResult,
+} from "./PromptEvolutionChart";
