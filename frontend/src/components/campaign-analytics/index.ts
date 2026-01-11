@@ -174,3 +174,17 @@ export {
   type MetricGroupConfig,
   type ComparisonTableProps,
 } from "./comparison/ComparisonTable";
+
+export {
+  NormalizedMetricsChart,
+  NormalizedMetricsChartSkeleton,
+  NormalizedMetricsChartError,
+  NormalizedMetricsChartEmpty,
+  SimpleNormalizedMetricsChart,
+  CompactNormalizedMetricsChart,
+  DetailedNormalizedMetricsChart,
+  type NormalizedMetric,
+  type RadarDataPoint,
+  type CampaignSeries,
+  type NormalizedMetricsChartProps,
+} from "./comparison/NormalizedMetricsChart";
