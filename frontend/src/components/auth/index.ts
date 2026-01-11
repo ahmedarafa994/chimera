@@ -16,8 +16,17 @@ export type { default as LoginFormDefault } from "./LoginForm";
 export { RegisterForm } from "./RegisterForm";
 export type { default as RegisterFormDefault } from "./RegisterForm";
 
-export { PasswordStrengthMeter } from "./PasswordStrengthMeter";
+export {
+  PasswordStrengthMeter,
+  PasswordRequirements,
+} from "./PasswordStrengthMeter";
 export type { default as PasswordStrengthMeterDefault } from "./PasswordStrengthMeter";
+
+export { ForgotPasswordForm } from "./ForgotPasswordForm";
+export type { default as ForgotPasswordFormDefault } from "./ForgotPasswordForm";
+
+export { ResetPasswordForm } from "./ResetPasswordForm";
+export type { default as ResetPasswordFormDefault } from "./ResetPasswordForm";
 
 // =============================================================================
 // Route Protection Components
