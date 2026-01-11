@@ -164,6 +164,12 @@ def _get_action_display_name(action: str) -> str:
         "user.verify": "Email Verified",
         "user.password_change": "Password Changed",
         "user.profile_update": "Profile Updated",
+        # Campaign events
+        "campaign.create": "Campaign Created",
+        "campaign.update": "Campaign Updated",
+        "campaign.delete": "Campaign Deleted",
+        "campaign.share": "Campaign Shared",
+        "campaign.unshare": "Campaign Share Removed",
         # Security events
         "security.rate_limit": "Rate Limited",
         "security.blocked_request": "Request Blocked",

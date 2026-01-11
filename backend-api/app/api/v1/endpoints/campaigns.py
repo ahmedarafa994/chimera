@@ -457,7 +457,7 @@ async def share_campaign(
 
         # Log to audit trail
         audit_log(
-            action=AuditAction.USER_MODIFY,
+            action=AuditAction.CAMPAIGN_SHARE,
             user_id=str(user.id),
             resource=f"/api/v1/campaigns/{campaign_id}/share",
             details={
@@ -688,7 +688,7 @@ async def remove_campaign_share(
 
         # Log to audit trail
         audit_log(
-            action=AuditAction.USER_MODIFY,
+            action=AuditAction.CAMPAIGN_UNSHARE,
             user_id=str(user.id),
             resource=f"/api/v1/campaigns/{campaign_id}/share/{target_user_id}",
             details={

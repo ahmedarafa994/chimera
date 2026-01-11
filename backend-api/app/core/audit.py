@@ -63,6 +63,13 @@ class AuditAction(str, Enum):
     USER_PASSWORD_CHANGE = "user.password_change"
     USER_PROFILE_UPDATE = "user.profile_update"
 
+    # Campaign events
+    CAMPAIGN_CREATE = "campaign.create"
+    CAMPAIGN_UPDATE = "campaign.update"
+    CAMPAIGN_DELETE = "campaign.delete"
+    CAMPAIGN_SHARE = "campaign.share"
+    CAMPAIGN_UNSHARE = "campaign.unshare"
+
     # System events
     SYSTEM_STARTUP = "system.startup"
     SYSTEM_SHUTDOWN = "system.shutdown"
