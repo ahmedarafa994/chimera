@@ -139,3 +139,19 @@ export {
   type PromptEvolutionFilter,
   type CorrelationResult,
 } from "./charts/PromptEvolutionChart";
+
+export {
+  LatencyDistributionChart,
+  LatencyDistributionChartSkeleton,
+  LatencyDistributionChartError,
+  LatencyDistributionChartEmpty,
+  SimpleLatencyChart,
+  CompactLatencyChart,
+  DetailedLatencyChart,
+  PercentileLatencyChart,
+  type LatencyDistributionChartProps,
+  type HistogramBin,
+  type BoxPlotStats,
+  type LatencyDataPoint,
+  type LatencyFilter,
+} from "./charts/LatencyDistributionChart";

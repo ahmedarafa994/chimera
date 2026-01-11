@@ -90,3 +90,26 @@ export type {
   PromptEvolutionFilter,
   CorrelationResult,
 } from "./PromptEvolutionChart";
+
+// =============================================================================
+// Latency Distribution Charts
+// =============================================================================
+
+export {
+  LatencyDistributionChart,
+  LatencyDistributionChartSkeleton,
+  LatencyDistributionChartError,
+  LatencyDistributionChartEmpty,
+  SimpleLatencyChart,
+  CompactLatencyChart,
+  DetailedLatencyChart,
+  PercentileLatencyChart,
+} from "./LatencyDistributionChart";
+
+export type {
+  LatencyDistributionChartProps,
+  HistogramBin,
+  BoxPlotStats,
+  LatencyDataPoint,
+  LatencyFilter,
+} from "./LatencyDistributionChart";
