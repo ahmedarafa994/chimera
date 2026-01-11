@@ -74,6 +74,7 @@ function LoginPageContent() {
   const registered = searchParams.get("registered") === "true";
   const verified = searchParams.get("verified") === "true";
   const passwordReset = searchParams.get("password_reset") === "true";
+  const sessionExpired = searchParams.get("session_expired") === "true";
 
   useEffect(() => {
     setMounted(true);
@@ -142,6 +143,12 @@ function LoginPageContent() {
             <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm animate-fade-in">
               <strong>Password reset successful!</strong> You can now log in with your
               new password.
+            </div>
+          )}
+
+          {sessionExpired && (
+            <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm animate-fade-in">
+              <strong>Session expired.</strong> Please sign in again to continue.
             </div>
           )}
 

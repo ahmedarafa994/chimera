@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import enhancedApi from "@/lib/api-enhanced";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Zap,
   Sparkles,
@@ -15,10 +16,44 @@ import {
   CheckCircle2,
   XCircle,
   Target,
-  Brain
+  Brain,
+  Shield,
+  FlaskConical,
+  Eye,
+  Users,
+  Settings,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { AdminOnly } from "@/components/auth/RoleGuard";
+
+// Role badge configuration
+const ROLE_CONFIG = {
+  admin: {
+    label: "Administrator",
+    icon: Shield,
+    color: "from-red-500 to-orange-500",
+    bgColor: "bg-red-500/10",
+    borderColor: "border-red-500/20",
+  },
+  researcher: {
+    label: "Researcher",
+    icon: FlaskConical,
+    color: "from-purple-500 to-pink-500",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/20",
+  },
+  viewer: {
+    label: "Viewer",
+    icon: Eye,
+    color: "from-blue-500 to-cyan-500",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/20",
+  },
+};
 
 export default function DashboardPage() {
+  const { user, isAdmin } = useAuth();
+
   const { data: healthData, isLoading: healthLoading } = useQuery({
     queryKey: ["health"],
     queryFn: () => enhancedApi.health(),
@@ -39,6 +74,10 @@ export default function DashboardPage() {
   const techniques = techniquesData;
 
   const activeProviders = providers.filter((p) => p.status === "active").length;
+
+  // Get role configuration for current user
+  const roleConfig = user?.role ? ROLE_CONFIG[user.role] : null;
+  const RoleIcon = roleConfig?.icon || Eye;
 
   const panels = [
     {
@@ -115,16 +154,55 @@ export default function DashboardPage() {
     },
   ];
 
+  // Admin-only panels
+  const adminPanels = [
+    {
+      title: "User Management",
+      description: "Manage users, roles, and permissions",
+      icon: Users,
+      href: "/dashboard/admin/users",
+      color: "text-rose-400",
+      bgColor: "bg-rose-500/10",
+      borderColor: "hover:border-rose-500/50",
+    },
+    {
+      title: "Platform Settings",
+      description: "Configure system-wide settings",
+      icon: Settings,
+      href: "/dashboard/settings",
+      color: "text-slate-400",
+      bgColor: "bg-slate-500/10",
+      borderColor: "hover:border-slate-500/50",
+    },
+  ];
+
   return (
     <div className="space-y-8 bg-pattern min-h-screen">
-      {/* Header with gradient text */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-bold tracking-tight gradient-text">
-          Dashboard Overview
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Welcome to <span className="font-semibold text-foreground">Project Chimera</span> — AI Prompt Transformation Engine for Security Research
-        </p>
+      {/* Personalized Header with user info */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-bold tracking-tight gradient-text">
+            {user ? `Welcome back, ${user.username}` : "Dashboard Overview"}
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            <span className="font-semibold text-foreground">Project Chimera</span> — AI Prompt Transformation Engine for Security Research
+          </p>
+        </div>
+
+        {/* User role badge */}
+        {user && roleConfig && (
+          <div className={`flex items-center gap-3 px-4 py-2 rounded-xl ${roleConfig.bgColor} border ${roleConfig.borderColor}`}>
+            <div className={`p-2 rounded-lg bg-gradient-to-br ${roleConfig.color} bg-opacity-20`}>
+              <RoleIcon className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Your Role</span>
+              <span className={`font-semibold bg-gradient-to-r ${roleConfig.color} bg-clip-text text-transparent`}>
+                {roleConfig.label}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Status Cards with glass effect */}
@@ -241,6 +319,39 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* Admin-only Panel Cards */}
+      <AdminOnly
+        fallback={null}
+      >
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-rose-400" />
+            <span className="gradient-text">Administration</span>
+            <Badge variant="outline" className="ml-2 bg-rose-500/10 text-rose-400 border-rose-500/20">
+              Admin Only
+            </Badge>
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {adminPanels.map((panel) => (
+              <Link key={panel.href} href={panel.href as unknown as "/dashboard"}>
+                <Card className={`h-full glass glass-hover card-transition cursor-pointer group ${panel.borderColor}`}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className={`p-3 rounded-xl ${panel.bgColor} transition-transform group-hover:scale-110`}>
+                        <panel.icon className={`h-6 w-6 ${panel.color}`} />
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    </div>
+                    <CardTitle className="mt-4 group-hover:text-primary transition-colors">{panel.title}</CardTitle>
+                    <CardDescription className="line-clamp-2">{panel.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </AdminOnly>
 
       {/* Provider Status with improved design */}
       {providers.length > 0 && (
