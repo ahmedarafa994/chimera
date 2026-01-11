@@ -478,7 +478,7 @@ async def update_current_user_profile(
 
         # Log successful update to audit trail
         audit_log(
-            action=AuditAction.USER_MODIFY,
+            action=AuditAction.USER_PROFILE_UPDATE,
             user_id=str(user.id),
             resource="/api/v1/users/me",
             details={
@@ -700,7 +700,7 @@ async def change_password(
 
         # Password changed successfully - log to audit trail
         audit_log(
-            action=AuditAction.USER_MODIFY,
+            action=AuditAction.USER_PASSWORD_CHANGE,
             user_id=str(user.id),
             resource="/api/v1/users/me/change-password",
             details={

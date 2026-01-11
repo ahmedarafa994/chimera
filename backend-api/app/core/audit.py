@@ -58,6 +58,10 @@ class AuditAction(str, Enum):
     USER_MODIFY = "user.modify"
     USER_DELETE = "user.delete"
     USER_ROLE_CHANGE = "user.role_change"
+    USER_REGISTER = "user.register"
+    USER_VERIFY = "user.verify"
+    USER_PASSWORD_CHANGE = "user.password_change"
+    USER_PROFILE_UPDATE = "user.profile_update"
 
     # System events
     SYSTEM_STARTUP = "system.startup"

@@ -306,7 +306,8 @@ Register a new user account with email verification.
     tags=["authentication"],
 )
 async def register_user(
-    request: UserRegistrationRequest,
+    request_data: UserRegistrationRequest,
+    http_request: Request,
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_db_session),
 ) -> UserRegistrationResponse:
@@ -319,11 +320,17 @@ async def register_user(
     - Email verification token generation
     - Verification email sent asynchronously
     """
+    # Import audit for logging
+    from app.core.audit import AuditAction, audit_log
+
+    # Get client IP for audit logging
+    client_ip = http_request.client.host if http_request.client else None
+
     # Validate password strength first (for better error messages)
     password_result = validate_password(
-        request.password,
-        email=request.email,
-        username=request.username,
+        request_data.password,
+        email=request_data.email,
+        username=request_data.username,
     )
 
     if not password_result.is_valid:
@@ -341,9 +348,9 @@ async def register_user(
     user_service = get_user_service(session)
 
     result = await user_service.register_user(
-        email=request.email,
-        username=request.username,
-        password=request.password,
+        email=request_data.email,
+        username=request_data.username,
+        password=request_data.password,
         role=UserRole.VIEWER,  # Default role for new users
     )
 
@@ -371,6 +378,21 @@ async def register_user(
             verification_token=result.verification_token,
         )
         logger.info(f"Verification email queued for {result.user.email}")
+
+    # Log successful registration to audit trail
+    audit_log(
+        action=AuditAction.USER_REGISTER,
+        user_id=str(result.user.id),
+        resource="/api/v1/auth/register",
+        details={
+            "email": result.user.email,
+            "username": result.user.username,
+            "role": result.user.role.value,
+        },
+        ip_address=client_ip,
+    )
+
+    logger.info(f"User registered successfully: {result.user.email} (id={result.user.id})")
 
     return UserRegistrationResponse(
         success=True,
@@ -468,6 +490,7 @@ Verify a user's email address using the verification token sent via email.
 )
 async def verify_email(
     token: str,
+    request: Request,
     session: AsyncSession = Depends(get_db_session),
 ) -> EmailVerificationResponse:
     """
@@ -476,6 +499,12 @@ async def verify_email(
     Validates the token, marks the user as verified,
     and clears the verification token.
     """
+    # Import audit for logging
+    from app.core.audit import AuditAction, audit_log
+
+    # Get client IP for audit logging
+    client_ip = request.client.host if request.client else None
+
     # Validate token format (should be 64 chars hex)
     if not token or len(token) != 64:
         logger.warning(f"Email verification failed: invalid token format")
@@ -505,6 +534,18 @@ async def verify_email(
                 "token_expired": token_expired,
             },
         )
+
+    # Log successful email verification to audit trail
+    audit_log(
+        action=AuditAction.USER_VERIFY,
+        user_id=str(result.user.id),
+        resource="/api/v1/auth/verify-email",
+        details={
+            "email": result.user.email,
+            "username": result.user.username,
+        },
+        ip_address=client_ip,
+    )
 
     logger.info(f"Email verified successfully: {result.user.email}")
 
@@ -858,7 +899,7 @@ async def reset_password(
     # Log successful password reset to audit trail
     client_ip = request.client.host if request.client else None
     audit_log(
-        action=AuditAction.USER_MODIFY,
+        action=AuditAction.USER_PASSWORD_CHANGE,
         resource="/api/v1/auth/reset-password",
         details={
             "action": "password_reset",
