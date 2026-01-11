@@ -188,3 +188,25 @@ export {
   type CampaignSeries,
   type NormalizedMetricsChartProps,
 } from "./comparison/NormalizedMetricsChart";
+
+export {
+  DeltaIndicator,
+  PercentageDeltaIndicator,
+  AbsoluteDeltaIndicator,
+  SuccessRateDelta,
+  LatencyDelta,
+  CostDelta,
+  TokenDelta,
+  InlineDelta,
+  LargeDelta,
+  DeltaComparison,
+  DeltaBadge,
+  type DeltaMode,
+  type DeltaDirection,
+  type DeltaSize,
+  type DeltaIconStyle,
+  type DeltaColorPreset,
+  type DeltaIndicatorProps,
+  type DeltaComparisonProps,
+  type DeltaBadgeProps,
+} from "./comparison/DeltaIndicator";
