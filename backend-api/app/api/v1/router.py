@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     admin,
     advanced_generation,
     adversarial,  # Unified adversarial endpoint (ADR-003)
+    api_keys,  # API Key Management (Feature: API Key Management & Provider Health Dashboard)
     autoadv,
     autodan,
     autodan_enhanced,
@@ -103,6 +104,9 @@ api_router.include_router(providers.router, tags=["providers"])
 api_router.include_router(
     provider_config.router, prefix="/provider-config", tags=["provider-config", "providers"]
 )
+
+# --- API Key Management (Feature: API Key Management & Provider Health Dashboard) ---
+api_router.include_router(api_keys.router, tags=["api-keys", "providers"])
 
 # --- Admin & Infrastructure ---
 api_router.include_router(admin.router, tags=["admin"])
