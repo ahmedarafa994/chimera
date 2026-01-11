@@ -294,3 +294,26 @@ export {
   type PresetConfig,
   type DateRangePickerProps,
 } from "./DateRangePicker";
+
+// =============================================================================
+// TelemetryDetailModal Components
+// =============================================================================
+
+export {
+  TelemetryDetailModal,
+  SimpleTelemetryDetailModal,
+  CompactTelemetryDetailModal,
+  TelemetryDetailModalSkeleton,
+  TelemetryDetailModalError,
+  StatusBadge,
+  CopyButton,
+  MetadataRow,
+  ScoreCard,
+  PromptDisplay,
+  ResponseDisplay,
+  TimingBreakdown,
+  QualityScores,
+  type NavigationDirection,
+  type DetailTab,
+  type TelemetryDetailModalProps,
+} from "./TelemetryDetailModal";
