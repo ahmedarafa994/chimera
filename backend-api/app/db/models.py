@@ -23,6 +23,21 @@ class UserRole(str, PyEnum):
     VIEWER = "viewer"  # Read-only access
 
 
+class CampaignVisibility(str, PyEnum):
+    """Campaign visibility levels for access control"""
+
+    PRIVATE = "private"  # Only owner can access
+    TEAM = "team"  # All users in the same organization/team can access
+    PUBLIC = "public"  # All authenticated users can access
+
+
+class CampaignSharePermission(str, PyEnum):
+    """Permission levels for shared campaigns"""
+
+    VIEW = "view"  # Read-only access to campaign
+    EDIT = "edit"  # Can modify campaign content
+
+
 # =============================================================================
 # User and Authentication Models
 # =============================================================================
@@ -256,3 +271,149 @@ class JailbreakPrompt(Base):
 
     dataset = relationship("JailbreakDataset", back_populates="prompts")
     evasion_tasks = relationship("DBEvasionTask", back_populates="jailbreak_prompt")
+
+
+# =============================================================================
+# Campaign Models with Ownership and Sharing
+# =============================================================================
+
+
+class Campaign(Base):
+    """
+    Campaign model for organizing jailbreak research and prompt testing.
+
+    Supports ownership, visibility levels (private/team/public), and explicit
+    sharing with specific users via CampaignShare. Campaigns group related
+    jailbreak attempts and track research progress.
+    """
+
+    __tablename__ = "campaigns"
+
+    # Primary key
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Ownership - links to the user who created the campaign
+    owner_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Campaign metadata
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Visibility control
+    visibility = Column(
+        Enum(CampaignVisibility, name="campaign_visibility", native_enum=False),
+        default=CampaignVisibility.PRIVATE,
+        nullable=False,
+    )
+
+    # Campaign status
+    is_active = Column(Boolean, default=True, nullable=False)
+    is_archived = Column(Boolean, default=False, nullable=False)
+
+    # Campaign configuration (stored as JSON for flexibility)
+    config = Column(JSON, default={}, nullable=False)
+
+    # Optional target model preference for the campaign
+    target_provider = Column(String(50), nullable=True)
+    target_model = Column(String(100), nullable=True)
+
+    # Statistics (denormalized for performance)
+    total_attempts = Column(Integer, default=0, nullable=False)
+    successful_attempts = Column(Integer, default=0, nullable=False)
+
+    # Timestamps
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
+    last_activity_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    owner = relationship("User", backref="owned_campaigns", lazy="joined")
+    shares = relationship(
+        "CampaignShare",
+        back_populates="campaign",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
+    # Table indexes for performance
+    __table_args__ = (
+        Index("ix_campaigns_owner_active", "owner_id", "is_active"),
+        Index("ix_campaigns_visibility", "visibility"),
+        Index("ix_campaigns_owner_visibility", "owner_id", "visibility"),
+        Index("ix_campaigns_created_at", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Campaign(id={self.id}, name={self.name}, owner_id={self.owner_id}, visibility={self.visibility})>"
+
+
+class CampaignShare(Base):
+    """
+    Explicit campaign sharing model for granting access to specific users.
+
+    When a campaign has PRIVATE visibility, the owner can still share it with
+    specific users via this model. Each share grants either VIEW or EDIT
+    permissions to the target user.
+    """
+
+    __tablename__ = "campaign_shares"
+
+    # Primary key
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Foreign keys
+    campaign_id = Column(
+        Integer,
+        ForeignKey("campaigns.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Permission level
+    permission = Column(
+        Enum(CampaignSharePermission, name="campaign_share_permission", native_enum=False),
+        default=CampaignSharePermission.VIEW,
+        nullable=False,
+    )
+
+    # Who shared this campaign (for audit purposes)
+    shared_by_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Timestamps
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
+
+    # Relationships
+    campaign = relationship("Campaign", back_populates="shares")
+    user = relationship("User", foreign_keys=[user_id], backref="shared_campaigns")
+    shared_by = relationship("User", foreign_keys=[shared_by_id])
+
+    # Table indexes and constraints
+    __table_args__ = (
+        # Ensure a user can only have one share entry per campaign
+        Index(
+            "ix_campaign_shares_unique",
+            "campaign_id",
+            "user_id",
+            unique=True,
+        ),
+        Index("ix_campaign_shares_user_permission", "user_id", "permission"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<CampaignShare(id={self.id}, campaign_id={self.campaign_id}, user_id={self.user_id}, permission={self.permission})>"
