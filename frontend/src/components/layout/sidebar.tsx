@@ -78,7 +78,7 @@ const AI_TOOLS_ROUTES: RouteConfig[] = [
 const RESOURCE_ROUTES: RouteConfig[] = [
   { label: "Models", icon: Cpu, href: "/dashboard/models", description: "Model & Session Mgmt" },
   { label: "AI Providers", icon: Server, href: "/dashboard/providers", description: "Configure & Switch Providers" },
-  { label: "Campaign Analytics", icon: BarChart3, href: "/dashboard/campaign-analytics", description: "Telemetry & Reporting" },
+  { label: "Campaign Analytics", icon: BarChart3, href: "/dashboard/analytics", description: "Telemetry & Reporting" },
   { label: "Techniques", icon: Layers, href: "/dashboard/techniques" },
   { label: "Metrics", icon: Activity, href: "/dashboard/metrics" },
 ];
