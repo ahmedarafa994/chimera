@@ -19,6 +19,7 @@ from app.api.v1.endpoints import (
     autodan_hierarchical,
     autodan_turbo,
     aegis,
+    campaigns,  # Campaign sharing endpoints
     chat,
     connection,
     csrf,
@@ -117,6 +118,9 @@ api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 
 # --- User Profile Management Endpoints ---
 api_router.include_router(users.router, prefix="/users", tags=["users", "profile"])
+
+# --- Campaign Sharing Endpoints ---
+api_router.include_router(campaigns.router, prefix="/campaigns", tags=["campaigns", "sharing"])
 
 # --- Background Jobs ---
 api_router.include_router(jobs.router, tags=["background-jobs"])
