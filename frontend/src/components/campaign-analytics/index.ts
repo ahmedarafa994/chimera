@@ -317,3 +317,22 @@ export {
   type DetailTab,
   type TelemetryDetailModalProps,
 } from "./TelemetryDetailModal";
+
+// =============================================================================
+// TelemetryTable Components
+// =============================================================================
+
+export {
+  TelemetryTable,
+  SimpleTelemetryTable,
+  CompactTelemetryTable,
+  DetailedTelemetryTable,
+  TelemetryTableSkeleton,
+  TelemetryTableError,
+  TelemetryTableEmpty,
+  TelemetryTableWaiting,
+  type TelemetrySortField,
+  type SortDirection,
+  type TelemetrySortConfig,
+  type TelemetryTableProps,
+} from "./TelemetryTable";
