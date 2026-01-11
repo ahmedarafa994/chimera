@@ -210,3 +210,12 @@ export {
   type DeltaComparisonProps,
   type DeltaBadgeProps,
 } from "./comparison/DeltaIndicator";
+
+export {
+  CampaignComparisonPanel,
+  SimpleComparisonPanel,
+  CompactComparisonPanel,
+  DetailedComparisonPanel,
+  type ComparisonViewMode,
+  type CampaignComparisonPanelProps,
+} from "./comparison/CampaignComparisonPanel";
