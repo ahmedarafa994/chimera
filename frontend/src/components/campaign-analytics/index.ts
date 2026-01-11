@@ -274,3 +274,23 @@ export {
   type FilterState,
   type FilterBarProps,
 } from "./FilterBar";
+
+// =============================================================================
+// DateRangePicker Components
+// =============================================================================
+
+export {
+  DateRangePicker,
+  SimpleDateRangePicker,
+  CompactDateRangePicker,
+  CalendarOnlyDateRangePicker,
+  AnalyticsDateRangePicker,
+  DateRangePickerSkeleton,
+  DateRangePickerEmpty,
+  type DateRangeValue,
+  type DateRangePreset,
+  type DateRangePickerSize,
+  type DateRangePickerAlign,
+  type PresetConfig,
+  type DateRangePickerProps,
+} from "./DateRangePicker";
