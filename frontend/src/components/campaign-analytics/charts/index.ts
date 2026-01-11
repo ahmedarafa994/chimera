@@ -112,4 +112,5 @@ export type {
   BoxPlotStats,
   LatencyDataPoint,
   LatencyFilter,
+  ChartViewMode as LatencyChartViewMode,
 } from "./LatencyDistributionChart";
