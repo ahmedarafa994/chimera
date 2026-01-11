@@ -33,6 +33,51 @@ from app.schemas.base_schemas import (
     ErrorResponse,
     SuccessResponse,
 )
+from app.schemas.campaign_analytics import (
+    # Enums
+    CampaignStatusEnum,
+    ExecutionStatusEnum,
+    ExportFormat,
+    MetricType,
+    TimeGranularity,
+    # Campaign schemas
+    CampaignBase,
+    CampaignComparison,
+    CampaignComparisonItem,
+    CampaignComparisonRequest,
+    CampaignCreate,
+    CampaignDetail,
+    CampaignFilterParams,
+    CampaignListRequest,
+    CampaignListResponse,
+    CampaignStatistics,
+    CampaignSummary,
+    CampaignUpdate,
+    # Breakdown schemas
+    BreakdownItem,
+    PotencyBreakdown,
+    ProviderBreakdown,
+    TechniqueBreakdown,
+    # Statistics schemas
+    AttemptCounts,
+    DistributionStats,
+    PercentileStats,
+    # Time series schemas
+    MultiSeriesTimeSeries,
+    TelemetryTimeSeries,
+    TimeSeriesDataPoint,
+    TimeSeriesQuery,
+    # Telemetry schemas
+    TelemetryEventDetail,
+    TelemetryEventSummary,
+    TelemetryFilterParams,
+    TelemetryListResponse,
+    # Export schemas
+    ExportChartOptions,
+    ExportDataOptions,
+    ExportRequest,
+    ExportResponse,
+)
 
 # Aliases for backward compatibility with endpoints expecting these names
 ExecuteRequest = PromptRequest
@@ -91,34 +136,86 @@ class TechniqueListResponse(BaseModel):
 
 
 __all__ = [
+    # Base schemas
     "BaseRequest",
     "BaseResponse",
     "BaseSchema",
     "ErrorResponse",
+    "SuccessResponse",
+    # Evasion schemas
     "EvasionAttemptResult",
     "EvasionTaskConfig",
     "EvasionTaskResult",
     "EvasionTaskStatusEnum",
     "EvasionTaskStatusResponse",
+    # Execution aliases
     "ExecuteRequest",
     "ExecuteResponse",
+    # Health check
     "HealthCheckResponse",
+    # LLM schemas
     "LLMModel",
     "LLMModelBase",
     "LLMModelCreate",
     "LLMProvider",
     "LLMResult",
+    # Metamorphosis schemas
     "MetamorphosisStrategyConfig",
     "MetamorphosisStrategyInfo",
+    # Provider schemas
     "Provider",
     "ProviderInfo",
     "ProviderListResponse",
-    "SuccessResponse",
+    # Technique schemas
     "TechniqueInfo",
     "TechniqueListResponse",
     "TechniqueSuite",
+    # Transform aliases
     "TransformRequest",
     "TransformResponse",
     "TransformResultMetadata",
     "TransformationDetail",
+    # Campaign Analytics - Enums
+    "CampaignStatusEnum",
+    "ExecutionStatusEnum",
+    "ExportFormat",
+    "MetricType",
+    "TimeGranularity",
+    # Campaign Analytics - Campaign schemas
+    "CampaignBase",
+    "CampaignComparison",
+    "CampaignComparisonItem",
+    "CampaignComparisonRequest",
+    "CampaignCreate",
+    "CampaignDetail",
+    "CampaignFilterParams",
+    "CampaignListRequest",
+    "CampaignListResponse",
+    "CampaignStatistics",
+    "CampaignSummary",
+    "CampaignUpdate",
+    # Campaign Analytics - Breakdown schemas
+    "BreakdownItem",
+    "PotencyBreakdown",
+    "ProviderBreakdown",
+    "TechniqueBreakdown",
+    # Campaign Analytics - Statistics schemas
+    "AttemptCounts",
+    "DistributionStats",
+    "PercentileStats",
+    # Campaign Analytics - Time series schemas
+    "MultiSeriesTimeSeries",
+    "TelemetryTimeSeries",
+    "TimeSeriesDataPoint",
+    "TimeSeriesQuery",
+    # Campaign Analytics - Telemetry schemas
+    "TelemetryEventDetail",
+    "TelemetryEventSummary",
+    "TelemetryFilterParams",
+    "TelemetryListResponse",
+    # Campaign Analytics - Export schemas
+    "ExportChartOptions",
+    "ExportDataOptions",
+    "ExportRequest",
+    "ExportResponse",
 ]
