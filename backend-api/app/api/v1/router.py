@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     admin,
     advanced_generation,
     adversarial,  # Unified adversarial endpoint (ADR-003)
+    auth,  # User authentication endpoints
     autoadv,
     autodan,
     autodan_enhanced,
@@ -109,6 +110,9 @@ api_router.include_router(admin.router, tags=["admin"])
 
 # --- Security Endpoints ---
 api_router.include_router(csrf.router, tags=["security"])
+
+# --- Authentication Endpoints ---
+api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 
 # --- Background Jobs ---
 api_router.include_router(jobs.router, tags=["background-jobs"])
