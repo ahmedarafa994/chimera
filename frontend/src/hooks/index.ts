@@ -146,6 +146,31 @@ export {
   type UseWebSocketStreamingReturn,
 } from "./useWebSocketStreaming";
 
+// Authentication hooks (NEW - Multi-user authentication)
+export {
+  useAuth,
+  useCurrentUser,
+  useAuthStatus,
+  useAuthActions,
+  useRoles,
+  useTokens,
+  usePassword,
+  useEmailVerification,
+  useRequireRole,
+  useMinimumRole,
+  type AuthUser,
+  type AuthTokens,
+  type LoginCredentials,
+  type LoginResponse,
+  type RegistrationData,
+  type RegistrationResponse,
+  type PasswordStrengthResult,
+  type AuthError,
+  type UserRole,
+  type AuthState,
+  type AuthContextValue,
+} from "./useAuth";
+
 // Re-export types from unified providers
 export type {
   ProviderInfo,

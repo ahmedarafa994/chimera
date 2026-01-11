@@ -288,6 +288,15 @@ export interface AuthTokens {
   refresh_expires_in: number;
 }
 
+/**
+ * User role enum matching backend UserRole
+ */
+export type UserRole = 'admin' | 'researcher' | 'viewer';
+
+/**
+ * User as returned from legacy API endpoints
+ * For new authentication, use AuthUser from AuthContext
+ */
 export interface User {
   id: string;
   email: string;
@@ -296,6 +305,44 @@ export interface User {
   roles: string[];
   permissions: string[];
   metadata?: Record<string, unknown>;
+}
+
+/**
+ * User as returned from authentication endpoints
+ */
+export interface AuthUser {
+  id: string;
+  email: string;
+  username: string;
+  role: UserRole;
+  is_verified: boolean;
+  is_active?: boolean;
+  created_at?: string;
+  last_login?: string;
+}
+
+/**
+ * Login response from /auth/login endpoint
+ */
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  refresh_expires_in: number;
+  user: AuthUser;
+  requires_verification: boolean;
+}
+
+/**
+ * Refresh token response
+ */
+export interface RefreshResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  refresh_expires_in: number;
 }
 
 // ============================================================================
