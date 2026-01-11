@@ -29,3 +29,7 @@ export type { TokenUsageCardProps } from "./TokenUsageCard";
 // Latency metrics card (API and processing latency)
 export { LatencyCard } from "./LatencyCard";
 export type { LatencyCardProps } from "./LatencyCard";
+
+// Live event feed (scrolling real-time events)
+export { LiveEventFeed } from "./LiveEventFeed";
+export type { LiveEventFeedProps } from "./LiveEventFeed";
