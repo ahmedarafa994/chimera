@@ -4,6 +4,7 @@ User Profile Management API Endpoints
 Provides user profile endpoints:
 - GET /me - Get current user profile
 - PUT /me - Update current user profile
+- POST /me/change-password - Change user password
 
 All endpoints require authentication and return sanitized user data (no password hash).
 """
@@ -21,7 +22,9 @@ from app.core.audit import AuditAction, audit_log
 from app.core.auth import TokenPayload, get_current_user
 from app.core.database import get_async_session_factory
 from app.core.exceptions import ValidationError
+from app.core.rate_limit import RateLimitConfig, get_rate_limiter, get_rate_limit_key
 from app.db.models import User, UserRole
+from app.services.password_validator import validate_password
 from app.services.user_service import UserService, get_user_service
 
 logger = logging.getLogger(__name__)
@@ -124,6 +127,80 @@ class ProfileUpdateErrorResponse(BaseModel):
     success: bool = False
     error: str
     field: Optional[str] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    """Request model for changing user password."""
+
+    current_password: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Current password for verification",
+    )
+    new_password: str = Field(
+        ...,
+        min_length=12,
+        max_length=128,
+        description="New password (minimum 12 characters with mixed case, numbers, and special characters)",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "current_password": "MyCurrentP@ssw0rd!",
+                "new_password": "MyNewSecureP@ssw0rd123!",
+            }
+        }
+
+
+class ChangePasswordResponse(BaseModel):
+    """Response model for successful password change."""
+
+    success: bool = True
+    message: str = "Password changed successfully."
+
+
+class ChangePasswordErrorResponse(BaseModel):
+    """Response model for password change errors."""
+
+    success: bool = False
+    error: str
+    incorrect_password: bool = False
+    password_errors: Optional[list[str]] = None
+
+
+# =============================================================================
+# Rate Limiting Configuration
+# =============================================================================
+
+# Change password: 5 requests per minute per IP to prevent brute force
+CHANGE_PASSWORD_RATE_LIMIT = RateLimitConfig(
+    requests_per_minute=5,
+    burst_size=2,
+    cost_weight=1,
+)
+
+
+async def _check_change_password_rate_limit(request: Request) -> None:
+    """
+    Check rate limit for change password requests.
+
+    Raises:
+        HTTPException: If rate limit is exceeded
+    """
+    rate_limiter = get_rate_limiter()
+    key = get_rate_limit_key(request, prefix="change_password")
+    allowed, headers = await rate_limiter.check_rate_limit(
+        key, CHANGE_PASSWORD_RATE_LIMIT
+    )
+    if not allowed:
+        logger.warning(f"Change password rate limit exceeded for IP: {request.client.host}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many password change attempts. Please try again later.",
+            headers=headers,
+        )
 
 
 # =============================================================================
@@ -451,4 +528,195 @@ async def update_current_user_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while updating profile",
+        )
+
+
+@router.post(
+    "/me/change-password",
+    status_code=status.HTTP_200_OK,
+    response_model=ChangePasswordResponse,
+    summary="Change user password",
+    description="""
+Change the password for the currently authenticated user.
+
+**Requires**:
+- Current password verification
+- New password meeting strength requirements
+
+**Password Requirements**:
+- Minimum 12 characters
+- At least one uppercase letter (A-Z)
+- At least one lowercase letter (a-z)
+- At least one digit (0-9)
+- At least one special character (!@#$%^&* etc.)
+- Cannot be a common password
+- Cannot contain email or username
+
+**Rate Limiting**: 5 requests per minute per IP
+
+**Security Notes**:
+- Current password is verified before any changes are made
+- Failed attempts are logged for security monitoring
+- Password change is logged to audit trail
+
+**Example Request**:
+```json
+{
+  "current_password": "MyCurrentP@ssw0rd!",
+  "new_password": "MyNewSecureP@ssw0rd123!"
+}
+```
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "message": "Password changed successfully."
+}
+```
+    """,
+    responses={
+        200: {
+            "description": "Password changed successfully",
+            "model": ChangePasswordResponse,
+        },
+        400: {
+            "description": "Invalid request or password validation failed",
+            "model": ChangePasswordErrorResponse,
+        },
+        401: {"description": "Not authenticated or incorrect current password"},
+        403: {"description": "API key authentication not supported for password change"},
+        429: {"description": "Too many password change attempts"},
+    },
+    tags=["users", "profile", "security"],
+)
+async def change_password(
+    request_data: ChangePasswordRequest,
+    request: Request,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> ChangePasswordResponse:
+    """
+    Change the current authenticated user's password.
+
+    Requires current password verification and validates new password strength.
+    """
+    # Check rate limit
+    await _check_change_password_rate_limit(request)
+
+    # Get authenticated user
+    user = await _get_authenticated_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # First, validate new password strength before attempting change
+    # This provides early feedback on password requirements
+    validation_result = validate_password(
+        request_data.new_password,
+        email=user.email,
+        username=user.username,
+    )
+
+    if not validation_result.is_valid:
+        password_errors = [e.message for e in validation_result.errors]
+        logger.info(f"Password change rejected: weak password for user {user.id}")
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": "New password does not meet requirements",
+                "incorrect_password": False,
+                "password_errors": password_errors,
+            },
+        )
+
+    # Attempt password change via user service
+    user_service = get_user_service(session)
+
+    try:
+        result = await user_service.change_password(
+            user_id=user.id,
+            current_password=request_data.current_password,
+            new_password=request_data.new_password,
+        )
+
+        if not result.success:
+            # Determine the error type
+            if result.error == "Current password is incorrect":
+                # Log failed password verification attempt
+                audit_log(
+                    action=AuditAction.AUTH_FAILED,
+                    user_id=str(user.id),
+                    resource="/api/v1/users/me/change-password",
+                    details={
+                        "action": "password_change_failed",
+                        "reason": "incorrect_current_password",
+                    },
+                    ip_address=client_ip,
+                )
+
+                logger.info(f"Password change failed: incorrect current password for user {user.id}")
+
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={
+                        "success": False,
+                        "error": "Current password is incorrect",
+                        "incorrect_password": True,
+                        "password_errors": None,
+                    },
+                )
+
+            # Password validation failed (shouldn't happen as we validate above, but handle it)
+            if result.validation_result and not result.validation_result.is_valid:
+                password_errors = [e.message for e in result.validation_result.errors]
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "success": False,
+                        "error": result.error or "New password does not meet requirements",
+                        "incorrect_password": False,
+                        "password_errors": password_errors,
+                    },
+                )
+
+            # Other error
+            logger.error(f"Password change failed for user {user.id}: {result.error}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "success": False,
+                    "error": result.error or "Password change failed",
+                    "incorrect_password": False,
+                    "password_errors": None,
+                },
+            )
+
+        # Password changed successfully - log to audit trail
+        audit_log(
+            action=AuditAction.USER_MODIFY,
+            user_id=str(user.id),
+            resource="/api/v1/users/me/change-password",
+            details={
+                "action": "password_changed",
+                "user_email": user.email,
+            },
+            ip_address=client_ip,
+        )
+
+        logger.info(f"Password changed successfully for user: {user.email} (id={user.id})")
+
+        return ChangePasswordResponse(
+            success=True,
+            message="Password changed successfully.",
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Unexpected error changing password: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while changing password",
         )
