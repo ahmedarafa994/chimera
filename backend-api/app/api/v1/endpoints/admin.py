@@ -13,21 +13,22 @@ Part of Phase 7: Admin User Management.
 
 import logging
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import AuditAction, audit_log
-from app.core.auth import TokenPayload, get_current_user
+from app.core.auth import TokenPayload, get_current_user, auth_service
 from app.core.config import settings
 from app.core.database import get_async_session_factory
 from app.core.logging import logger
 from app.db.models import User, UserRole
 from app.repositories.user_repository import get_user_repository
+from app.services.email_service import get_email_service
 from app.services.feature_flag_service import FeatureFlagService, get_feature_flags
 from app.services.tenant_service import TenantService, TenantTier, get_tenant_service
 from app.services.usage_tracker import UsageTracker, get_usage_tracker
@@ -607,6 +608,107 @@ class AdminUserUpdateResponse(BaseModel):
     message: str
     user: AdminUserResponse
     changes: dict = Field(default_factory=dict, description="Applied changes")
+
+
+# =============================================================================
+# Admin User Invite Models
+# =============================================================================
+
+
+class AdminInviteUserRequest(BaseModel):
+    """Request model for inviting a new user."""
+
+    email: EmailStr = Field(
+        ...,
+        description="Email address of the user to invite",
+        examples=["newuser@example.com"],
+    )
+    role: str = Field(
+        default="viewer",
+        description="Role to assign to the invited user: admin, researcher, or viewer",
+        examples=["researcher", "viewer"],
+    )
+    username: Optional[str] = Field(
+        None,
+        min_length=3,
+        max_length=50,
+        description="Optional username for the invited user (defaults to email prefix)",
+    )
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        """Validate that role is one of the allowed values."""
+        valid_roles = ["admin", "researcher", "viewer"]
+        v_lower = v.lower()
+        if v_lower not in valid_roles:
+            raise ValueError(f"Invalid role: {v}. Valid roles are: {', '.join(valid_roles)}")
+        return v_lower
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        """Validate username format if provided."""
+        if v is None:
+            return v
+        # Username must be alphanumeric with underscores/hyphens
+        import re
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", v):
+            raise ValueError(
+                "Username must start with a letter and contain only letters, numbers, underscores, or hyphens"
+            )
+        return v
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "researcher@example.com",
+                "role": "researcher",
+                "username": "new_researcher",
+            }
+        }
+
+
+class AdminInviteUserResponse(BaseModel):
+    """Response model for successful user invitation."""
+
+    success: bool = True
+    message: str
+    user_id: int
+    email: str
+    role: str
+    invitation_expires_at: datetime
+    username: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "message": "Invitation sent successfully",
+                "user_id": 123,
+                "email": "newuser@example.com",
+                "role": "researcher",
+                "invitation_expires_at": "2024-01-25T10:00:00Z",
+                "username": "newuser",
+            }
+        }
+
+
+class AdminInviteUserErrorResponse(BaseModel):
+    """Error response for user invitation endpoint."""
+
+    success: bool = False
+    error: str
+    email: Optional[str] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": False,
+                "error": "Email is already registered",
+                "email": "existing@example.com",
+            }
+        }
 
 
 # =============================================================================
@@ -1567,4 +1669,224 @@ async def deactivate_user(
         user_id=user_id,
         is_active=False,
         email=target_user.email,
+    )
+
+
+# =============================================================================
+# Admin User Invite Endpoint
+# =============================================================================
+
+# Invitation expiration: 7 days
+INVITATION_EXPIRY_DAYS = 7
+
+
+async def _send_invitation_email(
+    email: str,
+    inviter_name: str,
+    role: str,
+    invitation_token: str,
+) -> None:
+    """
+    Background task to send invitation email.
+
+    Args:
+        email: Recipient email address
+        inviter_name: Name of the admin who sent the invitation
+        role: Role being assigned to the invited user
+        invitation_token: Invitation token for the accept link
+    """
+    try:
+        email_service = get_email_service()
+        result = await email_service.send_invitation_email(
+            email=email,
+            inviter_name=inviter_name,
+            role=role.capitalize(),
+            invitation_token=invitation_token,
+        )
+
+        if result.success:
+            admin_logger.info(f"Invitation email sent to {email}")
+        else:
+            admin_logger.error(f"Failed to send invitation email to {email}: {result.error}")
+
+    except Exception as e:
+        admin_logger.error(f"Error sending invitation email to {email}: {e}", exc_info=True)
+
+
+@router.post(
+    "/users/invite",
+    status_code=status.HTTP_201_CREATED,
+    response_model=AdminInviteUserResponse,
+    summary="Invite new user (Admin only)",
+    description="""
+Invite a new user to the system with a specific role.
+
+**ADMIN ONLY**: This endpoint requires admin role.
+
+**Request Body**:
+- `email` - Email address of the user to invite (required)
+- `role` - Role to assign: admin, researcher, or viewer (default: viewer)
+- `username` - Optional username (defaults to email prefix if not provided)
+
+**Process**:
+1. Creates a new user account with a random temporary password
+2. Sets the account as unverified (is_verified=false)
+3. Generates an invitation token with 7-day expiry
+4. Sends an invitation email with a link to accept and set password
+
+**Notes**:
+- The invited user must click the invitation link and set their password
+- Invitation link expires after 7 days
+- If the email is already registered, returns an error
+- The invited user's account is active but unverified until they accept
+
+**Authentication**: Requires JWT token with admin role
+    """,
+    responses={
+        201: {
+            "description": "User invited successfully",
+            "model": AdminInviteUserResponse,
+        },
+        400: {
+            "description": "Invalid input or validation error",
+            "model": AdminInviteUserErrorResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {
+            "description": "Admin role required",
+            "model": AdminInviteUserErrorResponse,
+        },
+        409: {
+            "description": "Email already registered",
+            "model": AdminInviteUserErrorResponse,
+        },
+    },
+    tags=["admin", "users"],
+)
+async def invite_user(
+    request: Request,
+    invite_request: AdminInviteUserRequest,
+    background_tasks: BackgroundTasks,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> AdminInviteUserResponse:
+    """
+    Invite a new user to the system with a specific role.
+
+    Admin-only endpoint for user invitations.
+    """
+    # Authenticate and verify admin role
+    admin_user = await _get_admin_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Check if email is already registered
+    existing_user = await user_repo.get_by_email(invite_request.email)
+    if existing_user:
+        admin_logger.warning(
+            f"Admin {admin_user.id} attempted to invite already registered email: {invite_request.email}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Email '{invite_request.email}' is already registered",
+        )
+
+    # Generate username if not provided (use email prefix)
+    username = invite_request.username
+    if not username:
+        # Extract username from email (before @)
+        email_prefix = invite_request.email.split("@")[0]
+        # Clean up the prefix to be a valid username
+        import re
+        username = re.sub(r"[^a-zA-Z0-9_-]", "_", email_prefix)
+        # Ensure it starts with a letter
+        if not username or not username[0].isalpha():
+            username = "user_" + username
+
+    # Check if username is already taken
+    existing_username = await user_repo.get_by_username(username)
+    if existing_username:
+        # Append random suffix to make it unique
+        username = f"{username}_{secrets.token_hex(3)}"
+
+    # Generate invitation token (64 characters hex)
+    invitation_token = secrets.token_hex(32)
+
+    # Generate a random temporary password (user will set their own via invitation link)
+    temp_password = secrets.token_urlsafe(32)
+    hashed_password = auth_service.hash_password(temp_password)
+
+    # Parse role
+    try:
+        user_role = UserRole(invite_request.role)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid role: {invite_request.role}. Valid roles are: admin, researcher, viewer",
+        )
+
+    # Calculate invitation expiry
+    invitation_expires_at = datetime.utcnow() + timedelta(days=INVITATION_EXPIRY_DAYS)
+
+    # Create the user account
+    try:
+        new_user = await user_repo.create_user(
+            email=invite_request.email,
+            username=username,
+            hashed_password=hashed_password,
+            role=user_role,
+            is_active=True,  # Active but unverified
+            is_verified=False,  # Must accept invitation to verify
+            email_verification_token=invitation_token,
+            email_verification_token_expires=invitation_expires_at,
+        )
+        await session.commit()
+
+    except Exception as e:
+        await session.rollback()
+        admin_logger.error(f"Failed to create invited user: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user invitation",
+        )
+
+    # Log the admin action
+    audit_log(
+        action=AuditAction.USER_INVITE,
+        user_id=str(admin_user.id),
+        resource="/api/v1/admin/users/invite",
+        details={
+            "action": "invite_user",
+            "invited_user_id": new_user.id,
+            "invited_user_email": new_user.email,
+            "invited_user_username": new_user.username,
+            "assigned_role": invite_request.role,
+            "invitation_expires_at": invitation_expires_at.isoformat(),
+        },
+        ip_address=client_ip,
+    )
+
+    admin_logger.info(
+        f"Admin {admin_user.id} invited user {new_user.email} as {invite_request.role} (user_id={new_user.id})"
+    )
+
+    # Send invitation email in background
+    background_tasks.add_task(
+        _send_invitation_email,
+        email=new_user.email,
+        inviter_name=admin_user.username,
+        role=invite_request.role,
+        invitation_token=invitation_token,
+    )
+
+    return AdminInviteUserResponse(
+        success=True,
+        message="Invitation sent successfully",
+        user_id=new_user.id,
+        email=new_user.email,
+        role=invite_request.role,
+        invitation_expires_at=invitation_expires_at,
+        username=new_user.username,
     )

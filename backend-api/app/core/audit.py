@@ -62,6 +62,7 @@ class AuditAction(str, Enum):
     USER_VERIFY = "user.verify"
     USER_PASSWORD_CHANGE = "user.password_change"
     USER_PROFILE_UPDATE = "user.profile_update"
+    USER_INVITE = "user.invite"
 
     # Campaign events
     CAMPAIGN_CREATE = "campaign.create"
