@@ -6,6 +6,10 @@
  * event feeds for monitoring Aegis campaign telemetry in real-time.
  */
 
+// Main dashboard container
+export { AegisCampaignDashboard } from "./AegisCampaignDashboard";
+export type { AegisCampaignDashboardProps } from "./AegisCampaignDashboard";
+
 // Connection status indicator
 export { ConnectionStatus } from "./ConnectionStatus";
 export type { ConnectionStatusProps } from "./ConnectionStatus";
