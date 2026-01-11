@@ -155,3 +155,22 @@ export {
   type LatencyDataPoint,
   type LatencyFilter,
 } from "./charts/LatencyDistributionChart";
+
+// =============================================================================
+// Comparison Components
+// =============================================================================
+
+export {
+  ComparisonTable,
+  ComparisonTableSkeleton,
+  ComparisonTableError,
+  ComparisonTableEmpty,
+  SimpleComparisonTable,
+  CompactComparisonTable,
+  SummaryComparisonTable,
+  type MetricDirection,
+  type MetricFormat,
+  type MetricRowConfig,
+  type MetricGroupConfig,
+  type ComparisonTableProps,
+} from "./comparison/ComparisonTable";
