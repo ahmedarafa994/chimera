@@ -257,3 +257,20 @@ export {
   type BulkExportResult,
   type ExportPanelProps,
 } from "./ExportPanel";
+
+// =============================================================================
+// Filter Components
+// =============================================================================
+
+export {
+  FilterBar,
+  FilterBarSkeleton,
+  FilterBarEmpty,
+  CompactFilterBar,
+  InlineFilterBar,
+  createDefaultFilterState,
+  filterStateToParams,
+  type DateRange,
+  type FilterState,
+  type FilterBarProps,
+} from "./FilterBar";
