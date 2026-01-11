@@ -44,6 +44,7 @@ from app.api.v1.endpoints import (
     streaming,
     tokens,
     transformation,
+    users,  # User profile management endpoints
     utils,
 )
 
@@ -113,6 +114,9 @@ api_router.include_router(csrf.router, tags=["security"])
 
 # --- Authentication Endpoints ---
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
+
+# --- User Profile Management Endpoints ---
+api_router.include_router(users.router, prefix="/users", tags=["users", "profile"])
 
 # --- Background Jobs ---
 api_router.include_router(jobs.router, tags=["background-jobs"])
