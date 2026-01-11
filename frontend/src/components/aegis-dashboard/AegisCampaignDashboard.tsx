@@ -63,6 +63,7 @@ import { PromptEvolutionTimeline } from "./PromptEvolutionTimeline";
 
 // Import hook and types
 import { useAegisTelemetry } from "@/lib/hooks/useAegisTelemetry";
+import { useChartDataDebounce } from "@/lib/hooks/useChartDataDebounce";
 import {
   CampaignStatus,
   CampaignSummary,
@@ -665,6 +666,21 @@ export const AegisCampaignDashboard = memo(function AegisCampaignDashboard({
   });
 
   // ============================================================================
+  // Debounced Chart Data (100ms debounce for performance)
+  // ============================================================================
+
+  const {
+    debouncedSuccessRateData,
+    debouncedTokenUsageData,
+    debouncedLatencyData,
+    isPending: isChartUpdatePending,
+  } = useChartDataDebounce(
+    successRateHistory,
+    tokenUsageHistory,
+    latencyHistory
+  );
+
+  // ============================================================================
   // Track Last Connected Time
   // ============================================================================
 
@@ -799,21 +815,21 @@ export const AegisCampaignDashboard = memo(function AegisCampaignDashboard({
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <SuccessRateCard
               metrics={metrics}
-              successRateHistory={successRateHistory}
+              successRateHistory={debouncedSuccessRateData}
               trend={trend.trend}
               trendChange={trend.change}
               compact
             />
             <TokenUsageCard
               tokenUsage={tokenUsage}
-              tokenUsageHistory={tokenUsageHistory}
+              tokenUsageHistory={debouncedTokenUsageData}
               successfulAttacks={metrics.successful_attacks}
               totalAttacks={metrics.total_attempts}
               compact
             />
             <LatencyCard
               latencyMetrics={latencyMetrics}
-              latencyHistory={latencyHistory}
+              latencyHistory={debouncedLatencyData}
               compact
             />
             <GlassCard variant="default" intensity="medium" className="p-4">
@@ -848,7 +864,7 @@ export const AegisCampaignDashboard = memo(function AegisCampaignDashboard({
           {/* Charts Row */}
           <div className="grid gap-4 lg:grid-cols-2">
             <SuccessRateTrendChart
-              data={successRateHistory}
+              data={debouncedSuccessRateData}
               timeWindowMinutes={30}
             />
             <TechniqueBreakdown

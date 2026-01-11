@@ -21,3 +21,23 @@ export type {
   UseAegisTelemetryReturn,
   UseAegisTelemetry,
 } from "./useAegisTelemetry";
+
+// Aegis Performance Optimization hooks
+export {
+  useChartDataDebounce,
+  CHART_UPDATE_DEBOUNCE_MS,
+  MAX_CHART_RENDER_POINTS,
+} from "./useChartDataDebounce";
+export type { UseChartDataDebounceReturn } from "./useChartDataDebounce";
+
+export {
+  usePerformanceMonitor,
+  aegisPerformanceMonitor,
+  AegisPerformanceMonitor,
+  MAX_EVENT_PROCESSING_MS,
+} from "./useAegisPerformanceMonitor";
+export type {
+  PerformanceSample,
+  PerformanceMetrics,
+  PerformanceMonitorConfig,
+} from "./useAegisPerformanceMonitor";

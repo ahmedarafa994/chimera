@@ -14,7 +14,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useTransition } from "react";
 import {
   AegisTelemetryEventType,
   AegisTelemetryEvent,
@@ -64,6 +64,7 @@ import {
   LatencyUpdateData,
 } from "@/types/aegis-telemetry";
 import { getApiConfig } from "@/lib/api-config";
+import { aegisPerformanceMonitor, MAX_EVENT_PROCESSING_MS } from "./useAegisPerformanceMonitor";
 
 // ============================================================================
 // Types
@@ -273,9 +274,13 @@ export function useAegisTelemetry(
 
   /**
    * Process incoming telemetry event and update state
+   * Performance tracked to ensure <500ms processing requirement
    */
   const processEvent = useCallback(
     (event: AegisTelemetryEventBase) => {
+      // Start performance measurement
+      const endMeasure = aegisPerformanceMonitor.startMeasure(event.event_type);
+
       const now = Date.now();
       const eventLatency = now - lastEventTimeRef.current;
       lastEventTimeRef.current = now;
@@ -577,6 +582,9 @@ export function useAegisTelemetry(
 
         return newState;
       });
+
+      // End performance measurement after state update is queued
+      endMeasure();
     },
     [log]
   );
