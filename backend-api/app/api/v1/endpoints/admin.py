@@ -5,22 +5,35 @@ Provides administrative controls for:
 - Feature flag management
 - Technique configuration
 - System statistics
+- User management (admin-only)
 
 Part of Phase 3: Transformation implementation.
+Part of Phase 7: Admin User Management.
 """
 
+import logging
 import secrets
-from typing import Any
+from datetime import datetime
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import AuditAction, audit_log
+from app.core.auth import TokenPayload, get_current_user
 from app.core.config import settings
+from app.core.database import get_async_session_factory
 from app.core.logging import logger
+from app.db.models import User, UserRole
+from app.repositories.user_repository import get_user_repository
 from app.services.feature_flag_service import FeatureFlagService, get_feature_flags
 from app.services.tenant_service import TenantService, TenantTier, get_tenant_service
 from app.services.usage_tracker import UsageTracker, get_usage_tracker
+from app.services.user_service import get_user_service
+
+admin_logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 security = HTTPBearer()
@@ -423,3 +436,385 @@ async def check_tenant_quota(
         if tenant.monthly_quota > 0
         else 0,
     }
+
+
+# =============================================================================
+# Admin User Management Models
+# =============================================================================
+
+
+class AdminUserResponse(BaseModel):
+    """Response model for a single user in admin context."""
+
+    id: int
+    email: str
+    username: str
+    role: str
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "email": "user@example.com",
+                "username": "john_doe",
+                "role": "researcher",
+                "is_active": True,
+                "is_verified": True,
+                "created_at": "2024-01-15T10:30:00Z",
+                "updated_at": "2024-01-20T14:45:00Z",
+                "last_login": "2024-01-25T09:00:00Z",
+            }
+        }
+
+
+class AdminUserListResponse(BaseModel):
+    """Response model for paginated user list."""
+
+    success: bool = True
+    users: list[AdminUserResponse]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
+    filters: dict = Field(default_factory=dict, description="Applied filters")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "users": [
+                    {
+                        "id": 1,
+                        "email": "admin@example.com",
+                        "username": "admin",
+                        "role": "admin",
+                        "is_active": True,
+                        "is_verified": True,
+                        "created_at": "2024-01-01T00:00:00Z",
+                        "updated_at": None,
+                        "last_login": "2024-01-25T10:00:00Z",
+                    }
+                ],
+                "total": 25,
+                "page": 1,
+                "page_size": 20,
+                "has_more": True,
+                "filters": {"role": "admin", "is_active": True},
+            }
+        }
+
+
+class AdminUserListErrorResponse(BaseModel):
+    """Error response for admin user list endpoint."""
+
+    success: bool = False
+    error: str
+
+
+# =============================================================================
+# Database Session Dependency for Admin Endpoints
+# =============================================================================
+
+
+async def get_db_session() -> AsyncSession:
+    """
+    Get an async database session for admin endpoints.
+
+    Yields a session and ensures proper cleanup.
+    """
+    session = get_async_session_factory()()
+    try:
+        yield session
+    finally:
+        await session.close()
+
+
+# =============================================================================
+# Admin Role Verification Helpers
+# =============================================================================
+
+
+async def _get_admin_user(
+    current_user: TokenPayload,
+    session: AsyncSession,
+) -> User:
+    """
+    Get the authenticated admin user from the JWT token.
+
+    Args:
+        current_user: Token payload from JWT authentication
+        session: Database session
+
+    Returns:
+        User model from database (must be admin)
+
+    Raises:
+        HTTPException: If user not found, is API client, or not admin
+    """
+    # Check if this is an API client (not a database user)
+    if current_user.type == "api_key" or current_user.sub == "api_client":
+        admin_logger.warning("Admin endpoint accessed with API key authentication")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin endpoints require user authentication with JWT token",
+        )
+
+    # Get user ID from token
+    try:
+        user_id = int(current_user.sub)
+    except (ValueError, TypeError):
+        admin_logger.warning(f"Invalid user ID in token: {current_user.sub}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
+        )
+
+    # Get user from database
+    user_service = get_user_service(session)
+    user = await user_service.get_user_by_id(user_id)
+
+    if not user:
+        admin_logger.warning(f"User not found for admin request: id={user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if not user.is_active:
+        admin_logger.warning(f"Inactive user attempted admin access: id={user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated",
+        )
+
+    # Check admin role
+    if user.role != UserRole.ADMIN:
+        admin_logger.warning(
+            f"Non-admin user {user_id} attempted to access admin endpoint (role: {user.role})"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required for this operation",
+        )
+
+    return user
+
+
+def _user_to_admin_response(user: User) -> AdminUserResponse:
+    """
+    Convert a User model to an AdminUserResponse.
+
+    Sanitizes user data by excluding sensitive fields like password hash.
+
+    Args:
+        user: User model from database
+
+    Returns:
+        AdminUserResponse with safe user data
+    """
+    return AdminUserResponse(
+        id=user.id,
+        email=user.email,
+        username=user.username,
+        role=user.role.value if isinstance(user.role, UserRole) else user.role,
+        is_active=user.is_active,
+        is_verified=user.is_verified,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+        last_login=user.last_login,
+    )
+
+
+# =============================================================================
+# Admin User Management Endpoints
+# =============================================================================
+
+
+@router.get(
+    "/users",
+    status_code=status.HTTP_200_OK,
+    response_model=AdminUserListResponse,
+    summary="List all users (Admin only)",
+    description="""
+List all users in the system with pagination, filtering, and search capabilities.
+
+**ADMIN ONLY**: This endpoint requires admin role.
+
+**Features**:
+- Paginated results with configurable page size (1-100)
+- Filter by role (admin, researcher, viewer)
+- Filter by active status (active/inactive)
+- Filter by verification status (verified/unverified)
+- Search by email or username (partial match)
+
+**Query Parameters**:
+- `page` - Page number (1-indexed, default: 1)
+- `page_size` - Number of results per page (1-100, default: 20)
+- `role` - Filter by role: admin, researcher, viewer
+- `is_active` - Filter by active status: true/false
+- `is_verified` - Filter by verification status: true/false
+- `search` - Search term for email or username
+
+**Authentication**: Requires JWT token with admin role
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@example.com",
+      "username": "admin",
+      "role": "admin",
+      "is_active": true,
+      "is_verified": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": null,
+      "last_login": "2024-01-25T10:00:00Z"
+    }
+  ],
+  "total": 25,
+  "page": 1,
+  "page_size": 20,
+  "has_more": true,
+  "filters": {"role": "admin", "is_active": true}
+}
+```
+    """,
+    responses={
+        200: {
+            "description": "User list retrieved successfully",
+            "model": AdminUserListResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {
+            "description": "Admin role required or API key authentication not supported",
+            "model": AdminUserListErrorResponse,
+        },
+    },
+    tags=["admin", "users"],
+)
+async def list_users(
+    request: Request,
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of results per page"),
+    role: Optional[str] = Query(
+        None,
+        description="Filter by role: admin, researcher, viewer",
+        examples=["admin", "researcher", "viewer"],
+    ),
+    is_active: Optional[bool] = Query(
+        None,
+        description="Filter by active status",
+    ),
+    is_verified: Optional[bool] = Query(
+        None,
+        description="Filter by verification status",
+    ),
+    search: Optional[str] = Query(
+        None,
+        min_length=1,
+        max_length=100,
+        description="Search by email or username (partial match)",
+    ),
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> AdminUserListResponse:
+    """
+    List all users with pagination, filtering, and search.
+
+    Admin-only endpoint. Returns a paginated list of users.
+    """
+    # Authenticate and verify admin role
+    admin_user = await _get_admin_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Parse role filter
+    user_role: Optional[UserRole] = None
+    if role:
+        role_lower = role.lower()
+        try:
+            user_role = UserRole(role_lower)
+        except ValueError:
+            admin_logger.warning(f"Invalid role filter: {role}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid role: {role}. Valid roles are: admin, researcher, viewer",
+            )
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Calculate offset for pagination
+    offset = (page - 1) * page_size
+
+    # Fetch users with filters
+    try:
+        users, total = await user_repo.list_users(
+            limit=page_size,
+            offset=offset,
+            role=user_role,
+            is_active=is_active,
+            is_verified=is_verified,
+            search=search,
+        )
+    except Exception as e:
+        admin_logger.error(f"Failed to list users: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve users",
+        )
+
+    # Check if there are more results
+    has_more = (offset + len(users)) < total
+
+    # Convert to response models
+    user_responses = [_user_to_admin_response(user) for user in users]
+
+    # Build applied filters dict
+    applied_filters: dict[str, Any] = {}
+    if role:
+        applied_filters["role"] = role.lower()
+    if is_active is not None:
+        applied_filters["is_active"] = is_active
+    if is_verified is not None:
+        applied_filters["is_verified"] = is_verified
+    if search:
+        applied_filters["search"] = search
+
+    # Log the admin action
+    audit_log(
+        action=AuditAction.CONFIG_VIEW,
+        user_id=str(admin_user.id),
+        resource="/api/v1/admin/users",
+        details={
+            "action": "list_users",
+            "page": page,
+            "page_size": page_size,
+            "filters": applied_filters,
+            "total_results": total,
+            "returned_results": len(users),
+        },
+        ip_address=client_ip,
+    )
+
+    admin_logger.info(
+        f"Admin {admin_user.id} listed users: page={page}, total={total}, "
+        f"filters={applied_filters}"
+    )
+
+    return AdminUserListResponse(
+        success=True,
+        users=user_responses,
+        total=total,
+        page=page,
+        page_size=page_size,
+        has_more=has_more,
+        filters=applied_filters,
+    )
