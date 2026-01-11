@@ -33,3 +33,7 @@ export type { LatencyCardProps } from "./LatencyCard";
 // Live event feed (scrolling real-time events)
 export { LiveEventFeed } from "./LiveEventFeed";
 export type { LiveEventFeedProps } from "./LiveEventFeed";
+
+// Prompt evolution timeline (prompt transformation visualization)
+export { PromptEvolutionTimeline } from "./PromptEvolutionTimeline";
+export type { PromptEvolutionTimelineProps } from "./PromptEvolutionTimeline";
