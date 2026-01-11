@@ -175,12 +175,36 @@ class ResendVerificationErrorResponse(BaseModel):
     already_verified: bool = False
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Request model for password reset request (forgot password)."""
+
+    email: EmailStr = Field(
+        ...,
+        description="Email address to send password reset link to",
+        examples=["user@example.com"],
+    )
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Response model for forgot password request."""
+
+    success: bool = True
+    message: str = "If this email is registered, a password reset link has been sent."
+
+
 # =============================================================================
 # Rate Limiting Configuration for Auth Endpoints
 # =============================================================================
 
 # Resend verification: 3 requests per minute per IP to prevent abuse
 RESEND_VERIFICATION_RATE_LIMIT = RateLimitConfig(
+    requests_per_minute=3,
+    burst_size=1,
+    cost_weight=1,
+)
+
+# Forgot password: 3 requests per minute per IP to prevent enumeration attacks
+FORGOT_PASSWORD_RATE_LIMIT = RateLimitConfig(
     requests_per_minute=3,
     burst_size=1,
     cost_weight=1,
@@ -559,6 +583,132 @@ async def resend_verification(
     )
 
 
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_200_OK,
+    summary="Request password reset",
+    description="""
+Request a password reset link for a registered user.
+
+**Security Features**:
+- Rate limited to 3 requests per minute per IP address to prevent abuse
+- Returns success regardless of whether the email exists (prevents email enumeration)
+- Reset tokens expire after 1 hour
+- Only active users can receive password reset emails
+
+**Flow**:
+1. User submits their email address
+2. System checks if email exists and user is active
+3. If valid, a secure reset token is generated (1-hour expiry)
+4. Password reset email is sent with reset link
+5. Response indicates success (regardless of email existence for security)
+
+**Example Request**:
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Note**: For security reasons, this endpoint will always return success,
+even if the email is not registered. This prevents attackers from using
+this endpoint to determine which emails are registered.
+    """,
+    responses={
+        200: {
+            "description": "Password reset email sent (or would be if applicable)",
+            "model": ForgotPasswordResponse,
+        },
+        429: {
+            "description": "Rate limit exceeded",
+        },
+    },
+    tags=["authentication"],
+)
+async def forgot_password(
+    request_data: ForgotPasswordRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_db_session),
+) -> ForgotPasswordResponse:
+    """
+    Request a password reset link for a registered user.
+
+    Rate limited to prevent abuse. Generates a secure reset token
+    and sends a password reset email to the user.
+
+    Security: Always returns success to prevent email enumeration attacks.
+    """
+    # Rate limit check - stricter limit for this endpoint
+    await _check_forgot_password_rate_limit(request)
+
+    user_service = get_user_service(session)
+
+    # Request password reset - this handles all logic including security checks
+    result = await user_service.request_password_reset(email=request_data.email)
+
+    # Send email in background if we have a reset token
+    if result.reset_token:
+        # Get user for email template
+        user = await user_service.get_user_by_email(request_data.email)
+        if user:
+            background_tasks.add_task(
+                _send_password_reset_email,
+                email=user.email,
+                username=user.username,
+                reset_token=result.reset_token,
+            )
+            logger.info(f"Password reset email queued for {request_data.email}")
+    else:
+        # Log for security monitoring (but don't reveal to user)
+        logger.info(f"Password reset requested for {request_data.email} (no action taken)")
+
+    # Always return success message for security (prevents email enumeration)
+    return ForgotPasswordResponse(
+        success=True,
+        message="If this email is registered, a password reset link has been sent.",
+    )
+
+
+# =============================================================================
+# Rate Limiting Helpers
+# =============================================================================
+
+
+async def _check_forgot_password_rate_limit(request: Request) -> None:
+    """
+    Check rate limit for forgot password endpoint.
+
+    Stricter limits to prevent abuse and email bombing.
+    """
+    import asyncio
+
+    limiter = get_rate_limiter()
+    # Use IP-based key for forgot password
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"ratelimit:forgot_password:ip:{client_ip}"
+
+    # Check rate limit - handle both sync and async limiters
+    result = limiter.check_rate_limit(key, FORGOT_PASSWORD_RATE_LIMIT)
+    if asyncio.iscoroutine(result):
+        allowed, info = await result
+    else:
+        allowed, info = result
+
+    if not allowed:
+        logger.warning(f"Forgot password rate limit exceeded for IP: {client_ip}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests. Please wait before requesting another password reset.",
+            headers={
+                "X-RateLimit-Limit": str(info.get("limit", 3)),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(info.get("reset_at", int(time.time()) + 60)),
+                "Retry-After": str(info.get("retry_after", 60)),
+            },
+        )
+
+
 async def _check_resend_rate_limit(request: Request) -> None:
     """
     Check rate limit for resend verification endpoint.
@@ -624,3 +774,31 @@ async def _send_verification_email(
             logger.error(f"Failed to send verification email to {email}: {result.error}")
     except Exception as e:
         logger.error(f"Error sending verification email to {email}: {e}", exc_info=True)
+
+
+async def _send_password_reset_email(
+    email: str,
+    username: str,
+    reset_token: str,
+) -> None:
+    """
+    Send password reset email to user.
+
+    This runs as a background task to avoid blocking the forgot password response.
+    """
+    try:
+        result = await email_service.send_password_reset_email(
+            email=email,
+            username=username,
+            reset_token=reset_token,
+        )
+
+        if result.success:
+            if result.dev_mode:
+                logger.info(f"Password reset email logged (dev mode) for {email}")
+            else:
+                logger.info(f"Password reset email sent to {email}")
+        else:
+            logger.error(f"Failed to send password reset email to {email}: {result.error}")
+    except Exception as e:
+        logger.error(f"Error sending password reset email to {email}: {e}", exc_info=True)
