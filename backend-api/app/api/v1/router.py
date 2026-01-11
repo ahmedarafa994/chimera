@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     admin,
     advanced_generation,
     adversarial,  # Unified adversarial endpoint (ADR-003)
+    audit,  # Audit logging and user activity endpoints
     auth,  # User authentication endpoints
     autoadv,
     autodan,
@@ -109,6 +110,9 @@ api_router.include_router(
 
 # --- Admin & Infrastructure ---
 api_router.include_router(admin.router, tags=["admin"])
+
+# --- Audit Logging & User Activity Endpoints ---
+api_router.include_router(audit.router, tags=["audit", "security", "compliance"])
 
 # --- Security Endpoints ---
 api_router.include_router(csrf.router, tags=["security"])
