@@ -192,6 +192,39 @@ class ForgotPasswordResponse(BaseModel):
     message: str = "If this email is registered, a password reset link has been sent."
 
 
+class ResetPasswordRequest(BaseModel):
+    """Request model for password reset (using token from email)."""
+
+    token: str = Field(
+        ...,
+        min_length=64,
+        max_length=64,
+        description="Password reset token from email (64-character hex string)",
+    )
+    new_password: str = Field(
+        ...,
+        min_length=12,
+        max_length=128,
+        description="New password (minimum 12 characters with mixed case, numbers, and special characters)",
+    )
+
+
+class ResetPasswordResponse(BaseModel):
+    """Response model for successful password reset."""
+
+    success: bool = True
+    message: str = "Password has been reset successfully. You can now log in with your new password."
+
+
+class ResetPasswordErrorResponse(BaseModel):
+    """Response model for password reset errors."""
+
+    success: bool = False
+    error: str
+    token_expired: bool = False
+    password_errors: Optional[list[str]] = None
+
+
 # =============================================================================
 # Rate Limiting Configuration for Auth Endpoints
 # =============================================================================
@@ -207,6 +240,13 @@ RESEND_VERIFICATION_RATE_LIMIT = RateLimitConfig(
 FORGOT_PASSWORD_RATE_LIMIT = RateLimitConfig(
     requests_per_minute=3,
     burst_size=1,
+    cost_weight=1,
+)
+
+# Reset password: 5 requests per minute per IP to prevent brute force attacks
+RESET_PASSWORD_RATE_LIMIT = RateLimitConfig(
+    requests_per_minute=5,
+    burst_size=2,
     cost_weight=1,
 )
 
@@ -670,6 +710,171 @@ async def forgot_password(
     )
 
 
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Reset password with token",
+    description="""
+Reset a user's password using the token received via email.
+
+**Prerequisites**:
+- User must have requested a password reset via POST /forgot-password
+- User must have received the reset token via email
+- Reset token must not be expired (tokens expire after 1 hour)
+
+**Password Requirements**:
+- Minimum 12 characters
+- At least one uppercase letter (A-Z)
+- At least one lowercase letter (a-z)
+- At least one digit (0-9)
+- At least one special character (!@#$%^&* etc.)
+- Cannot contain your email or username
+- Cannot be a common password
+
+**Security Features**:
+- Rate limited to 5 requests per minute per IP to prevent brute force attacks
+- Token is invalidated after successful password reset
+- All existing sessions are implicitly invalidated (user must log in again)
+- Password change is logged to audit trail
+
+**Example Request**:
+```json
+{
+  "token": "abc123def456...64_character_hex_string",
+  "new_password": "MyNewSecureP@ssw0rd!"
+}
+```
+
+**Flow**:
+1. User receives reset email with token
+2. User clicks link or copies token to reset password form
+3. Frontend calls this endpoint with token and new password
+4. If valid, password is updated and user can log in
+    """,
+    responses={
+        200: {
+            "description": "Password reset successfully",
+            "model": ResetPasswordResponse,
+        },
+        400: {
+            "description": "Invalid request (weak password, invalid token)",
+            "model": ResetPasswordErrorResponse,
+        },
+        429: {
+            "description": "Rate limit exceeded",
+        },
+    },
+    tags=["authentication"],
+)
+async def reset_password(
+    request_data: ResetPasswordRequest,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> ResetPasswordResponse:
+    """
+    Reset user's password using reset token from email.
+
+    Validates the reset token and new password strength,
+    then updates the password if valid.
+
+    Security:
+    - Rate limited to prevent brute force attacks
+    - Token is cleared after successful reset
+    - Password change is logged to audit trail
+    """
+    # Import audit for logging
+    from app.core.audit import AuditAction, audit_log
+
+    # Rate limit check - prevent brute force attacks on reset tokens
+    await _check_reset_password_rate_limit(request)
+
+    # Validate token format (should be 64 chars hex)
+    if not request_data.token or len(request_data.token) != 64:
+        logger.warning("Password reset failed: invalid token format")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": "Invalid reset token format",
+                "token_expired": False,
+            },
+        )
+
+    # Validate new password strength first (better error messages)
+    password_result = validate_password(request_data.new_password)
+    if not password_result.is_valid:
+        error_messages = [error.message for error in password_result.errors]
+        logger.info("Password reset failed: weak password")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": "Password does not meet security requirements",
+                "token_expired": False,
+                "password_errors": error_messages,
+            },
+        )
+
+    # Reset password using user service
+    user_service = get_user_service(session)
+    result = await user_service.reset_password(
+        token=request_data.token,
+        new_password=request_data.new_password,
+    )
+
+    if not result.success:
+        # Determine if token is expired vs invalid
+        is_expired = "expired" in (result.error or "").lower()
+
+        logger.info(f"Password reset failed: {result.error}")
+
+        # Log failed attempt to audit (without user info since token is invalid)
+        client_ip = request.client.host if request.client else None
+        audit_log(
+            action=AuditAction.AUTH_FAILED,
+            resource="/api/v1/auth/reset-password",
+            details={
+                "reason": "password_reset_failed",
+                "error": result.error,
+                "token_expired": is_expired,
+            },
+            ip_address=client_ip,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": result.error or "Password reset failed",
+                "token_expired": is_expired,
+                "password_errors": (
+                    [e.message for e in result.validation_result.errors]
+                    if result.validation_result and not result.validation_result.is_valid
+                    else None
+                ),
+            },
+        )
+
+    # Log successful password reset to audit trail
+    client_ip = request.client.host if request.client else None
+    audit_log(
+        action=AuditAction.USER_MODIFY,
+        resource="/api/v1/auth/reset-password",
+        details={
+            "action": "password_reset",
+            "method": "email_token",
+        },
+        ip_address=client_ip,
+    )
+
+    logger.info("Password reset successful")
+
+    return ResetPasswordResponse(
+        success=True,
+        message="Password has been reset successfully. You can now log in with your new password.",
+    )
+
+
 # =============================================================================
 # Rate Limiting Helpers
 # =============================================================================
@@ -736,6 +941,40 @@ async def _check_resend_rate_limit(request: Request) -> None:
             detail="Too many requests. Please wait before requesting another verification email.",
             headers={
                 "X-RateLimit-Limit": str(info.get("limit", 3)),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(info.get("reset_at", int(time.time()) + 60)),
+                "Retry-After": str(info.get("retry_after", 60)),
+            },
+        )
+
+
+async def _check_reset_password_rate_limit(request: Request) -> None:
+    """
+    Check rate limit for reset password endpoint.
+
+    Limits to prevent brute force attacks on reset tokens.
+    """
+    import asyncio
+
+    limiter = get_rate_limiter()
+    # Use IP-based key for reset password
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"ratelimit:reset_password:ip:{client_ip}"
+
+    # Check rate limit - handle both sync and async limiters
+    result = limiter.check_rate_limit(key, RESET_PASSWORD_RATE_LIMIT)
+    if asyncio.iscoroutine(result):
+        allowed, info = await result
+    else:
+        allowed, info = result
+
+    if not allowed:
+        logger.warning(f"Reset password rate limit exceeded for IP: {client_ip}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many password reset attempts. Please wait before trying again.",
+            headers={
+                "X-RateLimit-Limit": str(info.get("limit", 5)),
                 "X-RateLimit-Remaining": "0",
                 "X-RateLimit-Reset": str(info.get("reset_at", int(time.time()) + 60)),
                 "Retry-After": str(info.get("retry_after", 60)),
