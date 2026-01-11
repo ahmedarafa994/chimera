@@ -219,3 +219,22 @@ export {
   type ComparisonViewMode,
   type CampaignComparisonPanelProps,
 } from "./comparison/CampaignComparisonPanel";
+
+// =============================================================================
+// Export Components
+// =============================================================================
+
+export {
+  ExportButton,
+  ChartExportButton,
+  DataExportButton,
+  CompactExportButton,
+  FullExportButton,
+  ExportButtonSkeleton,
+  ExportButtonDisabled,
+  type ExportFormat,
+  type ExportResult,
+  type ChartExportOptions,
+  type CSVExportOptions,
+  type ExportButtonProps,
+} from "./ExportButton";
