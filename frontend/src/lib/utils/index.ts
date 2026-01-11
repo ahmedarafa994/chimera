@@ -50,3 +50,15 @@ export {
   type CSVDownloadResult,
   type CampaignCSVColumnSet,
 } from './csv-export';
+
+// ZIP export utilities
+export {
+  generateZip,
+  downloadZip,
+  generateAndDownloadZip,
+  generateZipFilename,
+  checkZipExportSupport,
+  type ZipFileEntry,
+  type ZipGenerateResult,
+  type ZipGenerateOptions,
+} from './zip-export';
