@@ -38,6 +38,7 @@ from app.api.v1.endpoints import (
     overthink,
     pipeline_streaming,
     provider_config,
+    provider_health_dashboard,  # Provider Health Dashboard (Feature: API Key Management & Provider Health Dashboard)
     providers,
     proxy_health,
     session,
@@ -107,6 +108,11 @@ api_router.include_router(
 
 # --- API Key Management (Feature: API Key Management & Provider Health Dashboard) ---
 api_router.include_router(api_keys.router, tags=["api-keys", "providers"])
+
+# --- Provider Health Dashboard (Feature: API Key Management & Provider Health Dashboard) ---
+api_router.include_router(
+    provider_health_dashboard.router, tags=["provider-health", "dashboard", "providers"]
+)
 
 # --- Admin & Infrastructure ---
 api_router.include_router(admin.router, tags=["admin"])
