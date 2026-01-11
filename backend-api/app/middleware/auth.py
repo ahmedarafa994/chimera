@@ -1,11 +1,128 @@
+"""
+Authentication Middleware Module
+
+Provides API key authentication middleware with support for:
+- Global CHIMERA_API_KEY (backward compatibility)
+- Per-user API keys stored in database
+- Security audit logging
+"""
+
+import hashlib
 import os
 import time
+from datetime import datetime
+from typing import Optional
 
 from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
 from app.core.logging import logger
+
+
+# =============================================================================
+# Per-User API Key Validation
+# =============================================================================
+
+
+async def validate_user_api_key(api_key: str) -> tuple[bool, Optional[dict]]:
+    """
+    Validate an API key against the database.
+
+    Looks up the API key in the user_api_keys table and returns
+    user information if valid.
+
+    Args:
+        api_key: The API key to validate
+
+    Returns:
+        Tuple of (is_valid, user_info_dict or None)
+        user_info_dict contains: user_id, username, email, role, api_key_id
+    """
+    try:
+        # Import database components lazily to avoid circular imports
+        from app.core.database import get_async_session_factory
+        from app.db.models import UserAPIKey, User
+        from sqlalchemy import select, and_, or_
+
+        # Hash the API key for lookup
+        hashed_key = hashlib.sha256(api_key.encode()).hexdigest()
+
+        # Get a database session
+        session = get_async_session_factory()()
+
+        try:
+            # Look up the API key
+            stmt = select(UserAPIKey).where(UserAPIKey.hashed_key == hashed_key)
+            result = await session.execute(stmt)
+            api_key_record = result.scalar_one_or_none()
+
+            if not api_key_record:
+                logger.debug("API key not found in database")
+                return False, None
+
+            # Check if key is active
+            if not api_key_record.is_active:
+                logger.debug(f"API key {api_key_record.key_prefix}... is revoked")
+                return False, None
+
+            # Check if key is expired
+            if api_key_record.expires_at and api_key_record.expires_at < datetime.utcnow():
+                logger.debug(f"API key {api_key_record.key_prefix}... is expired")
+                return False, None
+
+            # Get the associated user
+            user_stmt = select(User).where(User.id == api_key_record.user_id)
+            user_result = await session.execute(user_stmt)
+            user = user_result.scalar_one_or_none()
+
+            if not user:
+                logger.warning(f"API key {api_key_record.key_prefix}... has no associated user")
+                return False, None
+
+            # Check if user is active
+            if not user.is_active:
+                logger.debug(f"User {user.email} is deactivated")
+                return False, None
+
+            # Update API key usage statistics (non-blocking)
+            try:
+                from sqlalchemy import update
+                from app.db.models import UserAPIKey as UserAPIKeyModel
+
+                update_stmt = (
+                    update(UserAPIKeyModel)
+                    .where(UserAPIKeyModel.id == api_key_record.id)
+                    .values(
+                        last_used_at=datetime.utcnow(),
+                        usage_count=UserAPIKeyModel.usage_count + 1,
+                    )
+                )
+                await session.execute(update_stmt)
+                await session.commit()
+            except Exception as e:
+                logger.debug(f"Failed to update API key usage stats: {e}")
+                # Don't fail auth if stats update fails
+
+            # Return user information
+            user_info = {
+                "user_id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role.value if hasattr(user.role, "value") else str(user.role),
+                "api_key_id": api_key_record.id,
+                "api_key_prefix": api_key_record.key_prefix,
+            }
+
+            logger.debug(f"Valid API key for user: {user.email} (key: {api_key_record.key_prefix}...)")
+            return True, user_info
+
+        finally:
+            await session.close()
+
+    except Exception as e:
+        logger.error(f"Error validating user API key: {e}", exc_info=True)
+        return False, None
 
 
 class APIKeyMiddleware(BaseHTTPMiddleware):
@@ -58,9 +175,8 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         # Check API key
         api_key = self._extract_api_key(request)
 
-        if not self._is_valid_api_key(api_key):
-            logger.warning(f"Invalid API key attempt from {self._get_client_ip(request)}")
-            # Return JSONResponse instead of raising HTTPException to avoid middleware crash
+        if not api_key:
+            logger.warning(f"Missing API key from {self._get_client_ip(request)}")
             from starlette.responses import JSONResponse
 
             return JSONResponse(
@@ -69,9 +185,49 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Process request
-        response = await call_next(request)
-        return response
+        # First, try to validate as a per-user API key from the database
+        is_valid_user_key, user_info = await validate_user_api_key(api_key)
+
+        if is_valid_user_key and user_info:
+            # Store user info in request state for downstream use
+            request.state.user_id = user_info["user_id"]
+            request.state.username = user_info["username"]
+            request.state.email = user_info["email"]
+            request.state.role = user_info["role"]
+            request.state.api_key_id = user_info["api_key_id"]
+            request.state.auth_type = "user_api_key"
+
+            logger.debug(
+                f"Authenticated user {user_info['username']} via API key {user_info['api_key_prefix']}..."
+            )
+
+            # Process request
+            response = await call_next(request)
+            return response
+
+        # Fall back to global CHIMERA_API_KEY for backward compatibility
+        if self._is_valid_global_api_key(api_key):
+            # Set request state for global API key auth
+            request.state.auth_type = "global_api_key"
+            request.state.user_id = None
+            request.state.username = "api_client"
+            request.state.role = "api_client"
+
+            logger.debug(f"Authenticated via global API key from {self._get_client_ip(request)}")
+
+            # Process request
+            response = await call_next(request)
+            return response
+
+        # Neither per-user nor global API key is valid
+        logger.warning(f"Invalid API key attempt from {self._get_client_ip(request)}")
+        from starlette.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": "Invalid or missing API key"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     def _extract_api_key(self, request: Request) -> str | None:
         """Extract API key from headers only (HIGH-003 FIX: removed query parameter support)."""
@@ -87,8 +243,19 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    def _is_valid_api_key(self, api_key: str | None) -> bool:
-        """Validate API key using timing-safe comparison (CRIT-002 & HIGH-002 FIX)."""
+    def _is_valid_global_api_key(self, api_key: str | None) -> bool:
+        """
+        Validate API key against global CHIMERA_API_KEY(s).
+
+        Uses timing-safe comparison (CRIT-002 & HIGH-002 FIX).
+        This provides backward compatibility for global API key auth.
+
+        Args:
+            api_key: The API key to validate
+
+        Returns:
+            True if valid against any configured global key, False otherwise
+        """
         if not api_key:
             return False
 
@@ -207,13 +374,79 @@ class SecurityAuditMiddleware(BaseHTTPMiddleware):
 def get_current_user_id(request: Request) -> str:
     """
     Get the current user ID from the request.
-    In this simple API key auth system, we return a static ID or derive it from the key.
+
+    Checks request.state for user info set by the APIKeyMiddleware.
+    Falls back to deriving a user ID from the API key header for
+    backward compatibility.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        User ID string (database user ID or derived from API key)
     """
-    # For now, return a placeholder or hash of the API key
+    # Check if middleware has set user info
+    if hasattr(request, "state"):
+        user_id = getattr(request.state, "user_id", None)
+        if user_id:
+            return str(user_id)
+
+        # Check for global API key auth
+        auth_type = getattr(request.state, "auth_type", None)
+        if auth_type == "global_api_key":
+            return "api_client"
+
+    # Fall back to deriving from API key header (backward compatibility)
     api_key = request.headers.get("X-API-Key")
     if api_key:
-        return f"user_{hash(api_key)}"
+        return f"api_key_{hash(api_key)}"
+
     return "anonymous_user"
+
+
+def get_current_user_info(request: Request) -> dict:
+    """
+    Get the current user information from the request.
+
+    Returns a dict with user details if authenticated via per-user API key,
+    or minimal info for global API key/anonymous users.
+
+    Args:
+        request: The FastAPI request object
+
+    Returns:
+        Dict with user info: user_id, username, email, role, auth_type
+    """
+    if hasattr(request, "state"):
+        auth_type = getattr(request.state, "auth_type", None)
+
+        if auth_type == "user_api_key":
+            return {
+                "user_id": getattr(request.state, "user_id", None),
+                "username": getattr(request.state, "username", None),
+                "email": getattr(request.state, "email", None),
+                "role": getattr(request.state, "role", None),
+                "api_key_id": getattr(request.state, "api_key_id", None),
+                "auth_type": "user_api_key",
+            }
+        elif auth_type == "global_api_key":
+            return {
+                "user_id": None,
+                "username": "api_client",
+                "email": None,
+                "role": "api_client",
+                "api_key_id": None,
+                "auth_type": "global_api_key",
+            }
+
+    return {
+        "user_id": None,
+        "username": "anonymous",
+        "email": None,
+        "role": None,
+        "api_key_id": None,
+        "auth_type": None,
+    }
 
 
 def get_client_info(request: Request) -> dict:

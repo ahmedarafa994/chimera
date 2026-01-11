@@ -3,18 +3,22 @@ Authentication and RBAC Module
 Production-grade authentication with JWT and Role-Based Access Control
 """
 
+import hashlib
 import logging
 import os
 import secrets
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import Any, Optional, TYPE_CHECKING
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from app.db.models import User, UserAPIKey
 
 # Redis for production token revocation persistence
 try:
@@ -276,6 +280,20 @@ class AuthService:
         """Generate a new secure API key"""
         return secrets.token_urlsafe(32)
 
+    def hash_api_key(self, api_key: str) -> str:
+        """
+        Hash an API key for database lookup.
+
+        Uses SHA-256 to match the hashing used when storing user API keys.
+
+        Args:
+            api_key: The plain API key to hash
+
+        Returns:
+            SHA-256 hex digest of the API key
+        """
+        return hashlib.sha256(api_key.encode()).hexdigest()
+
     # -------------------------------------------------------------------------
     # JWT Operations
     # -------------------------------------------------------------------------
@@ -456,22 +474,85 @@ def _is_jwt_format(token: str) -> bool:
     return len(parts) == 3
 
 
+def _get_role_from_user_role(user_role: str) -> Role:
+    """
+    Map a user role string to a Role enum.
+
+    Args:
+        user_role: Role string from database (admin, researcher, viewer)
+
+    Returns:
+        Role enum value
+    """
+    role_mapping = {
+        "admin": Role.ADMIN,
+        "researcher": Role.RESEARCHER,
+        "viewer": Role.VIEWER,
+    }
+    return role_mapping.get(user_role.lower(), Role.API_CLIENT)
+
+
 async def get_current_user(
+    request: Request = None,
     api_key: str = Depends(get_api_key),
     token: str = Depends(get_token),
 ) -> TokenPayload:
     """
     Get current authenticated user from API key or JWT token.
 
-    Supports both authentication methods:
-    1. API Key (X-API-Key header) - for simple API access
-    2. JWT Bearer token - for full user authentication
+    Supports multiple authentication methods in order of priority:
+    1. JWT Bearer token - for full user authentication
+    2. Per-user API key (validated by middleware) - for programmatic access
+    3. Global API key (X-API-Key header) - for backward compatibility
+
+    The middleware (APIKeyMiddleware) validates API keys and stores user info
+    in request.state for per-user API keys. This function checks that first.
     """
+    # Import Request lazily to avoid circular imports in dependency injection
+    from fastapi import Request as FastAPIRequest
+
     # Try JWT token first (only if it looks like a JWT)
     if token and _is_jwt_format(token):
         return auth_service.decode_token(token)
 
-    # Check if the Bearer token is actually an API key
+    # Check if middleware has set user info for per-user API key authentication
+    if request and hasattr(request, "state"):
+        auth_type = getattr(request.state, "auth_type", None)
+
+        if auth_type == "user_api_key":
+            # Per-user API key was validated by middleware
+            user_id = getattr(request.state, "user_id", None)
+            username = getattr(request.state, "username", "unknown")
+            role_str = getattr(request.state, "role", "viewer")
+
+            if user_id:
+                # Map the database role to our Role enum
+                role = _get_role_from_user_role(role_str)
+                permissions = [p.value for p in ROLE_PERMISSIONS.get(role, [])]
+
+                return TokenPayload(
+                    sub=str(user_id),
+                    role=role.value,
+                    permissions=permissions,
+                    exp=datetime.utcnow() + timedelta(hours=1),
+                    iat=datetime.utcnow(),
+                    jti=f"user_api_key_{user_id}",
+                    type="user_api_key",
+                )
+
+        elif auth_type == "global_api_key":
+            # Global API key was validated by middleware
+            return TokenPayload(
+                sub="api_client",
+                role=Role.API_CLIENT.value,
+                permissions=[p.value for p in ROLE_PERMISSIONS[Role.API_CLIENT]],
+                exp=datetime.utcnow() + timedelta(hours=1),
+                iat=datetime.utcnow(),
+                jti="global_api_key_auth",
+                type="api_key",
+            )
+
+    # Check if the Bearer token is actually an API key (for backward compatibility)
     if token and not _is_jwt_format(token) and auth_service.verify_api_key(token):
         # Create a synthetic token payload for API key auth via Bearer
         return TokenPayload(
@@ -484,7 +565,7 @@ async def get_current_user(
             type="api_key",
         )
 
-    # Fall back to X-API-Key header
+    # Fall back to X-API-Key header (for backward compatibility)
     if api_key and auth_service.verify_api_key(api_key):
         # Create a synthetic token payload for API key auth
         return TokenPayload(
