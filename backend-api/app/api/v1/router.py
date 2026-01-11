@@ -18,6 +18,7 @@ from app.api.v1.endpoints import (
     autodan_hierarchical,
     autodan_turbo,
     aegis,
+    campaign_analytics,  # Campaign telemetry analytics (Subtask 1.4)
     chat,
     connection,
     csrf,
@@ -140,3 +141,11 @@ api_router.include_router(
     prefix="/overthink",
     tags=["overthink", "reasoning", "adversarial"],
 )
+
+# --- Campaign Telemetry Analytics (Subtask 1.4) ---
+api_router.include_router(
+    campaign_analytics.router,
+    prefix="/campaigns",
+    tags=["campaigns", "analytics", "telemetry"],
+)
+
