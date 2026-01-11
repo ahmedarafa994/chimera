@@ -21,3 +21,7 @@ export type { SuccessRateTrendChartProps } from "./SuccessRateTrendChart";
 // Technique performance breakdown (bar chart with metrics)
 export { TechniqueBreakdown } from "./TechniqueBreakdown";
 export type { TechniqueBreakdownProps } from "./TechniqueBreakdown";
+
+// Token usage and cost tracking card
+export { TokenUsageCard } from "./TokenUsageCard";
+export type { TokenUsageCardProps } from "./TokenUsageCard";
