@@ -336,3 +336,17 @@ export {
   type TelemetrySortConfig,
   type TelemetryTableProps,
 } from "./TelemetryTable";
+
+// =============================================================================
+// CampaignAnalyticsDashboard Components
+// =============================================================================
+
+export {
+  CampaignAnalyticsDashboard,
+  CampaignAnalyticsDashboardSkeleton,
+  CampaignAnalyticsDashboardError,
+  CompactCampaignAnalyticsDashboard,
+  SimpleCampaignAnalyticsDashboard,
+  type DashboardTab,
+  type CampaignAnalyticsDashboardProps,
+} from "./CampaignAnalyticsDashboard";
