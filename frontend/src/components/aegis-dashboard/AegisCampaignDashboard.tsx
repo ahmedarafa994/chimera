@@ -22,7 +22,7 @@
 
 "use client";
 
-import { useState, useCallback, memo, useMemo } from "react";
+import { useState, useCallback, memo, useMemo, useEffect, useRef } from "react";
 import {
   Play,
   Pause,
@@ -34,6 +34,8 @@ import {
   FileSearch,
   Settings2,
   Loader2,
+  WifiOff,
+  AlertTriangle,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +67,7 @@ import {
   CampaignStatus,
   CampaignSummary,
   WebSocketConnectionStatus,
+  MAX_RECONNECT_ATTEMPTS,
 } from "@/types/aegis-telemetry";
 
 // ============================================================================
@@ -473,6 +476,132 @@ const ErrorState = memo(function ErrorState({
   );
 });
 
+/**
+ * Disconnection warning banner component
+ * Shows when WebSocket connection is lost but dashboard still has data
+ */
+const DisconnectionBanner = memo(function DisconnectionBanner({
+  status,
+  reconnectAttempts,
+  lastConnected,
+  onReconnect,
+}: {
+  status: WebSocketConnectionStatus;
+  reconnectAttempts: number;
+  lastConnected: string | null;
+  onReconnect: () => void;
+}) {
+  // Only show when disconnected or in error/reconnecting state (not connecting/connected)
+  if (status === "connected" || status === "connecting") {
+    return null;
+  }
+
+  const isReconnecting = status === "reconnecting";
+  const isError = status === "error";
+
+  // Calculate time since last connection
+  const getTimeSinceDisconnect = () => {
+    if (!lastConnected) return "Unknown";
+    const diff = Date.now() - new Date(lastConnected).getTime();
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-lg border p-3 transition-all duration-300",
+        isError
+          ? "bg-red-500/10 border-red-500/20"
+          : isReconnecting
+          ? "bg-amber-500/10 border-amber-500/20"
+          : "bg-gray-500/10 border-gray-500/20"
+      )}
+      role="alert"
+      aria-live="polite"
+    >
+      {/* Animated background for reconnecting state */}
+      {isReconnecting && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent animate-pulse" />
+      )}
+
+      <div className="relative flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div
+            className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+              isError
+                ? "bg-red-500/20"
+                : isReconnecting
+                ? "bg-amber-500/20"
+                : "bg-gray-500/20"
+            )}
+          >
+            {isReconnecting ? (
+              <RefreshCw
+                className="h-4 w-4 text-amber-400 animate-spin"
+                aria-hidden="true"
+              />
+            ) : isError ? (
+              <AlertTriangle className="h-4 w-4 text-red-400" aria-hidden="true" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-gray-400" aria-hidden="true" />
+            )}
+          </div>
+
+          {/* Text content */}
+          <div className="min-w-0">
+            <p
+              className={cn(
+                "text-sm font-medium",
+                isError
+                  ? "text-red-400"
+                  : isReconnecting
+                  ? "text-amber-400"
+                  : "text-gray-300"
+              )}
+            >
+              {isReconnecting
+                ? `Reconnecting... (Attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`
+                : isError
+                ? "Connection Error"
+                : "Connection Lost"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isReconnecting
+                ? "Attempting to restore real-time updates..."
+                : `Data may be stale. Last update: ${getTimeSinceDisconnect()}`}
+            </p>
+          </div>
+        </div>
+
+        {/* Reconnect button */}
+        {!isReconnecting && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onReconnect}
+            className={cn(
+              "shrink-0 gap-1.5",
+              isError
+                ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20"
+                : "bg-white/5 border-white/10 text-foreground hover:bg-white/10"
+            )}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Reconnect
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+});
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -505,6 +634,8 @@ export const AegisCampaignDashboard = memo(function AegisCampaignDashboard({
   const [activeCampaignId, setActiveCampaignId] = useState(
     autoConnect && initialCampaignId ? initialCampaignId : ""
   );
+  const [lastConnectedTime, setLastConnectedTime] = useState<string | null>(null);
+  const wasConnectedRef = useRef(false);
 
   // ============================================================================
   // WebSocket Hook
@@ -532,6 +663,24 @@ export const AegisCampaignDashboard = memo(function AegisCampaignDashboard({
     apiKey,
     debug,
   });
+
+  // ============================================================================
+  // Track Last Connected Time
+  // ============================================================================
+
+  useEffect(() => {
+    if (isConnected && !wasConnectedRef.current) {
+      // Just connected, update last connected time
+      setLastConnectedTime(new Date().toISOString());
+      wasConnectedRef.current = true;
+    } else if (!isConnected && wasConnectedRef.current) {
+      // Just disconnected, keep last connected time but update ref
+      wasConnectedRef.current = false;
+    } else if (isConnected) {
+      // Still connected, continuously update last connected time
+      setLastConnectedTime(new Date().toISOString());
+    }
+  }, [isConnected, connectionStatus, recentEvents.length]);
 
   // ============================================================================
   // Handlers
@@ -604,6 +753,16 @@ export const AegisCampaignDashboard = memo(function AegisCampaignDashboard({
         isConnecting={isLoading}
         isConnected={isConnected}
       />
+
+      {/* Disconnection Warning Banner - shows when we have data but connection is lost */}
+      {showDashboard && (connectionStatus === "disconnected" || connectionStatus === "reconnecting" || connectionStatus === "error") && (
+        <DisconnectionBanner
+          status={connectionStatus}
+          reconnectAttempts={reconnectAttempts}
+          lastConnected={lastConnectedTime}
+          onReconnect={handleReconnect}
+        />
+      )}
 
       {/* Error State */}
       {hasError && (
