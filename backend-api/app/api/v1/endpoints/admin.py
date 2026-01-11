@@ -516,6 +516,99 @@ class AdminUserListErrorResponse(BaseModel):
     error: str
 
 
+class AdminUpdateUserRequest(BaseModel):
+    """Request model for updating a user via admin endpoint."""
+
+    role: Optional[str] = Field(
+        None,
+        description="New role for the user: admin, researcher, or viewer",
+        examples=["researcher", "viewer"],
+    )
+    username: Optional[str] = Field(
+        None,
+        min_length=3,
+        max_length=50,
+        description="New username (must be unique)",
+    )
+    is_active: Optional[bool] = Field(
+        None,
+        description="Whether the user account is active",
+    )
+    is_verified: Optional[bool] = Field(
+        None,
+        description="Whether the user email is verified",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "role": "researcher",
+                "username": "new_username",
+            }
+        }
+
+
+class AdminUserDetailResponse(BaseModel):
+    """Response model for single user detail from admin endpoint."""
+
+    success: bool = True
+    user: AdminUserResponse
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "user": {
+                    "id": 1,
+                    "email": "user@example.com",
+                    "username": "john_doe",
+                    "role": "researcher",
+                    "is_active": True,
+                    "is_verified": True,
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "updated_at": "2024-01-20T14:45:00Z",
+                    "last_login": "2024-01-25T09:00:00Z",
+                },
+            }
+        }
+
+
+class AdminUserDetailErrorResponse(BaseModel):
+    """Error response for admin user detail endpoints."""
+
+    success: bool = False
+    error: str
+    user_id: Optional[int] = None
+
+
+class AdminUserDeleteResponse(BaseModel):
+    """Response model for admin user deletion."""
+
+    success: bool = True
+    message: str
+    user_id: int
+    email: str
+
+
+class AdminUserActivateResponse(BaseModel):
+    """Response model for user activation/deactivation."""
+
+    success: bool = True
+    message: str
+    user_id: int
+    is_active: bool
+    email: str
+
+
+class AdminUserUpdateResponse(BaseModel):
+    """Response model for user update."""
+
+    success: bool = True
+    message: str
+    user: AdminUserResponse
+    changes: dict = Field(default_factory=dict, description="Applied changes")
+
+
 # =============================================================================
 # Database Session Dependency for Admin Endpoints
 # =============================================================================
@@ -817,4 +910,661 @@ async def list_users(
         page_size=page_size,
         has_more=has_more,
         filters=applied_filters,
+    )
+
+
+@router.get(
+    "/users/{user_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=AdminUserDetailResponse,
+    summary="Get user details (Admin only)",
+    description="""
+Get detailed information about a specific user.
+
+**ADMIN ONLY**: This endpoint requires admin role.
+
+**Path Parameters**:
+- `user_id` - The unique identifier of the user
+
+**Authentication**: Requires JWT token with admin role
+
+**Returns**: Complete user details including status, role, and timestamps.
+    """,
+    responses={
+        200: {
+            "description": "User details retrieved successfully",
+            "model": AdminUserDetailResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {
+            "description": "Admin role required or API key authentication not supported",
+            "model": AdminUserDetailErrorResponse,
+        },
+        404: {
+            "description": "User not found",
+            "model": AdminUserDetailErrorResponse,
+        },
+    },
+    tags=["admin", "users"],
+)
+async def get_user_details(
+    request: Request,
+    user_id: int,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> AdminUserDetailResponse:
+    """
+    Get detailed information about a specific user.
+
+    Admin-only endpoint for viewing user details.
+    """
+    # Authenticate and verify admin role
+    admin_user = await _get_admin_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Fetch the target user
+    try:
+        target_user = await user_repo.get_by_id(user_id)
+    except Exception as e:
+        admin_logger.error(f"Failed to get user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user",
+        )
+
+    if not target_user:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to view non-existent user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found",
+        )
+
+    # Log the admin action
+    audit_log(
+        action=AuditAction.CONFIG_VIEW,
+        user_id=str(admin_user.id),
+        resource=f"/api/v1/admin/users/{user_id}",
+        details={
+            "action": "view_user",
+            "target_user_id": user_id,
+            "target_user_email": target_user.email,
+        },
+        ip_address=client_ip,
+    )
+
+    admin_logger.info(f"Admin {admin_user.id} viewed user {user_id} ({target_user.email})")
+
+    return AdminUserDetailResponse(
+        success=True,
+        user=_user_to_admin_response(target_user),
+    )
+
+
+@router.put(
+    "/users/{user_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=AdminUserUpdateResponse,
+    summary="Update user (Admin only)",
+    description="""
+Update a user's role, username, or status.
+
+**ADMIN ONLY**: This endpoint requires admin role.
+
+**Path Parameters**:
+- `user_id` - The unique identifier of the user to update
+
+**Request Body**:
+- `role` - New role (admin, researcher, viewer)
+- `username` - New username (must be unique)
+- `is_active` - Whether the account is active
+- `is_verified` - Whether the email is verified
+
+**Notes**:
+- All fields are optional; only provided fields will be updated
+- Cannot change your own admin role (to prevent lockout)
+- Username must be unique across all users
+
+**Authentication**: Requires JWT token with admin role
+    """,
+    responses={
+        200: {
+            "description": "User updated successfully",
+            "model": AdminUserUpdateResponse,
+        },
+        400: {
+            "description": "Invalid input or self-role modification",
+            "model": AdminUserDetailErrorResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {
+            "description": "Admin role required",
+            "model": AdminUserDetailErrorResponse,
+        },
+        404: {
+            "description": "User not found",
+            "model": AdminUserDetailErrorResponse,
+        },
+        409: {
+            "description": "Username already taken",
+            "model": AdminUserDetailErrorResponse,
+        },
+    },
+    tags=["admin", "users"],
+)
+async def update_user(
+    request: Request,
+    user_id: int,
+    update_request: AdminUpdateUserRequest,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> AdminUserUpdateResponse:
+    """
+    Update a user's role, username, or status.
+
+    Admin-only endpoint for modifying user accounts.
+    """
+    # Authenticate and verify admin role
+    admin_user = await _get_admin_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Fetch the target user
+    try:
+        target_user = await user_repo.get_by_id(user_id)
+    except Exception as e:
+        admin_logger.error(f"Failed to get user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user",
+        )
+
+    if not target_user:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to update non-existent user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found",
+        )
+
+    # Prevent admin from demoting themselves
+    if user_id == admin_user.id and update_request.role:
+        target_role = update_request.role.lower()
+        if target_role != "admin":
+            admin_logger.warning(
+                f"Admin {admin_user.id} attempted to demote themselves from admin role"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot change your own admin role. Have another admin modify your role if needed.",
+            )
+
+    # Prevent admin from deactivating themselves
+    if user_id == admin_user.id and update_request.is_active is False:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to deactivate themselves")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot deactivate your own account. Have another admin modify your account if needed.",
+        )
+
+    # Build update dict
+    changes: dict = {}
+    update_fields: dict = {}
+
+    # Handle role update
+    if update_request.role:
+        role_lower = update_request.role.lower()
+        try:
+            new_role = UserRole(role_lower)
+            if target_user.role != new_role:
+                update_fields["role"] = new_role
+                changes["role"] = {"from": target_user.role.value, "to": new_role.value}
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid role: {update_request.role}. Valid roles are: admin, researcher, viewer",
+            )
+
+    # Handle username update
+    if update_request.username and update_request.username != target_user.username:
+        # Check if username is already taken
+        existing_user = await user_repo.get_by_username(update_request.username)
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Username '{update_request.username}' is already taken",
+            )
+        update_fields["username"] = update_request.username
+        changes["username"] = {"from": target_user.username, "to": update_request.username}
+
+    # Handle is_active update
+    if update_request.is_active is not None and update_request.is_active != target_user.is_active:
+        update_fields["is_active"] = update_request.is_active
+        changes["is_active"] = {"from": target_user.is_active, "to": update_request.is_active}
+
+    # Handle is_verified update
+    if update_request.is_verified is not None and update_request.is_verified != target_user.is_verified:
+        update_fields["is_verified"] = update_request.is_verified
+        changes["is_verified"] = {"from": target_user.is_verified, "to": update_request.is_verified}
+
+    if not update_fields:
+        admin_logger.info(f"Admin {admin_user.id} made no changes to user {user_id}")
+        return AdminUserUpdateResponse(
+            success=True,
+            message="No changes applied",
+            user=_user_to_admin_response(target_user),
+            changes={},
+        )
+
+    # Apply updates
+    try:
+        updated_user = await user_repo.update_user(user_id, **update_fields)
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        admin_logger.error(f"Failed to update user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user",
+        )
+
+    # Determine the right audit action
+    audit_action = AuditAction.USER_MODIFY
+    if "role" in changes:
+        audit_action = AuditAction.USER_ROLE_CHANGE
+
+    # Log the admin action
+    audit_log(
+        action=audit_action,
+        user_id=str(admin_user.id),
+        resource=f"/api/v1/admin/users/{user_id}",
+        details={
+            "action": "update_user",
+            "target_user_id": user_id,
+            "target_user_email": target_user.email,
+            "changes": changes,
+        },
+        ip_address=client_ip,
+    )
+
+    admin_logger.info(
+        f"Admin {admin_user.id} updated user {user_id} ({target_user.email}): changes={changes}"
+    )
+
+    return AdminUserUpdateResponse(
+        success=True,
+        message=f"User updated successfully",
+        user=_user_to_admin_response(updated_user),
+        changes=changes,
+    )
+
+
+@router.delete(
+    "/users/{user_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=AdminUserDeleteResponse,
+    summary="Delete user (Admin only)",
+    description="""
+Permanently delete a user account.
+
+**ADMIN ONLY**: This endpoint requires admin role.
+
+**WARNING**: This action is irreversible. Consider using deactivation instead.
+
+**Path Parameters**:
+- `user_id` - The unique identifier of the user to delete
+
+**Notes**:
+- Permanently removes the user and all associated data
+- Cannot delete your own admin account
+- Consider using POST /admin/users/{id}/deactivate instead for reversible suspension
+
+**Authentication**: Requires JWT token with admin role
+    """,
+    responses={
+        200: {
+            "description": "User deleted successfully",
+            "model": AdminUserDeleteResponse,
+        },
+        400: {
+            "description": "Cannot delete own account",
+            "model": AdminUserDetailErrorResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {
+            "description": "Admin role required",
+            "model": AdminUserDetailErrorResponse,
+        },
+        404: {
+            "description": "User not found",
+            "model": AdminUserDetailErrorResponse,
+        },
+    },
+    tags=["admin", "users"],
+)
+async def delete_user(
+    request: Request,
+    user_id: int,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> AdminUserDeleteResponse:
+    """
+    Permanently delete a user account.
+
+    Admin-only endpoint. This action is irreversible.
+    """
+    # Authenticate and verify admin role
+    admin_user = await _get_admin_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Prevent admin from deleting themselves
+    if user_id == admin_user.id:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to delete themselves")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete your own account. Have another admin delete your account if needed.",
+        )
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Fetch the target user
+    try:
+        target_user = await user_repo.get_by_id(user_id)
+    except Exception as e:
+        admin_logger.error(f"Failed to get user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user",
+        )
+
+    if not target_user:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to delete non-existent user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found",
+        )
+
+    target_email = target_user.email
+
+    # Delete the user
+    try:
+        await user_repo.delete_user(user_id)
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        admin_logger.error(f"Failed to delete user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete user",
+        )
+
+    # Log the admin action
+    audit_log(
+        action=AuditAction.USER_DELETE,
+        user_id=str(admin_user.id),
+        resource=f"/api/v1/admin/users/{user_id}",
+        details={
+            "action": "delete_user",
+            "deleted_user_id": user_id,
+            "deleted_user_email": target_email,
+        },
+        ip_address=client_ip,
+    )
+
+    admin_logger.info(f"Admin {admin_user.id} deleted user {user_id} ({target_email})")
+
+    return AdminUserDeleteResponse(
+        success=True,
+        message=f"User deleted successfully",
+        user_id=user_id,
+        email=target_email,
+    )
+
+
+@router.post(
+    "/users/{user_id}/activate",
+    status_code=status.HTTP_200_OK,
+    response_model=AdminUserActivateResponse,
+    summary="Activate user (Admin only)",
+    description="""
+Activate a deactivated user account.
+
+**ADMIN ONLY**: This endpoint requires admin role.
+
+**Path Parameters**:
+- `user_id` - The unique identifier of the user to activate
+
+**Notes**:
+- Restores access for a previously deactivated user
+- User will be able to log in again immediately after activation
+- No effect if user is already active
+
+**Authentication**: Requires JWT token with admin role
+    """,
+    responses={
+        200: {
+            "description": "User activated successfully",
+            "model": AdminUserActivateResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {
+            "description": "Admin role required",
+            "model": AdminUserDetailErrorResponse,
+        },
+        404: {
+            "description": "User not found",
+            "model": AdminUserDetailErrorResponse,
+        },
+    },
+    tags=["admin", "users"],
+)
+async def activate_user(
+    request: Request,
+    user_id: int,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> AdminUserActivateResponse:
+    """
+    Activate a deactivated user account.
+
+    Admin-only endpoint for restoring user access.
+    """
+    # Authenticate and verify admin role
+    admin_user = await _get_admin_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Fetch the target user
+    try:
+        target_user = await user_repo.get_by_id(user_id)
+    except Exception as e:
+        admin_logger.error(f"Failed to get user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user",
+        )
+
+    if not target_user:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to activate non-existent user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found",
+        )
+
+    was_already_active = target_user.is_active
+
+    # Activate the user
+    try:
+        await user_repo.activate_user(user_id)
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        admin_logger.error(f"Failed to activate user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to activate user",
+        )
+
+    # Log the admin action
+    audit_log(
+        action=AuditAction.USER_MODIFY,
+        user_id=str(admin_user.id),
+        resource=f"/api/v1/admin/users/{user_id}/activate",
+        details={
+            "action": "activate_user",
+            "target_user_id": user_id,
+            "target_user_email": target_user.email,
+            "was_already_active": was_already_active,
+        },
+        ip_address=client_ip,
+    )
+
+    if was_already_active:
+        message = "User was already active"
+        admin_logger.info(f"Admin {admin_user.id} activated already-active user {user_id}")
+    else:
+        message = "User activated successfully"
+        admin_logger.info(f"Admin {admin_user.id} activated user {user_id} ({target_user.email})")
+
+    return AdminUserActivateResponse(
+        success=True,
+        message=message,
+        user_id=user_id,
+        is_active=True,
+        email=target_user.email,
+    )
+
+
+@router.post(
+    "/users/{user_id}/deactivate",
+    status_code=status.HTTP_200_OK,
+    response_model=AdminUserActivateResponse,
+    summary="Deactivate user (Admin only)",
+    description="""
+Deactivate a user account.
+
+**ADMIN ONLY**: This endpoint requires admin role.
+
+**Path Parameters**:
+- `user_id` - The unique identifier of the user to deactivate
+
+**Notes**:
+- Deactivated users cannot log in or access the system
+- This is reversible - use POST /admin/users/{id}/activate to restore access
+- Cannot deactivate your own admin account
+- Preferred over deletion for temporary suspension
+
+**Authentication**: Requires JWT token with admin role
+    """,
+    responses={
+        200: {
+            "description": "User deactivated successfully",
+            "model": AdminUserActivateResponse,
+        },
+        400: {
+            "description": "Cannot deactivate own account",
+            "model": AdminUserDetailErrorResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {
+            "description": "Admin role required",
+            "model": AdminUserDetailErrorResponse,
+        },
+        404: {
+            "description": "User not found",
+            "model": AdminUserDetailErrorResponse,
+        },
+    },
+    tags=["admin", "users"],
+)
+async def deactivate_user(
+    request: Request,
+    user_id: int,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> AdminUserActivateResponse:
+    """
+    Deactivate a user account.
+
+    Admin-only endpoint for suspending user access.
+    """
+    # Authenticate and verify admin role
+    admin_user = await _get_admin_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Prevent admin from deactivating themselves
+    if user_id == admin_user.id:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to deactivate themselves")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot deactivate your own account. Have another admin modify your account if needed.",
+        )
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Fetch the target user
+    try:
+        target_user = await user_repo.get_by_id(user_id)
+    except Exception as e:
+        admin_logger.error(f"Failed to get user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user",
+        )
+
+    if not target_user:
+        admin_logger.warning(f"Admin {admin_user.id} attempted to deactivate non-existent user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found",
+        )
+
+    was_already_inactive = not target_user.is_active
+
+    # Deactivate the user
+    try:
+        await user_repo.deactivate_user(user_id)
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        admin_logger.error(f"Failed to deactivate user {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to deactivate user",
+        )
+
+    # Log the admin action
+    audit_log(
+        action=AuditAction.USER_MODIFY,
+        user_id=str(admin_user.id),
+        resource=f"/api/v1/admin/users/{user_id}/deactivate",
+        details={
+            "action": "deactivate_user",
+            "target_user_id": user_id,
+            "target_user_email": target_user.email,
+            "was_already_inactive": was_already_inactive,
+        },
+        ip_address=client_ip,
+    )
+
+    if was_already_inactive:
+        message = "User was already deactivated"
+        admin_logger.info(f"Admin {admin_user.id} deactivated already-inactive user {user_id}")
+    else:
+        message = "User deactivated successfully"
+        admin_logger.info(f"Admin {admin_user.id} deactivated user {user_id} ({target_user.email})")
+
+    return AdminUserActivateResponse(
+        success=True,
+        message=message,
+        user_id=user_id,
+        is_active=False,
+        email=target_user.email,
     )
