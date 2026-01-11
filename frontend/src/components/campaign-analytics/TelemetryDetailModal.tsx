@@ -236,7 +236,7 @@ function truncateText(text: string | null | undefined, maxLength: number): strin
 /**
  * Status badge for the event.
  */
-function StatusBadge({ status }: { status: ExecutionStatusEnum }) {
+export function StatusBadge({ status }: { status: ExecutionStatusEnum }) {
   const config = STATUS_CONFIGS[status] || STATUS_CONFIGS.pending;
   const Icon = config.icon;
 
@@ -258,7 +258,7 @@ function StatusBadge({ status }: { status: ExecutionStatusEnum }) {
 /**
  * Copy button for text content.
  */
-function CopyButton({
+export function CopyButton({
   text,
   label = "Copy",
   className,
@@ -313,7 +313,7 @@ function CopyButton({
 /**
  * Metadata row component for consistent display.
  */
-function MetadataRow({
+export function MetadataRow({
   icon: Icon,
   label,
   value,
@@ -338,7 +338,7 @@ function MetadataRow({
 /**
  * Score card for quality metrics.
  */
-function ScoreCard({
+export function ScoreCard({
   label,
   score,
   description,
@@ -370,7 +370,7 @@ function ScoreCard({
 /**
  * Prompt display component with original and transformed prompts.
  */
-function PromptDisplay({ event, className }: PromptDisplayProps) {
+export function PromptDisplay({ event, className }: PromptDisplayProps) {
   const [showTransformed, setShowTransformed] = React.useState(true);
 
   const hasTransformedPrompt = !!event.transformed_prompt;
@@ -463,7 +463,7 @@ function PromptDisplay({ event, className }: PromptDisplayProps) {
 /**
  * Response display component.
  */
-function ResponseDisplay({ event, className }: ResponseDisplayProps) {
+export function ResponseDisplay({ event, className }: ResponseDisplayProps) {
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {/* Response content */}
@@ -546,7 +546,7 @@ function ResponseDisplay({ event, className }: ResponseDisplayProps) {
 /**
  * Timing breakdown component.
  */
-function TimingBreakdown({ event, className }: TimingBreakdownProps) {
+export function TimingBreakdown({ event, className }: TimingBreakdownProps) {
   const totalLatency = event.total_latency_ms || 0;
   const transformationTime = event.transformation_time_ms || 0;
   const executionTime = event.execution_time_ms || 0;
@@ -695,7 +695,7 @@ function TimingBreakdown({ event, className }: TimingBreakdownProps) {
 /**
  * Quality scores component.
  */
-function QualityScores({ event, className }: QualityScoresProps) {
+export function QualityScores({ event, className }: QualityScoresProps) {
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       {/* Main quality scores grid */}
@@ -783,7 +783,7 @@ function QualityScores({ event, className }: QualityScoresProps) {
 /**
  * Loading skeleton for the modal content.
  */
-function TelemetryDetailModalSkeleton() {
+export function TelemetryDetailModalSkeleton() {
   return (
     <div className="flex flex-col gap-4">
       {/* Header skeleton */}
@@ -820,7 +820,7 @@ function TelemetryDetailModalSkeleton() {
 /**
  * Error state for the modal.
  */
-function TelemetryDetailModalError({
+export function TelemetryDetailModalError({
   error,
   onRetry,
 }: {

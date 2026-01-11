@@ -154,7 +154,7 @@ export interface CampaignAnalyticsDashboardProps {
 /**
  * Tab configuration.
  */
-interface TabConfig {
+export interface TabConfig {
   id: DashboardTab;
   label: string;
   icon: React.ElementType;

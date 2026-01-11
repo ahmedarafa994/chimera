@@ -233,7 +233,7 @@ function formatDuration(ms: number | null | undefined): string {
 /**
  * Loading skeleton for the entire panel.
  */
-function StatisticsSummaryPanelSkeleton({
+export function StatisticsSummaryPanelSkeleton({
   compact = false,
   className,
 }: {
@@ -260,7 +260,7 @@ function StatisticsSummaryPanelSkeleton({
 /**
  * Error state for the panel.
  */
-function StatisticsSummaryPanelError({
+export function StatisticsSummaryPanelError({
   error,
   onRetry,
   className,
@@ -288,7 +288,7 @@ function StatisticsSummaryPanelError({
 /**
  * Empty state when no campaign is selected.
  */
-function StatisticsSummaryPanelEmpty({ className }: { className?: string }) {
+export function StatisticsSummaryPanelEmpty({ className }: { className?: string }) {
   return (
     <Card className={cn("border-dashed", className)}>
       <CardContent className="flex flex-col items-center justify-center py-10 text-center">

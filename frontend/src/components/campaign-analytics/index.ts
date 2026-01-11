@@ -348,5 +348,6 @@ export {
   CompactCampaignAnalyticsDashboard,
   SimpleCampaignAnalyticsDashboard,
   type DashboardTab,
+  type TabConfig,
   type CampaignAnalyticsDashboardProps,
 } from "./CampaignAnalyticsDashboard";
