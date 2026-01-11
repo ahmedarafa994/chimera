@@ -5,13 +5,18 @@ Provides user profile endpoints:
 - GET /me - Get current user profile
 - PUT /me - Update current user profile
 - POST /me/change-password - Change user password
+- GET /me/api-keys - List user's API keys
+- POST /me/api-keys - Create a new API key
+- DELETE /me/api-keys/{id} - Revoke/delete an API key
 
 All endpoints require authentication and return sanitized user data (no password hash).
 """
 
+import hashlib
 import logging
 import re
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -23,7 +28,8 @@ from app.core.auth import TokenPayload, get_current_user
 from app.core.database import get_async_session_factory
 from app.core.exceptions import ValidationError
 from app.core.rate_limit import RateLimitConfig, get_rate_limiter, get_rate_limit_key
-from app.db.models import User, UserRole
+from app.db.models import User, UserAPIKey, UserRole
+from app.repositories.user_repository import get_user_repository
 from app.services.password_validator import validate_password
 from app.services.user_service import UserService, get_user_service
 
@@ -719,4 +725,541 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while changing password",
+        )
+
+
+# =============================================================================
+# API Key Management Response Models
+# =============================================================================
+
+
+class APIKeyResponse(BaseModel):
+    """Response model for a single API key (masked)."""
+
+    id: int
+    name: Optional[str] = None
+    key_prefix: str
+    is_active: bool
+    expires_at: Optional[datetime] = None
+    last_used_at: Optional[datetime] = None
+    usage_count: int = 0
+    created_at: datetime
+    revoked_at: Optional[datetime] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "name": "Production API Key",
+                "key_prefix": "chim_abc1",
+                "is_active": True,
+                "expires_at": "2025-01-15T00:00:00Z",
+                "last_used_at": "2024-01-25T10:30:00Z",
+                "usage_count": 42,
+                "created_at": "2024-01-01T00:00:00Z",
+                "revoked_at": None,
+            }
+        }
+
+
+class APIKeyListResponse(BaseModel):
+    """Response model for listing API keys."""
+
+    success: bool = True
+    api_keys: list[APIKeyResponse]
+    total_count: int
+    active_count: int
+
+
+class CreateAPIKeyRequest(BaseModel):
+    """Request model for creating a new API key."""
+
+    name: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=100,
+        description="Optional friendly name for the API key",
+        examples=["Production Key", "CI/CD Pipeline"],
+    )
+    expires_in_days: Optional[int] = Field(
+        None,
+        ge=1,
+        le=365,
+        description="Optional expiration in days (1-365). If not set, key never expires.",
+        examples=[30, 90, 365],
+    )
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """Validate and sanitize key name."""
+        if v is None:
+            return v
+        # Strip whitespace and validate
+        v = v.strip()
+        if len(v) == 0:
+            return None
+        return v
+
+
+class CreateAPIKeyResponse(BaseModel):
+    """Response model for creating an API key.
+
+    IMPORTANT: The full API key is only returned ONCE at creation time.
+    Store it securely - it cannot be retrieved again.
+    """
+
+    success: bool = True
+    message: str = "API key created successfully."
+    api_key: str = Field(
+        ...,
+        description="The full API key. Store this securely - it cannot be retrieved again.",
+    )
+    key_info: APIKeyResponse
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "message": "API key created successfully.",
+                "api_key": "chim_abc123def456...",
+                "key_info": {
+                    "id": 1,
+                    "name": "Production API Key",
+                    "key_prefix": "chim_abc1",
+                    "is_active": True,
+                    "expires_at": "2025-01-15T00:00:00Z",
+                    "last_used_at": None,
+                    "usage_count": 0,
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "revoked_at": None,
+                },
+            }
+        }
+
+
+class DeleteAPIKeyResponse(BaseModel):
+    """Response model for deleting/revoking an API key."""
+
+    success: bool = True
+    message: str = "API key revoked successfully."
+
+
+class APIKeyErrorResponse(BaseModel):
+    """Response model for API key operation errors."""
+
+    success: bool = False
+    error: str
+
+
+# =============================================================================
+# API Key Configuration
+# =============================================================================
+
+# Maximum API keys per user
+MAX_API_KEYS_PER_USER = 10
+
+# API key prefix for identification
+API_KEY_PREFIX = "chim_"
+
+
+# =============================================================================
+# API Key Helper Functions
+# =============================================================================
+
+
+def _generate_api_key() -> tuple[str, str, str]:
+    """
+    Generate a new API key with prefix.
+
+    Returns:
+        Tuple of (full_key, hashed_key, key_prefix)
+    """
+    # Generate 32 bytes of random data (256 bits of entropy)
+    random_part = secrets.token_urlsafe(32)
+    full_key = f"{API_KEY_PREFIX}{random_part}"
+
+    # Hash the key for storage using SHA-256
+    hashed_key = hashlib.sha256(full_key.encode()).hexdigest()
+
+    # Extract prefix for identification (first 8 chars after prefix)
+    key_prefix = full_key[:len(API_KEY_PREFIX) + 4]
+
+    return full_key, hashed_key, key_prefix
+
+
+def _api_key_to_response(api_key: UserAPIKey) -> APIKeyResponse:
+    """
+    Convert a UserAPIKey model to an APIKeyResponse.
+
+    Args:
+        api_key: UserAPIKey model from database
+
+    Returns:
+        APIKeyResponse with safe key data
+    """
+    return APIKeyResponse(
+        id=api_key.id,
+        name=api_key.name,
+        key_prefix=api_key.key_prefix,
+        is_active=api_key.is_active,
+        expires_at=api_key.expires_at,
+        last_used_at=api_key.last_used_at,
+        usage_count=api_key.usage_count,
+        created_at=api_key.created_at,
+        revoked_at=api_key.revoked_at,
+    )
+
+
+# =============================================================================
+# API Key Endpoints
+# =============================================================================
+
+
+@router.get(
+    "/me/api-keys",
+    status_code=status.HTTP_200_OK,
+    response_model=APIKeyListResponse,
+    summary="List user's API keys",
+    description="""
+List all API keys for the currently authenticated user.
+
+**Returns**:
+- List of API keys with masked key values (only prefix shown)
+- Total count of all keys
+- Count of active (non-revoked, non-expired) keys
+
+**Note**: Full API key values are never returned after creation.
+Only the key prefix is shown for identification.
+
+**Authentication**: Requires JWT token (API key authentication not supported for key management)
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "api_keys": [
+    {
+      "id": 1,
+      "name": "Production Key",
+      "key_prefix": "chim_abc1",
+      "is_active": true,
+      "expires_at": "2025-01-15T00:00:00Z",
+      "last_used_at": "2024-01-25T10:30:00Z",
+      "usage_count": 42,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "total_count": 1,
+  "active_count": 1
+}
+```
+    """,
+    responses={
+        200: {
+            "description": "API keys retrieved successfully",
+            "model": APIKeyListResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {"description": "API key authentication not supported for key management"},
+    },
+    tags=["users", "api-keys"],
+)
+async def list_api_keys(
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> APIKeyListResponse:
+    """
+    List all API keys for the current user.
+
+    Returns masked API key data (only prefix shown).
+    """
+    user = await _get_authenticated_user(current_user, session)
+
+    # Get user repository for API key operations
+    user_repo = get_user_repository(session)
+
+    # List all keys
+    api_keys = await user_repo.list_api_keys(user.id)
+
+    # Count active keys
+    active_count = await user_repo.count_active_api_keys(user.id)
+
+    # Convert to response models
+    key_responses = [_api_key_to_response(key) for key in api_keys]
+
+    logger.info(f"Listed {len(api_keys)} API keys for user: {user.email} (id={user.id})")
+
+    return APIKeyListResponse(
+        success=True,
+        api_keys=key_responses,
+        total_count=len(api_keys),
+        active_count=active_count,
+    )
+
+
+@router.post(
+    "/me/api-keys",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CreateAPIKeyResponse,
+    summary="Create a new API key",
+    description="""
+Create a new API key for the currently authenticated user.
+
+**IMPORTANT**: The full API key is only returned ONCE at creation time.
+Copy and store it securely - it cannot be retrieved again.
+
+**Limits**:
+- Maximum 10 API keys per user
+- Keys can optionally expire after 1-365 days
+
+**Request Parameters**:
+- `name` (optional): Friendly name for identification
+- `expires_in_days` (optional): Days until expiration (1-365)
+
+**Authentication**: Requires JWT token (API key authentication not supported for key management)
+
+**Example Request**:
+```json
+{
+  "name": "Production Key",
+  "expires_in_days": 90
+}
+```
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "message": "API key created successfully.",
+  "api_key": "chim_abc123def456ghi789jkl012mno345pqr678stu",
+  "key_info": {
+    "id": 1,
+    "name": "Production Key",
+    "key_prefix": "chim_abc1",
+    "is_active": true,
+    "expires_at": "2024-04-15T00:00:00Z",
+    "created_at": "2024-01-15T00:00:00Z"
+  }
+}
+```
+    """,
+    responses={
+        201: {
+            "description": "API key created successfully",
+            "model": CreateAPIKeyResponse,
+        },
+        400: {
+            "description": "Maximum API keys limit reached",
+            "model": APIKeyErrorResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {"description": "API key authentication not supported for key management"},
+    },
+    tags=["users", "api-keys"],
+)
+async def create_api_key(
+    request_data: CreateAPIKeyRequest,
+    request: Request,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> CreateAPIKeyResponse:
+    """
+    Create a new API key for the current user.
+
+    The full API key is only returned once - store it securely.
+    """
+    user = await _get_authenticated_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Check limit
+    active_key_count = await user_repo.count_active_api_keys(user.id)
+    if active_key_count >= MAX_API_KEYS_PER_USER:
+        logger.warning(f"User {user.id} exceeded API key limit ({active_key_count}/{MAX_API_KEYS_PER_USER})")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": f"Maximum API keys limit reached ({MAX_API_KEYS_PER_USER}). Please revoke unused keys.",
+            },
+        )
+
+    # Generate API key
+    full_key, hashed_key, key_prefix = _generate_api_key()
+
+    # Calculate expiration if specified
+    expires_at = None
+    if request_data.expires_in_days:
+        expires_at = datetime.utcnow() + timedelta(days=request_data.expires_in_days)
+
+    # Create the API key
+    try:
+        api_key = await user_repo.create_api_key(
+            user_id=user.id,
+            hashed_key=hashed_key,
+            key_prefix=key_prefix,
+            name=request_data.name,
+            expires_at=expires_at,
+        )
+
+        # Commit the transaction
+        await session.commit()
+
+        # Log to audit trail
+        audit_log(
+            action=AuditAction.API_KEY_CREATED,
+            user_id=str(user.id),
+            resource="/api/v1/users/me/api-keys",
+            details={
+                "key_id": api_key.id,
+                "key_prefix": key_prefix,
+                "key_name": request_data.name,
+                "expires_at": expires_at.isoformat() if expires_at else None,
+            },
+            ip_address=client_ip,
+        )
+
+        logger.info(f"Created API key for user: {user.email} (id={user.id}, key_id={api_key.id})")
+
+        return CreateAPIKeyResponse(
+            success=True,
+            message="API key created successfully. Store this key securely - it cannot be retrieved again.",
+            api_key=full_key,
+            key_info=_api_key_to_response(api_key),
+        )
+
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Failed to create API key for user {user.id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create API key",
+        )
+
+
+@router.delete(
+    "/me/api-keys/{key_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=DeleteAPIKeyResponse,
+    summary="Revoke/delete an API key",
+    description="""
+Revoke (soft-delete) an API key owned by the current user.
+
+The API key will be deactivated immediately and can no longer be used
+for authentication. The key record is kept for audit purposes.
+
+**Parameters**:
+- `key_id`: The ID of the API key to revoke
+
+**Authentication**: Requires JWT token (API key authentication not supported for key management)
+
+**Security Notes**:
+- Revocation is logged to the audit trail
+- Revoked keys cannot be reactivated
+- Use this when a key is compromised or no longer needed
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "message": "API key revoked successfully."
+}
+```
+    """,
+    responses={
+        200: {
+            "description": "API key revoked successfully",
+            "model": DeleteAPIKeyResponse,
+        },
+        401: {"description": "Not authenticated"},
+        403: {"description": "API key authentication not supported for key management"},
+        404: {
+            "description": "API key not found",
+            "model": APIKeyErrorResponse,
+        },
+    },
+    tags=["users", "api-keys"],
+)
+async def delete_api_key(
+    key_id: int,
+    request: Request,
+    current_user: TokenPayload = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> DeleteAPIKeyResponse:
+    """
+    Revoke (soft-delete) an API key.
+
+    The key is deactivated but the record is kept for audit purposes.
+    """
+    user = await _get_authenticated_user(current_user, session)
+    client_ip = request.client.host if request.client else None
+
+    # Get user repository
+    user_repo = get_user_repository(session)
+
+    # Get the key first for audit logging
+    api_key = await user_repo.get_api_key_by_id(key_id, user.id)
+    if not api_key:
+        logger.warning(f"API key {key_id} not found for user {user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "success": False,
+                "error": "API key not found",
+            },
+        )
+
+    # Check if already revoked
+    if not api_key.is_active:
+        logger.info(f"API key {key_id} already revoked for user {user.id}")
+        return DeleteAPIKeyResponse(
+            success=True,
+            message="API key was already revoked.",
+        )
+
+    # Revoke the key
+    try:
+        success = await user_repo.revoke_api_key(key_id, user.id)
+
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to revoke API key",
+            )
+
+        # Commit the transaction
+        await session.commit()
+
+        # Log to audit trail
+        audit_log(
+            action=AuditAction.API_KEY_REVOKED,
+            user_id=str(user.id),
+            resource=f"/api/v1/users/me/api-keys/{key_id}",
+            details={
+                "key_id": key_id,
+                "key_prefix": api_key.key_prefix,
+                "key_name": api_key.name,
+            },
+            ip_address=client_ip,
+        )
+
+        logger.info(f"Revoked API key {key_id} for user: {user.email} (id={user.id})")
+
+        return DeleteAPIKeyResponse(
+            success=True,
+            message="API key revoked successfully.",
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Failed to revoke API key {key_id} for user {user.id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to revoke API key",
         )

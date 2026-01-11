@@ -1001,6 +1001,264 @@ class UserRepository:
         """
         return secrets.token_hex(length)
 
+    # =========================================================================
+    # API Key Operations
+    # =========================================================================
+
+    async def list_api_keys(self, user_id: int) -> list[UserAPIKey]:
+        """
+        List all API keys for a user.
+
+        Args:
+            user_id: User's ID
+
+        Returns:
+            List of UserAPIKey objects (active and inactive)
+        """
+        try:
+            stmt = (
+                select(UserAPIKey)
+                .where(UserAPIKey.user_id == user_id)
+                .order_by(UserAPIKey.created_at.desc())
+            )
+            result = await self._session.execute(stmt)
+            keys = list(result.scalars().all())
+
+            logger.debug(f"Found {len(keys)} API keys for user id={user_id}")
+            return keys
+
+        except Exception as e:
+            logger.error(f"Failed to list API keys for user id={user_id}: {e}", exc_info=True)
+            raise
+
+    async def count_active_api_keys(self, user_id: int) -> int:
+        """
+        Count active API keys for a user.
+
+        Args:
+            user_id: User's ID
+
+        Returns:
+            Number of active API keys
+        """
+        try:
+            stmt = select(func.count(UserAPIKey.id)).where(
+                and_(
+                    UserAPIKey.user_id == user_id,
+                    UserAPIKey.is_active == True,
+                    or_(
+                        UserAPIKey.expires_at.is_(None),
+                        UserAPIKey.expires_at > datetime.utcnow(),
+                    ),
+                )
+            )
+            result = await self._session.execute(stmt)
+            count = result.scalar_one()
+
+            logger.debug(f"User id={user_id} has {count} active API keys")
+            return count
+
+        except Exception as e:
+            logger.error(f"Failed to count API keys for user id={user_id}: {e}", exc_info=True)
+            raise
+
+    async def get_api_key_by_id(self, key_id: int, user_id: int) -> UserAPIKey | None:
+        """
+        Get an API key by ID, ensuring it belongs to the specified user.
+
+        Args:
+            key_id: API key ID
+            user_id: User's ID (for ownership verification)
+
+        Returns:
+            UserAPIKey if found and owned by user, None otherwise
+        """
+        try:
+            stmt = select(UserAPIKey).where(
+                and_(
+                    UserAPIKey.id == key_id,
+                    UserAPIKey.user_id == user_id,
+                )
+            )
+            result = await self._session.execute(stmt)
+            key = result.scalar_one_or_none()
+
+            if key:
+                logger.debug(f"Found API key id={key_id} for user id={user_id}")
+            else:
+                logger.debug(f"API key id={key_id} not found for user id={user_id}")
+
+            return key
+
+        except Exception as e:
+            logger.error(f"Failed to get API key id={key_id}: {e}", exc_info=True)
+            raise
+
+    async def get_api_key_by_hash(self, hashed_key: str) -> UserAPIKey | None:
+        """
+        Get an API key by its hash.
+
+        Used for API key authentication lookup.
+
+        Args:
+            hashed_key: The hashed API key value
+
+        Returns:
+            UserAPIKey if found, None otherwise
+        """
+        try:
+            stmt = select(UserAPIKey).where(UserAPIKey.hashed_key == hashed_key)
+            result = await self._session.execute(stmt)
+            key = result.scalar_one_or_none()
+
+            if key:
+                logger.debug(f"Found API key by hash: prefix={key.key_prefix}")
+            else:
+                logger.debug("API key not found by hash")
+
+            return key
+
+        except Exception as e:
+            logger.error(f"Failed to get API key by hash: {e}", exc_info=True)
+            raise
+
+    async def create_api_key(
+        self,
+        user_id: int,
+        hashed_key: str,
+        key_prefix: str,
+        name: str | None = None,
+        expires_at: datetime | None = None,
+    ) -> UserAPIKey:
+        """
+        Create a new API key for a user.
+
+        Args:
+            user_id: User's ID
+            hashed_key: The hashed API key value (for secure storage)
+            key_prefix: First 8 characters of the key for identification
+            name: Optional friendly name for the key
+            expires_at: Optional expiration datetime
+
+        Returns:
+            Created UserAPIKey object
+        """
+        try:
+            api_key = UserAPIKey(
+                user_id=user_id,
+                hashed_key=hashed_key,
+                key_prefix=key_prefix,
+                name=name,
+                expires_at=expires_at,
+                is_active=True,
+            )
+
+            self._session.add(api_key)
+            await self._session.flush()
+            await self._session.refresh(api_key)
+
+            logger.info(f"Created API key for user id={user_id}: prefix={key_prefix}, name={name}")
+            return api_key
+
+        except Exception as e:
+            await self._session.rollback()
+            logger.error(f"Failed to create API key for user id={user_id}: {e}", exc_info=True)
+            raise
+
+    async def revoke_api_key(self, key_id: int, user_id: int) -> bool:
+        """
+        Revoke (deactivate) an API key.
+
+        Args:
+            key_id: API key ID
+            user_id: User's ID (for ownership verification)
+
+        Returns:
+            True if revoked, False if not found or not owned by user
+        """
+        try:
+            # First verify ownership
+            key = await self.get_api_key_by_id(key_id, user_id)
+            if not key:
+                logger.warning(f"API key id={key_id} not found for user id={user_id}")
+                return False
+
+            if not key.is_active:
+                logger.info(f"API key id={key_id} is already revoked")
+                return True  # Already revoked, consider success
+
+            # Revoke the key
+            key.is_active = False
+            key.revoked_at = datetime.utcnow()
+
+            await self._session.flush()
+
+            logger.info(f"Revoked API key id={key_id} for user id={user_id}")
+            return True
+
+        except Exception as e:
+            await self._session.rollback()
+            logger.error(f"Failed to revoke API key id={key_id}: {e}", exc_info=True)
+            raise
+
+    async def delete_api_key(self, key_id: int, user_id: int) -> bool:
+        """
+        Permanently delete an API key.
+
+        Args:
+            key_id: API key ID
+            user_id: User's ID (for ownership verification)
+
+        Returns:
+            True if deleted, False if not found
+        """
+        try:
+            key = await self.get_api_key_by_id(key_id, user_id)
+            if not key:
+                logger.warning(f"API key id={key_id} not found for deletion")
+                return False
+
+            await self._session.delete(key)
+            await self._session.flush()
+
+            logger.info(f"Deleted API key id={key_id} for user id={user_id}")
+            return True
+
+        except Exception as e:
+            await self._session.rollback()
+            logger.error(f"Failed to delete API key id={key_id}: {e}", exc_info=True)
+            raise
+
+    async def update_api_key_usage(self, key_id: int) -> bool:
+        """
+        Update API key usage statistics (last_used_at, usage_count).
+
+        Args:
+            key_id: API key ID
+
+        Returns:
+            True if updated, False if not found
+        """
+        try:
+            stmt = (
+                update(UserAPIKey)
+                .where(UserAPIKey.id == key_id)
+                .values(
+                    last_used_at=datetime.utcnow(),
+                    usage_count=UserAPIKey.usage_count + 1,
+                )
+            )
+            result = await self._session.execute(stmt)
+
+            if result.rowcount > 0:
+                logger.debug(f"Updated usage for API key id={key_id}")
+                return True
+            return False
+
+        except Exception as e:
+            logger.error(f"Failed to update API key usage: {e}", exc_info=True)
+            raise
+
 
 # =============================================================================
 # Factory Function
