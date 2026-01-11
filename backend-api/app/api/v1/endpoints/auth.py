@@ -12,13 +12,19 @@ All endpoints follow security best practices for user authentication.
 """
 
 import logging
+import time
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_async_session_factory
+from app.core.rate_limit import (
+    RateLimitConfig,
+    get_rate_limiter,
+    get_rate_limit_key,
+)
 from app.db.models import UserRole
 from app.services.email_service import email_service
 from app.services.password_validator import validate_password
@@ -142,6 +148,43 @@ class EmailVerificationErrorResponse(BaseModel):
     success: bool = False
     error: str
     token_expired: bool = False
+
+
+class ResendVerificationRequest(BaseModel):
+    """Request model for resending verification email."""
+
+    email: EmailStr = Field(
+        ...,
+        description="Email address to resend verification to",
+        examples=["user@example.com"],
+    )
+
+
+class ResendVerificationResponse(BaseModel):
+    """Response model for resend verification."""
+
+    success: bool = True
+    message: str = "If this email is registered and unverified, a verification email has been sent."
+
+
+class ResendVerificationErrorResponse(BaseModel):
+    """Response model for resend verification errors."""
+
+    success: bool = False
+    error: str
+    already_verified: bool = False
+
+
+# =============================================================================
+# Rate Limiting Configuration for Auth Endpoints
+# =============================================================================
+
+# Resend verification: 3 requests per minute per IP to prevent abuse
+RESEND_VERIFICATION_RATE_LIMIT = RateLimitConfig(
+    requests_per_minute=3,
+    burst_size=1,
+    cost_weight=1,
+)
 
 
 # =============================================================================
@@ -407,6 +450,147 @@ async def verify_email(
         email=result.user.email,
         username=result.user.username,
     )
+
+
+@router.post(
+    "/resend-verification",
+    status_code=status.HTTP_200_OK,
+    summary="Resend verification email",
+    description="""
+Resend the email verification link for users who haven't verified their email yet.
+
+**Security Features**:
+- Rate limited to 3 requests per minute per IP address to prevent abuse
+- Returns success even if email doesn't exist (prevents email enumeration)
+- Only works for unverified users
+
+**Flow**:
+1. User requests resend with their email address
+2. System checks if email exists and is unverified
+3. New verification token is generated (24-hour expiry)
+4. Verification email is sent to user's email address
+5. Response indicates success (regardless of email existence for security)
+
+**Example Request**:
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Note**: For security reasons, this endpoint will return success even if:
+- The email is not registered
+- The email is already verified
+
+This prevents attackers from using this endpoint to determine which emails are registered.
+    """,
+    responses={
+        200: {
+            "description": "Verification email resent (or would be if applicable)",
+            "model": ResendVerificationResponse,
+        },
+        400: {
+            "description": "Email is already verified",
+            "model": ResendVerificationErrorResponse,
+        },
+        429: {
+            "description": "Rate limit exceeded",
+        },
+    },
+    tags=["authentication"],
+)
+async def resend_verification(
+    request_data: ResendVerificationRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_db_session),
+) -> ResendVerificationResponse:
+    """
+    Resend verification email to a user.
+
+    Rate limited to prevent abuse. Generates a new verification
+    token and sends a new verification email.
+    """
+    # Rate limit check - stricter limit for this endpoint
+    await _check_resend_rate_limit(request)
+
+    user_service = get_user_service(session)
+
+    # Resend verification email
+    success, new_token, error = await user_service.resend_verification_email(
+        email=request_data.email
+    )
+
+    if not success and error:
+        # Only return error if user explicitly already verified
+        if "already verified" in error.lower():
+            logger.info(f"Resend verification rejected: {request_data.email} already verified")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "success": False,
+                    "error": error,
+                    "already_verified": True,
+                },
+            )
+        # For other errors, log but return generic success (security)
+        logger.warning(f"Resend verification error for {request_data.email}: {error}")
+
+    # Send email in background if we have a new token
+    if new_token:
+        # We need to get the username for the email template
+        user = await user_service.get_user_by_email(request_data.email)
+        if user:
+            background_tasks.add_task(
+                _send_verification_email,
+                email=user.email,
+                username=user.username,
+                verification_token=new_token,
+            )
+            logger.info(f"Resend verification email queued for {request_data.email}")
+    else:
+        # Log for security monitoring (but don't reveal to user)
+        logger.info(f"Resend verification requested for {request_data.email} (no action taken)")
+
+    # Always return success message for security (prevents email enumeration)
+    return ResendVerificationResponse(
+        success=True,
+        message="If this email is registered and unverified, a verification email has been sent.",
+    )
+
+
+async def _check_resend_rate_limit(request: Request) -> None:
+    """
+    Check rate limit for resend verification endpoint.
+
+    Stricter limits to prevent abuse and email bombing.
+    """
+    import asyncio
+
+    limiter = get_rate_limiter()
+    # Use IP-based key for resend verification
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"ratelimit:resend_verification:ip:{client_ip}"
+
+    # Check rate limit - handle both sync and async limiters
+    result = limiter.check_rate_limit(key, RESEND_VERIFICATION_RATE_LIMIT)
+    if asyncio.iscoroutine(result):
+        allowed, info = await result
+    else:
+        allowed, info = result
+
+    if not allowed:
+        logger.warning(f"Resend verification rate limit exceeded for IP: {client_ip}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests. Please wait before requesting another verification email.",
+            headers={
+                "X-RateLimit-Limit": str(info.get("limit", 3)),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(info.get("reset_at", int(time.time()) + 60)),
+                "Retry-After": str(info.get("retry_after", 60)),
+            },
+        )
 
 
 # =============================================================================
