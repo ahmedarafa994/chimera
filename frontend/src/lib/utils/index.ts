@@ -33,3 +33,20 @@ export {
   type ChartExportResult,
   type ChartRef,
 } from './chart-export';
+
+// CSV export utilities
+export {
+  generateCSV,
+  generateCSVAuto,
+  downloadCSV,
+  exportAndDownloadCSV,
+  generateCSVFilename,
+  checkCSVExportSupport,
+  CAMPAIGN_CSV_COLUMNS,
+  type CSVDateFormat,
+  type CSVColumn,
+  type CSVGenerateOptions,
+  type CSVGenerateResult,
+  type CSVDownloadResult,
+  type CampaignCSVColumnSet,
+} from './csv-export';
