@@ -25,3 +25,7 @@ export type { TechniqueBreakdownProps } from "./TechniqueBreakdown";
 // Token usage and cost tracking card
 export { TokenUsageCard } from "./TokenUsageCard";
 export type { TokenUsageCardProps } from "./TokenUsageCard";
+
+// Latency metrics card (API and processing latency)
+export { LatencyCard } from "./LatencyCard";
+export type { LatencyCardProps } from "./LatencyCard";
