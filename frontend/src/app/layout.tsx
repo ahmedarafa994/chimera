@@ -8,6 +8,7 @@ import QueryProvider from "@/providers/query-provider";
 import { UnifiedModelProvider } from "@/providers/unified-model-provider";
 import ResourceOptimizationProvider from "@/components/providers/ResourceOptimizationProvider";
 import { WebVitalsTracker } from "@/components/WebVitalsTracker";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -66,14 +67,16 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <QueryProvider>
-          <UnifiedModelProvider>
-            <ResourceOptimizationProvider>
-              <ErrorBoundary>
-                {children}
-              </ErrorBoundary>
-              <Toaster />
-            </ResourceOptimizationProvider>
-          </UnifiedModelProvider>
+          <AuthProvider>
+            <UnifiedModelProvider>
+              <ResourceOptimizationProvider>
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+                <Toaster />
+              </ResourceOptimizationProvider>
+            </UnifiedModelProvider>
+          </AuthProvider>
         </QueryProvider>
 
         {/* Web Vitals tracking */}
