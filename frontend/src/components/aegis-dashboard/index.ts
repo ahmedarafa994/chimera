@@ -13,3 +13,7 @@ export type { ConnectionStatusProps } from "./ConnectionStatus";
 // Attack success rate metric card
 export { SuccessRateCard } from "./SuccessRateCard";
 export type { SuccessRateCardProps } from "./SuccessRateCard";
+
+// Success rate trend chart (area chart over time)
+export { SuccessRateTrendChart } from "./SuccessRateTrendChart";
+export type { SuccessRateTrendChartProps } from "./SuccessRateTrendChart";
