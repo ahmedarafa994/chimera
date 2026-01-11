@@ -127,6 +127,23 @@ class PasswordStrengthResponse(BaseModel):
     suggestions: list[str]
 
 
+class EmailVerificationResponse(BaseModel):
+    """Response model for successful email verification."""
+
+    success: bool = True
+    message: str = "Email verified successfully. You can now log in."
+    email: str
+    username: str
+
+
+class EmailVerificationErrorResponse(BaseModel):
+    """Response model for email verification errors."""
+
+    success: bool = False
+    error: str
+    token_expired: bool = False
+
+
 # =============================================================================
 # API Endpoints
 # =============================================================================
@@ -296,6 +313,99 @@ async def check_password_strength(
         errors=[{"type": e.error_type.value, "message": e.message} for e in result.errors],
         warnings=[{"type": w.error_type.value, "message": w.message} for w in result.warnings],
         suggestions=result.suggestions,
+    )
+
+
+@router.get(
+    "/verify-email/{token}",
+    status_code=status.HTTP_200_OK,
+    summary="Verify user email",
+    description="""
+Verify a user's email address using the verification token sent via email.
+
+**Token Format**:
+- 64-character hex string generated during registration
+- Token expires after 24 hours
+
+**Flow**:
+1. User clicks verification link in email
+2. Frontend extracts token and calls this endpoint
+3. If valid, user's email is marked as verified
+4. User can now log in
+
+**Security**:
+- Token is cleared after successful verification
+- Expired tokens are rejected
+- Invalid tokens return generic error
+
+**Example URL**:
+```
+/api/v1/auth/verify-email/abc123def456...
+```
+    """,
+    responses={
+        200: {
+            "description": "Email verified successfully",
+            "model": EmailVerificationResponse,
+        },
+        400: {
+            "description": "Invalid or expired verification token",
+            "model": EmailVerificationErrorResponse,
+        },
+        404: {
+            "description": "Token not found",
+            "model": EmailVerificationErrorResponse,
+        },
+    },
+    tags=["authentication"],
+)
+async def verify_email(
+    token: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> EmailVerificationResponse:
+    """
+    Verify user's email using verification token.
+
+    Validates the token, marks the user as verified,
+    and clears the verification token.
+    """
+    # Validate token format (should be 64 chars hex)
+    if not token or len(token) != 64:
+        logger.warning(f"Email verification failed: invalid token format")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": "Invalid verification token format",
+                "token_expired": False,
+            },
+        )
+
+    # Verify using user service
+    user_service = get_user_service(session)
+    result = await user_service.verify_email(token)
+
+    if not result.success:
+        # Determine if token is expired vs invalid
+        token_expired = "expired" in (result.error or "").lower()
+
+        logger.info(f"Email verification failed: {result.error}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": result.error or "Verification failed",
+                "token_expired": token_expired,
+            },
+        )
+
+    logger.info(f"Email verified successfully: {result.user.email}")
+
+    return EmailVerificationResponse(
+        success=True,
+        message="Email verified successfully. You can now log in.",
+        email=result.user.email,
+        username=result.user.username,
     )
 
 
