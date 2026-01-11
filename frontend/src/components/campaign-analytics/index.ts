@@ -93,3 +93,34 @@ export {
   type ZoomState,
   type SuccessRateTimeSeriesChartProps,
 } from "./charts/SuccessRateTimeSeriesChart";
+
+export {
+  TechniqueEffectivenessChart,
+  TechniqueEffectivenessChartSkeleton,
+  TechniqueEffectivenessChartError,
+  TechniqueEffectivenessChartEmpty,
+  SimpleTechniqueChart,
+  TechniqueRadarChart,
+  CompactTechniqueChart,
+  type TechniqueEffectivenessChartProps,
+  type TechniqueChartDataPoint,
+  type ChartViewMode,
+  type SortField,
+  type SortDirection,
+  type SuccessTier,
+} from "./charts/TechniqueEffectivenessChart";
+
+export {
+  ProviderComparisonChart,
+  ProviderComparisonChartSkeleton,
+  ProviderComparisonChartError,
+  ProviderComparisonChartEmpty,
+  SimpleProviderChart,
+  ProviderLatencyChart,
+  ProviderCostChart,
+  CompactProviderChart,
+  type ProviderComparisonChartProps,
+  type ProviderChartDataPoint,
+  type DisplayMode,
+  type ProviderSortField,
+} from "./charts/ProviderComparisonChart";
