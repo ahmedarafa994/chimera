@@ -155,3 +155,6 @@ export type {
   ConnectionStatus,
   UseUnifiedProviderSelectionReturn,
 } from "@/types/unified-providers";
+
+// API Key Management Hook (NEW - Secure API Key Storage)
+export { useApiKeys, default as useApiKeysDefault } from "./useApiKeys";
