@@ -7,5 +7,21 @@ separation between business logic and data access.
 """
 
 from app.repositories.base_repository import BaseRepository
+from app.repositories.prompt_library_repository import (
+    DuplicateEntityError,
+    EntityNotFoundError,
+    PromptLibraryRepository,
+    RepositoryError,
+    ValidationError,
+    get_prompt_library_repository,
+)
 
-__all__ = ["BaseRepository"]
+__all__ = [
+    "BaseRepository",
+    "PromptLibraryRepository",
+    "get_prompt_library_repository",
+    "RepositoryError",
+    "EntityNotFoundError",
+    "DuplicateEntityError",
+    "ValidationError",
+]
