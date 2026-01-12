@@ -10,6 +10,8 @@
  * - Uptime tracking with multiple time window displays
  * - Circuit breaker status monitoring
  * - Historical metrics charts with time range selection
+ * - Quota usage tracking with progress bars and alerts
+ * - Rate limit visualization with gauges showing RPM/TPM vs caps
  *
  * @example
  * ```tsx
@@ -19,6 +21,10 @@
  *   UptimeIndicator,
  *   UptimeBadges,
  *   CircularUptime,
+ *   QuotaUsageCard,
+ *   QuotaDashboard,
+ *   RateLimitGauge,
+ *   RateLimitDashboard,
  * } from "@/components/health-dashboard";
  *
  * // Display a provider health card
@@ -56,6 +62,33 @@
  *   last24Hours={99.95}
  *   last7Days={99.9}
  *   last30Days={99.85}
+ * />
+ *
+ * // Display quota usage card
+ * <QuotaUsageCard
+ *   quota={{
+ *     provider_id: "openai",
+ *     provider_name: "OpenAI",
+ *     usage_percent: 75.5,
+ *     tokens_used: 1500000,
+ *     tokens_limit: 2000000,
+ *     ...
+ *   }}
+ *   history={quotaHistory}
+ *   onRefresh={handleRefresh}
+ * />
+ *
+ * // Display rate limit gauge
+ * <RateLimitGauge
+ *   metrics={{
+ *     provider_id: "openai",
+ *     provider_name: "OpenAI",
+ *     requests_per_minute: 45,
+ *     effective_rpm_limit: 60,
+ *     rpm_usage_percent: 75,
+ *     ...
+ *   }}
+ *   onRefresh={handleRefresh}
  * />
  * ```
  */
@@ -97,3 +130,23 @@ export type {
   HealthSummary,
   HealthAlert,
 } from "./ProviderHealthDashboard";
+
+// Quota Usage Card - Progress bar showing quota usage with alerts
+export { QuotaUsageCard, QuotaDashboard } from "./QuotaUsageCard";
+export type {
+  QuotaUsageCardProps,
+  QuotaDashboardProps,
+  QuotaStatus,
+  QuotaHistoryEntry,
+  QuotaPeriod,
+  QuotaAlertLevel,
+} from "./QuotaUsageCard";
+
+// Rate Limit Gauge - Visual gauge showing requests/minute vs cap
+export { RateLimitGauge, RateLimitDashboard } from "./RateLimitGauge";
+export type {
+  RateLimitGaugeProps,
+  RateLimitDashboardProps,
+  RateLimitMetrics,
+  RateLimitLevel,
+} from "./RateLimitGauge";
