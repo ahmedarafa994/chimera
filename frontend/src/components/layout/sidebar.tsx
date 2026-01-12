@@ -33,6 +33,7 @@ import {
   Shield,
   Repeat,
   Users,
+  Key,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -82,6 +83,7 @@ const RESOURCE_ROUTES: RouteConfig[] = [
 ];
 
 const CONFIG_ROUTES: RouteConfig[] = [
+  { label: "API Keys", icon: Key, href: "/dashboard/api-keys", description: "Manage API Keys" },
   { label: "Mutators", icon: GitBranch, href: "/dashboard/config/mutators" },
   { label: "Policies", icon: Sliders, href: "/dashboard/config/policies" },
   { label: "Settings", icon: Wifi, href: "/dashboard/settings", description: "Connection & Config" },
