@@ -36,6 +36,7 @@ from app.api.v1.endpoints import (
     mousetrap,
     overthink,
     pipeline_streaming,
+    prompt_library,
     provider_config,
     providers,
     proxy_health,
@@ -139,4 +140,11 @@ api_router.include_router(
     overthink.router,
     prefix="/overthink",
     tags=["overthink", "reasoning", "adversarial"],
+)
+
+# --- Prompt Library & Template Management ---
+api_router.include_router(
+    prompt_library.router,
+    prefix="/prompt-library",
+    tags=["prompt-library", "templates"],
 )
