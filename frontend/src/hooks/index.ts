@@ -158,3 +158,17 @@ export type {
 
 // API Key Management Hook (NEW - Secure API Key Storage)
 export { useApiKeys, default as useApiKeysDefault } from "./useApiKeys";
+
+// Provider Health Dashboard Hooks (NEW - Real-time Health Monitoring)
+export {
+  useProviderHealthDashboard,
+  useHealthHistory,
+  useProviderHealthDetail,
+  default as useProviderHealthDashboardDefault,
+  type UseProviderHealthOptions,
+  type UseProviderHealthResult,
+  type UseHealthHistoryOptions,
+  type UseHealthHistoryResult,
+  type ProviderHealthDetail,
+  type UseProviderHealthDetailResult,
+} from "./useProviderHealth";
