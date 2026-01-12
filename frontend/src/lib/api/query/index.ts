@@ -78,3 +78,34 @@ export type {
   ModelValidationRequest,
   ModelValidationResponse,
 } from "./system-queries";
+
+// Prompt Library queries
+export {
+  // Query keys
+  promptLibraryKeys,
+  // Query hooks
+  usePromptTemplates,
+  usePromptTemplate,
+  useSearchTemplates,
+  useInfiniteSearchTemplates,
+  useTopRatedTemplates,
+  useLibraryStatistics,
+  useTemplateVersions,
+  useTemplateVersion,
+  useTemplateRatings,
+  useRatingStatistics,
+  // Mutation hooks
+  useCreateTemplate,
+  useUpdateTemplate,
+  useDeleteTemplate,
+  useRateTemplate,
+  useUpdateRating,
+  useDeleteRating,
+  useCreateVersion,
+  useRestoreVersion,
+  useSaveFromCampaign,
+  // Utility hooks
+  usePrefetchTemplate,
+  usePrefetchTemplateVersions,
+  useInvalidatePromptLibrary,
+} from "./prompt-library";
