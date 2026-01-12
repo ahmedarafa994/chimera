@@ -84,3 +84,56 @@ export type {
 } from './unified-providers';
 
 export { CAPABILITY_CONFIG, STATUS_CONFIG } from './unified-providers';
+
+// Prompt Library types
+export type {
+  TemplateMetadata,
+  TemplateVersion,
+  TemplateRating,
+  RatingStatistics,
+  PromptTemplate,
+  TemplateSearchFilters,
+  TemplateSearchRequest,
+  CreateTemplateRequest,
+  UpdateTemplateRequest,
+  SearchTemplatesRequest,
+  RateTemplateRequest,
+  UpdateRatingRequest,
+  CreateVersionRequest,
+  SaveFromCampaignRequest,
+  TemplateResponse,
+  TemplateListResponse,
+  TemplateVersionResponse,
+  TemplateVersionListResponse,
+  RatingResponse,
+  RatingListResponse,
+  RatingStatisticsResponse,
+  TopRatedTemplatesResponse,
+  TemplateDeleteResponse,
+  TemplateStatsResponse,
+  VersionDiff,
+  VersionChange,
+  VersionComparisonResponse,
+  VersionTimelineEntry,
+  VersionTimelineResponse,
+  TechniqueTypeOption,
+  VulnerabilityTypeOption,
+  TemplateSummary,
+} from './prompt-library-types';
+
+export {
+  TechniqueType,
+  VulnerabilityType,
+  SharingLevel,
+  TemplateStatus,
+  TemplateSortField,
+  SortOrder,
+  TECHNIQUE_TYPE_CATEGORIES,
+  VULNERABILITY_TYPE_CATEGORIES,
+  formatTechniqueType,
+  formatVulnerabilityType,
+  formatSharingLevel,
+  formatTemplateStatus,
+  DEFAULT_TEMPLATE_METADATA,
+  DEFAULT_RATING_STATISTICS,
+} from './prompt-library-types';
