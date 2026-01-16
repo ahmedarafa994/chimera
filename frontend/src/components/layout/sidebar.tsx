@@ -58,6 +58,9 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 const MAIN_ROUTES: RouteConfig[] = [
   { label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "Templates", icon: Layers, href: "/dashboard/templates", description: "Quick Start Templates" },
+  { label: "History", icon: Clock, href: "/dashboard/history", description: "Assessment History" },
+  { label: "Compare Providers", icon: BarChart3, href: "/dashboard/compare", description: "Multi-Provider Testing" },
   { label: "Execution", icon: Zap, href: "/dashboard/execution", description: "Transform + Execute" },
   { label: "Generation", icon: Sparkles, href: "/dashboard/generation", description: "Direct LLM" },
   { label: "GPTFuzz", icon: Bug, href: "/dashboard/gptfuzz", description: "Evolutionary Fuzzing" },
@@ -80,7 +83,7 @@ const AI_TOOLS_ROUTES: RouteConfig[] = [
 const RESOURCE_ROUTES: RouteConfig[] = [
   { label: "Models", icon: Cpu, href: "/dashboard/models", description: "Model & Session Mgmt" },
   { label: "AI Providers", icon: Server, href: "/dashboard/providers", description: "Configure & Switch Providers" },
-  { label: "Techniques", icon: Layers, href: "/dashboard/techniques" },
+  { label: "Technique Library", icon: FileText, href: "/dashboard/technique-library", description: "Attack Techniques Catalog" },
   { label: "Metrics", icon: Activity, href: "/dashboard/metrics" },
 ];
 
