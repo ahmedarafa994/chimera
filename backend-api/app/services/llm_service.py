@@ -28,6 +28,14 @@ Global Model Selection Integration:
 - Integration with ProviderResolutionService for priority-based resolution
 - get_current_selection_from_context() method for retrieving context selection
 - Automatic fallback to global selection when no explicit provider specified
+
+API Key Failover Integration (Subtask 3.2):
+- Integration with ApiKeyFailoverService for intelligent key rotation
+- Automatic failover to backup API keys when primary hits rate limit
+- Retry request with backup key transparently
+- Include failover metadata in response
+- Emit events for failover tracking
+- Integration with ProviderHealthService for health metrics
 """
 
 import asyncio
@@ -97,6 +105,48 @@ def _get_config_manager():
             return config_manager
     except Exception as e:
         logger.debug(f"Config manager not available: {e}")
+    return None
+
+
+def _get_api_key_failover_service():
+    """
+    Get ApiKeyFailoverService instance with graceful fallback.
+
+    Returns None if failover service is not available.
+    """
+    try:
+        from app.services.api_key_failover_service import get_api_key_failover_service
+        return get_api_key_failover_service()
+    except Exception as e:
+        logger.debug(f"ApiKeyFailoverService not available: {e}")
+    return None
+
+
+def _get_provider_health_service():
+    """
+    Get ProviderHealthService instance with graceful fallback.
+
+    Returns None if health service is not available.
+    """
+    try:
+        from app.services.provider_health_service import get_provider_health_service
+        return get_provider_health_service()
+    except Exception as e:
+        logger.debug(f"ProviderHealthService not available: {e}")
+    return None
+
+
+def _get_quota_tracking_service():
+    """
+    Get QuotaTrackingService instance with graceful fallback.
+
+    Returns None if quota service is not available.
+    """
+    try:
+        from app.services.quota_tracking_service import get_quota_tracking_service
+        return get_quota_tracking_service()
+    except Exception as e:
+        logger.debug(f"QuotaTrackingService not available: {e}")
     return None
 
 # =============================================================================
@@ -323,6 +373,12 @@ class LLMService:
 
         # Global model selection integration
         self._use_global_selection: bool = True
+
+        # API Key Failover Integration (Subtask 3.2)
+        # Enable automatic API key rotation on rate limit errors
+        self._api_key_failover_enabled: bool = True
+        # Track failover metadata for responses
+        self._last_failover_info: dict[str, Any] = {}
 
         # Load config-driven settings
         self._load_config_settings()
@@ -755,17 +811,65 @@ class LLMService:
         provider: LLMProvider,
     ) -> PromptResponse:
         """
-        Execute request with automatic failover on circuit breaker open.
+        Execute request with automatic failover on circuit breaker open and rate limits.
 
         STORY-1.2: Tries failover providers in order when primary fails.
+
+        Subtask 3.2: API Key Failover Integration:
+        - Intercept rate limit errors and trigger API key failover
+        - Retry request with backup key transparently
+        - Include failover metadata in response
+        - Record success/failure with failover service and health service
         """
         tried_providers = [primary_provider]
         last_error: Exception | None = None
+        failover_info: dict[str, Any] = {}
+        current_key_id: str | None = None
+        start_time = time.time()
+
+        # Get API key failover service if enabled
+        failover_service = None
+        if self._api_key_failover_enabled:
+            failover_service = _get_api_key_failover_service()
+
+        # Get health service for tracking
+        health_service = _get_provider_health_service()
+
+        # Get quota tracking service
+        quota_service = _get_quota_tracking_service()
 
         try:
+            # Try to get a managed API key if failover service is available
+            if failover_service:
+                try:
+                    key_id, api_key = await failover_service.get_available_key(primary_provider)
+                    if key_id and api_key:
+                        current_key_id = key_id
+                        # Create request with the managed API key
+                        request = PromptRequest(
+                            prompt=request.prompt,
+                            system_instruction=request.system_instruction,
+                            model=request.model,
+                            config=request.config,
+                            provider=request.provider,
+                            api_key=api_key,  # Use managed key
+                            skip_validation=request.skip_validation,
+                        )
+                        logger.debug(f"Using managed API key: {key_id[:20]}...")
+                except Exception as e:
+                    logger.debug(f"Could not get managed API key: {e}")
+
             response = await self._call_with_circuit_breaker(
                 primary_provider, provider.generate, request
             )
+
+            # Record success with services
+            latency_ms = (time.time() - start_time) * 1000
+            await self._record_request_success(
+                primary_provider, current_key_id, latency_ms, response,
+                failover_service, health_service, quota_service
+            )
+
             # Cache successful response (only for deterministic requests)
             cache_enabled = self._CACHE_ENABLED
             is_deterministic = (
@@ -781,6 +885,15 @@ class LLMService:
                 f"Circuit breaker open for provider '{e.name}'. "
                 f"Attempting failover..."
             )
+
+            # Record failure with health service
+            if health_service:
+                await health_service.record_external_check(
+                    provider_id=primary_provider,
+                    success=False,
+                    latency_ms=(time.time() - start_time) * 1000,
+                    error_message="Circuit breaker open",
+                )
 
             # Try failover providers if enabled
             if self._FAILOVER_ENABLED:
@@ -808,6 +921,12 @@ class LLMService:
                         logger.info(
                             f"Failover successful: {primary_provider} -> {fallback_name}"
                         )
+                        failover_info = {
+                            "original_provider": primary_provider,
+                            "fallback_provider": fallback_name,
+                            "reason": "circuit_breaker_open",
+                        }
+                        self._last_failover_info = failover_info
                         return response
 
                     except CircuitBreakerOpen as cb_err:
@@ -837,6 +956,181 @@ class LLMService:
                     "suggestion": "Wait for provider recovery or check API keys",
                 },
             )
+
+        except Exception as e:
+            # Check if this is a rate limit error
+            error_message = str(e)
+            is_rate_limit = self._is_rate_limit_error(error_message)
+            latency_ms = (time.time() - start_time) * 1000
+
+            # Record failure with health service
+            if health_service:
+                await health_service.record_external_check(
+                    provider_id=primary_provider,
+                    success=False,
+                    latency_ms=latency_ms,
+                    is_rate_limited=is_rate_limit,
+                    error_message=error_message,
+                )
+
+            # If rate limit error and API key failover is enabled, try with backup key
+            if is_rate_limit and failover_service and current_key_id:
+                logger.warning(
+                    f"Rate limit detected for {primary_provider} with key {current_key_id[:20]}..., "
+                    f"attempting API key failover..."
+                )
+
+                # Handle the error and get backup key
+                new_key_id, new_api_key = await failover_service.handle_error(
+                    provider_id=primary_provider,
+                    key_id=current_key_id,
+                    error=error_message,
+                    is_rate_limit=True,
+                )
+
+                if new_key_id and new_api_key:
+                    logger.info(
+                        f"API key failover: {current_key_id[:20]}... -> {new_key_id[:20]}..."
+                    )
+
+                    # Retry with backup key
+                    try:
+                        retry_request = PromptRequest(
+                            prompt=request.prompt,
+                            system_instruction=request.system_instruction,
+                            model=request.model,
+                            config=request.config,
+                            provider=request.provider,
+                            api_key=new_api_key,
+                            skip_validation=request.skip_validation,
+                        )
+
+                        response = await self._call_with_circuit_breaker(
+                            primary_provider, provider.generate, retry_request
+                        )
+
+                        # Record success with failover
+                        await failover_service.record_success(primary_provider, new_key_id)
+
+                        # Record with health service
+                        if health_service:
+                            await health_service.record_external_check(
+                                provider_id=primary_provider,
+                                success=True,
+                                latency_ms=(time.time() - start_time) * 1000,
+                            )
+
+                        # Store failover info
+                        failover_info = {
+                            "original_key_id": current_key_id[:20] + "...",
+                            "failover_key_id": new_key_id[:20] + "...",
+                            "reason": "rate_limit",
+                            "provider": primary_provider,
+                        }
+                        self._last_failover_info = failover_info
+
+                        logger.info(
+                            f"Request succeeded after API key failover for {primary_provider}"
+                        )
+                        return response
+
+                    except Exception as retry_error:
+                        logger.warning(
+                            f"Request failed even with backup key: {retry_error}"
+                        )
+                        # Continue to raise the original error
+                else:
+                    logger.warning(
+                        f"No backup API key available for {primary_provider}"
+                    )
+
+            # Re-raise the original error
+            raise
+
+    def _is_rate_limit_error(self, error_message: str) -> bool:
+        """
+        Check if an error message indicates a rate limit.
+
+        Args:
+            error_message: Error message from provider
+
+        Returns:
+            True if this is a rate limit error
+        """
+        if not error_message:
+            return False
+
+        error_lower = error_message.lower()
+        rate_limit_patterns = [
+            "rate limit",
+            "rate_limit",
+            "ratelimit",
+            "quota exceeded",
+            "quota_exceeded",
+            "too many requests",
+            "429",
+            "resource exhausted",
+            "capacity exceeded",
+            "requests per minute",
+            "tokens per minute",
+            "rpm limit",
+            "tpm limit",
+        ]
+        return any(pattern in error_lower for pattern in rate_limit_patterns)
+
+    async def _record_request_success(
+        self,
+        provider_id: str,
+        key_id: str | None,
+        latency_ms: float,
+        response: PromptResponse,
+        failover_service,
+        health_service,
+        quota_service,
+    ) -> None:
+        """
+        Record successful request with all tracking services.
+
+        Args:
+            provider_id: Provider identifier
+            key_id: API key ID used
+            latency_ms: Request latency in milliseconds
+            response: The successful response
+            failover_service: ApiKeyFailoverService instance
+            health_service: ProviderHealthService instance
+            quota_service: QuotaTrackingService instance
+        """
+        # Record success with failover service
+        if failover_service and key_id:
+            try:
+                await failover_service.record_success(provider_id, key_id)
+            except Exception as e:
+                logger.debug(f"Failed to record success with failover service: {e}")
+
+        # Record with health service
+        if health_service:
+            try:
+                await health_service.record_external_check(
+                    provider_id=provider_id,
+                    success=True,
+                    latency_ms=latency_ms,
+                )
+            except Exception as e:
+                logger.debug(f"Failed to record with health service: {e}")
+
+        # Record with quota service
+        if quota_service and response.usage_metadata:
+            try:
+                input_tokens = response.usage_metadata.get("prompt_token_count", 0)
+                output_tokens = response.usage_metadata.get("candidates_token_count", 0)
+                await quota_service.record_usage(
+                    provider_id=provider_id,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    model=response.model_used,
+                )
+            except Exception as e:
+                logger.debug(f"Failed to record with quota service: {e}")
 
     def _create_fallback_request(
         self, original: PromptRequest, fallback_provider: str
@@ -1062,7 +1356,7 @@ class LLMService:
         Get performance statistics for the LLM service (PERF-052).
 
         Returns cache hit rates, deduplication stats, provider info,
-        failover config, and cost tracking.
+        failover config, cost tracking, and API key failover status.
         """
         return {
             "cache": self._response_cache.get_stats(),
@@ -1078,6 +1372,11 @@ class LLMService:
                 "total_cost": self._total_cost,
                 "request_count": len(self._request_costs),
                 "recent_costs": self._request_costs[-10:],
+            },
+            # API Key Failover Integration (Subtask 3.2)
+            "api_key_failover": {
+                "enabled": self._api_key_failover_enabled,
+                "last_failover": self._last_failover_info,
             },
         }
 
@@ -1153,6 +1452,56 @@ class LLMService:
         logger.info(
             f"Global model selection {'enabled' if enabled else 'disabled'}"
         )
+
+    def enable_api_key_failover(self, enabled: bool = True) -> None:
+        """
+        Enable or disable automatic API key failover on rate limits.
+
+        When enabled, the service will automatically switch to backup API keys
+        when the primary key hits rate limits, and retry the request transparently.
+
+        Args:
+            enabled: Whether API key failover should be enabled
+        """
+        self._api_key_failover_enabled = enabled
+        logger.info(
+            f"API key failover {'enabled' if enabled else 'disabled'}"
+        )
+
+    def get_last_failover_info(self) -> dict[str, Any]:
+        """
+        Get information about the last failover event.
+
+        Returns:
+            Dictionary with failover details or empty dict if no failover occurred
+        """
+        return self._last_failover_info.copy()
+
+    def clear_failover_info(self) -> None:
+        """Clear the last failover info."""
+        self._last_failover_info.clear()
+
+    def get_api_key_failover_status(self) -> dict[str, Any]:
+        """
+        Get the current API key failover status for all providers.
+
+        Returns:
+            Dictionary with failover status per provider
+        """
+        failover_service = _get_api_key_failover_service()
+        if not failover_service:
+            return {
+                "enabled": self._api_key_failover_enabled,
+                "service_available": False,
+                "providers": {},
+            }
+
+        # Get status synchronously if possible, otherwise return basic info
+        return {
+            "enabled": self._api_key_failover_enabled,
+            "service_available": True,
+            "last_failover": self._last_failover_info,
+        }
 
     async def clear_cache(self) -> None:
         """Clear the response cache."""
