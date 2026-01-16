@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "008-multi-user-authentication-authorization",
+  "state": "building",
+  "subtasks": {
+    "completed": 8,
+    "total": 39,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Registration & Email Verification",
+    "id": null,
+    "total": 5
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 10,
+    "started_at": "2026-01-11T06:57:44.858400"
+  },
+  "last_update": "2026-01-11T08:58:27.735321"
+}

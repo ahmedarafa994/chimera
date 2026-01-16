@@ -12,6 +12,8 @@ from app.api.v1.endpoints import (
     advanced_generation,
     adversarial,  # Unified adversarial endpoint (ADR-003)
     api_keys,  # API Key Management (Feature: API Key Management & Provider Health Dashboard)
+    audit,  # Audit logging and user activity endpoints
+    auth,  # User authentication endpoints
     autoadv,
     autodan,
     autodan_enhanced,
@@ -19,6 +21,7 @@ from app.api.v1.endpoints import (
     autodan_hierarchical,
     autodan_turbo,
     aegis,
+    campaigns,  # Campaign sharing endpoints
     chat,
     connection,
     csrf,
@@ -46,6 +49,7 @@ from app.api.v1.endpoints import (
     streaming,
     tokens,
     transformation,
+    users,  # User profile management endpoints
     utils,
 )
 
@@ -121,8 +125,20 @@ api_router.include_router(failover.router, tags=["failover", "api-keys", "provid
 # --- Admin & Infrastructure ---
 api_router.include_router(admin.router, tags=["admin"])
 
+# --- Audit Logging & User Activity Endpoints ---
+api_router.include_router(audit.router, tags=["audit", "security", "compliance"])
+
 # --- Security Endpoints ---
 api_router.include_router(csrf.router, tags=["security"])
+
+# --- Authentication Endpoints ---
+api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
+
+# --- User Profile Management Endpoints ---
+api_router.include_router(users.router, prefix="/users", tags=["users", "profile"])
+
+# --- Campaign Sharing Endpoints ---
+api_router.include_router(campaigns.router, prefix="/campaigns", tags=["campaigns", "sharing"])
 
 # --- Background Jobs ---
 api_router.include_router(jobs.router, tags=["background-jobs"])

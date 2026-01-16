@@ -1,23 +1,51 @@
 """
 Authentication Router
 Provides login, refresh, and logout endpoints for frontend authentication.
+
+Supports two authentication modes:
+1. Database users - Users registered in the database (primary mode)
+2. Environment admin - Fallback admin account from env variables (backward compatibility)
 """
 
+import os
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import AuditAction, AuditSeverity, audit_log
 from app.core.auth import (
     Role,
     TokenPayload,
     auth_service,
     get_current_user,
 )
+from app.core.database import get_async_session_factory
 from app.core.observability import get_logger
+from app.services.user_service import UserService, get_user_service
 
 logger = get_logger("chimera.auth")
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+
+
+# =============================================================================
+# Database Session Dependency
+# =============================================================================
+
+
+async def get_db_session() -> AsyncSession:
+    """
+    Get an async database session for the request.
+
+    Yields a session and ensures proper cleanup.
+    """
+    session = get_async_session_factory()()
+    try:
+        yield session
+    finally:
+        await session.close()
 
 
 # =============================================================================
@@ -41,6 +69,7 @@ class LoginResponse(BaseModel):
     expires_in: int
     refresh_expires_in: int  # Added per GAP-004
     user: dict
+    requires_verification: bool = False  # Added for email verification flow
 
 
 class RefreshRequest(BaseModel):
@@ -65,65 +94,207 @@ class RefreshResponse(BaseModel):
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(request: LoginRequest, http_request: Request):
+async def login(
+    request: LoginRequest,
+    http_request: Request,
+    session: AsyncSession = Depends(get_db_session),
+):
     """
     Authenticate user and return access/refresh tokens.
 
-    **Rate Limited:** 5 attempts per minute per IP.
-    """
-    # TODO: Replace with actual user lookup from database
-    # For now, validate against environment-configured admin credentials
-    import os
+    **Authentication Modes**:
+    1. Database users (primary) - Registered users in the database
+    2. Environment admin (fallback) - For backward compatibility
 
+    **Rate Limited:** 5 attempts per minute per IP.
+
+    **Requirements**:
+    - User must have verified email to login
+    - User account must be active
+
+    **Audit Logging**:
+    - All login attempts are logged for security compliance
+    """
+    client_ip = http_request.client.host if http_request.client else None
+    user_agent = http_request.headers.get("User-Agent", "")
+
+    # Try database authentication first
+    user_service = get_user_service(session)
+    auth_result = await user_service.authenticate_user(
+        identifier=request.username,
+        password=request.password,
+        update_last_login=True,
+    )
+
+    if auth_result.success and auth_result.tokens:
+        # Successful database authentication
+        user = auth_result.user
+
+        # Log successful authentication
+        audit_log(
+            action=AuditAction.AUTH_LOGIN,
+            user_id=str(user.id),
+            resource="/auth/login",
+            details={
+                "method": "database",
+                "email": user.email,
+                "username": user.username,
+                "role": user.role.value,
+            },
+            ip_address=client_ip,
+            user_agent=user_agent,
+            severity=AuditSeverity.INFO,
+        )
+
+        logger.info(f"Successful login for user: {user.email} (id={user.id})")
+
+        # Calculate refresh token expiry
+        refresh_expires_in = int(auth_service.config.refresh_token_expire.total_seconds())
+
+        return LoginResponse(
+            access_token=auth_result.tokens.access_token,
+            refresh_token=auth_result.tokens.refresh_token,
+            token_type="Bearer",
+            expires_in=auth_result.tokens.expires_in,
+            refresh_expires_in=refresh_expires_in,
+            user={
+                "id": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "role": user.role.value,
+                "is_verified": user.is_verified,
+            },
+            requires_verification=False,
+        )
+
+    # Check if user exists but email not verified
+    if auth_result.requires_verification:
+        # Log failed login due to unverified email
+        audit_log(
+            action=AuditAction.AUTH_FAILED,
+            user_id=request.username,
+            resource="/auth/login",
+            details={
+                "reason": "email_not_verified",
+                "method": "database",
+            },
+            ip_address=client_ip,
+            user_agent=user_agent,
+            severity=AuditSeverity.WARNING,
+        )
+
+        logger.warning(f"Login failed for {request.username}: email not verified")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "Email not verified",
+                "message": "Please verify your email before logging in. Check your inbox for the verification link.",
+                "requires_verification": True,
+            },
+        )
+
+    # Database authentication failed - try environment admin fallback
+    # This maintains backward compatibility with existing deployments
+    env_auth_result = await _authenticate_env_admin(request.username, request.password)
+
+    if env_auth_result:
+        # Successful environment admin authentication
+        tokens, role = env_auth_result
+
+        # Log successful authentication
+        audit_log(
+            action=AuditAction.AUTH_LOGIN,
+            user_id=request.username,
+            resource="/auth/login",
+            details={
+                "method": "environment",
+                "username": request.username,
+                "role": role.value,
+            },
+            ip_address=client_ip,
+            user_agent=user_agent,
+            severity=AuditSeverity.INFO,
+        )
+
+        logger.info(f"Successful login for env admin: {request.username}")
+
+        # Calculate refresh token expiry
+        refresh_expires_in = int(auth_service.config.refresh_token_expire.total_seconds())
+
+        return LoginResponse(
+            access_token=tokens.access_token,
+            refresh_token=tokens.refresh_token,
+            token_type="Bearer",
+            expires_in=tokens.expires_in,
+            refresh_expires_in=refresh_expires_in,
+            user={
+                "id": request.username,
+                "username": request.username,
+                "role": role.value,
+                "is_verified": True,  # Env admin is always verified
+            },
+            requires_verification=False,
+        )
+
+    # All authentication methods failed
+    audit_log(
+        action=AuditAction.AUTH_FAILED,
+        user_id=request.username,
+        resource="/auth/login",
+        details={
+            "reason": auth_result.error or "invalid_credentials",
+            "method": "all",
+        },
+        ip_address=client_ip,
+        user_agent=user_agent,
+        severity=AuditSeverity.WARNING,
+    )
+
+    logger.warning(f"Failed login attempt for user: {request.username}")
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid credentials",
+    )
+
+
+async def _authenticate_env_admin(
+    username: str,
+    password: str,
+) -> Optional[tuple]:
+    """
+    Authenticate against environment-configured admin credentials.
+
+    This is a fallback for backward compatibility with deployments
+    that use CHIMERA_ADMIN_USER and CHIMERA_ADMIN_PASSWORD.
+
+    Args:
+        username: Username to check
+        password: Password to verify
+
+    Returns:
+        Tuple of (TokenResponse, Role) if authenticated, None otherwise
+    """
     admin_username = os.getenv("CHIMERA_ADMIN_USER", "admin")
     admin_password = os.getenv("CHIMERA_ADMIN_PASSWORD")
 
+    # If no admin password configured, env admin is disabled
     if not admin_password:
-        logger.error("CHIMERA_ADMIN_PASSWORD not configured")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Authentication service not configured"
-        )
+        return None
 
-    # Verify credentials
-    if request.username != admin_username:
-        logger.warning(f"Login attempt with unknown user: {request.username}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
-        )
+    # Check username match
+    if username != admin_username:
+        return None
 
-    if not auth_service.verify_password(request.password,
-                                         auth_service.hash_password(admin_password)):
-        # Use timing-safe comparison in production
-        if request.password != admin_password:
-            logger.warning(f"Failed login attempt for user: {request.username}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials"
-            )
+    # Verify password using timing-safe comparison
+    import secrets
+    if not secrets.compare_digest(password, admin_password):
+        return None
 
-    # Create tokens
-    role = Role.ADMIN if request.username == admin_username else Role.VIEWER
-    tokens = auth_service.create_tokens(request.username, role)
+    # Create tokens for env admin
+    role = Role.ADMIN
+    tokens = auth_service.create_tokens(admin_username, role)
 
-    # Calculate refresh token expiry
-    refresh_expires_in = int(auth_service.config.refresh_token_expire.total_seconds())
-
-    logger.info(f"Successful login for user: {request.username}")
-
-    return LoginResponse(
-        access_token=tokens.access_token,
-        refresh_token=tokens.refresh_token,
-        token_type="Bearer",
-        expires_in=tokens.expires_in,
-        refresh_expires_in=refresh_expires_in,
-        user={
-            "id": request.username,
-            "username": request.username,
-            "role": role.value,
-        }
-    )
+    return (tokens, role)
 
 
 @router.post("/refresh", response_model=RefreshResponse)
