@@ -33,6 +33,20 @@ from app.schemas.base_schemas import (
     ErrorResponse,
     SuccessResponse,
 )
+from app.schemas.aegis_telemetry import (
+    AegisTelemetryEvent,
+    AegisTelemetryEventType,
+    AttackMetrics,
+    CampaignStatus,
+    CampaignSummary,
+    LatencyMetrics,
+    PromptEvolution,
+    TechniqueCategory,
+    TechniquePerformance,
+    TokenUsage,
+    create_telemetry_event,
+    create_attack_metrics,
+)
 
 # Aliases for backward compatibility with endpoints expecting these names
 ExecuteRequest = PromptRequest
@@ -91,10 +105,26 @@ class TechniqueListResponse(BaseModel):
 
 
 __all__ = [
+    # Base schemas
     "BaseRequest",
     "BaseResponse",
     "BaseSchema",
     "ErrorResponse",
+    "SuccessResponse",
+    # Aegis telemetry schemas
+    "AegisTelemetryEvent",
+    "AegisTelemetryEventType",
+    "AttackMetrics",
+    "CampaignStatus",
+    "CampaignSummary",
+    "LatencyMetrics",
+    "PromptEvolution",
+    "TechniqueCategory",
+    "TechniquePerformance",
+    "TokenUsage",
+    "create_telemetry_event",
+    "create_attack_metrics",
+    # API schemas
     "EvasionAttemptResult",
     "EvasionTaskConfig",
     "EvasionTaskResult",
@@ -113,7 +143,6 @@ __all__ = [
     "Provider",
     "ProviderInfo",
     "ProviderListResponse",
-    "SuccessResponse",
     "TechniqueInfo",
     "TechniqueListResponse",
     "TechniqueSuite",

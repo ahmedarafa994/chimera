@@ -19,8 +19,7 @@ from app.api.routes.provider_config import router as provider_config_router
 from app.api.routes.provider_sync import router as provider_sync_router
 
 # Import v1 router that includes all endpoints
-# Import jailbreak endpoints
-from app.api.v1.endpoints.jailbreak import router as jailbreak_router
+# Jailbreak endpoints are available in advanced_generation.py
 from app.api.v1.endpoints.optimize import router as optimize_router
 from app.api.v1.router import api_router as v1_router
 from app.core.auth import get_current_user
@@ -51,8 +50,7 @@ router.include_router(v1_router)
 # Include optimization router (HouYi)
 router.include_router(optimize_router, prefix="/optimize", tags=["optimization"])
 
-# Include jailbreak router for legacy compatibility
-router.include_router(jailbreak_router)
+# Jailbreak endpoints included in v1_router via advanced_generation.py
 
 router.include_router(metamorph_router, tags=["metamorph"])
 

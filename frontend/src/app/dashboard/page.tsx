@@ -22,6 +22,7 @@ import {
   Eye,
   Users,
   Settings,
+  Radar,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminOnly } from "@/components/auth/RoleGuard";
@@ -151,6 +152,15 @@ export default function DashboardPage() {
       color: "text-cyan-400",
       bgColor: "bg-cyan-500/10",
       borderColor: "hover:border-cyan-500/50",
+    },
+    {
+      title: "Aegis Campaign",
+      description: "Real-time telemetry from active jailbreak campaigns",
+      icon: Radar,
+      href: "/dashboard/aegis-campaign",
+      color: "text-violet-400",
+      bgColor: "bg-violet-500/10",
+      borderColor: "hover:border-violet-500/50",
     },
   ];
 

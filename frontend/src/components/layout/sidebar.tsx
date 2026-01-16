@@ -34,6 +34,7 @@ import {
   Repeat,
   Users,
   Key,
+  Radar,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -65,6 +66,7 @@ const MAIN_ROUTES: RouteConfig[] = [
   { label: "HouYi", icon: Dna, href: "/dashboard/houyi", description: "Prompt Optimization" },
   { label: "Gradient Optimizer", icon: Target, href: "/dashboard/gradient", description: "HotFlip/GCG" },
   { label: "Lifelong Learning", icon: Repeat, href: "/dashboard/lifelong", description: "Continuous Learning" },
+  { label: "Aegis Campaign", icon: Radar, href: "/dashboard/aegis-campaign", description: "Real-Time Telemetry" },
   { label: "Evasion Tasks", icon: Shield, href: "/evasion", description: "Prompt Evasion" },
 ];
 
