@@ -16,6 +16,14 @@ from app.repositories.user_repository import (
     UsernameAlreadyExistsError,
     get_user_repository,
 )
+from app.repositories.prompt_library_repository import (
+    DuplicateEntityError,
+    EntityNotFoundError,
+    PromptLibraryRepository,
+    RepositoryError,
+    ValidationError,
+    get_prompt_library_repository,
+)
 
 __all__ = [
     # Base repository
@@ -29,4 +37,11 @@ __all__ = [
     "EmailAlreadyExistsError",
     "UsernameAlreadyExistsError",
     "InvalidTokenError",
+    # Prompt Library repository
+    "PromptLibraryRepository",
+    "get_prompt_library_repository",
+    "RepositoryError",
+    "EntityNotFoundError",
+    "DuplicateEntityError",
+    "ValidationError",
 ]

@@ -47,6 +47,25 @@ from app.schemas.aegis_telemetry import (
     create_telemetry_event,
     create_attack_metrics,
 )
+from app.schemas.prompt_library import (
+    CreateTemplateRequest,
+    CreateVersionRequest,
+    RateTemplateRequest,
+    RatingListResponse,
+    RatingResponse,
+    RatingStatisticsResponse,
+    SaveFromCampaignRequest,
+    SearchTemplatesRequest,
+    TemplateDeleteResponse,
+    TemplateListResponse,
+    TemplateResponse,
+    TemplateStatsResponse,
+    TemplateVersionListResponse,
+    TemplateVersionResponse,
+    TopRatedTemplatesResponse,
+    UpdateRatingRequest,
+    UpdateTemplateRequest,
+)
 
 # Aliases for backward compatibility with endpoints expecting these names
 ExecuteRequest = PromptRequest
@@ -150,4 +169,22 @@ __all__ = [
     "TransformResponse",
     "TransformResultMetadata",
     "TransformationDetail",
+    # Prompt Library schemas
+    "CreateTemplateRequest",
+    "CreateVersionRequest",
+    "RateTemplateRequest",
+    "RatingListResponse",
+    "RatingResponse",
+    "RatingStatisticsResponse",
+    "SaveFromCampaignRequest",
+    "SearchTemplatesRequest",
+    "TemplateDeleteResponse",
+    "TemplateListResponse",
+    "TemplateResponse",
+    "TemplateStatsResponse",
+    "TemplateVersionListResponse",
+    "TemplateVersionResponse",
+    "TopRatedTemplatesResponse",
+    "UpdateRatingRequest",
+    "UpdateTemplateRequest",
 ]

@@ -42,6 +42,7 @@ from app.api.v1.endpoints import (
     mousetrap,
     overthink,
     pipeline_streaming,
+    prompt_library,
     provider_config,
     provider_health_dashboard,  # Provider Health Dashboard (Feature: API Key Management & Provider Health Dashboard)
     providers,
@@ -175,4 +176,11 @@ api_router.include_router(
     overthink.router,
     prefix="/overthink",
     tags=["overthink", "reasoning", "adversarial"],
+)
+
+# --- Prompt Library & Template Management ---
+api_router.include_router(
+    prompt_library.router,
+    prefix="/prompt-library",
+    tags=["prompt-library", "templates"],
 )

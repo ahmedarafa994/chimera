@@ -35,6 +35,10 @@ import {
   Users,
   Key,
   Radar,
+  Clock,
+  BarChart3,
+  FileText,
+  Play
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -83,7 +87,9 @@ const AI_TOOLS_ROUTES: RouteConfig[] = [
 const RESOURCE_ROUTES: RouteConfig[] = [
   { label: "Models", icon: Cpu, href: "/dashboard/models", description: "Model & Session Mgmt" },
   { label: "AI Providers", icon: Server, href: "/dashboard/providers", description: "Configure & Switch Providers" },
+  { label: "Attack Sessions", icon: Play, href: "/dashboard/sessions", description: "Record, Replay & Share Sessions" },
   { label: "Technique Library", icon: FileText, href: "/dashboard/technique-library", description: "Attack Techniques Catalog" },
+  { label: "Security Reports", icon: BarChart3, href: "/dashboard/reports", description: "Professional PDF/HTML Reports" },
   { label: "Metrics", icon: Activity, href: "/dashboard/metrics" },
 ];
 
