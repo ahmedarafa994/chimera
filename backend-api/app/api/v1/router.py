@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     admin,
     advanced_generation,
     adversarial,  # Unified adversarial endpoint (ADR-003)
+    api_keys,  # API Key Management (Feature: API Key Management & Provider Health Dashboard)
     autoadv,
     autodan,
     autodan_enhanced,
@@ -24,6 +25,7 @@ from app.api.v1.endpoints import (
     datasets,
     deepteam,
     execute,
+    failover,  # Failover Status Endpoints (Feature: API Key Management & Provider Health Dashboard)
     gptfuzz,
     gradient_optimization,
     health,
@@ -37,6 +39,7 @@ from app.api.v1.endpoints import (
     overthink,
     pipeline_streaming,
     provider_config,
+    provider_health_dashboard,  # Provider Health Dashboard (Feature: API Key Management & Provider Health Dashboard)
     providers,
     proxy_health,
     session,
@@ -103,6 +106,17 @@ api_router.include_router(providers.router, tags=["providers"])
 api_router.include_router(
     provider_config.router, prefix="/provider-config", tags=["provider-config", "providers"]
 )
+
+# --- API Key Management (Feature: API Key Management & Provider Health Dashboard) ---
+api_router.include_router(api_keys.router, tags=["api-keys", "providers"])
+
+# --- Provider Health Dashboard (Feature: API Key Management & Provider Health Dashboard) ---
+api_router.include_router(
+    provider_health_dashboard.router, tags=["provider-health", "dashboard", "providers"]
+)
+
+# --- Failover Status Endpoints (Feature: API Key Management & Provider Health Dashboard) ---
+api_router.include_router(failover.router, tags=["failover", "api-keys", "providers"])
 
 # --- Admin & Infrastructure ---
 api_router.include_router(admin.router, tags=["admin"])
