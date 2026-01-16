@@ -109,3 +109,39 @@ export {
   usePrefetchTemplateVersions,
   useInvalidatePromptLibrary,
 } from "./prompt-library";
+
+// Campaign Analytics queries
+export {
+  // Query key factory
+  campaignQueryKeys,
+  // Query hooks
+  useCampaigns,
+  useCampaign,
+  useCampaignSummary,
+  useCampaignStatistics,
+  useTechniqueBreakdown,
+  useProviderBreakdown,
+  usePotencyBreakdown,
+  useCampaignTimeSeries,
+  useCampaignComparison,
+  useTelemetryEvents,
+  useTelemetryEventDetail,
+  useCampaignCacheStats,
+  // Mutation hooks
+  useCampaignExport,
+  useInvalidateCampaignCache,
+  // Prefetch utilities
+  usePrefetchCampaign,
+  usePrefetchCampaignList,
+  // Cache invalidation utilities
+  useInvalidateAllCampaigns,
+  useInvalidateCampaign,
+  // Utility functions
+  getCampaignCSVExportUrl,
+} from "./campaign-queries";
+export type {
+  CampaignListParams,
+  TimeSeriesParams,
+  TelemetryEventListParams,
+  ExportCSVParams,
+} from "./campaign-queries";

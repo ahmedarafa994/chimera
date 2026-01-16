@@ -22,6 +22,7 @@ from app.api.v1.endpoints import (
     autodan_turbo,
     aegis,
     aegis_ws,  # Aegis WebSocket telemetry endpoint
+    campaign_analytics,  # Campaign telemetry analytics (Subtask 1.4)
     campaigns,  # Campaign sharing endpoints
     chat,
     connection,
@@ -183,4 +184,11 @@ api_router.include_router(
     prompt_library.router,
     prefix="/prompt-library",
     tags=["prompt-library", "templates"],
+)
+
+# --- Campaign Telemetry Analytics (Subtask 1.4) ---
+api_router.include_router(
+    campaign_analytics.router,
+    prefix="/campaigns",
+    tags=["campaigns", "analytics", "telemetry"],
 )

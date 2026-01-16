@@ -52,6 +52,74 @@ export type {
 export * from './chimera';
 export * from './schemas';
 
+// Campaign Analytics types
+export {
+  CampaignStatusEnum,
+  ExecutionStatusEnum,
+  ExportFormat,
+  TimeGranularity,
+  MetricType,
+} from './campaign-analytics';
+
+export type {
+  // Base campaign types
+  CampaignBase,
+  CampaignCreate,
+  CampaignUpdate,
+  // Campaign response types
+  CampaignSummary,
+  CampaignDetail,
+  Campaign,
+  // Statistics types
+  PercentileStats,
+  DistributionStats,
+  AttemptCounts,
+  CampaignStatistics,
+  // Breakdown types
+  BreakdownItem,
+  TechniqueBreakdown,
+  ProviderBreakdown,
+  PotencyBreakdown,
+  // Time series types
+  TimeSeriesDataPoint,
+  TelemetryTimeSeries,
+  MultiSeriesTimeSeries,
+  // Comparison types
+  CampaignComparisonItem,
+  CampaignComparisonRequest,
+  CampaignComparison,
+  // Telemetry event types
+  TelemetryEventSummary,
+  TelemetryEventDetail,
+  TelemetryEvent,
+  // Export types
+  ExportChartOptions,
+  ExportDataOptions,
+  ExportOptions,
+  ExportRequest,
+  ExportResponse,
+  // Filter types
+  CampaignFilterParams,
+  TelemetryFilterParams,
+  FilterOptions,
+  TimeSeriesQuery,
+  // Pagination types
+  CampaignListRequest,
+  CampaignListResponse,
+  TelemetryListResponse,
+  // Cache types
+  CampaignCacheStats,
+  // UI state types
+  ComparisonSelection,
+  ChartExportRef,
+  AnalyticsDashboardTab,
+  SortConfig,
+  DateRange,
+  // API response types
+  CampaignAnalyticsResponse,
+  CampaignAnalyticsError,
+} from './campaign-analytics';
+
 // Unified Provider System types (NEW)
 export type {
   ProviderInfo as UnifiedProviderInfo,

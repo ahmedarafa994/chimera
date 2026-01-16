@@ -14,6 +14,15 @@ import type {
   CellProps,
   PieProps,
   ResponsiveContainerProps,
+  RadarChartProps,
+  RadarProps,
+  PolarGridProps,
+  PolarAngleAxisProps,
+  PolarRadiusAxisProps,
+  ScatterProps,
+  ReferenceLineProps,
+  ReferenceAreaProps,
+  ZAxisProps,
 } from 'recharts';
 
 // Create loading components for better UX
@@ -94,6 +103,34 @@ export const RechartsComponents = {
   Cell: dynamic(() => import('recharts').then(mod => ({ default: mod.Cell as ComponentType<CellProps> })), { ssr: false }),
   Pie: dynamic(() => import('recharts').then(mod => ({ default: mod.Pie as ComponentType<PieProps> })), { ssr: false }),
   ResponsiveContainer: dynamic(() => import('recharts').then(mod => ({ default: mod.ResponsiveContainer as ComponentType<ResponsiveContainerProps> })), { ssr: false }),
+
+  // Radar chart components
+  RadarChart: dynamic(() => import('recharts').then(mod => ({ default: mod.RadarChart })), {
+    loading: () => <ChartLoading />,
+    ssr: false,
+  }),
+  Radar: dynamic(() => import('recharts').then(mod => ({ default: mod.Radar as ComponentType<RadarProps> })), { ssr: false }),
+  PolarGrid: dynamic(() => import('recharts').then(mod => ({ default: mod.PolarGrid as ComponentType<PolarGridProps> })), { ssr: false }),
+  PolarAngleAxis: dynamic(() => import('recharts').then(mod => ({ default: mod.PolarAngleAxis as ComponentType<PolarAngleAxisProps> })), { ssr: false }),
+  PolarRadiusAxis: dynamic(() => import('recharts').then(mod => ({ default: mod.PolarRadiusAxis as ComponentType<PolarRadiusAxisProps> })), { ssr: false }),
+
+  // Scatter chart components
+  ScatterChart: dynamic(() => import('recharts').then(mod => ({ default: mod.ScatterChart })), {
+    loading: () => <ChartLoading />,
+    ssr: false,
+  }),
+  Scatter: dynamic(() => import('recharts').then(mod => ({ default: mod.Scatter as ComponentType<ScatterProps> })), { ssr: false }),
+  ZAxis: dynamic(() => import('recharts').then(mod => ({ default: mod.ZAxis as ComponentType<ZAxisProps> })), { ssr: false }),
+
+  // Reference components (for trend lines and annotations)
+  ReferenceLine: dynamic(() => import('recharts').then(mod => ({ default: mod.ReferenceLine as ComponentType<ReferenceLineProps> })), { ssr: false }),
+  ReferenceArea: dynamic(() => import('recharts').then(mod => ({ default: mod.ReferenceArea as ComponentType<ReferenceAreaProps> })), { ssr: false }),
+
+  // ComposedChart for combining scatter + line (trend)
+  ComposedChart: dynamic(() => import('recharts').then(mod => ({ default: mod.ComposedChart })), {
+    loading: () => <ChartLoading />,
+    ssr: false,
+  }),
 };
 
 // Performance monitoring components

@@ -90,6 +90,9 @@ const RESOURCE_ROUTES: RouteConfig[] = [
   { label: "Attack Sessions", icon: Play, href: "/dashboard/sessions", description: "Record, Replay & Share Sessions" },
   { label: "Technique Library", icon: FileText, href: "/dashboard/technique-library", description: "Attack Techniques Catalog" },
   { label: "Security Reports", icon: BarChart3, href: "/dashboard/reports", description: "Professional PDF/HTML Reports" },
+  { label: "Documentation Hub", icon: BookOpen, href: "/dashboard/help", description: "Interactive Help & Guides" },
+  { label: "Campaign Analytics", icon: BarChart3, href: "/dashboard/analytics", description: "Telemetry & Reporting" },
+  { label: "Team Workspaces", icon: Users, href: "/dashboard/workspaces", description: "Team Collaboration & RBAC" },
   { label: "Metrics", icon: Activity, href: "/dashboard/metrics" },
 ];
 
