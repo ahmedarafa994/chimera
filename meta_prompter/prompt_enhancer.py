@@ -169,13 +169,13 @@ class IntentAnalyzer:
             return PromptCategory.CONVERSATIONAL
 
         max_score = max(scores.values())
-        top_categories: ClassVar[list] = [
+        top_categories: list = [
             cat for cat, score in scores.items() if score == max_score
         ]
         if len(top_categories) == 1:
             return top_categories[0]
 
-        priority: ClassVar[list] = [
+        priority: list = [
             PromptCategory.TECHNICAL_INSTRUCTION,
             PromptCategory.ANALYTICAL,
             PromptCategory.BUSINESS_PROFESSIONAL,
@@ -190,7 +190,7 @@ class IntentAnalyzer:
         return top_categories[0]
 
     def _assess_complexity(self, text: str) -> int:
-        factors: ClassVar[dict] = {
+        factors: dict = {
             "length": min(len(text.split()) / 20, 3),
             "specificity": len(
                 re.findall(r"\b(specific|detailed|comprehensive|exact)\b", text.lower())
@@ -208,7 +208,7 @@ class IntentAnalyzer:
         return min(int(base_score) + 1, 10)
 
     def _identify_missing_elements(self, text: str) -> list[str]:
-        missing: ClassVar[list] = []
+        missing: list = []
 
         if not re.search(r"\b(who|audience|user|target)\b", text.lower()):
             missing.append("target_audience")
@@ -224,7 +224,7 @@ class IntentAnalyzer:
         return missing
 
     def _find_improvements(self, text: str, intent: str, category: PromptCategory) -> list[str]:
-        improvements: ClassVar[list] = []
+        improvements: list = []
 
         if len(text.split()) < 15:
             improvements.append("expand_context")
@@ -246,7 +246,7 @@ class IntentAnalyzer:
 
     def _extract_keywords(self, text: str) -> dict[str, int]:
         words = re.findall(r"\b\w+\b", text.lower())
-        stop_words: ClassVar[dict] = {
+        stop_words: dict = {
             "the",
             "a",
             "an",
@@ -262,16 +262,16 @@ class IntentAnalyzer:
             "with",
             "by",
         }
-        keywords: ClassVar[list] = [w for w in words if w not in stop_words and len(w) > 3]
+        keywords: list = [w for w in words if w not in stop_words and len(w) > 3]
 
-        keyword_counts: ClassVar[dict] = {}
+        keyword_counts: dict = {}
         for keyword in keywords:
             keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
 
         return dict(sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:10])
 
     def _assess_clarity(self, text: str) -> float:
-        factors: ClassVar[dict] = {
+        factors: dict = {
             "has_verb": (
                 1.0
                 if re.search(
@@ -351,7 +351,7 @@ class ContextExpander:
 
     def expand_context(self, analysis: PromptAnalysis, config: EnhancementConfig) -> dict[str, any]:
         """Expand context based on analysis"""
-        expanded: ClassVar[dict] = {
+        expanded: dict = {
             "domain_knowledge": self._add_domain_knowledge(analysis.category),
             "frameworks": self._select_frameworks(analysis.category, config),
             "best_practices": self._select_best_practices(analysis.improvement_opportunities),
@@ -363,7 +363,7 @@ class ContextExpander:
         return expanded
 
     def _add_domain_knowledge(self, category: PromptCategory) -> list[str]:
-        knowledge_base: ClassVar[dict] = {
+        knowledge_base: dict = {
             PromptCategory.TECHNICAL_INSTRUCTION: [
                 "Follow language-specific conventions",
                 "Implement comprehensive error handling",
@@ -394,7 +394,7 @@ class ContextExpander:
         return self.FRAMEWORKS.get(category, [])[:3]
 
     def _select_best_practices(self, improvements: list[str]) -> list[str]:
-        practices: ClassVar[list] = []
+        practices: list = []
 
         if "expand_context" in improvements:
             practices.extend(self.BEST_PRACTICES["completeness"][:2])
