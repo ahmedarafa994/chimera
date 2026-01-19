@@ -1,0 +1,3 @@
+entrypoint: src.main:app
+agent_name: DemoAgent
+runtime_protocol: HTTP
