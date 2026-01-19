@@ -354,7 +354,7 @@ class TechniqueLibraryService {
     const response = await apiClient.get(`${this.baseUri}/stats`);
     const data = response.data as TechniqueStatsApiResponse;
     const techniques = (data.most_effective_techniques ?? []).map((t: TechniqueApiResponse) => this.mapTechnique(t));
-    const popular = (data.popular_techniques ?? []).map((t: TechniqueApiResponse) => this.mapTechnique(t));
+    const popular = (data.popular_techniques ?? []).map((t: any) => this.mapTechnique(t));
     
     return {
       totalTechniques: data.totalTechniques ?? data.total_techniques ?? 0,

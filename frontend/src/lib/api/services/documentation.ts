@@ -187,7 +187,7 @@ export const documentationService = {
 
   async searchDocumentation(searchRequest: SearchRequest): Promise<SearchResult[]> {
     const response = await apiClient.post(`${API_BASE}/search`, searchRequest);
-    const results: any[] = response.data ?? [];
+    const results: any[] = Array.isArray(response.data) ? response.data : [];
     return results.map((result) => ({
       item: mapItem(result.item ?? result),
       relevance_score: result.relevance_score ?? result.score ?? 0,
@@ -198,22 +198,23 @@ export const documentationService = {
 
   async getDocumentationByCategory(category: DocumentationCategory): Promise<DocumentationItem[]> {
     const response = await apiClient.get(`${API_BASE}/categories/${category}`);
-    return (response.data ?? []).map(mapItem);
+    const items: any[] = Array.isArray(response.data) ? response.data : [];
+    return items.map(mapItem);
   },
 
   async getContextualHelp(context: HelpContext): Promise<ContextualHelpResponse> {
     const response = await apiClient.post(`${API_BASE}/context-help`, context);
-    return response.data;
+    return response.data as any;
   },
 
   async listVideoTutorials(category?: DocumentationCategory): Promise<VideoTutorial[]> {
     const response = await apiClient.get(`${API_BASE}/videos/`, { params: { category } });
-    return response.data;
+    return response.data as any;
   },
 
   async getQuickStartGuide(): Promise<QuickStartGuide> {
     const response = await apiClient.get(`${API_BASE}/quick-start`);
-    return response.data;
+    return response.data as any;
   },
 
   getTypeDisplayName(type: DocumentationType): string {
