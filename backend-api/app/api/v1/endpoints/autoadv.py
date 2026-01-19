@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import uuid
 from typing import Any
 
@@ -28,10 +29,8 @@ class ConnectionManager:
 
     async def broadcast(self, message: dict[str, Any]):
         for connection in self.active_connections:
-            try:
+            with contextlib.suppress(Exception):
                 await connection.send_json(message)
-            except Exception:
-                pass  # Handle disconnected clients gracefully
 
 
 manager = ConnectionManager()
@@ -44,12 +43,10 @@ def log_callback(log_entry):
     # We need to bridge this to the async websocket broadcast.
     # Since we can't await here, we run it in the background or use a queue.
     # For simplicity, we'll try getting the running loop.
-    try:
+    with contextlib.suppress(RuntimeError):
         loop = asyncio.get_running_loop()
         if loop.is_running():
             asyncio.run_coroutine_threadsafe(manager.broadcast(log_entry), loop)
-    except RuntimeError:
-        pass  # No loop running
 
 
 logging_utils.register_log_callback(log_callback)

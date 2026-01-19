@@ -18,50 +18,90 @@ import numpy as np
 import pytest
 
 from meta_prompter.attacks.autodan.fitness_evaluation import (
-    CrossEntropyLoss, FitnessConfig, FitnessEvaluationPipeline, FitnessResult,
-    FluencyScorer, JailbreakSuccessEstimator, PerplexityCalculator,
-    ReadabilityScorer, SemanticSimilarityScorer, StealthScorer)
+    CrossEntropyLoss,
+    FitnessConfig,
+    FitnessEvaluationPipeline,
+    FitnessResult,
+    FluencyScorer,
+    JailbreakSuccessEstimator,
+    PerplexityCalculator,
+    ReadabilityScorer,
+    SemanticSimilarityScorer,
+    StealthScorer,
+)
+
 # AutoDAN imports
 from meta_prompter.attacks.autodan.hierarchical_genetic_algorithm import (
-    GeneticOperators, HGAConfig, HierarchicalGeneticAlgorithm, Individual,
-    Island)
+    GeneticOperators,
+    HGAConfig,
+    HierarchicalGeneticAlgorithm,
+    Individual,
+    Island,
+)
 from meta_prompter.attacks.autodan.token_perturbation import (
-    GradientEstimator, GumbelSoftmaxSampler, HomoglyphPerturbation,
-    HotFlipAttack, PerturbationConfig, SemanticPerturbation,
-    TokenPerturbationEngine)
+    GradientEstimator,
+    GumbelSoftmaxSampler,
+    HomoglyphPerturbation,
+    HotFlipAttack,
+    PerturbationConfig,
+    SemanticPerturbation,
+    TokenPerturbationEngine,
+)
+
 # cchimera imports
 from meta_prompter.attacks.cchimera.adversarial_core import (
-    AdversarialCandidate, AdversarialConfig, AdversarialGenerationEngine,
-    HeuristicFitnessEvaluator, ObfuscationMutation, RolePlayInjectionMutation,
-    SemanticParaphraseMutation, StructureMorphingMutation,
-    TokenSubstitutionMutation)
-from meta_prompter.attacks.cchimera.elitism_strategies import (AdaptiveElitism,
-                                                               ArchiveElitism,
-                                                               EliteConfig,
-                                                               ElitismManager,
-                                                               ElitismType)
-from meta_prompter.attacks.cchimera.elitism_strategies import \
-    Individual as EliteIndividual
-from meta_prompter.attacks.cchimera.elitism_strategies import (ParetoElitism,
-                                                               StandardElitism)
+    AdversarialCandidate,
+    AdversarialConfig,
+    AdversarialGenerationEngine,
+    HeuristicFitnessEvaluator,
+    ObfuscationMutation,
+    RolePlayInjectionMutation,
+    SemanticParaphraseMutation,
+    StructureMorphingMutation,
+    TokenSubstitutionMutation,
+)
+from meta_prompter.attacks.cchimera.elitism_strategies import (
+    AdaptiveElitism,
+    ArchiveElitism,
+    EliteConfig,
+    ElitismManager,
+    ElitismType,
+    ParetoElitism,
+    StandardElitism,
+)
+from meta_prompter.attacks.cchimera.elitism_strategies import Individual as EliteIndividual
 from meta_prompter.attacks.cchimera.multi_objective_optimization import (
-    NSGAII, HypervolumeIndicator, MOOConfig, MultiObjectiveOptimizer,
-    Objective, ObjectiveType, ParetoFront, Solution)
+    NSGAII,
+    HypervolumeIndicator,
+    MOOConfig,
+    MultiObjectiveOptimizer,
+    Objective,
+    ObjectiveType,
+    ParetoFront,
+    Solution,
+)
+
 # Evaluation metrics imports
-from meta_prompter.attacks.evaluation_metrics import (AttackSuccessRate,
-                                                      ComprehensiveEvaluator,
-                                                      DiversityMetric,
-                                                      FluencyMetric,
-                                                      PerplexityMetric,
-                                                      SemanticSimilarity,
-                                                      StealthMetric,
-                                                      compute_perplexity,
-                                                      compute_similarity)
+from meta_prompter.attacks.evaluation_metrics import (
+    AttackSuccessRate,
+    ComprehensiveEvaluator,
+    DiversityMetric,
+    FluencyMetric,
+    PerplexityMetric,
+    SemanticSimilarity,
+    StealthMetric,
+    compute_perplexity,
+    compute_similarity,
+)
+
 # Unified interface imports
-from meta_prompter.attacks.unified_interface import (AttackResult, AttackType,
-                                                     UnifiedAttackOrchestrator,
-                                                     UnifiedConfig,
-                                                     cchimeraEngine)
+from meta_prompter.attacks.unified_interface import (
+    AttackResult,
+    AttackType,
+    UnifiedAttackOrchestrator,
+    UnifiedConfig,
+    cchimeraEngine,
+)
 
 # ============================================================================
 # Test Fixtures
@@ -204,7 +244,7 @@ class TestTokenPerturbation:
     def test_hotflip_attack(self, seed_prompt):
         """Test HotFlip attack simulation."""
         config = PerturbationConfig()
-        engine = TokenPerturbationEngine(config)
+        TokenPerturbationEngine(config)
         hotflip = HotFlipAttack(config)
 
         # Test perturbation
@@ -638,7 +678,7 @@ class TestElitismStrategies:
 
         population = [EliteIndividual(genotype=f"ind_{i}", fitness=i * 0.1) for i in range(10)]
 
-        new_pop, elites = manager.apply_elitism(population)
+        _new_pop, elites = manager.apply_elitism(population)
 
         assert len(elites) > 0
         stats = manager.get_elite_statistics()
@@ -842,7 +882,7 @@ class TestEndToEndIntegration:
             max_generations=3,
         )
 
-        optimizer = MultiObjectiveOptimizer(objectives, config, algorithm="nsga2")
+        MultiObjectiveOptimizer(objectives, config, algorithm="nsga2")
 
         # Create initial population
         engine = AdversarialGenerationEngine(

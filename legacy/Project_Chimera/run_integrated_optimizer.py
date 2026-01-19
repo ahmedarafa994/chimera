@@ -11,8 +11,7 @@ import os
 import sys
 
 from context_processor import ContextProcessor
-from llm_integration import (LLMIntegrationEngine, LLMProvider,
-                             TransformationRequest)
+from llm_integration import LLMIntegrationEngine, LLMProvider, TransformationRequest
 
 # Ensure Project_Chimera is in path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

@@ -7,8 +7,13 @@ N_note is critical - removing it causes 35-40% effectiveness drop (Section 4.2).
 import pytest
 
 from meta_prompter.attacks.extend_attack.n_notes import (
-    N_NOTE_TEMPLATES, NNoteBuilder, NNoteVariant, get_all_variants,
-    get_default_n_note, get_n_note_for_scenario)
+    N_NOTE_TEMPLATES,
+    NNoteBuilder,
+    NNoteVariant,
+    get_all_variants,
+    get_default_n_note,
+    get_n_note_for_scenario,
+)
 
 # =============================================================================
 # Test Fixtures
@@ -165,7 +170,7 @@ class TestNNoteBuilder:
 
         # After reset, should use default
         result = n_note_builder.build()
-        default = N_NOTE_TEMPLATES[NNoteVariant.DEFAULT]
+        N_NOTE_TEMPLATES[NNoteVariant.DEFAULT]
 
         # Result should be default (or close to it)
         assert result is not None
@@ -293,7 +298,7 @@ class TestGetAllVariants:
         """Test all returned variants have non-empty values."""
         variants = get_all_variants()
 
-        for key, value in variants.items():
+        for _key, value in variants.items():
             assert value is not None
             assert len(value) > 0
 

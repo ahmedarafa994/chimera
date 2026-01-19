@@ -88,7 +88,7 @@ class ABTestPlanner:
             Sample size calculation with duration estimates
         """
         alpha = 1 - self.CONFIDENCE_LEVELS[confidence_level]
-        beta = 1 - power
+        1 - power
 
         # Expected conversion for variant B
         expected_conversion_b = baseline_conversion * (1 + minimum_detectable_effect)
@@ -150,10 +150,7 @@ class ABTestPlanner:
         rate_b = variant_b_conversions / variant_b_visitors if variant_b_visitors > 0 else 0
 
         # Calculate improvement
-        if rate_a > 0:
-            relative_improvement = (rate_b - rate_a) / rate_a
-        else:
-            relative_improvement = 0
+        relative_improvement = (rate_b - rate_a) / rate_a if rate_a > 0 else 0
 
         absolute_improvement = rate_b - rate_a
 

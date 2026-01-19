@@ -540,7 +540,7 @@ export default function ResearchLabPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Experiment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{experimentToDelete?.name}&quot;? This action cannot be undone
+              Are you sure you want to delete &quot;{experimentToDelete?.title}&quot;? This action cannot be undone
               and will remove all execution data and findings.
             </AlertDialogDescription>
           </AlertDialogHeader>

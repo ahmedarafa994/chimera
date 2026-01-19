@@ -158,7 +158,7 @@ class CPUProfiler:
             # Use flameprof to convert cProfile to flame graph
             try:
                 subprocess.run(
-                    [  # noqa: S607
+                    [
                         "flameprof",
                         profile_data_path,
                         "--format",
@@ -192,7 +192,7 @@ class CPUProfiler:
 
             # Run py-spy for a short duration to capture current state
             subprocess.run(
-                [  # noqa: S607
+                [
                     "py-spy",
                     "record",
                     "--pid",

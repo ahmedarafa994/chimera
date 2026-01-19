@@ -1,8 +1,6 @@
 import os
 from typing import ClassVar
 
-# ruff: noqa: RUF001
-
 
 class Config:
     # Database configuration

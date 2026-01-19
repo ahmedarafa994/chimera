@@ -1,14 +1,14 @@
 """System health check schemas."""
+
 from pydantic import BaseModel
-from typing import Dict, List
 
 
 class SystemHealthResponse(BaseModel):
     """Response model for system health check."""
 
     status: str
-    services: Dict[str, str]
-    active_techniques: List[str]
+    services: dict[str, str]
+    active_techniques: list[str]
     api_version: str
 
     class Config:

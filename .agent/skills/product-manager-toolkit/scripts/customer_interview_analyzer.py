@@ -180,10 +180,7 @@ class InterviewAnalyzer:
         for pattern in self.jtbd_patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
             for match in matches:
-                if isinstance(match, tuple):
-                    job = " → ".join(match)
-                else:
-                    job = match
+                job = " → ".join(match) if isinstance(match, tuple) else match
 
                 jobs.append(
                     {
@@ -200,10 +197,7 @@ class InterviewAnalyzer:
         negative_count = sum(1 for ind in self.pain_indicators if ind in text)
 
         total = positive_count + negative_count
-        if total == 0:
-            sentiment_score = 0
-        else:
-            sentiment_score = (positive_count - negative_count) / total
+        sentiment_score = 0 if total == 0 else (positive_count - negative_count) / total
 
         if sentiment_score > 0.3:
             sentiment_label = "positive"

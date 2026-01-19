@@ -1,6 +1,5 @@
 import secrets
 
-# ruff: noqa: ARG002
 from app.techniques.base_technique import BaseTechnique
 
 

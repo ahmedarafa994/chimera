@@ -332,13 +332,13 @@ class ObfuscationLayer:
         sets.
         """
         homoglyphs = {
-            "a": "а",  # noqa: RUF001
-            "c": "с",  # noqa: RUF001
-            "e": "е",  # noqa: RUF001
-            "o": "о",  # noqa: RUF001
-            "p": "р",  # noqa: RUF001
-            "x": "х",  # noqa: RUF001
-            "y": "у",  # noqa: RUF001
+            "a": "а",
+            "c": "с",
+            "e": "е",
+            "o": "о",
+            "p": "р",
+            "x": "х",
+            "y": "у",
         }
         result = ""
         for char in prompt:

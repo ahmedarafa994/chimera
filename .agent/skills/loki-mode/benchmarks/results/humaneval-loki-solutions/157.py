@@ -23,7 +23,4 @@ def right_angle_triangle(a, b, c):
         return True
     if abs(a_sq + c_sq - b_sq) < epsilon:
         return True
-    if abs(b_sq + c_sq - a_sq) < epsilon:
-        return True
-
-    return False
+    return abs(b_sq + c_sq - a_sq) < epsilon

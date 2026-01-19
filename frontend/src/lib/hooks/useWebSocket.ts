@@ -75,7 +75,10 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): WebSo
         if (reconnectCountRef.current < reconnectAttempts) {
           reconnectCountRef.current++;
           reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
+            // Trigger reconnection via effect or another method
+            // We can't call connect() directly here to avoid use-before-define
+            // Instead we rely on the effect to handle this or use a ref
+            connectRef.current?.();
           }, reconnectInterval);
         }
       };
@@ -89,6 +92,12 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): WebSo
       console.error('Failed to create WebSocket connection:', error);
     }
   }, [url, reconnectAttempts, reconnectInterval, heartbeatInterval]);
+
+  // Use a ref to hold the connect function to allow recursive calling
+  const connectRef = useRef(connect);
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const sendMessage = useCallback((message: WSMessage) => {
     if (ws && ws.readyState === WebSocket.OPEN) {

@@ -18,10 +18,7 @@ def encode(message):
     for char in message:
         if char.isalpha():
             # Swap case
-            if char.isupper():
-                new_char = char.lower()
-            else:
-                new_char = char.upper()
+            new_char = char.lower() if char.isupper() else char.upper()
 
             # If it's a vowel (after case swap), replace with letter 2 places ahead
             if new_char in vowels:

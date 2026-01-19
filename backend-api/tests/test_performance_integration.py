@@ -328,8 +328,8 @@ async def test_memory_leak_detection(benchmark_suite):
                         config=GenerationConfig(max_tokens=100),
                     )
                     await benchmark_suite._llm_service.generate_text(mock_request)
-                except:
-                    pass  # Mock service may not be fully functional
+                except Exception as e:
+                    print(f"Mock service failed: {e}")  # Mock service may not be fully functional
 
         # Force cleanup
         gc.collect()

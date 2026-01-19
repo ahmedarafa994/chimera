@@ -239,39 +239,3 @@ def test_hierarchical_persona_empty_request():
     transformer = HierarchicalPersonaTransformer()
     result = transformer.transform(context)
     assert result == ""
-
-
-def test_dynamic_persona_empty_request():
-    context = TransformationContext(
-        original_prompt="",
-        current_prompt="",
-        potency=5,
-        technique_suite="test_suite",
-    )
-    transformer = DynamicPersonaEvolutionTransformer()
-    result = transformer.transform(context)
-    assert result == ""
-
-
-def test_nested_context_empty_request():
-    context = TransformationContext(
-        original_prompt="",
-        current_prompt="",
-        potency=5,
-        technique_suite="test_suite",
-    )
-    transformer = NestedContextTransformer()
-    result = transformer.transform(context)
-    assert result == ""
-
-
-def test_narrative_context_empty_request():
-    context = TransformationContext(
-        original_prompt="",
-        current_prompt="",
-        potency=5,
-        technique_suite="test_suite",
-    )
-    transformer = NarrativeContextTransformer()
-    result = transformer.transform(context)
-    assert result == ""

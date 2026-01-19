@@ -33,7 +33,7 @@ def valid_date(date):
 
         month = int(mm)
         day = int(dd)
-        year = int(yyyy)
+        int(yyyy)
 
         if month < 1 or month > 12:
             return False
@@ -47,9 +47,8 @@ def valid_date(date):
         elif month in [4, 6, 9, 11]:
             if day > 30:
                 return False
-        elif month == 2:
-            if day > 29:
-                return False
+        elif month == 2 and day > 29:
+            return False
 
         return True
     except:

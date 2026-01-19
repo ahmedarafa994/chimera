@@ -156,7 +156,7 @@ async def generate_jailbreak_prompt(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Jailbreak generation failed: {e!s}",
-        )
+        ) from e
 
 
 @router.post(
@@ -218,7 +218,7 @@ async def generate_code(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Code generation failed: {e!s}",
-        )
+        ) from e
 
 
 @router.post(
@@ -289,7 +289,7 @@ async def generate_red_team_suite(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Red team suite generation failed: {e!s}",
-        )
+        ) from e
 
 
 @router.post(
@@ -339,7 +339,7 @@ async def validate_prompt(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prompt validation failed: {e!s}",
-        )
+        ) from e
 
 
 @router.get(
@@ -387,7 +387,7 @@ async def get_available_techniques(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve available techniques: {e!s}",
-        )
+        ) from e
 
 
 @router.get("/statistics", response_model=AdvancedGenerationStats, status_code=status.HTTP_200_OK)
@@ -429,7 +429,7 @@ async def get_advanced_generation_statistics(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve statistics: {e!s}",
-        )
+        ) from e
 
 
 @router.get("/health", response_model=HealthCheckResponse, status_code=status.HTTP_200_OK)
@@ -560,7 +560,7 @@ async def reset_advanced_generation_service(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to reset advanced generation service: {e!s}",
-        )
+        ) from e
 
 
 @router.get("/config", status_code=status.HTTP_200_OK)
@@ -633,7 +633,7 @@ async def get_advanced_generation_config(api_key: str = Depends(verify_api_key))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve configuration: {e!s}",
-        )
+        ) from e
 
 
 # =============================================================================
@@ -832,4 +832,4 @@ async def estimate_jailbreak_tokens(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Token estimation failed: {e!s}",
-        )
+        ) from e

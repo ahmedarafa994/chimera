@@ -578,7 +578,7 @@ export function useProviderWebSocket(enabled: boolean = true) {
           const delay = Math.min(5000 * reconnectAttempts.current, 15000); // Exponential backoff, max 15s
           console.log(`[ProviderWS] Attempting reconnect ${reconnectAttempts.current}/${maxReconnectAttempts} in ${delay}ms...`);
           reconnectTimeoutRef.current = setTimeout(() => {
-            connectImpl();
+            connect();
           }, delay);
         } else if (reconnectAttempts.current >= maxReconnectAttempts) {
           setConnectionError("WebSocket connection failed, using polling for updates");

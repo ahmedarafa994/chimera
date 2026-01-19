@@ -88,7 +88,7 @@ class TestInputValidation:
         for _payload in xss_payloads:
             # sanitized = Sanitizer.remove_scripts(payload)
             # assert "<script" not in sanitized.lower()
-            pass
+            continue
 
     def test_html_escaping(self):
         """Test HTML entity escaping"""
@@ -115,7 +115,7 @@ class TestInputValidation:
         for _payload in sql_payloads:
             # is_suspicious = Sanitizer.check_sql_injection(payload)
             # assert is_suspicious, f"Failed to detect SQL injection: {payload}"
-            pass
+            continue
 
     @pytest.mark.parametrize(
         "malicious_input,should_pass",
@@ -139,8 +139,9 @@ class TestInputValidation:
             #     assert prompt.prompt is not None
             # If it passes but shouldn't, check it's sanitized
         except ValidationError:
-            pass
-            # assert not should_pass, f"Should have passed: {malicious_input}"
+            if should_pass:
+                pytest.fail(f"Validation failed for valid input: {malicious_input}")
+            # Expected error for invalid input
 
 
 class TestAuthenticationSecurity:
@@ -196,7 +197,7 @@ class TestAuthenticationSecurity:
         """Test that API keys are not leaked in responses"""
         # This would be an integration test with the actual API
         # For unit test, we verify the pattern
-        pass
+        return
 
     def test_password_hashing(self):
         """Test that passwords are properly hashed"""
@@ -329,7 +330,7 @@ class TestSecretsManagement:
                             # This could be a hardcoded secret
                             pass  # Log warning but don't fail for now
             except FileNotFoundError:
-                pass
+                continue
 
     def test_env_files_not_committed(self):
         """Test that .env files are in .gitignore"""

@@ -23,8 +23,4 @@ def is_sorted(lst):
     from collections import Counter
 
     counts = Counter(lst)
-    for count in counts.values():
-        if count > 2:
-            return False
-
-    return True
+    return all(count <= 2 for count in counts.values())

@@ -1,6 +1,5 @@
 import base64
 
-# ruff: noqa: ARG002
 from app.techniques.base_technique import BaseTechnique
 from config import Config
 

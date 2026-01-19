@@ -5,10 +5,12 @@ logger = logging.getLogger(__name__)
 
 # Import legacy components - eventually these should be fully migrated to project_aegis.core.algorithms
 from meta_prompter.attacks.autodan.hierarchical_genetic_algorithm import (
-    DefaultFitnessEvaluator, HGAConfig, HierarchicalGeneticAlgorithm,
-    Individual)
-from project_aegis.core.prompt_engine.strategies.base import (BaseStrategy,
-                                                              PromptCandidate)
+    DefaultFitnessEvaluator,
+    HGAConfig,
+    HierarchicalGeneticAlgorithm,
+    Individual,
+)
+from project_aegis.core.prompt_engine.strategies.base import BaseStrategy, PromptCandidate
 
 # from meta_prompter.attacks.autodan.fitness_evaluation import DefaultFitnessEvaluator
 

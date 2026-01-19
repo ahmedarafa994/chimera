@@ -8,8 +8,7 @@ import pickle
 import wandb
 from framework import Retrieval, Target
 from framework_r import Attacker_r, Scorer_r, Summarizer_r
-from llm import (DeepSeekModel, HuggingFaceModel, OpenAIEmbeddingModel,
-                 VLLMModel)
+from llm import DeepSeekModel, HuggingFaceModel, OpenAIEmbeddingModel, VLLMModel
 from pipeline import AutoDANTurbo
 
 
@@ -200,7 +199,7 @@ if __name__ == "__main__":
             if os.environ.get("ALLOW_UNTRUSTED_PICKLE") == "1":
                 warm_up_strategy_library = pickle.load(
                     f
-                )  # noqa: S301 - guarded by ALLOW_UNTRUSTED_PICKLE
+                )
             else:
                 raise RuntimeError(
                     "Deserializing pickle files is disabled by default. To enable, set ALLOW_UNTRUSTED_PICKLE=1"

@@ -596,12 +596,10 @@ const TokenTrendChart = memo(function TokenTrendChart({
 }) {
   // Transform data for chart - show cumulative token usage
   const chartData = useMemo(() => {
-    let cumulativeTotal = 0;
     return data.map((point) => {
-      cumulativeTotal = point.total_tokens;
       return {
         ...point,
-        cumulative: cumulativeTotal,
+        cumulative: point.total_tokens,
       };
     });
   }, [data]);

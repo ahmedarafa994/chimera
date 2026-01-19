@@ -318,10 +318,7 @@ class KeywordAnalyzer:
         volume_score = min((search_volume / 100000) * 40, 40)
 
         # Competition score (0-30 points) - inverse relationship
-        if competing_apps > 0:
-            competition_score = max(30 - (competing_apps / 500), 0)
-        else:
-            competition_score = 30
+        competition_score = max(30 - competing_apps / 500, 0) if competing_apps > 0 else 30
 
         # Relevance score (0-30 points)
         relevance_points = relevance_score * 30

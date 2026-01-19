@@ -243,7 +243,7 @@ class ApiClient {
 
     if (cachedData && !config?.params?.skipCache) {
       logger.logCacheHit(cacheKey);
-      return { data: cachedData as T, status: 200 };
+      return { data: cachedData as T, status: 200, headers: {} };
     }
 
     const response = await retryWithBackoff(
@@ -254,6 +254,7 @@ class ApiClient {
     return {
       data: response.data,
       status: response.status,
+      headers: response.headers as Record<string, string>,
       request_id: (response.config as ExtendedAxiosConfig)?.metadata?.requestId,
     };
   }
@@ -267,6 +268,7 @@ class ApiClient {
     return {
       data: response.data,
       status: response.status,
+      headers: response.headers as Record<string, string>,
       request_id: (response.config as ExtendedAxiosConfig)?.metadata?.requestId,
     };
   }
@@ -280,6 +282,7 @@ class ApiClient {
     return {
       data: response.data,
       status: response.status,
+      headers: response.headers as Record<string, string>,
       request_id: (response.config as ExtendedAxiosConfig)?.metadata?.requestId,
     };
   }
@@ -293,6 +296,7 @@ class ApiClient {
     return {
       data: response.data,
       status: response.status,
+      headers: response.headers as Record<string, string>,
       request_id: (response.config as ExtendedAxiosConfig)?.metadata?.requestId,
     };
   }
@@ -306,6 +310,7 @@ class ApiClient {
     return {
       data: response.data,
       status: response.status,
+      headers: response.headers as Record<string, string>,
       request_id: (response.config as ExtendedAxiosConfig)?.metadata?.requestId,
     };
   }

@@ -15,9 +15,13 @@ if (typeof window !== 'undefined') {
 }
 
 // Patched API client with proper authentication
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 class AuthenticatedApiClient {
+    private apiKey: string;
+    private baseURL: string;
+    private client: AxiosInstance;
+
     constructor() {
         this.apiKey = DEV_API_KEY;
         this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
@@ -52,34 +56,40 @@ class AuthenticatedApiClient {
     }
 
     // HTTP methods with automatic authentication
-    async get(url, config = {}) {
-        return this.client.get(url, config);
+    async get<T = unknown>(url: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+        return this.client.get<T>(url, config);
     }
 
-    async post(url, data, config = {}) {
-        return this.client.post(url, data, config);
+    async post<T = unknown>(url: string, data?: unknown, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+        return this.client.post<T>(url, data, config);
     }
 
-    async put(url, data, config = {}) {
-        return this.client.put(url, data, config);
+    async put<T = unknown>(url: string, data?: unknown, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+        return this.client.put<T>(url, data, config);
     }
 
-    async delete(url, config = {}) {
-        return this.client.delete(url, config);
+    async delete<T = unknown>(url: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+        return this.client.delete<T>(url, config);
     }
 
-    async patch(url, data, config = {}) {
-        return this.client.patch(url, data, config);
+    async patch<T = unknown>(url: string, data?: unknown, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+        return this.client.patch<T>(url, data, config);
+    }
+
+    // Alias for delete method (for compatibility)
+    async del<T = unknown>(url: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+        return this.delete<T>(url, config);
     }
 
     // Test authentication
-    async testConnection() {
+    async testConnection(): Promise<boolean> {
         try {
             const response = await this.get('/health');
             console.log('✅ API authentication successful');
             return true;
-        } catch (error) {
-            console.error('❌ API authentication failed:', error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error('❌ API authentication failed:', errorMessage);
             return false;
         }
     }

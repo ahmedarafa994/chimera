@@ -2,13 +2,14 @@ import logging
 from typing import Any
 
 from project_aegis.core.methodologies.techniques import (
-    DiagnosticTechnique, HypotheticalScenarioEmbedding, RecursiveArgumentation,
-    SemanticReinterpretation)
+    DiagnosticTechnique,
+    HypotheticalScenarioEmbedding,
+    RecursiveArgumentation,
+    SemanticReinterpretation,
+)
 from project_aegis.core.orchestrator.session_state import SessionState
-from project_aegis.core.prompt_engine.primitives import (InjectionVector,
-                                                         PromptAtom)
-from project_aegis.core.prompt_engine.refinement import (RefinementStrategy,
-                                                         RuleBasedRefiner)
+from project_aegis.core.prompt_engine.primitives import InjectionVector, PromptAtom
+from project_aegis.core.prompt_engine.refinement import RefinementStrategy, RuleBasedRefiner
 
 logger = logging.getLogger("project_aegis.orchestrator")
 
@@ -23,7 +24,7 @@ class AegisOrchestrator:
         self,
         target_model_client: Any,
         refinement_engine: RefinementStrategy = None,
-        atom_library: dict[str, list[PromptAtom]] = None,
+        atom_library: dict[str, list[PromptAtom]] | None = None,
     ):
 
         self.target_model = target_model_client

@@ -13,8 +13,7 @@ except ImportError:
     # Fallback for different import contexts
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
-    from llm_provider_client import (LLMClientFactory,  # pragma: no cover
-                                     LLMProvider)
+    from llm_provider_client import LLMClientFactory, LLMProvider  # pragma: no cover
 
     _ = (LLMClientFactory, LLMProvider)
 except ImportError:

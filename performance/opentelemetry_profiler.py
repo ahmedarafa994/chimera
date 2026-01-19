@@ -14,12 +14,9 @@ from typing import Any
 try:
     from opentelemetry import metrics, trace
     from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import \
-        OTLPMetricExporter
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
-        OTLPSpanExporter
-    from opentelemetry.instrumentation.aiohttp_client import \
-        AioHttpClientInstrumentor
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
@@ -28,8 +25,7 @@ try:
     from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
-                                                ConsoleSpanExporter)
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
     OPENTELEMETRY_AVAILABLE = True
 except ImportError:
@@ -157,8 +153,7 @@ class OpenTelemetryProfiler:
                 metric_exporter = OTLPMetricExporter(endpoint=otlp_endpoint.replace("4317", "4318"))
             else:
                 # Use console exporter for development
-                from opentelemetry.exporter.console.metrics import \
-                    ConsoleMetricExporter
+                from opentelemetry.exporter.console.metrics import ConsoleMetricExporter
 
                 metric_exporter = ConsoleMetricExporter()
 

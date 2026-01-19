@@ -133,8 +133,8 @@ export default function TechniqueBuilderPage() {
 
   const handleCreateTechnique = useCallback(async () => {
     const errors = techniqueBuilderService.validateTechniqueCreate(newTechniqueData);
-    if (errors.length > 0) {
-      toast.error(errors.join(', '));
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors).join(', '));
       return;
     }
 
@@ -175,7 +175,7 @@ export default function TechniqueBuilderPage() {
       });
 
       // Update with template data
-      const updatedTechnique = await techniqueBuilderService.updateTechnique(technique.technique_id, {
+      const updatedTechnique = await techniqueBuilderService.updateTechnique(technique.technique_id ?? '', {
         parameters: template.parameters_template,
         steps: template.steps_template
       });
@@ -197,7 +197,7 @@ export default function TechniqueBuilderPage() {
 
     try {
       const updatedTechnique = await techniqueBuilderService.updateTechnique(
-        selectedTechnique.technique_id,
+        selectedTechnique.technique_id ?? '',
         editTechniqueData
       );
 
@@ -213,15 +213,15 @@ export default function TechniqueBuilderPage() {
     if (!selectedTechnique) return;
 
     const errors = techniqueBuilderService.validateTestRequest(testRequest);
-    if (errors.length > 0) {
-      toast.error(errors.join(', '));
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors).join(', '));
       return;
     }
 
     try {
       setTesting(true);
       const execution = await techniqueBuilderService.testTechnique(
-        selectedTechnique.technique_id,
+        selectedTechnique.technique_id ?? '',
         testRequest
       );
 
@@ -229,7 +229,7 @@ export default function TechniqueBuilderPage() {
       toast.success(`Test completed in ${techniqueBuilderService.formatExecutionTime(execution.execution_time)}`);
 
       // Refresh technique stats
-      await loadTechniqueStats(selectedTechnique.technique_id);
+      await loadTechniqueStats(selectedTechnique.technique_id ?? '');
       setShowTestDialog(false);
     } catch (error) {
       // Error already handled in service
@@ -240,7 +240,7 @@ export default function TechniqueBuilderPage() {
 
   const handleCloneTechnique = useCallback(async (technique: CustomTechnique) => {
     try {
-      const clonedTechnique = await techniqueBuilderService.cloneTechnique(technique.technique_id);
+      const clonedTechnique = await techniqueBuilderService.cloneTechnique(technique.technique_id ?? '');
 
       // Refresh and select cloned technique
       await loadTechniques();
@@ -254,7 +254,7 @@ export default function TechniqueBuilderPage() {
     if (!techniqueToDelete) return;
 
     try {
-      await techniqueBuilderService.deleteTechnique(techniqueToDelete.technique_id);
+      await techniqueBuilderService.deleteTechnique(techniqueToDelete.technique_id ?? '');
 
       // Refresh techniques list
       await loadTechniques();
@@ -351,7 +351,7 @@ export default function TechniqueBuilderPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      loadTechniqueStats(selectedTechnique.technique_id);
+                      loadTechniqueStats(selectedTechnique.technique_id ?? '');
                       setShowStatsDialog(true);
                     }}
                   >
@@ -405,7 +405,7 @@ export default function TechniqueBuilderPage() {
               <TabsContent value="history" className="space-y-6">
                 <TechniqueHistoryView
                   technique={selectedTechnique}
-                  onLoadStats={() => loadTechniqueStats(selectedTechnique.technique_id)}
+                  onLoadStats={() => loadTechniqueStats(selectedTechnique.technique_id ?? '')}
                 />
               </TabsContent>
             </Tabs>
@@ -515,7 +515,7 @@ export default function TechniqueBuilderPage() {
           <DialogHeader>
             <DialogTitle>Test Technique</DialogTitle>
             <DialogDescription>
-              Test "{selectedTechnique?.name}" with sample input to validate functionality.
+              Test &quot;{selectedTechnique?.name}&quot; with sample input to validate functionality.
             </DialogDescription>
           </DialogHeader>
 
@@ -582,7 +582,7 @@ export default function TechniqueBuilderPage() {
           <DialogHeader>
             <DialogTitle>Technique Statistics</DialogTitle>
             <DialogDescription>
-              Performance metrics and usage analytics for "{selectedTechnique?.name}"
+              Performance metrics and usage analytics for &quot;{selectedTechnique?.name}&quot;
             </DialogDescription>
           </DialogHeader>
 
@@ -601,7 +601,7 @@ export default function TechniqueBuilderPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Technique</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{techniqueToDelete?.name}"? This action cannot be undone
+              Are you sure you want to delete &quot;{techniqueToDelete?.name}&quot;? This action cannot be undone
               and will remove all associated test results and statistics.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -619,7 +619,15 @@ export default function TechniqueBuilderPage() {
 
 // Placeholder components for the different views - in a real implementation these would be fully featured
 
-function TechniqueListView({ techniques, selectedTechnique, onSelectTechnique, onCreateNew, onRefresh }: any) {
+interface TechniqueListViewProps {
+  techniques: TechniqueListResponse | null;
+  selectedTechnique: CustomTechnique | null;
+  onSelectTechnique: (technique: CustomTechnique) => void;
+  onCreateNew: () => void;
+  onRefresh: () => void;
+}
+
+function TechniqueListView({ techniques, selectedTechnique, onSelectTechnique, onCreateNew, onRefresh }: TechniqueListViewProps) {
   if (!techniques) return <div>Loading...</div>;
 
   return (
@@ -730,7 +738,7 @@ function TechniqueOverviewView({ techniques, onCreateNew, onCreateFromTemplate, 
         <Card>
           <CardContent className="p-4 text-center">
             <Activity className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-            <div className="text-2xl font-bold">{techniques.techniques.reduce((sum: number, t: CustomTechnique) => sum + t.usage_count, 0)}</div>
+            <div className="text-2xl font-bold">{techniques.techniques.reduce((sum: number, t: CustomTechnique) => sum + (t.usage_count ?? 0), 0)}</div>
             <div className="text-sm text-muted-foreground">Total Executions</div>
           </CardContent>
         </Card>
@@ -740,7 +748,7 @@ function TechniqueOverviewView({ techniques, onCreateNew, onCreateFromTemplate, 
             <CheckCircle className="h-8 w-8 mx-auto mb-2 text-purple-600" />
             <div className="text-2xl font-bold">
               {techniques.techniques.length > 0
-                ? Math.round(techniques.techniques.reduce((sum: number, t: CustomTechnique) => sum + t.success_rate, 0) / techniques.techniques.length * 100)
+                ? Math.round(techniques.techniques.reduce((sum: number, t: CustomTechnique) => sum + (t.success_rate ?? 0), 0) / techniques.techniques.length * 100)
                 : 0}%
             </div>
             <div className="text-sm text-muted-foreground">Avg Success Rate</div>

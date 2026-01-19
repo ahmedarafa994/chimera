@@ -28,6 +28,7 @@ def create_app(config_name="default"):
     # before db.create_all()
     from app import models
     from app.routes.api import api_bp
+
     # Register Blueprints
     from app.routes.main import main_bp
 

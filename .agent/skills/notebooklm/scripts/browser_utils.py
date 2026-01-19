@@ -3,6 +3,8 @@ Browser Utilities for NotebookLM Skill
 Handles browser launching, stealth features, and common interactions
 """
 
+import builtins
+import contextlib
 import json
 import random
 import time
@@ -68,10 +70,8 @@ class StealthUtils:
         element = page.query_selector(selector)
         if not element:
             # Try waiting if not immediately found
-            try:
+            with contextlib.suppress(builtins.BaseException):
                 element = page.wait_for_selector(selector, timeout=2000)
-            except:
-                pass
 
         if not element:
             print(f"⚠️ Element not found for typing: {selector}")

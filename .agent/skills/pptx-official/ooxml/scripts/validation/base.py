@@ -844,7 +844,7 @@ class BaseSchemaValidator:
                 return set()
 
             # Validate the specific file in original
-            is_valid, errors = self._validate_single_file_xsd(original_xml_file, temp_path)
+            _is_valid, errors = self._validate_single_file_xsd(original_xml_file, temp_path)
             return errors if errors else set()
 
     def _remove_template_tags_from_text_nodes(self, xml_doc):

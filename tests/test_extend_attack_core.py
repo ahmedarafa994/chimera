@@ -14,17 +14,25 @@ import re
 
 import pytest
 
-from meta_prompter.attacks.extend_attack import (AttackMetrics, AttackResult,
-                                                 BatchAttackResult,
-                                                 ExtendAttack,
-                                                 ExtendAttackBuilder,
-                                                 IndirectInjectionResult,
-                                                 SelectionRules,
-                                                 SelectionStrategy,
-                                                 TransformInfo, decode_attack,
-                                                 quick_attack)
+from meta_prompter.attacks.extend_attack import (
+    AttackMetrics,
+    AttackResult,
+    BatchAttackResult,
+    ExtendAttack,
+    ExtendAttackBuilder,
+    IndirectInjectionResult,
+    SelectionRules,
+    SelectionStrategy,
+    TransformInfo,
+    decode_attack,
+    quick_attack,
+)
 from meta_prompter.attacks.extend_attack.transformers import (
-    BASE_SET, BaseConverter, CharacterTransformer, ObfuscationDecoder)
+    BASE_SET,
+    BaseConverter,
+    CharacterTransformer,
+    ObfuscationDecoder,
+)
 
 # =============================================================================
 # Test Fixtures
@@ -323,8 +331,7 @@ class TestSelectionRules:
         valid_chars = rules.get_valid_characters(test_text)
 
         # Should only include vowels
-        expected_vowels = {"e", "o"}  # lowercase vowels in "Hello World"
-        result_set = set(c.lower() for c in valid_chars)
+        result_set = {c.lower() for c in valid_chars}
         assert result_set.issubset(
             {"a", "e", "i", "o", "u"}
         ), f"Expected only vowels, got {result_set}"

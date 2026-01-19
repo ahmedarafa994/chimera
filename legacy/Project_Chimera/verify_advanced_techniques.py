@@ -7,6 +7,7 @@ Tests all newly added transformers, framers, and technique suites.
 import sys
 
 import psychological_framer
+
 # Import modules
 import transformer_engine
 

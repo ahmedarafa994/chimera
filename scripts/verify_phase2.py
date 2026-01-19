@@ -12,10 +12,12 @@ import numpy as np
 sys.path.append(str(Path(__file__).parent.parent / "backend-api"))
 
 from app.engines.autodan_turbo.strategy_extractor import StrategyExtractor
-from app.engines.autodan_turbo.strategy_library import (JailbreakStrategy,
-                                                        StrategyLibrary,
-                                                        StrategyMetadata,
-                                                        StrategySource)
+from app.engines.autodan_turbo.strategy_library import (
+    JailbreakStrategy,
+    StrategyLibrary,
+    StrategyMetadata,
+    StrategySource,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

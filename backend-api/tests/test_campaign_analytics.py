@@ -506,55 +506,57 @@ class TestCampaignAnalyticsServiceComparison:
     async def test_compare_campaigns_two_campaigns(self, analytics_service, mock_async_session):
         """Test comparing two campaigns."""
         # Create mock summaries and statistics
-        with patch.object(analytics_service, "get_campaign_summary") as mock_summary:
-            with patch.object(analytics_service, "calculate_statistics") as mock_stats:
-                # Mock campaign summaries
-                summary1 = MagicMock()
-                summary1.id = "campaign-001"
-                summary1.name = "Campaign 1"
-                summary1.status = CampaignStatusEnum.COMPLETED
-                summary1.total_attempts = 100
-                summary1.success_rate = 0.75
+        with (
+            patch.object(analytics_service, "get_campaign_summary") as mock_summary,
+            patch.object(analytics_service, "calculate_statistics") as mock_stats,
+        ):
+            # Mock campaign summaries
+            summary1 = MagicMock()
+            summary1.id = "campaign-001"
+            summary1.name = "Campaign 1"
+            summary1.status = CampaignStatusEnum.COMPLETED
+            summary1.total_attempts = 100
+            summary1.success_rate = 0.75
 
-                summary2 = MagicMock()
-                summary2.id = "campaign-002"
-                summary2.name = "Campaign 2"
-                summary2.status = CampaignStatusEnum.COMPLETED
-                summary2.total_attempts = 80
-                summary2.success_rate = 0.65
+            summary2 = MagicMock()
+            summary2.id = "campaign-002"
+            summary2.name = "Campaign 2"
+            summary2.status = CampaignStatusEnum.COMPLETED
+            summary2.total_attempts = 80
+            summary2.success_rate = 0.65
 
-                mock_summary.side_effect = [summary1, summary2]
+            mock_summary.side_effect = [summary1, summary2]
 
-                # Mock statistics
-                stats1 = MagicMock()
-                stats1.semantic_success = MagicMock(mean=0.8)
-                stats1.latency_ms = MagicMock(mean=1200.0, percentiles=MagicMock(p95=2000.0))
-                stats1.total_tokens = MagicMock(mean=150.0)
-                stats1.total_tokens_used = 15000
-                stats1.total_cost_cents = 50.0
-                stats1.attempts = MagicMock(total=100)
-                stats1.total_duration_seconds = 3600.0
+            # Mock statistics
+            stats1 = MagicMock()
+            stats1.semantic_success = MagicMock(mean=0.8)
+            stats1.latency_ms = MagicMock(mean=1200.0, percentiles=MagicMock(p95=2000.0))
+            stats1.total_tokens = MagicMock(mean=150.0)
+            stats1.total_tokens_used = 15000
+            stats1.total_cost_cents = 50.0
+            stats1.attempts = MagicMock(total=100)
+            stats1.total_duration_seconds = 3600.0
 
-                stats2 = MagicMock()
-                stats2.semantic_success = MagicMock(mean=0.7)
-                stats2.latency_ms = MagicMock(mean=1500.0, percentiles=MagicMock(p95=2500.0))
-                stats2.total_tokens = MagicMock(mean=180.0)
-                stats2.total_tokens_used = 14400
-                stats2.total_cost_cents = 40.0
-                stats2.attempts = MagicMock(total=80)
-                stats2.total_duration_seconds = 3000.0
+            stats2 = MagicMock()
+            stats2.semantic_success = MagicMock(mean=0.7)
+            stats2.latency_ms = MagicMock(mean=1500.0, percentiles=MagicMock(p95=2500.0))
+            stats2.total_tokens = MagicMock(mean=180.0)
+            stats2.total_tokens_used = 14400
+            stats2.total_cost_cents = 40.0
+            stats2.attempts = MagicMock(total=80)
+            stats2.total_duration_seconds = 3000.0
 
-                mock_stats.side_effect = [stats1, stats2]
+            mock_stats.side_effect = [stats1, stats2]
 
-                result = await analytics_service.compare_campaigns(["campaign-001", "campaign-002"])
+            result = await analytics_service.compare_campaigns(["campaign-001", "campaign-002"])
 
-                assert result is not None
-                assert isinstance(result, CampaignComparison)
-                assert len(result.campaigns) == 2
-                assert result.best_success_rate_campaign in ["campaign-001", "campaign-002"]
-                # Campaign 1 has higher success rate
-                assert result.delta_success_rate is not None
-                assert result.delta_success_rate == pytest.approx(0.10, rel=0.01)
+            assert result is not None
+            assert isinstance(result, CampaignComparison)
+            assert len(result.campaigns) == 2
+            assert result.best_success_rate_campaign in ["campaign-001", "campaign-002"]
+            # Campaign 1 has higher success rate
+            assert result.delta_success_rate is not None
+            assert result.delta_success_rate == pytest.approx(0.10, rel=0.01)
 
     @pytest.mark.asyncio
     async def test_compare_campaigns_invalid_count(self, analytics_service):

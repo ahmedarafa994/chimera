@@ -26,10 +26,7 @@ def intersection(interval1, interval2):
             return True
         if n % 2 == 0:
             return False
-        for i in range(3, int(n**0.5) + 1, 2):
-            if n % i == 0:
-                return False
-        return True
+        return all(n % i != 0 for i in range(3, int(n ** 0.5) + 1, 2))
 
     start1, end1 = interval1
     start2, end2 = interval2

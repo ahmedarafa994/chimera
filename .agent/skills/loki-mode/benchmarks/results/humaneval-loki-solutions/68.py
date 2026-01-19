@@ -45,10 +45,9 @@ def pluck(arr):
     min_index = None
 
     for i, val in enumerate(arr):
-        if val % 2 == 0:
-            if min_even is None or val < min_even:
-                min_even = val
-                min_index = i
+        if val % 2 == 0 and (min_even is None or val < min_even):
+            min_even = val
+            min_index = i
 
     if min_even is None:
         return []

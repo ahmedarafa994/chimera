@@ -16,7 +16,7 @@ def check_dict_case(dict):
     all_lower = True
     all_upper = True
 
-    for key in dict.keys():
+    for key in dict:
         if not isinstance(key, str):
             return False
         if not key.islower():

@@ -49,10 +49,8 @@ class TestProviderFailover:
                 Mock(content="Anthropic success"),
             ]
 
-            try:
+            with contextlib.suppress(Exception):
                 await service.generate(prompt="test", provider="openai", model="gpt-4")
-            except Exception:
-                pass  # May raise if all fail
 
             # Should have attempted multiple providers
             assert mock_call.call_count >= 1

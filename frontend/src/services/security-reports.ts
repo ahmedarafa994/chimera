@@ -177,7 +177,7 @@ class SecurityReportService {
       });
 
       // Get filename from Content-Disposition header
-      const contentDisposition = response.headers['content-disposition'];
+      const contentDisposition = response.headers ? response.headers['content-disposition'] : undefined;
       let filename = `security_report_${reportId}.pdf`;
 
       if (contentDisposition && typeof contentDisposition === 'string') {
@@ -188,7 +188,7 @@ class SecurityReportService {
       }
 
       // Create download link
-      const blob = response.data;
+      const blob = response.data as any as Blob;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';

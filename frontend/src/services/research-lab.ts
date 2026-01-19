@@ -555,9 +555,8 @@ class ResearchLabService {
     try {
       const response = await apiClient.post<TechniqueVariation>(`${this.baseUrl}/technique-variations`, variationData);
 
-      const result = await response.json();
       toast.success('Technique variation created successfully');
-      return result;
+      return response.data;
     } catch (error) {
       console.error('Failed to create technique variation:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create technique variation');

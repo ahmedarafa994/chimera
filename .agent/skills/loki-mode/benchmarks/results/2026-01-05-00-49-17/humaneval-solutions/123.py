@@ -21,10 +21,7 @@ def get_odd_collatz(n):
     while current != 1:
         if current % 2 == 1:
             odd_numbers.append(current)
-        if current % 2 == 0:
-            current = current // 2
-        else:
-            current = 3 * current + 1
+        current = current // 2 if current % 2 == 0 else 3 * current + 1
 
     odd_numbers.append(1)
 

@@ -315,5 +315,97 @@ export const workspaceService = {
       has_next: data.has_next,
       has_prev: data.has_prev
     };
+  },
+
+  validateWorkspaceCreate(data: WorkspaceCreate): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (!data.name?.trim()) errors.name = 'Workspace name is required';
+    return errors;
+  },
+
+  createDefaultSettings(): Record<string, any> {
+    return {
+      notifications_enabled: true,
+      default_visibility: 'team',
+      auto_archive_days: 90
+    };
+  },
+
+  validateInviteRequest(data: InviteUserRequest): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (!data.email?.trim()) errors.email = 'Email is required';
+    if (data.email && !/^\S+@\S+\.\S+$/.test(data.email)) errors.email = 'Invalid email format';
+    return errors;
+  },
+
+  async removeMemberFromWorkspace(workspaceId: string, userId: string): Promise<void> {
+    return this.removeMember(workspaceId, userId);
+  },
+
+  async deleteWorkspace(workspaceId: string): Promise<void> {
+    await apiClient.delete(`${API_BASE}/${workspaceId}`);
+  },
+
+  getRolePermissions(role: TeamRole): string[] {
+    const permissions: Record<TeamRole, string[]> = {
+      owner: ['all'],
+      admin: ['manage_members', 'manage_settings', 'create_assessments', 'view_all'],
+      researcher: ['create_assessments', 'view_all', 'manage_own_assessments'],
+      viewer: ['view_all']
+    };
+    return permissions[role] || [];
+  },
+
+  formatLastActive(date?: string): string {
+    if (!date) return 'Never';
+    return new Date(date).toLocaleDateString();
+  },
+
+  getRoleColor(role: TeamRole): string {
+    const colors: Record<TeamRole, string> = {
+      owner: 'purple',
+      admin: 'red',
+      researcher: 'blue',
+      viewer: 'gray'
+    };
+    return colors[role] || 'gray';
+  },
+
+  getRoleDisplayName(role: TeamRole): string {
+    return role.charAt(0).toUpperCase() + role.slice(1);
+  },
+
+  getInvitationStatusColor(status: InvitationStatus): string {
+    const colors: Record<InvitationStatus, string> = {
+      pending: 'yellow',
+      accepted: 'green',
+      declined: 'red',
+      expired: 'gray'
+    };
+    return colors[status] || 'gray';
+  },
+
+  getInvitationStatusDisplayName(status: InvitationStatus): string {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  },
+
+  getActivityTypeIcon(type: ActivityType): string {
+    const icons: Record<ActivityType, string> = {
+      user_joined: '👋',
+      user_left: '🏃',
+      role_changed: '🔄',
+      assessment_created: '🧪',
+      assessment_shared: '🔗',
+      report_generated: '📊',
+      api_key_added: '🔑',
+      api_key_removed: '🚫',
+      workspace_created: '🏢',
+      workspace_updated: '📝'
+    };
+    return icons[type] || '⚡';
+  },
+
+  getActivityTypeDisplayName(type: ActivityType): string {
+    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   }
 };

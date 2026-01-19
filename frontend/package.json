@@ -7,9 +7,9 @@
   },
   "scripts": {
     "dev": "next dev --turbopack -p 3001",
-    "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next build",
-    "build:analyze": "cross-env ANALYZE=true NODE_OPTIONS='--max-old-space-size=4096' NEXT_BUILD_BUNDLER=webpack next build",
-    "build:turbo": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next build",
+    "build": "cross-env NODE_OPTIONS='--max-old-space-size=8192' NEXT_BUILD_BUNDLER=webpack next build",
+    "build:analyze": "cross-env ANALYZE=true NODE_OPTIONS='--max-old-space-size=8192' NEXT_BUILD_BUNDLER=webpack next build",
+    "build:turbo": "cross-env NODE_OPTIONS='--max-old-space-size=8192' next build",
     "start": "next start",
     "lint": "eslint",
     "performance:audit": "node scripts/performance-audit.js"

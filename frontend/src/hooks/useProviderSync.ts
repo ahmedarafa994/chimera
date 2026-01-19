@@ -409,7 +409,7 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
 
           reconnectTimeoutRef.current = setTimeout(() => {
             setReconnectAttempts((prev) => prev + 1);
-            connectImpl();
+            connectRef.current?.();
           }, delay);
         }
       };
@@ -421,6 +421,12 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
       console.error('[SyncWS] Failed to connect:', error);
     }
   }, [enabled, onEvent, onConnectionChange, queryClient, reconnectAttempts]);
+
+  // Use a ref to hold the connect function to allow recursive calling
+  const connectRef = useRef(connect);
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

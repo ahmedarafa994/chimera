@@ -157,8 +157,11 @@ export function usePriorityRendering<T>(
 ) {
   const { highPriority = false, deferMs = 100 } = options;
 
+  // Always call useDeferredValue to avoid conditional hook rules violation
+  const deferredValue = useDeferredValue(value);
+
   // Use immediate value for high priority, deferred for low priority
-  const processedValue = highPriority ? value : useDeferredValue(value);
+  const processedValue = highPriority ? value : deferredValue;
   const isPending = processedValue !== value;
 
   return {

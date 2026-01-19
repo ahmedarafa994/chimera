@@ -155,7 +155,7 @@ class CleanupManager:
             }
 
         # Perform deletion
-        for category, items in cleanup_data["categories"].items():
+        for _category, items in cleanup_data["categories"].items():
             for item_info in items:
                 path = Path(item_info["path"])
                 try:

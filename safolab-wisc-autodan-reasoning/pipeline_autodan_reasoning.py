@@ -1,6 +1,9 @@
 from framework import Library
-from framework_autodan_reasoning import (AttackerAutoDANReasoning,
-                                         AttackerBeamSearch, AttackerBestOfN)
+from framework_autodan_reasoning import (
+    AttackerAutoDANReasoning,
+    AttackerBeamSearch,
+    AttackerBestOfN,
+)
 from pipeline import AutoDANTurbo
 
 
@@ -74,12 +77,11 @@ class AutoDANReasoning(AutoDANTurbo):
             if project_root not in sys.path:
                 sys.path.append(project_root)
 
-            from data.autodan_strategies.jailbreak_frameworks import \
-                get_jailbreak_strategies
-            from data.autodan_strategies.mist_vulnerability_assistant import \
-                get_mist_assistant_strategy
-            from data.autodan_strategies.prompt_frameworks import \
-                get_prompt_frameworks
+            from data.autodan_strategies.jailbreak_frameworks import get_jailbreak_strategies
+            from data.autodan_strategies.mist_vulnerability_assistant import (
+                get_mist_assistant_strategy,
+            )
+            from data.autodan_strategies.prompt_frameworks import get_prompt_frameworks
 
             strategies.update({"mist_assistant": get_mist_assistant_strategy()})
             strategies.update(get_jailbreak_strategies())

@@ -56,14 +56,14 @@ def main():
         # Since NeuralBypassEngine instantiates them internally, we must patch the classes themselves.
 
         with (
-            patch("app.engines.autodan_turbo.neural_bypass.SemanticEmbedder") as MockEmbedder,
+            patch("app.engines.autodan_turbo.neural_bypass.SemanticEmbedder"),
             patch(
                 "app.engines.autodan_turbo.neural_bypass.TokenProbabilityAnalyzer"
-            ) as MockAnalyzer,
+            ),
             patch(
                 "app.engines.autodan_turbo.neural_bypass.LearnedRefusalClassifier"
-            ) as MockClassifier,
-            patch("app.engines.autodan_turbo.neural_bypass.TechniqueMAB") as MockMAB,
+            ),
+            patch("app.engines.autodan_turbo.neural_bypass.TechniqueMAB"),
         ):
 
             neural_engine = NeuralBypassEngine(llm_client=mock_llm_client)

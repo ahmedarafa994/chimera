@@ -202,9 +202,11 @@ class TestCircuitBreakerIntegration:
         service._circuit_breakers = {"openai": mock_cb}
 
         # Simulate failure (mock the actual call)
-        with patch.object(service, "_call_provider", side_effect=Exception("API Error")):
-            with contextlib.suppress(Exception):
-                await service.generate(prompt="test", provider="openai", model="gpt-4")
+        with (
+            patch.object(service, "_call_provider", side_effect=Exception("API Error")),
+            contextlib.suppress(Exception),
+        ):
+            await service.generate(prompt="test", provider="openai", model="gpt-4")
 
         # Verify circuit breaker was notified
         # Implementation-specific assertion

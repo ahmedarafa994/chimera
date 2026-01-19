@@ -742,7 +742,7 @@ async def run_single_attack(
 
     except Exception as e:
         logger.error(f"AutoDAN-Turbo attack failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Attack failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Attack failed: {e!s}") from e
 
 
 @router.post("/warmup", response_model=WarmupResponse)
@@ -816,7 +816,7 @@ async def run_warmup_exploration(
 
     except Exception as e:
         logger.error(f"AutoDAN-Turbo warmup failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Warmup failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Warmup failed: {e!s}") from e
 
 
 @router.post("/lifelong", response_model=LifelongLoopResponse)
@@ -874,7 +874,7 @@ async def run_lifelong_loop(
 
     except Exception as e:
         logger.error(f"AutoDAN-Turbo lifelong loop failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Lifelong loop failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Lifelong loop failed: {e!s}") from e
 
 
 @router.post("/test", response_model=TestStageResponse)
@@ -959,7 +959,7 @@ async def run_test_stage(
 
     except Exception as e:
         logger.error(f"AutoDAN-Turbo test stage failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Test stage failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Test stage failed: {e!s}") from e
 
 
 # ==================== Strategy Library Endpoints ====================
@@ -1019,7 +1019,7 @@ async def list_strategies(
         raise
     except Exception as e:
         logger.error(f"Failed to list strategies: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to list strategies: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to list strategies: {e!s}") from e
 
 
 @router.get("/strategies/{strategy_id}", response_model=StrategyResponse)
@@ -1044,7 +1044,7 @@ async def get_strategy(strategy_id: str):
         raise
     except Exception as e:
         logger.error(f"Failed to get strategy: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get strategy: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get strategy: {e!s}") from e
 
 
 @router.post("/strategies", response_model=StrategyResponse)
@@ -1089,7 +1089,7 @@ async def create_strategy(payload: StrategyCreateRequest):
         raise
     except Exception as e:
         logger.error(f"Failed to create strategy: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to create strategy: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to create strategy: {e!s}") from e
 
 
 @router.delete("/strategies/{strategy_id}")
@@ -1109,7 +1109,7 @@ async def delete_strategy(strategy_id: str):
         raise
     except Exception as e:
         logger.error(f"Failed to delete strategy: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to delete strategy: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete strategy: {e!s}") from e
 
 
 @router.post("/strategies/search")
@@ -1138,7 +1138,7 @@ async def search_strategies(
 
     except Exception as e:
         logger.error(f"Strategy search failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Search failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {e!s}") from e
 
 
 @router.post("/strategies/batch-inject")
@@ -1187,7 +1187,7 @@ async def batch_inject_strategies(strategies: list[StrategyCreateRequest]):
 
     except Exception as e:
         logger.error(f"Batch inject failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Batch inject failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Batch inject failed: {e!s}") from e
 
 
 # ==================== Progress & Stats Endpoints ====================
@@ -1237,7 +1237,7 @@ async def get_progress():
 
     except Exception as e:
         logger.error(f"Failed to get progress: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get progress: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get progress: {e!s}") from e
 
 
 @router.get("/library/stats", response_model=LibraryStatsResponse)
@@ -1301,7 +1301,7 @@ async def get_library_stats():
 
     except Exception as e:
         logger.error(f"Failed to get library stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get library stats: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get library stats: {e!s}") from e
 
 
 # ==================== Management Endpoints ====================
@@ -1322,7 +1322,7 @@ async def reset_engine():
 
     except Exception as e:
         logger.error(f"Failed to reset engine: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to reset: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to reset: {e!s}") from e
 
 
 @router.post("/library/save")
@@ -1344,7 +1344,7 @@ async def save_library():
 
     except Exception as e:
         logger.error(f"Failed to save library: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to save library: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to save library: {e!s}") from e
 
 
 @router.post("/library/clear")
@@ -1373,7 +1373,7 @@ async def clear_library(
 
     except Exception as e:
         logger.error(f"Failed to clear library: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to clear library: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear library: {e!s}") from e
 
 
 @router.get("/health")
@@ -1458,7 +1458,7 @@ async def export_library():
 
     except Exception as e:
         logger.error(f"Export failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Export failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Export failed: {e!s}") from e
 
 
 @router.post("/transfer/import")
@@ -1530,7 +1530,7 @@ async def import_library(
 
     except Exception as e:
         logger.error(f"Import failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Import failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Import failed: {e!s}") from e
 
 
 # ==================== Scoring Endpoints ====================
@@ -1568,7 +1568,7 @@ async def score_response(
 
     except Exception as e:
         logger.error(f"Scoring failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Scoring failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Scoring failed: {e!s}") from e
 
 
 # ==================== Strategy Extraction Endpoints ====================
@@ -1600,4 +1600,4 @@ async def extract_strategy(
 
     except Exception as e:
         logger.error(f"Extraction failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Extraction failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Extraction failed: {e!s}") from e

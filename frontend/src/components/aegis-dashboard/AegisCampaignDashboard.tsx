@@ -492,25 +492,42 @@ const DisconnectionBanner = memo(function DisconnectionBanner({
   lastConnected: string | null;
   onReconnect: () => void;
 }) {
-  // Only show when disconnected or in error/reconnecting state (not connecting/connected)
-  if (status === "connected" || status === "connecting") {
-    return null;
-  }
-
   const isReconnecting = status === "reconnecting";
   const isError = status === "error";
 
   // Calculate time since last connection
-  const getTimeSinceDisconnect = () => {
-    if (!lastConnected) return "Unknown";
-    const diff = Date.now() - new Date(lastConnected).getTime();
-    const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ago`;
-  };
+  const [timeSinceDisconnect, setTimeSinceDisconnect] = useState<string>("Unknown");
+
+  useEffect(() => {
+    const updateTime = () => {
+      if (!lastConnected) {
+        setTimeSinceDisconnect("Unknown");
+        return;
+      }
+      const diff = Date.now() - new Date(lastConnected).getTime();
+      const seconds = Math.floor(diff / 1000);
+      if (seconds < 60) {
+        setTimeSinceDisconnect(`${seconds}s ago`);
+      } else {
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) {
+          setTimeSinceDisconnect(`${minutes}m ago`);
+        } else {
+          const hours = Math.floor(minutes / 60);
+          setTimeSinceDisconnect(`${hours}h ago`);
+        }
+      }
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [lastConnected]);
+
+  // Only show when disconnected or in error/reconnecting state (not connecting/connected)
+  if (status === "connected" || status === "connecting") {
+    return null;
+  }
 
   return (
     <div
@@ -576,7 +593,7 @@ const DisconnectionBanner = memo(function DisconnectionBanner({
             <p className="text-xs text-muted-foreground mt-0.5">
               {isReconnecting
                 ? "Attempting to restore real-time updates..."
-                : `Data may be stale. Last update: ${getTimeSinceDisconnect()}`}
+                : `Data may be stale. Last update: ${timeSinceDisconnect}`}
             </p>
           </div>
         </div>

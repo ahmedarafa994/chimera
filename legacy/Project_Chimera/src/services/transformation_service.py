@@ -5,6 +5,7 @@ Handles prompt transformation logic with proper separation of concerns.
 
 import logging
 import os
+
 # Import existing components (will be refactored later)
 import sys
 import time
@@ -12,8 +13,7 @@ from typing import Any
 
 from ..config.settings import get_performance_config
 from ..core.technique_loader import technique_loader
-from ..models.domain import (IntentData, TransformationRequest,
-                             TransformationResult, ValidationError)
+from ..models.domain import IntentData, TransformationRequest, TransformationResult, ValidationError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

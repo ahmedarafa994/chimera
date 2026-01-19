@@ -596,7 +596,7 @@ class MutationEngine:
                     neighbors = self.embedding.nearest_neighbors(word, k=3)
                     if neighbors:
                         # Choose a random neighbor
-                        replacement, score = self._random.choice(neighbors)
+                        replacement, _score = self._random.choice(neighbors)
 
                         # Apply capitalization if original was capitalized
                         if word[0].isupper():
@@ -1193,13 +1193,13 @@ class CombinedAttackEngine:
 __all__ = [
     # Main Engine
     "CombinedAttackEngine",
-    # Sub-Engines
-    "ObfuscationEngine",
-    "MutationEngine",
-    # Result Types
-    "ObfuscatedResult",
-    "MutatedResult",
     "CombinedResult",
+    "MutatedResult",
+    "MutationEngine",
     # Enums
     "MutationType",
+    # Result Types
+    "ObfuscatedResult",
+    # Sub-Engines
+    "ObfuscationEngine",
 ]

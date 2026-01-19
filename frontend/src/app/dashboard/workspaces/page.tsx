@@ -137,8 +137,8 @@ export default function WorkspacesPage() {
 
   const handleCreateWorkspace = useCallback(async () => {
     const errors = workspaceService.validateWorkspaceCreate(newWorkspaceData);
-    if (errors.length > 0) {
-      toast.error(errors.join(', '));
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors).join(', '));
       return;
     }
 
@@ -190,8 +190,8 @@ export default function WorkspacesPage() {
     if (!selectedWorkspace) return;
 
     const errors = workspaceService.validateInviteRequest(inviteData);
-    if (errors.length > 0) {
-      toast.error(errors.join(', '));
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors).join(', '));
       return;
     }
 
@@ -536,7 +536,7 @@ export default function WorkspacesPage() {
               <div className="text-xs text-muted-foreground">
                 <strong>Permissions:</strong>
                 <ul className="list-disc list-inside mt-1">
-                  {workspaceService.getRolePermissions(inviteData.role).slice(0, 2).map((permission, index) => (
+                  {workspaceService.getRolePermissions(inviteData.role).slice(0, 2).map((permission: string, index: number) => (
                     <li key={index}>{permission}</li>
                   ))}
                 </ul>
@@ -753,7 +753,7 @@ function WorkspaceMembersView({
           <h3 className="text-lg font-semibold">Team Members</h3>
           <p className="text-sm text-muted-foreground">
             {workspaceMembers.total_members} active member{workspaceMembers.total_members !== 1 ? 's' : ''}
-            {workspaceMembers.total_invitations > 0 && (
+            {(workspaceMembers.total_invitations ?? 0) > 0 && (
               <span> • {workspaceMembers.total_invitations} pending invitation{workspaceMembers.total_invitations !== 1 ? 's' : ''}</span>
             )}
           </p>

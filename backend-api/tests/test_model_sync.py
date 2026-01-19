@@ -281,16 +281,18 @@ class TestModelSyncService:
         model_id = "google:gemini-1.5-pro"
         ip_address = "127.0.0.1"
 
-        with patch("app.services.model_sync_service.get_redis_client", return_value=mock_redis):
+        with (
+            patch("app.services.model_sync_service.get_redis_client", return_value=mock_redis),
             # Mock rate limit check to return False (limit exceeded)
-            with patch.object(service, "_check_rate_limit", return_value=False):
-                request = ModelSelectionRequest(
-                    model_id=model_id, timestamp=datetime.utcnow().isoformat()
-                )
-                result = await service.select_model(request, user_id, session_id, ip_address)
+            patch.object(service, "_check_rate_limit", return_value=False),
+        ):
+            request = ModelSelectionRequest(
+                model_id=model_id, timestamp=datetime.utcnow().isoformat()
+            )
+            result = await service.select_model(request, user_id, session_id, ip_address)
 
-                assert result.success is False
-                assert "rate limit" in result.message.lower()
+            assert result.success is False
+            assert "rate limit" in result.message.lower()
 
     @pytest.mark.asyncio
     async def test_validate_model_success(self, service):

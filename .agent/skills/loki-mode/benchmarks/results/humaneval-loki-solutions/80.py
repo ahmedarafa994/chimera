@@ -21,7 +21,7 @@ def is_happy(s):
 
     for i in range(len(s) - 2):
         a, b, c = s[i], s[i + 1], s[i + 2]
-        if a == b or b == c or a == c:
+        if a in (b, c) or b == c:
             return False
 
     return True

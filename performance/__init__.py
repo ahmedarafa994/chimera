@@ -14,13 +14,12 @@ from fastapi.middleware.base import BaseHTTPMiddleware
 
 from performance.apm_integration import apm_profiler, apm_trace_async
 from performance.cpu_profiler import cpu_profiler, profile_cpu_async
-from performance.database_profiler import (db_profiler, profile_cache,
-                                           profile_query)
+from performance.database_profiler import db_profiler, profile_cache, profile_query
 from performance.io_network_profiler import io_profiler, monitor_io
 from performance.memory_profiler import memory_profiler, monitor_memory
 from performance.monitoring_system import performance_monitor
-from performance.opentelemetry_profiler import (otel_profiler,
-                                                trace_async_operation)
+from performance.opentelemetry_profiler import otel_profiler, trace_async_operation
+
 # Import all profiling modules
 from performance.profiling_config import config
 

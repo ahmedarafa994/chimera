@@ -136,19 +136,19 @@ async def create_api_key(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e),
-        )
+        ) from e
     except ApiKeyValidationError as e:
         logger.warning(f"Validation error: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     except ApiKeyServiceError as e:
         logger.error(f"Service error creating key: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create API key",
-        )
+        ) from e
 
 
 @router.get(
@@ -283,22 +283,22 @@ async def update_api_key(
         logger.info(f"Updated API key {key_id}")
         return key_response
 
-    except ApiKeyNotFoundError:
+    except ApiKeyNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"API key not found: {key_id}",
-        )
+        ) from e
     except ApiKeyValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     except ApiKeyServiceError as e:
         logger.error(f"Service error updating key: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update API key",
-        )
+        ) from e
 
 
 @router.delete(
@@ -331,11 +331,11 @@ async def delete_api_key(
             message=f"API key {key_id} deleted successfully",
         )
 
-    except ApiKeyNotFoundError:
+    except ApiKeyNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"API key not found: {key_id}",
-        )
+        ) from e
 
 
 @router.post(
@@ -366,11 +366,11 @@ async def revoke_api_key(
         logger.info(f"Revoked API key {key_id}")
         return key_response
 
-    except ApiKeyNotFoundError:
+    except ApiKeyNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"API key not found: {key_id}",
-        )
+        ) from e
 
 
 @router.post(
@@ -588,11 +588,11 @@ async def activate_api_key(
         logger.info(f"Activated API key {key_id}")
         return key_response
 
-    except ApiKeyNotFoundError:
+    except ApiKeyNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"API key not found: {key_id}",
-        )
+        ) from e
 
 
 @router.post(
@@ -625,8 +625,8 @@ async def deactivate_api_key(
         logger.info(f"Deactivated API key {key_id}")
         return key_response
 
-    except ApiKeyNotFoundError:
+    except ApiKeyNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"API key not found: {key_id}",
-        )
+        ) from e

@@ -2,10 +2,12 @@ import logging
 import random
 from abc import ABC, abstractmethod
 
-from project_aegis.core.prompt_engine.primitives import (ConstraintNegotiator,
-                                                         ContextEstablisher,
-                                                         InjectionVector,
-                                                         PromptAtom)
+from project_aegis.core.prompt_engine.primitives import (
+    ConstraintNegotiator,
+    ContextEstablisher,
+    InjectionVector,
+    PromptAtom,
+)
 
 logger = logging.getLogger("project_aegis.prompt_engine.refinement")
 
@@ -49,7 +51,7 @@ class RuleBasedRefiner(RefinementStrategy):
         "complex",
     ]
 
-    def __init__(self, atom_library: dict[str, list[PromptAtom]] = None):
+    def __init__(self, atom_library: dict[str, list[PromptAtom]] | None = None):
         self.atom_library = atom_library or {"context": [], "constraint": [], "payload": []}
 
     def analyze_resistance(self, model_response: str) -> float:

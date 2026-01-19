@@ -26,6 +26,7 @@ Usage:
     doc.save()
 """
 
+import contextlib
 import html
 import random
 import shutil
@@ -78,10 +79,8 @@ class DocxXMLEditor(XMLEditor):
             for elem in elements:
                 change_id = elem.getAttribute("w:id")
                 if change_id:
-                    try:
+                    with contextlib.suppress(ValueError):
                         max_id = max(max_id, int(change_id))
-                    except ValueError:
-                        pass
         return max_id + 1
 
     def _ensure_w16du_namespace(self):
@@ -878,10 +877,8 @@ class Document:
         for comment_elem in editor.dom.getElementsByTagName("w:comment"):
             comment_id = comment_elem.getAttribute("w:id")
             if comment_id:
-                try:
+                with contextlib.suppress(ValueError):
                     max_id = max(max_id, int(comment_id))
-                except ValueError:
-                    pass
         return max_id + 1
 
     def _load_existing_comments(self):

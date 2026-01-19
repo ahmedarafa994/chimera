@@ -18,10 +18,10 @@ __all__ = [
     "AttackerAgent",
     # Base classes
     "BaseLLMAgent",
-    "LLMConfig",
-    "LLMProvider",
     # Agent implementations
     "ComplianceAgent",
+    "LLMConfig",
+    "LLMProvider",
     "SummarizerAgent",
     "TargetAgent",
 ]

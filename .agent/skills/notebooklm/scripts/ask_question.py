@@ -20,6 +20,9 @@ from patchright.sync_api import sync_playwright
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+import builtins
+import contextlib
+
 from auth_manager import AuthManager
 from browser_utils import BrowserFactory, StealthUtils
 from notebook_manager import NotebookLibrary
@@ -171,16 +174,12 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
     finally:
         # Always clean up
         if context:
-            try:
+            with contextlib.suppress(builtins.BaseException):
                 context.close()
-            except:
-                pass
 
         if playwright:
-            try:
+            with contextlib.suppress(builtins.BaseException):
                 playwright.stop()
-            except:
-                pass
 
 
 def main():

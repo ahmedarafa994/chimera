@@ -512,12 +512,12 @@ async def generate_jailbreak(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Rate limit exceeded",
             headers=headers,
-        )
-    except ResourceExhaustedError:
+        ) from e
+    except ResourceExhaustedError as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Resource exhausted. Please try again later.",
-        )
+        ) from e
 
     # If the service returns an error payload, map it to a proper HTTP error.
     if result.get("status") == "error":

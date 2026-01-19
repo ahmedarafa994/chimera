@@ -48,7 +48,4 @@ def move_one_ball(arr):
 
     # If exactly one break point and the wrap-around is valid
     # (last element <= first element), it can be rotated to sorted order
-    if break_count == 1 and arr[-1] <= arr[0]:
-        return True
-
-    return False
+    return bool(break_count == 1 and arr[-1] <= arr[0])

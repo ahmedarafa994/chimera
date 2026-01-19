@@ -13,8 +13,7 @@ from typing import Any
 from assembler import ChimeraAssembler
 from batch_processor import BatchProcessor, JobPriority
 from intent_deconstructor import IntentDeconstructor
-from llm_provider_client import (LLMClientFactory, LLMProvider,
-                                 LLMProviderClient, LLMResponse)
+from llm_provider_client import LLMClientFactory, LLMProvider, LLMProviderClient, LLMResponse
 from obfuscator import *
 from psychological_framer import *
 from transformer_engine import *

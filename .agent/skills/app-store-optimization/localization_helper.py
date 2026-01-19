@@ -325,7 +325,7 @@ class LocalizationHelper:
         for market_code in target_markets:
             # Find market in priority lists
             market_info = None
-            for tier_name, markets in self.PRIORITY_MARKETS.items():
+            for _tier_name, markets in self.PRIORITY_MARKETS.items():
                 for m in markets:
                     if m["language"] == market_code:
                         market_info = m
@@ -418,7 +418,7 @@ class LocalizationHelper:
         phases = []
 
         # Phase 1: Top revenue markets
-        phase_1 = [m for m in markets[:3]]
+        phase_1 = list(markets[:3])
         if phase_1:
             phases.append(
                 {
@@ -429,7 +429,7 @@ class LocalizationHelper:
             )
 
         # Phase 2: Remaining tier 1 and top tier 2
-        phase_2 = [m for m in markets[3:6]]
+        phase_2 = list(markets[3:6])
         if phase_2:
             phases.append(
                 {
@@ -440,7 +440,7 @@ class LocalizationHelper:
             )
 
         # Phase 3: Remaining markets
-        phase_3 = [m for m in markets[6:]]
+        phase_3 = list(markets[6:])
         if phase_3:
             phases.append(
                 {

@@ -24,6 +24,8 @@ from patchright.sync_api import BrowserContext, sync_playwright
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+import contextlib
+
 from browser_utils import BrowserFactory
 
 from config import AUTH_INFO_FILE, BROWSER_STATE_DIR, DATA_DIR, STATE_FILE
@@ -146,16 +148,12 @@ class AuthManager:
         finally:
             # Clean up browser resources
             if context:
-                try:
+                with contextlib.suppress(Exception):
                     context.close()
-                except Exception:
-                    pass
 
             if playwright:
-                try:
+                with contextlib.suppress(Exception):
                     playwright.stop()
-                except Exception:
-                    pass
 
     def _save_browser_state(self, context: BrowserContext):
         """Save browser state to disk"""
@@ -270,15 +268,11 @@ class AuthManager:
 
         finally:
             if context:
-                try:
+                with contextlib.suppress(Exception):
                     context.close()
-                except Exception:
-                    pass
             if playwright:
-                try:
+                with contextlib.suppress(Exception):
                     playwright.stop()
-                except Exception:
-                    pass
 
 
 def main():

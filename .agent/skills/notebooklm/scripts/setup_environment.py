@@ -59,7 +59,7 @@ class SkillEnvironment:
                 )
 
                 # Install requirements
-                result = subprocess.run(
+                subprocess.run(
                     [str(self.venv_pip), "install", "-r", str(self.requirements_file)],
                     check=True,
                     capture_output=True,
@@ -109,7 +109,7 @@ class SkillEnvironment:
             return str(self.venv_python)
         return sys.executable
 
-    def run_script(self, script_name: str, args: list = None) -> int:
+    def run_script(self, script_name: str, args: list | None = None) -> int:
         """Run a script with the virtual environment"""
         script_path = self.skill_dir / "scripts" / script_name
 

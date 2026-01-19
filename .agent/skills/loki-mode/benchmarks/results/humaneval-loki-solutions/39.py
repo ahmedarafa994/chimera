@@ -26,10 +26,7 @@ def prime_fib(n: int):
             return True
         if num % 2 == 0:
             return False
-        for i in range(3, int(num**0.5) + 1, 2):
-            if num % i == 0:
-                return False
-        return True
+        return all(num % i != 0 for i in range(3, int(num ** 0.5) + 1, 2))
 
     count = 0
     fib_prev, fib_curr = 0, 1

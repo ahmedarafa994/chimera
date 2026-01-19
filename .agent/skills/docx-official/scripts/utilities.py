@@ -30,6 +30,7 @@ Example usage:
     editor.save()
 """
 
+import contextlib
 import html
 from pathlib import Path
 
@@ -124,12 +125,11 @@ class XMLEditor:
                         continue
 
             # Check attrs filter
-            if attrs is not None:
-                if not all(
-                    elem.getAttribute(attr_name) == attr_value
-                    for attr_name, attr_value in attrs.items()
-                ):
-                    continue
+            if attrs is not None and not all(
+                elem.getAttribute(attr_name) == attr_value
+                for attr_name, attr_value in attrs.items()
+            ):
+                continue
 
             # Check contains filter
             if contains is not None:
@@ -292,10 +292,8 @@ class XMLEditor:
         for rel_elem in self.dom.getElementsByTagName("Relationship"):
             rel_id = rel_elem.getAttribute("Id")
             if rel_id.startswith("rId"):
-                try:
+                with contextlib.suppress(ValueError):
                     max_id = max(max_id, int(rel_id[3:]))
-                except ValueError:
-                    pass
         return f"rId{max_id + 1}"
 
     def save(self):

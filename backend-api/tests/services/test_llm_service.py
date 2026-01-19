@@ -8,6 +8,7 @@ Tests cover:
 """
 
 import asyncio
+import contextlib
 import hashlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -386,7 +387,7 @@ class TestLLMServiceCircuitBreaker:
 
         # Attempt multiple failed calls
         for _ in range(5):
-            try:
+            with contextlib.suppress(Exception):
                 request = MagicMock()
                 request.prompt = "Test"
                 request.model = "model"
@@ -398,8 +399,6 @@ class TestLLMServiceCircuitBreaker:
                 ) as mock_exec:
                     mock_exec.side_effect = Exception("Provider error")
                     await service.generate_text(request)
-            except Exception:
-                pass
 
         # Circuit breaker state should be tracked
         # (actual behavior depends on implementation)
@@ -465,10 +464,10 @@ class TestCacheKeyGeneration:
         request2.temperature = 0.7
 
         # Generate keys (implementation-dependent)
-        key1 = hashlib.md5(
+        key1 = hashlib.sha256(
             f"{request1.prompt}:{request1.model}:{request1.provider}".encode()
         ).hexdigest()
-        key2 = hashlib.md5(
+        key2 = hashlib.sha256(
             f"{request2.prompt}:{request2.model}:{request2.provider}".encode()
         ).hexdigest()
 
@@ -486,10 +485,10 @@ class TestCacheKeyGeneration:
         request2.model = "model"
         request2.provider = "provider"
 
-        key1 = hashlib.md5(
+        key1 = hashlib.sha256(
             f"{request1.prompt}:{request1.model}:{request1.provider}".encode()
         ).hexdigest()
-        key2 = hashlib.md5(
+        key2 = hashlib.sha256(
             f"{request2.prompt}:{request2.model}:{request2.provider}".encode()
         ).hexdigest()
 

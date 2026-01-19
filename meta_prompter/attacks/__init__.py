@@ -38,21 +38,21 @@ except ImportError:
     HotFlipAttack = None
 
 __all__ = [
-    # ExtendAttack exports
-    "ExtendAttack",
-    "ExtendAttackBuilder",
-    "ExtendAttackConfig",
-    "SelectionRules",
-    "SelectionStrategy",
     "AttackResult",
-    "quick_attack",
-    "decode_attack",
     # AutoDAN exports
     "AutoDANAttack",
     "AutoDANConfig",
     "AutoDANReasoningWorkflow",
-    "ReasoningEnhancedMutation",
-    "MutationWithReasoningResult",
+    # ExtendAttack exports
+    "ExtendAttack",
+    "ExtendAttackBuilder",
+    "ExtendAttackConfig",
     # Optional attacks
     "HotFlipAttack",
+    "MutationWithReasoningResult",
+    "ReasoningEnhancedMutation",
+    "SelectionRules",
+    "SelectionStrategy",
+    "decode_attack",
+    "quick_attack",
 ]

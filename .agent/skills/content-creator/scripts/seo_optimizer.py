@@ -61,7 +61,7 @@ class SEOOptimizer:
         }
 
     def analyze(
-        self, content: str, target_keyword: str = None, secondary_keywords: list[str] = None
+        self, content: str, target_keyword: str | None = None, secondary_keywords: list[str] | None = None
     ) -> dict:
         """Analyze content for SEO optimization"""
 
@@ -243,7 +243,7 @@ class SEOOptimizer:
 
         return lsi_keywords
 
-    def _generate_meta_suggestions(self, content: str, keyword: str = None) -> dict:
+    def _generate_meta_suggestions(self, content: str, keyword: str | None = None) -> dict:
         """Generate SEO meta tag suggestions"""
         # Extract first sentence for description base
         sentences = re.split(r"[.!?]+", content)
@@ -369,7 +369,7 @@ class SEOOptimizer:
 
 
 def optimize_content(
-    content: str, keyword: str = None, secondary_keywords: list[str] = None
+    content: str, keyword: str | None = None, secondary_keywords: list[str] | None = None
 ) -> str:
     """Main function to optimize content"""
     optimizer = SEOOptimizer()

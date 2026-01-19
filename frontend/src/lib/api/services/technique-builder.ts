@@ -93,7 +93,11 @@ export interface TechniqueTemplate {
   category: string;
   base_steps: TechniqueStep[];
   base_parameters: TechniqueParameter[];
+  // Aliases for backward compatibility
+  steps_template?: TechniqueStep[];
+  parameters_template?: TechniqueParameter[];
   preview_image_url?: string;
+  usage_count?: number;
 }
 
 export interface CustomTechnique {
@@ -129,9 +133,12 @@ export interface TechniqueExecution {
   status: 'pending' | 'running' | 'completed' | 'failed';
   started_at: string;
   completed_at?: string;
+  executed_at: string;
   execution_time: number;
-  results: Record<string, any>;
-  logs: string[];
+  success: boolean;
+  error_message?: string;
+  results?: Record<string, any>;
+  logs?: string[];
 }
 
 export type TechniqueCreate = Partial<CustomTechnique>;
@@ -151,11 +158,13 @@ export interface TechniqueListResponse {
 export interface TechniqueTestRequest {
   test_input: string;
   test_parameters?: Record<string, any>;
+  model_provider?: string;
+  model_name?: string;
 }
 
 export interface TechniqueStatsResponse {
   technique_id: string;
-  executions: any[];
+  executions: TechniqueExecution[];
   success_rate: number;
   average_execution_time: number;
   usage_by_date: Record<string, number>;

@@ -160,7 +160,7 @@ class LaunchChecklistGenerator:
         }
 
     def plan_seasonal_campaigns(
-        self, app_category: str, current_month: int = None
+        self, app_category: str, current_month: int | None = None
     ) -> dict[str, Any]:
         """
         Identify seasonal opportunities for ASO campaigns.
@@ -393,7 +393,7 @@ class LaunchChecklistGenerator:
         total_items = 0
         completed_items = 0
 
-        for platform, categories in checklists.items():
+        for _platform, categories in checklists.items():
             for category in categories:
                 for item in category["items"]:
                     total_items += 1
@@ -474,7 +474,7 @@ class LaunchChecklistGenerator:
         major, minor, patch = int(parts[0]), int(parts[1]), int(parts[2] if len(parts) > 2 else 0)
 
         versions = []
-        for i in range(feature_count):
+        for _i in range(feature_count):
             if update_frequency == "weekly" or update_frequency == "biweekly":
                 patch += 1
             elif update_frequency == "monthly":

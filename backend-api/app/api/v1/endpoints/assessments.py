@@ -148,7 +148,7 @@ async def list_assessments(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list assessments",
-        )
+        ) from e
 
 
 @router.post("/", response_model=AssessmentResponse, status_code=status.HTTP_201_CREATED)
@@ -201,7 +201,7 @@ async def create_assessment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create assessment",
-        )
+        ) from e
 
 
 @router.get("/{assessment_id}", response_model=AssessmentResponse)

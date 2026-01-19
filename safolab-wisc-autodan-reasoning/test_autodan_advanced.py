@@ -165,7 +165,7 @@ if __name__ == "__main__":
             if os.environ.get("ALLOW_UNTRUSTED_PICKLE") == "1":
                 lifelong_strategy_library = pickle.load(
                     f
-                )  # noqa: S301 - guarded by ALLOW_UNTRUSTED_PICKLE
+                )
                 logger.info(f"Loaded {len(lifelong_strategy_library)} strategies from library")
             else:
                 raise RuntimeError(

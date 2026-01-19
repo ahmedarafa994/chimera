@@ -763,12 +763,12 @@ async def _get_admin_user(
     # Get user ID from token
     try:
         user_id = int(current_user.sub)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
         admin_logger.warning(f"Invalid user ID in token: {current_user.sub}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
-        )
+        ) from e
 
     # Get user from database
     user_service = get_user_service(session)
@@ -937,12 +937,12 @@ async def list_users(
         role_lower = role.lower()
         try:
             user_role = UserRole(role_lower)
-        except ValueError:
+        except ValueError as e:
             admin_logger.warning(f"Invalid role filter: {role}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid role: {role}. Valid roles are: admin, researcher, viewer",
-            )
+            ) from e
 
     # Get user repository
     user_repo = get_user_repository(session)
@@ -965,7 +965,7 @@ async def list_users(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve users",
-        )
+        ) from e
 
     # Check if there are more results
     has_more = (offset + len(users)) < total
@@ -1076,7 +1076,7 @@ async def get_user_details(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user",
-        )
+        ) from e
 
     if not target_user:
         admin_logger.warning(f"Admin {admin_user.id} attempted to view non-existent user {user_id}")
@@ -1184,7 +1184,7 @@ async def update_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user",
-        )
+        ) from e
 
     if not target_user:
         admin_logger.warning(
@@ -1227,11 +1227,11 @@ async def update_user(
             if target_user.role != new_role:
                 update_fields["role"] = new_role
                 changes["role"] = {"from": target_user.role.value, "to": new_role.value}
-        except ValueError:
+        except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid role: {update_request.role}. Valid roles are: admin, researcher, viewer",
-            )
+            ) from e
 
     # Handle username update
     if update_request.username and update_request.username != target_user.username:
@@ -1277,7 +1277,7 @@ async def update_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user",
-        )
+        ) from e
 
     # Determine the right audit action
     audit_action = AuditAction.USER_MODIFY
@@ -1387,7 +1387,7 @@ async def delete_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user",
-        )
+        ) from e
 
     if not target_user:
         admin_logger.warning(
@@ -1410,7 +1410,7 @@ async def delete_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete user",
-        )
+        ) from e
 
     # Log the admin action
     audit_log(
@@ -1498,7 +1498,7 @@ async def activate_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user",
-        )
+        ) from e
 
     if not target_user:
         admin_logger.warning(
@@ -1521,7 +1521,7 @@ async def activate_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to activate user",
-        )
+        ) from e
 
     # Log the admin action
     audit_log(
@@ -1629,7 +1629,7 @@ async def deactivate_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user",
-        )
+        ) from e
 
     if not target_user:
         admin_logger.warning(
@@ -1652,7 +1652,7 @@ async def deactivate_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to deactivate user",
-        )
+        ) from e
 
     # Log the admin action
     audit_log(
@@ -1834,11 +1834,11 @@ async def invite_user(
     # Parse role
     try:
         user_role = UserRole(invite_request.role)
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid role: {invite_request.role}. Valid roles are: admin, researcher, viewer",
-        )
+        ) from e
 
     # Calculate invitation expiry
     invitation_expires_at = datetime.utcnow() + timedelta(days=INVITATION_EXPIRY_DAYS)
@@ -1863,7 +1863,7 @@ async def invite_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user invitation",
-        )
+        ) from e
 
     # Log the admin action
     audit_log(

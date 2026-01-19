@@ -136,7 +136,7 @@ class NotebookLibrary:
                 self.active_notebook_id = None
                 # Set new active if there are other notebooks
                 if self.notebooks:
-                    self.active_notebook_id = list(self.notebooks.keys())[0]
+                    self.active_notebook_id = next(iter(self.notebooks.keys()))
 
             self._save_library()
             print(f"✅ Removed notebook: {notebook_id}")

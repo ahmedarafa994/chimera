@@ -6,16 +6,17 @@ import assembler
 import autodan_engine
 import discovered_framers
 import discovered_techniques
+
 # Import all system modules
 import obfuscator
 import preset_transformers
 import psychological_framer
 import transformer_engine
-from enhanced_request_analyzer import (analyze_request_for_clarification,
-                                       deconstruct_intent)
+from enhanced_request_analyzer import analyze_request_for_clarification, deconstruct_intent
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from gemini_client import GeminiClient
+
 # Import security configuration
 from security_config import SecurityConfig, require_api_key
 

@@ -39,7 +39,7 @@ def valid_date(date):
     try:
         month = int(mm)
         day = int(dd)
-        year = int(yyyy)
+        int(yyyy)
     except ValueError:
         return False
 
@@ -53,7 +53,4 @@ def valid_date(date):
     else:
         max_days = 29
 
-    if day < 1 or day > max_days:
-        return False
-
-    return True
+    return not (day < 1 or day > max_days)

@@ -510,56 +510,66 @@ class TestQwenClient:
 
     def test_client_initialization_with_key(self, mock_settings):
         """Client initializes with API key."""
-        with patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.qwen_client.AsyncOpenAI") as mock_openai:
-                QwenClient(mock_settings)
-                mock_openai.assert_called_once()
+        with (
+            patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.qwen_client.AsyncOpenAI") as mock_openai,
+        ):
+            QwenClient(mock_settings)
+            mock_openai.assert_called_once()
 
     def test_get_model_name_default(self, mock_settings):
         """Default model is used when not specified."""
-        with patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.qwen_client.AsyncOpenAI"):
-                client = QwenClient(mock_settings)
+        with (
+            patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.qwen_client.AsyncOpenAI"),
+        ):
+            client = QwenClient(mock_settings)
 
-                request = PromptRequest(prompt="test")
-                model = client._get_model_name(request)
+            request = PromptRequest(prompt="test")
+            model = client._get_model_name(request)
 
-                assert model == QwenClient.DEFAULT_MODEL
+            assert model == QwenClient.DEFAULT_MODEL
 
     def test_get_model_name_from_request(self, mock_settings):
         """Model from request is used when specified."""
-        with patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.qwen_client.AsyncOpenAI"):
-                client = QwenClient(mock_settings)
+        with (
+            patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.qwen_client.AsyncOpenAI"),
+        ):
+            client = QwenClient(mock_settings)
 
-                request = PromptRequest(prompt="test", model="qwen-max")
-                model = client._get_model_name(request)
+            request = PromptRequest(prompt="test", model="qwen-max")
+            model = client._get_model_name(request)
 
-                assert model == "qwen-max"
+            assert model == "qwen-max"
 
     def test_validate_api_key(self, mock_settings):
         """API key validation works correctly."""
-        with patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.qwen_client.AsyncOpenAI"):
-                client = QwenClient(mock_settings)
+        with (
+            patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.qwen_client.AsyncOpenAI"),
+        ):
+            client = QwenClient(mock_settings)
 
-                assert client._validate_api_key("sk-valid-key-12345") is True
-                assert client._validate_api_key("short") is False
-                assert client._validate_api_key("") is False
-                assert client._validate_api_key(None) is False
+            assert client._validate_api_key("sk-valid-key-12345") is True
+            assert client._validate_api_key("short") is False
+            assert client._validate_api_key("") is False
+            assert client._validate_api_key(None) is False
 
     @pytest.mark.asyncio
     async def test_qwen_implements_interface(self, mock_settings):
         """QwenClient implements LLMProvider interface."""
-        with patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.qwen_client.AsyncOpenAI"):
-                client = QwenClient(mock_settings)
+        with (
+            patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.qwen_client.AsyncOpenAI"),
+        ):
+            client = QwenClient(mock_settings)
 
-                assert isinstance(client, LLMProvider)
-                assert hasattr(client, "generate")
-                assert hasattr(client, "check_health")
-                assert hasattr(client, "generate_stream")
-                assert hasattr(client, "count_tokens")
+            assert isinstance(client, LLMProvider)
+            assert hasattr(client, "generate")
+            assert hasattr(client, "check_health")
+            assert hasattr(client, "generate_stream")
+            assert hasattr(client, "count_tokens")
 
 
 # =============================================================================
@@ -580,34 +590,40 @@ class TestCursorClient:
 
     def test_client_initialization_with_key(self, mock_settings):
         """Client initializes with API key."""
-        with patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.cursor_client.AsyncOpenAI") as mock_openai:
-                CursorClient(mock_settings)
-                mock_openai.assert_called_once()
+        with (
+            patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.cursor_client.AsyncOpenAI") as mock_openai,
+        ):
+            CursorClient(mock_settings)
+            mock_openai.assert_called_once()
 
     def test_get_model_name_default(self, mock_settings):
         """Default model is used when not specified."""
-        with patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.cursor_client.AsyncOpenAI"):
-                client = CursorClient(mock_settings)
+        with (
+            patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.cursor_client.AsyncOpenAI"),
+        ):
+            client = CursorClient(mock_settings)
 
-                request = PromptRequest(prompt="test")
-                model = client._get_model_name(request)
+            request = PromptRequest(prompt="test")
+            model = client._get_model_name(request)
 
-                assert model == CursorClient.DEFAULT_MODEL
+            assert model == CursorClient.DEFAULT_MODEL
 
     @pytest.mark.asyncio
     async def test_cursor_implements_interface(self, mock_settings):
         """CursorClient implements LLMProvider interface."""
-        with patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings):
-            with patch("app.infrastructure.cursor_client.AsyncOpenAI"):
-                client = CursorClient(mock_settings)
+        with (
+            patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings),
+            patch("app.infrastructure.cursor_client.AsyncOpenAI"),
+        ):
+            client = CursorClient(mock_settings)
 
-                assert isinstance(client, LLMProvider)
-                assert hasattr(client, "generate")
-                assert hasattr(client, "check_health")
-                assert hasattr(client, "generate_stream")
-                assert hasattr(client, "count_tokens")
+            assert isinstance(client, LLMProvider)
+            assert hasattr(client, "generate")
+            assert hasattr(client, "check_health")
+            assert hasattr(client, "generate_stream")
+            assert hasattr(client, "count_tokens")
 
 
 # =============================================================================

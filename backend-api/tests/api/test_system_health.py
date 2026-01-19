@@ -42,5 +42,5 @@ async def test_system_health_status_values(client: AsyncClient):
     assert data["status"] in ["healthy", "degraded"]
 
     # Service statuses should be valid
-    for service, status in data["services"].items():
+    for _service, status in data["services"].items():
         assert status in ["connected", "disconnected", "available", "unavailable"]

@@ -92,12 +92,12 @@ class TestProviderConfigValidator:
         """Test Anthropic API key format validation"""
         # Valid Anthropic key
         valid_key = "sk-ant-api03-abcdef1234567890123456789012345678901234567890"
-        is_valid, error = await self.validator.validate_api_key_format("anthropic", valid_key)
+        is_valid, _error = await self.validator.validate_api_key_format("anthropic", valid_key)
         assert is_valid
 
         # Invalid format
         invalid_key = "sk-wrong-format"
-        is_valid, _error = await self.validator.validate_api_key_format("anthropic", invalid_key)
+        is_valid, _ = await self.validator.validate_api_key_format("anthropic", invalid_key)
         assert not is_valid
 
     @pytest.mark.asyncio

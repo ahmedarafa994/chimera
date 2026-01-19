@@ -405,7 +405,7 @@ export default function ScheduledTestingPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {scheduledTestingService.getAvailableFrequencies().map(freq => (
+                    {scheduledTestingService.getAvailableFrequencies().map((freq: { id: ScheduleFrequency; name: string; description: string }) => (
                       <SelectItem key={freq.id} value={freq.id}>
                         {freq.name} - {freq.description}
                       </SelectItem>

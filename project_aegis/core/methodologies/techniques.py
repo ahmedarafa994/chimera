@@ -1,7 +1,9 @@
-from project_aegis.core.prompt_engine.primitives import (ConstraintNegotiator,
-                                                         ContextEstablisher,
-                                                         InjectionVector,
-                                                         PayloadDeliverer)
+from project_aegis.core.prompt_engine.primitives import (
+    ConstraintNegotiator,
+    ContextEstablisher,
+    InjectionVector,
+    PayloadDeliverer,
+)
 
 
 class DiagnosticTechnique:
@@ -22,7 +24,7 @@ class SemanticReinterpretation(DiagnosticTechnique):
     """
 
     def generate_vector(
-        self, target_concept: str, cipher_map: dict[str, str] = None, **kwargs
+        self, target_concept: str, cipher_map: dict[str, str] | None = None, **kwargs
     ) -> InjectionVector:
         cipher_map = cipher_map or {"[HARM]": "Apple", "[ACTION]": "Eat"}
 

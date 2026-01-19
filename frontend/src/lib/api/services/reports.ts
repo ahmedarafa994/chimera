@@ -146,7 +146,7 @@ class SecurityReportService {
         responseType: 'blob'
       });
 
-      const contentDisposition = response.headers['content-disposition'];
+      const contentDisposition = response.headers ? response.headers['content-disposition'] : undefined;
       let filename = `security_report_${reportId}.pdf`;
 
       if (contentDisposition) {
@@ -156,7 +156,7 @@ class SecurityReportService {
         }
       }
 
-      const blob = response.data;
+      const blob = response.data as any as Blob;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';

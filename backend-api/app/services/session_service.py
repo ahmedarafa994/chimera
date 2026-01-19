@@ -329,7 +329,7 @@ class SessionService:
         if model is None:
             provider, model = self.get_default_model(provider)
         else:
-            is_valid, message, fallback = self.validate_model(provider, model)
+            is_valid, message, _fallback = self.validate_model(provider, model)
             if not is_valid:
                 raise ValueError(message)
 

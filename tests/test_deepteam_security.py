@@ -131,8 +131,7 @@ class TestDeepTeamConfiguration:
 
     def test_vulnerability_config_creation(self):
         """Test creating vulnerability configurations."""
-        from app.services.deepteam.config import (VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import VulnerabilityConfig, VulnerabilityType
 
         config = VulnerabilityConfig(
             type=VulnerabilityType.BIAS,
@@ -160,8 +159,7 @@ class TestDeepTeamConfiguration:
 
     def test_preset_configs(self):
         """Test preset configuration loading."""
-        from app.services.deepteam.config import (PresetConfig,
-                                                  get_preset_config)
+        from app.services.deepteam.config import PresetConfig, get_preset_config
 
         quick_scan = get_preset_config(PresetConfig.QUICK_SCAN)
         assert len(quick_scan.vulnerabilities) > 0
@@ -172,10 +170,13 @@ class TestDeepTeamConfiguration:
 
     def test_session_config_creation(self):
         """Test creating session configurations."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             target_purpose="Test chatbot",
@@ -214,8 +215,7 @@ class TestVulnerabilityFactory:
 
     def test_create_mock_vulnerability(self):
         """Test creating mock vulnerability when DeepTeam not installed."""
-        from app.services.deepteam.config import (VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import VulnerabilityConfig, VulnerabilityType
         from app.services.deepteam.vulnerabilities import VulnerabilityFactory
 
         config = VulnerabilityConfig(
@@ -389,10 +389,13 @@ class TestPromptInjection:
     @pytest.mark.security
     async def test_direct_prompt_injection(self, deepteam_service, vulnerable_model_callback):
         """Test detection of direct prompt injection vulnerabilities."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -418,10 +421,13 @@ class TestPromptInjection:
     @pytest.mark.security
     async def test_indirect_prompt_injection(self, deepteam_service, mock_model_callback):
         """Test detection of indirect prompt injection."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -447,10 +453,13 @@ class TestJailbreaking:
     @pytest.mark.security
     async def test_linear_jailbreaking(self, deepteam_service, vulnerable_model_callback):
         """Test linear jailbreaking attack detection."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -472,10 +481,13 @@ class TestJailbreaking:
     @pytest.mark.security
     async def test_roleplay_jailbreaking(self, deepteam_service, mock_model_callback):
         """Test roleplay-based jailbreaking detection."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -501,10 +513,13 @@ class TestDataLeakage:
     @pytest.mark.security
     async def test_pii_leakage(self, deepteam_service, vulnerable_model_callback):
         """Test PII leakage detection."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -529,10 +544,13 @@ class TestDataLeakage:
     @pytest.mark.security
     async def test_system_prompt_leakage(self, deepteam_service, mock_model_callback):
         """Test system prompt leakage detection."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -565,10 +583,13 @@ class TestOWASPLLMTop10:
     @pytest.mark.owasp
     async def test_llm01_prompt_injection(self, deepteam_service, mock_model_callback):
         """LLM01: Prompt Injection testing."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -592,10 +613,13 @@ class TestOWASPLLMTop10:
     @pytest.mark.owasp
     async def test_llm02_insecure_output_handling(self, deepteam_service, mock_model_callback):
         """LLM02: Insecure Output Handling testing."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -621,10 +645,13 @@ class TestOWASPLLMTop10:
         self, deepteam_service, mock_model_callback
     ):
         """LLM06: Sensitive Information Disclosure testing."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -648,10 +675,13 @@ class TestOWASPLLMTop10:
     @pytest.mark.owasp
     async def test_llm07_insecure_plugin_design(self, deepteam_service, mock_model_callback):
         """LLM07: Insecure Plugin Design testing."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -675,10 +705,13 @@ class TestOWASPLLMTop10:
     @pytest.mark.owasp
     async def test_llm08_excessive_agency(self, deepteam_service, mock_model_callback):
         """LLM08: Excessive Agency testing."""
-        from app.services.deepteam.config import (AttackConfig, AttackType,
-                                                  RedTeamSessionConfig,
-                                                  VulnerabilityConfig,
-                                                  VulnerabilityType)
+        from app.services.deepteam.config import (
+            AttackConfig,
+            AttackType,
+            RedTeamSessionConfig,
+            VulnerabilityConfig,
+            VulnerabilityType,
+        )
 
         config = RedTeamSessionConfig(
             vulnerabilities=[
@@ -767,8 +800,7 @@ class TestChimeraIntegration:
     @pytest.mark.integration
     async def test_multi_model_callback(self, deepteam_service):
         """Test multi-model callback for comparative analysis."""
-        from app.services.deepteam.callbacks import (ChimeraModelCallback,
-                                                     MultiModelCallback)
+        from app.services.deepteam.callbacks import ChimeraModelCallback, MultiModelCallback
 
         # Create mock callbacks
         callbacks = []

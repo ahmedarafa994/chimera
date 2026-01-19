@@ -207,10 +207,9 @@ export function useEnhancedModelSelection(
               return {
                 id: m.model_id || m.id || "",
                 name: m.name || m.model_id || m.id || "",
-                tier:
-                  m.tier === "standard" || m.tier === "premium" || m.tier === "experimental"
-                    ? m.tier
-                    : "standard",
+                tier: (m.tier === "standard" || m.tier === "premium" || m.tier === "experimental"
+                  ? m.tier
+                  : "standard") as "standard" | "premium" | "experimental",
                 contextWindow: m.context_window,
                 maxTokens: m.max_tokens,
               };

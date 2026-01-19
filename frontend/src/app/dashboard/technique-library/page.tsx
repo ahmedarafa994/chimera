@@ -261,7 +261,7 @@ export default function TechniqueLibraryPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Categories</SelectItem>
-                          {categories.map(category => (
+                          {categories.map((category: TechniqueCategory) => (
                             <SelectItem key={category} value={category}>
                               {techniqueLibraryService.getCategoryIcon(category)} {techniqueLibraryService.getCategoryDisplayName(category)}
                             </SelectItem>

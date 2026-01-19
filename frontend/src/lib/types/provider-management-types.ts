@@ -84,6 +84,8 @@ export interface ModelInfo {
   supports_streaming: boolean;
   /** Whether model supports function calling */
   supports_function_calling: boolean;
+  /** Whether model supports vision */
+  supports_vision: boolean;
   /** Pricing info */
   pricing?: ModelPricing;
   /** Additional capabilities */

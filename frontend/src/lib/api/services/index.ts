@@ -15,9 +15,6 @@ export { generationService, generationApi } from './generation-service';
 export { jailbreakService, jailbreakApi } from './jailbreak-service';
 export { healthMonitoringService, healthApi } from './health-service';
 
-// Unified API client
-export { default as chimeraApi } from './index';
-
 // ============================================================================
 // EXISTING SERVICES (Legacy - Migrate to aligned versions)
 // ============================================================================
@@ -31,9 +28,9 @@ export { evasionService } from './evasion-service';
 export { providerManagementService } from './provider-management-service';
 export { adminService } from './admin-service';
 export * from './jobs';
-export { assessmentsService } from './assessments';
-export { transformationsService } from './transformations';
-export { reportsService } from './reports';
+export { assessmentService as assessmentsService } from './assessments';
+export { transformationService as transformationsService } from './transformations';
+export { securityReportService as reportsService } from './reports';
 export { workspaceService } from './workspaces';
 export { defenseEngineService } from './defense-engine';
 export { documentationService } from './documentation';

@@ -197,7 +197,7 @@ if __name__ == "__main__":
             if os.environ.get("ALLOW_UNTRUSTED_PICKLE") == "1":
                 warm_up_strategy_library = pickle.load(
                     f
-                )  # noqa: S301 - guarded by ALLOW_UNTRUSTED_PICKLE
+                )
             else:
                 raise RuntimeError(
                     "Deserializing pickle files is disabled by default. To enable, set ALLOW_UNTRUSTED_PICKLE=1"

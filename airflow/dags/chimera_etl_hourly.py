@@ -27,16 +27,16 @@ from airflow import DAG
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
-from app.services.data_pipeline.batch_ingestion import (  # noqa: E402
+from app.services.data_pipeline.batch_ingestion import (
     ingest_jailbreak_experiments_batch,
     ingest_llm_interactions_batch,
     ingest_transformation_events_batch,
 )
-from app.services.data_pipeline.data_quality import (  # noqa: E402
+from app.services.data_pipeline.data_quality import (
     validate_llm_interactions,
     validate_transformations,
 )
-from app.services.data_pipeline.delta_lake_manager import DeltaLakeManager  # noqa: E402
+from app.services.data_pipeline.delta_lake_manager import DeltaLakeManager
 
 # =============================================================================
 # DAG Configuration

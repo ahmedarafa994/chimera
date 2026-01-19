@@ -1289,19 +1289,19 @@ class BenchmarkEvaluator:
 # =============================================================================
 
 __all__ = [
-    # Data classes
-    "DualVectorMetrics",
-    "ResourceMetrics",
-    "JailbreakMetrics",
-    "StealthMetrics",
-    "BenchmarkResults",
-    "ComparisonReport",
-    # Evaluators
-    "ResourceEvaluator",
-    "JailbreakEvaluator",
-    "StealthEvaluator",
-    # Pipeline
-    "UnifiedEvaluationPipeline",
     # Benchmark
     "BenchmarkEvaluator",
+    "BenchmarkResults",
+    "ComparisonReport",
+    # Data classes
+    "DualVectorMetrics",
+    "JailbreakEvaluator",
+    "JailbreakMetrics",
+    # Evaluators
+    "ResourceEvaluator",
+    "ResourceMetrics",
+    "StealthEvaluator",
+    "StealthMetrics",
+    # Pipeline
+    "UnifiedEvaluationPipeline",
 ]

@@ -90,7 +90,7 @@ class InjectionVector:
         else:
             self.atoms.insert(position, atom)
 
-    def compile(self, context: dict[str, Any] = None) -> str:
+    def compile(self, context: dict[str, Any] | None = None) -> str:
         """
         Compile the vector into a single string for model consumption.
         """

@@ -1350,11 +1350,11 @@ async def get_strategy_config(
     # Check if strategy exists
     try:
         AdversarialStrategy(strategy)
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
             status_code=404,
             detail=f"Strategy not found: {strategy}. Available: {[s.value for s in AdversarialStrategy]}",
-        )
+        ) from e
 
     # Base config for all strategies
     base_config = {

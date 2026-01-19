@@ -80,10 +80,11 @@ export const evasionService = {
    * Get task history
    */
   async getHistory(limit: number = 50): Promise<EvasionTask[]> {
-    return enhancedApi.get<EvasionTask[]>(
+    const response = await apiClient.get<EvasionTask[]>(
       `${API_BASE}/history`,
       { params: { limit } }
     );
+    return response.data;
   },
 
   /**

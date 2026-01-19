@@ -19,6 +19,6 @@ if "app" in sys.modules:
 if "backend_api.app" in sys.modules:
     del sys.modules["backend_api.app"]
 
-import app as _shim_app  # noqa: E402
+import app as _shim_app
 
 sys.modules.setdefault("backend_api.app", _shim_app)

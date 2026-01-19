@@ -6,16 +6,18 @@ Tests benchmark configurations from Table 3 of the paper.
 
 import pytest
 
-from meta_prompter.attacks.extend_attack.config import (AIME_2024_CONFIG,
-                                                        AIME_2025_CONFIG,
-                                                        BENCHMARK_CONFIGS,
-                                                        BIGCODEBENCH_CONFIG,
-                                                        DEFAULT_BASE_SET,
-                                                        HUMANEVAL_CONFIG,
-                                                        BenchmarkConfig,
-                                                        get_benchmark_config,
-                                                        get_model_defaults,
-                                                        get_optimal_rho)
+from meta_prompter.attacks.extend_attack.config import (
+    AIME_2024_CONFIG,
+    AIME_2025_CONFIG,
+    BENCHMARK_CONFIGS,
+    BIGCODEBENCH_CONFIG,
+    DEFAULT_BASE_SET,
+    HUMANEVAL_CONFIG,
+    BenchmarkConfig,
+    get_benchmark_config,
+    get_model_defaults,
+    get_optimal_rho,
+)
 
 # =============================================================================
 # Test Fixtures

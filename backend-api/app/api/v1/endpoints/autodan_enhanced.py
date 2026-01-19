@@ -284,7 +284,7 @@ async def generate_jailbreak(
         return JailbreakResponse(**result)
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         error_str = str(e)
         logger.error(f"Jailbreak generation failed: {e}", exc_info=True)
@@ -296,9 +296,9 @@ async def generate_jailbreak(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=f"Rate limit or quota exceeded for {provider}.",
                 headers={"Retry-After": "60"},
-            )
+            ) from e
 
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {error_str}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {error_str}") from e
 
 
 @router.post("/jailbreak/batch", response_model=BatchJailbreakResponse)
@@ -399,9 +399,9 @@ async def generate_batch_jailbreak(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=f"Rate limit or quota exceeded for {provider}.",
                 headers={"Retry-After": "60"},
-            )
+            ) from e
 
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {error_str}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {error_str}") from e
 
 
 @router.get("/config", response_model=ConfigResponse)
@@ -504,7 +504,7 @@ async def update_configuration(payload: ConfigUpdateRequest):
 
     except Exception as e:
         logger.error(f"Configuration update failed: {e}", exc_info=True)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/metrics", response_model=MetricsResponse)

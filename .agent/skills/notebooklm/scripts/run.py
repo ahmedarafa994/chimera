@@ -84,7 +84,7 @@ def main():
     venv_python = ensure_venv()
 
     # Build command
-    cmd = [str(venv_python), str(script_path)] + script_args
+    cmd = [str(venv_python), str(script_path), *script_args]
 
     # Run the script
     try:

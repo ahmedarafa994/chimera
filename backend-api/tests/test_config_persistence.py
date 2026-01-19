@@ -12,7 +12,8 @@ from datetime import timedelta
 import pytest
 
 # Set test database path before imports
-TEST_DB_PATH = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
+with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+    TEST_DB_PATH = tmp.name
 os.environ["CHIMERA_DB_PATH"] = TEST_DB_PATH
 
 
@@ -34,7 +35,8 @@ from app.infrastructure.repositories.config_repository import ConfigRepository, 
 @pytest.fixture
 async def db():
     """Create test database connection."""
-    db_path = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = tmp.name
     connection = DatabaseConnection(db_path)
     await connection.initialize()
     yield connection
@@ -100,15 +102,13 @@ class TestDatabaseConnection:
     @pytest.mark.asyncio
     async def test_transaction_rollback(self, db, schema):
         """Test transaction rollback on error."""
-        try:
+        with contextlib.suppress(Exception):
             async with db.transaction():
                 await db.execute(
                     "INSERT INTO schema_version (id, version, updated_at) "
                     "VALUES (3, 100, '2025-01-01')"
                 )
                 raise ValueError("Simulated error")
-        except Exception:
-            pass
 
         result = await db.fetchone("SELECT version FROM schema_version WHERE id = 3")
         assert result is None

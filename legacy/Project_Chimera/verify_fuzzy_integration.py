@@ -7,6 +7,7 @@ This script verifies all components are properly integrated.
 import sys
 
 import psychological_framer
+
 # Import the necessary modules
 import transformer_engine
 

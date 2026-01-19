@@ -391,7 +391,7 @@ class DependencyGraph:
             if component in rec_stack:
                 # Found a cycle
                 cycle_start = path.index(component)
-                cycles.append(path[cycle_start:] + [component])
+                cycles.append([*path[cycle_start:], component])
                 return
 
             if component in visited:

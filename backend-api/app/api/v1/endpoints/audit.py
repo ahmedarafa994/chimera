@@ -219,12 +219,12 @@ async def _get_authenticated_user(
     # Get user ID from token
     try:
         user_id = int(current_user.sub)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
         logger.warning(f"Invalid user ID in token: {current_user.sub}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
-        )
+        ) from e
 
     # Get user from database
     user_service = get_user_service(session)

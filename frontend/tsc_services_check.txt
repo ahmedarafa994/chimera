@@ -1,0 +1,140 @@
+src/app/dashboard/technique-builder/page.tsx(136,9): error TS2365: Operator '>' cannot be applied to types 'string' and 'number'.
+src/app/dashboard/technique-builder/page.tsx(137,26): error TS2349: This expression is not callable.
+  Type 'String' has no call signatures.
+src/app/dashboard/technique-builder/page.tsx(178,78): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(179,30): error TS2339: Property 'parameters_template' does not exist on type 'TechniqueTemplate'.
+src/app/dashboard/technique-builder/page.tsx(180,25): error TS2339: Property 'steps_template' does not exist on type 'TechniqueTemplate'.
+src/app/dashboard/technique-builder/page.tsx(200,9): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(216,9): error TS2365: Operator '>' cannot be applied to types 'string' and 'number'.
+src/app/dashboard/technique-builder/page.tsx(217,26): error TS2349: This expression is not callable.
+  Type 'String' has no call signatures.
+src/app/dashboard/technique-builder/page.tsx(224,9): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(232,32): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(243,76): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(257,53): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(354,42): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(408,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/dashboard/technique-builder/page.tsx(468,49): error TS2339: Property 'id' does not exist on type 'string'.
+src/app/dashboard/technique-builder/page.tsx(468,69): error TS2339: Property 'id' does not exist on type 'string'.
+src/app/dashboard/technique-builder/page.tsx(469,35): error TS2339: Property 'name' does not exist on type 'string'.
+src/app/dashboard/technique-builder/page.tsx(537,38): error TS2339: Property 'model_provider' does not exist on type 'TechniqueTestRequest'.
+src/app/dashboard/technique-builder/page.tsx(555,38): error TS2339: Property 'model_name' does not exist on type 'TechniqueTestRequest'.
+src/app/dashboard/technique-builder/page.tsx(733,122): error TS18048: 't.usage_count' is possibly 'undefined'.
+src/app/dashboard/technique-builder/page.tsx(743,102): error TS18048: 't.success_rate' is possibly 'undefined'.
+src/app/dashboard/technique-builder/page.tsx(765,31): error TS2339: Property 'usage_count' does not exist on type 'TechniqueTemplate'.
+src/app/dashboard/workspaces/page.tsx(140,9): error TS2365: Operator '>' cannot be applied to types 'string' and 'number'.
+src/app/dashboard/workspaces/page.tsx(141,26): error TS2349: This expression is not callable.
+  Type 'String' has no call signatures.
+src/app/dashboard/workspaces/page.tsx(193,9): error TS2365: Operator '>' cannot be applied to types 'string' and 'number'.
+src/app/dashboard/workspaces/page.tsx(194,26): error TS2349: This expression is not callable.
+  Type 'String' has no call signatures.
+src/app/dashboard/workspaces/page.tsx(756,14): error TS18048: 'workspaceMembers.total_invitations' is possibly 'undefined'.
+src/hooks/use-enhanced-model-selection.ts(186,13): error TS2322: Type '{ id: string; name: string; status: "healthy" | "degraded" | "offline"; models: ({ id: string; name: string; tier: "standard"; contextWindow?: undefined; maxTokens?: undefined; } | { id: string; name: string; tier: string; contextWindow: number | undefined; maxTokens: number | undefined; })[]; latency: number | unde...' is not assignable to type 'Provider[]'.
+  Type '{ id: string; name: string; status: "healthy" | "degraded" | "offline"; models: ({ id: string; name: string; tier: "standard"; contextWindow?: undefined; maxTokens?: undefined; } | { id: string; name: string; tier: string; contextWindow: number | undefined; maxTokens: number | undefined; })[]; latency: number | unde...' is not assignable to type 'Provider'.
+    Types of property 'models' are incompatible.
+      Type '({ id: string; name: string; tier: "standard"; contextWindow?: undefined; maxTokens?: undefined; } | { id: string; name: string; tier: string; contextWindow: number | undefined; maxTokens: number | undefined; })[]' is not assignable to type 'Model[]'.
+        Type '{ id: string; name: string; tier: "standard"; contextWindow?: undefined; maxTokens?: undefined; } | { id: string; name: string; tier: string; contextWindow: number | undefined; maxTokens: number | undefined; }' is not assignable to type 'Model'.
+          Type '{ id: string; name: string; tier: string; contextWindow: number | undefined; maxTokens: number | undefined; }' is not assignable to type 'Model'.
+            Types of property 'tier' are incompatible.
+              Type 'string' is not assignable to type '"experimental" | "standard" | "premium"'.
+src/hooks/useProviderConfig.ts(581,13): error TS2304: Cannot find name 'connectImpl'.
+src/hooks/useProviderSync.ts(412,13): error TS2304: Cannot find name 'connectImpl'.
+src/lib/api/services/attack-sessions.ts(277,7): error TS2322: Type 'unknown' is not assignable to type 'Record<string, any>'.
+src/lib/api/services/attack-sessions.ts(314,7): error TS2322: Type 'unknown' is not assignable to type 'Record<string, any>'.
+src/lib/api/services/autoadv-service.ts(123,12): error TS2304: Cannot find name 'enhancedApi'.
+src/lib/api/services/documentation.ts(190,11): error TS2740: Type '{}' is missing the following properties from type 'any[]': length, pop, push, concat, and 35 more.
+src/lib/api/services/documentation.ts(201,34): error TS2339: Property 'map' does not exist on type '{}'.
+src/lib/api/services/documentation.ts(206,5): error TS2322: Type 'unknown' is not assignable to type 'ContextualHelpResponse'.
+src/lib/api/services/documentation.ts(211,5): error TS2322: Type 'unknown' is not assignable to type 'VideoTutorial[]'.
+src/lib/api/services/documentation.ts(216,5): error TS2322: Type 'unknown' is not assignable to type 'QuickStartGuide'.
+src/lib/api/services/evasion-service.ts(83,12): error TS2304: Cannot find name 'enhancedApi'.
+src/lib/api/services/reports.ts(149,34): error TS18048: 'response.headers' is possibly 'undefined'.
+src/lib/api/services/reports.ts(160,46): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Blob | MediaSource'.
+src/lib/api/services/research-lab.ts(461,23): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(462,16): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(462,30): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(463,15): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(464,20): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(465,27): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(466,27): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(496,7): error TS2322: Type 'unknown' is not assignable to type '{ message: string; execution_id: string; estimated_completion: string; }'.
+src/lib/api/services/research-lab.ts(517,22): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(518,16): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(518,30): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(519,15): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(520,20): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(521,27): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(522,27): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(569,7): error TS2322: Type 'unknown' is not assignable to type '{ download_url: string; filename: string; size_bytes: number; expires_at: string; }'.
+src/lib/api/services/research-lab.ts(582,7): error TS2322: Type 'unknown' is not assignable to type 'ResearchAnalytics'.
+src/lib/api/services/research-lab.ts(604,13): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(604,39): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(605,28): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(606,15): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(607,22): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(608,34): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(609,29): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(610,27): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(611,24): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/research-lab.ts(612,21): error TS18046: 'variation' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(346,19): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(347,14): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(347,28): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(348,13): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(349,18): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(350,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(351,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(403,20): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(404,14): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(404,28): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(405,13): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(406,18): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(407,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(408,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(420,15): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(421,14): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(421,28): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(422,13): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(423,18): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(424,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/scheduled-testing.ts(425,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(264,22): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(265,21): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(266,27): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(266,52): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(266,66): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(267,26): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(267,50): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(268,15): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(269,20): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(270,27): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(271,27): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-builder.ts(331,5): error TS2322: Type 'unknown' is not assignable to type 'TechniqueStatsResponse'.
+src/lib/api/services/technique-library.ts(350,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(351,22): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(354,24): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(354,48): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(355,25): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(355,49): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(356,19): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(357,37): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(358,21): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(361,23): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(362,19): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(362,53): error TS18046: 'data' is of type 'unknown'.
+src/lib/api/services/technique-library.ts(368,34): error TS2339: Property 'map' does not exist on type '{}'.
+src/lib/api/services/technique-library.ts(391,27): error TS2339: Property 'output' does not exist on type '{}'.
+src/lib/hooks/useWebSocket.ts(78,13): error TS2304: Cannot find name 'connectImpl'.
+src/lib/services/provider-management-service.ts(136,5): error TS2353: Object literal may only specify known properties, and 'supports_vision' does not exist in type 'ModelInfo'.
+src/services/attack-sessions.ts(317,23): error TS2339: Property 'del' does not exist on type 'ApiClient'.
+src/services/research-lab.ts(558,37): error TS2339: Property 'json' does not exist on type 'ApiResponse<TechniqueVariation>'.
+src/services/security-reports.ts(180,34): error TS18048: 'response.headers' is possibly 'undefined'.
+src/services/security-reports.ts(192,46): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Blob | MediaSource'.

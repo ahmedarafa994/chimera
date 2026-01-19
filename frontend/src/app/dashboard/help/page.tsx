@@ -191,7 +191,7 @@ export default function DocumentationHubPage() {
           Documentation & Help Hub
         </h1>
         <p className="text-muted-foreground text-lg">
-          Comprehensive guides, tutorials, and contextual help for mastering Chimera's AI security testing platform.
+          Comprehensive guides, tutorials, and contextual help for mastering Chimera&apos;s AI security testing platform.
         </p>
       </div>
 

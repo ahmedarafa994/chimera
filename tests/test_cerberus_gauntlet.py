@@ -23,7 +23,7 @@ def test_prometheus_evolution():
     prometheus.generate_population()
     assert len(prometheus.population) == 20
 
-    initial_template = prometheus.population[0].template
+    prometheus.population[0].template
     evolved_prompts = prometheus.evolve(target_intent="test intent")
 
     assert len(evolved_prompts) == 20

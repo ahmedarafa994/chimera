@@ -59,7 +59,7 @@ async def execute_hierarchical_search(
 
     except ValueError as e:
         logger.error(f"Invalid request: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Hierarchical search failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Hierarchical search failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Hierarchical search failed: {e!s}") from e

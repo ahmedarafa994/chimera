@@ -8,6 +8,7 @@ Usage:
     result = generate_design_system("SaaS dashboard", "My Project")
 """
 
+import contextlib
 import csv
 import json
 
@@ -40,7 +41,7 @@ class DesignSystemGenerator:
         with open(filepath, encoding="utf-8") as f:
             return list(csv.DictReader(f))
 
-    def _multi_domain_search(self, query: str, style_priority: list = None) -> dict:
+    def _multi_domain_search(self, query: str, style_priority: list | None = None) -> dict:
         """Execute searches across multiple domains."""
         results = {}
         for domain, config in SEARCH_CONFIG.items():
@@ -95,10 +96,8 @@ class DesignSystemGenerator:
 
         # Parse decision rules JSON
         decision_rules = {}
-        try:
+        with contextlib.suppress(json.JSONDecodeError):
             decision_rules = json.loads(rule.get("Decision_Rules", "{}"))
-        except json.JSONDecodeError:
-            pass
 
         return {
             "pattern": rule.get("Recommended_Pattern", ""),
@@ -152,7 +151,7 @@ class DesignSystemGenerator:
         """Extract results list from search result dict."""
         return search_result.get("results", [])
 
-    def generate(self, query: str, project_name: str = None) -> dict:
+    def generate(self, query: str, project_name: str | None = None) -> dict:
         """Generate complete design system recommendation."""
         # Step 1: First search product to get category
         product_result = search(query, "product", 1)
@@ -468,7 +467,7 @@ def format_markdown(design_system: dict) -> str:
 
 # ============ MAIN ENTRY POINT ============
 def generate_design_system(
-    query: str, project_name: str = None, output_format: str = "ascii"
+    query: str, project_name: str | None = None, output_format: str = "ascii"
 ) -> str:
     """
     Main entry point for design system generation.

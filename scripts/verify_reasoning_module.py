@@ -18,11 +18,9 @@ async def verify_reasoning_module():
 
     try:
         # 1. Test Imports
-        from app.engines.autodan_turbo.lifelong_engine import \
-            AutoDANTurboLifelongEngine
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
         from app.engines.autodan_turbo.models import JailbreakStrategy
-        from app.engines.autodan_turbo.reasoning_module import \
-            CoreReasoningEngine
+        from app.engines.autodan_turbo.reasoning_module import CoreReasoningEngine
 
         logger.info("✅ Imports successful")
 

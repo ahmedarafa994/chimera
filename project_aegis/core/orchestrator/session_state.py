@@ -25,7 +25,7 @@ class SessionState:
     interactions: list[Interaction] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
-    def add_interaction(self, prompt: str, response: str, metrics: dict[str, float] = None):
+    def add_interaction(self, prompt: str, response: str, metrics: dict[str, float] | None = None):
         turn_id = len(self.interactions) + 1
         interaction = Interaction(
             turn_id=turn_id, prompt=prompt, response=response, metrics=metrics or {}

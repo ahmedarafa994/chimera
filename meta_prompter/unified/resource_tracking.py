@@ -1451,18 +1451,18 @@ class UnifiedResourceService:
 # =============================================================================
 
 __all__ = [
-    # Dataclasses
-    "VectorResourceUsage",
-    "CombinedResourceUsage",
-    "ResourceBudget",
-    "SessionSummary",
-    "BudgetStatus",
-    "ResourceAllocation",
-    "ResourcePrediction",
     "AllocationDecision",
     # Classes
     "AttackSession",
-    "UnifiedResourceTracker",
+    "BudgetStatus",
+    "CombinedResourceUsage",
+    "ResourceAllocation",
     "ResourceAllocator",
+    "ResourceBudget",
+    "ResourcePrediction",
+    "SessionSummary",
     "UnifiedResourceService",
+    "UnifiedResourceTracker",
+    # Dataclasses
+    "VectorResourceUsage",
 ]

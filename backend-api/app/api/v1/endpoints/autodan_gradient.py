@@ -96,10 +96,10 @@ async def optimize_with_gradient(
 
     except ValueError as e:
         logger.error(f"Invalid request: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Gradient optimization failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Gradient optimization failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Gradient optimization failed: {e!s}") from e
 
 
 # ========================
@@ -178,7 +178,7 @@ async def execute_ensemble_attack(
 
     except ValueError as e:
         logger.error(f"Invalid request: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Ensemble attack failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Ensemble attack failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Ensemble attack failed: {e!s}") from e

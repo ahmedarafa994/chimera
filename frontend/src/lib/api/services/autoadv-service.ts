@@ -120,7 +120,8 @@ export const autoadvService = {
    * Get available strategies
    */
   async getStrategies(): Promise<AutoAdvStrategy[]> {
-    return enhancedApi.get<AutoAdvStrategy[]>(`${API_BASE}/strategies`);
+    const response = await apiClient.get<AutoAdvStrategy[]>(`${API_BASE}/strategies`);
+    return response.data;
   },
 
   /**

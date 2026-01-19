@@ -1,9 +1,9 @@
 from unittest.mock import MagicMock, patch
 
+from backend_api.app.main import app
 from fastapi.testclient import TestClient
 
 from app.services.llm_service import get_llm_service
-from backend_api.app.main import app
 
 # Mock LLM service
 mock_llm_service = MagicMock()

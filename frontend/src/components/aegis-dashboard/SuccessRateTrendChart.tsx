@@ -373,7 +373,7 @@ const LoadingSkeleton = memo(function LoadingSkeleton({
           <div
             key={i}
             className="w-4 bg-white/10 rounded-t"
-            style={{ height: `${Math.random() * 60 + 20}%` }}
+            style={{ height: `${((i * 13) % 60) + 20}%` }}
           />
         ))}
       </div>

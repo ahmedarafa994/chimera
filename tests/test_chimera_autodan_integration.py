@@ -75,8 +75,7 @@ class TestChimeraAutoDanUnified:
     @pytest.mark.asyncio
     async def test_campaign_execution(self):
         """Test multi-phase campaign execution."""
-        from meta_prompter.chimera_autodan import (ChimeraAutoDAN,
-                                                   ChimeraAutoDanConfig)
+        from meta_prompter.chimera_autodan import ChimeraAutoDAN, ChimeraAutoDanConfig
 
         config = ChimeraAutoDanConfig(
             enable_personas=True, enable_genetic_optimization=False, generations=1
@@ -279,7 +278,7 @@ class TestAutoDANPersonaOptimizer:
         def callback(update):
             progress_updates.append(update)
 
-        personas = await optimizer.optimize(objective, callback=callback)
+        await optimizer.optimize(objective, callback=callback)
 
         assert len(progress_updates) > 0
         # Fitness should generally improve or stay stable
@@ -347,8 +346,7 @@ class TestChimeraComponentIntegration:
 
     def test_narrative_manager_integration(self):
         """Test NarrativeContextManager works with unified system."""
-        from meta_prompter.chimera.narrative_manager import \
-            NarrativeContextManager
+        from meta_prompter.chimera.narrative_manager import NarrativeContextManager
         from meta_prompter.chimera.persona_factory import PersonaFactory
 
         factory = PersonaFactory()
@@ -364,8 +362,7 @@ class TestChimeraComponentIntegration:
 
     def test_semantic_obfuscator_integration(self):
         """Test SemanticObfuscator works with unified system."""
-        from meta_prompter.chimera.semantic_obfuscator import \
-            SemanticObfuscator
+        from meta_prompter.chimera.semantic_obfuscator import SemanticObfuscator
 
         obfuscator = SemanticObfuscator()
 
@@ -383,9 +380,11 @@ class TestEndToEndIntegration:
     @pytest.mark.asyncio
     async def test_full_pipeline(self):
         """Test complete Chimera+AutoDAN pipeline."""
-        from meta_prompter.chimera_autodan import (ChimeraAutoDAN,
-                                                   ChimeraAutoDanConfig,
-                                                   UnifiedFitnessEvaluator)
+        from meta_prompter.chimera_autodan import (
+            ChimeraAutoDAN,
+            ChimeraAutoDanConfig,
+            UnifiedFitnessEvaluator,
+        )
 
         # Configure
         config = ChimeraAutoDanConfig(
@@ -421,7 +420,7 @@ class TestEndToEndIntegration:
                     return "Mock response"
 
             # AegisOrchestrator should use Chimera components
-            orchestrator = AegisOrchestrator(target_model=MockModel())
+            AegisOrchestrator(target_model=MockModel())
 
             # ChimeraMutator should work independently
             mutator = ChimeraMutator()

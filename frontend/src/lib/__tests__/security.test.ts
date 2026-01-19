@@ -18,7 +18,8 @@ import {
 describe("checkForSecrets", () => {
     it("should detect OpenAI API keys", () => {
         // Use a key that matches the regex /sk-[a-zA-Z0-9]{20,}/g
-        const content = 'const key = "sk-abc123def456ghi789jkl012345678901234567890"';
+        // eslint-disable-next-line no-restricted-syntax
+        const content = 'const key = "sk-dummyOpenAIKeyForTestingPurposesOnly12345"';
         const result = checkForSecrets(content);
 
         expect(result.safe).toBe(false);
@@ -27,7 +28,8 @@ describe("checkForSecrets", () => {
     });
 
     it("should detect Google API keys", () => {
-        const content = 'const key = "AIzaSyDaGmWKa4JsXZ-HjGw7ISLn_3namBGqWQQ"';
+        // eslint-disable-next-line no-restricted-syntax
+        const content = 'const key = "AIzaSyDummyGoogleKeyForTestingPurposesOnly12"';
         const result = checkForSecrets(content);
 
         expect(result.safe).toBe(false);
@@ -35,6 +37,7 @@ describe("checkForSecrets", () => {
     });
 
     it("should detect private keys", () => {
+        // eslint-disable-next-line no-restricted-syntax
         const content = '-----BEGIN RSA PRIVATE KEY-----';
         const result = checkForSecrets(content);
 

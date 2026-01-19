@@ -9,7 +9,7 @@
  */
 
 import { toast } from 'sonner';
-import apiClient from '@/lib/api/client';
+import { apiClient } from '@/lib/api/client';
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type DefenseCategory = 'input_filtering' | 'output_monitoring' | 'session_management' | 'model_training' | 'infrastructure';

@@ -314,7 +314,7 @@ class AttackSessionService {
    */
   async deleteSession(sessionId: string): Promise<void> {
     try {
-      await apiClient.del(`${this.baseUrl}/${sessionId}`);
+      await apiClient.delete(`${this.baseUrl}/${sessionId}`);
       toast.success('Session deleted successfully');
     } catch (error: any) {
       console.error('Failed to delete session:', error);

@@ -13,6 +13,7 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   timestamp?: string;
   request_id?: string;
+  headers?: Record<string, string>;
 }
 
 export interface ApiError {
