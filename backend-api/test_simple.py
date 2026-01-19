@@ -20,7 +20,7 @@ def wait_for_server(max_attempts=20):
             if response.status_code == 200:
                 print(f"✓ Server ready after {i+1} attempts")
                 return True
-        except:
+        except Exception:  # noqa: E722
             time.sleep(1)
     print("✗ Server not responding")
     return False

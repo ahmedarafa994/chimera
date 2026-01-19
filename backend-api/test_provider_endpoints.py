@@ -131,7 +131,7 @@ def main():
             if response.status_code == 200:
                 print("✅ Server is ready!\n")
                 break
-        except:
+        except Exception:  # noqa: E722
             time.sleep(1)
             print(f"  Attempt {i+1}/10...")
     else:

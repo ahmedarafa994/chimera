@@ -191,7 +191,7 @@ def test_chat_completion_with_selection():
                 data = response.json()
                 if "model" in data:
                     print(f"    Model used: {data.get('model')}")
-            except:
+            except Exception:  # noqa: E722
                 pass
 
 

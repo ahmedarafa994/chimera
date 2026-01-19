@@ -20,7 +20,7 @@ except ImportError:
 # Add this to the router registration section (after line 273)
 # --- Health Monitoring Dashboard (FIXED VERSION) ---
 if HEALTH_MONITORING_AVAILABLE and health_monitoring_router:
-    api_router.include_router(
+    api_router.include_router(  # noqa: F821
         health_monitoring_router,
         prefix="/health",
         tags=["health", "monitoring", "dashboard"],
@@ -71,7 +71,7 @@ else:
             "message": "Health monitoring system not available.",
         }
 
-    api_router.include_router(
+    api_router.include_router(  # noqa: F821
         fallback_health_router,
         prefix="/health",
         tags=["health", "fallback"],

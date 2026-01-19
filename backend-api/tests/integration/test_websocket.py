@@ -209,7 +209,7 @@ class TestWebSocketConcurrency:
 
         try:
             # Open multiple connections
-            for i in range(5):
+            for _ in range(5):
                 ws = test_client.websocket_connect("/ws/enhance")
                 ws.__enter__()
                 connections.append(ws)
