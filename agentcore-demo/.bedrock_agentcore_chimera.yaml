@@ -1,0 +1,8 @@
+default_agent: chimera_research
+agents:
+  chimera_research:
+    name: chimera_research
+    entrypoint: src.chimera_research_agent:app
+    agent_name: ChimeraResearchAssistant
+    runtime_protocol: HTTP
+    description: "AI Security Research Assistant for Chimera platform"
