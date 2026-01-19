@@ -34,13 +34,24 @@ agentcore invoke --dev '{"prompt": "What is AWS?"}'
 - **src/main.py**: Main agent code with Strands Agent wrapped in BedrockAgentCoreApp
 - **.bedrock_agentcore.yaml**: Configuration file specifying the entrypoint
 - **requirements.txt**: Python dependencies
+- **examples/**: Advanced examples (streaming, session management)
+
+## Examples
+
+Check out the `examples/` directory for more advanced patterns:
+
+- **Streaming Agent**: Real-time streaming responses with tools
+- **Session Management**: Maintain conversation state across requests
+
+See [examples/README.md](examples/README.md) for details.
 
 ## Next Steps
 
-1. **Add tools**: Import tools from `strands_tools` (file_read, file_write, etc.)
-2. **Add memory**: Use AgentCore Memory for persistent conversations
-3. **Add gateway**: Expose MCP tools via AgentCore Gateway
-4. **Deploy**: Use `agentcore configure` and `agentcore launch` to deploy to AWS
+1. **Try the examples**: Explore `examples/` directory
+2. **Add tools**: Import tools from `strands_tools` (file_read, file_write, etc.)
+3. **Add memory**: Use AgentCore Memory for persistent conversations
+4. **Add gateway**: Expose MCP tools via AgentCore Gateway
+5. **Deploy**: Use `agentcore configure` and `agentcore launch` to deploy to AWS
 
 ## Deployment
 
