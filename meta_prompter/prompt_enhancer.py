@@ -406,7 +406,7 @@ class ContextExpander:
         return practices or self.BEST_PRACTICES["clarity"][:2]
 
     def _generate_constraints(self, analysis: PromptAnalysis) -> list[str]:
-        constraints: ClassVar[list] = []
+        constraints: list = []
 
         if analysis.category == PromptCategory.TECHNICAL_INSTRUCTION:
             constraints.extend(
@@ -436,7 +436,7 @@ class ContextExpander:
         return constraints[:4]
 
     def _define_parameters(self, analysis: PromptAnalysis) -> dict[str, str]:
-        params: ClassVar[dict] = {
+        params: dict = {
             "output_format": "Specify desired format (markdown, JSON, code, etc.)",
             "length": "Target length or word count",
             "style": "Tone and voice preferences",
@@ -513,7 +513,7 @@ class ViralityOptimizer:
         return text
 
     def _add_emotional_hooks(self, text: str, analysis: PromptAnalysis) -> str:
-        category_triggers: ClassVar[dict] = {
+        category_triggers: dict = {
             PromptCategory.VIRAL_SOCIAL: "curiosity",
             PromptCategory.BUSINESS_PROFESSIONAL: "achievement",
             PromptCategory.EDUCATIONAL: "curiosity",
@@ -547,7 +547,7 @@ class SEOOptimizer:
         }
 
     def _generate_semantic_keywords(self, analysis: PromptAnalysis) -> list[str]:
-        semantic_map: ClassVar[dict] = {
+        semantic_map: dict = {
             "create": ["build", "generate", "develop", "craft", "design"],
             "optimize": ["improve", "enhance", "refine", "boost", "maximize"],
             "learn": ["master", "understand", "discover", "explore", "study"],
@@ -572,7 +572,7 @@ class SEOOptimizer:
     def _generate_title_variants(self, _text: str, analysis: PromptAnalysis) -> list[str]:
         keywords = list(analysis.keyword_density.keys())[:2]
 
-        templates: ClassVar[list] = [
+        templates: list = [
             f"Complete Guide to {keywords[0] if keywords else 'Your Goal'}",
             f"How to {analysis.detected_intent.replace('_', ' ').title()} - Expert Tips",
             f"{keywords[0].title() if keywords else 'Master'} Tutorial: Everything You Need",
@@ -599,7 +599,7 @@ class StructureOptimizer:
         if not config.structure_hierarchically:
             return text
 
-        sections: ClassVar[dict] = {
+        sections: dict = {
             "role_definition": self._create_role_section(analysis),
             "objective": self._create_objective_section(text, analysis),
             "context": self._create_context_section(context),
@@ -614,7 +614,7 @@ class StructureOptimizer:
         return structured
 
     def _create_role_section(self, analysis: PromptAnalysis) -> str:
-        role_map: ClassVar[dict] = {
+        role_map: dict = {
             PromptCategory.TECHNICAL_INSTRUCTION: "Software Engineer & Technical Architect",
             PromptCategory.CREATIVE_CONTENT: "Storyteller & Creative Content Strategist",
             PromptCategory.VIRAL_SOCIAL: "Viral Content Creator & Engagement Specialist",
@@ -630,7 +630,7 @@ class StructureOptimizer:
         return f"# Objective\n{text}\n\n**Intent**: {analysis.detected_intent.replace('_', ' ').title()}"
 
     def _create_context_section(self, context: dict) -> str:
-        context_parts: ClassVar[list] = []
+        context_parts: list = []
 
         if context.get("domain_knowledge"):
             context_parts.append("## Domain Knowledge")
@@ -643,7 +643,7 @@ class StructureOptimizer:
         return "\n".join(context_parts) if context_parts else ""
 
     def _create_requirements_section(self, context: dict, _config: EnhancementConfig) -> str:
-        requirements: ClassVar[list] = ["# Requirements"]
+        requirements: list = ["# Requirements"]
 
         if context.get("best_practices"):
             requirements.append("\n## Best Practices to Apply")
@@ -662,13 +662,13 @@ class StructureOptimizer:
         if not config.add_constraints or not context.get("constraints"):
             return ""
 
-        constraints: ClassVar[list] = ["# Constraints & Limitations"]
+        constraints: list = ["# Constraints & Limitations"]
         constraints.extend([f"- {item}" for item in context["constraints"][:5]])
 
         return "\n".join(constraints)
 
     def _create_output_format_section(self, analysis: PromptAnalysis) -> str:
-        format_specs: ClassVar[dict] = {
+        format_specs: dict = {
             PromptCategory.TECHNICAL_INSTRUCTION: "Well-commented code with inline documentation",
             PromptCategory.CREATIVE_CONTENT: "Engaging narrative with clear structure",
             PromptCategory.VIRAL_SOCIAL: "Hook-driven content optimized for platform",
@@ -689,7 +689,7 @@ Deliver your response as: {spec}
 
     def _create_examples_section(self, context: dict) -> str:
         if context.get("examples"):
-            examples: ClassVar[list] = ["# Examples & Guidance"]
+            examples: list = ["# Examples & Guidance"]
             examples.extend([f"- {item}" for item in context["examples"]])
             return "\n".join(examples)
         return ""
@@ -704,9 +704,9 @@ Your response is successful when it:
 - Engages the target audience effectively"""
 
     def _assemble_prompt(self, sections: dict[str, str]) -> str:
-        prompt_parts: ClassVar[list] = []
+        prompt_parts: list = []
 
-        section_order: ClassVar[list] = [
+        section_order: list = [
             "role_definition",
             "objective",
             "context",

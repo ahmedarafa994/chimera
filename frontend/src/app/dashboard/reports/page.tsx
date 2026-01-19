@@ -83,7 +83,7 @@ export default function SecurityReportsPage() {
         securityReportService.listReports()
       ]);
 
-      setAssessments(assessmentsData);
+      setAssessments(assessmentsData.assessments);
       setReports(reportsData);
     } catch (error) {
       // Errors already handled in services
