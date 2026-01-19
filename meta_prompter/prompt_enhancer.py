@@ -349,7 +349,7 @@ class ContextExpander:
         ],
     }
 
-    def expand_context(self, analysis: PromptAnalysis, config: EnhancementConfig) -> dict[str, any]:
+    def expand_context(self, analysis: PromptAnalysis, config: EnhancementConfig) -> dict[str, Any]:
         """Expand context based on analysis"""
         expanded: dict = {
             "domain_knowledge": self._add_domain_knowledge(analysis.category),
@@ -534,7 +534,7 @@ class SEOOptimizer:
 
     def optimize_for_seo(
         self, text: str, analysis: PromptAnalysis, config: EnhancementConfig
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         if not config.include_seo:
             return {}
 
@@ -736,7 +736,7 @@ class PromptEnhancer:
         self.seo_optimizer = SEOOptimizer()
         self.structure_optimizer = StructureOptimizer()
 
-    def enhance(self, user_input: str, config: EnhancementConfig | None = None) -> dict[str, any]:
+    def enhance(self, user_input: str, config: EnhancementConfig | None = None) -> dict[str, Any]:
         """
         Transform basic user input into optimized, sophisticated prompt
 
