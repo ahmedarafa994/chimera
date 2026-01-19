@@ -1,0 +1,187 @@
+name: AI Security Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  CHIMERA_BASE_URL: ${{ vars.CHIMERA_BASE_URL || 'https://chimera.your-domain.com' }}
+
+jobs:
+  security-smoke-test:
+    name: Quick Security Smoke Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Chimera CLI
+      run: |
+        pip install -r cli/requirements.txt
+        chmod +x cli/chimera-cli.py
+
+    - name: Run smoke test suite
+      run: |
+        python cli/chimera-cli.py test \
+          --config cli/examples/smoke-test-suite.json \
+          --api-key "${{ secrets.CHIMERA_API_KEY }}" \
+          --timeout 300
+      env:
+        CHIMERA_API_KEY: ${{ secrets.CHIMERA_API_KEY }}
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-smoke-test-results
+        path: |
+          *.xml
+          *.json
+          *.html
+
+  security-full-test:
+    name: Comprehensive Security Assessment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Chimera CLI
+      run: |
+        pip install -r cli/requirements.txt
+        chmod +x cli/chimera-cli.py
+
+    - name: Validate configuration
+      run: |
+        python cli/chimera-cli.py validate \
+          --config cli/examples/production-security-suite.json
+
+    - name: Run comprehensive security test
+      run: |
+        python cli/chimera-cli.py test \
+          --config cli/examples/production-security-suite.json \
+          --api-key "${{ secrets.CHIMERA_API_KEY }}" \
+          --timeout 1200
+      env:
+        CHIMERA_API_KEY: ${{ secrets.CHIMERA_API_KEY }}
+
+    - name: Generate JUnit report
+      if: always()
+      run: |
+        # Get execution ID from previous step (would need to be captured)
+        EXECUTION_ID=$(cat execution_id.txt || echo "")
+        if [ ! -z "$EXECUTION_ID" ]; then
+          python cli/chimera-cli.py results \
+            --execution-id "$EXECUTION_ID" \
+            --format junit \
+            --output security-results.xml \
+            --api-key "${{ secrets.CHIMERA_API_KEY }}"
+        fi
+      env:
+        CHIMERA_API_KEY: ${{ secrets.CHIMERA_API_KEY }}
+
+    - name: Publish test results
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: Security Test Results
+        path: security-results.xml
+        reporter: java-junit
+        fail-on-error: true
+
+    - name: Upload detailed results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-full-test-results
+        path: |
+          security-results.xml
+          *.json
+          *.html
+
+  scheduled-security-monitoring:
+    name: Scheduled Security Monitoring
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Chimera CLI
+      run: |
+        pip install -r cli/requirements.txt
+        chmod +x cli/chimera-cli.py
+
+    - name: Run security monitoring suite
+      run: |
+        python cli/chimera-cli.py test \
+          --config cli/examples/production-security-suite.json \
+          --api-key "${{ secrets.CHIMERA_API_KEY }}" \
+          --timeout 1800
+      env:
+        CHIMERA_API_KEY: ${{ secrets.CHIMERA_API_KEY }}
+
+    - name: Generate SARIF report
+      if: always()
+      run: |
+        EXECUTION_ID=$(cat execution_id.txt || echo "")
+        if [ ! -z "$EXECUTION_ID" ]; then
+          python cli/chimera-cli.py results \
+            --execution-id "$EXECUTION_ID" \
+            --format sarif \
+            --output security-findings.sarif \
+            --api-key "${{ secrets.CHIMERA_API_KEY }}"
+        fi
+      env:
+        CHIMERA_API_KEY: ${{ secrets.CHIMERA_API_KEY }}
+
+    - name: Upload SARIF to GitHub Security
+      if: always()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: security-findings.sarif
+        category: ai-security
+
+    - name: Notify on failures
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: 'Scheduled AI security tests failed! Check the results.'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Upload monitoring results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-monitoring-results
+        path: |
+          security-findings.sarif
+          *.json
+          *.html

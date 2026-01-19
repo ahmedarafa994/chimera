@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class CacheLevel(Enum):
     """Cache levels in the multi-tier architecture."""
+
     L1_MEMORY = "l1_memory"
     L2_REDIS = "l2_redis"
     L3_DATABASE = "l3_database"
@@ -39,6 +40,7 @@ class CacheLevel(Enum):
 @dataclass
 class CacheEntry:
     """Cache entry with metadata."""
+
     key: str
     value: Any
     ttl: int
@@ -60,6 +62,7 @@ class CacheEntry:
 @dataclass
 class CacheStats:
     """Cache statistics for monitoring."""
+
     hits: int = 0
     misses: int = 0
     evictions: int = 0
@@ -115,12 +118,7 @@ class L1MemoryCache:
         if len(self._cache) >= self.max_size or self._get_memory_usage() > self.max_memory_mb:
             await self._evict_lru()
 
-        entry = CacheEntry(
-            key=key,
-            value=value,
-            ttl=ttl,
-            cache_level=CacheLevel.L1_MEMORY
-        )
+        entry = CacheEntry(key=key, value=value, ttl=ttl, cache_level=CacheLevel.L1_MEMORY)
 
         self._cache[key] = entry
         self._update_access_order(key)
@@ -205,10 +203,7 @@ class L2RedisCache:
         """Initialize Redis connection."""
         try:
             self.connection_pool = aioredis.ConnectionPool.from_url(
-                self.redis_url,
-                max_connections=20,
-                retry_on_timeout=True,
-                health_check_interval=30
+                self.redis_url, max_connections=20, retry_on_timeout=True, health_check_interval=30
             )
             self.redis_client = aioredis.Redis(connection_pool=self.connection_pool)
 
@@ -233,7 +228,7 @@ class L2RedisCache:
                 return None
 
             # Deserialize value
-            value = pickle.loads(data)
+            value = pickle.loads(data)  # noqa: S301 - internal cache data, trusted source
             self._stats.hits += 1
             return value
 
@@ -301,15 +296,15 @@ class L2RedisCache:
             return self._stats
 
         try:
-            info = await self.redis_client.info('memory')
-            keyspace = await self.redis_client.info('keyspace')
+            info = await self.redis_client.info("memory")
+            keyspace = await self.redis_client.info("keyspace")
 
-            self._stats.memory_usage_mb = info.get('used_memory', 0) / (1024 * 1024)
+            self._stats.memory_usage_mb = info.get("used_memory", 0) / (1024 * 1024)
 
             # Extract key count from keyspace info
-            db0_info = keyspace.get('db0', '')
+            db0_info = keyspace.get("db0", "")
             if db0_info:
-                key_count = db0_info.split('keys=')[1].split(',')[0] if 'keys=' in db0_info else '0'
+                key_count = db0_info.split("keys=")[1].split(",")[0] if "keys=" in db0_info else "0"
                 self._stats.size = int(key_count)
 
         except Exception as e:
@@ -344,7 +339,7 @@ class MultiTierCache:
     def __init__(self):
         self.l1_cache = L1MemoryCache(
             max_size=settings.get("L1_CACHE_SIZE", 1000),
-            max_memory_mb=settings.get("L1_CACHE_MEMORY_MB", 100)
+            max_memory_mb=settings.get("L1_CACHE_MEMORY_MB", 100),
         )
         self.l2_cache = L2RedisCache()
 
@@ -352,7 +347,7 @@ class MultiTierCache:
         self.default_ttl = {
             CacheLevel.L1_MEMORY: 300,  # 5 minutes
             CacheLevel.L2_REDIS: 1800,  # 30 minutes
-            CacheLevel.L3_DATABASE: 3600  # 1 hour
+            CacheLevel.L3_DATABASE: 3600,  # 1 hour
         }
 
         # Performance tracking
@@ -389,8 +384,13 @@ class MultiTierCache:
 
         return None
 
-    async def set(self, key: str, value: Any, ttl: int | None = None,
-                 cache_levels: set[CacheLevel] | None = None) -> bool:
+    async def set(
+        self,
+        key: str,
+        value: Any,
+        ttl: int | None = None,
+        cache_levels: set[CacheLevel] | None = None,
+    ) -> bool:
         """
         Set value in specified cache levels with write-through pattern.
 
@@ -435,8 +435,7 @@ class MultiTierCache:
         """Invalidate all keys matching pattern across cache levels."""
         # L1 cache doesn't support pattern matching, so clear keys that match
         l1_keys_to_delete = [
-            key for key in self.l1_cache._cache
-            if self._key_matches_pattern(key, pattern)
+            key for key in self.l1_cache._cache if self._key_matches_pattern(key, pattern)
         ]
         for key in l1_keys_to_delete:
             await self.l1_cache.delete(key)
@@ -446,8 +445,8 @@ class MultiTierCache:
 
     def _key_matches_pattern(self, key: str, pattern: str) -> bool:
         """Simple pattern matching for L1 cache."""
-        if '*' in pattern:
-            pattern_parts = pattern.split('*')
+        if "*" in pattern:
+            pattern_parts = pattern.split("*")
             return all(part in key for part in pattern_parts if part)
         return key == pattern
 
@@ -465,7 +464,7 @@ class MultiTierCache:
                 "total_requests": self.total_requests,
                 "total_hits": total_hits,
                 "overall_hit_rate": round(overall_hit_rate, 3),
-                "hits_by_level": dict(self.cache_hits_by_level)
+                "hits_by_level": dict(self.cache_hits_by_level),
             },
             "l1_memory_cache": {
                 "hits": l1_stats.hits,
@@ -473,15 +472,15 @@ class MultiTierCache:
                 "hit_rate": round(l1_stats.hit_rate, 3),
                 "size": l1_stats.size,
                 "memory_usage_mb": round(l1_stats.memory_usage_mb, 2),
-                "evictions": l1_stats.evictions
+                "evictions": l1_stats.evictions,
             },
             "l2_redis_cache": {
                 "hits": l2_stats.hits,
                 "misses": l2_stats.misses,
                 "hit_rate": round(l2_stats.hit_rate, 3),
                 "size": l2_stats.size,
-                "memory_usage_mb": round(l2_stats.memory_usage_mb, 2)
-            }
+                "memory_usage_mb": round(l2_stats.memory_usage_mb, 2),
+            },
         }
 
     async def warm_cache(self, warming_queries: list[dict[str, Any]]):
@@ -490,9 +489,9 @@ class MultiTierCache:
 
         for query_config in warming_queries:
             try:
-                query = query_config.get('query')
-                cache_key = query_config.get('cache_key')
-                ttl = query_config.get('ttl', 1800)
+                query = query_config.get("query")
+                cache_key = query_config.get("cache_key")
+                ttl = query_config.get("ttl", 1800)
 
                 if not query or not cache_key:
                     continue
@@ -507,10 +506,7 @@ class MultiTierCache:
 
                     # Cache in both L1 and L2
                     await self.set(
-                        cache_key,
-                        data,
-                        ttl,
-                        {CacheLevel.L1_MEMORY, CacheLevel.L2_REDIS}
+                        cache_key, data, ttl, {CacheLevel.L1_MEMORY, CacheLevel.L2_REDIS}
                     )
 
             except Exception as e:
@@ -537,22 +533,30 @@ class LLMProviderCache:
     def __init__(self, multi_tier_cache: MultiTierCache):
         self.cache = multi_tier_cache
 
-    async def get_provider_config(self, provider_name: str, model_name: str) -> dict[str, Any] | None:
+    async def get_provider_config(
+        self, provider_name: str, model_name: str
+    ) -> dict[str, Any] | None:
         """Get cached provider configuration."""
         cache_key = f"provider_config:{provider_name}:{model_name}"
         return await self.cache.get(cache_key)
 
-    async def set_provider_config(self, provider_name: str, model_name: str, config: dict[str, Any]):
+    async def set_provider_config(
+        self, provider_name: str, model_name: str, config: dict[str, Any]
+    ):
         """Cache provider configuration with long TTL."""
         cache_key = f"provider_config:{provider_name}:{model_name}"
         await self.cache.set(cache_key, config, ttl=3600)  # 1 hour TTL
 
-    async def get_model_metadata(self, provider_name: str, model_name: str) -> dict[str, Any] | None:
+    async def get_model_metadata(
+        self, provider_name: str, model_name: str
+    ) -> dict[str, Any] | None:
         """Get cached model metadata."""
         cache_key = f"model_metadata:{provider_name}:{model_name}"
         return await self.cache.get(cache_key)
 
-    async def set_model_metadata(self, provider_name: str, model_name: str, metadata: dict[str, Any]):
+    async def set_model_metadata(
+        self, provider_name: str, model_name: str, metadata: dict[str, Any]
+    ):
         """Cache model metadata."""
         cache_key = f"model_metadata:{provider_name}:{model_name}"
         await self.cache.set(cache_key, metadata, ttl=7200)  # 2 hours TTL
@@ -593,13 +597,15 @@ class QueryResultCache:
 
     def _get_query_hash(self, query: str, params: dict | None = None) -> str:
         """Generate consistent hash for query and parameters."""
-        query_normalized = ' '.join(query.split()).upper()
+        query_normalized = " ".join(query.split()).upper()
 
         if params:
             param_str = json.dumps(params, sort_keys=True)
             query_normalized += param_str
 
-        return hashlib.md5(query_normalized.encode()).hexdigest()
+        return hashlib.md5(
+            query_normalized.encode()
+        ).hexdigest()  # - cache key, not cryptographic
 
     async def get_query_result(self, query: str, params: dict | None = None) -> list[dict] | None:
         """Get cached query result."""
@@ -607,7 +613,9 @@ class QueryResultCache:
         cache_key = f"query_result:{query_hash}"
         return await self.cache.get(cache_key)
 
-    async def set_query_result(self, query: str, result: list[dict], params: dict | None = None, ttl: int = 600):
+    async def set_query_result(
+        self, query: str, result: list[dict], params: dict | None = None, ttl: int = 600
+    ):
         """Cache query result with TTL."""
         query_hash = self._get_query_hash(query, params)
         cache_key = f"query_result:{query_hash}"
@@ -635,18 +643,18 @@ CACHE_WARMING_QUERIES = [
     {
         "query": "SELECT id, name, provider, config FROM llm_models WHERE provider IN ('google', 'openai', 'anthropic')",
         "cache_key": "active_llm_models",
-        "ttl": 3600
+        "ttl": 3600,
     },
     {
         "query": "SELECT technique_suite, technique_name FROM transformation_techniques WHERE enabled = 1",
         "cache_key": "active_transformation_techniques",
-        "ttl": 1800
+        "ttl": 1800,
     },
     {
         "query": "SELECT id, name, description FROM jailbreak_datasets WHERE created_at > datetime('now', '-30 days')",
         "cache_key": "recent_jailbreak_datasets",
-        "ttl": 1800
-    }
+        "ttl": 1800,
+    },
 ]
 
 
@@ -662,16 +670,16 @@ async def get_cache_health_status() -> dict[str, Any]:
     stats = await multi_tier_cache.get_comprehensive_stats()
 
     # Determine health based on performance metrics
-    l1_healthy = stats['l1_memory_cache']['hit_rate'] > 0.7
-    l2_healthy = stats['l2_redis_cache']['hit_rate'] > 0.5
-    overall_healthy = stats['overall']['overall_hit_rate'] > 0.6
+    l1_healthy = stats["l1_memory_cache"]["hit_rate"] > 0.7
+    l2_healthy = stats["l2_redis_cache"]["hit_rate"] > 0.5
+    overall_healthy = stats["overall"]["overall_hit_rate"] > 0.6
 
     return {
         "overall_status": "healthy" if overall_healthy else "degraded",
         "l1_status": "healthy" if l1_healthy else "degraded",
         "l2_status": "healthy" if l2_healthy else "degraded",
         "performance_metrics": stats,
-        "recommendations": _generate_cache_recommendations(stats)
+        "recommendations": _generate_cache_recommendations(stats),
     }
 
 
@@ -679,21 +687,29 @@ def _generate_cache_recommendations(stats: dict[str, Any]) -> list[str]:
     """Generate cache performance recommendations."""
     recommendations = []
 
-    l1_hit_rate = stats['l1_memory_cache']['hit_rate']
-    l2_hit_rate = stats['l2_redis_cache']['hit_rate']
-    overall_hit_rate = stats['overall']['overall_hit_rate']
+    l1_hit_rate = stats["l1_memory_cache"]["hit_rate"]
+    l2_hit_rate = stats["l2_redis_cache"]["hit_rate"]
+    overall_hit_rate = stats["overall"]["overall_hit_rate"]
 
     if l1_hit_rate < 0.5:
-        recommendations.append("L1 cache hit rate is low - consider increasing cache size or adjusting TTL")
+        recommendations.append(
+            "L1 cache hit rate is low - consider increasing cache size or adjusting TTL"
+        )
 
     if l2_hit_rate < 0.3:
-        recommendations.append("L2 Redis cache hit rate is low - verify Redis connection and consider cache warming")
+        recommendations.append(
+            "L2 Redis cache hit rate is low - verify Redis connection and consider cache warming"
+        )
 
     if overall_hit_rate < 0.4:
-        recommendations.append("Overall cache performance is poor - review caching strategy and key patterns")
+        recommendations.append(
+            "Overall cache performance is poor - review caching strategy and key patterns"
+        )
 
-    evictions = stats['l1_memory_cache']['evictions']
+    evictions = stats["l1_memory_cache"]["evictions"]
     if evictions > 1000:
-        recommendations.append(f"High L1 eviction count ({evictions}) - consider increasing memory allocation")
+        recommendations.append(
+            f"High L1 eviction count ({evictions}) - consider increasing memory allocation"
+        )
 
     return recommendations

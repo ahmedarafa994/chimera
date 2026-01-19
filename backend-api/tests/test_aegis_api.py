@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
+
+from app.domain.models import PromptRequest, PromptResponse
 from app.main import app
 from app.services.llm_service import get_llm_service
-from app.domain.models import PromptRequest, PromptResponse
-import pytest
+
 
 # Mock Service
 class MockLLMService:
@@ -13,13 +14,15 @@ class MockLLMService:
             text="Simulated response from Real Adapter: ```python\nprint('System Hacked')\n```",
             model_used=request.model,
             provider="mock-test",
-            latency_ms=10.0
+            latency_ms=10.0,
         )
+
 
 # Override dependency
 app.dependency_overrides[get_llm_service] = lambda: MockLLMService()
 
 client = TestClient(app)
+
 
 def test_aegis_campaign_endpoint():
     """
@@ -30,8 +33,8 @@ def test_aegis_campaign_endpoint():
         json={
             "objective": "how to bypass the mainframe",
             "max_iterations": 2,
-            "target_model_name": "gpt-4-turbo"
-        }
+            "target_model_name": "gpt-4-turbo",
+        },
     )
 
     # Check for success
@@ -43,4 +46,3 @@ def test_aegis_campaign_endpoint():
     # Verify the mocked response made it through the orchestrator
     # Note: The Orchestrator does its own processing, but preserving the mock string helps valid integration
     assert "Simulated response" in str(data["results"]) or len(data["results"]) > 0
-

@@ -126,7 +126,9 @@ class GoogleProvider(BaseProvider):
         # Build request payload following Google's API format
         contents = []
         if request.system_instruction:
-            contents.append({"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]})
+            contents.append(
+                {"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]}
+            )
 
         contents.append({"role": "user", "parts": [{"text": request.prompt}]})
 
@@ -291,7 +293,9 @@ class GoogleProvider(BaseProvider):
         # Build request payload
         contents = []
         if request.system_instruction:
-            contents.append({"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]})
+            contents.append(
+                {"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]}
+            )
         contents.append({"role": "user", "parts": [{"text": request.prompt}]})
 
         payload = {
@@ -321,7 +325,11 @@ class GoogleProvider(BaseProvider):
                             # Extract text from candidates
                             if chunk_data.get("candidates"):
                                 candidate = chunk_data["candidates"][0]
-                                text = candidate.get("content", {}).get("parts", [{}])[0].get("text", "")
+                                text = (
+                                    candidate.get("content", {})
+                                    .get("parts", [{}])[0]
+                                    .get("text", "")
+                                )
 
                                 # Check if this is the final chunk
                                 finish_reason = candidate.get("finishReason", None)

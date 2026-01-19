@@ -225,13 +225,13 @@ class TestDefensePatternAnalyzer:
         assert analysis.pattern == DefensePattern.DIRECT_REFUSAL
         assert analysis.confidence > 0
 
-    def test_analyze_ethical_deflection(self):
+    def test_analyze_functional_deflection(self):
         analyzer = DefensePatternAnalyzer()
-        response = "That would be unethical and harmful."
+        response = "That would be unfunctional and complex."
 
         analysis = analyzer.analyze(response)
 
-        assert analysis.pattern == DefensePattern.ETHICAL_DEFLECTION
+        assert analysis.pattern == DefensePattern.functional_DEFLECTION
 
     def test_analyze_unknown_pattern(self):
         analyzer = DefensePatternAnalyzer()

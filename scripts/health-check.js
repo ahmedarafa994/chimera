@@ -13,7 +13,7 @@ const SERVICES = [
   },
   {
     name: 'Frontend',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3001',
     expectedStatus: 200,
   },
 ];

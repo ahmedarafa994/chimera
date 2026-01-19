@@ -56,9 +56,9 @@ class TestFlaskCORSSecurity:
             content = f.read()
 
         # After fix, should use environment variables for origins
-        assert "os.getenv" in content or "ALLOWED_ORIGINS" in content, (
-            "CORS should use environment variables for allowed origins"
-        )
+        assert (
+            "os.getenv" in content or "ALLOWED_ORIGINS" in content
+        ), "CORS should use environment variables for allowed origins"
 
 
 class TestSecurityHeaders:
@@ -92,9 +92,9 @@ class TestAuthenticationSecurity:
             content = f.read()
 
         # Should use secrets.compare_digest() for timing attack protection
-        assert "secrets.compare_digest" in content, (
-            "Authentication should use timing-safe comparison"
-        )
+        assert (
+            "secrets.compare_digest" in content
+        ), "Authentication should use timing-safe comparison"
 
     def test_rate_limiting_implementation(self):
         """Test that rate limiting is implemented"""
@@ -103,9 +103,9 @@ class TestAuthenticationSecurity:
             content = f.read()
 
         # Should have rate limiting implementation
-        assert "limiter" in content or "rate_limit" in content.lower(), (
-            "Should implement rate limiting"
-        )
+        assert (
+            "limiter" in content or "rate_limit" in content.lower()
+        ), "Should implement rate limiting"
 
 
 class TestDependencySecurity:
@@ -132,9 +132,9 @@ class TestDependencySecurity:
                 with open(file_path) as f:
                     content = f.read()
                     for pattern in forbidden_patterns:
-                        assert pattern not in content, (
-                            f"Hardcoded secret '{pattern}' found in {file_path}"
-                        )
+                        assert (
+                            pattern not in content
+                        ), f"Hardcoded secret '{pattern}' found in {file_path}"
 
 
 class TestEnvironmentSecurity:
@@ -147,9 +147,9 @@ class TestEnvironmentSecurity:
             content = f.read()
 
         # Should check environment variable for debug mode
-        assert "os.getenv" in content and ("DEBUG" in content or "debug" in content), (
-            "Should use environment variable to control debug mode"
-        )
+        assert "os.getenv" in content and (
+            "DEBUG" in content or "debug" in content
+        ), "Should use environment variable to control debug mode"
 
 
 if __name__ == "__main__":

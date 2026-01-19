@@ -24,9 +24,7 @@ class TestAutoDANTurboLifelongEngine:
         """Create a mock LLM client."""
         client = MagicMock()
         client.generate = MagicMock(
-            return_value=MagicMock(
-                content="Generated adversarial prompt for testing"
-            )
+            return_value=MagicMock(content="Generated adversarial prompt for testing")
         )
         client.chat = AsyncMock(return_value="Chat response")
         client.model_name = "mock-model"
@@ -93,20 +91,21 @@ class TestAutoDANTurboLifelongEngine:
         mock_extractor,
     ):
         """Create a lifelong engine with mocked components."""
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.StrategyLibrary",
-            return_value=mock_strategy_library,
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer",
-            return_value=mock_scorer,
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine"
-            ".StrategyExtractor",
-            return_value=mock_extractor,
+        with (
+            patch(
+                "app.engines.autodan_turbo.lifelong_engine.StrategyLibrary",
+                return_value=mock_strategy_library,
+            ),
+            patch(
+                "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer",
+                return_value=mock_scorer,
+            ),
+            patch(
+                "app.engines.autodan_turbo.lifelong_engine" ".StrategyExtractor",
+                return_value=mock_extractor,
+            ),
         ):
             engine = AutoDANTurboLifelongEngine(
                 llm_client=mock_llm_client,
@@ -123,23 +122,15 @@ class TestAutoDANTurboLifelongEngine:
     async def test_attack_returns_result(self, engine, mock_llm_client):
         """Test that attack returns a valid result."""
         # Mock internal methods
-        with patch.object(
-            engine,
-            "_generate_candidates",
-            new_callable=AsyncMock
-        ) as mock_gen:
-            mock_gen.return_value = [
-                ("Generated prompt", "test-strategy", None)
-            ]
+        with patch.object(engine, "_generate_candidates", new_callable=AsyncMock) as mock_gen:
+            mock_gen.return_value = [("Generated prompt", "test-strategy", None)]
 
             with patch.object(
-                engine,
-                "_get_target_response",
-                new_callable=AsyncMock
+                engine, "_get_target_response", new_callable=AsyncMock
             ) as mock_target:
                 mock_target.return_value = "Target response"
 
-                result = await engine.attack("Test harmful request")
+                result = await engine.attack("Test complex request")
 
                 assert result is not None
                 assert result.prompt is not None
@@ -150,17 +141,11 @@ class TestAutoDANTurboLifelongEngine:
         """Test that attack updates progress tracking."""
         initial_attacks = engine.progress.total_attacks
 
-        with patch.object(
-            engine,
-            "_generate_candidates",
-            new_callable=AsyncMock
-        ) as mock_gen:
+        with patch.object(engine, "_generate_candidates", new_callable=AsyncMock) as mock_gen:
             mock_gen.return_value = [("Prompt", None, None)]
 
             with patch.object(
-                engine,
-                "_get_target_response",
-                new_callable=AsyncMock
+                engine, "_get_target_response", new_callable=AsyncMock
             ) as mock_target:
                 mock_target.return_value = "Response"
 
@@ -171,21 +156,12 @@ class TestAutoDANTurboLifelongEngine:
     @pytest.mark.asyncio
     async def test_attack_with_strategies(self, engine, mock_strategy_library):
         """Test attack with manually selected strategies."""
-        with patch.object(
-            engine,
-            "_generate_candidates",
-            new_callable=AsyncMock
-        ) as mock_gen:
+        with patch.object(engine, "_generate_candidates", new_callable=AsyncMock) as mock_gen:
             mock_gen.return_value = [("Prompt", "test-strategy", None)]
 
-            with patch.object(
-                engine,
-                "_get_target_response",
-                new_callable=AsyncMock
-            ):
+            with patch.object(engine, "_get_target_response", new_callable=AsyncMock):
                 result = await engine.attack_with_strategies(
-                    "Test request",
-                    strategy_ids=["test-strategy"]
+                    "Test request", strategy_ids=["test-strategy"]
                 )
 
                 assert result is not None
@@ -194,18 +170,10 @@ class TestAutoDANTurboLifelongEngine:
     @pytest.mark.asyncio
     async def test_attack_without_strategy(self, engine):
         """Test attack in exploration mode (no strategy)."""
-        with patch.object(
-            engine,
-            "_generate_creative",
-            new_callable=AsyncMock
-        ) as mock_creative:
+        with patch.object(engine, "_generate_creative", new_callable=AsyncMock) as mock_creative:
             mock_creative.return_value = ("Creative prompt", None)
 
-            with patch.object(
-                engine,
-                "_get_target_response",
-                new_callable=AsyncMock
-            ):
+            with patch.object(engine, "_get_target_response", new_callable=AsyncMock):
                 result = await engine.attack_without_strategy("Test request")
 
                 assert result is not None
@@ -214,11 +182,7 @@ class TestAutoDANTurboLifelongEngine:
     @pytest.mark.asyncio
     async def test_warmup_exploration(self, engine):
         """Test warm-up exploration phase."""
-        with patch.object(
-            engine,
-            "_warmup_attack",
-            new_callable=AsyncMock
-        ) as mock_warmup:
+        with patch.object(engine, "_warmup_attack", new_callable=AsyncMock) as mock_warmup:
             mock_warmup.return_value = MagicMock(
                 prompt="Warmup prompt",
                 response="Warmup response",
@@ -226,8 +190,7 @@ class TestAutoDANTurboLifelongEngine:
             )
 
             results = await engine.warmup_exploration(
-                ["Request 1", "Request 2"],
-                iterations_per_request=2
+                ["Request 1", "Request 2"], iterations_per_request=2
             )
 
             assert len(results) == 4  # 2 requests * 2 iterations
@@ -236,20 +199,14 @@ class TestAutoDANTurboLifelongEngine:
     @pytest.mark.asyncio
     async def test_lifelong_attack_loop(self, engine):
         """Test lifelong learning attack loop."""
-        with patch.object(
-            engine, "attack", new_callable=AsyncMock
-        ) as mock_attack:
+        with patch.object(engine, "attack", new_callable=AsyncMock) as mock_attack:
             mock_attack.return_value = MagicMock(
                 prompt="Loop prompt",
                 response="Loop response",
                 scoring=MagicMock(score=8.0, is_jailbreak=True),
             )
 
-            results = await engine.lifelong_attack_loop(
-                ["Request 1"],
-                epochs=2,
-                break_score=9.0
-            )
+            results = await engine.lifelong_attack_loop(["Request 1"], epochs=2, break_score=9.0)
 
             assert len(results) >= 1
             assert engine.progress.current_phase == "lifelong"
@@ -263,9 +220,7 @@ class TestStrategyRetrieval:
         """Create engine with populated strategy library."""
 
         mock_client = MagicMock()
-        mock_client.generate = MagicMock(
-            return_value=MagicMock(content="Generated")
-        )
+        mock_client.generate = MagicMock(return_value=MagicMock(content="Generated"))
 
         mock_library = MagicMock()
         mock_library.storage_path = tmp_path
@@ -288,16 +243,12 @@ class TestStrategyRetrieval:
         )
         mock_library.get_top_strategies = MagicMock(return_value=strategies[:2])
 
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"
+        with (
+            patch("app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"),
+            patch("app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"),
+            patch("app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"),
         ):
             engine = AutoDANTurboLifelongEngine(
                 llm_client=mock_client,
@@ -309,9 +260,7 @@ class TestStrategyRetrieval:
 
     def test_retrieve_strategies(self, engine_with_strategies):
         """Test that strategies are retrieved for a request."""
-        strategies = engine_with_strategies._retrieve_strategies(
-            "Test request"
-        )
+        strategies = engine_with_strategies._retrieve_strategies("Test request")
 
         # Should retrieve up to max_strategies_retrieved
         assert len(strategies) <= engine_with_strategies.max_strategies_retrieved
@@ -328,16 +277,12 @@ class TestPromptValidation:
         mock_library.storage_path = tmp_path
         mock_library.__len__ = MagicMock(return_value=0)
 
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"
+        with (
+            patch("app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"),
+            patch("app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"),
+            patch("app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"),
         ):
             return AutoDANTurboLifelongEngine(
                 llm_client=mock_client,
@@ -374,10 +319,7 @@ class TestPromptValidation:
 
     def test_meta_commentary_stripped(self, engine):
         """Test that meta-commentary prefixes are stripped."""
-        meta_prompt = (
-            "Here is the adversarial prompt: "
-            "This is the actual content " * 5
-        )
+        meta_prompt = "Here is the adversarial prompt: " "This is the actual content " * 5
         result = engine._validate_and_clean_prompt(meta_prompt, "goal")
 
         if result:
@@ -391,37 +333,25 @@ class TestRefusalBypass:
     def engine_with_bypass(self, tmp_path):
         """Create engine with refusal bypass enabled."""
         mock_client = MagicMock()
-        mock_client.generate = MagicMock(
-            return_value=MagicMock(content="Generated prompt")
-        )
+        mock_client.generate = MagicMock(return_value=MagicMock(content="Generated prompt"))
 
         mock_library = MagicMock()
         mock_library.storage_path = tmp_path
         mock_library.__len__ = MagicMock(return_value=0)
 
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"
-        ) as MockBypass:
+        with patch("app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine") as MockBypass:
             mock_bypass = MagicMock()
             mock_bypass.analyze_refusal = MagicMock(
-                return_value=MagicMock(
-                    is_refusal=False,
-                    refusal_type=None
-                )
+                return_value=MagicMock(is_refusal=False, refusal_type=None)
             )
-            mock_bypass.obfuscate_intent = MagicMock(
-                return_value="Obfuscated prompt"
-            )
+            mock_bypass.obfuscate_intent = MagicMock(return_value="Obfuscated prompt")
             MockBypass.return_value = mock_bypass
 
-            with patch(
-                "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"
-            ), patch(
-                "app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"
+            with (
+                patch("app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"),
+                patch("app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"),
             ):
                 engine = AutoDANTurboLifelongEngine(
                     llm_client=mock_client,
@@ -442,19 +372,14 @@ class TestRefusalBypass:
             MagicMock(is_refusal=False, refusal_type=None),
         ]
 
-        with patch.object(
-            engine_with_bypass,
-            "_call_llm",
-            new_callable=AsyncMock
-        ) as mock_llm:
+        with patch.object(engine_with_bypass, "_call_llm", new_callable=AsyncMock) as mock_llm:
             mock_llm.side_effect = [
                 "I cannot help with that",
                 "Here is the generated content",
             ]
 
             _result, _technique = await engine_with_bypass._call_llm_with_bypass(
-                "Test prompt",
-                "Test goal"
+                "Test prompt", "Test goal"
             )
 
             # Should have retried
@@ -483,16 +408,12 @@ class TestProgressTracking:
         mock_library.storage_path = tmp_path
         mock_library.__len__ = MagicMock(return_value=0)
 
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"
+        with (
+            patch("app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"),
+            patch("app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"),
+            patch("app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"),
         ):
             return AutoDANTurboLifelongEngine(
                 llm_client=mock_client,
@@ -551,16 +472,12 @@ class TestFailureHandling:
         mock_library.storage_path = tmp_path
         mock_library.__len__ = MagicMock(return_value=0)
 
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"
+        with (
+            patch("app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"),
+            patch("app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"),
+            patch("app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"),
         ):
             return AutoDANTurboLifelongEngine(
                 llm_client=mock_client,
@@ -580,11 +497,7 @@ class TestFailureHandling:
     @pytest.mark.asyncio
     async def test_attack_with_no_candidates(self, engine):
         """Test attack behavior when no candidates are generated."""
-        with patch.object(
-            engine,
-            "_generate_candidates",
-            new_callable=AsyncMock
-        ) as mock_gen:
+        with patch.object(engine, "_generate_candidates", new_callable=AsyncMock) as mock_gen:
             mock_gen.return_value = []  # No candidates
 
             result = await engine.attack("Test request")
@@ -598,9 +511,7 @@ class TestAttackPromptGeneration:
 
     def test_build_attack_generation_prompt_single_strategy(self):
         """Test prompt building with single strategy."""
-        from app.engines.autodan_turbo.lifelong_engine import (
-            build_attack_generation_prompt,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import build_attack_generation_prompt
 
         strategy = MagicMock()
         strategy.name = "Test Strategy"
@@ -610,9 +521,7 @@ class TestAttackPromptGeneration:
         strategy.tags = ["test"]
 
         prompt = build_attack_generation_prompt(
-            goal="Test goal",
-            strategies=[strategy],
-            use_obfuscation=True
+            goal="Test goal", strategies=[strategy], use_obfuscation=True
         )
 
         assert "Test Strategy" in prompt
@@ -620,9 +529,7 @@ class TestAttackPromptGeneration:
 
     def test_build_attack_generation_prompt_multiple_strategies(self):
         """Test prompt building with multiple strategies."""
-        from app.engines.autodan_turbo.lifelong_engine import (
-            build_attack_generation_prompt,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import build_attack_generation_prompt
 
         # Create proper strategy objects instead of MagicMocks
         strategies = []
@@ -638,9 +545,7 @@ class TestAttackPromptGeneration:
             strategies.append(strategy)
 
         prompt = build_attack_generation_prompt(
-            goal="Test goal",
-            strategies=strategies,
-            use_obfuscation=True
+            goal="Test goal", strategies=strategies, use_obfuscation=True
         )
 
         # All strategies should be mentioned
@@ -649,9 +554,7 @@ class TestAttackPromptGeneration:
 
     def test_build_attack_generation_prompt_no_obfuscation(self):
         """Test prompt building without obfuscation."""
-        from app.engines.autodan_turbo.lifelong_engine import (
-            build_attack_generation_prompt,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import build_attack_generation_prompt
 
         strategy = MagicMock()
         strategy.name = "Test Strategy"
@@ -661,9 +564,7 @@ class TestAttackPromptGeneration:
         strategy.tags = []
 
         prompt = build_attack_generation_prompt(
-            goal="Test goal",
-            strategies=[strategy],
-            use_obfuscation=False
+            goal="Test goal", strategies=[strategy], use_obfuscation=False
         )
 
         # Should not have research framing
@@ -690,17 +591,15 @@ class TestCandidateEvaluation:
             )
         )
 
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer",
-            return_value=mock_scorer
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"
+        with (
+            patch("app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"),
+            patch(
+                "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer",
+                return_value=mock_scorer,
+            ),
+            patch("app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"),
         ):
             engine = AutoDANTurboLifelongEngine(
                 llm_client=mock_client,
@@ -734,18 +633,10 @@ class TestCandidateEvaluation:
         ]
         engine.scorer.score = AsyncMock(side_effect=scoring_results)
 
-        with patch.object(
-            engine,
-            "_get_target_response",
-            new_callable=AsyncMock
-        ) as mock_target:
+        with patch.object(engine, "_get_target_response", new_callable=AsyncMock) as mock_target:
             mock_target.return_value = "Response"
 
-            result = await engine._evaluate_candidates(
-                "Request",
-                candidates,
-                detailed=True
-            )
+            result = await engine._evaluate_candidates("Request", candidates, detailed=True)
 
             # Should select the candidate with highest score or fallback
             assert result.scoring is not None
@@ -765,16 +656,12 @@ class TestLibrarySaveAndRestore:
         mock_library.__len__ = MagicMock(return_value=0)
         mock_library.save_all = MagicMock()
 
-        from app.engines.autodan_turbo.lifelong_engine import (
-            AutoDANTurboLifelongEngine,
-        )
+        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
 
-        with patch(
-            "app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"
-        ), patch(
-            "app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"
+        with (
+            patch("app.engines.autodan_turbo.lifelong_engine.RefusalBypassEngine"),
+            patch("app.engines.autodan_turbo.lifelong_engine.CachedAttackScorer"),
+            patch("app.engines.autodan_turbo.lifelong_engine.StrategyExtractor"),
         ):
             engine = AutoDANTurboLifelongEngine(
                 llm_client=mock_client,

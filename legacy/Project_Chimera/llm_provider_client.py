@@ -724,7 +724,7 @@ class LLMClientFactory:
             config = ProviderConfig(
                 provider=LLMProvider.CUSTOM,
                 api_key=os.getenv("CUSTOM_API_KEY", ""),
-                base_url=os.getenv("CUSTOM_BASE_URL", "http://localhost:8000"),
+                base_url=os.getenv("CUSTOM_BASE_URL", "http://localhost:8001"),
                 model=os.getenv("CUSTOM_MODEL", "custom-model"),
                 cost_per_1k_tokens=0.0,
             )

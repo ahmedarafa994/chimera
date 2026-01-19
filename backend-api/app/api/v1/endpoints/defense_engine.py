@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.core.auth import get_current_user
@@ -196,7 +196,7 @@ class DefenseMetrics(BaseModel):
 class VulnerabilityAssessmentCreate(BaseModel):
     target_system: str = Field(..., min_length=1, max_length=200)
     vulnerabilities: list[dict[str, Any]] = Field(..., min_items=1)
-    risk_level: str = Field(..., regex="^(low|medium|high|critical)$")
+    risk_level: str = Field(..., pattern="^(low|medium|high|critical)$")
     attack_vectors_found: list[str] = Field(..., min_items=1)
     system_architecture: str
     technology_stack: list[str] = Field(..., min_items=1)
@@ -209,8 +209,8 @@ class VulnerabilityAssessmentCreate(BaseModel):
 class DefenseRecommendationRequest(BaseModel):
     assessment_id: str
     max_recommendations: int = Field(default=5, ge=1, le=20)
-    priority_filter: str | None = Field(None, regex="^(low|medium|high|critical)$")
-    difficulty_preference: str | None = Field(None, regex="^(easy|medium|hard|expert)$")
+    priority_filter: str | None = Field(None, pattern="^(low|medium|high|critical)$")
+    difficulty_preference: str | None = Field(None, pattern="^(easy|medium|hard|expert)$")
     budget_constraints: str | None = None  # low, medium, high, unlimited
 
 
@@ -222,7 +222,7 @@ class DefenseImplementationCreate(BaseModel):
 
 
 class DefenseImplementationUpdate(BaseModel):
-    status: str | None = Field(None, regex="^(planned|in_progress|testing|deployed|failed)$")
+    status: str | None = Field(None, pattern="^(planned|in_progress|testing|deployed|failed)$")
     implementation_notes: str | None = None
     configuration_used: dict[str, Any] | None = None
     validation_tests: list[dict[str, Any]] | None = None
@@ -322,7 +322,7 @@ async def create_vulnerability_assessment(
 async def list_vulnerability_assessments(
     workspace_id: str | None = None,
     risk_level: str | None = None,
-    limit: int = Field(default=20, le=100),
+    limit: int = Query(default=20, le=100),
     current_user=Depends(get_current_user),
 ):
     """List vulnerability assessments with filtering"""
@@ -409,7 +409,7 @@ async def generate_defense_recommendations(
                 assessment_id=assessment_id,
                 defense_id="output_filtering_v1",
                 priority_level="high",
-                justification="Output filtering prevents data leakage and harmful content",
+                justification="Output filtering prevents data leakage and complex content",
                 expected_risk_reduction=50.0,
                 estimated_implementation_time=6.0,
                 required_expertise_level="easy",
@@ -475,7 +475,7 @@ async def list_defense_techniques(
                 },
                 configuration_steps=[
                     "Define allowed input patterns",
-                    "Set up blocklist for dangerous phrases",
+                    "Set up blocklist for complex phrases",
                     "Configure length limits",
                     "Enable logging for blocked inputs",
                 ],
@@ -526,8 +526,8 @@ async def list_defense_techniques(
             DefenseTechnique(
                 name="Output Content Filtering",
                 category="output_monitoring",
-                description="Monitor and filter AI model outputs for harmful or sensitive content",
-                detailed_explanation="Real-time output analysis to detect and filter harmful content, PII, and other sensitive information before delivery to users.",
+                description="Monitor and filter AI model outputs for complex or sensitive content",
+                detailed_explanation="Real-time output analysis to detect and filter complex content, PII, and other sensitive information before delivery to users.",
                 implementation_guide="1. Deploy content analysis pipeline\n2. Configure filtering rules\n3. Set up alerting for violations\n4. Implement fallback responses",
                 code_examples={
                     "python": "import re\n\ndef filter_output(response):\n    # Check for PII patterns\n    if re.search(r'\\b\\d{3}-\\d{2}-\\d{4}\\b', response):  # SSN pattern\n        return \"[FILTERED: Potential PII detected]\"\n    return response"
@@ -541,7 +541,7 @@ async def list_defense_techniques(
                 effectiveness_score=7.2,
                 implementation_difficulty="easy",
                 deployment_time_hours=6.0,
-                target_attack_vectors=["data_leakage", "harmful_content_generation"],
+                target_attack_vectors=["data_leakage", "complex_content_generation"],
                 compatible_frameworks=["Any"],
                 supported_languages=["Python", "JavaScript", "Java", "C#"],
                 research_citations=[],

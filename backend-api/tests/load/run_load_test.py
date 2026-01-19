@@ -30,10 +30,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from tests.load.locust_config import (
-    get_all_configs,
-    get_config,
-)
+from tests.load.locust_config import get_all_configs, get_config
 
 
 def parse_args() -> argparse.Namespace:
@@ -138,11 +135,16 @@ def build_locust_command(args: argparse.Namespace) -> list[str]:
     # Build command
     cmd = [
         "locust",
-        "-f", "tests/load/locustfile.py",
-        "--host", host,
-        "--users", str(users),
-        "--spawn-rate", str(spawn_rate),
-        "--run-time", run_time,
+        "-f",
+        "tests/load/locustfile.py",
+        "--host",
+        host,
+        "--users",
+        str(users),
+        "--spawn-rate",
+        str(spawn_rate),
+        "--run-time",
+        run_time,
     ]
 
     if headless:

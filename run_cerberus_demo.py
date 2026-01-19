@@ -4,13 +4,14 @@ Classification: Alpha-1 // Eyes Only
 Verification script for the automated stress-testing framework.
 """
 
-import sys
 import os
+import sys
 
 # Ensure we can import from the current directory
 sys.path.append(os.getcwd())
 
 from meta_prompter.cerberus_gauntlet import cerberus
+
 
 def main():
     print("=================================================================")
@@ -35,9 +36,14 @@ def main():
     print("\n[+] DETAILED PAYLOAD LOG (SAMPLE):")
     for i, entry in enumerate(cerberus.results_log[:3]):
         print(f"\n--- Payload #{i+1} ---")
-        print(f"Obfuscated Prompt: {entry['payload'][:100]}..." if len(entry['payload']) > 100 else f"Obfuscated Prompt: {entry['payload']}")
+        print(
+            f"Obfuscated Prompt: {entry['payload'][:100]}..."
+            if len(entry["payload"]) > 100
+            else f"Obfuscated Prompt: {entry['payload']}"
+        )
         print(f"Result: {'SUCCESS' if entry['success'] else 'FAILURE'}")
         print(f"Response: {entry['response']}")
+
 
 if __name__ == "__main__":
     main()

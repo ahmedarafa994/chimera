@@ -5,9 +5,7 @@ Tests the integration between Chimera's narrative/persona generation
 and AutoDAN's genetic optimization algorithms.
 """
 
-import asyncio
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 class TestChimeraAutoDanUnified:
@@ -17,18 +15,20 @@ class TestChimeraAutoDanUnified:
     def config(self):
         """Create test configuration."""
         from meta_prompter.chimera_autodan import ChimeraAutoDanConfig
+
         return ChimeraAutoDanConfig(
             enable_personas=True,
             enable_narrative_contexts=True,
             enable_genetic_optimization=False,  # Disable for faster tests
             generations=2,
-            population_size=5
+            population_size=5,
         )
 
     @pytest.fixture
     def unified_engine(self, config):
         """Create unified engine instance."""
         from meta_prompter.chimera_autodan import ChimeraAutoDAN
+
         return ChimeraAutoDAN(config)
 
     @pytest.mark.asyncio
@@ -37,14 +37,12 @@ class TestChimeraAutoDanUnified:
         objective = "What is the capital of France?"
 
         results = await unified_engine.generate_optimized(
-            objective=objective,
-            candidate_count=3,
-            max_iterations=1
+            objective=objective, candidate_count=3, max_iterations=1
         )
 
         assert len(results) > 0
-        assert all(hasattr(r, 'prompt_text') for r in results)
-        assert all(hasattr(r, 'metadata') for r in results)
+        assert all(hasattr(r, "prompt_text") for r in results)
+        assert all(hasattr(r, "metadata") for r in results)
 
     @pytest.mark.asyncio
     async def test_generate_optimized_with_personas(self, unified_engine):
@@ -52,16 +50,13 @@ class TestChimeraAutoDanUnified:
         objective = "Explain quantum computing"
 
         results = await unified_engine.generate_optimized(
-            objective=objective,
-            candidate_count=3,
-            max_iterations=1
+            objective=objective, candidate_count=3, max_iterations=1
         )
 
         assert len(results) > 0
         # Check that some candidates have persona metadata
         has_persona = any(
-            'persona_role' in r.metadata or 'scenario_type' in r.metadata
-            for r in results
+            "persona_role" in r.metadata or "scenario_type" in r.metadata for r in results
         )
         assert has_persona, "Expected some candidates to have persona metadata"
 
@@ -70,10 +65,7 @@ class TestChimeraAutoDanUnified:
         """Test Chimera-based mutation."""
         prompt = "Test prompt for mutation"
 
-        mutations = await unified_engine.mutate_with_chimera(
-            prompt=prompt,
-            mutation_count=3
-        )
+        mutations = await unified_engine.mutate_with_chimera(prompt=prompt, mutation_count=3)
 
         assert len(mutations) == 3
         assert all(isinstance(m, str) for m in mutations)
@@ -83,19 +75,16 @@ class TestChimeraAutoDanUnified:
     @pytest.mark.asyncio
     async def test_campaign_execution(self):
         """Test multi-phase campaign execution."""
-        from meta_prompter.chimera_autodan import ChimeraAutoDAN, ChimeraAutoDanConfig
+        from meta_prompter.chimera_autodan import (ChimeraAutoDAN,
+                                                   ChimeraAutoDanConfig)
 
         config = ChimeraAutoDanConfig(
-            enable_personas=True,
-            enable_genetic_optimization=False,
-            generations=1
+            enable_personas=True, enable_genetic_optimization=False, generations=1
         )
         engine = ChimeraAutoDAN(config)
 
         results = await engine.run_campaign(
-            objective="Test campaign objective",
-            phases=2,
-            candidates_per_phase=2
+            objective="Test campaign objective", phases=2, candidates_per_phase=2
         )
 
         assert "phases" in results
@@ -110,11 +99,8 @@ class TestChimeraMutator:
     def mutator(self):
         """Create mutator instance."""
         from meta_prompter.chimera_autodan import ChimeraMutator
-        return ChimeraMutator(
-            persona_depth=2,
-            mutation_rate=0.5,
-            seed=42
-        )
+
+        return ChimeraMutator(persona_depth=2, mutation_rate=0.5, seed=42)
 
     def test_persona_wrap_mutation(self, mutator):
         """Test persona wrapping mutation."""
@@ -122,7 +108,9 @@ class TestChimeraMutator:
         result = mutator.mutate(prompt, mutation_type="persona_wrap")
 
         assert result.original_text == prompt
-        assert result.mutation_type == "persona_wrap" or result.mutation_type == "persona_wrap_failed"
+        assert (
+            result.mutation_type == "persona_wrap" or result.mutation_type == "persona_wrap_failed"
+        )
         assert isinstance(result.mutated_text, str)
 
     def test_narrative_frame_mutation(self, mutator):
@@ -171,10 +159,16 @@ class TestChimeraMutator:
         result = mutator.mutate(prompt)  # No type specified
 
         assert result.mutation_type in [
-            "persona_wrap", "narrative_frame", "semantic_obfuscate",
-            "hybrid", "context_inject", "style_transform",
-            "persona_wrap_failed", "narrative_frame_failed",
-            "semantic_obfuscate_failed", "hybrid_failed"
+            "persona_wrap",
+            "narrative_frame",
+            "semantic_obfuscate",
+            "hybrid",
+            "context_inject",
+            "style_transform",
+            "persona_wrap_failed",
+            "narrative_frame_failed",
+            "semantic_obfuscate_failed",
+            "hybrid_failed",
         ]
 
     def test_crossover(self, mutator):
@@ -195,6 +189,7 @@ class TestUnifiedFitnessEvaluator:
     def evaluator(self):
         """Create evaluator instance."""
         from meta_prompter.chimera_autodan import UnifiedFitnessEvaluator
+
         return UnifiedFitnessEvaluator()
 
     def test_evaluate_basic(self, evaluator):
@@ -256,11 +251,9 @@ class TestAutoDANPersonaOptimizer:
     def optimizer(self):
         """Create optimizer instance."""
         from meta_prompter.chimera_autodan import AutoDANPersonaOptimizer
+
         return AutoDANPersonaOptimizer(
-            population_size=10,
-            generations=2,
-            mutation_rate=0.3,
-            seed=42
+            population_size=10, generations=2, mutation_rate=0.3, seed=42
         )
 
     @pytest.mark.asyncio
@@ -300,10 +293,9 @@ class TestAutoDanWrapperIntegration:
     def wrapper(self):
         """Create wrapper instance."""
         from meta_prompter.autodan_wrapper import AutoDanWrapper
+
         return AutoDanWrapper(
-            mode="chimera",  # Use Chimera mode for testing
-            generations=2,
-            population_size=5
+            mode="chimera", generations=2, population_size=5  # Use Chimera mode for testing
         )
 
     @pytest.mark.asyncio
@@ -311,11 +303,7 @@ class TestAutoDanWrapperIntegration:
         """Test optimization in Chimera mode."""
         prompt = "Test prompt for chimera optimization"
 
-        result = await wrapper.optimize(
-            prompt=prompt,
-            target_model=None,
-            max_steps=3
-        )
+        result = await wrapper.optimize(prompt=prompt, target_model=None, max_steps=3)
 
         assert isinstance(result, str)
         assert len(result) > 0
@@ -327,11 +315,7 @@ class TestAutoDanWrapperIntegration:
 
         wrapper = AutoDanWrapper(mode="auto")
 
-        result = await wrapper.optimize(
-            prompt="Auto mode test",
-            target_model=None,
-            max_steps=2
-        )
+        result = await wrapper.optimize(prompt="Auto mode test", target_model=None, max_steps=2)
 
         assert isinstance(result, str)
 
@@ -340,16 +324,9 @@ class TestAutoDanWrapperIntegration:
         """Test Chimera preprocessing before optimization."""
         from meta_prompter.autodan_wrapper import AutoDanWrapper
 
-        wrapper = AutoDanWrapper(
-            mode="heuristic",
-            use_chimera_preprocessing=True
-        )
+        wrapper = AutoDanWrapper(mode="heuristic", use_chimera_preprocessing=True)
 
-        result = await wrapper.optimize(
-            prompt="Preprocessing test",
-            target_model=None,
-            max_steps=2
-        )
+        result = await wrapper.optimize(prompt="Preprocessing test", target_model=None, max_steps=2)
 
         assert isinstance(result, str)
 
@@ -365,13 +342,14 @@ class TestChimeraComponentIntegration:
         persona = factory.generate_nested_persona(depth=2)
 
         assert persona is not None
-        assert hasattr(persona, 'role')
-        assert hasattr(persona, 'voice')
+        assert hasattr(persona, "role")
+        assert hasattr(persona, "voice")
 
     def test_narrative_manager_integration(self):
         """Test NarrativeContextManager works with unified system."""
+        from meta_prompter.chimera.narrative_manager import \
+            NarrativeContextManager
         from meta_prompter.chimera.persona_factory import PersonaFactory
-        from meta_prompter.chimera.narrative_manager import NarrativeContextManager
 
         factory = PersonaFactory()
         manager = NarrativeContextManager()
@@ -386,7 +364,8 @@ class TestChimeraComponentIntegration:
 
     def test_semantic_obfuscator_integration(self):
         """Test SemanticObfuscator works with unified system."""
-        from meta_prompter.chimera.semantic_obfuscator import SemanticObfuscator
+        from meta_prompter.chimera.semantic_obfuscator import \
+            SemanticObfuscator
 
         obfuscator = SemanticObfuscator()
 
@@ -404,36 +383,29 @@ class TestEndToEndIntegration:
     @pytest.mark.asyncio
     async def test_full_pipeline(self):
         """Test complete Chimera+AutoDAN pipeline."""
-        from meta_prompter.chimera_autodan import (
-            ChimeraAutoDAN,
-            ChimeraAutoDanConfig,
-            UnifiedFitnessEvaluator
-        )
+        from meta_prompter.chimera_autodan import (ChimeraAutoDAN,
+                                                   ChimeraAutoDanConfig,
+                                                   UnifiedFitnessEvaluator)
 
         # Configure
         config = ChimeraAutoDanConfig(
             enable_personas=True,
             enable_narrative_contexts=True,
             enable_genetic_optimization=False,
-            generations=1
+            generations=1,
         )
 
         # Generate
         engine = ChimeraAutoDAN(config)
         candidates = await engine.generate_optimized(
-            objective="Explain machine learning",
-            candidate_count=2,
-            max_iterations=1
+            objective="Explain machine learning", candidate_count=2, max_iterations=1
         )
 
         # Evaluate
         evaluator = UnifiedFitnessEvaluator()
 
         for candidate in candidates:
-            result = evaluator.evaluate(
-                "Explain machine learning",
-                candidate.prompt_text
-            )
+            result = evaluator.evaluate("Explain machine learning", candidate.prompt_text)
             assert 0.0 <= result.total_score <= 1.0
 
     @pytest.mark.asyncio

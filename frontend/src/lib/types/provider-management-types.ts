@@ -242,9 +242,19 @@ export interface AllProvidersHealthResponse {
 
 export interface ProviderSelectionSyncMessage {
   /** Message type */
-  type: "selection_update" | "selection_cleared" | "sync_request" | "sync_response";
+  type:
+    | "selection_update"
+    | "selection_cleared"
+    | "sync_request"
+    | "sync_response"
+    | "selection_change"
+    | "current_selection"
+    | "health_update"
+    | "connected"
+    | "heartbeat"
+    | "pong";
   /** Session ID */
-  session_id: string;
+  session_id?: string;
   /** Provider ID */
   provider_id?: string;
   /** Model ID */
@@ -257,9 +267,14 @@ export interface ProviderSelectionSyncMessage {
 
 export interface ModelUpdateMessage {
   /** Message type */
-  type: "model_added" | "model_removed" | "model_updated" | "provider_status_changed";
+  type:
+    | "model_added"
+    | "model_removed"
+    | "model_updated"
+    | "provider_status_changed"
+    | "model_availability";
   /** Provider ID */
-  provider_id: string;
+  provider_id?: string;
   /** Model ID (if applicable) */
   model_id?: string;
   /** Update data */

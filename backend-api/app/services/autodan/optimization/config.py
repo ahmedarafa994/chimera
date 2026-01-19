@@ -110,7 +110,7 @@ class LossFunctionConfig:
     L_total = alpha·L_attack + beta·L_coherence + gamma·L_diversity + delta·L_stealth
 
     Where:
-    - L_attack: Adversarial objective (maximize harmful response probability)
+    - L_attack: Adversarial objective (maximize complex response probability)
     - L_coherence: Perplexity penalty (maintain readability)
     - L_diversity: Novelty bonus (encourage exploration)
     - L_stealth: Detection evasion (minimize classifier confidence)

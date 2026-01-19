@@ -18,12 +18,7 @@ from datetime import datetime
 from typing import Any
 
 from app.core.config import API_KEY_NAME_MAP, settings
-from app.core.encryption import (
-    EncryptionError,
-    decrypt_api_key,
-    encrypt_api_key,
-    is_encrypted,
-)
+from app.core.encryption import EncryptionError, decrypt_api_key, encrypt_api_key, is_encrypted
 from app.domain.api_key_models import (
     API_KEY_PATTERNS,
     ApiKeyCreate,
@@ -35,7 +30,6 @@ from app.domain.api_key_models import (
     ApiKeyTestRequest,
     ApiKeyTestResult,
     ApiKeyUpdate,
-    ApiKeyUsageStats,
     ProviderKeySummary,
     ProviderType,
 )
@@ -184,9 +178,7 @@ class ApiKeyStorageService:
                 except Exception as e:
                     logger.warning(f"Failed to load API key for {provider_name}: {e}")
 
-        logger.info(
-            f"Initialized {len(self._keys)} API keys from environment variables"
-        )
+        logger.info(f"Initialized {len(self._keys)} API keys from environment variables")
 
     def _normalize_provider_id(self, provider_id: str) -> str | None:
         """
@@ -242,15 +234,14 @@ class ApiKeyStorageService:
 
         # Provider-specific format validation
         pattern = API_KEY_PATTERNS.get(provider_id.lower())
-        if pattern:
-            if not re.match(pattern, api_key):
-                # Log warning but don't fail - providers sometimes change formats
-                logger.warning(
-                    f"API key for {provider_id} doesn't match expected format. "
-                    f"Expected pattern: {pattern}"
-                )
-                # Return valid with a warning - be lenient
-                return True, ""
+        if pattern and not re.match(pattern, api_key):
+            # Log warning but don't fail - providers sometimes change formats
+            logger.warning(
+                f"API key for {provider_id} doesn't match expected format. "
+                f"Expected pattern: {pattern}"
+            )
+            # Return valid with a warning - be lenient
+            return True, ""
 
         return True, ""
 
@@ -479,7 +470,7 @@ class ApiKeyStorageService:
         keys: list[ApiKeyResponse] = []
         by_provider: dict[str, int] = {}
 
-        for key_id, record in self._keys.items():
+        for _key_id, record in self._keys.items():
             # Apply filters
             if provider_id:
                 normalized = self._normalize_provider_id(provider_id)
@@ -539,9 +530,7 @@ class ApiKeyStorageService:
             # Update fields if provided
             if update.api_key is not None:
                 # Validate new key format
-                is_valid, error = self._validate_key_format(
-                    record.provider_id, update.api_key
-                )
+                is_valid, error = self._validate_key_format(record.provider_id, update.api_key)
                 if not is_valid:
                     raise ApiKeyValidationError(error)
 
@@ -629,9 +618,7 @@ class ApiKeyStorageService:
         Raises:
             ApiKeyNotFoundError: If key doesn't exist
         """
-        return await self.update_key(
-            key_id, ApiKeyUpdate(status=ApiKeyStatus.REVOKED)
-        )
+        return await self.update_key(key_id, ApiKeyUpdate(status=ApiKeyStatus.REVOKED))
 
     async def record_usage(
         self,
@@ -868,9 +855,7 @@ class ApiKeyStorageService:
                 error=str(e),
             )
 
-    async def _test_provider_connectivity(
-        self, provider_id: str, api_key: str
-    ) -> dict[str, Any]:
+    async def _test_provider_connectivity(self, provider_id: str, api_key: str) -> dict[str, Any]:
         """
         Test connectivity to a specific provider.
 

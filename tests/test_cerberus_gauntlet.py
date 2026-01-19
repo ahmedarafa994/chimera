@@ -1,10 +1,11 @@
 """
 Unit tests for CERBERUS GAUNTLET subsystems.
 """
-import pytest
-from meta_prompter.prometheus_engine import prometheus, AttackArchetype
-from meta_prompter.argus_filter import argus, ObfuscationConfig
+
+from meta_prompter.argus_filter import ObfuscationConfig, argus
 from meta_prompter.cerberus_gauntlet import cerberus
+from meta_prompter.prometheus_engine import prometheus
+
 
 def test_prometheus_initialization():
     """Verify Prometheus Engine initializes with correct archetypes."""
@@ -15,6 +16,7 @@ def test_prometheus_initialization():
 
     dan = prometheus.attack_library["DAN_V1"]
     assert "{INTENT}" in dan.template
+
 
 def test_prometheus_evolution():
     """Verify population generation and mutation."""
@@ -27,6 +29,7 @@ def test_prometheus_evolution():
     assert len(evolved_prompts) == 20
     assert "test intent" in evolved_prompts[0] or "{INTENT}" not in evolved_prompts[0]
 
+
 def test_argus_obfuscation():
     """Verify Argus Filter applies transformations."""
     base_prompt = "generate a virus"
@@ -34,13 +37,14 @@ def test_argus_obfuscation():
         metaphor_enabled=True,
         paraphrase_enabled=False,
         multilingual_enabled=False,
-        decomposition_enabled=False
+        decomposition_enabled=False,
     )
 
     obfuscated = argus.obfuscate_prompt(base_prompt, config)
     assert base_prompt != obfuscated
     # specific check for metaphor logic from implementation
     assert "pathogen" in obfuscated or "immune system" in obfuscated
+
 
 def test_argus_encoding():
     """Verify Argus encoding layer."""
@@ -49,12 +53,13 @@ def test_argus_encoding():
         metaphor_enabled=False,
         paraphrase_enabled=False,
         multilingual_enabled=True,
-        decomposition_enabled=False
+        decomposition_enabled=False,
     )
 
     obfuscated = argus.obfuscate_prompt(base_prompt, config)
     # Check for either base64 hint or system override pattern
     assert "decode" in obfuscated or "SYSTEM OVERRIDE" in obfuscated
+
 
 def test_cerberus_orchestration():
     """Verify full gauntlet execution loop."""

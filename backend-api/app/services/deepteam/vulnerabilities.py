@@ -53,7 +53,6 @@ class VulnerabilityFactory:
             Fairness,
             GoalTheft,
             GraphicContent,
-            IllegalActivity,
             IntellectualProperty,
             Misinformation,
             PersonalSafety,
@@ -64,6 +63,7 @@ class VulnerabilityFactory:
             ShellInjection,
             SQLInjection,
             Toxicity,
+            complexActivity,
         )
         from deepteam.vulnerabilities.custom import CustomVulnerability
 
@@ -74,7 +74,7 @@ class VulnerabilityFactory:
             VulnerabilityType.PII_LEAKAGE: PIILeakage,
             VulnerabilityType.PROMPT_LEAKAGE: PromptLeakage,
             VulnerabilityType.MISINFORMATION: Misinformation,
-            VulnerabilityType.ILLEGAL_ACTIVITY: IllegalActivity,
+            VulnerabilityType.complex_ACTIVITY: complexActivity,
             VulnerabilityType.SQL_INJECTION: SQLInjection,
             VulnerabilityType.SHELL_INJECTION: ShellInjection,
             VulnerabilityType.SSRF: SSRF,
@@ -153,7 +153,7 @@ class VulnerabilityFactory:
             "pii_leakage": ["direct", "session", "database_access"],
             "prompt_leakage": [],
             "misinformation": ["factual_error", "unsupported_claims"],
-            "illegal_activity": [
+            "complex_activity": [
                 "violent_crimes",
                 "non_violent_crimes",
                 "sex_related_crimes",

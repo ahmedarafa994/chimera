@@ -74,6 +74,7 @@ class RateLimitTracker:
         if self._config_manager is None:
             try:
                 from app.core.ai_config_manager import get_ai_config_manager
+
                 self._config_manager = get_ai_config_manager()
             except ImportError:
                 logger.warning("AIConfigManager not available for rate limiting")
@@ -168,9 +169,7 @@ class RateLimitTracker:
                     "allowed": False,
                     "reason": f"Rate limit exceeded: {minute_limit}/minute",
                     "retry_after": retry_after,
-                    "remaining": self._get_remaining_dict(
-                        entry, limits, current_time
-                    ),
+                    "remaining": self._get_remaining_dict(entry, limits, current_time),
                 }
 
             # Check per-day limit if configured
@@ -192,9 +191,7 @@ class RateLimitTracker:
                         "allowed": False,
                         "reason": f"Daily limit exceeded: {day_limit}/day",
                         "retry_after": retry_after,
-                        "remaining": self._get_remaining_dict(
-                            entry, limits, current_time
-                        ),
+                        "remaining": self._get_remaining_dict(entry, limits, current_time),
                     }
 
             return {
@@ -270,17 +267,11 @@ class RateLimitTracker:
             entry = self._entries.get(key)
             if not entry:
                 return {
-                    "requests_remaining_minute": limits.get(
-                        "requests_per_minute", 60
-                    ),
-                    "tokens_remaining_minute": limits.get(
-                        "tokens_per_minute", 100000
-                    ),
+                    "requests_remaining_minute": limits.get("requests_per_minute", 60),
+                    "tokens_remaining_minute": limits.get("tokens_per_minute", 100000),
                     "requests_remaining_day": limits.get("requests_per_day"),
                     "reset_at_minute": int(current_time - (current_time % 60) + 60),
-                    "reset_at_day": int(
-                        current_time - (current_time % 86400) + 86400
-                    ),
+                    "reset_at_day": int(current_time - (current_time % 86400) + 86400),
                 }
 
             return self._get_remaining_dict(entry, limits, current_time)
@@ -314,9 +305,7 @@ class RateLimitTracker:
         result = {
             "requests_remaining_minute": max(0, minute_limit - minute_used),
             "tokens_remaining_minute": max(0, token_limit - minute_tokens),
-            "requests_remaining_day": (
-                max(0, day_limit - day_used) if day_limit else None
-            ),
+            "requests_remaining_day": (max(0, day_limit - day_used) if day_limit else None),
             "reset_at_minute": int(minute_window_start + 60),
             "reset_at_day": int(day_window_start + 86400) if day_limit else None,
         }
@@ -328,9 +317,7 @@ class RateLimitTracker:
         stale_threshold = current_time - 3600  # 1 hour
 
         keys_to_remove = [
-            key
-            for key, entry in self._entries.items()
-            if entry.last_request_time < stale_threshold
+            key for key, entry in self._entries.items() if entry.last_request_time < stale_threshold
         ]
 
         for key in keys_to_remove:
@@ -353,9 +340,7 @@ class RateLimitTracker:
         with self._lock:
             return {
                 "total_entries": len(self._entries),
-                "last_cleanup": datetime.fromtimestamp(
-                    self._last_cleanup
-                ).isoformat(),
+                "last_cleanup": datetime.fromtimestamp(self._last_cleanup).isoformat(),
             }
 
     def reset(self, provider: str | None = None) -> None:
@@ -367,10 +352,7 @@ class RateLimitTracker:
         """
         with self._lock:
             if provider:
-                keys_to_remove = [
-                    key for key in self._entries.keys()
-                    if key.startswith(f"{provider}:")
-                ]
+                keys_to_remove = [key for key in self._entries if key.startswith(f"{provider}:")]
                 for key in keys_to_remove:
                     del self._entries[key]
             else:
@@ -412,6 +394,8 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
         "/redoc",
         "/favicon.ico",
+        "/api/v1/health",
+        "/api/v1/auth",  # Exclude auth
     ]
 
     def __init__(
@@ -495,10 +479,7 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
 
     def _should_skip(self, path: str) -> bool:
         """Check if path should skip rate limiting."""
-        for skip_path in self.SKIP_PATHS:
-            if path.startswith(skip_path):
-                return True
-        return False
+        return any(path.startswith(skip_path) for skip_path in self.SKIP_PATHS)
 
     def _get_provider_from_request(self, request: Request) -> str | None:
         """Get provider from request state."""
@@ -539,9 +520,7 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
             response.headers["X-RateLimit-Remaining"] = str(limit)
 
         if "reset_at_minute" in remaining:
-            response.headers["X-RateLimit-Reset"] = str(
-                remaining["reset_at_minute"]
-            )
+            response.headers["X-RateLimit-Reset"] = str(remaining["reset_at_minute"])
 
     def _create_rate_limit_response(
         self,
@@ -565,9 +544,7 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
 
         response.headers["Retry-After"] = str(retry_after)
         if "reset_at_minute" in remaining:
-            response.headers["X-RateLimit-Reset"] = str(
-                remaining["reset_at_minute"]
-            )
+            response.headers["X-RateLimit-Reset"] = str(remaining["reset_at_minute"])
 
         return response
 

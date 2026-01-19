@@ -15,7 +15,7 @@ class SecurityEnvironment:
         """Get allowed CORS origins from environment or use secure defaults"""
         origins_str = os.getenv(
             "ALLOWED_ORIGINS",
-            "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080",
+            "http://localhost:3001,http://localhost:8080,http://127.0.0.1:3001,http://127.0.0.1:8080",
         )
         return [origin.strip() for origin in origins_str.split(",") if origin.strip()]
 

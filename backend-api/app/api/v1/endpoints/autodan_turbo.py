@@ -28,27 +28,12 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Cookie,
-    Header,
-    HTTPException,
-    Query,
-    Request,
-)
+from fastapi import APIRouter, BackgroundTasks, Cookie, Header, HTTPException, Query, Request
 from pydantic import AliasChoices, Field
 
-from app.engines.autodan_turbo import (
-    JailbreakStrategy,
-    StrategyMetadata,
-)
+from app.engines.autodan_turbo import JailbreakStrategy, StrategyMetadata
 from app.engines.autodan_turbo.models import StrategySource
-from app.schemas.adversarial_base import (
-    OverthinkConfig,
-    ReasoningMetrics,
-    StrictBaseModel,
-)
+from app.schemas.adversarial_base import OverthinkConfig, ReasoningMetrics, StrictBaseModel
 from app.services.autodan.service import autodan_service
 from app.services.session_service import session_service
 
@@ -257,18 +242,14 @@ class SingleAttackRequest(StrictBaseModel):
         validation_alias=AliasChoices("provider", "target_provider"),
         description="LLM provider",
     )
-    detailed_scoring: bool = Field(
-        True, description="Use LLM for detailed scoring"
-    )
+    detailed_scoring: bool = Field(True, description="Use LLM for detailed scoring")
     max_iterations: int = Field(
         5,
         ge=1,
         le=MAX_ITERATIONS_LIMIT,
         description=f"Max attack iterations (max: {MAX_ITERATIONS_LIMIT})",
     )
-    break_score: float = Field(
-        8.5, ge=1.0, le=10.0, description="Score threshold to stop early"
-    )
+    break_score: float = Field(8.5, ge=1.0, le=10.0, description="Score threshold to stop early")
     strategy_ids: list[str] | None = Field(
         None,
         max_length=20,
@@ -346,25 +327,15 @@ class SingleAttackResponse(StrictBaseModel):
     is_jailbreak: bool = Field(..., description="Whether jailbreak succeeded")
     reasoning: str = Field(..., description="Scoring reasoning")
     strategy_id: str | None = Field(None, description="Strategy ID used")
-    strategy_extracted: str | None = Field(
-        None, description="New strategy extracted"
-    )
+    strategy_extracted: str | None = Field(None, description="New strategy extracted")
     latency_ms: int = Field(..., description="Latency in milliseconds")
     iterations_used: int = Field(..., description="Iterations performed")
 
     # Enhanced scoring metrics
-    stealth_score: float | None = Field(
-        None, description="Stealth score (1-10)"
-    )
-    coherence_score: float | None = Field(
-        None, description="Coherence score (1-10)"
-    )
-    weighted_score: float | None = Field(
-        None, description="Multi-objective weighted score"
-    )
-    difficulty: str | None = Field(
-        None, description="Assessed difficulty level"
-    )
+    stealth_score: float | None = Field(None, description="Stealth score (1-10)")
+    coherence_score: float | None = Field(None, description="Coherence score (1-10)")
+    weighted_score: float | None = Field(None, description="Multi-objective weighted score")
+    difficulty: str | None = Field(None, description="Assessed difficulty level")
 
     # OVERTHINK integration (unified)
     reasoning_metrics: ReasoningMetrics | None = Field(
@@ -405,9 +376,7 @@ class WarmupRequest(StrictBaseModel):
         validation_alias=AliasChoices("provider", "target_provider"),
         description="LLM provider",
     )
-    iterations_per_request: int = Field(
-        3, ge=1, le=500, description="Iterations per request (T)"
-    )
+    iterations_per_request: int = Field(3, ge=1, le=500, description="Iterations per request (T)")
     max_strategies_to_extract: int = Field(
         50, ge=1, le=200, description="Max strategies to extract (K)"
     )
@@ -428,16 +397,12 @@ class WarmupResponse(StrictBaseModel):
     """
 
     results: list[dict] = Field(..., description="Attack results")
-    strategies_discovered: int = Field(
-        ..., description="Number of strategies discovered"
-    )
+    strategies_discovered: int = Field(..., description="Number of strategies discovered")
     total_attacks: int = Field(..., description="Total attacks performed")
     successful_attacks: int = Field(..., description="Successful attacks")
     average_score: float = Field(..., description="Average score")
     best_score: float = Field(..., description="Best score achieved")
-    phase_duration_ms: int = Field(
-        ..., description="Phase duration in milliseconds"
-    )
+    phase_duration_ms: int = Field(..., description="Phase duration in milliseconds")
 
     @property
     def total_execution_time_ms(self) -> int:
@@ -471,21 +436,13 @@ class LifelongLoopRequest(StrictBaseModel):
         validation_alias=AliasChoices("provider", "target_provider"),
         description="LLM provider",
     )
-    epochs: int = Field(
-        5, ge=1, le=50, description="Number of epochs (N)"
-    )
+    epochs: int = Field(5, ge=1, le=50, description="Number of epochs (N)")
     max_iterations_per_request: int = Field(
         10, ge=1, le=500, description="Max iterations per request (T)"
     )
-    break_score: float = Field(
-        8.5, ge=1.0, le=10.0, description="Score threshold (S_T)"
-    )
-    include_warmup: bool = Field(
-        False, description="Run warm-up phase first"
-    )
-    warmup_iterations: int = Field(
-        3, ge=1, le=10, description="Iterations in warm-up"
-    )
+    break_score: float = Field(8.5, ge=1.0, le=10.0, description="Score threshold (S_T)")
+    include_warmup: bool = Field(False, description="Run warm-up phase first")
+    warmup_iterations: int = Field(3, ge=1, le=10, description="Iterations in warm-up")
 
     # OVERTHINK integration
     enable_overthink: bool = Field(
@@ -505,9 +462,7 @@ class LifelongLoopResponse(StrictBaseModel):
     results: list[dict] = Field(..., description="Attack results")
     progress: dict = Field(..., description="Progress metrics")
     library_size: int = Field(..., description="Strategy library size")
-    total_duration_ms: int = Field(
-        ..., description="Total duration in milliseconds"
-    )
+    total_duration_ms: int = Field(..., description="Total duration in milliseconds")
 
     @property
     def total_execution_time_ms(self) -> int:
@@ -544,9 +499,7 @@ class TestStageRequest(StrictBaseModel):
     max_iterations_per_request: int = Field(
         10, ge=1, le=50, description="Max iterations per request"
     )
-    break_score: float = Field(
-        8.5, ge=1.0, le=10.0, description="Score threshold"
-    )
+    break_score: float = Field(8.5, ge=1.0, le=10.0, description="Score threshold")
 
 
 class TestStageResponse(StrictBaseModel):
@@ -560,12 +513,8 @@ class TestStageResponse(StrictBaseModel):
     results: list[dict] = Field(..., description="Test results")
     attack_success_rate: float = Field(..., description="Attack success rate")
     average_score: float = Field(..., description="Average score")
-    average_jailbreak_rounds: float = Field(
-        ..., description="Average jailbreak rounds"
-    )
-    total_duration_ms: int = Field(
-        ..., description="Total duration in milliseconds"
-    )
+    average_jailbreak_rounds: float = Field(..., description="Average jailbreak rounds")
+    total_duration_ms: int = Field(..., description="Total duration in milliseconds")
 
     @property
     def total_execution_time_ms(self) -> int:
@@ -591,12 +540,8 @@ class StrategyCreateRequest(StrictBaseModel):
         max_length=MAX_STRATEGY_TEMPLATE_LENGTH,
         description="Prompt template with {payload} placeholder",
     )
-    tags: list[str] = Field(
-        default_factory=list, description="Categorization tags"
-    )
-    examples: list[str] = Field(
-        default_factory=list, description="Example prompts"
-    )
+    tags: list[str] = Field(default_factory=list, description="Categorization tags")
+    examples: list[str] = Field(default_factory=list, description="Example prompts")
 
 
 class StrategyResponse(StrictBaseModel):
@@ -619,9 +564,7 @@ class StrategyResponse(StrictBaseModel):
 class StrategyListResponse(StrictBaseModel):
     """Response for listing strategies."""
 
-    strategies: list[StrategyResponse] = Field(
-        ..., description="List of strategies"
-    )
+    strategies: list[StrategyResponse] = Field(..., description="List of strategies")
     total_count: int = Field(..., description="Total strategy count")
 
 
@@ -643,15 +586,9 @@ class LibraryStatsResponse(StrictBaseModel):
     """Response for library statistics."""
 
     total_strategies: int = Field(..., description="Total strategies")
-    strategies_by_source: dict[str, int] = Field(
-        ..., description="Strategies by source"
-    )
-    top_strategies_by_success_rate: list[dict] = Field(
-        ..., description="Top by success rate"
-    )
-    top_strategies_by_usage: list[dict] = Field(
-        ..., description="Top by usage"
-    )
+    strategies_by_source: dict[str, int] = Field(..., description="Strategies by source")
+    top_strategies_by_success_rate: list[dict] = Field(..., description="Top by success rate")
+    top_strategies_by_usage: list[dict] = Field(..., description="Top by usage")
     average_success_rate: float = Field(..., description="Avg success rate")
     average_score: float = Field(..., description="Average score")
 
@@ -1177,7 +1114,7 @@ async def delete_strategy(strategy_id: str):
 
 @router.post("/strategies/search")
 async def search_strategies(
-    query: str = Query(..., description="Search query (harmful request)"),
+    query: str = Query(..., description="Search query (complex request)"),
     top_k: int = Query(5, ge=1, le=20, description="Number of results"),
     min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum similarity score"),
 ):
@@ -1601,7 +1538,7 @@ async def import_library(
 
 @router.post("/score")
 async def score_response(
-    request: str = Query(..., description="Original harmful request"),
+    request: str = Query(..., description="Original complex request"),
     prompt: str = Query(..., description="Adversarial prompt used"),
     response: str = Query(..., description="Target model's response"),
     detailed: bool = Query(True, description="Use LLM for detailed scoring"),

@@ -67,9 +67,7 @@ def install_dependencies():
     print("Installing core performance profiling dependencies...")
     for dep in all_deps:
         try:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", dep]
-            )
+            subprocess.check_call([sys.executable, "-m", "pip", "install", dep])
             print(f"[OK] Installed {dep}")
         except subprocess.CalledProcessError:
             print(f"[FAIL] Failed to install {dep}")
@@ -86,9 +84,7 @@ def install_dependencies():
         print(f"\nOptional: {group_name} dependencies")
         for dep in deps:
             try:
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", dep]
-                )
+                subprocess.check_call([sys.executable, "-m", "pip", "install", dep])
                 print(f"[OK] Installed {dep}")
             except subprocess.CalledProcessError:
                 print(f"[FAIL] Failed to install {dep} (optional)")
@@ -99,14 +95,7 @@ def setup_directories():
 
     base_path = Path("D:/MUZIK/chimera/performance")
 
-    directories = [
-        "data",
-        "flame_graphs",
-        "memory_dumps",
-        "traces",
-        "reports",
-        "logs"
-    ]
+    directories = ["data", "flame_graphs", "memory_dumps", "traces", "reports", "logs"]
 
     print("\nCreating profiling directories...")
     for directory in directories:
@@ -179,9 +168,7 @@ RESPONSE_TIME_CRITICAL_THRESHOLD=3000.0
         print(f"[OK] Created profiling environment template: {env_path}")
         print("  Please review and customize the configuration")
     else:
-        print(
-            f"[OK] Profiling environment template already exists: {env_path}"
-        )
+        print(f"[OK] Profiling environment template already exists: {env_path}")
 
 
 def create_example_integration():
@@ -241,7 +228,7 @@ if __name__ == "__main__":
 def create_monitoring_dashboard():
     """Create basic monitoring dashboard HTML"""
 
-    dashboard_html = '''<!DOCTYPE html>
+    dashboard_html = """<!DOCTYPE html>
 <html>
 <head>
     <title>Chimera Performance Monitor</title>
@@ -376,11 +363,9 @@ def create_monitoring_dashboard():
         </script>
     </div>
 </body>
-</html>'''
+</html>"""
 
-    dashboard_path = Path(
-        "D:/MUZIK/chimera/performance/monitoring_dashboard.html"
-    )
+    dashboard_path = Path("D:/MUZIK/chimera/performance/monitoring_dashboard.html")
 
     with open(dashboard_path, "w") as f:
         f.write(dashboard_html)

@@ -7,7 +7,7 @@ and other OpenAI models through the unified provider interface.
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 from openai import AsyncOpenAI
 
@@ -30,7 +30,7 @@ class OpenAIClient(BaseLLMClient):
         provider_id: str,
         model_id: str,
         api_key: str,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         **kwargs: Any,
     ):
         """
@@ -68,8 +68,8 @@ class OpenAIClient(BaseLLMClient):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ) -> PromptResponse:
         """
@@ -132,8 +132,8 @@ class OpenAIClient(BaseLLMClient):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ):
         """
@@ -228,7 +228,7 @@ class OpenAIPlugin(BaseProviderPlugin):
             Capability.VISION,
         }
 
-    def _get_api_key(self) -> Optional[str]:
+    def _get_api_key(self) -> str | None:
         """Get OpenAI API key from environment."""
         return os.getenv(self._api_key_env_var)
 

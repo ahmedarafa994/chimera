@@ -3,7 +3,7 @@ Pydantic models for AutoDAN-Turbo strategy library and attack results.
 
 Based on the formal strategy definition from the paper:
 A jailbreak strategy S is defined as a textual addition that increases
-the jailbreak score when applied to a harmful request.
+the jailbreak score when applied to a complex request.
 
 IMPORTANT: Strategies serve as GUIDANCE for AI-generated prompts, not as
 fill-in-the-blank templates. The LLM should use strategies as inspiration

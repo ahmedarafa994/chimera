@@ -119,7 +119,7 @@ class TestProviderConfigValidator:
         assert "API key is required" in error
 
     @pytest.mark.asyncio
-    @patch('aiohttp.ClientSession')
+    @patch("aiohttp.ClientSession")
     async def test_validate_connectivity_success(self, mock_session):
         """Test successful connectivity validation"""
         # Mock successful HTTP response
@@ -142,7 +142,7 @@ class TestProviderConfigValidator:
         assert error == ""
 
     @pytest.mark.asyncio
-    @patch('aiohttp.ClientSession')
+    @patch("aiohttp.ClientSession")
     async def test_validate_connectivity_failure(self, mock_session):
         """Test connectivity validation failure"""
         # Mock failed HTTP response
@@ -168,12 +168,12 @@ class TestProviderConfigValidator:
     @pytest.mark.asyncio
     async def test_validate_provider_config_complete(self):
         """Test complete provider configuration validation"""
-        with patch.object(self.validator, 'validate_connectivity', return_value=(True, "")):
+        with patch.object(self.validator, "validate_connectivity", return_value=(True, "")):
             result = await self.validator.validate_provider_config(
                 provider="openai",
                 api_key="sk-1234567890abcdef1234567890abcdef",
                 base_url="https://api.openai.com/v1",
-                test_connectivity=True
+                test_connectivity=True,
             )
 
             assert result["is_valid"]
@@ -194,7 +194,7 @@ class TestEnhancedSettings:
         test_key = "sk-test1234567890abcdef"
         encrypted_key = encrypt_api_key(test_key)
 
-        with patch.object(self.settings, 'OPENAI_API_KEY', encrypted_key):
+        with patch.object(self.settings, "OPENAI_API_KEY", encrypted_key):
             decrypted = self.settings.get_decrypted_api_key("openai")
             assert decrypted == test_key
 
@@ -203,7 +203,7 @@ class TestEnhancedSettings:
         test_key = "sk-test1234567890abcdef"
 
         # Mock encryption setting
-        with patch.object(self.settings, 'ENCRYPT_API_KEYS_AT_REST', True):
+        with patch.object(self.settings, "ENCRYPT_API_KEYS_AT_REST", True):
             success = self.settings.set_encrypted_api_key("openai", test_key)
             assert success
 
@@ -227,7 +227,7 @@ class TestEnhancedSettings:
 
     def test_get_provider_config_dict(self):
         """Test getting provider configuration dictionary"""
-        with patch.object(self.settings, 'OPENAI_API_KEY', 'sk-test123'):
+        with patch.object(self.settings, "OPENAI_API_KEY", "sk-test123"):
             config_dict = self.settings.get_provider_config_dict()
 
             assert "openai" in config_dict
@@ -278,14 +278,14 @@ class TestEnhancedConfigManager:
     @pytest.mark.asyncio
     async def test_validate_proxy_mode_config_disabled(self):
         """Test proxy mode validation when disabled"""
-        with patch('app.core.config.settings.API_CONNECTION_MODE', APIConnectionMode.DIRECT):
+        with patch("app.core.config.settings.API_CONNECTION_MODE", APIConnectionMode.DIRECT):
             result = await self.config_manager.validate_proxy_mode_config()
 
             # Should be valid when proxy mode is disabled
             assert result["is_valid"]
 
     @pytest.mark.asyncio
-    @patch('aiohttp.ClientSession')
+    @patch("aiohttp.ClientSession")
     async def test_validate_proxy_mode_config_enabled_success(self, mock_session):
         """Test proxy mode validation when enabled and proxy is reachable"""
         mock_response = AsyncMock()
@@ -297,7 +297,7 @@ class TestEnhancedConfigManager:
         mock_session_instance.__aenter__.return_value = mock_session_instance
         mock_session.return_value = mock_session_instance
 
-        with patch('app.core.config.settings.API_CONNECTION_MODE', APIConnectionMode.PROXY):
+        with patch("app.core.config.settings.API_CONNECTION_MODE", APIConnectionMode.PROXY):
             result = await self.config_manager.validate_proxy_mode_config()
 
             assert result["is_valid"]
@@ -367,7 +367,7 @@ class TestConfigurationIntegration:
             provider="openai",
             api_key="invalid_key",
             base_url="https://api.openai.com/v1",
-            test_connectivity=False  # Skip connectivity to focus on format
+            test_connectivity=False,  # Skip connectivity to focus on format
         )
 
         assert not result["is_valid"]
@@ -416,7 +416,7 @@ class TestConfigurationEdgeCases:
             provider="openai",
             api_key="sk-1234567890abcdef1234567890abcdef",
             base_url="https://unreachable-url-12345.com",
-            test_connectivity=True
+            test_connectivity=True,
         )
 
         assert not result["is_valid"]
@@ -452,5 +452,5 @@ class TestConfigurationEdgeCases:
 # Pytest configuration
 pytestmark = [
     pytest.mark.unit,  # Mark all tests as unit tests
-    pytest.mark.asyncio  # Allow async tests
+    pytest.mark.asyncio,  # Allow async tests
 ]

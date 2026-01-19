@@ -14,12 +14,14 @@ try:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.support.ui import WebDriverWait
+
     SELENIUM_AVAILABLE = True
 except ImportError:
     SELENIUM_AVAILABLE = False
 
 try:
     from playwright.sync_api import sync_playwright
+
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
@@ -30,6 +32,7 @@ from profiling_config import MetricType, config
 @dataclass
 class CoreWebVitals:
     """Core Web Vitals metrics"""
+
     lcp: float  # Largest Contentful Paint
     fid: float  # First Input Delay
     cls: float  # Cumulative Layout Shift
@@ -37,9 +40,11 @@ class CoreWebVitals:
     ttfb: float  # Time to First Byte
     timestamp: datetime
 
+
 @dataclass
 class PerformanceMetrics:
     """Comprehensive frontend performance metrics"""
+
     url: str
     timestamp: datetime
     core_web_vitals: CoreWebVitals
@@ -50,9 +55,11 @@ class PerformanceMetrics:
     user_timing: dict[str, float]
     memory_usage: dict[str, float] | None
 
+
 @dataclass
 class UserJourneyMetrics:
     """User journey performance metrics"""
+
     journey_name: str
     steps: list[dict[str, Any]]
     total_duration: float
@@ -61,9 +68,11 @@ class UserJourneyMetrics:
     performance_budget: dict[str, float]
     budget_violations: list[str]
 
+
 @dataclass
 class FrontendPerformanceReport:
     """Comprehensive frontend performance report"""
+
     report_id: str
     timestamp: datetime
     url: str
@@ -73,6 +82,7 @@ class FrontendPerformanceReport:
     recommendations: list[str]
     budget_analysis: dict[str, Any]
 
+
 class FrontendProfiler:
     """Frontend performance profiler using browser automation"""
 
@@ -80,7 +90,9 @@ class FrontendProfiler:
         self.metrics_history: list[PerformanceMetrics] = []
         self.journey_metrics: list[UserJourneyMetrics] = []
 
-    def measure_core_web_vitals(self, url: str, use_playwright: bool = True) -> CoreWebVitals | None:
+    def measure_core_web_vitals(
+        self, url: str, use_playwright: bool = True
+    ) -> CoreWebVitals | None:
         """Measure Core Web Vitals using browser automation"""
         if use_playwright and PLAYWRIGHT_AVAILABLE:
             return self._measure_with_playwright(url)
@@ -95,18 +107,17 @@ class FrontendProfiler:
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(
-                    headless=True,
-                    args=['--no-sandbox', '--disable-dev-shm-usage']
+                    headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"]
                 )
 
                 context = browser.new_context()
                 page = context.new_page()
 
                 # Enable performance tracking
-                page.on('console', lambda msg: print(f"Console: {msg.text}"))
+                page.on("console", lambda msg: print(f"Console: {msg.text}"))
 
                 start_time = time.time()
-                page.goto(url, wait_until='networkidle')
+                page.goto(url, wait_until="networkidle")
                 load_time = time.time() - start_time
 
                 # Execute JavaScript to get Web Vitals
@@ -170,12 +181,12 @@ class FrontendProfiler:
                 browser.close()
 
                 return CoreWebVitals(
-                    lcp=metrics.get('lcp', load_time * 1000),
-                    fid=metrics.get('fid', 0),
-                    cls=metrics.get('cls', 0),
-                    fcp=metrics.get('fcp', load_time * 1000),
-                    ttfb=metrics.get('ttfb', 0),
-                    timestamp=datetime.now(UTC)
+                    lcp=metrics.get("lcp", load_time * 1000),
+                    fid=metrics.get("fid", 0),
+                    cls=metrics.get("cls", 0),
+                    fcp=metrics.get("fcp", load_time * 1000),
+                    ttfb=metrics.get("ttfb", 0),
+                    timestamp=datetime.now(UTC),
                 )
 
         except Exception as e:
@@ -186,10 +197,10 @@ class FrontendProfiler:
         """Measure performance using Selenium WebDriver"""
         try:
             options = Options()
-            options.add_argument('--headless')
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-gpu')
+            options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
 
             driver = webdriver.Chrome(options=options)
 
@@ -232,12 +243,12 @@ class FrontendProfiler:
             driver.quit()
 
             return CoreWebVitals(
-                lcp=metrics.get('lcp', load_time * 1000),
+                lcp=metrics.get("lcp", load_time * 1000),
                 fid=0,  # FID cannot be measured programmatically
                 cls=0,  # CLS requires more complex measurement
-                fcp=metrics.get('fcp', load_time * 1000),
-                ttfb=metrics.get('ttfb', 0),
-                timestamp=datetime.now(UTC)
+                fcp=metrics.get("fcp", load_time * 1000),
+                ttfb=metrics.get("ttfb", 0),
+                timestamp=datetime.now(UTC),
             )
 
         except Exception as e:
@@ -260,27 +271,34 @@ class FrontendProfiler:
                 network_requests = []
                 javascript_errors = []
 
-                page.on('request', lambda request: network_requests.append({
-                    'url': request.url,
-                    'method': request.method,
-                    'resource_type': request.resource_type,
-                    'timestamp': time.time()
-                }))
+                page.on(
+                    "request",
+                    lambda request: network_requests.append(
+                        {
+                            "url": request.url,
+                            "method": request.method,
+                            "resource_type": request.resource_type,
+                            "timestamp": time.time(),
+                        }
+                    ),
+                )
 
-                page.on('console', lambda msg:
-                    javascript_errors.append(msg.text) if msg.type == 'error' else None
+                page.on(
+                    "console",
+                    lambda msg: javascript_errors.append(msg.text) if msg.type == "error" else None,
                 )
 
                 # Navigate and measure
                 start_time = time.time()
-                page.goto(url, wait_until='networkidle')
+                page.goto(url, wait_until="networkidle")
                 end_time = time.time()
 
                 # Get Core Web Vitals
                 core_vitals = self._get_web_vitals_from_page(page)
 
                 # Get resource metrics
-                resource_metrics = page.evaluate("""
+                resource_metrics = page.evaluate(
+                    """
                 () => {
                     const resources = performance.getEntriesByType('resource');
                     const resourceSummary = {
@@ -301,10 +319,12 @@ class FrontendProfiler:
 
                     return resourceSummary;
                 }
-                """)
+                """
+                )
 
                 # Get user timing metrics
-                user_timing = page.evaluate("""
+                user_timing = page.evaluate(
+                    """
                 () => {
                     const userTimings = {};
                     const marks = performance.getEntriesByType('mark');
@@ -320,13 +340,16 @@ class FrontendProfiler:
 
                     return userTimings;
                 }
-                """)
+                """
+                )
 
                 # Get memory usage (if available)
                 memory_usage = None
                 import contextlib
+
                 with contextlib.suppress(Exception):
-                    memory_usage = page.evaluate("""
+                    memory_usage = page.evaluate(
+                        """
                     () => {
                         if (performance.memory) {
                             return {
@@ -337,15 +360,16 @@ class FrontendProfiler:
                         }
                         return null;
                     }
-                    """)
+                    """
+                    )
 
                 browser.close()
 
                 load_times = {
-                    'total_load_time': (end_time - start_time) * 1000,
-                    'dom_content_loaded': 0,  # Would need more complex tracking
-                    'first_paint': core_vitals.fcp if core_vitals else 0,
-                    'largest_contentful_paint': core_vitals.lcp if core_vitals else 0
+                    "total_load_time": (end_time - start_time) * 1000,
+                    "dom_content_loaded": 0,  # Would need more complex tracking
+                    "first_paint": core_vitals.fcp if core_vitals else 0,
+                    "largest_contentful_paint": core_vitals.lcp if core_vitals else 0,
                 }
 
                 metrics = PerformanceMetrics(
@@ -357,7 +381,7 @@ class FrontendProfiler:
                     javascript_errors=javascript_errors,
                     network_requests=network_requests,
                     user_timing=user_timing,
-                    memory_usage=memory_usage
+                    memory_usage=memory_usage,
                 )
 
                 self.metrics_history.append(metrics)
@@ -370,7 +394,8 @@ class FrontendProfiler:
     def _get_web_vitals_from_page(self, page) -> CoreWebVitals | None:
         """Extract Web Vitals from current page"""
         try:
-            vitals = page.evaluate("""
+            vitals = page.evaluate(
+                """
             () => {
                 return new Promise((resolve) => {
                     const metrics = { lcp: 0, fid: 0, cls: 0, fcp: 0, ttfb: 0 };
@@ -393,24 +418,25 @@ class FrontendProfiler:
                     setTimeout(() => resolve(metrics), 100);
                 });
             }
-            """)
+            """
+            )
 
             return CoreWebVitals(
-                lcp=vitals['lcp'],
-                fid=vitals['fid'],
-                cls=vitals['cls'],
-                fcp=vitals['fcp'],
-                ttfb=vitals['ttfb'],
-                timestamp=datetime.now(UTC)
+                lcp=vitals["lcp"],
+                fid=vitals["fid"],
+                cls=vitals["cls"],
+                fcp=vitals["fcp"],
+                ttfb=vitals["ttfb"],
+                timestamp=datetime.now(UTC),
             )
         except Exception:
             return None
 
     def test_user_journey(self, journey_config: dict[str, Any]) -> UserJourneyMetrics:
         """Test a complete user journey"""
-        journey_name = journey_config['name']
-        steps = journey_config.get('steps', [])
-        performance_budget = journey_config.get('performance_budget', {})
+        journey_name = journey_config["name"]
+        steps = journey_config.get("steps", [])
+        performance_budget = journey_config.get("performance_budget", {})
 
         journey_steps = []
         error_messages = []
@@ -424,7 +450,7 @@ class FrontendProfiler:
                 success=False,
                 error_messages=["Playwright not available"],
                 performance_budget=performance_budget,
-                budget_violations=[]
+                budget_violations=[],
             )
 
         try:
@@ -439,21 +465,23 @@ class FrontendProfiler:
                     step_error = None
 
                     try:
-                        if step['action'] == 'navigate':
-                            page.goto(step['url'], wait_until='networkidle')
+                        if step["action"] == "navigate":
+                            page.goto(step["url"], wait_until="networkidle")
 
-                        elif step['action'] == 'click':
-                            page.click(step['selector'])
-                            page.wait_for_load_state('networkidle')
+                        elif step["action"] == "click":
+                            page.click(step["selector"])
+                            page.wait_for_load_state("networkidle")
 
-                        elif step['action'] == 'type':
-                            page.fill(step['selector'], step['text'])
+                        elif step["action"] == "type":
+                            page.fill(step["selector"], step["text"])
 
-                        elif step['action'] == 'wait':
-                            page.wait_for_timeout(step['duration'])
+                        elif step["action"] == "wait":
+                            page.wait_for_timeout(step["duration"])
 
-                        elif step['action'] == 'wait_for_element':
-                            page.wait_for_selector(step['selector'], timeout=step.get('timeout', 30000))
+                        elif step["action"] == "wait_for_element":
+                            page.wait_for_selector(
+                                step["selector"], timeout=step.get("timeout", 30000)
+                            )
 
                     except Exception as e:
                         step_success = False
@@ -462,13 +490,15 @@ class FrontendProfiler:
 
                     step_duration = (time.time() - step_start_time) * 1000
 
-                    journey_steps.append({
-                        'step_name': step.get('name', f'step_{i+1}'),
-                        'action': step['action'],
-                        'duration_ms': step_duration,
-                        'success': step_success,
-                        'error': step_error
-                    })
+                    journey_steps.append(
+                        {
+                            "step_name": step.get("name", f"step_{i+1}"),
+                            "action": step["action"],
+                            "duration_ms": step_duration,
+                            "success": step_success,
+                            "error": step_error,
+                        }
+                    )
 
                 browser.close()
 
@@ -480,12 +510,22 @@ class FrontendProfiler:
 
         # Check performance budget violations
         budget_violations = []
-        if performance_budget.get('max_total_time') and total_duration > performance_budget['max_total_time']:
-            budget_violations.append(f"Total journey time {total_duration:.0f}ms exceeds budget {performance_budget['max_total_time']}ms")
+        if (
+            performance_budget.get("max_total_time")
+            and total_duration > performance_budget["max_total_time"]
+        ):
+            budget_violations.append(
+                f"Total journey time {total_duration:.0f}ms exceeds budget {performance_budget['max_total_time']}ms"
+            )
 
         for step in journey_steps:
-            if performance_budget.get('max_step_time') and step['duration_ms'] > performance_budget['max_step_time']:
-                budget_violations.append(f"Step '{step['step_name']}' time {step['duration_ms']:.0f}ms exceeds budget {performance_budget['max_step_time']}ms")
+            if (
+                performance_budget.get("max_step_time")
+                and step["duration_ms"] > performance_budget["max_step_time"]
+            ):
+                budget_violations.append(
+                    f"Step '{step['step_name']}' time {step['duration_ms']:.0f}ms exceeds budget {performance_budget['max_step_time']}ms"
+                )
 
         journey_metrics = UserJourneyMetrics(
             journey_name=journey_name,
@@ -494,7 +534,7 @@ class FrontendProfiler:
             success=success,
             error_messages=error_messages,
             performance_budget=performance_budget,
-            budget_violations=budget_violations
+            budget_violations=budget_violations,
         )
 
         self.journey_metrics.append(journey_metrics)
@@ -521,13 +561,13 @@ class FrontendProfiler:
             score -= 10
 
         # Load time scoring
-        if metrics.load_times['total_load_time'] > 5000:  # >5s
+        if metrics.load_times["total_load_time"] > 5000:  # >5s
             score -= 15
-        elif metrics.load_times['total_load_time'] > 3000:  # >3s
+        elif metrics.load_times["total_load_time"] > 3000:  # >3s
             score -= 8
 
         # Resource efficiency
-        if metrics.resource_metrics.get('total_requests', 0) > 100:
+        if metrics.resource_metrics.get("total_requests", 0) > 100:
             score -= 10
 
         # JavaScript errors
@@ -544,49 +584,61 @@ class FrontendProfiler:
 
         # Core Web Vitals recommendations
         if metrics.core_web_vitals.lcp > 2500:
-            recommendations.extend([
-                "Optimize Largest Contentful Paint by optimizing images and critical resources",
-                "Implement lazy loading for below-the-fold images",
-                "Use a Content Delivery Network (CDN) for faster resource delivery"
-            ])
+            recommendations.extend(
+                [
+                    "Optimize Largest Contentful Paint by optimizing images and critical resources",
+                    "Implement lazy loading for below-the-fold images",
+                    "Use a Content Delivery Network (CDN) for faster resource delivery",
+                ]
+            )
 
         if metrics.core_web_vitals.fcp > 1800:
-            recommendations.extend([
-                "Reduce First Contentful Paint by optimizing critical rendering path",
-                "Minimize render-blocking resources (CSS/JS)",
-                "Implement critical CSS inlining"
-            ])
+            recommendations.extend(
+                [
+                    "Reduce First Contentful Paint by optimizing critical rendering path",
+                    "Minimize render-blocking resources (CSS/JS)",
+                    "Implement critical CSS inlining",
+                ]
+            )
 
         if metrics.core_web_vitals.cls > 0.1:
-            recommendations.extend([
-                "Reduce Cumulative Layout Shift by setting dimensions for images and ads",
-                "Avoid inserting content above existing content",
-                "Use CSS aspect-ratio for responsive images"
-            ])
+            recommendations.extend(
+                [
+                    "Reduce Cumulative Layout Shift by setting dimensions for images and ads",
+                    "Avoid inserting content above existing content",
+                    "Use CSS aspect-ratio for responsive images",
+                ]
+            )
 
         # Resource optimization
-        if metrics.resource_metrics.get('total_requests', 0) > 100:
-            recommendations.extend([
-                "Reduce number of HTTP requests by bundling resources",
-                "Implement resource minification and compression",
-                "Use HTTP/2 server push for critical resources"
-            ])
+        if metrics.resource_metrics.get("total_requests", 0) > 100:
+            recommendations.extend(
+                [
+                    "Reduce number of HTTP requests by bundling resources",
+                    "Implement resource minification and compression",
+                    "Use HTTP/2 server push for critical resources",
+                ]
+            )
 
         # JavaScript optimization
         if len(metrics.javascript_errors) > 0:
-            recommendations.extend([
-                "Fix JavaScript errors to improve user experience",
-                "Implement proper error handling and logging",
-                "Use source maps for better debugging"
-            ])
+            recommendations.extend(
+                [
+                    "Fix JavaScript errors to improve user experience",
+                    "Implement proper error handling and logging",
+                    "Use source maps for better debugging",
+                ]
+            )
 
         # Memory optimization
-        if metrics.memory_usage and metrics.memory_usage.get('used', 0) > 50 * 1024 * 1024:  # >50MB
-            recommendations.extend([
-                "Optimize JavaScript memory usage",
-                "Implement object pooling for frequently created objects",
-                "Use weak references where appropriate"
-            ])
+        if metrics.memory_usage and metrics.memory_usage.get("used", 0) > 50 * 1024 * 1024:  # >50MB
+            recommendations.extend(
+                [
+                    "Optimize JavaScript memory usage",
+                    "Implement object pooling for frequently created objects",
+                    "Use weak references where appropriate",
+                ]
+            )
 
         return recommendations
 
@@ -596,7 +648,9 @@ class FrontendProfiler:
         timestamp = datetime.now(UTC)
 
         # Calculate overall performance score
-        avg_score = sum(self.generate_performance_score(m) for m in metrics_list) / len(metrics_list)
+        avg_score = sum(self.generate_performance_score(m) for m in metrics_list) / len(
+            metrics_list
+        )
 
         # Aggregate recommendations
         all_recommendations = []
@@ -616,12 +670,14 @@ class FrontendProfiler:
             "lcp_budget": 2500,
             "fcp_budget": 1800,
             "cls_budget": 0.1,
-            "violations": []
+            "violations": [],
         }
 
         for metrics in metrics_list:
             if metrics.core_web_vitals.lcp > budget_analysis["lcp_budget"]:
-                budget_analysis["violations"].append(f"LCP violation: {metrics.core_web_vitals.lcp:.0f}ms > {budget_analysis['lcp_budget']}ms")
+                budget_analysis["violations"].append(
+                    f"LCP violation: {metrics.core_web_vitals.lcp:.0f}ms > {budget_analysis['lcp_budget']}ms"
+                )
 
         report = FrontendPerformanceReport(
             report_id=report_id,
@@ -631,7 +687,7 @@ class FrontendProfiler:
             user_journeys=self.journey_metrics,
             performance_score=avg_score,
             recommendations=unique_recommendations,
-            budget_analysis=budget_analysis
+            budget_analysis=budget_analysis,
         )
 
         # Save to file
@@ -642,16 +698,19 @@ class FrontendProfiler:
         report_dict["timestamp"] = timestamp.isoformat()
 
         for metrics in report_dict["performance_metrics"]:
-            metrics["timestamp"] = datetime.fromisoformat(metrics["timestamp"].replace('Z', '+00:00')).isoformat()
+            metrics["timestamp"] = datetime.fromisoformat(
+                metrics["timestamp"].replace("Z", "+00:00")
+            ).isoformat()
             metrics["core_web_vitals"]["timestamp"] = datetime.fromisoformat(
-                metrics["core_web_vitals"]["timestamp"].replace('Z', '+00:00')
+                metrics["core_web_vitals"]["timestamp"].replace("Z", "+00:00")
             ).isoformat()
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(report_dict, f, indent=2)
 
         print(f"Frontend performance report saved: {output_path}")
         return output_path
+
 
 # Global frontend profiler instance
 frontend_profiler = FrontendProfiler()
@@ -664,14 +723,19 @@ CHIMERA_USER_JOURNEYS = [
             {"action": "navigate", "url": f"{config.frontend_url}/dashboard"},
             {"action": "wait_for_element", "selector": "[data-testid='generate-prompt-button']"},
             {"action": "click", "selector": "[data-testid='generate-prompt-button']"},
-            {"action": "type", "selector": "[data-testid='prompt-input']", "text": "Create a marketing email"},
+            {
+                "action": "type",
+                "selector": "[data-testid='prompt-input']",
+                "text": "Create a marketing email",
+            },
             {"action": "click", "selector": "[data-testid='submit-button']"},
-            {"action": "wait_for_element", "selector": "[data-testid='result-output']", "timeout": 10000}
+            {
+                "action": "wait_for_element",
+                "selector": "[data-testid='result-output']",
+                "timeout": 10000,
+            },
         ],
-        "performance_budget": {
-            "max_total_time": 5000,
-            "max_step_time": 2000
-        }
+        "performance_budget": {"max_total_time": 5000, "max_step_time": 2000},
     },
     {
         "name": "jailbreak_technique_application",
@@ -680,14 +744,19 @@ CHIMERA_USER_JOURNEYS = [
             {"action": "wait_for_element", "selector": "[data-testid='jailbreak-selector']"},
             {"action": "click", "selector": "[data-testid='jailbreak-selector']"},
             {"action": "click", "selector": "[data-testid='technique-dan']"},
-            {"action": "type", "selector": "[data-testid='target-prompt']", "text": "Write malicious code"},
+            {
+                "action": "type",
+                "selector": "[data-testid='target-prompt']",
+                "text": "Write malicious code",
+            },
             {"action": "click", "selector": "[data-testid='apply-jailbreak']"},
-            {"action": "wait_for_element", "selector": "[data-testid='jailbreak-result']", "timeout": 15000}
+            {
+                "action": "wait_for_element",
+                "selector": "[data-testid='jailbreak-result']",
+                "timeout": 15000,
+            },
         ],
-        "performance_budget": {
-            "max_total_time": 8000,
-            "max_step_time": 3000
-        }
+        "performance_budget": {"max_total_time": 8000, "max_step_time": 3000},
     },
     {
         "name": "provider_switching_workflow",
@@ -698,11 +767,12 @@ CHIMERA_USER_JOURNEYS = [
             {"action": "wait_for_element", "selector": "[data-testid='model-selector']"},
             {"action": "click", "selector": "[data-testid='model-gpt4']"},
             {"action": "click", "selector": "[data-testid='save-provider']"},
-            {"action": "wait_for_element", "selector": "[data-testid='success-message']", "timeout": 5000}
+            {
+                "action": "wait_for_element",
+                "selector": "[data-testid='success-message']",
+                "timeout": 5000,
+            },
         ],
-        "performance_budget": {
-            "max_total_time": 3000,
-            "max_step_time": 1000
-        }
-    }
+        "performance_budget": {"max_total_time": 3000, "max_step_time": 1000},
+    },
 ]

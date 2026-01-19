@@ -445,6 +445,7 @@ export function MutationOptimizerUI({
           bestFitness: Math.max(...fitnessValues),
           avgFitness: fitnessValues.reduce((a, b) => a + b, 0) / fitnessValues.length,
           diversity: 0.8 - (parseInt(gen) * 0.02), // Placeholder diversity calculation
+          timestamp: Date.now(), // Add required timestamp property
         };
       })
       .sort((a, b) => a.generation - b.generation);

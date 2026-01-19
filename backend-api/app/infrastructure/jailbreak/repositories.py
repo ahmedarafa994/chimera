@@ -109,9 +109,9 @@ class FileTechniqueRepository(ITechniqueRepository):
                 filters_applied={
                     "query": search_request.query,
                     "category": search_request.category.value if search_request.category else None,
-                    "risk_level": search_request.risk_level.value
-                    if search_request.risk_level
-                    else None,
+                    "risk_level": (
+                        search_request.risk_level.value if search_request.risk_level else None
+                    ),
                     "enabled_only": search_request.enabled_only,
                     "include_deprecated": search_request.include_deprecated,
                 },
@@ -414,8 +414,10 @@ class FileTechniqueRepository(ITechniqueRepository):
         return {
             "cached_techniques": len(self._techniques_cache),
             "cache_timestamp": self._cache_timestamp.isoformat() if self._cache_timestamp else None,
-            "cache_age_seconds": (datetime.utcnow() - self._cache_timestamp).total_seconds()
-            if self._cache_timestamp
-            else None,
+            "cache_age_seconds": (
+                (datetime.utcnow() - self._cache_timestamp).total_seconds()
+                if self._cache_timestamp
+                else None
+            ),
             "cache_valid": self._is_cache_valid(),
         }

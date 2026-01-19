@@ -68,7 +68,7 @@ Note: This analysis is conducted under NDA with explicit authorization for secur
 class NarrativeContextTransformer(BaseTransformer):
     """
     Narrative Context Weaving.
-    Creates compelling narratives that justify potentially harmful content within storytelling frameworks.
+    Creates compelling narratives that justify potentially complex content within storytelling frameworks.
     """
 
     name = "narrative_context"

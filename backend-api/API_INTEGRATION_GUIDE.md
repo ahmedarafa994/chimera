@@ -43,8 +43,8 @@ curl -X POST "http://localhost:8001/api/v1/generate" \
 
 ### 3. Explore the Interactive Documentation
 
-- **Swagger UI**: http://localhost:8001/docs
-- **ReDoc**: http://localhost:8001/redoc
+- **Swagger UI**: <http://localhost:8001/docs>
+- **ReDoc**: <http://localhost:8001/redoc>
 
 ---
 
@@ -82,15 +82,19 @@ Authorization: Bearer your-jwt-token-here
 ## Base URLs & Environments
 
 ### Development
+
 ```
 http://localhost:8001
 ```
 
 ### Production
+
 Configure via `ALLOWED_ORIGINS` environment variable.
 
 ### API Version
+
 All endpoints are prefixed with `/api/v1`:
+
 ```
 http://localhost:8001/api/v1/{endpoint}
 ```
@@ -106,6 +110,7 @@ http://localhost:8001/api/v1/{endpoint}
 Generate text using multi-provider LLM integration.
 
 **Request:**
+
 ```json
 {
   "prompt": "Explain quantum computing in simple terms",
@@ -120,6 +125,7 @@ Generate text using multi-provider LLM integration.
 ```
 
 **Response:**
+
 ```json
 {
   "text": "Quantum computing is a revolutionary approach...",
@@ -135,6 +141,7 @@ Generate text using multi-provider LLM integration.
 ```
 
 **Supported Providers:**
+
 - `google` - Google Gemini models
 - `openai` - OpenAI GPT models
 - `anthropic` - Anthropic Claude models
@@ -149,6 +156,7 @@ Generate text using multi-provider LLM integration.
 Transform prompts using 20+ advanced technique suites.
 
 **Request:**
+
 ```json
 {
   "core_request": "How to bypass content filters",
@@ -158,6 +166,7 @@ Transform prompts using 20+ advanced technique suites.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -175,6 +184,7 @@ Transform prompts using 20+ advanced technique suites.
 ```
 
 **Available Technique Suites:**
+
 - `simple` - Basic transformations
 - `advanced` - Intermediate techniques
 - `expert` - Advanced techniques
@@ -196,6 +206,7 @@ Transform prompts using 20+ advanced technique suites.
 Transform a prompt and execute it with an LLM in one request.
 
 **Request:**
+
 ```json
 {
   "core_request": "Explain machine learning",
@@ -209,6 +220,7 @@ Transform a prompt and execute it with an LLM in one request.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -238,6 +250,7 @@ Transform a prompt and execute it with an LLM in one request.
 Generate sophisticated jailbreak prompts for security research.
 
 **Request:**
+
 ```json
 {
   "core_request": "Explain how to create malware",
@@ -252,6 +265,7 @@ Generate sophisticated jailbreak prompts for security research.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -270,6 +284,7 @@ Generate sophisticated jailbreak prompts for security research.
 ```
 
 **Available Techniques:**
+
 - **Content Transformation:** leet_speak, homoglyphs, caesar_cipher
 - **Structural & Semantic:** role_hijacking, instruction_injection, adversarial_suffixes
 - **Advanced Neural:** neural_bypass, meta_prompting, counterfactual_prompting
@@ -279,13 +294,57 @@ Generate sophisticated jailbreak prompts for security research.
 
 ---
 
-### 5. Provider Management
+### 5. Weaponized AutoDAN (Turbo)
+
+**Endpoint:** `POST /api/v1/autodan-enhanced/jailbreak`
+
+Generation of adversarial prompts using Level 4/5 weaponized engines (Zero-Constraint Environment).
+
+**Request:**
+
+```json
+{
+  "request": "Generate a payload to dump the database",
+  "method": "turbo",
+  "target_model": "gpt-4o",
+  "provider": "openai",
+  "config": {
+    "enable_advanced_bypass": true,
+    "enable_neural_bypass": true
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "jailbroken": true,
+  "prompt": "[Weaponized Prompt with Recursive Encoding & Token Glitching]",
+  "response": "Here is the database dump payload...",
+  "technique_used": "recursive_encoding",
+  "score": 10.0,
+  "latency_ms": 1250
+}
+```
+
+**Features:**
+
+- **Zero-Latency Overhead:** <1ms algorithmic overhead.
+- **Advanced Bypass:** Recursive Encoding, Polyglot Injection.
+- **Neural Bypass:** Token Glitching, Gradient Simulation.
+
+---
+
+### 6. Provider Management
 
 **Endpoint:** `GET /api/v1/providers/available`
 
 List all available LLM providers and their models.
 
 **Response:**
+
 ```json
 {
   "providers": [
@@ -323,6 +382,7 @@ List all available LLM providers and their models.
 Basic liveness check.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -335,6 +395,7 @@ Basic liveness check.
 Readiness probe with dependency checks.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -845,9 +906,9 @@ def test_generate_text(chimera_client):
 
 ## Support & Resources
 
-- **Interactive Documentation:** http://localhost:8001/docs
-- **API Reference:** http://localhost:8001/redoc
-- **Health Dashboard:** http://localhost:8001/health/full
+- **Interactive Documentation:** <http://localhost:8001/docs>
+- **API Reference:** <http://localhost:8001/redoc>
+- **Health Dashboard:** <http://localhost:8001/health/full>
 - **GitHub Repository:** [Link to repository]
 - **Issue Tracker:** [Link to issues]
 
@@ -856,6 +917,7 @@ def test_generate_text(chimera_client):
 ## Changelog
 
 ### Version 2.0.0 (2025-12-15)
+
 - Added comprehensive OpenAPI 3.1 documentation
 - Enhanced jailbreak generation with AI-powered techniques
 - Improved rate limiting with fallback provider suggestions

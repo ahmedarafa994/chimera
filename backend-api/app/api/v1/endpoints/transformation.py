@@ -9,10 +9,7 @@ from fastapi.responses import StreamingResponse
 from app.core.auth import Permission, require_permission
 from app.core.deps import get_transformation_service
 from app.schemas import TransformRequest, TransformResponse, TransformResultMetadata
-from app.services.transformation_service import (
-    TransformationEngine,
-    TransformationResult,
-)
+from app.services.transformation_service import TransformationEngine, TransformationResult
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -60,9 +57,10 @@ async def transform_prompt(
     )
 
     return TransformResponse(
+        success=True,
         original_prompt=result.original_prompt,
         transformed_prompt=result.transformed_prompt,
-        metadata=metadata,
+        metadata=metadata.model_dump(),
     )
 
 

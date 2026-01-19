@@ -203,7 +203,7 @@ export function ChangePasswordForm({
         const headers = getApiHeaders();
 
         const response = await fetch(
-          `${apiConfig.apiUrl}/api/v1/users/me/change-password`,
+          `${apiConfig.backendApiUrl}/api/v1/users/me/change-password`,
           {
             method: "POST",
             headers: {

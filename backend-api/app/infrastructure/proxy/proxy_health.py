@@ -14,17 +14,14 @@ Features:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 from dataclasses import dataclass
 from typing import Any
 
 from app.core.config import settings
 from app.core.logging import logger
-from app.infrastructure.proxy.proxy_client import (
-    ProxyClient,
-    ProxyHealthStatus,
-    get_proxy_client,
-)
+from app.infrastructure.proxy.proxy_client import ProxyClient, ProxyHealthStatus, get_proxy_client
 
 
 @dataclass
@@ -137,10 +134,8 @@ class ProxyHealthMonitor:
         self._is_running = False
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
             self._task = None
 
         logger.info("ProxyHealthMonitor stopped")
@@ -208,9 +203,7 @@ class ProxyHealthMonitor:
             # Running average
             n = self._metrics.successful_checks
             prev_avg = self._metrics.avg_latency_ms
-            self._metrics.avg_latency_ms = (
-                prev_avg * (n - 1) + result.latency_ms
-            ) / n
+            self._metrics.avg_latency_ms = (prev_avg * (n - 1) + result.latency_ms) / n
         else:
             self._metrics.failed_checks += 1
             self._metrics.last_failure = result.timestamp
@@ -218,9 +211,7 @@ class ProxyHealthMonitor:
         # Calculate uptime percentage
         total = self._metrics.total_checks
         if total > 0:
-            self._metrics.uptime_percent = (
-                self._metrics.successful_checks / total
-            ) * 100
+            self._metrics.uptime_percent = (self._metrics.successful_checks / total) * 100
 
     def _update_consecutive_failures(self, result: HealthCheckResult) -> None:
         """Track consecutive failures for health status."""
@@ -231,8 +222,7 @@ class ProxyHealthMonitor:
 
             if self._consecutive_failures >= self.UNHEALTHY_THRESHOLD:
                 logger.warning(
-                    f"Proxy unhealthy: {self._consecutive_failures} "
-                    f"consecutive failures"
+                    f"Proxy unhealthy: {self._consecutive_failures} " f"consecutive failures"
                 )
 
     def get_status(self) -> dict[str, Any]:

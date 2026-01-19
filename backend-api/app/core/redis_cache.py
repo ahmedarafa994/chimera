@@ -251,7 +251,7 @@ class RedisL2Cache:
             ttl = ttl if ttl is not None else self.default_ttl
 
             # Serialize value
-            if isinstance(value, (str, int, float, bool)):
+            if isinstance(value, str | int | float | bool):
                 serialized = str(value)
             else:
                 serialized = json.dumps(value)

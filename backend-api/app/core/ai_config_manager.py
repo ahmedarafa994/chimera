@@ -6,6 +6,7 @@ AI provider configurations. Supports hot-reload and configuration versioning.
 """
 
 import asyncio
+import contextlib
 import hashlib
 import logging
 import os
@@ -204,9 +205,7 @@ class AIConfigManager:
 
             # Emit event
             event_type = (
-                ConfigEventType.CONFIG_LOADED
-                if not old_config
-                else ConfigEventType.CONFIG_RELOADED
+                ConfigEventType.CONFIG_LOADED if not old_config else ConfigEventType.CONFIG_RELOADED
             )
             await self._emit_event(
                 ConfigEvent(
@@ -256,9 +255,7 @@ class AIConfigManager:
         if "providers" in raw_config:
             parsed_providers = {}
             for provider_id, provider_data in raw_config["providers"].items():
-                parsed_providers[provider_id] = self._parse_provider(
-                    provider_id, provider_data
-                )
+                parsed_providers[provider_id] = self._parse_provider(provider_id, provider_data)
             raw_config["providers"] = parsed_providers
 
         # Transform failover_chains
@@ -274,18 +271,13 @@ class AIConfigManager:
 
         # Parse global config
         if "global" in raw_config:
-            raw_config["global_config"] = self._parse_global_config(
-                raw_config.pop("global")
-            )
+            raw_config["global_config"] = self._parse_global_config(raw_config.pop("global"))
 
         return AIProvidersConfig(**raw_config)
 
     def _parse_global_config(self, global_data: dict[str, Any]) -> GlobalConfig:
         """Parse global configuration section."""
-        from app.config.ai_provider_settings import (
-            CostTrackingConfig,
-            GlobalRateLimitConfig,
-        )
+        from app.config.ai_provider_settings import CostTrackingConfig, GlobalRateLimitConfig
 
         cost_tracking = None
         if "cost_tracking" in global_data:
@@ -301,9 +293,7 @@ class AIConfigManager:
             rate_limiting=rate_limiting or GlobalRateLimitConfig(),
         )
 
-    def _parse_provider(
-        self, provider_id: str, provider_data: dict[str, Any]
-    ) -> ProviderConfig:
+    def _parse_provider(self, provider_id: str, provider_data: dict[str, Any]) -> ProviderConfig:
         """Parse a single provider configuration."""
         # Parse API config
         api_data = provider_data.get("api", {})
@@ -401,9 +391,7 @@ class AIConfigManager:
             max_output_tokens=model_data.get("max_output_tokens", 4096),
             supports_streaming=model_data.get("supports_streaming", True),
             supports_vision=model_data.get("supports_vision", False),
-            supports_function_calling=model_data.get(
-                "supports_function_calling", False
-            ),
+            supports_function_calling=model_data.get("supports_function_calling", False),
             is_default=model_data.get("is_default", False),
             tier=tier,
             pricing=pricing,
@@ -421,8 +409,7 @@ class AIConfigManager:
                 env_var = provider.api.key_env_var
                 if not os.getenv(env_var):
                     warnings.append(
-                        f"API key env var '{env_var}' not set "
-                        f"for provider '{provider_id}'"
+                        f"API key env var '{env_var}' not set " f"for provider '{provider_id}'"
                     )
 
         # Check failover chain validity
@@ -431,8 +418,7 @@ class AIConfigManager:
                 resolved = config.aliases.get(failover_id, failover_id)
                 if resolved not in config.providers:
                     errors.append(
-                        f"Invalid failover provider '{failover_id}' "
-                        f"in '{provider_id}' chain"
+                        f"Invalid failover provider '{failover_id}' " f"in '{provider_id}' chain"
                     )
 
         # Log warnings
@@ -458,9 +444,7 @@ class AIConfigManager:
             RuntimeError: If configuration not loaded
         """
         if not self._config:
-            raise RuntimeError(
-                "Configuration not loaded. Call load_config() first."
-            )
+            raise RuntimeError("Configuration not loaded. Call load_config() first.")
         return self._config
 
     def get_provider(self, provider_id: str) -> ProviderConfig | None:
@@ -508,9 +492,7 @@ class AIConfigManager:
             raise RuntimeError("No active model configured")
         return model
 
-    def get_model(
-        self, model_id: str, provider_id: str | None = None
-    ) -> ModelConfig | None:
+    def get_model(self, model_id: str, provider_id: str | None = None) -> ModelConfig | None:
         """
         Get model configuration.
 
@@ -540,9 +522,7 @@ class AIConfigManager:
         config = self.get_config()
         return config.get_enabled_providers()
 
-    def get_failover_chain(
-        self, name: str, provider_id: str | None = None
-    ) -> list[str]:
+    def get_failover_chain(self, name: str, provider_id: str | None = None) -> list[str]:
         """
         Get a named failover chain or provider's failover chain.
 
@@ -696,19 +676,15 @@ class AIConfigManager:
             logger.warning("File watcher already running")
             return
 
-        self._file_watcher_task = asyncio.create_task(
-            self._file_watcher_loop(interval_seconds)
-        )
+        self._file_watcher_task = asyncio.create_task(self._file_watcher_loop(interval_seconds))
         logger.info(f"Started config file watcher (interval={interval_seconds}s)")
 
     async def stop_file_watcher(self) -> None:
         """Stop the file watcher."""
         if self._file_watcher_task:
             self._file_watcher_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._file_watcher_task
-            except asyncio.CancelledError:
-                pass
             self._file_watcher_task = None
             logger.info("Stopped config file watcher")
 
@@ -743,15 +719,13 @@ class AIConfigManager:
     ) -> ConfigSnapshot:
         """Create a configuration snapshot."""
         version = len(self._snapshots) + 1
-        snapshot = ConfigSnapshot(
-            version=version, config=config, description=description
-        )
+        snapshot = ConfigSnapshot(version=version, config=config, description=description)
 
         self._snapshots.append(snapshot)
 
         # Limit snapshot history
         if len(self._snapshots) > self.MAX_SNAPSHOTS:
-            self._snapshots = self._snapshots[-self.MAX_SNAPSHOTS:]
+            self._snapshots = self._snapshots[-self.MAX_SNAPSHOTS :]
 
         return snapshot
 

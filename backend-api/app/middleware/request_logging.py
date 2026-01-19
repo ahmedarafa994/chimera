@@ -303,9 +303,9 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             "endpoints": {
                 endpoint: {
                     "count": data["count"],
-                    "avg_time_ms": round(data["total_time_ms"] / data["count"], 2)
-                    if data["count"] > 0
-                    else 0,
+                    "avg_time_ms": (
+                        round(data["total_time_ms"] / data["count"], 2) if data["count"] > 0 else 0
+                    ),
                     "error_rate": data["errors"] / data["count"] if data["count"] > 0 else 0,
                 }
                 for endpoint, data in self._endpoint_metrics.items()

@@ -39,21 +39,19 @@ class RecoveryResult(BaseModel):
     provider: str = Field(..., description="Recovered provider")
     model: str = Field(..., description="Recovered model")
     source: str = Field(
-        default="default",
-        description="Source of recovery (database, cache, default, migration)"
+        default="default", description="Source of recovery (database, cache, default, migration)"
     )
     was_migrated: bool = Field(
-        default=False,
-        description="Whether data was migrated from legacy format"
+        default=False, description="Whether data was migrated from legacy format"
     )
-    error: Optional[str] = Field(None, description="Error if recovery failed")
+    error: str | None = Field(None, description="Error if recovery failed")
 
 
 class RecoveryAuditEntry(BaseModel):
     """Audit log entry for recovery operations."""
 
     session_id: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     recovery_type: str  # "automatic", "manual", "migration"
     source: str  # "database", "cache", "default", "migration"
     provider: str
@@ -66,53 +64,45 @@ class LegacySelectionFormat(BaseModel):
     """Represents various legacy selection formats."""
 
     # Format 1: old user_model_preferences format
-    selected_provider: Optional[str] = None
-    selected_model: Optional[str] = None
+    selected_provider: str | None = None
+    selected_model: str | None = None
 
     # Format 2: simple key-value format
-    provider: Optional[str] = None
-    model: Optional[str] = None
+    provider: str | None = None
+    model: str | None = None
 
     # Format 3: ID-based format
-    provider_id: Optional[str] = None
-    model_id: Optional[str] = None
+    provider_id: str | None = None
+    model_id: str | None = None
 
     # Session/user identifiers
-    session_id: Optional[str] = None
-    session: Optional[str] = None
-    id: Optional[str] = None
-    user_id: Optional[str] = None
-    user: Optional[str] = None
+    session_id: str | None = None
+    session: str | None = None
+    id: str | None = None
+    user_id: str | None = None
+    user: str | None = None
 
     # Metadata
-    preferences: Optional[dict] = None
-    model_settings: Optional[dict] = None
+    preferences: dict | None = None
+    model_settings: dict | None = None
 
     @property
-    def resolved_provider(self) -> Optional[str]:
+    def resolved_provider(self) -> str | None:
         """Get provider from any format."""
-        return (
-            self.provider_id or
-            self.selected_provider or
-            self.provider
-        )
+        return self.provider_id or self.selected_provider or self.provider
 
     @property
-    def resolved_model(self) -> Optional[str]:
+    def resolved_model(self) -> str | None:
         """Get model from any format."""
-        return (
-            self.model_id or
-            self.selected_model or
-            self.model
-        )
+        return self.model_id or self.selected_model or self.model
 
     @property
-    def resolved_session_id(self) -> Optional[str]:
+    def resolved_session_id(self) -> str | None:
         """Get session ID from any format."""
         return self.session_id or self.session or self.id
 
     @property
-    def resolved_user_id(self) -> Optional[str]:
+    def resolved_user_id(self) -> str | None:
         """Get user ID from any format."""
         return self.user_id or self.user
 
@@ -152,12 +142,8 @@ class SelectionRecoveryService:
         if getattr(self, "_initialized", False):
             return
 
-        self._default_provider = getattr(
-            settings, "DEFAULT_PROVIDER", "openai"
-        )
-        self._default_model = getattr(
-            settings, "DEFAULT_MODEL", "gpt-4"
-        )
+        self._default_provider = getattr(settings, "DEFAULT_PROVIDER", "openai")
+        self._default_model = getattr(settings, "DEFAULT_MODEL", "gpt-4")
         self._persistence = None
         self._cache = None
         self._audit_log: list[RecoveryAuditEntry] = []
@@ -189,8 +175,8 @@ class SelectionRecoveryService:
     async def recover_selection(
         self,
         session_id: str,
-        user_id: Optional[str] = None,
-        db_session: Optional[AsyncSession] = None,
+        user_id: str | None = None,
+        db_session: AsyncSession | None = None,
         use_defaults: bool = True,
     ) -> RecoveryResult:
         """
@@ -247,9 +233,8 @@ class SelectionRecoveryService:
 
                     # Update cache
                     if self._cache:
-                        from app.infrastructure.cache.selection_cache import (
-                            CachedSelection,
-                        )
+                        from app.infrastructure.cache.selection_cache import CachedSelection
+
                         await self._cache.set(
                             session_id,
                             CachedSelection(
@@ -270,9 +255,7 @@ class SelectionRecoveryService:
         # Try to find user's default selection
         if user_id and db_session:
             try:
-                user_default = await self._get_user_default_selection(
-                    user_id, db_session
-                )
+                user_default = await self._get_user_default_selection(user_id, db_session)
                 if user_default:
                     result = RecoveryResult(
                         success=True,
@@ -311,7 +294,7 @@ class SelectionRecoveryService:
     async def recover_from_legacy(
         self,
         old_format: dict,
-        db_session: Optional[AsyncSession] = None,
+        db_session: AsyncSession | None = None,
     ) -> RecoveryResult:
         """
         Recover selection from legacy format.
@@ -373,14 +356,16 @@ class SelectionRecoveryService:
                 was_migrated=True,
             )
 
-            self._log_recovery(result, user_id, "migration", {
-                "original_format": old_format,
-            })
-
-            logger.info(
-                f"Migrated legacy selection: {session_id} -> "
-                f"{provider}/{model}"
+            self._log_recovery(
+                result,
+                user_id,
+                "migration",
+                {
+                    "original_format": old_format,
+                },
             )
+
+            logger.info(f"Migrated legacy selection: {session_id} -> " f"{provider}/{model}")
 
             return result
 
@@ -410,9 +395,7 @@ class SelectionRecoveryService:
         Returns:
             SelectionRecord if migration successful, None otherwise
         """
-        from app.services.session_selection_persistence import (
-            SelectionRecord,
-        )
+        from app.services.session_selection_persistence import SelectionRecord
 
         result = await self.recover_from_legacy(old_format)
 
@@ -432,8 +415,8 @@ class SelectionRecoveryService:
     async def recover_batch(
         self,
         session_ids: list[str],
-        user_id: Optional[str] = None,
-        db_session: Optional[AsyncSession] = None,
+        user_id: str | None = None,
+        db_session: AsyncSession | None = None,
     ) -> dict[str, RecoveryResult]:
         """
         Recover selections for multiple sessions.
@@ -449,9 +432,7 @@ class SelectionRecoveryService:
         results: dict[str, RecoveryResult] = {}
 
         for session_id in session_ids:
-            results[session_id] = await self.recover_selection(
-                session_id, user_id, db_session
-            )
+            results[session_id] = await self.recover_selection(session_id, user_id, db_session)
 
         return results
 
@@ -463,23 +444,19 @@ class SelectionRecoveryService:
         self,
         user_id: str,
         db_session: AsyncSession,
-    ) -> Optional[tuple[str, str]]:
+    ) -> tuple[str, str] | None:
         """Get user's default provider/model selection."""
         try:
             from sqlalchemy import select
+
             from app.infrastructure.database.models import UserModelPreference
 
-            query = select(UserModelPreference).where(
-                UserModelPreference.user_id == user_id
-            )
+            query = select(UserModelPreference).where(UserModelPreference.user_id == user_id)
             result = await db_session.execute(query)
             preference = result.scalar_one_or_none()
 
             if preference:
-                return (
-                    preference.selected_provider,
-                    preference.selected_model
-                )
+                return (preference.selected_provider, preference.selected_model)
 
             return None
 
@@ -490,9 +467,9 @@ class SelectionRecoveryService:
     def _log_recovery(
         self,
         result: RecoveryResult,
-        user_id: Optional[str],
+        user_id: str | None,
         recovery_type: str,
-        details: Optional[dict] = None,
+        details: dict | None = None,
     ) -> None:
         """Log recovery operation for audit."""
         entry = RecoveryAuditEntry(
@@ -509,12 +486,9 @@ class SelectionRecoveryService:
 
         # Trim audit log if too large
         if len(self._audit_log) > self._max_audit_entries:
-            self._audit_log = self._audit_log[-self._max_audit_entries:]
+            self._audit_log = self._audit_log[-self._max_audit_entries :]
 
-        logger.debug(
-            f"Recovery logged: {result.session_id} "
-            f"({result.source}, {recovery_type})"
-        )
+        logger.debug(f"Recovery logged: {result.session_id} " f"({result.source}, {recovery_type})")
 
     # -------------------------------------------------------------------------
     # Audit Access
@@ -522,7 +496,7 @@ class SelectionRecoveryService:
 
     def get_recovery_audit(
         self,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
         limit: int = 100,
     ) -> list[RecoveryAuditEntry]:
         """
@@ -563,9 +537,7 @@ class SelectionRecoveryService:
 
         for entry in self._audit_log:
             by_source[entry.source] = by_source.get(entry.source, 0) + 1
-            by_type[entry.recovery_type] = (
-                by_type.get(entry.recovery_type, 0) + 1
-            )
+            by_type[entry.recovery_type] = by_type.get(entry.recovery_type, 0) + 1
             if entry.recovery_type == "migration":
                 migrations += 1
 
@@ -609,9 +581,9 @@ def get_selection_recovery_service() -> SelectionRecoveryService:
 # =============================================================================
 
 __all__ = [
-    "SelectionRecoveryService",
-    "RecoveryResult",
-    "RecoveryAuditEntry",
     "LegacySelectionFormat",
+    "RecoveryAuditEntry",
+    "RecoveryResult",
+    "SelectionRecoveryService",
     "get_selection_recovery_service",
 ]

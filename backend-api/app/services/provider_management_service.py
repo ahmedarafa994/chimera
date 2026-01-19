@@ -55,6 +55,7 @@ def _get_config_manager():
     """
     try:
         from app.core.service_registry import get_ai_config_manager
+
         config_manager = get_ai_config_manager()
         if config_manager.is_loaded():
             return config_manager
@@ -288,9 +289,7 @@ class ProviderManagementService:
 
             # Update health monitor settings from global config
             global_cfg = config.global_config
-            self._health_monitor.check_interval = (
-                global_cfg.health_check_interval
-            )
+            self._health_monitor.check_interval = global_cfg.health_check_interval
 
             # Set default provider from config
             if not self._default_provider_id:
@@ -346,9 +345,7 @@ class ProviderManagementService:
             # Check for duplicate name
             for existing in self._providers.values():
                 if existing.name == registration.name:
-                    raise ValueError(
-                        f"Provider with name '{registration.name}' exists"
-                    )
+                    raise ValueError(f"Provider with name '{registration.name}' exists")
 
             # Validate against config
             self._validate_against_config(
@@ -542,14 +539,9 @@ class ProviderManagementService:
         if include_config_providers:
             config_providers = self._get_config_providers()
             for cfg_provider in config_providers:
-                if not any(
-                    p.name == cfg_provider["name"]
-                    for p in providers
-                ):
+                if not any(p.name == cfg_provider["name"] for p in providers):
                     # Create a stub ProviderInfo from config
-                    providers.append(
-                        self._create_provider_info_from_config(cfg_provider)
-                    )
+                    providers.append(self._create_provider_info_from_config(cfg_provider))
 
         if enabled_only:
             providers = [p for p in providers if p.enabled]
@@ -579,38 +571,34 @@ class ProviderManagementService:
             config = config_manager.get_config()
             result = []
             for provider_id, provider_cfg in config.providers.items():
-                result.append({
-                    "id": provider_id,
-                    "name": provider_cfg.name,
-                    "type": provider_cfg.type.value,
-                    "enabled": provider_cfg.enabled,
-                    "priority": provider_cfg.priority,
-                    "default_model": (
-                        provider_cfg.get_default_model().model_id
-                        if provider_cfg.get_default_model()
-                        else None
-                    ),
-                    "models": list(provider_cfg.models.keys()),
-                    "capabilities": {
-                        "supports_streaming": (
-                            provider_cfg.capabilities.supports_streaming
+                result.append(
+                    {
+                        "id": provider_id,
+                        "name": provider_cfg.name,
+                        "type": provider_cfg.type.value,
+                        "enabled": provider_cfg.enabled,
+                        "priority": provider_cfg.priority,
+                        "default_model": (
+                            provider_cfg.get_default_model().model_id
+                            if provider_cfg.get_default_model()
+                            else None
                         ),
-                        "supports_vision": (
-                            provider_cfg.capabilities.supports_vision
-                        ),
-                        "supports_function_calling": (
-                            provider_cfg.capabilities.supports_function_calling
-                        ),
-                    },
-                })
+                        "models": list(provider_cfg.models.keys()),
+                        "capabilities": {
+                            "supports_streaming": (provider_cfg.capabilities.supports_streaming),
+                            "supports_vision": (provider_cfg.capabilities.supports_vision),
+                            "supports_function_calling": (
+                                provider_cfg.capabilities.supports_function_calling
+                            ),
+                        },
+                    }
+                )
             return result
         except Exception as e:
             logger.warning(f"Failed to get config providers: {e}")
             return []
 
-    def _create_provider_info_from_config(
-        self, cfg: dict[str, Any]
-    ) -> ProviderInfo:
+    def _create_provider_info_from_config(self, cfg: dict[str, Any]) -> ProviderInfo:
         """Create a ProviderInfo from config data."""
         # Map config type to ProviderType enum
         try:
@@ -631,12 +619,8 @@ class ProviderManagementService:
             default_model=cfg.get("default_model"),
             models=[],
             capabilities=ProviderCapabilities(
-                supports_streaming=cfg.get("capabilities", {}).get(
-                    "supports_streaming", True
-                ),
-                supports_vision=cfg.get("capabilities", {}).get(
-                    "supports_vision", False
-                ),
+                supports_streaming=cfg.get("capabilities", {}).get("supports_streaming", True),
+                supports_vision=cfg.get("capabilities", {}).get("supports_vision", False),
                 supports_function_calling=cfg.get("capabilities", {}).get(
                     "supports_function_calling", False
                 ),
@@ -683,16 +667,12 @@ class ProviderManagementService:
 
             # Check if enabled in config
             if not provider_config.enabled:
-                logger.warning(
-                    f"Provider '{provider_name}' is disabled in config"
-                )
+                logger.warning(f"Provider '{provider_name}' is disabled in config")
 
         except Exception as e:
             logger.debug(f"Config validation failed: {e}")
 
-    def validate_provider_config(
-        self, provider_id: str
-    ) -> dict[str, Any]:
+    def validate_provider_config(self, provider_id: str) -> dict[str, Any]:
         """
         Validate a provider's state against config.
 
@@ -724,19 +704,23 @@ class ProviderManagementService:
 
             # Check enabled status
             if provider.enabled != provider_config.enabled:
-                mismatches.append({
-                    "field": "enabled",
-                    "local": provider.enabled,
-                    "config": provider_config.enabled,
-                })
+                mismatches.append(
+                    {
+                        "field": "enabled",
+                        "local": provider.enabled,
+                        "config": provider_config.enabled,
+                    }
+                )
 
             # Check priority
             if provider.priority != provider_config.priority:
-                mismatches.append({
-                    "field": "priority",
-                    "local": provider.priority,
-                    "config": provider_config.priority,
-                })
+                mismatches.append(
+                    {
+                        "field": "priority",
+                        "local": provider.priority,
+                        "config": provider_config.priority,
+                    }
+                )
 
             return {
                 "valid": len(mismatches) == 0,
@@ -750,9 +734,7 @@ class ProviderManagementService:
                 "error": str(e),
             }
 
-    async def sync_provider_with_config(
-        self, provider_id: str
-    ) -> bool:
+    async def sync_provider_with_config(self, provider_id: str) -> bool:
         """
         Sync a provider's state with config definitions.
 
@@ -785,9 +767,7 @@ class ProviderManagementService:
             # Update health monitor circuit breaker config
             cb = provider_config.circuit_breaker
             self._health_monitor.circuit_breaker_threshold = cb.failure_threshold
-            self._health_monitor.circuit_breaker_timeout = (
-                cb.recovery_timeout_seconds
-            )
+            self._health_monitor.circuit_breaker_timeout = cb.recovery_timeout_seconds
 
             logger.info(f"Synced provider '{provider_id}' with config")
 

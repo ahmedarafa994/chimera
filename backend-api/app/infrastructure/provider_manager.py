@@ -138,8 +138,7 @@ class ProviderManager:
         self._update_provider_order()
 
         logger.info(
-            f"Registered provider '{name}' with priority {priority} "
-            f"(default={is_default})"
+            f"Registered provider '{name}' with priority {priority} " f"(default={is_default})"
         )
 
     def _update_provider_order(self) -> None:
@@ -220,9 +219,7 @@ class ProviderManager:
                 state.average_latency_ms = latency_ms
             else:
                 # Exponential moving average
-                state.average_latency_ms = (
-                    0.9 * state.average_latency_ms + 0.1 * latency_ms
-                )
+                state.average_latency_ms = 0.9 * state.average_latency_ms + 0.1 * latency_ms
 
             # Check if healthy
             if state.status != ProviderStatus.HEALTHY:
@@ -248,12 +245,9 @@ class ProviderManager:
 
             if is_rate_limit:
                 state.status = ProviderStatus.RATE_LIMITED
-                state.rate_limit_reset = (
-                    time.time() + self.config.rate_limit_cooldown
-                )
+                state.rate_limit_reset = time.time() + self.config.rate_limit_cooldown
                 logger.warning(
-                    f"Provider '{name}' rate limited. "
-                    f"Cooldown until {state.rate_limit_reset}"
+                    f"Provider '{name}' rate limited. " f"Cooldown until {state.rate_limit_reset}"
                 )
             elif state.consecutive_failures >= self.config.unhealthy_threshold:
                 state.status = ProviderStatus.UNHEALTHY
@@ -305,7 +299,7 @@ class ProviderManager:
             )
 
         # Limit failover attempts
-        providers_to_try = providers_to_try[:self.config.max_failover_attempts]
+        providers_to_try = providers_to_try[: self.config.max_failover_attempts]
 
         last_error: Exception | None = None
 
@@ -340,8 +334,7 @@ class ProviderManager:
                     raise
 
                 logger.warning(
-                    f"Provider '{provider_name}' failed: {e!s}. "
-                    f"Trying next provider..."
+                    f"Provider '{provider_name}' failed: {e!s}. " f"Trying next provider..."
                 )
 
         raise RetryExhaustedError(
@@ -408,9 +401,7 @@ class ProviderManager:
         if self._health_check_task and not self._health_check_task.done():
             return
 
-        self._health_check_task = asyncio.create_task(
-            self._health_check_loop()
-        )
+        self._health_check_task = asyncio.create_task(self._health_check_loop())
         logger.info("Started provider health check loop")
 
     async def stop_health_checks(self) -> None:

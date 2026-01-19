@@ -362,7 +362,9 @@ class BatchDataIngester:
                 root_path=str(table_path),
                 partition_cols=partition_cols,
                 compression=self.config.compression,
-                existing_data_behavior="overwrite_or_ignore" if mode == "append" else "delete_matching",
+                existing_data_behavior=(
+                    "overwrite_or_ignore" if mode == "append" else "delete_matching"
+                ),
             )
             logger.info(f"Wrote {len(df)} rows to {table_path}")
             return table_path
@@ -431,7 +433,11 @@ class BatchDataIngester:
         watermark_file = watermark_dir / f"{table_name}.json"
         with open(watermark_file, "w") as f:
             json.dump(
-                {"table": table_name, "last_timestamp": timestamp.isoformat(), "updated_at": datetime.utcnow().isoformat()},
+                {
+                    "table": table_name,
+                    "last_timestamp": timestamp.isoformat(),
+                    "updated_at": datetime.utcnow().isoformat(),
+                },
                 f,
                 indent=2,
             )
@@ -461,6 +467,7 @@ class BatchDataIngester:
 
 
 # Convenience functions for ETL jobs
+
 
 def ingest_llm_interactions_batch(lookback_hours: int = 1) -> None:
     """
@@ -502,7 +509,12 @@ def ingest_transformation_events_batch(lookback_hours: int = 1) -> None:
         df = ingester.extract_transformation_events(start_time, end_time)
 
         schema = {
-            "required_fields": ["transformation_id", "technique_suite", "technique_name", "created_at"],
+            "required_fields": [
+                "transformation_id",
+                "technique_suite",
+                "technique_name",
+                "created_at",
+            ],
             "dtypes": {"transformation_id": "object", "transformation_time_ms": "int64"},
         }
         df = ingester.validate_and_clean(df, schema)

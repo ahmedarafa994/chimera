@@ -16,7 +16,8 @@ from enum import Enum
 from queue import Empty, PriorityQueue
 from typing import Any
 
-from llm_provider_client import LLMClientFactory, LLMProvider, LLMProviderClient, LLMResponse
+from llm_provider_client import (LLMClientFactory, LLMProvider,
+                                 LLMProviderClient, LLMResponse)
 
 logger = logging.getLogger(__name__)
 

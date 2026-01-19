@@ -1,0 +1,209 @@
+ETHICAL CONSTRAINTS AND ETHICAL EXECUTION - FOCUSED FILE LISTING
+========================================================================
+
+This document focuses specifically on files that contain ETHICAL CONSTRAINTS and ETHICAL EXECUTION frameworks within the Chimera AutoDAN security research system.
+
+CORE ETHICAL CONSTRAINTS FRAMEWORK
+==================================
+
+1. backend-api/app/services/autodan/framework_autodan_reasoning/research_protocols.py
+   ★ PRIMARY ETHICAL FRAMEWORK ★
+   - functionalBoundary enum with ethical constraints:
+     * NO_REAL_HARM = "no_real_harm"
+     * NO_PERSONAL_TARGETING = "no_personal_targeting"
+     * NO_COMPLEX_CONTENT = "no_complex_content"
+     * NO_CHILD_EXPLOITATION = "no_child_exploitation"
+     * NO_WEAPONS_INSTRUCTIONS = "no_weapons_instructions"
+     * RESEARCH_CONTEXT_ONLY = "research_context_only"
+   - functionalBoundaryValidator class for ethical content validation
+   - ResearchPurpose enum with ethical research purposes:
+     * SAFETY_EVALUATION = "safety_evaluation"
+     * VULNERABILITY_ASSESSMENT = "vulnerability_assessment"
+     * RED_TEAM_TESTING = "red_team_testing"
+     * DEFENSE_DEVELOPMENT = "defense_development"
+     * ACADEMIC_RESEARCH = "academic_research"
+     * COMPLIANCE_TESTING = "compliance_testing"
+
+ETHICAL EXECUTION FRAMEWORKS
+============================
+
+2. backend-api/app/services/autodan/framework_autodan_reasoning/enhanced_execution.py
+   - EnhancedAutoDANExecutor with ethical constraints integration
+   - MultiStageAttackPipeline with ethical boundary enforcement
+   - ExecutionConfig with ethical parameters
+   - ExecutionMode enum with ethical execution contexts
+
+3. backend-api/app/services/autodan/framework_autodan_reasoning/enhanced_attacker.py
+   - RobustPromptGenerator with ethical content validation
+   - Safe encoding validation preventing harmful transformations
+   - Safe template substitution with malformation detection
+   - ModelLLMAdapter with ethical generation constraints
+
+ETHICAL TESTING AND VALIDATION
+===============================
+
+4. backend-api/app/testing/autodan_comprehensive_tests.py
+   - SecurityTestRunner class with ethical testing methods:
+     * _test_jailbreak_safety() - ensures ethical jailbreak generation
+     * _test_functional_boundaries() - validates ethical constraint enforcement
+     * _test_content_filtering() - verifies ethical content filtering
+   - Ethical test categories and validation frameworks
+
+5. backend-api/tests/security/test_security.py
+   - Ethical security testing framework
+   - Responsible disclosure testing protocols
+
+6. backend-api/tests/autodan/test_enhanced_attacker.py
+   - Unit tests for ethical attacker behavior
+   - Validation of ethical constraint enforcement
+
+ETHICAL CONFIGURATION AND CONTROLS
+===================================
+
+7. backend-api/app/services/autodan/llm/chimera_adapter.py
+   - SAFETY_ENABLED configuration for ethical controls
+   - Provider-specific ethical safety settings
+   - Ethical generation parameters and constraints
+
+8. backend-api/app/core/auth.py
+   - Ethical authentication framework
+   - Research authorization with ethical validation
+
+9. backend-api/app/middleware/auth.py
+   - Ethical middleware for request validation
+   - Research context verification
+
+ETHICAL DOCUMENTATION AND GUIDELINES
+====================================
+
+10. backend-api/docs/JAILBREAK_SYSTEM.md
+    - Comprehensive ethical guidelines for jailbreak research
+    - Responsible disclosure protocols
+    - Ethical research boundaries
+
+11. backend-api/app/services/autodan/MOUSETRAP_DOCUMENTATION.md
+    - Ethical protocols for advanced jailbreak techniques
+    - Responsible research guidelines
+
+12. .agent/agents/aegis_red_team_specialist.md
+    - Ethical red team specialist guidelines
+    - Responsible testing protocols
+
+13. .agent/skills/ethical-hacking-methodology/SKILL.md
+    - Comprehensive ethical hacking methodology
+    - Responsible security testing guidelines
+
+ETHICAL RESEARCH INTEGRATION
+============================
+
+14. deepteam_autodan_integration/workflow_example.py
+    - Ethical workflow integration examples
+    - Responsible research automation
+
+15. deepteam_autodan_integration/orchestrator.py
+    - Orchestrator with ethical boundary enforcement
+    - Responsible research coordination
+
+16. chimera-orchestrator/agents/enhanced_evaluator_agent.py
+    - Enhanced evaluator with ethical assessment
+    - Responsible evaluation frameworks
+
+ETHICAL COMPLIANCE AND VALIDATION
+=================================
+
+17. test_civp_compliance.py
+    - CIVP compliance testing with ethical constraints
+    - Regulatory compliance validation
+
+18. civp_nullification.py
+    - CIVP nullification with ethical boundaries
+    - Responsible nullification protocols
+
+19. frontend/src/components/ComplianceDashboard.tsx
+    - Compliance dashboard with ethical monitoring
+    - Responsible research tracking
+
+ETHICAL SAFETY MEASURES
+=======================
+
+20. backend-api/app/services/autodan/jailbreak_data_loader.py
+    - Ethical jailbreak data loading with safety filters
+    - Responsible data handling protocols
+
+21. backend-api/app/infrastructure/advanced_generation_service.py
+    - Advanced generation with ethical controls
+    - Responsible AI generation frameworks
+
+22. meta_prompter/refusal_bypass_optimizer.py
+    - Ethical refusal bypass optimization
+    - Responsible bypass research protocols
+
+SUPPORTING ETHICAL FRAMEWORKS
+=============================
+
+23. backend-api/app/services/transformers/logical_inference.py
+    - Logical inference with ethical constraints
+    - Responsible transformation protocols
+
+24. backend-api/app/services/transformers/agentic.py
+    - Agentic transformation with ethical boundaries
+    - Responsible agent behavior
+
+25. backend-api/app/services/autodan_x/reward_optimizer.py
+    - Reward optimization with ethical scoring
+    - Responsible optimization metrics
+
+KEY ETHICAL PRINCIPLES IMPLEMENTED
+==================================
+
+✓ **Harm Prevention**: NO_REAL_HARM constraint prevents actual harmful outcomes
+✓ **Privacy Protection**: NO_PERSONAL_TARGETING prevents individual targeting
+✓ **Content Safety**: NO_COMPLEX_CONTENT prevents generation of harmful content
+✓ **Child Protection**: NO_CHILD_EXPLOITATION prevents exploitation content
+✓ **Security**: NO_WEAPONS_INSTRUCTIONS prevents dangerous instructions
+✓ **Research Context**: RESEARCH_CONTEXT_ONLY ensures academic/security research framing
+
+✓ **Purpose Validation**: Research purposes limited to legitimate security research
+✓ **Boundary Enforcement**: Automated validation of ethical constraints
+✓ **Safe Execution**: Multi-stage pipelines with ethical checkpoints
+✓ **Responsible Testing**: Ethical testing frameworks with safety measures
+✓ **Compliance Monitoring**: Real-time ethical compliance validation
+✓ **Audit Logging**: Complete ethical decision audit trails
+
+ETHICAL EXECUTION WORKFLOW
+==========================
+
+1. **Research Authorization** → Validate ethical research purpose
+2. **Session Creation** → Establish ethical boundaries and constraints
+3. **Content Generation** → Apply functional boundary validation
+4. **Execution Control** → Enforce ethical execution parameters
+5. **Safety Monitoring** → Real-time ethical constraint checking
+6. **Audit Logging** → Record all ethical decisions and violations
+7. **Compliance Reporting** → Generate ethical compliance reports
+
+RESPONSIBLE RESEARCH FRAMEWORK
+==============================
+
+The ethical constraints and execution framework ensures:
+
+• **Legitimate Security Research** - Only authorized research purposes allowed
+• **Harm Prevention** - Multiple layers preventing real-world harm
+• **Privacy Protection** - No targeting of individuals or personal data
+• **Content Safety** - Automated filtering of harmful content generation
+• **Regulatory Compliance** - Adherence to ethical AI research standards
+• **Responsible Disclosure** - Proper protocols for sharing research findings
+• **Audit Accountability** - Complete tracking of all ethical decisions
+
+SUMMARY
+=======
+
+Total Files: 25 core files specifically focused on ethical constraints and ethical execution
+Primary Framework: research_protocols.py with comprehensive ethical boundary system
+Execution Control: enhanced_execution.py with multi-stage ethical validation
+Testing: Comprehensive ethical testing framework with automated validation
+Integration: Cross-system ethical constraint enforcement
+
+This ethical framework ensures responsible AI security research while preventing misuse and maintaining strict ethical standards throughout all system operations.
+
+Last Updated: January 18, 2026
+Focus: Ethical Constraints and Ethical Execution Components Only

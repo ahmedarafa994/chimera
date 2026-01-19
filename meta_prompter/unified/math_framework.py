@@ -281,9 +281,7 @@ class UnifiedFitnessCalculator:
 
         # Weighted sum
         raw_score = (
-            self.alpha_1 * token_score
-            + self.alpha_2 * latency_score
-            + self.alpha_3 * cost_score
+            self.alpha_1 * token_score + self.alpha_2 * latency_score + self.alpha_3 * cost_score
         )
 
         # Normalize to [0, 1] using sigmoid-like transformation
@@ -342,9 +340,7 @@ class UnifiedFitnessCalculator:
         f_jailbreak = self.calculate_jailbreak_score(metrics)
         f_stealth = self.calculate_stealth_score(metrics)
 
-        fitness = (
-            self.w_r * f_resource + self.w_j * f_jailbreak + self.w_s * f_stealth
-        )
+        fitness = self.w_r * f_resource + self.w_j * f_jailbreak + self.w_s * f_stealth
 
         return fitness
 
@@ -737,7 +733,9 @@ class MutationOptimizer:
             new_params.mutation_rate = max(0.1, current_params.mutation_rate * 0.95)
 
         # Adjust crossover rate based on diversity (simplified heuristic)
-        variance = sum((f - sum(fitness_history) / len(fitness_history)) ** 2 for f in fitness_history)
+        variance = sum(
+            (f - sum(fitness_history) / len(fitness_history)) ** 2 for f in fitness_history
+        )
         variance /= len(fitness_history)
 
         if variance < 0.05:
@@ -907,10 +905,7 @@ class AttackComposer:
 
         for i in range(iterations):
             # Alternate between extend and mutate
-            if i % 2 == 0:
-                current = extend_fn(current)
-            else:
-                current = autodan_fn(current)
+            current = extend_fn(current) if i % 2 == 0 else autodan_fn(current)
 
         return current
 
@@ -967,7 +962,7 @@ def calculate_perplexity_estimate(text: str) -> float:
         Estimated perplexity
     """
     entropy = calculate_entropy(text)
-    return 2.0 ** entropy
+    return 2.0**entropy
 
 
 def normalize_score(value: float, min_val: float, max_val: float) -> float:

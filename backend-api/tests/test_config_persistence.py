@@ -12,7 +12,7 @@ from datetime import timedelta
 import pytest
 
 # Set test database path before imports
-TEST_DB_PATH = tempfile.mktemp(suffix=".db")
+TEST_DB_PATH = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
 os.environ["CHIMERA_DB_PATH"] = TEST_DB_PATH
 
 
@@ -23,29 +23,18 @@ from app.domain.services.config_service import (
     ConfigurationService,
     reset_config_service,
 )
-from app.infrastructure.database.connection import (
-    DatabaseConnection,
-    shutdown_database,
-)
+from app.infrastructure.database.connection import DatabaseConnection, shutdown_database
 from app.infrastructure.database.schema import DatabaseSchema
 from app.infrastructure.database.unit_of_work import UnitOfWork, create_unit_of_work
-from app.infrastructure.repositories.api_key_repository import (
-    ApiKeyEntity,
-    ApiKeyRepository,
-)
-from app.infrastructure.repositories.base import (
-    DuplicateEntityError,
-)
-from app.infrastructure.repositories.config_repository import (
-    ConfigRepository,
-    ProviderConfigEntity,
-)
+from app.infrastructure.repositories.api_key_repository import ApiKeyEntity, ApiKeyRepository
+from app.infrastructure.repositories.base import DuplicateEntityError
+from app.infrastructure.repositories.config_repository import ConfigRepository, ProviderConfigEntity
 
 
 @pytest.fixture
 async def db():
     """Create test database connection."""
-    db_path = tempfile.mktemp(suffix=".db")
+    db_path = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
     connection = DatabaseConnection(db_path)
     await connection.initialize()
     yield connection
@@ -105,9 +94,7 @@ class TestDatabaseConnection:
                 "VALUES (2, 99, '2025-01-01')"
             )
 
-        result = await db.fetchone(
-            "SELECT version FROM schema_version WHERE id = 2"
-        )
+        result = await db.fetchone("SELECT version FROM schema_version WHERE id = 2")
         assert result["version"] == 99
 
     @pytest.mark.asyncio
@@ -123,9 +110,7 @@ class TestDatabaseConnection:
         except Exception:
             pass
 
-        result = await db.fetchone(
-            "SELECT version FROM schema_version WHERE id = 3"
-        )
+        result = await db.fetchone("SELECT version FROM schema_version WHERE id = 3")
         assert result is None
 
 
@@ -135,9 +120,7 @@ class TestDatabaseSchema:
     @pytest.mark.asyncio
     async def test_schema_creates_tables(self, db, schema):
         """Test schema creates required tables."""
-        tables = await db.fetchall(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        )
+        tables = await db.fetchall("SELECT name FROM sqlite_master WHERE type='table'")
         table_names = [t["name"] for t in tables]
 
         assert "schema_version" in table_names
@@ -147,9 +130,7 @@ class TestDatabaseSchema:
     @pytest.mark.asyncio
     async def test_schema_version_tracked(self, db, schema):
         """Test schema version is tracked."""
-        result = await db.fetchone(
-            "SELECT version FROM schema_version WHERE id = 1"
-        )
+        result = await db.fetchone("SELECT version FROM schema_version WHERE id = 1")
         assert result["version"] >= 1
 
 
@@ -160,10 +141,7 @@ class TestConfigRepository:
     async def test_create_config(self, config_repo):
         """Test creating a configuration."""
         entity = ProviderConfigEntity(
-            provider_type="openai",
-            name="default",
-            settings={"model": "gpt-4"},
-            is_default=True
+            provider_type="openai", name="default", settings={"model": "gpt-4"}, is_default=True
         )
 
         created = await config_repo.create(entity)
@@ -177,10 +155,7 @@ class TestConfigRepository:
     @pytest.mark.asyncio
     async def test_get_config_by_id(self, config_repo):
         """Test retrieving configuration by ID."""
-        entity = ProviderConfigEntity(
-            provider_type="anthropic",
-            name="claude-config"
-        )
+        entity = ProviderConfigEntity(provider_type="anthropic", name="claude-config")
         created = await config_repo.create(entity)
 
         retrieved = await config_repo.get_by_id(created.id)
@@ -192,12 +167,8 @@ class TestConfigRepository:
     @pytest.mark.asyncio
     async def test_get_all_configs(self, config_repo):
         """Test retrieving all configurations."""
-        await config_repo.create(
-            ProviderConfigEntity(provider_type="openai", name="config1")
-        )
-        await config_repo.create(
-            ProviderConfigEntity(provider_type="anthropic", name="config2")
-        )
+        await config_repo.create(ProviderConfigEntity(provider_type="openai", name="config1"))
+        await config_repo.create(ProviderConfigEntity(provider_type="anthropic", name="config2"))
 
         configs = await config_repo.get_all()
 
@@ -206,10 +177,7 @@ class TestConfigRepository:
     @pytest.mark.asyncio
     async def test_update_config(self, config_repo):
         """Test updating configuration."""
-        entity = ProviderConfigEntity(
-            provider_type="openai",
-            name="original"
-        )
+        entity = ProviderConfigEntity(provider_type="openai", name="original")
         created = await config_repo.create(entity)
 
         created.name = "updated"
@@ -222,10 +190,7 @@ class TestConfigRepository:
     @pytest.mark.asyncio
     async def test_delete_config(self, config_repo):
         """Test deleting configuration."""
-        entity = ProviderConfigEntity(
-            provider_type="openai",
-            name="to-delete"
-        )
+        entity = ProviderConfigEntity(provider_type="openai", name="to-delete")
         created = await config_repo.create(entity)
 
         result = await config_repo.delete(created.id)
@@ -237,15 +202,9 @@ class TestConfigRepository:
     @pytest.mark.asyncio
     async def test_get_by_provider_type(self, config_repo):
         """Test filtering by provider type."""
-        await config_repo.create(
-            ProviderConfigEntity(provider_type="openai", name="oai1")
-        )
-        await config_repo.create(
-            ProviderConfigEntity(provider_type="openai", name="oai2")
-        )
-        await config_repo.create(
-            ProviderConfigEntity(provider_type="anthropic", name="ant1")
-        )
+        await config_repo.create(ProviderConfigEntity(provider_type="openai", name="oai1"))
+        await config_repo.create(ProviderConfigEntity(provider_type="openai", name="oai2"))
+        await config_repo.create(ProviderConfigEntity(provider_type="anthropic", name="ant1"))
 
         openai_configs = await config_repo.get_by_provider_type("openai")
 
@@ -256,20 +215,12 @@ class TestConfigRepository:
     async def test_default_config_management(self, config_repo):
         """Test default configuration handling."""
         await config_repo.create(
-            ProviderConfigEntity(
-                provider_type="openai",
-                name="first",
-                is_default=True
-            )
+            ProviderConfigEntity(provider_type="openai", name="first", is_default=True)
         )
 
         # Creating second default should clear first
         config2 = await config_repo.create(
-            ProviderConfigEntity(
-                provider_type="openai",
-                name="second",
-                is_default=True
-            )
+            ProviderConfigEntity(provider_type="openai", name="second", is_default=True)
         )
 
         # Verify only one default
@@ -280,10 +231,7 @@ class TestConfigRepository:
     @pytest.mark.asyncio
     async def test_duplicate_config_raises_error(self, config_repo):
         """Test duplicate configuration raises error."""
-        entity = ProviderConfigEntity(
-            provider_type="openai",
-            name="unique"
-        )
+        entity = ProviderConfigEntity(provider_type="openai", name="unique")
         await config_repo.create(entity)
 
         with pytest.raises(DuplicateEntityError):
@@ -297,9 +245,7 @@ class TestApiKeyRepository:
     async def test_create_api_key_encrypts(self, api_key_repo):
         """Test API key is encrypted on storage."""
         entity = ApiKeyEntity(
-            provider_type="openai",
-            key_name="test-key",
-            api_key="sk-test-key-12345"
+            provider_type="openai", key_name="test-key", api_key="sk-test-key-12345"
         )
 
         created = await api_key_repo.create(entity)
@@ -311,11 +257,7 @@ class TestApiKeyRepository:
     async def test_get_api_key_decrypts(self, api_key_repo):
         """Test API key is decrypted on retrieval."""
         original_key = "sk-secret-api-key-67890"
-        entity = ApiKeyEntity(
-            provider_type="anthropic",
-            key_name="prod-key",
-            api_key=original_key
-        )
+        entity = ApiKeyEntity(provider_type="anthropic", key_name="prod-key", api_key=original_key)
         created = await api_key_repo.create(entity)
 
         retrieved = await api_key_repo.get_by_id(created.id)
@@ -327,11 +269,7 @@ class TestApiKeyRepository:
     async def test_get_active_key(self, api_key_repo):
         """Test getting active API key for provider."""
         await api_key_repo.create(
-            ApiKeyEntity(
-                provider_type="openai",
-                key_name="active-key",
-                api_key="sk-active"
-            )
+            ApiKeyEntity(provider_type="openai", key_name="active-key", api_key="sk-active")
         )
 
         active = await api_key_repo.get_active_key("openai")
@@ -343,9 +281,7 @@ class TestApiKeyRepository:
     async def test_deactivate_key(self, api_key_repo):
         """Test deactivating API key."""
         entity = ApiKeyEntity(
-            provider_type="openai",
-            key_name="to-deactivate",
-            api_key="sk-deactivate"
+            provider_type="openai", key_name="to-deactivate", api_key="sk-deactivate"
         )
         created = await api_key_repo.create(entity)
 
@@ -358,11 +294,7 @@ class TestApiKeyRepository:
     @pytest.mark.asyncio
     async def test_record_usage(self, api_key_repo):
         """Test recording API key usage."""
-        entity = ApiKeyEntity(
-            provider_type="openai",
-            key_name="usage-key",
-            api_key="sk-usage"
-        )
+        entity = ApiKeyEntity(provider_type="openai", key_name="usage-key", api_key="sk-usage")
         created = await api_key_repo.create(entity)
         assert created.last_used_at is None
 
@@ -375,17 +307,11 @@ class TestApiKeyRepository:
     @pytest.mark.asyncio
     async def test_duplicate_provider_name_raises(self, api_key_repo):
         """Test duplicate provider/name raises error."""
-        entity = ApiKeyEntity(
-            provider_type="openai",
-            key_name="unique-name",
-            api_key="sk-first"
-        )
+        entity = ApiKeyEntity(provider_type="openai", key_name="unique-name", api_key="sk-first")
         await api_key_repo.create(entity)
 
         duplicate = ApiKeyEntity(
-            provider_type="openai",
-            key_name="unique-name",
-            api_key="sk-second"
+            provider_type="openai", key_name="unique-name", api_key="sk-second"
         )
         with pytest.raises(DuplicateEntityError):
             await api_key_repo.create(duplicate)
@@ -406,10 +332,7 @@ class TestUnitOfWork:
     async def test_uow_context_manager(self, db, schema):
         """Test UoW as context manager."""
         async with create_unit_of_work(db) as uow:
-            config = ProviderConfigEntity(
-                provider_type="openai",
-                name="uow-test"
-            )
+            config = ProviderConfigEntity(provider_type="openai", name="uow-test")
             await uow.configs.create(config)
 
         # Verify persisted after context exit
@@ -428,7 +351,7 @@ class TestConfigurationService:
             provider_type="openai",
             name="service-test",
             settings={"model": "gpt-4"},
-            is_default=True
+            is_default=True,
         )
 
         assert config.id is not None
@@ -437,10 +360,7 @@ class TestConfigurationService:
     @pytest.mark.asyncio
     async def test_get_config_caches(self, config_service):
         """Test configuration is cached."""
-        config = await config_service.create_config(
-            provider_type="openai",
-            name="cache-test"
-        )
+        config = await config_service.create_config(provider_type="openai", name="cache-test")
 
         # First call populates cache
         retrieved1 = await config_service.get_config(config.id)
@@ -452,29 +372,20 @@ class TestConfigurationService:
     @pytest.mark.asyncio
     async def test_update_invalidates_cache(self, config_service):
         """Test update invalidates cache."""
-        config = await config_service.create_config(
-            provider_type="openai",
-            name="invalidate-test"
-        )
+        config = await config_service.create_config(provider_type="openai", name="invalidate-test")
 
         # Cache the config
         await config_service.get_config(config.id)
 
         # Update should invalidate
-        updated = await config_service.update_config(
-            config.id,
-            name="updated-name"
-        )
+        updated = await config_service.update_config(config.id, name="updated-name")
 
         assert updated.name == "updated-name"
 
     @pytest.mark.asyncio
     async def test_delete_config(self, config_service):
         """Test deleting configuration."""
-        config = await config_service.create_config(
-            provider_type="openai",
-            name="delete-test"
-        )
+        config = await config_service.create_config(provider_type="openai", name="delete-test")
 
         result = await config_service.delete_config(config.id)
         assert result is True
@@ -486,9 +397,7 @@ class TestConfigurationService:
     async def test_store_api_key(self, config_service):
         """Test storing API key."""
         key = await config_service.store_api_key(
-            provider_type="openai",
-            key_name="service-key",
-            api_key="sk-test-12345"
+            provider_type="openai", key_name="service-key", api_key="sk-test-12345"
         )
 
         assert key.id is not None
@@ -498,9 +407,7 @@ class TestConfigurationService:
     async def test_get_active_api_key(self, config_service):
         """Test getting active API key."""
         await config_service.store_api_key(
-            provider_type="anthropic",
-            key_name="active-service-key",
-            api_key="sk-anthropic"
+            provider_type="anthropic", key_name="active-service-key", api_key="sk-anthropic"
         )
 
         key = await config_service.get_active_api_key("anthropic")
@@ -512,15 +419,10 @@ class TestConfigurationService:
     async def test_rotate_api_key(self, config_service):
         """Test rotating API key."""
         key = await config_service.store_api_key(
-            provider_type="openai",
-            key_name="rotate-key",
-            api_key="sk-old-key"
+            provider_type="openai", key_name="rotate-key", api_key="sk-old-key"
         )
 
-        rotated = await config_service.rotate_api_key(
-            key.id,
-            new_api_key="sk-new-key"
-        )
+        rotated = await config_service.rotate_api_key(key.id, new_api_key="sk-new-key")
 
         assert rotated.api_key == "sk-new-key"
 
@@ -528,9 +430,7 @@ class TestConfigurationService:
     async def test_deactivate_api_key(self, config_service):
         """Test deactivating API key."""
         key = await config_service.store_api_key(
-            provider_type="openai",
-            key_name="deactivate-service",
-            api_key="sk-deactivate"
+            provider_type="openai", key_name="deactivate-service", api_key="sk-deactivate"
         )
 
         result = await config_service.deactivate_api_key(key.id)
@@ -540,18 +440,12 @@ class TestConfigurationService:
     async def test_update_nonexistent_raises(self, config_service):
         """Test updating non-existent config raises error."""
         with pytest.raises(ConfigNotFoundError):
-            await config_service.update_config(
-                "nonexistent-id",
-                name="new-name"
-            )
+            await config_service.update_config("nonexistent-id", name="new-name")
 
     @pytest.mark.asyncio
     async def test_cache_clear(self, config_service):
         """Test clearing cache."""
-        await config_service.create_config(
-            provider_type="openai",
-            name="clear-cache-test"
-        )
+        await config_service.create_config(provider_type="openai", name="clear-cache-test")
 
         # Populate cache
         await config_service.get_all_configs()

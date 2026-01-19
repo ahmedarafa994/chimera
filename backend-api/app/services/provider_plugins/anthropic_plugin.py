@@ -48,10 +48,7 @@ class AnthropicPlugin(BaseProviderPlugin):
 
     @property
     def base_url(self) -> str:
-        return os.environ.get(
-            "DIRECT_ANTHROPIC_BASE_URL",
-            "https://api.anthropic.com"
-        )
+        return os.environ.get("DIRECT_ANTHROPIC_BASE_URL", "https://api.anthropic.com")
 
     @property
     def capabilities(self) -> list[ProviderCapability]:
@@ -151,15 +148,14 @@ class AnthropicPlugin(BaseProviderPlugin):
             import anthropic
 
             client = anthropic.AsyncAnthropic(
-                api_key=api_key,
-                base_url=self.base_url if self.base_url else None
+                api_key=api_key, base_url=self.base_url if self.base_url else None
             )
 
             # Make a minimal request to validate the key
             await client.messages.create(
                 model="claude-3-haiku-20240307",
                 max_tokens=1,
-                messages=[{"role": "user", "content": "Hi"}]
+                messages=[{"role": "user", "content": "Hi"}],
             )
             return True
         except Exception as e:
@@ -177,8 +173,7 @@ class AnthropicPlugin(BaseProviderPlugin):
             raise ValueError("Anthropic API key is required")
 
         client = anthropic.AsyncAnthropic(
-            api_key=key,
-            base_url=self.base_url if self.base_url else None
+            api_key=key, base_url=self.base_url if self.base_url else None
         )
         model = request.model or self.get_default_model()
 
@@ -227,14 +222,17 @@ class AnthropicPlugin(BaseProviderPlugin):
                 model_used=response.model,
                 provider="anthropic",
                 finish_reason=response.stop_reason,
-                usage={
-                    "prompt_tokens": response.usage.input_tokens,
-                    "completion_tokens": response.usage.output_tokens,
-                    "total_tokens": (
-                        response.usage.input_tokens +
-                        response.usage.output_tokens
-                    ),
-                } if response.usage else None,
+                usage=(
+                    {
+                        "prompt_tokens": response.usage.input_tokens,
+                        "completion_tokens": response.usage.output_tokens,
+                        "total_tokens": (
+                            response.usage.input_tokens + response.usage.output_tokens
+                        ),
+                    }
+                    if response.usage
+                    else None
+                ),
                 latency_ms=latency_ms,
                 request_id=response.id,
             )
@@ -253,8 +251,7 @@ class AnthropicPlugin(BaseProviderPlugin):
             raise ValueError("Anthropic API key is required")
 
         client = anthropic.AsyncAnthropic(
-            api_key=key,
-            base_url=self.base_url if self.base_url else None
+            api_key=key, base_url=self.base_url if self.base_url else None
         )
         model = request.model or self.get_default_model()
 
@@ -298,14 +295,17 @@ class AnthropicPlugin(BaseProviderPlugin):
                     text="",
                     is_final=True,
                     finish_reason=final_message.stop_reason,
-                    usage={
-                        "prompt_tokens": final_message.usage.input_tokens,
-                        "completion_tokens": final_message.usage.output_tokens,
-                        "total_tokens": (
-                            final_message.usage.input_tokens +
-                            final_message.usage.output_tokens
-                        ),
-                    } if final_message.usage else None,
+                    usage=(
+                        {
+                            "prompt_tokens": final_message.usage.input_tokens,
+                            "completion_tokens": final_message.usage.output_tokens,
+                            "total_tokens": (
+                                final_message.usage.input_tokens + final_message.usage.output_tokens
+                            ),
+                        }
+                        if final_message.usage
+                        else None
+                    ),
                 )
         except Exception as e:
             logger.error(f"Anthropic streaming error: {e}")

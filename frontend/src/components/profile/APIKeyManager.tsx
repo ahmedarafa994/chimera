@@ -164,7 +164,7 @@ export function APIKeyManager({ className }: APIKeyManagerProps) {
       const apiConfig = getApiConfig();
       const headers = getApiHeaders();
 
-      const response = await fetch(`${apiConfig.apiUrl}/api/v1/users/me/api-keys`, {
+      const response = await fetch(`${apiConfig.backendApiUrl}/api/v1/users/me/api-keys`, {
         method: "GET",
         headers,
       });
@@ -208,7 +208,7 @@ export function APIKeyManager({ className }: APIKeyManagerProps) {
         body.expires_in_days = newKeyExpiry;
       }
 
-      const response = await fetch(`${apiConfig.apiUrl}/api/v1/users/me/api-keys`, {
+      const response = await fetch(`${apiConfig.backendApiUrl}/api/v1/users/me/api-keys`, {
         method: "POST",
         headers: {
           ...headers,
@@ -264,7 +264,7 @@ export function APIKeyManager({ className }: APIKeyManagerProps) {
         const headers = getApiHeaders();
 
         const response = await fetch(
-          `${apiConfig.apiUrl}/api/v1/users/me/api-keys/${keyId}`,
+          `${apiConfig.backendApiUrl}/api/v1/users/me/api-keys/${keyId}`,
           {
             method: "DELETE",
             headers,

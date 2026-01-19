@@ -64,6 +64,7 @@ LABEL_TENANT = "tenant_id"
 
 class MetricType(Enum):
     """Types of metrics tracked"""
+
     REQUEST_COUNT = "request_count"
     TOKEN_USAGE = "token_usage"
     LATENCY = "latency"
@@ -72,6 +73,7 @@ class MetricType(Enum):
 
 class AggregationType(Enum):
     """Redis TimeSeries aggregation types"""
+
     AVG = "avg"
     SUM = "sum"
     MIN = "min"
@@ -84,6 +86,7 @@ class AggregationType(Enum):
 @dataclass
 class MetricDataPoint:
     """Single metric data point"""
+
     timestamp: datetime
     value: float
     labels: dict[str, str]
@@ -100,6 +103,7 @@ class MetricDataPoint:
 @dataclass
 class MetricQueryResult:
     """Result of a metric query"""
+
     metric_type: MetricType
     labels: dict[str, str]
     data_points: list[MetricDataPoint]
@@ -178,7 +182,7 @@ class RealtimeMetrics:
     @staticmethod
     def _get_redis_url() -> str:
         """Get Redis URL from settings with fallback"""
-        if hasattr(settings, 'REDIS_URL'):
+        if hasattr(settings, "REDIS_URL"):
             return settings.REDIS_URL
         return "redis://localhost:6379/0"
 
@@ -238,8 +242,11 @@ class RealtimeMetrics:
             await self._redis.execute_command(
                 "TS.CREATE",
                 TS_REQUEST_COUNT,
-                "RETENTION", self.DEFAULT_RETENTION_MS,
-                "LABELS", "metric_type", "request_count",
+                "RETENTION",
+                self.DEFAULT_RETENTION_MS,
+                "LABELS",
+                "metric_type",
+                "request_count",
             )
 
             # Add downsampling rule for 1-minute aggregation
@@ -248,8 +255,12 @@ class RealtimeMetrics:
                     "TS.CREATERULE",
                     TS_REQUEST_COUNT,
                     f"{TS_REQUEST_COUNT}:1m",
-                    "AGGREGATION", "sum", 60000,
-                    "LABELS", "aggregation", "1m",
+                    "AGGREGATION",
+                    "sum",
+                    60000,
+                    "LABELS",
+                    "aggregation",
+                    "1m",
                 )
             except ResponseError:
                 pass  # Rule might already exist
@@ -258,24 +269,33 @@ class RealtimeMetrics:
             await self._redis.execute_command(
                 "TS.CREATE",
                 TS_TOKEN_USAGE,
-                "RETENTION", self.DEFAULT_RETENTION_MS,
-                "LABELS", "metric_type", "token_usage",
+                "RETENTION",
+                self.DEFAULT_RETENTION_MS,
+                "LABELS",
+                "metric_type",
+                "token_usage",
             )
 
             # Latency TimeSeries
             await self._redis.execute_command(
                 "TS.CREATE",
                 TS_LATENCY,
-                "RETENTION", self.DEFAULT_RETENTION_MS,
-                "LABELS", "metric_type", "latency",
+                "RETENTION",
+                self.DEFAULT_RETENTION_MS,
+                "LABELS",
+                "metric_type",
+                "latency",
             )
 
             # Error rate TimeSeries
             await self._redis.execute_command(
                 "TS.CREATE",
                 TS_ERROR_RATE,
-                "RETENTION", self.DEFAULT_RETENTION_MS,
-                "LABELS", "metric_type", "error_rate",
+                "RETENTION",
+                self.DEFAULT_RETENTION_MS,
+                "LABELS",
+                "metric_type",
+                "error_rate",
             )
 
             logger.info("TimeSeries created successfully")
@@ -318,7 +338,6 @@ class RealtimeMetrics:
         timestamp = timestamp or datetime.utcnow()
         timestamp_ms = int(timestamp.timestamp() * 1000)
 
-
         try:
             pipe = self._redis.pipeline()
 
@@ -329,10 +348,14 @@ class RealtimeMetrics:
                 timestamp_ms,
                 1,
                 "LABELS",
-                LABEL_PROVIDER, provider,
-                LABEL_MODEL, model,
-                LABEL_STATUS, status,
-                LABEL_TENANT, tenant_id,
+                LABEL_PROVIDER,
+                provider,
+                LABEL_MODEL,
+                model,
+                LABEL_STATUS,
+                status,
+                LABEL_TENANT,
+                tenant_id,
             )
 
             # Token usage
@@ -342,9 +365,12 @@ class RealtimeMetrics:
                 timestamp_ms,
                 tokens,
                 "LABELS",
-                LABEL_PROVIDER, provider,
-                LABEL_MODEL, model,
-                LABEL_TENANT, tenant_id,
+                LABEL_PROVIDER,
+                provider,
+                LABEL_MODEL,
+                model,
+                LABEL_TENANT,
+                tenant_id,
             )
 
             # Latency
@@ -354,10 +380,14 @@ class RealtimeMetrics:
                 timestamp_ms,
                 latency_ms,
                 "LABELS",
-                LABEL_PROVIDER, provider,
-                LABEL_MODEL, model,
-                LABEL_STATUS, status,
-                LABEL_TENANT, tenant_id,
+                LABEL_PROVIDER,
+                provider,
+                LABEL_MODEL,
+                model,
+                LABEL_STATUS,
+                status,
+                LABEL_TENANT,
+                tenant_id,
             )
 
             # Error rate (1 if error, 0 if success)
@@ -368,9 +398,12 @@ class RealtimeMetrics:
                 timestamp_ms,
                 error_value,
                 "LABELS",
-                LABEL_PROVIDER, provider,
-                LABEL_MODEL, model,
-                LABEL_TENANT, tenant_id,
+                LABEL_PROVIDER,
+                provider,
+                LABEL_MODEL,
+                model,
+                LABEL_TENANT,
+                tenant_id,
             )
 
             await pipe.execute()
@@ -433,8 +466,11 @@ class RealtimeMetrics:
                     ts_key,
                     start_ts,
                     end_ts or "+",
-                    "FILTER", filter_expr,
-                    "AGGREGATION", aggregation_type.value, bucket_size_ms,
+                    "FILTER",
+                    filter_expr,
+                    "AGGREGATION",
+                    aggregation_type.value,
+                    bucket_size_ms,
                 )
             else:
                 result = await self._redis.execute_command(
@@ -442,7 +478,8 @@ class RealtimeMetrics:
                     ts_key,
                     start_ts,
                     end_ts or "+",
-                    "FILTER", filter_expr,
+                    "FILTER",
+                    filter_expr,
                 )
 
             # Parse result
@@ -492,8 +529,11 @@ class RealtimeMetrics:
                     ts_key,
                     start_ts,
                     "+",
-                    "FILTER", filter_expr,
-                    "AGGREGATION", aggregation_type.value, bucket_size_ms,
+                    "FILTER",
+                    filter_expr,
+                    "AGGREGATION",
+                    aggregation_type.value,
+                    bucket_size_ms,
                 )
             else:
                 result = await self._redis.execute_command(
@@ -501,7 +541,8 @@ class RealtimeMetrics:
                     ts_key,
                     start_ts,
                     "+",
-                    "FILTER", filter_expr,
+                    "FILTER",
+                    filter_expr,
                 )
 
             data_points = self._parse_ts_result(result)
@@ -564,10 +605,16 @@ class RealtimeMetrics:
                 "TS.MRANGE",
                 start_ts,
                 "+",
-                "AGGREGATION", aggregation_type.value, bucket_size_ms,
+                "AGGREGATION",
+                aggregation_type.value,
+                bucket_size_ms,
                 "WITHLABELS",
-                "FILTER", "*",  # All keys
-                "GROUPBY", *group_by, "REDUCE", aggregation_type.value,
+                "FILTER",
+                "*",  # All keys
+                "GROUPBY",
+                *group_by,
+                "REDUCE",
+                aggregation_type.value,
             )
 
             # Parse result and group by label combinations
@@ -606,11 +653,13 @@ class RealtimeMetrics:
         for timestamp_ms, value in result:
             try:
                 timestamp = datetime.fromtimestamp(timestamp_ms / 1000)
-                data_points.append(MetricDataPoint(
-                    timestamp=timestamp,
-                    value=float(value),
-                    labels={},  # Labels are filtered at query time
-                ))
+                data_points.append(
+                    MetricDataPoint(
+                        timestamp=timestamp,
+                        value=float(value),
+                        labels={},  # Labels are filtered at query time
+                    )
+                )
             except (ValueError, TypeError) as e:
                 logger.warning(f"Failed to parse data point: {e}")
 
@@ -634,21 +683,25 @@ class RealtimeMetrics:
             for timestamp_ms, value in data_points:
                 try:
                     timestamp = datetime.fromtimestamp(timestamp_ms / 1000)
-                    parsed_points.append(MetricDataPoint(
-                        timestamp=timestamp,
-                        value=float(value),
-                        labels=labels,
-                    ))
+                    parsed_points.append(
+                        MetricDataPoint(
+                            timestamp=timestamp,
+                            value=float(value),
+                            labels=labels,
+                        )
+                    )
                 except (ValueError, TypeError):
                     pass
 
-            query_results.append(MetricQueryResult(
-                metric_type=metric_type,
-                labels=labels,
-                data_points=parsed_points,
-                aggregation=aggregation,
-                bucket_size_ms=bucket_size_ms,
-            ))
+            query_results.append(
+                MetricQueryResult(
+                    metric_type=metric_type,
+                    labels=labels,
+                    data_points=parsed_points,
+                    aggregation=aggregation,
+                    bucket_size_ms=bucket_size_ms,
+                )
+            )
 
         return query_results
 
@@ -666,7 +719,8 @@ class RealtimeMetrics:
             # Use TS.QUERY to get all series
             result = await self._redis.execute_command(
                 "TS.QUERY",
-                "FILTER", "*",
+                "FILTER",
+                "*",
             )
 
             series_info = {}

@@ -74,9 +74,11 @@ class Strategy(BaseModel):
             definition=data.get("Definition", data.get("definition", "")),
             example=data.get("Example", data.get("example")),
             score_improvement=data.get("score_improvement", 0.0),
-            created_at=datetime.fromisoformat(data["created_at"])
-            if "created_at" in data
-            else datetime.now(),
+            created_at=(
+                datetime.fromisoformat(data["created_at"])
+                if "created_at" in data
+                else datetime.now()
+            ),
         )
 
 
@@ -282,9 +284,11 @@ class JailbreakResult(BaseModel):
     def to_summary(self) -> dict[str, Any]:
         """Get a summary of the result."""
         return {
-            "malicious_request": self.malicious_request[:100] + "..."
-            if len(self.malicious_request) > 100
-            else self.malicious_request,
+            "malicious_request": (
+                self.malicious_request[:100] + "..."
+                if len(self.malicious_request) > 100
+                else self.malicious_request
+            ),
             "successful": self.successful,
             "best_score": self.best_score,
             "total_iterations": self.total_iterations,

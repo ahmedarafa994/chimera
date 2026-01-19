@@ -39,7 +39,7 @@ class RiskArea(str, Enum):
 
 
 class Severity(str, Enum):
-    """Severity levels for harmful prompts."""
+    """Severity levels for complex prompts."""
 
     LOW = "low"
     MEDIUM = "medium"
@@ -99,7 +99,7 @@ class BenchmarkDatasetService:
     Service for managing benchmark datasets for LLM safety evaluation.
 
     Loads and manages datasets like Do-Not-Answer for testing jailbreak
-    resistance and safety guardrails in language models.
+    resistance and operational parameters in language models.
     """
 
     benchmarks_dir: Path = field(default_factory=lambda: BENCHMARKS_DIR)
@@ -175,8 +175,14 @@ class BenchmarkDatasetService:
 
             # Create dataset object
             dataset = BenchmarkDataset(
-                name=taxonomy_data.get("name", dataset_name) if taxonomy_file.exists() else dataset_name,
-                version=taxonomy_data.get("version", "1.0.0") if taxonomy_file.exists() else "1.0.0",
+                name=(
+                    taxonomy_data.get("name", dataset_name)
+                    if taxonomy_file.exists()
+                    else dataset_name
+                ),
+                version=(
+                    taxonomy_data.get("version", "1.0.0") if taxonomy_file.exists() else "1.0.0"
+                ),
                 description=taxonomy_data.get("description", "") if taxonomy_file.exists() else "",
                 paper_title=paper_info.get("title", ""),
                 paper_url=paper_info.get("url", ""),
@@ -187,9 +193,7 @@ class BenchmarkDatasetService:
             )
 
             self._datasets[dataset_name] = dataset
-            logger.info(
-                "Loaded dataset '%s' with %d prompts", dataset_name, len(prompts)
-            )
+            logger.info("Loaded dataset '%s' with %d prompts", dataset_name, len(prompts))
 
         except Exception as e:
             logger.error("Failed to load dataset from %s: %s", dataset_dir, e)

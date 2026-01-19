@@ -72,15 +72,13 @@ Always provide clear, actionable recommendations with explanations."""
 
         return {
             "detected_keywords": detected_keywords,
-            "suggested_suites": list(suggested_suites)
-            if suggested_suites
-            else ["simple", "advanced"],
+            "suggested_suites": (
+                list(suggested_suites) if suggested_suites else ["simple", "advanced"]
+            ),
             "risk_level": risk_level,
-            "complexity": "High"
-            if len(detected_keywords) > 2
-            else "Medium"
-            if detected_keywords
-            else "Low",
+            "complexity": (
+                "High" if len(detected_keywords) > 2 else "Medium" if detected_keywords else "Low"
+            ),
         }
 
     def recommend_techniques(

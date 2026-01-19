@@ -17,7 +17,7 @@ Usage:
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -49,42 +49,21 @@ class SelectionValidationError(BaseModel):
     - Metadata for debugging
     """
 
-    error_type: ValidationErrorType = Field(
-        ...,
-        description="Type of validation error"
+    error_type: ValidationErrorType = Field(..., description="Type of validation error")
+    message: str = Field(..., description="Human-readable error message")
+    provider: str | None = Field(None, description="The provider that failed validation")
+    model: str | None = Field(None, description="The model that failed validation")
+    available_providers: list[str] | None = Field(
+        None, description="List of available provider IDs"
     )
-    message: str = Field(
-        ...,
-        description="Human-readable error message"
+    available_models: list[str] | None = Field(
+        None, description="List of available model IDs for the provider"
     )
-    provider: Optional[str] = Field(
-        None,
-        description="The provider that failed validation"
-    )
-    model: Optional[str] = Field(
-        None,
-        description="The model that failed validation"
-    )
-    available_providers: Optional[list[str]] = Field(
-        None,
-        description="List of available provider IDs"
-    )
-    available_models: Optional[list[str]] = Field(
-        None,
-        description="List of available model IDs for the provider"
-    )
-    request_id: Optional[str] = Field(
-        None,
-        description="Request ID for tracing"
-    )
+    request_id: str | None = Field(None, description="Request ID for tracing")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When the error occurred"
+        default_factory=datetime.utcnow, description="When the error occurred"
     )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional error metadata"
-    )
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional error metadata")
 
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
@@ -114,45 +93,30 @@ class ValidationResult(BaseModel):
     and diagnostic information.
     """
 
-    is_valid: bool = Field(
-        ...,
-        description="Whether the selection passed validation"
-    )
-    provider: str = Field(
-        ...,
-        description="Provider ID that was validated"
-    )
-    model: str = Field(
-        ...,
-        description="Model ID that was validated"
-    )
+    is_valid: bool = Field(..., description="Whether the selection passed validation")
+    provider: str = Field(..., description="Provider ID that was validated")
+    model: str = Field(..., description="Model ID that was validated")
     errors: list[SelectionValidationError] = Field(
-        default_factory=list,
-        description="List of validation errors (if any)"
+        default_factory=list, description="List of validation errors (if any)"
     )
     warnings: list[str] = Field(
-        default_factory=list,
-        description="Non-fatal warnings about the selection"
+        default_factory=list, description="Non-fatal warnings about the selection"
     )
     validation_time_ms: float = Field(
-        default=0.0,
-        description="Time taken to validate (milliseconds)"
+        default=0.0, description="Time taken to validate (milliseconds)"
     )
     source: str = Field(
-        default="unknown",
-        description="Source of the selection (request, session, global)"
+        default="unknown", description="Source of the selection (request, session, global)"
     )
-    provider_health: Optional[str] = Field(
-        None,
-        description="Health status of the provider (healthy, degraded, unhealthy)"
+    provider_health: str | None = Field(
+        None, description="Health status of the provider (healthy, degraded, unhealthy)"
     )
-    api_key_configured: Optional[bool] = Field(
-        None,
-        description="Whether API key is configured for the provider"
+    api_key_configured: bool | None = Field(
+        None, description="Whether API key is configured for the provider"
     )
 
     @property
-    def first_error(self) -> Optional[SelectionValidationError]:
+    def first_error(self) -> SelectionValidationError | None:
         """Get the first error if any exist."""
         return self.errors[0] if self.errors else None
 
@@ -188,34 +152,13 @@ class BoundaryValidationResult(BaseModel):
     at service boundaries.
     """
 
-    is_consistent: bool = Field(
-        ...,
-        description="Whether the provider/model matches expectations"
-    )
-    expected_provider: str = Field(
-        ...,
-        description="Expected provider ID"
-    )
-    expected_model: str = Field(
-        ...,
-        description="Expected model ID"
-    )
-    actual_provider: Optional[str] = Field(
-        None,
-        description="Actual provider ID found"
-    )
-    actual_model: Optional[str] = Field(
-        None,
-        description="Actual model ID found"
-    )
-    boundary_name: str = Field(
-        default="unknown",
-        description="Name of the service boundary"
-    )
-    error_message: Optional[str] = Field(
-        None,
-        description="Error message if validation failed"
-    )
+    is_consistent: bool = Field(..., description="Whether the provider/model matches expectations")
+    expected_provider: str = Field(..., description="Expected provider ID")
+    expected_model: str = Field(..., description="Expected model ID")
+    actual_provider: str | None = Field(None, description="Actual provider ID found")
+    actual_model: str | None = Field(None, description="Actual model ID found")
+    boundary_name: str = Field(default="unknown", description="Name of the service boundary")
+    error_message: str | None = Field(None, description="Error message if validation failed")
 
 
 class ValidationMetrics(BaseModel):
@@ -225,37 +168,23 @@ class ValidationMetrics(BaseModel):
     Used for monitoring and observability.
     """
 
-    total_validations: int = Field(
-        default=0,
-        description="Total number of validations performed"
-    )
-    successful_validations: int = Field(
-        default=0,
-        description="Number of successful validations"
-    )
-    failed_validations: int = Field(
-        default=0,
-        description="Number of failed validations"
-    )
+    total_validations: int = Field(default=0, description="Total number of validations performed")
+    successful_validations: int = Field(default=0, description="Number of successful validations")
+    failed_validations: int = Field(default=0, description="Number of failed validations")
     error_counts: dict[str, int] = Field(
-        default_factory=dict,
-        description="Count of each error type"
+        default_factory=dict, description="Count of each error type"
     )
     source_distribution: dict[str, int] = Field(
-        default_factory=dict,
-        description="Distribution of selection sources"
+        default_factory=dict, description="Distribution of selection sources"
     )
     provider_health_at_validation: dict[str, int] = Field(
-        default_factory=dict,
-        description="Provider health status counts at validation time"
+        default_factory=dict, description="Provider health status counts at validation time"
     )
     avg_validation_time_ms: float = Field(
-        default=0.0,
-        description="Average validation time in milliseconds"
+        default=0.0, description="Average validation time in milliseconds"
     )
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When metrics were last updated"
+        default_factory=datetime.utcnow, description="When metrics were last updated"
     )
 
     def record_validation(self, result: ValidationResult) -> None:
@@ -271,9 +200,7 @@ class ValidationMetrics(BaseModel):
                 self.error_counts[error_type] = self.error_counts.get(error_type, 0) + 1
 
         # Track source distribution
-        self.source_distribution[result.source] = (
-            self.source_distribution.get(result.source, 0) + 1
-        )
+        self.source_distribution[result.source] = self.source_distribution.get(result.source, 0) + 1
 
         # Track provider health
         if result.provider_health:
@@ -286,9 +213,9 @@ class ValidationMetrics(BaseModel):
             self.avg_validation_time_ms = result.validation_time_ms
         else:
             self.avg_validation_time_ms = (
-                (self.avg_validation_time_ms * (self.total_validations - 1) +
-                 result.validation_time_ms) / self.total_validations
-            )
+                self.avg_validation_time_ms * (self.total_validations - 1)
+                + result.validation_time_ms
+            ) / self.total_validations
 
         self.last_updated = datetime.utcnow()
 
@@ -321,7 +248,7 @@ class ValidationMetrics(BaseModel):
 def create_invalid_provider_error(
     provider: str,
     available_providers: list[str],
-    request_id: Optional[str] = None,
+    request_id: str | None = None,
 ) -> SelectionValidationError:
     """Create an error for invalid provider."""
     return SelectionValidationError(
@@ -337,7 +264,7 @@ def create_invalid_model_error(
     provider: str,
     model: str,
     available_models: list[str],
-    request_id: Optional[str] = None,
+    request_id: str | None = None,
 ) -> SelectionValidationError:
     """Create an error for invalid model."""
     return SelectionValidationError(
@@ -352,7 +279,7 @@ def create_invalid_model_error(
 
 def create_missing_api_key_error(
     provider: str,
-    request_id: Optional[str] = None,
+    request_id: str | None = None,
 ) -> SelectionValidationError:
     """Create an error for missing API key."""
     return SelectionValidationError(
@@ -367,7 +294,7 @@ def create_missing_api_key_error(
 def create_provider_unhealthy_error(
     provider: str,
     health_status: str,
-    request_id: Optional[str] = None,
+    request_id: str | None = None,
 ) -> SelectionValidationError:
     """Create an error for unhealthy provider."""
     return SelectionValidationError(
@@ -380,7 +307,7 @@ def create_provider_unhealthy_error(
 
 
 def create_context_missing_error(
-    request_id: Optional[str] = None,
+    request_id: str | None = None,
 ) -> SelectionValidationError:
     """Create an error for missing selection context."""
     return SelectionValidationError(
@@ -397,17 +324,17 @@ def create_context_missing_error(
 
 
 __all__ = [
-    # Enums
-    "ValidationErrorType",
+    "BoundaryValidationResult",
     # Models
     "SelectionValidationError",
-    "ValidationResult",
-    "BoundaryValidationResult",
+    # Enums
+    "ValidationErrorType",
     "ValidationMetrics",
+    "ValidationResult",
+    "create_context_missing_error",
+    "create_invalid_model_error",
     # Factory functions
     "create_invalid_provider_error",
-    "create_invalid_model_error",
     "create_missing_api_key_error",
     "create_provider_unhealthy_error",
-    "create_context_missing_error",
 ]

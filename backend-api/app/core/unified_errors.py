@@ -78,7 +78,9 @@ class LLMProviderError(ServiceError):
 class ProviderNotAvailableError(LLMProviderError):
     """Provider not available error."""
 
-    def __init__(self, provider: str, message: str | None = None, details: dict[str, Any] | None = None):
+    def __init__(
+        self, provider: str, message: str | None = None, details: dict[str, Any] | None = None
+    ):
         final_message = message or f"Provider {provider} is not available"
         super().__init__(
             final_message,
@@ -240,9 +242,7 @@ class AegisError(ServiceError):
     def __init__(self, message: str, **kwargs):
         # Extract status_code from kwargs, default to 500
         error_status_code = kwargs.pop("status_code", status.HTTP_500_INTERNAL_SERVER_ERROR)
-        super().__init__(
-            message, service_name="aegis", status_code=error_status_code, **kwargs
-        )
+        super().__init__(message, service_name="aegis", status_code=error_status_code, **kwargs)
 
 
 class AegisSynthesisError(AegisError):

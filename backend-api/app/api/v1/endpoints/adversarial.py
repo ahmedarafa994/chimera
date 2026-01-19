@@ -24,12 +24,59 @@ import uuid
 from enum import Enum
 from typing import Any, Literal
 
-from fastapi import APIRouter, Cookie, Depends, Header, HTTPException
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.error_handlers import api_error_handler
+from app.services.session_service import session_service
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_model_context(
+    payload_model: str | None,
+    payload_provider: str | None,
+    x_session_id: str | None,
+    chimera_cookie: str | None,
+) -> tuple[str, str]:
+    """
+    Resolve target model/provider using hierarchy:
+    explicit payload -> session -> global defaults, with validation/fallback.
+    """
+    session_id = x_session_id or chimera_cookie
+
+    if session_id:
+        session_provider, session_model = session_service.get_session_model(session_id)
+    else:
+        session_provider, session_model = session_service.get_default_model()
+
+    provider = payload_provider or session_provider
+    model = payload_model or session_model
+
+    is_valid, message, fallback_model = session_service.validate_model(provider, model)
+    if is_valid:
+        return provider, model
+
+    fallback_provider = provider
+    if provider not in session_service.get_master_model_list():
+        fallback_provider, _ = session_service.get_default_model()
+
+    if payload_model or payload_provider:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "INVALID_MODEL_SELECTION",
+                "message": message,
+                "fallback_provider": fallback_provider,
+                "fallback_model": fallback_model,
+            },
+        )
+
+    # No explicit selection -> best-effort fallback to keep requests working.
+    if fallback_model:
+        return fallback_provider, fallback_model
+    return session_service.get_default_model()
+
 
 router = APIRouter(
     prefix="/adversarial", tags=["adversarial", "jailbreak", "generation", "overthink"]
@@ -517,9 +564,7 @@ class AdversarialService:
             from app.services.deepteam.jailbreak_service import (
                 JailbreakGenerateRequest as DTRequest,
             )
-            from app.services.deepteam.jailbreak_service import (
-                get_jailbreak_service,
-            )
+            from app.services.deepteam.jailbreak_service import get_jailbreak_service
             from app.services.deepteam.prompt_generator import AttackStrategyType
 
             service = get_jailbreak_service()
@@ -557,13 +602,15 @@ class AdversarialService:
                 session_id=session_id,
                 strategy_used=request.strategy.value,
                 prompts=prompts,
-                best_prompt=GeneratedPrompt(
-                    prompt=result.best_prompt.prompt,
-                    score=result.max_fitness_score,
-                    strategy=request.strategy.value,
-                )
-                if result.best_prompt
-                else None,
+                best_prompt=(
+                    GeneratedPrompt(
+                        prompt=result.best_prompt.prompt,
+                        score=result.max_fitness_score,
+                        strategy=request.strategy.value,
+                    )
+                    if result.best_prompt
+                    else None
+                ),
                 latency_ms=0,
                 iterations=result.generations_completed,
                 total_generated=len(prompts),
@@ -808,19 +855,21 @@ class AdversarialService:
                 iterations=1,
                 total_generated=len(prompts),
                 model_used=request.target_reasoning_model or "o1",
-                provider_used="openai"
-                if target_model
-                in [ReasoningModel.O1, ReasoningModel.O1_MINI, ReasoningModel.O3_MINI]
-                else "deepseek",
+                provider_used=(
+                    "openai"
+                    if target_model
+                    in [ReasoningModel.O1, ReasoningModel.O1_MINI, ReasoningModel.O3_MINI]
+                    else "deepseek"
+                ),
                 # OVERTHINK-specific metrics
                 reasoning_tokens=token_metrics.reasoning_tokens if token_metrics else None,
                 amplification_factor=token_metrics.amplification_factor if token_metrics else None,
                 cost_metrics=cost_metrics_dict,
                 baseline_tokens=token_metrics.baseline_tokens if token_metrics else None,
                 target_reached=result.target_reached,
-                decoys_injected=len(result.injected_prompt.decoy_problems)
-                if result.injected_prompt
-                else 0,
+                decoys_injected=(
+                    len(result.injected_prompt.decoy_problems) if result.injected_prompt else 0
+                ),
                 error=result.error if not result.success else None,
             )
 
@@ -1160,6 +1209,21 @@ async def generate_adversarial(
 ) -> AdversarialGenerateResponse:
     """Generate adversarial prompts using the specified strategy."""
     session_id = x_session_id or chimera_session_id
+
+    # Resolve model/provider from session if not explicitly provided
+    resolved_provider, resolved_model = _resolve_model_context(
+        payload_model=request.model,
+        payload_provider=request.provider,
+        x_session_id=x_session_id,
+        chimera_cookie=chimera_session_id,
+    )
+
+    # Update request with resolved values (if not already set)
+    if not request.provider:
+        request.provider = resolved_provider
+    if not request.model:
+        request.model = resolved_model
+
     return await service.generate(request, session_id)
 
 
@@ -1172,11 +1236,25 @@ async def generate_adversarial(
 @api_error_handler("adversarial_batch", "Batch generation failed")
 async def batch_generate(
     request: BatchAdversarialRequest,
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
     service: AdversarialService = Depends(get_adversarial_service),
 ) -> BatchAdversarialResponse:
     """Generate adversarial prompts for multiple inputs."""
     start_time = time.time()
     results: list[AdversarialGenerateResponse] = []
+
+    # Resolve model/provider from session if not explicitly provided
+    resolved_provider, resolved_model = _resolve_model_context(
+        payload_model=request.model,
+        payload_provider=request.provider,
+        x_session_id=x_session_id,
+        chimera_cookie=chimera_session_id,
+    )
+
+    # Use resolved values if not explicitly set
+    provider = request.provider or resolved_provider
+    model = request.model or resolved_model
 
     if request.parallel:
         tasks = [
@@ -1184,8 +1262,8 @@ async def batch_generate(
                 AdversarialGenerateRequest(
                     prompt=p,
                     strategy=request.strategy,
-                    provider=request.provider,
-                    model=request.model,
+                    provider=provider,
+                    model=model,
                 )
             )
             for p in request.prompts
@@ -1197,8 +1275,8 @@ async def batch_generate(
                 AdversarialGenerateRequest(
                     prompt=p,
                     strategy=request.strategy,
-                    provider=request.provider,
-                    model=request.model,
+                    provider=provider,
+                    model=model,
                 )
             )
             results.append(result)
@@ -1271,7 +1349,7 @@ async def get_strategy_config(
     """
     # Check if strategy exists
     try:
-        strat = AdversarialStrategy(strategy)
+        AdversarialStrategy(strategy)
     except ValueError:
         raise HTTPException(
             status_code=404,

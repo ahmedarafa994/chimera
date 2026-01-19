@@ -8,23 +8,23 @@ Phase 2 feature for competitive differentiation:
 - Import/export capabilities
 """
 
-import json
 import uuid
 from datetime import datetime
-from typing import List, Optional, Dict, Any
 from enum import Enum
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db
 from app.core.auth import get_current_user
-from app.db.models import User, Assessment
+from app.core.database import get_db
 from app.core.observability import get_logger
+from app.db.models import User
 
 logger = get_logger("chimera.api.sessions")
 router = APIRouter()
+
 
 # Session Models
 class SessionStatus(str, Enum):
@@ -34,38 +34,43 @@ class SessionStatus(str, Enum):
     FAILED = "failed"
     SHARED = "shared"
 
+
 class SharePermission(str, Enum):
     VIEW = "view"
     REPLAY = "replay"
     EDIT = "edit"
     ADMIN = "admin"
 
+
 class AttackStep(BaseModel):
     """Individual step in an attack session"""
+
     step_id: str
     timestamp: datetime
     step_type: str  # "prompt", "transform", "execute", "analyze"
 
     # Step data
-    input_data: Dict[str, Any] = Field(default_factory=dict)
-    output_data: Dict[str, Any] = Field(default_factory=dict)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    input_data: dict[str, Any] = Field(default_factory=dict)
+    output_data: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     # Results
     success: bool
     execution_time: float  # seconds
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
     # Context
-    technique_used: Optional[str] = None
-    target_model: Optional[str] = None
-    target_provider: Optional[str] = None
+    technique_used: str | None = None
+    target_model: str | None = None
+    target_provider: str | None = None
+
 
 class AttackSession(BaseModel):
     """Complete attack session with all steps and context"""
+
     session_id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
     # Ownership and sharing
     owner_id: str
@@ -77,13 +82,13 @@ class AttackSession(BaseModel):
     status: SessionStatus = SessionStatus.ACTIVE
 
     # Attack configuration
-    target_config: Dict[str, Any] = Field(default_factory=dict)
-    techniques_config: Dict[str, Any] = Field(default_factory=dict)
+    target_config: dict[str, Any] = Field(default_factory=dict)
+    techniques_config: dict[str, Any] = Field(default_factory=dict)
     original_prompt: str
 
     # Session data
-    steps: List[AttackStep] = Field(default_factory=list)
-    results_summary: Dict[str, Any] = Field(default_factory=dict)
+    steps: list[AttackStep] = Field(default_factory=list)
+    results_summary: dict[str, Any] = Field(default_factory=dict)
 
     # Metrics
     total_steps: int = 0
@@ -92,78 +97,92 @@ class AttackSession(BaseModel):
 
     # Sharing
     is_public: bool = False
-    shared_with: List[Dict[str, Any]] = Field(default_factory=list)
+    shared_with: list[dict[str, Any]] = Field(default_factory=list)
 
     # Tags and categorization
-    tags: List[str] = Field(default_factory=list)
-    category: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    category: str | None = None
+
 
 class SessionCreate(BaseModel):
     """Request to create a new attack session"""
+
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=1000)
+    description: str | None = Field(None, max_length=1000)
 
     # Initial configuration
     target_provider: str
     target_model: str
-    target_config: Dict[str, Any] = Field(default_factory=dict)
+    target_config: dict[str, Any] = Field(default_factory=dict)
     original_prompt: str = Field(..., min_length=1)
 
     # Optional configuration
-    techniques_config: Dict[str, Any] = Field(default_factory=dict)
-    tags: List[str] = Field(default_factory=list)
-    category: Optional[str] = None
+    techniques_config: dict[str, Any] = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
+    category: str | None = None
+
 
 class SessionUpdate(BaseModel):
     """Request to update session metadata"""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[SessionStatus] = None
-    tags: Optional[List[str]] = None
-    category: Optional[str] = None
+
+    name: str | None = None
+    description: str | None = None
+    status: SessionStatus | None = None
+    tags: list[str] | None = None
+    category: str | None = None
+
 
 class SessionShare(BaseModel):
     """Request to share session with users"""
-    user_ids: List[str] = Field(..., min_items=1)
+
+    user_ids: list[str] = Field(..., min_length=1)
     permission: SharePermission = SharePermission.VIEW
-    message: Optional[str] = None
-    expires_at: Optional[datetime] = None
+    message: str | None = None
+    expires_at: datetime | None = None
+
 
 class SessionReplay(BaseModel):
     """Request to replay a session"""
+
     session_id: str
-    replay_name: Optional[str] = None
+    replay_name: str | None = None
 
     # Replay options
     start_from_step: int = 0
-    stop_at_step: Optional[int] = None
-    modify_target: Optional[Dict[str, str]] = None  # Change provider/model
-    skip_steps: List[int] = Field(default_factory=list)
+    stop_at_step: int | None = None
+    modify_target: dict[str, str] | None = None  # Change provider/model
+    skip_steps: list[int] = Field(default_factory=list)
+
 
 class SessionExport(BaseModel):
     """Session export data"""
+
     session: AttackSession
     export_format: str = "json"
-    export_metadata: Dict[str, Any] = Field(default_factory=dict)
+    export_metadata: dict[str, Any] = Field(default_factory=dict)
+
 
 class SessionListResponse(BaseModel):
     """Response for session listing"""
-    sessions: List[AttackSession]
+
+    sessions: list[AttackSession]
     total: int
     page: int
     page_size: int
     has_next: bool
     has_prev: bool
 
+
 # In-memory storage for demo (in production, would use database)
-sessions_storage: Dict[str, AttackSession] = {}
-session_shares: Dict[str, List[Dict[str, Any]]] = {}
+sessions_storage: dict[str, AttackSession] = {}
+session_shares: dict[str, list[dict[str, Any]]] = {}
+
 
 @router.post("/", response_model=AttackSession, status_code=status.HTTP_201_CREATED)
 async def create_session(
     session_data: SessionCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Create a new attack session for recording and replay
@@ -187,12 +206,12 @@ async def create_session(
             target_config={
                 "provider": session_data.target_provider,
                 "model": session_data.target_model,
-                **session_data.target_config
+                **session_data.target_config,
             },
             techniques_config=session_data.techniques_config,
             original_prompt=session_data.original_prompt,
             tags=session_data.tags,
-            category=session_data.category
+            category=session_data.category,
         )
 
         # Store session (in production, save to database)
@@ -206,20 +225,23 @@ async def create_session(
         logger.error(f"Failed to create session: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create attack session"
+            detail="Failed to create attack session",
         )
+
 
 @router.get("/", response_model=SessionListResponse)
 async def list_sessions(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    status_filter: Optional[SessionStatus] = Query(None, description="Filter by status", alias="status"),
-    category: Optional[str] = Query(None, description="Filter by category"),
-    search: Optional[str] = Query(None, description="Search in name and description"),
+    status_filter: SessionStatus | None = Query(
+        None, description="Filter by status", alias="status"
+    ),
+    category: str | None = Query(None, description="Filter by category"),
+    search: str | None = Query(None, description="Search in name and description"),
     owner_only: bool = Query(False, description="Show only owned sessions"),
     shared_only: bool = Query(False, description="Show only shared sessions"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """List attack sessions with filtering and pagination"""
     try:
@@ -231,9 +253,8 @@ async def list_sessions(
             has_access = False
 
             # Owner access
-            if session.owner_id == current_user.id:
-                if not shared_only:
-                    has_access = True
+            if session.owner_id == current_user.id and not shared_only:
+                has_access = True
 
             # Shared access
             if session.session_id in session_shares:
@@ -261,9 +282,10 @@ async def list_sessions(
         if search:
             search_term = search.lower()
             filtered_sessions = [
-                s for s in filtered_sessions
-                if search_term in s.name.lower() or
-                   (s.description and search_term in s.description.lower())
+                s
+                for s in filtered_sessions
+                if search_term in s.name.lower()
+                or (s.description and search_term in s.description.lower())
             ]
 
         # Sort by updated_at descending
@@ -272,7 +294,7 @@ async def list_sessions(
         # Apply pagination
         total = len(filtered_sessions)
         offset = (page - 1) * page_size
-        sessions_page = filtered_sessions[offset:offset + page_size]
+        sessions_page = filtered_sessions[offset : offset + page_size]
 
         logger.info(f"Listed {len(sessions_page)} sessions for user {current_user.id}")
 
@@ -282,38 +304,31 @@ async def list_sessions(
             page=page,
             page_size=page_size,
             has_next=offset + page_size < total,
-            has_prev=page > 1
+            has_prev=page > 1,
         )
 
     except Exception as e:
         logger.error(f"Failed to list sessions: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve sessions"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve sessions"
         )
+
 
 @router.get("/{session_id}", response_model=AttackSession)
 async def get_session(
-    session_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    session_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get detailed session information including all steps"""
     try:
         session = sessions_storage.get(session_id)
 
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         # Check access permissions
         has_access = False
 
-        if session.owner_id == current_user.id:
-            has_access = True
-        elif session.is_public:
+        if session.owner_id == current_user.id or session.is_public:
             has_access = True
         elif session_id in session_shares:
             user_shares = session_shares[session_id]
@@ -321,8 +336,7 @@ async def get_session(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this session"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this session"
             )
 
         return session
@@ -332,31 +346,28 @@ async def get_session(
     except Exception as e:
         logger.error(f"Failed to get session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve session"
         )
+
 
 @router.patch("/{session_id}", response_model=AttackSession)
 async def update_session(
     session_id: str,
     update_data: SessionUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Update session metadata (owner only)"""
     try:
         session = sessions_storage.get(session_id)
 
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         if session.owner_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only session owner can update metadata"
+                detail="Only session owner can update metadata",
             )
 
         # Update fields
@@ -382,37 +393,33 @@ async def update_session(
     except Exception as e:
         logger.error(f"Failed to update session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update session"
         )
+
 
 @router.post("/{session_id}/steps", response_model=AttackStep)
 async def add_session_step(
     session_id: str,
-    step_data: Dict[str, Any],
+    step_data: dict[str, Any],
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Add a step to an active session"""
     try:
         session = sessions_storage.get(session_id)
 
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         if session.owner_id != current_user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only session owner can add steps"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Only session owner can add steps"
             )
 
         if session.status not in [SessionStatus.ACTIVE, SessionStatus.PAUSED]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot add steps to completed or failed sessions"
+                detail="Cannot add steps to completed or failed sessions",
             )
 
         # Create step
@@ -428,7 +435,7 @@ async def add_session_step(
             error_message=step_data.get("error_message"),
             technique_used=step_data.get("technique_used"),
             target_model=step_data.get("target_model"),
-            target_provider=step_data.get("target_provider")
+            target_provider=step_data.get("target_provider"),
         )
 
         # Add step to session
@@ -447,31 +454,28 @@ async def add_session_step(
     except Exception as e:
         logger.error(f"Failed to add step to session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to add session step"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to add session step"
         )
+
 
 @router.post("/{session_id}/share")
 async def share_session(
     session_id: str,
     share_data: SessionShare,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Share session with other users"""
     try:
         session = sessions_storage.get(session_id)
 
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         if session.owner_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only session owner can share sessions"
+                detail="Only session owner can share sessions",
             )
 
         # Validate user IDs (in production, check if users exist)
@@ -487,8 +491,7 @@ async def share_session(
         for user_id in share_data.user_ids:
             # Check if already shared with this user
             existing_share = next(
-                (s for s in session_shares[session_id] if s["user_id"] == user_id),
-                None
+                (s for s in session_shares[session_id] if s["user_id"] == user_id), None
             )
 
             if existing_share:
@@ -498,18 +501,22 @@ async def share_session(
                 existing_share["updated_at"] = datetime.utcnow()
             else:
                 # Add new share
-                session_shares[session_id].append({
-                    "user_id": user_id,
-                    "permission": share_data.permission.value,
-                    "shared_by": current_user.id,
-                    "shared_at": datetime.utcnow(),
-                    "expires_at": share_data.expires_at,
-                    "message": share_data.message
-                })
+                session_shares[session_id].append(
+                    {
+                        "user_id": user_id,
+                        "permission": share_data.permission.value,
+                        "shared_by": current_user.id,
+                        "shared_at": datetime.utcnow(),
+                        "expires_at": share_data.expires_at,
+                        "message": share_data.message,
+                    }
+                )
 
         # Update session sharing info
         session.shared_with = session_shares[session_id]
-        session.status = SessionStatus.SHARED if session.status == SessionStatus.COMPLETED else session.status
+        session.status = (
+            SessionStatus.SHARED if session.status == SessionStatus.COMPLETED else session.status
+        )
         session.updated_at = datetime.utcnow()
 
         logger.info(f"Shared session {session_id} with {len(share_data.user_ids)} users")
@@ -521,51 +528,45 @@ async def share_session(
     except Exception as e:
         logger.error(f"Failed to share session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to share session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to share session"
         )
+
 
 @router.post("/{session_id}/replay", response_model=AttackSession)
 async def replay_session(
     session_id: str,
     replay_data: SessionReplay,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Create a replay of an existing session"""
     try:
         original_session = sessions_storage.get(session_id)
 
         if not original_session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         # Check replay permissions
         has_replay_access = False
 
-        if original_session.owner_id == current_user.id:
-            has_replay_access = True
-        elif original_session.is_public:
+        if original_session.owner_id == current_user.id or original_session.is_public:
             has_replay_access = True
         elif session_id in session_shares:
             user_shares = session_shares[session_id]
-            user_share = next(
-                (s for s in user_shares if s["user_id"] == current_user.id),
-                None
-            )
+            user_share = next((s for s in user_shares if s["user_id"] == current_user.id), None)
             if user_share and user_share["permission"] in ["replay", "edit", "admin"]:
                 has_replay_access = True
 
         if not has_replay_access:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions to replay this session"
+                detail="Insufficient permissions to replay this session",
             )
 
         # Create replay session
-        replay_session_id = f"replay_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+        replay_session_id = (
+            f"replay_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+        )
 
         # Copy original session configuration
         replay_session = AttackSession(
@@ -579,8 +580,8 @@ async def replay_session(
             target_config=original_session.target_config.copy(),
             techniques_config=original_session.techniques_config.copy(),
             original_prompt=original_session.original_prompt,
-            tags=original_session.tags + ["replay"],
-            category=original_session.category
+            tags=[*original_session.tags, "replay"],
+            category=original_session.category,
         )
 
         # Apply modifications if specified
@@ -593,15 +594,16 @@ async def replay_session(
         # TODO: In production, this would trigger actual replay execution
         # For now, we'll copy the steps with modified timestamps
 
-        steps_to_replay = original_session.steps[replay_data.start_from_step:]
+        steps_to_replay = original_session.steps[replay_data.start_from_step :]
         if replay_data.stop_at_step:
-            steps_to_replay = steps_to_replay[:replay_data.stop_at_step - replay_data.start_from_step]
+            steps_to_replay = steps_to_replay[
+                : replay_data.stop_at_step - replay_data.start_from_step
+            ]
 
         # Filter out skipped steps
         if replay_data.skip_steps:
             steps_to_replay = [
-                step for i, step in enumerate(steps_to_replay)
-                if i not in replay_data.skip_steps
+                step for i, step in enumerate(steps_to_replay) if i not in replay_data.skip_steps
             ]
 
         # Copy steps with new timestamps and IDs
@@ -618,7 +620,7 @@ async def replay_session(
                 error_message=original_step.error_message,
                 technique_used=original_step.technique_used,
                 target_model=replay_session.target_config.get("model"),
-                target_provider=replay_session.target_config.get("provider")
+                target_provider=replay_session.target_config.get("provider"),
             )
             replay_session.steps.append(new_step)
 
@@ -640,33 +642,28 @@ async def replay_session(
     except Exception as e:
         logger.error(f"Failed to replay session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to replay session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to replay session"
         )
+
 
 @router.get("/{session_id}/export", response_model=SessionExport)
 async def export_session(
     session_id: str,
     format: str = Query("json", description="Export format"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Export session data for sharing or backup"""
     try:
         session = sessions_storage.get(session_id)
 
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         # Check export permissions (same as view permissions)
         has_access = False
 
-        if session.owner_id == current_user.id:
-            has_access = True
-        elif session.is_public:
+        if session.owner_id == current_user.id or session.is_public:
             has_access = True
         elif session_id in session_shares:
             user_shares = session_shares[session_id]
@@ -674,8 +671,7 @@ async def export_session(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this session"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this session"
             )
 
         # Generate export metadata
@@ -684,34 +680,32 @@ async def export_session(
             "exported_at": datetime.utcnow(),
             "export_format": format,
             "original_session_id": session_id,
-            "chimera_version": "2.0.0"  # TODO: Get actual version
+            "chimera_version": "2.0.0",  # TODO: Get actual version
         }
 
-        return SessionExport(
-            session=session,
-            export_format=format,
-            export_metadata=export_metadata
-        )
+        return SessionExport(session=session, export_format=format, export_metadata=export_metadata)
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to export session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to export session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to export session"
         )
+
 
 @router.post("/import", response_model=AttackSession)
 async def import_session(
     import_data: SessionExport,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Import a previously exported session"""
     try:
         # Generate new session ID for imported session
-        new_session_id = f"import_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+        new_session_id = (
+            f"import_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+        )
 
         # Create imported session
         imported_session = import_data.session.model_copy()
@@ -743,36 +737,30 @@ async def import_session(
     except Exception as e:
         logger.error(f"Failed to import session: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to import session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to import session"
         )
+
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
-    session_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    session_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Delete a session (owner only)"""
     try:
         session = sessions_storage.get(session_id)
 
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Session not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         if session.owner_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only session owner can delete sessions"
+                detail="Only session owner can delete sessions",
             )
 
         # Delete session and its shares
         del sessions_storage[session_id]
-        if session_id in session_shares:
-            del session_shares[session_id]
+        session_shares.pop(session_id, None)
 
         logger.info(f"Deleted session {session_id} for user {current_user.id}")
 
@@ -781,6 +769,5 @@ async def delete_session(
     except Exception as e:
         logger.error(f"Failed to delete session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete session"
         )

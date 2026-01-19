@@ -78,9 +78,9 @@ class StructuredLogFormatter(logging.Formatter):
             log_data["exception"] = {
                 "type": record.exc_info[0].__name__ if record.exc_info[0] else None,
                 "message": str(record.exc_info[1]) if record.exc_info[1] else None,
-                "traceback": traceback.format_exception(*record.exc_info)
-                if record.exc_info[0]
-                else None,
+                "traceback": (
+                    traceback.format_exception(*record.exc_info) if record.exc_info[0] else None
+                ),
             }
 
         # Add environment info

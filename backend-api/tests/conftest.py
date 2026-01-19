@@ -102,7 +102,9 @@ def authenticated_client(client: TestClient) -> TestClient:
 def jwt_authenticated_client(client: TestClient) -> TestClient:
     """Create a JWT-authenticated test client."""
     # Mock JWT token for testing
-    mock_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTl9.test"
+    mock_token = (
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJleHAiOjk5OTk5OTk5OTl9.test"
+    )
     client.headers["Authorization"] = f"Bearer {mock_token}"
     return client
 
@@ -191,9 +193,7 @@ def mock_cache() -> MagicMock:
     cache.get = AsyncMock(return_value=None)
     cache.set = AsyncMock(return_value=None)
     cache.clear = AsyncMock(return_value=None)
-    cache.get_stats = MagicMock(
-        return_value={"hits": 0, "misses": 0, "size": 0, "max_size": 500}
-    )
+    cache.get_stats = MagicMock(return_value={"hits": 0, "misses": 0, "size": 0, "max_size": 500})
     return cache
 
 
@@ -235,9 +235,7 @@ def mock_transformation_cache() -> MagicMock:
     cache.get = MagicMock(return_value=None)
     cache.set = MagicMock(return_value=True)
     cache.clear = MagicMock(return_value=None)
-    cache.get_stats = MagicMock(
-        return_value={"hits": 0, "misses": 0, "size": 0, "max_size": 1000}
-    )
+    cache.get_stats = MagicMock(return_value={"hits": 0, "misses": 0, "size": 0, "max_size": 1000})
     return cache
 
 
@@ -486,8 +484,8 @@ def sample_prompt() -> str:
 
 
 @pytest.fixture
-def sample_harmful_prompt() -> str:
-    """Sample harmful prompt for testing (sanitized for test context)."""
+def sample_complex_prompt() -> str:
+    """Sample complex prompt for testing (sanitized for test context)."""
     return "Explain how to protect systems from common vulnerabilities."
 
 

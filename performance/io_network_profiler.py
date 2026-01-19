@@ -22,6 +22,7 @@ from profiling_config import MetricType, config
 @dataclass
 class IOMetrics:
     """I/O performance metrics"""
+
     timestamp: datetime
     disk_io: dict[str, Any]
     network_io: dict[str, Any]
@@ -29,9 +30,11 @@ class IOMetrics:
     network_connections: int
     io_wait_time: float
 
+
 @dataclass
 class NetworkLatencyTest:
     """Network latency test results"""
+
     target: str
     test_type: str  # 'ping', 'http', 'tcp'
     latency_ms: float
@@ -39,9 +42,11 @@ class NetworkLatencyTest:
     timestamp: datetime
     error_message: str | None = None
 
+
 @dataclass
 class APIResponseMetrics:
     """API response time metrics"""
+
     endpoint: str
     method: str
     response_time_ms: float
@@ -50,9 +55,11 @@ class APIResponseMetrics:
     timestamp: datetime
     headers: dict[str, str] = field(default_factory=dict)
 
+
 @dataclass
 class IOPerformanceReport:
     """Comprehensive I/O performance report"""
+
     report_id: str
     timestamp: datetime
     io_metrics: list[IOMetrics]
@@ -61,6 +68,7 @@ class IOPerformanceReport:
     performance_summary: dict[str, Any]
     bottlenecks: list[dict[str, Any]]
     recommendations: list[str]
+
 
 class IONetworkProfiler:
     """Comprehensive I/O and Network performance profiler"""
@@ -80,7 +88,9 @@ class IONetworkProfiler:
 
     async def start_monitoring(self, interval: int = 30) -> None:
         """Start continuous I/O and network monitoring"""
-        if not config.is_metric_enabled(MetricType.IO) and not config.is_metric_enabled(MetricType.NETWORK):
+        if not config.is_metric_enabled(MetricType.IO) and not config.is_metric_enabled(
+            MetricType.NETWORK
+        ):
             return
 
         if self.monitoring_active:
@@ -89,23 +99,17 @@ class IONetworkProfiler:
 
         # Initialize aiohttp session
         connector = aiohttp.TCPConnector(
-            limit=100,
-            limit_per_host=30,
-            keepalive_timeout=30,
-            enable_cleanup_closed=True
+            limit=100, limit_per_host=30, keepalive_timeout=30, enable_cleanup_closed=True
         )
         self.session = aiohttp.ClientSession(
-            connector=connector,
-            timeout=aiohttp.ClientTimeout(total=30)
+            connector=connector, timeout=aiohttp.ClientTimeout(total=30)
         )
 
         self.monitoring_active = True
 
         # Start monitoring in a separate thread
         self.monitoring_thread = threading.Thread(
-            target=self._run_monitoring_loop,
-            args=(interval,),
-            daemon=True
+            target=self._run_monitoring_loop, args=(interval,), daemon=True
         )
         self.monitoring_thread.start()
 
@@ -173,7 +177,7 @@ class IONetworkProfiler:
             io_wait_time = 0.0
             try:
                 cpu_times = psutil.cpu_times()
-                if hasattr(cpu_times, 'iowait'):
+                if hasattr(cpu_times, "iowait"):
                     io_wait_time = cpu_times.iowait
             except AttributeError:
                 pass
@@ -188,7 +192,7 @@ class IONetworkProfiler:
                     "read_time": disk_io.read_time if disk_io else 0,
                     "write_time": disk_io.write_time if disk_io else 0,
                     "process_read_bytes": process_io.read_bytes,
-                    "process_write_bytes": process_io.write_bytes
+                    "process_write_bytes": process_io.write_bytes,
                 },
                 network_io={
                     "bytes_sent": net_io.bytes_sent,
@@ -198,11 +202,11 @@ class IONetworkProfiler:
                     "errin": net_io.errin,
                     "errout": net_io.errout,
                     "dropin": net_io.dropin,
-                    "dropout": net_io.dropout
+                    "dropout": net_io.dropout,
                 },
                 file_operations=dict(self.file_operations.copy()),
                 network_connections=connections,
-                io_wait_time=io_wait_time
+                io_wait_time=io_wait_time,
             )
 
             self.io_metrics.append(metrics)
@@ -220,7 +224,7 @@ class IONetworkProfiler:
             ("google.com", "ping"),
             ("1.1.1.1", "ping"),
             (config.backend_url, "http"),
-            (config.frontend_url, "http")
+            (config.frontend_url, "http"),
         ]
 
         for target, test_type in test_targets:
@@ -237,7 +241,7 @@ class IONetworkProfiler:
                     test_type=test_type,
                     latency_ms=latency,
                     success=latency > 0,
-                    timestamp=datetime.now(UTC)
+                    timestamp=datetime.now(UTC),
                 )
 
                 self.network_tests.append(test_result)
@@ -253,7 +257,7 @@ class IONetworkProfiler:
                     latency_ms=0.0,
                     success=False,
                     timestamp=datetime.now(UTC),
-                    error_message=str(e)
+                    error_message=str(e),
                 )
                 self.network_tests.append(error_test)
 
@@ -263,17 +267,23 @@ class IONetworkProfiler:
             # Use system ping command
             start_time = time.time()
 
-            if os.name == 'nt':  # Windows
+            if os.name == "nt":  # Windows
                 process = await asyncio.create_subprocess_exec(
-                    'ping', '-n', '1', target,
+                    "ping",
+                    "-n",
+                    "1",
+                    target,
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    stderr=asyncio.subprocess.PIPE,
                 )
             else:  # Unix-like
                 process = await asyncio.create_subprocess_exec(
-                    'ping', '-c', '1', target,
+                    "ping",
+                    "-c",
+                    "1",
+                    target,
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    stderr=asyncio.subprocess.PIPE,
                 )
 
             _stdout, _stderr = await asyncio.wait_for(process.communicate(), timeout=10)
@@ -295,7 +305,9 @@ class IONetworkProfiler:
         try:
             start_time = time.time()
 
-            async with self.session.get(target, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            async with self.session.get(
+                target, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
                 await response.read()
                 end_time = time.time()
 
@@ -336,7 +348,7 @@ class IONetworkProfiler:
                             status_code=response.status,
                             content_length=len(content),
                             timestamp=datetime.now(UTC),
-                            headers=dict(response.headers)
+                            headers=dict(response.headers),
                         )
 
                 elif method == "POST":
@@ -353,7 +365,7 @@ class IONetworkProfiler:
                             status_code=response.status,
                             content_length=len(content),
                             timestamp=datetime.now(UTC),
-                            headers=dict(response.headers)
+                            headers=dict(response.headers),
                         )
 
                 self.api_metrics.append(metrics)
@@ -366,7 +378,7 @@ class IONetworkProfiler:
                     response_time_ms=-1,
                     status_code=0,
                     content_length=0,
-                    timestamp=datetime.now(UTC)
+                    timestamp=datetime.now(UTC),
                 )
                 self.api_metrics.append(error_metrics)
 
@@ -392,48 +404,68 @@ class IONetworkProfiler:
             time_diff = (last_metric.timestamp - first_metric.timestamp).total_seconds()
 
             if time_diff > 0:
-                read_rate = (last_metric.disk_io["read_bytes"] - first_metric.disk_io["read_bytes"]) / time_diff
-                write_rate = (last_metric.disk_io["write_bytes"] - first_metric.disk_io["write_bytes"]) / time_diff
+                read_rate = (
+                    last_metric.disk_io["read_bytes"] - first_metric.disk_io["read_bytes"]
+                ) / time_diff
+                write_rate = (
+                    last_metric.disk_io["write_bytes"] - first_metric.disk_io["write_bytes"]
+                ) / time_diff
 
                 # Check for high I/O rates (>100MB/s)
                 if read_rate > 100 * 1024 * 1024:
-                    bottlenecks.append({
-                        "type": "high_disk_read",
-                        "severity": "warning",
-                        "rate_mbps": read_rate / 1024 / 1024,
-                        "description": f"High disk read rate: {read_rate/1024/1024:.1f}MB/s"
-                    })
+                    bottlenecks.append(
+                        {
+                            "type": "high_disk_read",
+                            "severity": "warning",
+                            "rate_mbps": read_rate / 1024 / 1024,
+                            "description": f"High disk read rate: {read_rate/1024/1024:.1f}MB/s",
+                        }
+                    )
 
                 if write_rate > 100 * 1024 * 1024:
-                    bottlenecks.append({
-                        "type": "high_disk_write",
-                        "severity": "warning",
-                        "rate_mbps": write_rate / 1024 / 1024,
-                        "description": f"High disk write rate: {write_rate/1024/1024:.1f}MB/s"
-                    })
+                    bottlenecks.append(
+                        {
+                            "type": "high_disk_write",
+                            "severity": "warning",
+                            "rate_mbps": write_rate / 1024 / 1024,
+                            "description": f"High disk write rate: {write_rate/1024/1024:.1f}MB/s",
+                        }
+                    )
 
         # Analyze API response times
         if self.api_metrics:
             recent_api_metrics = list(self.api_metrics)[-100:]
 
             for endpoint in {m.endpoint for m in recent_api_metrics}:
-                endpoint_metrics = [m for m in recent_api_metrics if m.endpoint == endpoint and m.response_time_ms > 0]
+                endpoint_metrics = [
+                    m
+                    for m in recent_api_metrics
+                    if m.endpoint == endpoint and m.response_time_ms > 0
+                ]
 
                 if endpoint_metrics:
-                    avg_response_time = statistics.mean(m.response_time_ms for m in endpoint_metrics)
-                    p95_response_time = statistics.quantiles(
-                        [m.response_time_ms for m in endpoint_metrics], n=20
-                    )[-1] if len(endpoint_metrics) > 5 else avg_response_time
+                    avg_response_time = statistics.mean(
+                        m.response_time_ms for m in endpoint_metrics
+                    )
+                    p95_response_time = (
+                        statistics.quantiles([m.response_time_ms for m in endpoint_metrics], n=20)[
+                            -1
+                        ]
+                        if len(endpoint_metrics) > 5
+                        else avg_response_time
+                    )
 
                     if p95_response_time > 3000:  # 3 seconds
-                        bottlenecks.append({
-                            "type": "slow_api_endpoint",
-                            "severity": "critical" if p95_response_time > 5000 else "warning",
-                            "endpoint": endpoint,
-                            "avg_response_time_ms": avg_response_time,
-                            "p95_response_time_ms": p95_response_time,
-                            "description": f"Slow API endpoint: {endpoint} (P95: {p95_response_time:.0f}ms)"
-                        })
+                        bottlenecks.append(
+                            {
+                                "type": "slow_api_endpoint",
+                                "severity": "critical" if p95_response_time > 5000 else "warning",
+                                "endpoint": endpoint,
+                                "avg_response_time_ms": avg_response_time,
+                                "p95_response_time_ms": p95_response_time,
+                                "description": f"Slow API endpoint: {endpoint} (P95: {p95_response_time:.0f}ms)",
+                            }
+                        )
 
         # Analyze network latency
         if self.network_tests:
@@ -446,13 +478,15 @@ class IONetworkProfiler:
                     avg_latency = statistics.mean(t.latency_ms for t in target_tests)
 
                     if avg_latency > 1000:  # 1 second
-                        bottlenecks.append({
-                            "type": "high_network_latency",
-                            "severity": "warning",
-                            "target": target,
-                            "avg_latency_ms": avg_latency,
-                            "description": f"High network latency to {target}: {avg_latency:.0f}ms"
-                        })
+                        bottlenecks.append(
+                            {
+                                "type": "high_network_latency",
+                                "severity": "warning",
+                                "target": target,
+                                "avg_latency_ms": avg_latency,
+                                "description": f"High network latency to {target}: {avg_latency:.0f}ms",
+                            }
+                        )
 
         return bottlenecks
 
@@ -469,15 +503,23 @@ class IONetworkProfiler:
 
         if self.io_metrics:
             recent_metrics = list(self.io_metrics)[-100:]
-            performance_summary["avg_io_wait_time"] = statistics.mean(m.io_wait_time for m in recent_metrics)
-            performance_summary["avg_network_connections"] = statistics.mean(m.network_connections for m in recent_metrics)
+            performance_summary["avg_io_wait_time"] = statistics.mean(
+                m.io_wait_time for m in recent_metrics
+            )
+            performance_summary["avg_network_connections"] = statistics.mean(
+                m.network_connections for m in recent_metrics
+            )
 
         if self.api_metrics:
             recent_api = list(self.api_metrics)[-100:]
-            successful_requests = [m for m in recent_api if m.response_time_ms > 0 and 200 <= m.status_code < 300]
+            successful_requests = [
+                m for m in recent_api if m.response_time_ms > 0 and 200 <= m.status_code < 300
+            ]
 
             if successful_requests:
-                performance_summary["avg_api_response_time_ms"] = statistics.mean(m.response_time_ms for m in successful_requests)
+                performance_summary["avg_api_response_time_ms"] = statistics.mean(
+                    m.response_time_ms for m in successful_requests
+                )
                 performance_summary["api_success_rate"] = len(successful_requests) / len(recent_api)
 
         if self.network_tests:
@@ -485,8 +527,12 @@ class IONetworkProfiler:
             successful_tests = [t for t in recent_tests if t.success]
 
             if successful_tests:
-                performance_summary["avg_network_latency_ms"] = statistics.mean(t.latency_ms for t in successful_tests)
-                performance_summary["network_success_rate"] = len(successful_tests) / len(recent_tests)
+                performance_summary["avg_network_latency_ms"] = statistics.mean(
+                    t.latency_ms for t in successful_tests
+                )
+                performance_summary["network_success_rate"] = len(successful_tests) / len(
+                    recent_tests
+                )
 
         # Generate recommendations
         recommendations = []
@@ -502,7 +548,9 @@ class IONetworkProfiler:
                 recommendations.append(f"Optimize {bottleneck['endpoint']} endpoint performance")
                 recommendations.append("Add response caching for frequently requested data")
             elif bottleneck["type"] == "high_network_latency":
-                recommendations.append(f"Investigate network connectivity to {bottleneck['target']}")
+                recommendations.append(
+                    f"Investigate network connectivity to {bottleneck['target']}"
+                )
                 recommendations.append("Consider using CDN or edge locations")
 
         if not bottlenecks:
@@ -517,7 +565,7 @@ class IONetworkProfiler:
             api_metrics=list(self.api_metrics),
             performance_summary=performance_summary,
             bottlenecks=bottlenecks,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         # Save report to file
@@ -538,20 +586,23 @@ class IONetworkProfiler:
             "recommendations": report.recommendations,
             "metrics_count": len(report.io_metrics),
             "network_tests_count": len(report.network_tests),
-            "api_metrics_count": len(report.api_metrics)
+            "api_metrics_count": len(report.api_metrics),
         }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(report_dict, f, indent=2)
 
         print(f"I/O performance report saved: {output_path}")
 
+
 # Global I/O profiler instance
 io_profiler = IONetworkProfiler()
+
 
 # Decorator for monitoring I/O operations
 def monitor_io(operation_name: str = "unknown"):
     """Decorator to monitor I/O operations"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             start_time = time.time()
@@ -568,8 +619,12 @@ def monitor_io(operation_name: str = "unknown"):
 
                 # Log slow operations
                 if duration_ms > 1000:  # Slower than 1 second
-                    print(f"Slow I/O operation '{operation_name}': {duration_ms:.0f}ms (Success: {success})")
+                    print(
+                        f"Slow I/O operation '{operation_name}': {duration_ms:.0f}ms (Success: {success})"
+                    )
 
             return result
+
         return wrapper
+
     return decorator

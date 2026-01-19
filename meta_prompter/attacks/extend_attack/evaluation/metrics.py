@@ -219,12 +219,8 @@ class BenchmarkResults:
         std_latency_ratio = statistics.stdev(latency_ratios) if len(latency_ratios) > 1 else 0.0
 
         # Calculate accuracy metrics
-        baseline_correct = sum(
-            1 for r in results if r.baseline_metrics.is_correct is True
-        )
-        attack_correct = sum(
-            1 for r in results if r.attack_metrics.is_correct is True
-        )
+        baseline_correct = sum(1 for r in results if r.baseline_metrics.is_correct is True)
+        attack_correct = sum(1 for r in results if r.attack_metrics.is_correct is True)
         baseline_accuracy = (baseline_correct / total_samples) * 100
         attack_accuracy = (attack_correct / total_samples) * 100
         accuracy_drop = baseline_accuracy - attack_accuracy
@@ -408,12 +404,8 @@ class MetricsCalculator:
         if not results:
             return True
 
-        baseline_correct = sum(
-            1 for r in results if r.baseline_metrics.is_correct is True
-        )
-        attack_correct = sum(
-            1 for r in results if r.attack_metrics.is_correct is True
-        )
+        baseline_correct = sum(1 for r in results if r.baseline_metrics.is_correct is True)
+        attack_correct = sum(1 for r in results if r.attack_metrics.is_correct is True)
 
         if baseline_correct == 0:
             return True  # No baseline accuracy to preserve
@@ -459,19 +451,13 @@ class MetricsCalculator:
         Returns:
             Dictionary with overhead metrics
         """
-        length_ratio = MetricsCalculator.calculate_length_ratio(
-            baseline_tokens, attack_tokens
-        )
+        length_ratio = MetricsCalculator.calculate_length_ratio(baseline_tokens, attack_tokens)
         latency_ratio = MetricsCalculator.calculate_latency_ratio(
             baseline_latency_ms, attack_latency_ms
         )
 
-        baseline_cost = MetricsCalculator.calculate_token_cost(
-            baseline_tokens, price_per_1k_tokens
-        )
-        attack_cost = MetricsCalculator.calculate_token_cost(
-            attack_tokens, price_per_1k_tokens
-        )
+        baseline_cost = MetricsCalculator.calculate_token_cost(baseline_tokens, price_per_1k_tokens)
+        attack_cost = MetricsCalculator.calculate_token_cost(attack_tokens, price_per_1k_tokens)
 
         return {
             "length_ratio": length_ratio,

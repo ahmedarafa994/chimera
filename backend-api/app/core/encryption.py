@@ -18,11 +18,13 @@ logger = logging.getLogger(__name__)
 
 class EncryptionError(Exception):
     """Base exception for encryption operations"""
+
     pass
 
 
 class EncryptionKeyError(EncryptionError):
     """Raised when encryption key is invalid or missing"""
+
     pass
 
 
@@ -58,7 +60,9 @@ class _EncryptionManager:
                 if len(key) == 32:
                     return key
                 else:
-                    logger.warning("Invalid encryption key length in environment, generating new one")
+                    logger.warning(
+                        "Invalid encryption key length in environment, generating new one"
+                    )
             except Exception as e:
                 logger.warning(f"Invalid encryption key format in environment: {e}")
 
@@ -121,8 +125,8 @@ class _EncryptionManager:
 
         try:
             fernet = self._get_fernet()
-            encrypted_bytes = fernet.encrypt(plaintext_key.encode('utf-8'))
-            encrypted_b64 = base64.urlsafe_b64encode(encrypted_bytes).decode('utf-8')
+            encrypted_bytes = fernet.encrypt(plaintext_key.encode("utf-8"))
+            encrypted_b64 = base64.urlsafe_b64encode(encrypted_bytes).decode("utf-8")
             return f"enc:{encrypted_b64}"
         except Exception as e:
             raise EncryptionError(f"Failed to encrypt API key: {e}") from e
@@ -157,7 +161,7 @@ class _EncryptionManager:
             encrypted_bytes = base64.urlsafe_b64decode(encrypted_b64)
             decrypted_bytes = fernet.decrypt(encrypted_bytes)
 
-            return decrypted_bytes.decode('utf-8')
+            return decrypted_bytes.decode("utf-8")
         except Exception as e:
             raise EncryptionError(f"Failed to decrypt API key: {e}") from e
 

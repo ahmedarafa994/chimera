@@ -203,7 +203,7 @@ class TestRoutewayProviderHealthCheck:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "object": "list",
-            "data": [{"id": "gpt-4o-mini", "name": "GPT-4o Mini"}]
+            "data": [{"id": "gpt-4o-mini", "name": "GPT-4o Mini"}],
         }
 
         client = MagicMock(spec=httpx.AsyncClient)
@@ -252,17 +252,11 @@ class TestRoutewayProviderErrorHandling:
         mock_response = MagicMock()
         mock_response.status_code = 401
         mock_response.json.return_value = {
-            "error": {
-                "message": "Invalid or missing API key",
-                "type": "error",
-                "code": 401
-            }
+            "error": {"message": "Invalid or missing API key", "type": "error", "code": 401}
         }
 
         error = httpx.HTTPStatusError(
-            message="401 Unauthorized",
-            request=MagicMock(),
-            response=mock_response
+            message="401 Unauthorized", request=MagicMock(), response=mock_response
         )
 
         with pytest.raises(Exception) as exc_info:
@@ -276,17 +270,11 @@ class TestRoutewayProviderErrorHandling:
         mock_response = MagicMock()
         mock_response.status_code = 429
         mock_response.json.return_value = {
-            "error": {
-                "message": "You have used up your free quota",
-                "type": "error",
-                "code": 429
-            }
+            "error": {"message": "You have used up your free quota", "type": "error", "code": 429}
         }
 
         error = httpx.HTTPStatusError(
-            message="429 Too Many Requests",
-            request=MagicMock(),
-            response=mock_response
+            message="429 Too Many Requests", request=MagicMock(), response=mock_response
         )
 
         with pytest.raises(Exception) as exc_info:

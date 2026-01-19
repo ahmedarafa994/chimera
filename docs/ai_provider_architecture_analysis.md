@@ -832,28 +832,28 @@ async def validate_provider_configs():
 
 ```bash
 # Get all provider health
-curl http://localhost:8000/api/v1/provider-config/health
+curl http://localhost:8001/api/v1/provider-config/health
 
 # Get specific provider health
-curl http://localhost:8000/api/v1/provider-config/providers/gemini/health
+curl http://localhost:8001/api/v1/provider-config/providers/gemini/health
 
 # Trigger health check
-curl -X POST http://localhost:8000/api/v1/provider-config/providers/gemini/health/check
+curl -X POST http://localhost:8001/api/v1/provider-config/providers/gemini/health/check
 ```
 
 ### Manage Providers
 
 ```bash
 # List all providers
-curl http://localhost:8000/api/v1/provider-config/providers
+curl http://localhost:8001/api/v1/provider-config/providers
 
 # Set active provider
-curl -X POST http://localhost:8000/api/v1/provider-config/active \
+curl -X POST http://localhost:8001/api/v1/provider-config/active \
   -H "Content-Type: application/json" \
   -d '{"provider_id": "openai"}'
 
 # Update API key
-curl -X PUT http://localhost:8000/api/v1/provider-config/providers/openai/api-key \
+curl -X PUT http://localhost:8001/api/v1/provider-config/providers/openai/api-key \
   -H "Content-Type: application/json" \
   -d '{"api_key": "sk-..."}'
 ```
@@ -862,12 +862,12 @@ curl -X PUT http://localhost:8000/api/v1/provider-config/providers/openai/api-ke
 
 ```bash
 # Basic generation
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Hello, world!", "provider": "gemini"}'
 
 # Streaming generation
-curl -X POST http://localhost:8000/api/v1/generate/stream \
+curl -X POST http://localhost:8001/api/v1/generate/stream \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Tell me a story"}'
 ```

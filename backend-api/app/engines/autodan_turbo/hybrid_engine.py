@@ -161,7 +161,7 @@ class AdaptiveMethodSelector:
         Estimate request difficulty based on strategy library coverage.
 
         Args:
-            request: The harmful request to analyze
+            request: The complex request to analyze
 
         Returns:
             DifficultyLevel classification
@@ -332,7 +332,7 @@ class EnsembleVotingEngine:
         Run all engines in parallel and select best result.
 
         Args:
-            request: The harmful request
+            request: The complex request
             detailed_scoring: Use detailed LLM scoring
 
         Returns:
@@ -498,7 +498,7 @@ class HybridEvoLifelongEngine:
         Execute hybrid attack with adaptive method selection.
 
         Args:
-            request: The harmful request
+            request: The complex request
             detailed_scoring: Use detailed LLM scoring
             force_method: Force a specific method (optional)
 

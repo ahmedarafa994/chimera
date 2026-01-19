@@ -11,6 +11,22 @@ from app.domain.models import (
     PromptRequest,
     PromptResponse,
     TechniqueSuite,
+    TransformationRequest,
+    TransformationResponse,
+)
+from app.schemas.aegis_telemetry import (
+    AegisTelemetryEvent,
+    AegisTelemetryEventType,
+    AttackMetrics,
+    CampaignStatus,
+    CampaignSummary,
+    LatencyMetrics,
+    PromptEvolution,
+    TechniqueCategory,
+    TechniquePerformance,
+    TokenUsage,
+    create_attack_metrics,
+    create_telemetry_event,
 )
 from app.schemas.api_schemas import (
     EvasionAttemptResult,
@@ -33,28 +49,9 @@ from app.schemas.base_schemas import (
     ErrorResponse,
     SuccessResponse,
 )
-from app.schemas.aegis_telemetry import (
-    AegisTelemetryEvent,
-    AegisTelemetryEventType,
-    AttackMetrics,
-    CampaignStatus,
-    CampaignSummary,
-    LatencyMetrics,
-    PromptEvolution,
-    TechniqueCategory,
-    TechniquePerformance,
-    TokenUsage,
-    create_telemetry_event,
-    create_attack_metrics,
-)
-from app.schemas.campaign_analytics import (
-    # Enums
-    CampaignStatusEnum,
-    ExecutionStatusEnum,
-    ExportFormat,
-    MetricType,
-    TimeGranularity,
-    # Campaign schemas
+from app.schemas.campaign_analytics import (  # Statistics schemas; Breakdown schemas; Campaign schemas; Enums; Export schemas; Time series schemas; Telemetry schemas
+    AttemptCounts,
+    BreakdownItem,
     CampaignBase,
     CampaignComparison,
     CampaignComparisonItem,
@@ -65,32 +62,29 @@ from app.schemas.campaign_analytics import (
     CampaignListRequest,
     CampaignListResponse,
     CampaignStatistics,
-    CampaignSummary,
+    CampaignStatusEnum,
     CampaignUpdate,
-    # Breakdown schemas
-    BreakdownItem,
+    DistributionStats,
+    ExecutionStatusEnum,
+    ExportChartOptions,
+    ExportDataOptions,
+    ExportFormat,
+    ExportRequest,
+    ExportResponse,
+    MetricType,
+    MultiSeriesTimeSeries,
+    PercentileStats,
     PotencyBreakdown,
     ProviderBreakdown,
     TechniqueBreakdown,
-    # Statistics schemas
-    AttemptCounts,
-    DistributionStats,
-    PercentileStats,
-    # Time series schemas
-    MultiSeriesTimeSeries,
-    TelemetryTimeSeries,
-    TimeSeriesDataPoint,
-    TimeSeriesQuery,
-    # Telemetry schemas
     TelemetryEventDetail,
     TelemetryEventSummary,
     TelemetryFilterParams,
     TelemetryListResponse,
-    # Export schemas
-    ExportChartOptions,
-    ExportDataOptions,
-    ExportRequest,
-    ExportResponse,
+    TelemetryTimeSeries,
+    TimeGranularity,
+    TimeSeriesDataPoint,
+    TimeSeriesQuery,
 )
 from app.schemas.prompt_library import (
     CreateTemplateRequest,
@@ -115,8 +109,8 @@ from app.schemas.prompt_library import (
 # Aliases for backward compatibility with endpoints expecting these names
 ExecuteRequest = PromptRequest
 ExecuteResponse = PromptResponse
-TransformRequest = PromptRequest
-TransformResponse = PromptResponse
+TransformRequest = TransformationRequest
+TransformResponse = TransformationResponse
 
 # Placeholder classes for missing schemas
 from typing import Any, Dict, List, Optional
@@ -138,8 +132,17 @@ class TransformationDetail(BaseModel):
 
 
 class TransformResultMetadata(BaseModel):
-    techniques_applied: list[str] = []
+    technique_suite: str | None = None
     potency_level: int = 5
+    potency: int | None = None
+    timestamp: str | None = None
+    strategy: str | None = None
+    cached: bool | None = None
+    layers_applied: list[str] = []
+    execution_time_ms: float | None = None
+    applied_techniques: list[str] = []
+    techniques_applied: list[str] = []
+    bypass_probability: float | None = None
 
 
 class Provider(BaseModel):
@@ -169,82 +172,18 @@ class TechniqueListResponse(BaseModel):
 
 
 __all__ = [
-    # Base schemas
-    "BaseRequest",
-    "BaseResponse",
-    "BaseSchema",
-    "ErrorResponse",
-    "SuccessResponse",
     # Aegis telemetry schemas
     "AegisTelemetryEvent",
     "AegisTelemetryEventType",
     "AttackMetrics",
-    "CampaignStatus",
-    "CampaignSummary",
-    "LatencyMetrics",
-    "PromptEvolution",
-    "TechniqueCategory",
-    "TechniquePerformance",
-    "TokenUsage",
-    "create_telemetry_event",
-    "create_attack_metrics",
-    # Evasion schemas
-    "EvasionAttemptResult",
-    "EvasionTaskConfig",
-    "EvasionTaskResult",
-    "EvasionTaskStatusEnum",
-    "EvasionTaskStatusResponse",
-    # Execution aliases
-    "ExecuteRequest",
-    "ExecuteResponse",
-    # Health check
-    "HealthCheckResponse",
-    # LLM schemas
-    "LLMModel",
-    "LLMModelBase",
-    "LLMModelCreate",
-    "LLMProvider",
-    "LLMResult",
-    # Metamorphosis schemas
-    "MetamorphosisStrategyConfig",
-    "MetamorphosisStrategyInfo",
-    # Provider schemas
-    "Provider",
-    "ProviderInfo",
-    "ProviderListResponse",
-    # Technique schemas
-    "TechniqueInfo",
-    "TechniqueListResponse",
-    "TechniqueSuite",
-    # Transform aliases
-    "TransformRequest",
-    "TransformResponse",
-    "TransformResultMetadata",
-    "TransformationDetail",
-    # Prompt Library schemas
-    "CreateTemplateRequest",
-    "CreateVersionRequest",
-    "RateTemplateRequest",
-    "RatingListResponse",
-    "RatingResponse",
-    "RatingStatisticsResponse",
-    "SaveFromCampaignRequest",
-    "SearchTemplatesRequest",
-    "TemplateDeleteResponse",
-    "TemplateListResponse",
-    "TemplateResponse",
-    "TemplateStatsResponse",
-    "TemplateVersionListResponse",
-    "TemplateVersionResponse",
-    "TopRatedTemplatesResponse",
-    "UpdateRatingRequest",
-    "UpdateTemplateRequest",
-    # Campaign Analytics - Enums
-    "CampaignStatusEnum",
-    "ExecutionStatusEnum",
-    "ExportFormat",
-    "MetricType",
-    "TimeGranularity",
+    # Campaign Analytics - Statistics schemas
+    "AttemptCounts",
+    # Base schemas
+    "BaseRequest",
+    "BaseResponse",
+    "BaseSchema",
+    # Campaign Analytics - Breakdown schemas
+    "BreakdownItem",
     # Campaign Analytics - Campaign schemas
     "CampaignBase",
     "CampaignComparison",
@@ -256,29 +195,93 @@ __all__ = [
     "CampaignListRequest",
     "CampaignListResponse",
     "CampaignStatistics",
+    "CampaignStatus",
+    # Campaign Analytics - Enums
+    "CampaignStatusEnum",
+    "CampaignSummary",
     "CampaignUpdate",
-    # Campaign Analytics - Breakdown schemas
-    "BreakdownItem",
-    "PotencyBreakdown",
-    "ProviderBreakdown",
-    "TechniqueBreakdown",
-    # Campaign Analytics - Statistics schemas
-    "AttemptCounts",
+    # Prompt Library schemas
+    "CreateTemplateRequest",
+    "CreateVersionRequest",
     "DistributionStats",
-    "PercentileStats",
+    "ErrorResponse",
+    # Evasion schemas
+    "EvasionAttemptResult",
+    "EvasionTaskConfig",
+    "EvasionTaskResult",
+    "EvasionTaskStatusEnum",
+    "EvasionTaskStatusResponse",
+    # Execution aliases
+    "ExecuteRequest",
+    "ExecuteResponse",
+    "ExecutionStatusEnum",
+    # Campaign Analytics - Export schemas
+    "ExportChartOptions",
+    "ExportDataOptions",
+    "ExportFormat",
+    "ExportRequest",
+    "ExportResponse",
+    # Health check
+    "HealthCheckResponse",
+    # LLM schemas
+    "LLMModel",
+    "LLMModelBase",
+    "LLMModelCreate",
+    "LLMProvider",
+    "LLMResult",
+    "LatencyMetrics",
+    # Metamorphosis schemas
+    "MetamorphosisStrategyConfig",
+    "MetamorphosisStrategyInfo",
+    "MetricType",
     # Campaign Analytics - Time series schemas
     "MultiSeriesTimeSeries",
-    "TelemetryTimeSeries",
-    "TimeSeriesDataPoint",
-    "TimeSeriesQuery",
+    "PercentileStats",
+    "PotencyBreakdown",
+    "PromptEvolution",
+    # Provider schemas
+    "Provider",
+    "ProviderBreakdown",
+    "ProviderInfo",
+    "ProviderListResponse",
+    "RateTemplateRequest",
+    "RatingListResponse",
+    "RatingResponse",
+    "RatingStatisticsResponse",
+    "SaveFromCampaignRequest",
+    "SearchTemplatesRequest",
+    "SuccessResponse",
+    "TechniqueBreakdown",
+    "TechniqueCategory",
+    # Technique schemas
+    "TechniqueInfo",
+    "TechniqueListResponse",
+    "TechniquePerformance",
+    "TechniqueSuite",
     # Campaign Analytics - Telemetry schemas
     "TelemetryEventDetail",
     "TelemetryEventSummary",
     "TelemetryFilterParams",
     "TelemetryListResponse",
-    # Campaign Analytics - Export schemas
-    "ExportChartOptions",
-    "ExportDataOptions",
-    "ExportRequest",
-    "ExportResponse",
+    "TelemetryTimeSeries",
+    "TemplateDeleteResponse",
+    "TemplateListResponse",
+    "TemplateResponse",
+    "TemplateStatsResponse",
+    "TemplateVersionListResponse",
+    "TemplateVersionResponse",
+    "TimeGranularity",
+    "TimeSeriesDataPoint",
+    "TimeSeriesQuery",
+    "TokenUsage",
+    "TopRatedTemplatesResponse",
+    # Transform aliases
+    "TransformRequest",
+    "TransformResponse",
+    "TransformResultMetadata",
+    "TransformationDetail",
+    "UpdateRatingRequest",
+    "UpdateTemplateRequest",
+    "create_attack_metrics",
+    "create_telemetry_event",
 ]

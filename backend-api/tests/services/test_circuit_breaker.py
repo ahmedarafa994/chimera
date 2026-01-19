@@ -6,7 +6,9 @@ resilience and failover behavior.
 
 P1 Test Coverage: Circuit breaker state transitions, failover, and recovery.
 """
+
 import asyncio
+import contextlib
 from datetime import datetime
 from unittest.mock import Mock, patch
 
@@ -20,11 +22,7 @@ class TestCircuitBreakerStates:
         """Circuit breaker should start in closed state."""
         from app.core.circuit_breaker import CircuitBreaker
 
-        cb = CircuitBreaker(
-            failure_threshold=5,
-            recovery_timeout=30,
-            half_open_max_calls=3
-        )
+        cb = CircuitBreaker(failure_threshold=5, recovery_timeout=30, half_open_max_calls=3)
 
         assert cb.state == "closed"
         assert cb.failure_count == 0
@@ -56,6 +54,7 @@ class TestCircuitBreakerStates:
 
         # Wait for recovery timeout
         import time
+
         time.sleep(1.1)
 
         # Check if it transitions to half-open on next call
@@ -66,11 +65,7 @@ class TestCircuitBreakerStates:
         """Circuit breaker closes after successful calls in half-open state."""
         from app.core.circuit_breaker import CircuitBreaker
 
-        cb = CircuitBreaker(
-            failure_threshold=3,
-            recovery_timeout=0,
-            half_open_max_calls=2
-        )
+        cb = CircuitBreaker(failure_threshold=3, recovery_timeout=0, half_open_max_calls=2)
 
         # Open the circuit
         for _ in range(3):
@@ -166,11 +161,7 @@ class TestCircuitBreakerMetrics:
         """Get metrics returns complete circuit breaker data."""
         from app.core.circuit_breaker import CircuitBreaker
 
-        cb = CircuitBreaker(
-            failure_threshold=5,
-            recovery_timeout=30,
-            name="test_provider"
-        )
+        cb = CircuitBreaker(failure_threshold=5, recovery_timeout=30, name="test_provider")
 
         cb.record_failure()
         cb.record_success()
@@ -193,8 +184,7 @@ class TestCircuitBreakerIntegration:
         from app.services.llm_service import llm_service
 
         # Check that circuit breaker is initialized
-        assert hasattr(llm_service, "circuit_breakers") or \
-               hasattr(llm_service, "_circuit_breaker")
+        assert hasattr(llm_service, "circuit_breakers") or hasattr(llm_service, "_circuit_breaker")
 
     @pytest.mark.asyncio
     async def test_provider_failure_triggers_circuit_breaker(self):
@@ -213,14 +203,8 @@ class TestCircuitBreakerIntegration:
 
         # Simulate failure (mock the actual call)
         with patch.object(service, "_call_provider", side_effect=Exception("API Error")):
-            try:
-                await service.generate(
-                    prompt="test",
-                    provider="openai",
-                    model="gpt-4"
-                )
-            except Exception:
-                pass
+            with contextlib.suppress(Exception):
+                await service.generate(prompt="test", provider="openai", model="gpt-4")
 
         # Verify circuit breaker was notified
         # Implementation-specific assertion
@@ -244,11 +228,7 @@ class TestCircuitBreakerRecovery:
         """Circuit breaker allows gradual recovery in half-open state."""
         from app.core.circuit_breaker import CircuitBreaker
 
-        cb = CircuitBreaker(
-            failure_threshold=5,
-            recovery_timeout=0,
-            half_open_max_calls=3
-        )
+        cb = CircuitBreaker(failure_threshold=5, recovery_timeout=0, half_open_max_calls=3)
 
         # Open circuit
         for _ in range(5):

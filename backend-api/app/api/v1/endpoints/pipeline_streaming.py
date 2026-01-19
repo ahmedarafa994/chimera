@@ -102,7 +102,9 @@ manager = ConnectionManager()
 async def metrics_stream(
     websocket: WebSocket,
     provider: str = Query(..., description="LLM provider to stream metrics for"),
-    metric_type: str = Query("latency", description="Type of metric (latency, tokens, errors, requests)"),
+    metric_type: str = Query(
+        "latency", description="Type of metric (latency, tokens, errors, requests)"
+    ),
     interval_seconds: int = Query(5, description="Update interval in seconds"),
 ):
     """
@@ -122,14 +124,17 @@ async def metrics_stream(
         pipeline = await get_pipeline()
 
         # Send initial connection message
-        await manager.send_personal({
-            "type": "connected",
-            "client_id": client_id,
-            "provider": provider,
-            "metric_type": metric_type,
-            "interval_seconds": interval_seconds,
-            "timestamp": datetime.utcnow().isoformat(),
-        }, websocket)
+        await manager.send_personal(
+            {
+                "type": "connected",
+                "client_id": client_id,
+                "provider": provider,
+                "metric_type": metric_type,
+                "interval_seconds": interval_seconds,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+            websocket,
+        )
 
         # Map metric type string to enum
         metric_type_map = {
@@ -153,13 +158,16 @@ async def metrics_stream(
                 )
 
                 # Send metrics update
-                await manager.send_personal({
-                    "type": "metrics_update",
-                    "provider": provider,
-                    "metric_type": metric_type,
-                    "data": metrics_data,
-                    "timestamp": datetime.utcnow().isoformat(),
-                }, websocket)
+                await manager.send_personal(
+                    {
+                        "type": "metrics_update",
+                        "provider": provider,
+                        "metric_type": metric_type,
+                        "data": metrics_data,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    },
+                    websocket,
+                )
 
                 # Wait for next interval
                 await asyncio.sleep(interval_seconds)
@@ -168,11 +176,14 @@ async def metrics_stream(
                 break
             except Exception as e:
                 logger.error(f"Error in metrics stream: {e}")
-                await manager.send_personal({
-                    "type": "error",
-                    "message": str(e),
-                    "timestamp": datetime.utcnow().isoformat(),
-                }, websocket)
+                await manager.send_personal(
+                    {
+                        "type": "error",
+                        "message": str(e),
+                        "timestamp": datetime.utcnow().isoformat(),
+                    },
+                    websocket,
+                )
                 await asyncio.sleep(interval_seconds)
 
     except WebSocketDisconnect:
@@ -184,7 +195,9 @@ async def metrics_stream(
 @router.websocket("/pipeline/streaming/events")
 async def events_stream(
     websocket: WebSocket,
-    event_types: str = Query("all", description="Comma-separated event types (llm,transformation,jailbreak)"),
+    event_types: str = Query(
+        "all", description="Comma-separated event types (llm,transformation,jailbreak)"
+    ),
     client_id: str | None = Query(None, description="Optional client identifier"),
 ):
     """
@@ -203,15 +216,22 @@ async def events_stream(
     try:
         pipeline = await get_pipeline()
 
-        await manager.send_personal({
-            "type": "connected",
-            "client_id": client_id,
-            "event_types": event_types,
-            "timestamp": datetime.utcnow().isoformat(),
-        }, websocket)
+        await manager.send_personal(
+            {
+                "type": "connected",
+                "client_id": client_id,
+                "event_types": event_types,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+            websocket,
+        )
 
         # Parse event types
-        types = [t.strip() for t in event_types.split(",")] if event_types != "all" else ["llm", "transformation", "jailbreak"]
+        types = (
+            [t.strip() for t in event_types.split(",")]
+            if event_types != "all"
+            else ["llm", "transformation", "jailbreak"]
+        )
 
         # Set custom analytics handler to forward events
         async def event_forwarder(entry):
@@ -220,17 +240,24 @@ async def events_stream(
                 event_type = entry.event_type
 
                 # Filter by event types
-                if "all" not in types and event_type.replace("_interaction", "").replace("_experiment", "") not in types:
+                if (
+                    "all" not in types
+                    and event_type.replace("_interaction", "").replace("_experiment", "")
+                    not in types
+                ):
                     return
 
-                await manager.send_personal({
-                    "type": "event",
-                    "event_type": event_type,
-                    "event_id": entry.entry_id,
-                    "timestamp": entry.timestamp.isoformat(),
-                    "data": entry.data,
-                    "metadata": entry.metadata,
-                }, websocket)
+                await manager.send_personal(
+                    {
+                        "type": "event",
+                        "event_type": event_type,
+                        "event_id": entry.entry_id,
+                        "timestamp": entry.timestamp.isoformat(),
+                        "data": entry.data,
+                        "metadata": entry.metadata,
+                    },
+                    websocket,
+                )
 
             except Exception as e:
                 logger.error(f"Error forwarding event: {e}")
@@ -242,10 +269,13 @@ async def events_stream(
         while True:
             try:
                 await asyncio.sleep(30)
-                await manager.send_personal({
-                    "type": "heartbeat",
-                    "timestamp": datetime.utcnow().isoformat(),
-                }, websocket)
+                await manager.send_personal(
+                    {
+                        "type": "heartbeat",
+                        "timestamp": datetime.utcnow().isoformat(),
+                    },
+                    websocket,
+                )
             except WebSocketDisconnect:
                 break
             except Exception as e:
@@ -280,12 +310,15 @@ async def health_stream(
     try:
         pipeline = await get_pipeline()
 
-        await manager.send_personal({
-            "type": "connected",
-            "client_id": client_id,
-            "interval_seconds": interval_seconds,
-            "timestamp": datetime.utcnow().isoformat(),
-        }, websocket)
+        await manager.send_personal(
+            {
+                "type": "connected",
+                "client_id": client_id,
+                "interval_seconds": interval_seconds,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+            websocket,
+        )
 
         while True:
             try:
@@ -296,12 +329,15 @@ async def health_stream(
                 stats = await pipeline.get_pipeline_stats()
 
                 # Send health update
-                await manager.send_personal({
-                    "type": "health_update",
-                    "health": health,
-                    "stats": stats,
-                    "timestamp": datetime.utcnow().isoformat(),
-                }, websocket)
+                await manager.send_personal(
+                    {
+                        "type": "health_update",
+                        "health": health,
+                        "stats": stats,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    },
+                    websocket,
+                )
 
                 await asyncio.sleep(interval_seconds)
 
@@ -309,11 +345,14 @@ async def health_stream(
                 break
             except Exception as e:
                 logger.error(f"Error in health stream: {e}")
-                await manager.send_personal({
-                    "type": "error",
-                    "message": str(e),
-                    "timestamp": datetime.utcnow().isoformat(),
-                }, websocket)
+                await manager.send_personal(
+                    {
+                        "type": "error",
+                        "message": str(e),
+                        "timestamp": datetime.utcnow().isoformat(),
+                    },
+                    websocket,
+                )
                 await asyncio.sleep(interval_seconds)
 
     except WebSocketDisconnect:
@@ -325,6 +364,7 @@ async def health_stream(
 # REST endpoints for streaming status
 class StreamingStatusResponse(BaseModel):
     """Response model for streaming status"""
+
     active_connections: int
     channels: dict[str, int]
     pipeline_running: bool
@@ -360,6 +400,7 @@ async def get_streaming_status():
 
 class BroadcastRequest(BaseModel):
     """Request model for broadcasting messages"""
+
     channel: str
     message: dict[str, Any]
 
@@ -377,7 +418,7 @@ async def broadcast_message(request: BroadcastRequest):
             {
                 **request.message,
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         return {

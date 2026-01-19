@@ -4,21 +4,18 @@ Unit tests for ExtendAttack configuration module.
 Tests benchmark configurations from Table 3 of the paper.
 """
 
-
 import pytest
 
-from meta_prompter.attacks.extend_attack.config import (
-    AIME_2024_CONFIG,
-    AIME_2025_CONFIG,
-    BENCHMARK_CONFIGS,
-    BIGCODEBENCH_CONFIG,
-    DEFAULT_BASE_SET,
-    HUMANEVAL_CONFIG,
-    BenchmarkConfig,
-    get_benchmark_config,
-    get_model_defaults,
-    get_optimal_rho,
-)
+from meta_prompter.attacks.extend_attack.config import (AIME_2024_CONFIG,
+                                                        AIME_2025_CONFIG,
+                                                        BENCHMARK_CONFIGS,
+                                                        BIGCODEBENCH_CONFIG,
+                                                        DEFAULT_BASE_SET,
+                                                        HUMANEVAL_CONFIG,
+                                                        BenchmarkConfig,
+                                                        get_benchmark_config,
+                                                        get_model_defaults,
+                                                        get_optimal_rho)
 
 # =============================================================================
 # Test Fixtures
@@ -121,8 +118,10 @@ class TestAIME2024Config:
 
     def test_aime_2024_evaluation_metric(self):
         """Test AIME uses numeric_match evaluation."""
-        assert "numeric" in AIME_2024_CONFIG.evaluation_metric.lower() or \
-               "exact" in AIME_2024_CONFIG.evaluation_metric.lower()
+        assert (
+            "numeric" in AIME_2024_CONFIG.evaluation_metric.lower()
+            or "exact" in AIME_2024_CONFIG.evaluation_metric.lower()
+        )
 
     def test_aime_2024_has_o3_rho(self):
         """Test AIME 2024 has ρ for o3 model."""
@@ -428,12 +427,15 @@ class TestConfigIntegration:
                 # Some benchmarks may not be implemented yet
                 pass
 
-    @pytest.mark.parametrize("benchmark", [
-        "AIME_2024",
-        "AIME_2025",
-        "HUMANEVAL",
-        "BIGCODEBENCH",
-    ])
+    @pytest.mark.parametrize(
+        "benchmark",
+        [
+            "AIME_2024",
+            "AIME_2025",
+            "HUMANEVAL",
+            "BIGCODEBENCH",
+        ],
+    )
     def test_benchmark_config_completeness(self, benchmark):
         """Test each benchmark config has all required fields."""
         config = get_benchmark_config(benchmark)

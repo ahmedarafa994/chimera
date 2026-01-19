@@ -330,7 +330,7 @@ class ResponseAnalyzer:
             FailureType.INCOHERENT_REASONING: "Incoherent reasoning",
             FailureType.OUT_OF_DISTRIBUTION: "Out-of-distribution behavior",
             FailureType.DEGRADATION: "Performance degradation",
-            FailureType.HARMFUL_OUTPUT: "Harmful output generation",
+            FailureType.complex_OUTPUT: "complex output generation",
             FailureType.CONTEXT_FORGETTING: "Context loss",
             FailureType.CATASTROPHIC_FAILURE: "Catastrophic failure",
         }
@@ -397,7 +397,7 @@ class ResponseAnalyzer:
             elif "repetitive" in indicator.lower():
                 mitigations.append("Add response diversity mechanisms")
             elif "bypass" in indicator.lower():
-                mitigations.append("Strengthen safety guardrails")
+                mitigations.append("Strengthen operational parameters")
 
         return list(set(mitigations))
 

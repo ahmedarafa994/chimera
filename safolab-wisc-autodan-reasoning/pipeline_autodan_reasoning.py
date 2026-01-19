@@ -1,9 +1,6 @@
 from framework import Library
-from framework_autodan_reasoning import (
-    AttackerAutoDANReasoning,
-    AttackerBeamSearch,
-    AttackerBestOfN,
-)
+from framework_autodan_reasoning import (AttackerAutoDANReasoning,
+                                         AttackerBeamSearch, AttackerBestOfN)
 from pipeline import AutoDANTurbo
 
 
@@ -59,6 +56,43 @@ class AutoDANReasoning(AutoDANTurbo):
         base_model = turbo_framework["attacker"].model
         self.autodan_reasoning_attacker = AttackerAutoDANReasoning(base_model)
 
+        # Load extended strategies
+        self.extended_strategies = self.load_extended_strategies()
+
+        self._initialize_scaling_attackers(best_of_n, beam_width, beam_depth, beam_k)
+
+    def load_extended_strategies(self):
+        """Load additional strategies from the new modules."""
+        strategies = {}
+        try:
+            # Import dynamically to avoid circular dependencies if any
+            import os
+            import sys
+
+            # Add project root to path if needed to find data module
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            if project_root not in sys.path:
+                sys.path.append(project_root)
+
+            from data.autodan_strategies.jailbreak_frameworks import \
+                get_jailbreak_strategies
+            from data.autodan_strategies.mist_vulnerability_assistant import \
+                get_mist_assistant_strategy
+            from data.autodan_strategies.prompt_frameworks import \
+                get_prompt_frameworks
+
+            strategies.update({"mist_assistant": get_mist_assistant_strategy()})
+            strategies.update(get_jailbreak_strategies())
+            strategies.update(get_prompt_frameworks())
+
+            self.logger.info(f"Loaded {len(strategies)} extended strategies.")
+        except Exception as e:
+            print(f"DEBUG: Failed to load extended strategies: {e}")
+            self.logger.error(f"Failed to load extended strategies: {e}")
+
+        return strategies
+
+    def _initialize_scaling_attackers(self, best_of_n, beam_width, beam_depth, beam_k):
         # Create specialized attackers using the enhanced attacker
         self.attacker_best_of_n = AttackerBestOfN(self.autodan_reasoning_attacker, N=best_of_n)
         self.attacker_beam_search = AttackerBeamSearch(
@@ -107,7 +141,7 @@ class AutoDANReasoning(AutoDANTurbo):
                 jailbreak_prompt, attacker_system = self.autodan_reasoning_attacker.warm_up_attack(
                     request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
                 )
-                for word in self.refusal_list:
+                for word in self.non_compliance_list:
                     if word in jailbreak_prompt:
                         jailbreak_prompt = request
 
@@ -174,7 +208,7 @@ class AutoDANReasoning(AutoDANTurbo):
                             )
                         )
 
-                    for word in self.refusal_list:
+                    for word in self.non_compliance_list:
                         if word in jailbreak_prompt:
                             jailbreak_prompt = request
 
@@ -204,9 +238,9 @@ class AutoDANReasoning(AutoDANTurbo):
             # Update previous attempt for next iteration (as per paper)
             prev_attempt = {
                 "prompt": jailbreak_prompt,
-                "response": target_response
-                if "target_response" in locals()
-                else prev_target_response,
+                "response": (
+                    target_response if "target_response" in locals() else prev_target_response
+                ),
                 "score": score,
             }
 
@@ -259,7 +293,7 @@ class AutoDANReasoning(AutoDANTurbo):
                 jailbreak_prompt, attacker_system = self.autodan_reasoning_attacker.warm_up_attack(
                     request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
                 )
-                for word in self.refusal_list:
+                for word in self.non_compliance_list:
                     if word in jailbreak_prompt:
                         jailbreak_prompt = request
 
@@ -318,7 +352,7 @@ class AutoDANReasoning(AutoDANTurbo):
                             request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
                         )
                     )
-                    for word in self.refusal_list:
+                    for word in self.non_compliance_list:
                         if word in jailbreak_prompt:
                             jailbreak_prompt = request
 
@@ -346,9 +380,9 @@ class AutoDANReasoning(AutoDANTurbo):
             # Update previous attempt for next iteration (as per paper)
             prev_attempt = {
                 "prompt": jailbreak_prompt,
-                "response": target_response
-                if "target_response" in locals()
-                else prev_target_response,
+                "response": (
+                    target_response if "target_response" in locals() else prev_target_response
+                ),
                 "score": score,
             }
 

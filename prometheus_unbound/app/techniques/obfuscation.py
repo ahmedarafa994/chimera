@@ -1,9 +1,8 @@
 import base64
 
-from config import Config
-
 # ruff: noqa: ARG002
 from app.techniques.base_technique import BaseTechnique
+from config import Config
 
 
 class ObfuscationTechnique(BaseTechnique):

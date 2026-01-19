@@ -313,7 +313,7 @@ export const useAegisTelemetryStore = create<AegisTelemetryState>()(
         const timestamp = event.timestamp || new Date().toISOString();
 
         set((state) => {
-          let newState = { ...state };
+          const newState = { ...state };
 
           // Add event to history
           newState.recentEvents = addToRollingWindow(

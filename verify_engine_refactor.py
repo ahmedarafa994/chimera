@@ -5,9 +5,7 @@ import sys
 sys.path.append(os.path.join(os.getcwd(), "backend-api"))
 
 try:
-    from app.services.unified_transformation_engine import (
-        UnifiedTransformationEngine,
-    )
+    from app.services.unified_transformation_engine import UnifiedTransformationEngine
 
     print("SUCCESS: UnifiedTransformationEngine imported successfully.")
 

@@ -83,7 +83,7 @@ Remove or populate `SidebarProps` interface.
 |----|-------|----------|
 | MED-001 | Console statements in production | Multiple files (27 instances) |
 | MED-002 | Form submissions only log | `mutators/page.tsx:49`, `policies/page.tsx:46` |
-| MED-003 | dangerouslySetInnerHTML usage | `chart.tsx:83` |
+| MED-003 | complexlySetInnerHTML usage | `chart.tsx:83` |
 | MED-004 | Minimal loading states | `providers-panel.tsx:17` |
 | MED-005 | Inconsistent error handling | Various mutation handlers |
 | MED-006 | useEffect dependency issues | `llm-config-form.tsx:75` |

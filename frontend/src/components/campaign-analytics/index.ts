@@ -97,17 +97,12 @@ export {
 export {
   TechniqueEffectivenessChart,
   TechniqueEffectivenessChartSkeleton,
-  TechniqueEffectivenessChartError,
   TechniqueEffectivenessChartEmpty,
   SimpleTechniqueChart,
   TechniqueRadarChart,
   CompactTechniqueChart,
   type TechniqueEffectivenessChartProps,
-  type TechniqueChartDataPoint,
-  type ChartViewMode,
-  type SortField,
-  type SortDirection,
-  type SuccessTier,
+  type TechniqueEffectivenessData,
 } from "./charts/TechniqueEffectivenessChart";
 
 export {
@@ -332,7 +327,7 @@ export {
   TelemetryTableEmpty,
   TelemetryTableWaiting,
   type TelemetrySortField,
-  type SortDirection,
+  type TelemetrySortDirection,
   type TelemetrySortConfig,
   type TelemetryTableProps,
 } from "./TelemetryTable";

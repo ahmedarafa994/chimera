@@ -19,20 +19,51 @@ import time
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Cookie, Header, status
 from pydantic import AliasChoices, Field, field_validator
 
 from app.api.error_handlers import api_error_handler
 from app.core.unified_errors import ChimeraError
-from app.schemas.adversarial_base import (
-    OverthinkConfig,
-    ReasoningMetrics,
-    StrictBaseModel,
-)
+from app.schemas.adversarial_base import OverthinkConfig, ReasoningMetrics, StrictBaseModel
 from app.services.autodan.mousetrap import MousetrapConfig
 from app.services.autodan.service import autodan_service
+from app.services.session_service import session_service
 
 router = APIRouter()
+
+
+def _resolve_model_context(
+    payload_model: str | None,
+    payload_provider: str | None,
+    x_session_id: str | None,
+    chimera_cookie: str | None,
+) -> tuple[str, str]:
+    """
+    Resolve target model/provider using hierarchy:
+    explicit payload -> session -> global defaults, with validation/fallback.
+    """
+    session_id = x_session_id or chimera_cookie
+
+    if session_id:
+        session_provider, session_model = session_service.get_session_model(session_id)
+    else:
+        session_provider, session_model = session_service.get_default_model()
+
+    provider = payload_provider or session_provider
+    model = payload_model or session_model
+
+    is_valid, _, fallback_model = session_service.validate_model(provider, model)
+    if is_valid:
+        return provider, model
+
+    fallback_provider = provider
+    if provider not in session_service.get_master_model_list():
+        fallback_provider, _ = session_service.get_default_model()
+
+    # Best-effort fallback to keep requests working.
+    if fallback_model:
+        return fallback_provider, fallback_model
+    return session_service.get_default_model()
 
 
 # ==================== Request/Response Models ====================
@@ -77,9 +108,7 @@ class MousetrapRequest(StrictModel):
     )
 
     # Mousetrap-specific parameters
-    iterations: int | None = Field(
-        None, ge=1, le=10, description="Iterative refinement steps"
-    )
+    iterations: int | None = Field(None, ge=1, le=10, description="Iterative refinement steps")
     max_chain_length: int | None = Field(
         None, ge=3, le=15, description="Max steps in chaotic chain"
     )
@@ -210,9 +239,7 @@ class AdaptiveMousetrapRequest(StrictModel):
 
     @field_validator("target_responses")
     @classmethod
-    def _validate_responses(
-        cls, value: list[str] | None
-    ) -> list[str] | None:
+    def _validate_responses(cls, value: list[str] | None) -> list[str] | None:
         if value is None:
             return None
         if len(value) > 10:
@@ -225,13 +252,9 @@ class MousetrapReasoningStep(StrictModel):
 
     step_type: str = Field(..., description="Type of reasoning step")
     chaos_level: str = Field(..., description="Level of chaos")
-    confidence_disruption: float = Field(
-        ..., description="Amount of confidence disruption"
-    )
+    confidence_disruption: float = Field(..., description="Amount of confidence disruption")
     reasoning_path: str = Field(..., description="Reasoning path taken")
-    content_preview: str | None = Field(
-        None, description="Preview of step content"
-    )
+    content_preview: str | None = Field(None, description="Preview of step content")
 
 
 class MousetrapResponse(StrictModel):
@@ -251,50 +274,30 @@ class MousetrapResponse(StrictModel):
         description="Unique attack identifier",
     )
     success: bool = Field(..., description="Whether the attack succeeded")
-    generated_prompt: str = Field(
-        ..., description="Generated adversarial prompt"
-    )
+    generated_prompt: str = Field(..., description="Generated adversarial prompt")
     score: float = Field(
         ...,
         ge=0.0,
         le=10.0,
         description="Attack effectiveness score (0-10 scale)",
     )
-    execution_time_ms: float = Field(
-        ..., description="Execution time in milliseconds"
-    )
+    execution_time_ms: float = Field(..., description="Execution time in milliseconds")
 
     # Mousetrap-specific fields (backwards compatible)
-    prompt: str = Field(
-        ..., description="Generated prompt (alias for generated_prompt)"
-    )
-    effectiveness_score: float = Field(
-        ..., description="Effectiveness (0-1 scale)"
-    )
-    extraction_success: bool = Field(
-        ..., description="Whether extraction was successful"
-    )
-    chain_length: int = Field(
-        ..., description="Number of steps in reasoning chain"
-    )
+    prompt: str = Field(..., description="Generated prompt (alias for generated_prompt)")
+    effectiveness_score: float = Field(..., description="Effectiveness (0-1 scale)")
+    extraction_success: bool = Field(..., description="Whether extraction was successful")
+    chain_length: int = Field(..., description="Number of steps in reasoning chain")
 
     # Chaos analytics
-    chaos_progression: list[float] = Field(
-        ..., description="Chaos levels throughout chain"
-    )
+    chaos_progression: list[float] = Field(..., description="Chaos levels throughout chain")
     average_chaos: float = Field(..., description="Average chaos level")
     peak_chaos: float = Field(..., description="Peak chaos level achieved")
 
     # Performance metrics (backwards compatible)
-    latency_ms: float = Field(
-        ..., description="Latency in milliseconds"
-    )
-    model_used: str | None = Field(
-        None, description="Model used for generation"
-    )
-    provider_used: str | None = Field(
-        None, description="Provider used"
-    )
+    latency_ms: float = Field(..., description="Latency in milliseconds")
+    model_used: str | None = Field(None, description="Model used for generation")
+    provider_used: str | None = Field(None, description="Provider used")
 
     # Optional detailed information
     reasoning_steps: list[MousetrapReasoningStep] | None = Field(
@@ -326,12 +329,8 @@ class MousetrapResponse(StrictModel):
 class AdaptiveMousetrapResponse(MousetrapResponse):
     """Extended response model for adaptive Mousetrap attacks."""
 
-    adaptation_applied: bool = Field(
-        ..., description="Whether adaptation was applied"
-    )
-    technique_description: dict | None = Field(
-        None, description="Mousetrap technique description"
-    )
+    adaptation_applied: bool = Field(..., description="Whether adaptation was applied")
+    technique_description: dict | None = Field(None, description="Mousetrap technique description")
     techniques_used: list[str] = Field(
         default_factory=lambda: ["mousetrap", "adaptive"],
         description="Techniques used in attack",
@@ -348,12 +347,17 @@ class MousetrapConfigOptionsResponse(StrictModel):
 
 # ==================== API Endpoints ====================
 
+
 @router.post("/mousetrap", response_model=MousetrapResponse)
 @api_error_handler(
     "mousetrap_attack",
     default_error_message="Mousetrap attack failed",
 )
-async def run_mousetrap_attack(request: MousetrapRequest):
+async def run_mousetrap_attack(
+    request: MousetrapRequest,
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
+):
     """
     Run a Mousetrap attack using Chain of Iterative Chaos.
 
@@ -375,14 +379,26 @@ async def run_mousetrap_attack(request: MousetrapRequest):
     try:
         start_time = time.time()
 
+        # Resolve model/provider from session if not explicitly provided
+        resolved_provider, resolved_model = _resolve_model_context(
+            payload_model=request.model,
+            payload_provider=request.provider,
+            x_session_id=x_session_id,
+            chimera_cookie=chimera_session_id,
+        )
+
+        # Use resolved values if not explicitly set
+        model_name = request.model or resolved_model
+        provider = request.provider or resolved_provider
+
         # Create Mousetrap configuration from request
         config = request.to_mousetrap_config()
 
         # Run the Mousetrap attack
         result = await autodan_service.run_mousetrap_attack_async(
             request=request.request,
-            model_name=request.model,
-            provider=request.provider,
+            model_name=model_name,
+            provider=provider,
             iterations=request.iterations,
             config=config,
             strategy_context=request.strategy_context,
@@ -409,8 +425,8 @@ async def run_mousetrap_attack(request: MousetrapRequest):
             average_chaos=result["average_chaos"],
             peak_chaos=result["peak_chaos"],
             latency_ms=latency_ms,
-            model_used=request.model,
-            provider_used=request.provider,
+            model_used=model_name,
+            provider_used=provider,
             reasoning_steps=[
                 MousetrapReasoningStep(
                     step_type=step["step_type"],
@@ -445,7 +461,11 @@ async def run_mousetrap_attack(request: MousetrapRequest):
     "adaptive_mousetrap_attack",
     default_error_message="Adaptive Mousetrap attack failed",
 )
-async def run_adaptive_mousetrap_attack(request: AdaptiveMousetrapRequest):
+async def run_adaptive_mousetrap_attack(
+    request: AdaptiveMousetrapRequest,
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
+):
     """
     Run an adaptive Mousetrap attack that learns from previous responses.
 
@@ -469,11 +489,23 @@ async def run_adaptive_mousetrap_attack(request: AdaptiveMousetrapRequest):
     try:
         start_time = time.time()
 
+        # Resolve model/provider from session if not explicitly provided
+        resolved_provider, resolved_model = _resolve_model_context(
+            payload_model=request.model,
+            payload_provider=request.provider,
+            x_session_id=x_session_id,
+            chimera_cookie=chimera_session_id,
+        )
+
+        # Use resolved values if not explicitly set
+        model_name = request.model or resolved_model
+        provider = request.provider or resolved_provider
+
         # Run the adaptive Mousetrap attack
         result = await autodan_service.run_adaptive_mousetrap_attack(
             request=request.request,
-            model_name=request.model,
-            provider=request.provider,
+            model_name=model_name,
+            provider=provider,
             target_responses=request.target_responses,
             strategy_context=request.strategy_context,
         )
@@ -499,8 +531,8 @@ async def run_adaptive_mousetrap_attack(request: AdaptiveMousetrapRequest):
             average_chaos=result["average_chaos"],
             peak_chaos=result["peak_chaos"],
             latency_ms=latency_ms,
-            model_used=request.model,
-            provider_used=request.provider,
+            model_used=model_name,
+            provider_used=provider,
             adaptation_applied=result["adaptation_applied"],
             technique_description=result.get("technique_description"),
             techniques_used=["mousetrap", "adaptive"],
@@ -529,8 +561,7 @@ async def run_adaptive_mousetrap_attack(request: AdaptiveMousetrapRequest):
                 "request": request.request[:100],
                 "model": request.model,
                 "num_target_responses": (
-                    len(request.target_responses)
-                    if request.target_responses else 0
+                    len(request.target_responses) if request.target_responses else 0
                 ),
             },
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -565,9 +596,7 @@ async def get_mousetrap_config_options():
     try:
         config_options = autodan_service.get_mousetrap_config_options()
 
-        return MousetrapConfigOptionsResponse(
-            configuration_options=config_options
-        )
+        return MousetrapConfigOptionsResponse(configuration_options=config_options)
 
     except Exception as e:
         raise ChimeraError(
@@ -579,11 +608,14 @@ async def get_mousetrap_config_options():
 
 # ==================== Legacy Compatibility ====================
 
+
 @router.post("/mousetrap/simple")
 async def run_simple_mousetrap_attack(
     request: str,
     model: str | None = None,
     provider: str | None = None,
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
 ):
     """
     Simplified Mousetrap attack endpoint for basic use cases.
@@ -592,10 +624,22 @@ async def run_simple_mousetrap_attack(
     parameters and returns only the generated prompt.
     """
     try:
+        # Resolve model/provider from session if not explicitly provided
+        resolved_provider, resolved_model = _resolve_model_context(
+            payload_model=model,
+            payload_provider=provider,
+            x_session_id=x_session_id,
+            chimera_cookie=chimera_session_id,
+        )
+
+        # Use resolved values if not explicitly set
+        model_name = model or resolved_model
+        provider_name = provider or resolved_provider
+
         result = autodan_service.run_mousetrap_attack(
             request=request,
-            model_name=model,
-            provider=provider,
+            model_name=model_name,
+            provider=provider_name,
         )
 
         return {"prompt": result, "method": "mousetrap", "status": "success"}

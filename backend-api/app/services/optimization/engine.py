@@ -11,6 +11,7 @@ def _secure_random() -> float:
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
 
+
 from app.core.logging import logger
 from app.domain.houyi.interfaces import OptimizationTarget
 from app.domain.houyi.models import Chromosome, Intention, PromptInjection
@@ -121,9 +122,9 @@ class IterativePromptOptimizer:
             # Create a dummy intent_data for enhancement
             intent_data = {
                 "raw_text": framework,
-                "target_model": self.target.model_name
-                if hasattr(self.target, "model_name")
-                else "unknown",
+                "target_model": (
+                    self.target.model_name if hasattr(self.target, "model_name") else "unknown"
+                ),
             }
             enhanced = NextGenerationTransformationMixin.apply_viral_propagation(
                 framework, potency=5
@@ -190,9 +191,9 @@ class IterativePromptOptimizer:
             try:
                 intent_data = {
                     "raw_text": base_prompt,
-                    "target_model": self.target.model_name
-                    if hasattr(self.target, "model_name")
-                    else "unknown",
+                    "target_model": (
+                        self.target.model_name if hasattr(self.target, "model_name") else "unknown"
+                    ),
                     "potency": 8,  # High potency for final attack
                 }
                 enhanced_prompt = base_prompt
@@ -291,9 +292,9 @@ class IterativePromptOptimizer:
                 # Create intent_data for disruptor enhancement
                 intent_data = {
                     "raw_text": disruptor,
-                    "target_model": self.target.model_name
-                    if hasattr(self.target, "model_name")
-                    else "unknown",
+                    "target_model": (
+                        self.target.model_name if hasattr(self.target, "model_name") else "unknown"
+                    ),
                     "potency": 7,  # High potency for disruptors
                 }
                 # Apply viral propagation
@@ -375,9 +376,11 @@ class IterativePromptOptimizer:
                         # Apply extra viral propagation
                         intent_data = {
                             "raw_text": enhanced_chrom.disruptor,
-                            "target_model": self.target.model_name
-                            if hasattr(self.target, "model_name")
-                            else "unknown",
+                            "target_model": (
+                                self.target.model_name
+                                if hasattr(self.target, "model_name")
+                                else "unknown"
+                            ),
                         }
                         enhanced_chrom.disruptor = (
                             NextGenerationTransformationMixin.apply_viral_propagation(
@@ -459,9 +462,9 @@ class IterativePromptOptimizer:
                 final_prompt = f"{self.best_chromosome.framework}{self.best_chromosome.separator}{self.best_chromosome.disruptor}"
                 intent_data = {
                     "raw_text": final_prompt,
-                    "target_model": self.target.model_name
-                    if hasattr(self.target, "model_name")
-                    else "unknown",
+                    "target_model": (
+                        self.target.model_name if hasattr(self.target, "model_name") else "unknown"
+                    ),
                 }
                 enhanced = NextGenerationTransformationMixin.apply_viral_propagation(
                     final_prompt, 10

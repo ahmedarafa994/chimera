@@ -633,7 +633,7 @@ export function DistributionStatCard({
   // Calculate delta as difference between mean and median if available
   const delta = React.useMemo(() => {
     if (!stats || stats.mean === null || stats.median === null) return null;
-    if (primaryMetric === "mean" && stats.median !== undefined) {
+    if (primaryMetric === "mean" && stats.median !== undefined && stats.mean !== undefined) {
       return stats.mean - stats.median;
     }
     return null;

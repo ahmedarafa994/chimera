@@ -16,22 +16,20 @@ Key Features:
 
 import logging
 from contextvars import ContextVar, Token
-from typing import Any, Optional
+from typing import Any
 
 from app.domain.models import Selection, SelectionScope
 
 logger = logging.getLogger(__name__)
 
 # Context variables for request-scoped selection state
-_selection_context: ContextVar[Optional[Selection]] = ContextVar(
-    "provider_selection", default=None
-)
+_selection_context: ContextVar[Selection | None] = ContextVar("provider_selection", default=None)
 
-_session_id_context: ContextVar[Optional[str]] = ContextVar("session_id", default=None)
+_session_id_context: ContextVar[str | None] = ContextVar("session_id", default=None)
 
-_user_id_context: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
+_user_id_context: ContextVar[str | None] = ContextVar("user_id", default=None)
 
-_request_id_context: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
+_request_id_context: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 
 class SelectionContext:

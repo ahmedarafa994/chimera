@@ -91,6 +91,8 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
         "/redoc",
         "/favicon.ico",
+        "/api/v1/health",
+        "/api/v1/auth",  # Exclude auth
     ]
 
     def __init__(
@@ -121,6 +123,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
         if self._config_manager is None:
             try:
                 from app.core.ai_config_manager import get_ai_config_manager
+
                 self._config_manager = get_ai_config_manager()
             except ImportError:
                 logger.warning("AIConfigManager not available")
@@ -187,10 +190,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
 
     def _should_skip(self, path: str) -> bool:
         """Check if path should skip provider injection."""
-        for skip_path in self.SKIP_PATHS:
-            if path.startswith(skip_path):
-                return True
-        return False
+        return any(path.startswith(skip_path) for skip_path in self.SKIP_PATHS)
 
     def _resolve_provider_context(self, request: Request) -> ProviderContext | None:
         """
@@ -332,12 +332,11 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
                     }
 
         # Check failover chain exists if specified
-        if context.failover_chain:
-            if context.failover_chain not in config.failover_chains:
-                return {
-                    "valid": False,
-                    "reason": f"Unknown failover chain: {context.failover_chain}",
-                }
+        if context.failover_chain and context.failover_chain not in config.failover_chains:
+            return {
+                "valid": False,
+                "reason": f"Unknown failover chain: {context.failover_chain}",
+            }
 
         return {"valid": True}
 

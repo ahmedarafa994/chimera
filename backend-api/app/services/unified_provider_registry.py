@@ -272,17 +272,14 @@ class UnifiedProviderRegistry:
                 continue
 
             # Filter by capabilities
-            if with_capabilities:
-                if not with_capabilities.issubset(model.capabilities):
-                    continue
+            if with_capabilities and not with_capabilities.issubset(model.capabilities):
+                continue
 
             filtered_models.append(model)
 
         return filtered_models
 
-    def create_client(
-        self, provider_id: str, model_id: str, **kwargs: Any
-    ) -> BaseLLMClient:
+    def create_client(self, provider_id: str, model_id: str, **kwargs: Any) -> BaseLLMClient:
         """
         Create a client instance for a specific provider and model.
 

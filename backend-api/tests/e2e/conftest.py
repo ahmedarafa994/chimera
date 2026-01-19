@@ -39,7 +39,7 @@ def api_base_url():
 @pytest.fixture(scope="session")
 def frontend_base_url():
     """Base URL for frontend testing"""
-    return "http://localhost:3000"
+    return "http://localhost:3001"
 
 
 @pytest.fixture(scope="session")

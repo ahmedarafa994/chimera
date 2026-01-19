@@ -130,16 +130,13 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
 
             # Check circuit breaker if enabled
             if self._check_circuit_breaker:
-                cb_check = self._check_circuit_breaker_status(
-                    provider_check.get("provider")
-                )
+                cb_check = self._check_circuit_breaker_status(provider_check.get("provider"))
                 if cb_check["open"]:
                     self._blocked_count += 1
                     return self._create_error_response(
                         503,
                         "Service temporarily unavailable",
-                        f"Circuit breaker open for provider: "
-                        f"{provider_check.get('provider')}",
+                        f"Circuit breaker open for provider: " f"{provider_check.get('provider')}",
                     )
 
             # Check rate limits if enabled
@@ -154,9 +151,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
                         429,
                         "Rate limit exceeded",
                         rate_check.get("message", "Too many requests"),
-                        headers={
-                            "Retry-After": str(rate_check.get("retry_after", 60))
-                        },
+                        headers={"Retry-After": str(rate_check.get("retry_after", 60))},
                     )
 
             # Store provider info in request state for downstream use
@@ -183,17 +178,11 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
 
     def _should_skip(self, path: str) -> bool:
         """Check if path should skip validation entirely."""
-        for skip_path in self.SKIP_PATHS:
-            if path.startswith(skip_path):
-                return True
-        return False
+        return any(path.startswith(skip_path) for skip_path in self.SKIP_PATHS)
 
     def _needs_validation(self, path: str) -> bool:
         """Check if path needs provider validation."""
-        for provider_path in self.PROVIDER_PATHS:
-            if path.startswith(provider_path):
-                return True
-        return False
+        return any(path.startswith(provider_path) for provider_path in self.PROVIDER_PATHS)
 
     async def _check_provider_availability(self) -> dict:
         """
@@ -416,9 +405,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
             "blocked_requests": self._blocked_count,
             "fallback_requests": self._fallback_count,
             "block_rate": (
-                self._blocked_count / self._request_count
-                if self._request_count > 0
-                else 0.0
+                self._blocked_count / self._request_count if self._request_count > 0 else 0.0
             ),
         }
 
@@ -461,6 +448,7 @@ def create_validation_middleware(
             )
         )
     """
+
     class ConfiguredValidationMiddleware(ConfigValidationMiddleware):
         def __init__(self, app):
             super().__init__(

@@ -9,7 +9,7 @@ import os
 import secrets
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
@@ -18,7 +18,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from app.db.models import User, UserAPIKey
+    pass
 
 # Redis for production token revocation persistence
 try:
@@ -162,7 +162,7 @@ class TokenResponse(BaseModel):
                 "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "Bearer",
                 "expires_in": 3600,
-                "refresh_expires_in": 604800
+                "refresh_expires_in": 604800,
             }
         }
 
@@ -509,7 +509,6 @@ async def get_current_user(
     in request.state for per-user API keys. This function checks that first.
     """
     # Import Request lazily to avoid circular imports in dependency injection
-    from fastapi import Request as FastAPIRequest
 
     # Try JWT token first (only if it looks like a JWT)
     if token and _is_jwt_format(token):
@@ -522,7 +521,7 @@ async def get_current_user(
         if auth_type == "user_api_key":
             # Per-user API key was validated by middleware
             user_id = getattr(request.state, "user_id", None)
-            username = getattr(request.state, "username", "unknown")
+            getattr(request.state, "username", "unknown")
             role_str = getattr(request.state, "role", "viewer")
 
             if user_id:
@@ -653,7 +652,9 @@ class AuditLogger:
     def __init__(self):
         self.logger = logging.getLogger("audit")
 
-    def log_authentication(self, user_id: str, success: bool, method: str, ip_address: str | None = None):
+    def log_authentication(
+        self, user_id: str, success: bool, method: str, ip_address: str | None = None
+    ):
         """Log authentication attempt"""
         self.logger.info(f"AUTH: user={user_id} success={success} method={method} ip={ip_address}")
 

@@ -18,7 +18,10 @@ export async function POST(request: NextRequest) {
     // In production, you could forward to an analytics service
     // Example: await fetch(process.env.ANALYTICS_ENDPOINT, { method: 'POST', body: JSON.stringify(metric) });
 
-    console.log('[Web Vitals]', metric.name, metric.value);
+    // Use console.warn instead of console.log for lint compliance
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[Web Vitals]', metric.name, metric.value);
+    }
 
     return NextResponse.json({ success: true });
   } catch (_error) {

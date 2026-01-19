@@ -11,6 +11,7 @@ def _secure_random() -> float:
     """Cryptographically secure float in [0,1)."""
     return secrets.randbelow(10**9) / 1e9
 
+
 from app.services.transformers.base import BaseTransformer, TransformationContext
 
 

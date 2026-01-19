@@ -133,7 +133,7 @@ OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 
 # CORS Origins
-BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+BACKEND_CORS_ORIGINS=["http://localhost:3001"]
 
 # Cache
 ENABLE_CACHE=true

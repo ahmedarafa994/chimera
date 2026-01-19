@@ -19,7 +19,6 @@ import asyncio
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -33,14 +32,11 @@ from app.services.provider_resolution_service import (
     ProviderResolutionService,
     get_provider_resolution_service,
 )
-from app.services.stream_context import (
-    StreamingContext,
-    get_streaming_context,
-)
+from app.services.stream_context import StreamingContext, get_streaming_context
 from app.services.stream_formatters import (
     StreamFormat,
-    StreamResponseFormatter,
     StreamingHeadersBuilder,
+    StreamResponseFormatter,
     get_stream_formatter,
 )
 from app.services.unified_streaming_service import (
@@ -64,7 +60,7 @@ class StreamingError(Exception):
         message: str,
         error_code: str,
         status_code: int = 500,
-        stream_id: Optional[str] = None,
+        stream_id: str | None = None,
     ):
         super().__init__(message)
         self.message = message
@@ -76,7 +72,7 @@ class StreamingError(Exception):
 class ProviderNotAvailableError(StreamingError):
     """Raised when the resolved provider is not available."""
 
-    def __init__(self, provider: str, stream_id: Optional[str] = None):
+    def __init__(self, provider: str, stream_id: str | None = None):
         super().__init__(
             message=f"Provider '{provider}' is not available or not configured",
             error_code="PROVIDER_NOT_AVAILABLE",
@@ -93,7 +89,7 @@ class ModelNotFoundError(StreamingError):
         self,
         model: str,
         provider: str,
-        stream_id: Optional[str] = None,
+        stream_id: str | None = None,
     ):
         super().__init__(
             message=f"Model '{model}' not found for provider '{provider}'",
@@ -111,8 +107,8 @@ class RateLimitExceededError(StreamingError):
     def __init__(
         self,
         provider: str,
-        retry_after: Optional[int] = None,
-        stream_id: Optional[str] = None,
+        retry_after: int | None = None,
+        stream_id: str | None = None,
     ):
         super().__init__(
             message=f"Rate limit exceeded for provider '{provider}'",
@@ -130,7 +126,7 @@ class StreamInterruptedError(StreamingError):
     def __init__(
         self,
         reason: str,
-        stream_id: Optional[str] = None,
+        stream_id: str | None = None,
     ):
         super().__init__(
             message=f"Stream interrupted: {reason}",
@@ -150,30 +146,14 @@ class StreamGenerateRequest(BaseModel):
     """Request model for unified stream generation."""
 
     prompt: str = Field(..., description="The text prompt for generation")
-    system_instruction: Optional[str] = Field(
-        None, description="Optional system instruction"
-    )
-    temperature: float = Field(
-        0.7, ge=0.0, le=2.0, description="Generation temperature"
-    )
-    max_tokens: Optional[int] = Field(
-        None, ge=1, le=100000, description="Maximum tokens to generate"
-    )
-    top_p: Optional[float] = Field(
-        None, ge=0.0, le=1.0, description="Top-p sampling"
-    )
-    top_k: Optional[int] = Field(
-        None, ge=1, description="Top-k sampling"
-    )
-    stop_sequences: Optional[list[str]] = Field(
-        None, description="Stop sequences"
-    )
-    provider: Optional[str] = Field(
-        None, description="Explicit provider override"
-    )
-    model: Optional[str] = Field(
-        None, description="Explicit model override"
-    )
+    system_instruction: str | None = Field(None, description="Optional system instruction")
+    temperature: float = Field(0.7, ge=0.0, le=2.0, description="Generation temperature")
+    max_tokens: int | None = Field(None, ge=1, le=100000, description="Maximum tokens to generate")
+    top_p: float | None = Field(None, ge=0.0, le=1.0, description="Top-p sampling")
+    top_k: int | None = Field(None, ge=1, description="Top-k sampling")
+    stop_sequences: list[str] | None = Field(None, description="Stop sequences")
+    provider: str | None = Field(None, description="Explicit provider override")
+    model: str | None = Field(None, description="Explicit model override")
 
 
 class ChatMessage(BaseModel):
@@ -186,30 +166,14 @@ class ChatMessage(BaseModel):
 class StreamChatRequest(BaseModel):
     """Request model for unified stream chat."""
 
-    messages: list[ChatMessage] = Field(
-        ..., description="List of chat messages"
-    )
-    temperature: float = Field(
-        0.7, ge=0.0, le=2.0, description="Generation temperature"
-    )
-    max_tokens: Optional[int] = Field(
-        None, ge=1, le=100000, description="Maximum tokens to generate"
-    )
-    top_p: Optional[float] = Field(
-        None, ge=0.0, le=1.0, description="Top-p sampling"
-    )
-    top_k: Optional[int] = Field(
-        None, ge=1, description="Top-k sampling"
-    )
-    stop_sequences: Optional[list[str]] = Field(
-        None, description="Stop sequences"
-    )
-    provider: Optional[str] = Field(
-        None, description="Explicit provider override"
-    )
-    model: Optional[str] = Field(
-        None, description="Explicit model override"
-    )
+    messages: list[ChatMessage] = Field(..., description="List of chat messages")
+    temperature: float = Field(0.7, ge=0.0, le=2.0, description="Generation temperature")
+    max_tokens: int | None = Field(None, ge=1, le=100000, description="Maximum tokens to generate")
+    top_p: float | None = Field(None, ge=0.0, le=1.0, description="Top-p sampling")
+    top_k: int | None = Field(None, ge=1, description="Top-k sampling")
+    stop_sequences: list[str] | None = Field(None, description="Stop sequences")
+    provider: str | None = Field(None, description="Explicit provider override")
+    model: str | None = Field(None, description="Explicit model override")
 
 
 # =============================================================================
@@ -315,7 +279,7 @@ async def _raw_stream_generator(
 
 async def _unified_stream_generator(
     request: StreamGenerateRequest,
-    session_id: Optional[str],
+    session_id: str | None,
     streaming_service: UnifiedStreamingService,
     formatter: StreamResponseFormatter,
     stream_format: StreamFormat = StreamFormat.SSE,
@@ -392,7 +356,7 @@ async def _unified_stream_generator(
 
 async def _unified_chat_stream_generator(
     request: StreamChatRequest,
-    session_id: Optional[str],
+    session_id: str | None,
     streaming_service: UnifiedStreamingService,
     formatter: StreamResponseFormatter,
     stream_format: StreamFormat = StreamFormat.SSE,
@@ -404,10 +368,7 @@ async def _unified_chat_stream_generator(
     total_chunks = 0
 
     # Convert messages to list of dicts
-    messages = [
-        {"role": msg.role, "content": msg.content}
-        for msg in request.messages
-    ]
+    messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
 
     try:
         async for chunk in streaming_service.stream_chat(
@@ -606,11 +567,9 @@ async def stream_generate_raw(
 )
 async def stream_generate(
     request: StreamGenerateRequest,
-    x_session_id: Optional[str] = Header(None, alias="X-Session-Id"),
-    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
-    streaming_service: UnifiedStreamingService = Depends(
-        get_streaming_service
-    ),
+    x_session_id: str | None = Header(None, alias="X-Session-Id"),
+    x_user_id: str | None = Header(None, alias="X-User-Id"),
+    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
     resolution_service: ProviderResolutionService = Depends(
         lambda: get_provider_resolution_service()
     ),
@@ -621,7 +580,7 @@ async def stream_generate(
     """
     # Generate stream ID upfront for tracing
     stream_id = f"stream_{uuid.uuid4().hex[:12]}"
-    started_at = datetime.utcnow()
+    datetime.utcnow()
 
     try:
         # Resolve provider/model before starting stream
@@ -633,9 +592,7 @@ async def stream_generate(
         )
 
         # Validate provider availability
-        if not await _validate_provider_available(
-            resolution.provider, streaming_service
-        ):
+        if not await _validate_provider_available(resolution.provider, streaming_service):
             raise ProviderNotAvailableError(
                 provider=resolution.provider,
                 stream_id=stream_id,
@@ -651,9 +608,7 @@ async def stream_generate(
 
         # Add additional tracing headers
         headers["X-Stream-Resolution-Source"] = resolution.resolution_source
-        headers["X-Stream-Resolution-Priority"] = str(
-            resolution.resolution_priority
-        )
+        headers["X-Stream-Resolution-Priority"] = str(resolution.resolution_priority)
 
         return StreamingResponse(
             _unified_stream_generator(
@@ -749,11 +704,9 @@ async def stream_generate(
 )
 async def stream_chat(
     request: StreamChatRequest,
-    x_session_id: Optional[str] = Header(None, alias="X-Session-Id"),
-    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
-    streaming_service: UnifiedStreamingService = Depends(
-        get_streaming_service
-    ),
+    x_session_id: str | None = Header(None, alias="X-Session-Id"),
+    x_user_id: str | None = Header(None, alias="X-User-Id"),
+    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
     resolution_service: ProviderResolutionService = Depends(
         lambda: get_provider_resolution_service()
     ),
@@ -764,7 +717,7 @@ async def stream_chat(
     """
     # Generate stream ID upfront for tracing
     stream_id = f"stream_{uuid.uuid4().hex[:12]}"
-    started_at = datetime.utcnow()
+    datetime.utcnow()
 
     try:
         # Resolve provider/model before starting stream
@@ -776,9 +729,7 @@ async def stream_chat(
         )
 
         # Validate provider availability
-        if not await _validate_provider_available(
-            resolution.provider, streaming_service
-        ):
+        if not await _validate_provider_available(resolution.provider, streaming_service):
             raise ProviderNotAvailableError(
                 provider=resolution.provider,
                 stream_id=stream_id,
@@ -794,9 +745,7 @@ async def stream_chat(
 
         # Add additional tracing headers
         headers["X-Stream-Resolution-Source"] = resolution.resolution_source
-        headers["X-Stream-Resolution-Priority"] = str(
-            resolution.resolution_priority
-        )
+        headers["X-Stream-Resolution-Priority"] = str(resolution.resolution_priority)
 
         return StreamingResponse(
             _unified_chat_stream_generator(
@@ -848,9 +797,7 @@ async def stream_chat(
             headers=headers,
         )
     except Exception as e:
-        logger.error(
-            f"Unexpected error starting chat stream: {e}", exc_info=True
-        )
+        logger.error(f"Unexpected error starting chat stream: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -880,11 +827,9 @@ async def stream_chat(
 )
 async def stream_generate_jsonl(
     request: StreamGenerateRequest,
-    x_session_id: Optional[str] = Header(None, alias="X-Session-Id"),
-    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
-    streaming_service: UnifiedStreamingService = Depends(
-        get_streaming_service
-    ),
+    x_session_id: str | None = Header(None, alias="X-Session-Id"),
+    x_user_id: str | None = Header(None, alias="X-User-Id"),
+    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
     resolution_service: ProviderResolutionService = Depends(
         lambda: get_provider_resolution_service()
     ),
@@ -904,9 +849,7 @@ async def stream_generate_jsonl(
         )
 
         # Validate provider availability
-        if not await _validate_provider_available(
-            resolution.provider, streaming_service
-        ):
+        if not await _validate_provider_available(resolution.provider, streaming_service):
             raise ProviderNotAvailableError(
                 provider=resolution.provider,
                 stream_id=stream_id,
@@ -943,9 +886,7 @@ async def stream_generate_jsonl(
             },
         )
     except Exception as e:
-        logger.error(
-            f"Unexpected error starting JSONL stream: {e}", exc_info=True
-        )
+        logger.error(f"Unexpected error starting JSONL stream: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -985,9 +926,7 @@ async def _validate_provider_available(
             return False
 
         if not plugin.supports_streaming():
-            logger.warning(
-                f"Provider {provider} does not support streaming"
-            )
+            logger.warning(f"Provider {provider} does not support streaming")
             return False
 
         # Check if API key is configured
@@ -1014,9 +953,7 @@ async def _validate_provider_available(
     responses={200: {"description": "List of active streams"}},
 )
 async def get_active_streams(
-    streaming_service: UnifiedStreamingService = Depends(
-        get_streaming_service
-    ),
+    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
 ):
     """Get all currently active streaming sessions."""
     return {
@@ -1032,9 +969,7 @@ async def get_active_streams(
     responses={200: {"description": "Streaming metrics summary"}},
 )
 async def get_stream_metrics(
-    streaming_service: UnifiedStreamingService = Depends(
-        get_streaming_service
-    ),
+    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
 ):
     """Get streaming performance metrics."""
     return streaming_service.get_metrics_summary()
@@ -1048,9 +983,7 @@ async def get_stream_metrics(
 )
 async def get_recent_stream_metrics(
     limit: int = 100,
-    streaming_service: UnifiedStreamingService = Depends(
-        get_streaming_service
-    ),
+    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
 ):
     """Get metrics for recent streams."""
     return {
@@ -1070,9 +1003,7 @@ async def get_recent_stream_metrics(
 )
 async def cancel_stream(
     stream_id: str,
-    streaming_service: UnifiedStreamingService = Depends(
-        get_streaming_service
-    ),
+    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
 ):
     """Cancel an active stream by ID."""
     cancelled = await streaming_service.cancel_stream(stream_id)
@@ -1107,9 +1038,7 @@ async def get_streaming_capabilities(
     for provider in providers:
         capabilities[provider] = {
             "streaming_supported": service.supports_streaming(provider),
-            "token_counting_supported": service.supports_token_counting(
-                provider
-            ),
+            "token_counting_supported": service.supports_token_counting(provider),
         }
 
     return {

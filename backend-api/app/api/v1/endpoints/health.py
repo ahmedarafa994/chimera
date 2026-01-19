@@ -426,9 +426,7 @@ async def health_check() -> HealthResponse:
     # FIX: Changed to dict[str, Any] to allow optional proxy values
     checks: dict[str, Any] = {
         "database": any(c.name == "database" and c.status == "healthy" for c in components),
-        "redis": any(
-            c.name == "redis" and c.status in ["healthy", "degraded"] for c in components
-        ),
+        "redis": any(c.name == "redis" and c.status in ["healthy", "degraded"] for c in components),
         "llm_providers": all(
             c.status != "unhealthy" for c in components if c.name.startswith("llm_provider_")
         ),
@@ -871,12 +869,10 @@ async def check_providers_health() -> AIProviderHealthResponse:
 
         # Determine overall status
         unhealthy_providers = [
-            pid for pid, info in providers_health.items()
-            if info.get("status") == "unhealthy"
+            pid for pid, info in providers_health.items() if info.get("status") == "unhealthy"
         ]
         degraded_providers = [
-            pid for pid, info in providers_health.items()
-            if info.get("status") == "degraded"
+            pid for pid, info in providers_health.items() if info.get("status") == "degraded"
         ]
 
         if unhealthy_providers:
@@ -936,10 +932,7 @@ async def check_config_health() -> ConfigHealthResponse:
     """
     try:
         from app.core.ai_config_manager import get_ai_config_manager
-        from app.core.config_validator import (
-            ValidationSeverity,
-            get_config_validator,
-        )
+        from app.core.config_validator import ValidationSeverity, get_config_validator
 
         config_manager = get_ai_config_manager()
         config_validator = get_config_validator()
@@ -956,13 +949,9 @@ async def check_config_health() -> ConfigHealthResponse:
         # Get validation results
         validation_results = config_validator.validate_all()
 
-        errors = [
-            r.message for r in validation_results
-            if r.severity == ValidationSeverity.ERROR
-        ]
+        errors = [r.message for r in validation_results if r.severity == ValidationSeverity.ERROR]
         warnings = [
-            r.message for r in validation_results
-            if r.severity == ValidationSeverity.WARNING
+            r.message for r in validation_results if r.severity == ValidationSeverity.WARNING
         ]
 
         config_valid = len(errors) == 0
@@ -1012,9 +1001,7 @@ class FallbackStatusResponse(BaseModel):
     success_rate: float = Field(description="Fallback success rate")
     provider_health: dict[str, Any] = Field(description="Per-provider health")
     fallback_reasons: dict[str, int] = Field(description="Failure reasons")
-    skipped_providers: list[str] = Field(
-        default=[], description="Providers being skipped"
-    )
+    skipped_providers: list[str] = Field(default=[], description="Providers being skipped")
 
 
 @router.get(
@@ -1045,17 +1032,11 @@ async def check_fallback_status() -> FallbackStatusResponse:
         success_rate = successful / total if total > 0 else 1.0
 
         # Get list of skipped providers
-        skipped = [
-            pid for pid, info in provider_health.items()
-            if info.get("should_skip", False)
-        ]
+        skipped = [pid for pid, info in provider_health.items() if info.get("should_skip", False)]
 
         # Determine status
         failed = stats.get("failed_fallbacks", 0)
-        if failed > successful and total > 0 or skipped:
-            status = "degraded"
-        else:
-            status = "healthy"
+        status = "degraded" if (failed > successful and total > 0) or skipped else "healthy"
 
         return FallbackStatusResponse(
             status=status,
@@ -1092,9 +1073,7 @@ class StartupHealthResponse(BaseModel):
     minimum_requirements_met: bool = Field(description="Min requirements met")
     critical_errors: list[str] = Field(default=[], description="Critical errors")
     warnings: list[str] = Field(default=[], description="Warnings")
-    startup_time_ms: float | None = Field(
-        None, description="Startup validation time"
-    )
+    startup_time_ms: float | None = Field(None, description="Startup validation time")
 
 
 @router.get(
@@ -1236,3 +1215,39 @@ async def run_startup_validation(
             warnings=[],
             startup_time_ms=None,
         )
+
+
+@router.get("/integration/stats", tags=["integration"])
+async def integration_stats_v1():
+    """Alias for integration stats under /api/v1."""
+    stats: dict[str, Any] = {}
+
+    try:
+        from app.core.event_bus import event_bus
+
+        stats["event_bus"] = event_bus.get_stats()
+    except ImportError:
+        stats["event_bus"] = {"error": "not_available"}
+
+    try:
+        from app.core.task_queue import task_queue
+
+        stats["task_queue"] = task_queue.get_stats()
+    except ImportError:
+        stats["task_queue"] = {"error": "not_available"}
+
+    try:
+        from app.services.webhook_service import webhook_service
+
+        stats["webhook_service"] = webhook_service.get_stats()
+    except ImportError:
+        stats["webhook_service"] = {"error": "not_available"}
+
+    try:
+        from app.middleware.idempotency import get_idempotency_store
+
+        stats["idempotency"] = get_idempotency_store().get_stats()
+    except ImportError:
+        stats["idempotency"] = {"error": "not_available"}
+
+    return stats

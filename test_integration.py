@@ -1,4 +1,3 @@
-
 import requests
 
 BACKEND_URL = "http://localhost:8001"
@@ -44,7 +43,7 @@ print("\n[4] Testing CORS headers...")
 try:
     r = requests.options(
         f"{BACKEND_URL}/api/v1/providers",
-        headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"},
+        headers={"Origin": "http://localhost:3001", "Access-Control-Request-Method": "GET"},
         timeout=5,
     )
     print(f"   Status: {r.status_code}")

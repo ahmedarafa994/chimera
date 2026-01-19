@@ -2,7 +2,7 @@
   "security_validation_report": {
     "timestamp": "2025-12-01 03:20:30",
     "system": "Project Chimera Backend API",
-    "base_url": "http://localhost:8000",
+    "base_url": "http://localhost:8001",
     "summary": {
       "total_tests": 18,
       "passed_tests": 5,

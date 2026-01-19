@@ -19,6 +19,8 @@ import {
   ModelSelectionResponse,
   CurrentSelectionResponse,
   RateLimitResponse,
+  ProviderStatus,
+  CircuitBreakerState,
   ProviderHealthStatus,
   AllProvidersHealthResponse,
   getOrCreateSessionId,
@@ -45,6 +47,101 @@ function getSessionHeaders(): Record<string, string> {
 }
 
 // =============================================================================
+// Mapping Helpers
+// =============================================================================
+
+type BackendProviderInfo = {
+  provider: string;
+  display_name?: string;
+  status?: string;
+  is_healthy?: boolean;
+  models?: string[];
+  default_model?: string | null;
+  latency_ms?: number | null;
+};
+
+type BackendProviderModelsResponse = {
+  provider: string;
+  display_name?: string;
+  models: Array<{
+    id: string;
+    name: string;
+    description?: string | null;
+    max_tokens?: number;
+    is_default?: boolean;
+    tier?: string;
+  }>;
+  default_model?: string | null;
+  count: number;
+};
+
+type BackendCurrentSelection = {
+  provider?: string;
+  model?: string;
+  display_name?: string;
+  session_id?: string | null;
+  is_default?: boolean;
+};
+
+type BackendRateLimitInfo = {
+  allowed: boolean;
+  remaining_requests: number;
+  remaining_tokens: number;
+  reset_at: string;
+  retry_after_seconds?: number | null;
+  limit_type?: string | null;
+  tier?: string;
+  fallback_provider?: string | null;
+};
+
+function mapProviderStatus(status?: string, isHealthy?: boolean): ProviderStatus {
+  if (status === "rate_limited") return ProviderStatus.RATE_LIMITED;
+  if (status === "degraded") return ProviderStatus.DEGRADED;
+  if (status === "unavailable") return ProviderStatus.UNAVAILABLE;
+  if (status === "unknown") return ProviderStatus.UNKNOWN;
+  if (typeof isHealthy === "boolean") {
+    return isHealthy ? ProviderStatus.AVAILABLE : ProviderStatus.UNAVAILABLE;
+  }
+  return ProviderStatus.AVAILABLE;
+}
+
+function mapProviderInfo(provider: BackendProviderInfo): ProviderInfo {
+  return {
+    provider_id: provider.provider,
+    name: provider.display_name || provider.provider,
+    status: mapProviderStatus(provider.status, provider.is_healthy),
+    is_enabled: true,
+    supported_model_types: ["chat"],
+    metadata: {
+      default_model: provider.default_model,
+      latency_ms: provider.latency_ms,
+    },
+  };
+}
+
+function mapModelInfo(
+  providerId: string,
+  model: BackendProviderModelsResponse["models"][number]
+): ModelInfo {
+  return {
+    model_id: model.id,
+    name: model.name || model.id,
+    description: model.description || undefined,
+    provider_id: providerId,
+    model_type: "chat",
+    context_window: model.max_tokens,
+    max_output_tokens: model.max_tokens,
+    supports_streaming: true,
+    supports_function_calling: false,
+    supports_vision: false,
+    metadata: {
+      tier: model.tier,
+      is_default: model.is_default,
+    },
+  };
+}
+
+// =============================================================================
 // Provider API Methods
 // =============================================================================
 
@@ -52,13 +149,23 @@ function getSessionHeaders(): Record<string, string> {
  * List all available providers
  */
 export async function listAvailableProviders(): Promise<AvailableProvidersResponse> {
-  const response = await enhancedApi.get<AvailableProvidersResponse>(
+  const response = await enhancedApi.get<{
+    providers: BackendProviderInfo[];
+    count: number;
+    default_provider?: string;
+    default_model?: string;
+  }>(
     `${PROVIDERS_BASE_PATH}/available`,
     {
       headers: getSessionHeaders(),
     }
   );
-  return response;
+  const providers = response.providers.map(mapProviderInfo);
+  return {
+    providers,
+    total_count: response.count || providers.length,
+    timestamp: new Date().toISOString(),
+  };
 }
 
 /**
@@ -67,13 +174,19 @@ export async function listAvailableProviders(): Promise<AvailableProvidersRespon
 export async function getProviderModels(
   providerId: string
 ): Promise<ProviderModelsResponse> {
-  const response = await enhancedApi.get<ProviderModelsResponse>(
+  const response = await enhancedApi.get<BackendProviderModelsResponse>(
     `${PROVIDERS_BASE_PATH}/${encodeURIComponent(providerId)}/models`,
     {
       headers: getSessionHeaders(),
     }
   );
-  return response;
+  const models = response.models.map((model) => mapModelInfo(response.provider, model));
+  return {
+    provider_id: response.provider,
+    models,
+    total_count: response.count,
+    last_updated: new Date().toISOString(),
+  };
 }
 
 /**
@@ -82,13 +195,13 @@ export async function getProviderModels(
 export async function getProviderInfo(
   providerId: string
 ): Promise<ProviderInfo> {
-  const response = await enhancedApi.get<ProviderInfo>(
+  const response = await enhancedApi.get<BackendProviderInfo>(
     `${PROVIDERS_BASE_PATH}/${encodeURIComponent(providerId)}`,
     {
       headers: getSessionHeaders(),
     }
   );
-  return response;
+  return mapProviderInfo(response);
 }
 
 // =============================================================================
@@ -103,27 +216,52 @@ export async function selectModel(
 ): Promise<ModelSelectionResponse> {
   const sessionId = request.session_id || getOrCreateSessionId();
 
-  const response = await enhancedApi.post<ModelSelectionResponse>(
+  const response = await enhancedApi.post<{
+    success: boolean;
+    message?: string;
+    provider: string;
+    model: string;
+    session_id: string;
+  }>(
     `${PROVIDERS_BASE_PATH}/select`,
-    { ...request, session_id: sessionId },
+    {
+      provider: request.provider_id,
+      model: request.model_id,
+      session_id: sessionId,
+      reason: request.reason,
+    },
     {
       headers: getSessionHeaders(),
     }
   );
-  return response;
+  return {
+    success: response.success,
+    session_id: response.session_id,
+    provider_id: response.provider,
+    model_id: response.model,
+    selected_at: new Date().toISOString(),
+    message: response.message,
+  };
 }
 
 /**
  * Get the current model selection for the session
  */
 export async function getCurrentSelection(): Promise<CurrentSelectionResponse> {
-  const response = await enhancedApi.get<CurrentSelectionResponse>(
+  const response = await enhancedApi.get<BackendCurrentSelection>(
     `${PROVIDERS_BASE_PATH}/current`,
     {
       headers: getSessionHeaders(),
     }
   );
-  return response;
+  const hasSelection = !!response.provider && !!response.model;
+  return {
+    has_selection: hasSelection,
+    session_id: response.session_id || undefined,
+    provider_id: response.provider || undefined,
+    model_id: response.model || undefined,
+    selected_at: new Date().toISOString(),
+  };
 }
 
 /**
@@ -150,7 +288,7 @@ export async function getRateLimitInfo(
   providerId: string,
   modelId: string
 ): Promise<RateLimitResponse> {
-  const response = await enhancedApi.get<RateLimitResponse>(
+  const response = await enhancedApi.get<BackendRateLimitInfo>(
     `${PROVIDERS_BASE_PATH}/rate-limit`,
     {
       headers: getSessionHeaders(),
@@ -160,7 +298,29 @@ export async function getRateLimitInfo(
       },
     }
   );
-  return response;
+  return {
+    rate_limit: {
+      provider_id: providerId,
+      model_id: modelId,
+      is_rate_limited: !response.allowed,
+      requests_remaining: response.remaining_requests,
+      tokens_remaining: response.remaining_tokens,
+      reset_at: response.reset_at,
+      retry_after_seconds: response.retry_after_seconds || undefined,
+      tier: response.tier,
+    },
+    fallback_suggestions: response.fallback_provider
+      ? [
+          {
+            provider_id: response.fallback_provider,
+            model_id: "",
+            reason: "Rate limit fallback",
+            estimated_availability: "unknown",
+            compatibility_score: 0.5,
+          },
+        ]
+      : undefined,
+  };
 }
 
 // =============================================================================
@@ -173,26 +333,73 @@ export async function getRateLimitInfo(
 export async function getProviderHealth(
   providerId: string
 ): Promise<ProviderHealthStatus> {
-  const response = await enhancedApi.get<ProviderHealthStatus>(
+  const response = await enhancedApi.get<{
+    provider?: string;
+    is_healthy?: boolean;
+    last_check?: string;
+    latency_ms?: number | null;
+    error_message?: string | null;
+    consecutive_failures?: number;
+  }>(
     `${PROVIDERS_BASE_PATH}/${encodeURIComponent(providerId)}/health`,
     {
       headers: getSessionHeaders(),
     }
   );
-  return response;
+  return {
+    provider_id: response.provider || providerId,
+    status: response.is_healthy ? ProviderStatus.AVAILABLE : ProviderStatus.UNAVAILABLE,
+    circuit_breaker_state: CircuitBreakerState.CLOSED,
+    last_success: response.is_healthy ? response.last_check : undefined,
+    last_failure: response.is_healthy ? undefined : response.last_check,
+    failure_count: response.consecutive_failures || 0,
+    success_rate: response.is_healthy ? 1 : 0,
+    avg_latency_ms: response.latency_ms || undefined,
+    checked_at: response.last_check || new Date().toISOString(),
+  };
 }
 
 /**
  * Get health status for all providers
  */
 export async function getAllProvidersHealth(): Promise<AllProvidersHealthResponse> {
-  const response = await enhancedApi.get<AllProvidersHealthResponse>(
+  const response = await enhancedApi.get<{
+    providers: Array<{
+      provider: string;
+      is_healthy: boolean;
+      last_check: string;
+      latency_ms?: number | null;
+      error_message?: string | null;
+      consecutive_failures?: number;
+    }>;
+    timestamp: string;
+  }>(
     `${PROVIDERS_BASE_PATH}/health`,
     {
       headers: getSessionHeaders(),
     }
   );
-  return response;
+  const providers = response.providers.map((provider) => ({
+    provider_id: provider.provider,
+    status: provider.is_healthy ? ProviderStatus.AVAILABLE : ProviderStatus.UNAVAILABLE,
+    circuit_breaker_state: CircuitBreakerState.CLOSED,
+    last_success: provider.is_healthy ? provider.last_check : undefined,
+    last_failure: provider.is_healthy ? undefined : provider.last_check,
+    failure_count: provider.consecutive_failures || 0,
+    success_rate: provider.is_healthy ? 1 : 0,
+    avg_latency_ms: provider.latency_ms || undefined,
+    checked_at: provider.last_check,
+  }));
+
+  const systemHealth = providers.some((p) => p.status !== ProviderStatus.AVAILABLE)
+    ? "degraded"
+    : "healthy";
+
+  return {
+    providers,
+    system_health: systemHealth,
+    timestamp: response.timestamp,
+  };
 }
 
 // =============================================================================

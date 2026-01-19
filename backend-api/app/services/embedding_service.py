@@ -172,6 +172,7 @@ class EmbeddingService:
         if self._config_manager is None:
             try:
                 from app.core.service_registry import get_ai_config_manager
+
                 self._config_manager = get_ai_config_manager()
             except Exception as e:
                 logger.warning(f"Failed to get AI config manager: {e}")
@@ -329,9 +330,7 @@ class EmbeddingService:
 
         # Generate embedding
         try:
-            embedding = await self._generate_embedding_impl(
-                text, actual_provider, actual_model
-            )
+            embedding = await self._generate_embedding_impl(text, actual_provider, actual_model)
 
             # Update stats
             self._stats.total_embeddings_generated += 1
@@ -344,8 +343,7 @@ class EmbeddingService:
             self._stats.total_tokens_used += tokens
             if actual_provider in EMBEDDING_MODELS:
                 model_info = EMBEDDING_MODELS[actual_provider].get(
-                    actual_model or EMBEDDING_MODELS[actual_provider].get("default", ""),
-                    {}
+                    actual_model or EMBEDDING_MODELS[actual_provider].get("default", ""), {}
                 )
                 price = model_info.get("price_per_1k_tokens", 0)
                 self._stats.total_cost += (tokens / 1000) * price
@@ -435,7 +433,7 @@ class EmbeddingService:
                         cache_key = self._get_cache_key(
                             texts_to_generate[indices_to_generate.index(i)],
                             actual_provider,
-                            actual_model
+                            actual_model,
                         )
                         self._add_to_cache(cache_key, embedding, actual_provider, actual_model)
 
@@ -558,16 +556,10 @@ class EmbeddingService:
             return await self._openai_batch_embedding(texts, model)
         elif provider in ("gemini", "google"):
             # Gemini doesn't support batch, generate individually
-            return [
-                await self._gemini_embedding(text, model)
-                for text in texts
-            ]
+            return [await self._gemini_embedding(text, model) for text in texts]
         else:
             # Generate individually as fallback
-            return [
-                await self._generate_embedding_impl(text, provider, model)
-                for text in texts
-            ]
+            return [await self._generate_embedding_impl(text, provider, model) for text in texts]
 
     async def _openai_embedding(self, text: str, model: str | None) -> list[float]:
         """Generate embedding using OpenAI."""
@@ -576,9 +568,7 @@ class EmbeddingService:
         try:
             import openai
 
-            client = openai.AsyncOpenAI(
-                api_key=os.getenv("OPENAI_API_KEY")
-            )
+            client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
             response = await client.embeddings.create(
                 input=text,
@@ -605,9 +595,7 @@ class EmbeddingService:
         try:
             import openai
 
-            client = openai.AsyncOpenAI(
-                api_key=os.getenv("OPENAI_API_KEY")
-            )
+            client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
             response = await client.embeddings.create(
                 input=texts,
@@ -784,7 +772,8 @@ class EmbeddingService:
         """Remove expired cache entries. Returns count of removed entries."""
         current_time = time.time()
         expired_keys = [
-            key for key, entry in self._embedding_cache.items()
+            key
+            for key, entry in self._embedding_cache.items()
             if current_time - entry.created_at > self._cache_ttl
         ]
 

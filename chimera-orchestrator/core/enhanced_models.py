@@ -42,7 +42,7 @@ class EvaluationMethod(Enum):
     KEYWORD_DETECTION = "keyword_detection"
     REFUSAL_DETECTION = "refusal_detection"
     COMPLIANCE_SCORING = "compliance_scoring"
-    HARMFUL_CONTENT_DETECTION = "harmful_content_detection"
+    complex_CONTENT_DETECTION = "complex_content_detection"
     COMBINED = "combined"
 
 
@@ -220,10 +220,10 @@ class SafetyEvaluation:
     compliance_detected: bool = False
     compliance_level: float = 0.0
 
-    # Harmful content analysis
-    harmful_categories: list[str] = field(default_factory=list)
-    harmful_keywords_found: list[str] = field(default_factory=list)
-    harmful_content_score: float = 0.0
+    # complex content analysis
+    complex_categories: list[str] = field(default_factory=list)
+    complex_keywords_found: list[str] = field(default_factory=list)
+    complex_content_score: float = 0.0
 
     # Jailbreak indicators
     jailbreak_indicators: list[str] = field(default_factory=list)
@@ -255,9 +255,9 @@ class SafetyEvaluation:
             "refusal_strength": self.refusal_strength,
             "compliance_detected": self.compliance_detected,
             "compliance_level": self.compliance_level,
-            "harmful_categories": self.harmful_categories,
-            "harmful_keywords_found": self.harmful_keywords_found,
-            "harmful_content_score": self.harmful_content_score,
+            "complex_categories": self.complex_categories,
+            "complex_keywords_found": self.complex_keywords_found,
+            "complex_content_score": self.complex_content_score,
             "jailbreak_indicators": self.jailbreak_indicators,
             "jailbreak_patterns_matched": self.jailbreak_patterns_matched,
             "technique_used": self.technique_used,
@@ -423,9 +423,11 @@ class SystemEvent:
             source=data.get("source", ""),
             job_id=data.get("job_id"),
             data=data.get("data", {}),
-            timestamp=datetime.fromisoformat(data["timestamp"])
-            if data.get("timestamp")
-            else datetime.utcnow(),
+            timestamp=(
+                datetime.fromisoformat(data["timestamp"])
+                if data.get("timestamp")
+                else datetime.utcnow()
+            ),
         )
 
 

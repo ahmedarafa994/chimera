@@ -31,10 +31,14 @@ class LoadTestConfig:
     def to_cli_args(self) -> list[str]:
         """Convert config to Locust CLI arguments."""
         args = [
-            "--host", self.host,
-            "--users", str(self.users),
-            "--spawn-rate", str(self.spawn_rate),
-            "--run-time", self.run_time,
+            "--host",
+            self.host,
+            "--users",
+            str(self.users),
+            "--spawn-rate",
+            str(self.spawn_rate),
+            "--run-time",
+            self.run_time,
         ]
 
         if self.headless:

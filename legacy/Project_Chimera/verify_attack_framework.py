@@ -5,28 +5,24 @@ import sys
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from transformer_engine import (
-    AcademicResearchEngine,
-    AdvancedObfuscationEngine,
-    AgenticExploitationEngine,
-    ContextualInceptionEngine,
-    DocumentAuthorityEngine,
-    EvilConfidantEngine,
-    GeminiIntentExpansionEngine,
-    GovernmentContractorEngine,
-    HierarchicalPersonaEngine,
-    LogicalInferenceEngine,
-    MultiLayerContextEngine,
-    MultimodalJailbreakEngine,
-    MultiStageEncodingEngine,
-    PayloadFragmentationEngine,
-    ProfessionalAuthorityEngine,
-    PromptLeakingEngine,
-    SandwichAttackEngine,
-    SemanticObfuscationEngine,
-    SubtlePersuasionEngine,
-    UtilitarianReasoningEngine,
-)
+from transformer_engine import (AcademicResearchEngine,
+                                AdvancedObfuscationEngine,
+                                AgenticExploitationEngine,
+                                ContextualInceptionEngine,
+                                DocumentAuthorityEngine, EvilConfidantEngine,
+                                GeminiIntentExpansionEngine,
+                                GovernmentContractorEngine,
+                                HierarchicalPersonaEngine,
+                                LogicalInferenceEngine,
+                                MultiLayerContextEngine,
+                                MultimodalJailbreakEngine,
+                                MultiStageEncodingEngine,
+                                PayloadFragmentationEngine,
+                                ProfessionalAuthorityEngine,
+                                PromptLeakingEngine, SandwichAttackEngine,
+                                SemanticObfuscationEngine,
+                                SubtlePersuasionEngine,
+                                UtilitarianReasoningEngine)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("VerifyAttackFramework")

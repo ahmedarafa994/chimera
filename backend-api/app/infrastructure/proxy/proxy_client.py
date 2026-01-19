@@ -181,9 +181,7 @@ class ProxyClient:
                             "User-Agent": "Chimera-ProxyClient/1.0",
                         },
                     )
-                    self._health_status.connection_state = (
-                        ProxyConnectionState.CONNECTED
-                    )
+                    self._health_status.connection_state = ProxyConnectionState.CONNECTED
                     logger.debug("ProxyClient HTTP client created with connection pool")
         return self._client
 
@@ -197,7 +195,7 @@ class ProxyClient:
 
     def _calculate_retry_delay(self, attempt: int) -> float:
         """Calculate exponential backoff delay for retry."""
-        delay = self.DEFAULT_RETRY_BASE_DELAY * (2 ** attempt)
+        delay = self.DEFAULT_RETRY_BASE_DELAY * (2**attempt)
         return min(delay, self.DEFAULT_RETRY_MAX_DELAY)
 
     async def send_request(
@@ -253,8 +251,7 @@ class ProxyClient:
                 if response.status_code == 200:
                     result = response.json()
                     logger.debug(
-                        f"Proxy request successful: {request_id}, "
-                        f"latency={latency_ms:.2f}ms"
+                        f"Proxy request successful: {request_id}, " f"latency={latency_ms:.2f}ms"
                     )
                     return result
 
@@ -350,9 +347,7 @@ class ProxyClient:
                 self._health_status.latency_ms = latency_ms
                 self._health_status.error = None
                 self._health_status.consecutive_failures = 0
-                self._health_status.connection_state = (
-                    ProxyConnectionState.CONNECTED
-                )
+                self._health_status.connection_state = ProxyConnectionState.CONNECTED
                 logger.debug(f"Proxy health check passed: latency={latency_ms:.2f}ms")
             else:
                 self._health_status.is_healthy = False
@@ -387,9 +382,7 @@ class ProxyClient:
             "request_count": self._request_count,
             "error_count": self._error_count,
             "error_rate": (
-                self._error_count / self._request_count
-                if self._request_count > 0
-                else 0.0
+                self._error_count / self._request_count if self._request_count > 0 else 0.0
             ),
             "is_healthy": self._health_status.is_healthy,
             "connection_state": self._health_status.connection_state.value,

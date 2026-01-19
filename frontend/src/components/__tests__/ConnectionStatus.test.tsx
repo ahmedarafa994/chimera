@@ -30,14 +30,14 @@ vi.mock('@/lib/api/client', () => ({
     mutation: vi.fn(() => Promise.resolve({ data: {} })),
     utils: {
       getCurrentMode: vi.fn(() => 'development'),
-      getCurrentUrl: vi.fn(() => 'http://localhost:8000'),
+      getCurrentUrl: vi.fn(() => 'http://localhost:8001'),
     },
   },
 }));
 
 vi.mock('@/lib/api/config', () => ({
   getApiConfig: vi.fn(() => ({
-    baseURL: 'http://localhost:8000',
+    baseURL: 'http://localhost:8001',
     aiProvider: 'google',
   })),
 }));

@@ -4,10 +4,12 @@ Simple Model Selection Test
 Quick test to verify model selection context works
 """
 
-import requests
 import time
 
+import requests
+
 BASE_URL = "http://localhost:8001"
+
 
 def wait_for_server(max_attempts=20):
     """Wait for server to be ready"""
@@ -23,13 +25,14 @@ def wait_for_server(max_attempts=20):
     print("✗ Server not responding")
     return False
 
+
 def main():
     if not wait_for_server():
         return
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("MODEL SELECTION TEST")
-    print("="*60)
+    print("=" * 60)
 
     # Test 1: Get stats
     print("\n1. Provider Stats:")
@@ -71,9 +74,10 @@ def main():
         for m in models[:3]:
             print(f"   - {m['id']}: {m['name']}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ Test Complete!")
-    print("="*60)
+    print("=" * 60)
+
 
 if __name__ == "__main__":
     main()

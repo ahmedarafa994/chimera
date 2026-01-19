@@ -610,9 +610,4 @@ export function InlineStatisticsSummary({
 
 export default StatisticsSummaryPanel;
 
-// Export sub-components for flexibility
-export {
-  StatisticsSummaryPanelSkeleton,
-  StatisticsSummaryPanelError,
-  StatisticsSummaryPanelEmpty,
-};
+// Note: Sub-components are already exported where they're defined above

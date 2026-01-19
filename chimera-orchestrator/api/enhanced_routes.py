@@ -9,13 +9,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import (
-    FastAPI,
-    HTTPException,
-    Query,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -266,9 +260,9 @@ def create_enhanced_app(
                 aid: status.to_dict()
                 for aid, status in app_state.orchestrator.get_agent_statuses().items()
             },
-            "queue_sizes": app_state.message_queue.get_all_queue_sizes()
-            if app_state.message_queue
-            else {},
+            "queue_sizes": (
+                app_state.message_queue.get_all_queue_sizes() if app_state.message_queue else {}
+            ),
             "dataset_stats": await app_state.orchestrator.get_dataset_stats(),
         }
 
@@ -326,9 +320,11 @@ def create_enhanced_app(
         return {
             "techniques": app_state.generator.list_techniques(),
             "patterns": app_state.generator.list_patterns(),
-            "personas": list(app_state.generator.personas.keys())
-            if hasattr(app_state.generator, "personas")
-            else [],
+            "personas": (
+                list(app_state.generator.personas.keys())
+                if hasattr(app_state.generator, "personas")
+                else []
+            ),
         }
 
     # ========================================================================
@@ -442,7 +438,7 @@ def create_enhanced_app(
                 "safety_score": result.safety_score,
                 "confidence": result.confidence,
                 "refusal_detected": result.refusal_detected,
-                "harmful_categories": result.harmful_categories,
+                "complex_categories": result.complex_categories,
                 "technique_effectiveness": result.technique_effectiveness,
                 "recommendations": result.recommendations,
                 "detailed_analysis": result.detailed_analysis,
@@ -586,9 +582,11 @@ def create_enhanced_app(
                 {
                     "job_id": j.id,
                     "status": j.state.value,
-                    "query": j.original_query[:50] + "..."
-                    if len(j.original_query) > 50
-                    else j.original_query,
+                    "query": (
+                        j.original_query[:50] + "..."
+                        if len(j.original_query) > 50
+                        else j.original_query
+                    ),
                     "target_models": j.target_models,
                     "jailbreak_rate": j.jailbreak_rate,
                     "created_at": j.created_at.isoformat() if j.created_at else None,
@@ -647,9 +645,9 @@ def create_enhanced_app(
             "pipeline": app_state.orchestrator.get_pipeline_metrics(),
             "generator": app_state.generator._generation_metrics if app_state.generator else {},
             "executor": app_state.executor.get_execution_metrics() if app_state.executor else {},
-            "evaluator": app_state.evaluator.get_evaluation_metrics()
-            if app_state.evaluator
-            else {},
+            "evaluator": (
+                app_state.evaluator.get_evaluation_metrics() if app_state.evaluator else {}
+            ),
         }
 
     @app.get("/api/v2/metrics/techniques")

@@ -20,6 +20,7 @@ try:
     from ddtrace.contrib.redis import patch as redis_patch
     from ddtrace.contrib.requests import patch as requests_patch
     from ddtrace.contrib.sqlite3 import patch as sqlite3_patch
+
     DATADOG_AVAILABLE = True
 except ImportError:
     DATADOG_AVAILABLE = False
@@ -29,6 +30,7 @@ try:
     import newrelic.agent
     from newrelic.api.function_trace import function_trace
     from newrelic.api.transaction import current_transaction
+
     NEW_RELIC_AVAILABLE = True
 except ImportError:
     NEW_RELIC_AVAILABLE = False
@@ -36,6 +38,7 @@ except ImportError:
 # Generic APM metrics
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -48,6 +51,7 @@ from profiling_config import MetricType, config
 @dataclass
 class APMMetrics:
     """APM-specific metrics"""
+
     timestamp: datetime
     service_name: str
     trace_id: str | None
@@ -58,9 +62,11 @@ class APMMetrics:
     custom_metrics: dict[str, Any]
     tags: dict[str, str]
 
+
 @dataclass
 class APMAlert:
     """APM alert data"""
+
     alert_id: str
     timestamp: datetime
     severity: str  # critical, warning, info
@@ -70,6 +76,7 @@ class APMAlert:
     service: str
     description: str
     recommendations: list[str]
+
 
 class DataDogIntegration:
     """DataDog APM integration"""
@@ -103,7 +110,7 @@ class DataDogIntegration:
             ddtrace.config.tags = {
                 "system": "chimera",
                 "component": "ai-optimization",
-                "deployment.environment": config.environment.value
+                "deployment.environment": config.environment.value,
             }
 
             print("DataDog APM configured")
@@ -132,8 +139,9 @@ class DataDogIntegration:
                 span.set_tag("error.type", type(e).__name__)
                 raise
 
-    def trace_llm_request(self, provider: str, model: str, prompt_length: int,
-                         response_length: int, latency_ms: float) -> None:
+    def trace_llm_request(
+        self, provider: str, model: str, prompt_length: int, response_length: int, latency_ms: float
+    ) -> None:
         """Trace LLM request with DataDog"""
         if not self.enabled:
             return
@@ -146,13 +154,16 @@ class DataDogIntegration:
                 span.set_tag("llm.response_length", response_length)
                 span.set_metric("llm.latency", latency_ms)
 
-    def custom_metric(self, metric_name: str, value: float, tags: dict[str, str] | None = None) -> None:
+    def custom_metric(
+        self, metric_name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Send custom metric to DataDog"""
         if not self.enabled:
             return
 
         try:
             from ddtrace.api import DdApi
+
             dd_api = DdApi()
 
             metric_tags = [f"{k}:{v}" for k, v in (tags or {}).items()]
@@ -160,6 +171,7 @@ class DataDogIntegration:
 
         except Exception as e:
             print(f"Error sending DataDog metric: {e}")
+
 
 class NewRelicIntegration:
     """New Relic APM integration"""
@@ -184,8 +196,8 @@ class NewRelicIntegration:
             settings = newrelic.agent.global_settings()
             settings.license_key = license_key
             settings.app_name = self.app_name
-            settings.log_file = 'stdout'
-            settings.log_level = 'info'
+            settings.log_file = "stdout"
+            settings.log_level = "info"
 
             newrelic.agent.initialize()
             print("New Relic APM configured")
@@ -218,8 +230,9 @@ class NewRelicIntegration:
                 transaction.notice_error()
             raise
 
-    def trace_llm_request(self, provider: str, model: str, prompt_length: int,
-                         response_length: int, latency_ms: float) -> None:
+    def trace_llm_request(
+        self, provider: str, model: str, prompt_length: int, response_length: int, latency_ms: float
+    ) -> None:
         """Trace LLM request with New Relic"""
         if not self.enabled:
             return
@@ -246,6 +259,7 @@ class NewRelicIntegration:
         except Exception as e:
             print(f"Error sending New Relic metric: {e}")
 
+
 class GenericAPMIntegration:
     """Generic APM integration for custom metrics collection"""
 
@@ -262,9 +276,7 @@ class GenericAPMIntegration:
 
         self.monitoring_active = True
         self.monitoring_thread = threading.Thread(
-            target=self._monitoring_loop,
-            args=(interval,),
-            daemon=True
+            target=self._monitoring_loop, args=(interval,), daemon=True
         )
         self.monitoring_thread.start()
         print("Generic APM monitoring started")
@@ -307,13 +319,19 @@ class GenericAPMIntegration:
             disk_io = psutil.disk_io_counters()
             if disk_io:
                 self._record_metric("system.disk.read_bytes", disk_io.read_bytes, {"unit": "bytes"})
-                self._record_metric("system.disk.write_bytes", disk_io.write_bytes, {"unit": "bytes"})
+                self._record_metric(
+                    "system.disk.write_bytes", disk_io.write_bytes, {"unit": "bytes"}
+                )
 
             # Network I/O metrics
             net_io = psutil.net_io_counters()
             if net_io:
-                self._record_metric("system.network.bytes_sent", net_io.bytes_sent, {"unit": "bytes"})
-                self._record_metric("system.network.bytes_recv", net_io.bytes_recv, {"unit": "bytes"})
+                self._record_metric(
+                    "system.network.bytes_sent", net_io.bytes_sent, {"unit": "bytes"}
+                )
+                self._record_metric(
+                    "system.network.bytes_recv", net_io.bytes_recv, {"unit": "bytes"}
+                )
 
         except Exception as e:
             print(f"Error collecting system metrics: {e}")
@@ -329,7 +347,7 @@ class GenericAPMIntegration:
             duration_ms=0,
             error=None,
             custom_metrics={metric_name: value},
-            tags=tags
+            tags=tags,
         )
 
         self.metrics.append(metric)
@@ -348,15 +366,27 @@ class GenericAPMIntegration:
         # Check CPU threshold
         cpu_metrics = [m for m in recent_metrics if "system.cpu.usage" in m.custom_metrics]
         if cpu_metrics:
-            avg_cpu = sum(m.custom_metrics["system.cpu.usage"] for m in cpu_metrics) / len(cpu_metrics)
+            avg_cpu = sum(m.custom_metrics["system.cpu.usage"] for m in cpu_metrics) / len(
+                cpu_metrics
+            )
 
             if avg_cpu > config.performance_thresholds["cpu"]["critical"]:
-                self._create_alert("high_cpu_usage", avg_cpu,
-                                 config.performance_thresholds["cpu"]["critical"],
-                                 "critical", "Average CPU usage is critically high")
+                self._create_alert(
+                    "high_cpu_usage",
+                    avg_cpu,
+                    config.performance_thresholds["cpu"]["critical"],
+                    "critical",
+                    "Average CPU usage is critically high",
+                )
 
-    def _create_alert(self, alert_type: str, current_value: float, threshold: float,
-                     severity: str, description: str) -> None:
+    def _create_alert(
+        self,
+        alert_type: str,
+        current_value: float,
+        threshold: float,
+        severity: str,
+        description: str,
+    ) -> None:
         """Create a performance alert"""
         alert = APMAlert(
             alert_id=f"{alert_type}_{int(time.time())}",
@@ -367,13 +397,15 @@ class GenericAPMIntegration:
             threshold_value=threshold,
             service="chimera-system",
             description=description,
-            recommendations=self._get_alert_recommendations(alert_type)
+            recommendations=self._get_alert_recommendations(alert_type),
         )
 
         self.alerts.append(alert)
 
         # Print alert
-        print(f"APM ALERT [{severity.upper()}]: {description} - Current: {current_value:.1f}, Threshold: {threshold:.1f}")
+        print(
+            f"APM ALERT [{severity.upper()}]: {description} - Current: {current_value:.1f}, Threshold: {threshold:.1f}"
+        )
 
     def _get_alert_recommendations(self, alert_type: str) -> list[str]:
         """Get recommendations for specific alert types"""
@@ -381,21 +413,22 @@ class GenericAPMIntegration:
             "high_cpu_usage": [
                 "Check for CPU-intensive processes",
                 "Consider optimizing algorithms",
-                "Scale horizontally if needed"
+                "Scale horizontally if needed",
             ],
             "high_memory_usage": [
                 "Check for memory leaks",
                 "Optimize data structures",
-                "Consider increasing available memory"
+                "Consider increasing available memory",
             ],
             "slow_response_time": [
                 "Optimize database queries",
                 "Implement caching",
-                "Review application logic"
-            ]
+                "Review application logic",
+            ],
         }
 
         return recommendations.get(alert_type, ["Investigate the root cause"])
+
 
 class UnifiedAPMProfiler:
     """Unified APM profiler supporting multiple platforms"""
@@ -444,42 +477,48 @@ class UnifiedAPMProfiler:
                 with suppress(builtins.BaseException):
                     ctx.__exit__(None, None, None)
 
-    def trace_llm_request(self, provider: str, model: str, prompt: str,
-                         response: str, latency_ms: float) -> None:
+    def trace_llm_request(
+        self, provider: str, model: str, prompt: str, response: str, latency_ms: float
+    ) -> None:
         """Trace LLM request across all APM platforms"""
         prompt_length = len(prompt)
         response_length = len(response)
 
         if self.datadog.enabled:
-            self.datadog.trace_llm_request(provider, model, prompt_length, response_length, latency_ms)
+            self.datadog.trace_llm_request(
+                provider, model, prompt_length, response_length, latency_ms
+            )
 
         if self.newrelic.enabled:
-            self.newrelic.trace_llm_request(provider, model, prompt_length, response_length, latency_ms)
+            self.newrelic.trace_llm_request(
+                provider, model, prompt_length, response_length, latency_ms
+            )
 
         # Generic APM recording
         self.generic._record_metric(
-            "llm.request.latency",
-            latency_ms,
-            {"provider": provider, "model": model}
+            "llm.request.latency", latency_ms, {"provider": provider, "model": model}
         )
 
-    def trace_transformation(self, technique: str, input_length: int,
-                           output_length: int, processing_time_ms: float) -> None:
+    def trace_transformation(
+        self, technique: str, input_length: int, output_length: int, processing_time_ms: float
+    ) -> None:
         """Trace prompt transformation"""
         with self.trace_operation("prompt_transformation") as span:
             attributes = {
                 "transformation.technique": technique,
                 "transformation.input_length": input_length,
                 "transformation.output_length": output_length,
-                "transformation.processing_time_ms": processing_time_ms
+                "transformation.processing_time_ms": processing_time_ms,
             }
 
             # Add attributes to active span if available
-            if span and hasattr(span, 'set_tag'):
+            if span and hasattr(span, "set_tag"):
                 for key, value in attributes.items():
                     span.set_tag(key, value)
 
-    def custom_metric(self, metric_name: str, value: float, tags: dict[str, str] | None = None) -> None:
+    def custom_metric(
+        self, metric_name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Send custom metric to all enabled APM platforms"""
         if self.datadog.enabled:
             self.datadog.custom_metric(metric_name, value, tags)
@@ -497,21 +536,24 @@ class UnifiedAPMProfiler:
             "apm_platforms": {
                 "datadog_enabled": self.datadog.enabled,
                 "newrelic_enabled": self.newrelic.enabled,
-                "generic_enabled": self.generic.monitoring_active
+                "generic_enabled": self.generic.monitoring_active,
             },
             "recent_metrics": len(self.generic.metrics),
-            "active_alerts": len(self.generic.alerts)
+            "active_alerts": len(self.generic.alerts),
         }
 
         # Add recent alerts
-        recent_alerts = [alert for alert in self.generic.alerts
-                        if (datetime.now(UTC) - alert.timestamp).total_seconds() < 3600]
+        recent_alerts = [
+            alert
+            for alert in self.generic.alerts
+            if (datetime.now(UTC) - alert.timestamp).total_seconds() < 3600
+        ]
 
         summary["recent_alerts"] = [
             {
                 "severity": alert.severity,
                 "metric": alert.metric_name,
-                "description": alert.description
+                "description": alert.description,
             }
             for alert in recent_alerts
         ]
@@ -527,38 +569,49 @@ class UnifiedAPMProfiler:
             "configuration": {
                 "datadog": {"enabled": self.datadog.enabled, "service": self.datadog.service_name},
                 "newrelic": {"enabled": self.newrelic.enabled, "app": self.newrelic.app_name},
-                "generic": {"enabled": self.generic.monitoring_active}
+                "generic": {"enabled": self.generic.monitoring_active},
             },
             "metrics_collected": len(self.generic.metrics),
-            "alerts_generated": len(self.generic.alerts)
+            "alerts_generated": len(self.generic.alerts),
         }
 
-        output_path = config.get_output_path(MetricType.NETWORK, f"apm_report_{int(time.time())}.json")
+        output_path = config.get_output_path(
+            MetricType.NETWORK, f"apm_report_{int(time.time())}.json"
+        )
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(report, f, indent=2)
 
         print(f"APM report saved: {output_path}")
         return output_path
 
+
 # Global unified APM profiler instance
 apm_profiler = UnifiedAPMProfiler()
+
 
 # Decorators for APM tracing
 def apm_trace(operation_name: str, **attributes):
     """Decorator for APM tracing"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             with apm_profiler.trace_operation(operation_name, **attributes):
                 return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 def apm_trace_async(operation_name: str, **attributes):
     """Decorator for async APM tracing"""
+
     def decorator(func):
         async def wrapper(*args, **kwargs):
             with apm_profiler.trace_operation(operation_name, **attributes):
                 return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator

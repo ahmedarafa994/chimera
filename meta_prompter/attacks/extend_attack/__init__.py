@@ -61,12 +61,7 @@ from .config import (
     get_optimal_rho,
     list_available_benchmarks,
 )
-from .core import (
-    ExtendAttack,
-    ExtendAttackBuilder,
-    decode_attack,
-    quick_attack,
-)
+from .core import ExtendAttack, ExtendAttackBuilder, decode_attack, quick_attack
 
 # Data models
 from .models import (

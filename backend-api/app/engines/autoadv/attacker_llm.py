@@ -16,23 +16,17 @@ except ImportError:
 
 # Import necessary items from local modules
 from .llm_base import LLM
-from .logging_utils import (
-    VERBOSE_DETAILED,
-    log,
-)
+from .logging_utils import VERBOSE_DETAILED, log
 
 # Ensure all levels used are imported
 from .temperature_manager import TemperatureManager  # Import TemperatureManager
-from .utils import (
-    api_call_with_retry,
-    check_api_key_existence,
-)
+from .utils import api_call_with_retry, check_api_key_existence
 
 
 class AttackerLLM(LLM):
     """
     Specialized LLM class for the attacking model that attempts to generate
-    prompts that can bypass safety guardrails in target models.
+    prompts that can bypass operational parameters in target models.
 
     Attributes:
         client: API client instance (OpenAI, Together, Grok, etc.)

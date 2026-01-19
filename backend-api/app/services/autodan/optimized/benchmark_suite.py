@@ -530,9 +530,9 @@ class ScalabilityBenchmark:
                 "times_seconds": times,
                 "throughputs": throughputs,
                 "scaling_efficiency": scaling_efficiency,
-                "max_scale_tested": max(s for s, t in times.items() if t < self.timeout_seconds)
-                if times
-                else 0,
+                "max_scale_tested": (
+                    max(s for s, t in times.items() if t < self.timeout_seconds) if times else 0
+                ),
             },
             duration_seconds=duration,
         )

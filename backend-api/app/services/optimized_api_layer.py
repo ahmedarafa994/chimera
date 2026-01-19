@@ -30,6 +30,7 @@ from app.core.logging import logger
 # Pagination Models and Utilities
 # =====================================================
 
+
 class PaginationParams(BaseModel):
     """Standard pagination parameters."""
 
@@ -77,6 +78,7 @@ class BatchResponse(BaseModel):
 # Response Compression Middleware
 # =====================================================
 
+
 class ResponseCompressionMiddleware(BaseHTTPMiddleware):
     """
     Advanced response compression middleware with selective compression.
@@ -93,7 +95,10 @@ class ResponseCompressionMiddleware(BaseHTTPMiddleware):
         self.minimum_size = minimum_size
         self.compression_level = compression_level
         self.exclude_media_types = exclude_media_types or [
-            "image/", "video/", "audio/", "application/octet-stream"
+            "image/",
+            "video/",
+            "audio/",
+            "application/octet-stream",
         ]
 
     async def dispatch(self, request: Request, call_next):
@@ -111,10 +116,7 @@ class ResponseCompressionMiddleware(BaseHTTPMiddleware):
 
         # Compress if body is large enough
         if len(response_body) >= self.minimum_size:
-            compressed_body = gzip.compress(
-                response_body,
-                compresslevel=self.compression_level
-            )
+            compressed_body = gzip.compress(response_body, compresslevel=self.compression_level)
 
             # Only use compression if it reduces size significantly
             if len(compressed_body) < len(response_body) * 0.9:
@@ -160,6 +162,7 @@ class ResponseCompressionMiddleware(BaseHTTPMiddleware):
 # =====================================================
 # Request Caching and Optimization
 # =====================================================
+
 
 @dataclass
 class CacheEntry:
@@ -209,11 +212,7 @@ class APIResponseCache:
         key_string = "|".join(key_parts)
         return hashlib.sha256(key_string.encode()).hexdigest()
 
-    async def get(
-        self,
-        request: Request,
-        body: bytes | None = None
-    ) -> Any | None:
+    async def get(self, request: Request, body: bytes | None = None) -> Any | None:
         """Get cached response."""
         key = self._generate_key(request, body)
 
@@ -310,6 +309,7 @@ class APIResponseCache:
 # Performance Monitoring Middleware
 # =====================================================
 
+
 @dataclass
 class RequestMetrics:
     """Metrics for a single request."""
@@ -347,7 +347,7 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
         response_size = 0
 
         # Get response size if possible
-        if hasattr(response, 'body') and isinstance(response.body, bytes):
+        if hasattr(response, "body") and isinstance(response.body, bytes):
             response_size = len(response.body)
 
         # Store metrics
@@ -418,7 +418,8 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
                 "endpoints": endpoint_stats,
                 "timespan_minutes": (
                     (self._metrics[-1].timestamp - self._metrics[0].timestamp) / 60
-                    if len(self._metrics) > 1 else 0
+                    if len(self._metrics) > 1
+                    else 0
                 ),
             }
 
@@ -426,6 +427,7 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
 # =====================================================
 # N+1 Query Prevention and Batch Loading
 # =====================================================
+
 
 class BatchLoader:
     """
@@ -525,6 +527,7 @@ class BatchLoader:
 # Optimized API Router with Performance Features
 # =====================================================
 
+
 class OptimizedAPIRouter:
     """
     High-performance API router with optimization features.
@@ -561,13 +564,14 @@ class OptimizedAPIRouter:
         handler: callable,
         methods: list[str] | None = None,
         cache_ttl: int = 300,
-        cache_key_func: callable | None = None,  # noqa: ARG002
+        cache_key_func: callable | None = None,
     ):
         """
         Add endpoint with response caching.
         """
         if methods is None:
             methods = ["GET"]
+
         async def cached_handler(request: Request):
             # Check cache for GET requests
             if request.method == "GET":
@@ -599,7 +603,7 @@ class OptimizedAPIRouter:
         path: str,
         data_loader: callable,
         methods: list[str] | None = None,
-        default_page_size: int = 20,  # noqa: ARG002
+        default_page_size: int = 20,
         max_page_size: int = 100,
     ):
         """
@@ -609,7 +613,7 @@ class OptimizedAPIRouter:
             methods = ["GET"]
 
         async def paginated_handler(
-            request: Request,  # noqa: ARG001
+            request: Request,
             pagination: PaginationParams = Depends(),
         ):
             # Validate page size
@@ -658,6 +662,7 @@ class OptimizedAPIRouter:
         """
         Add endpoint with batch processing capabilities.
         """
+
         async def batch_handler(batch_request: BatchRequest):
             start_time = time.time()
 
@@ -723,10 +728,7 @@ class OptimizedAPIRouter:
         )
 
     async def _process_single_request(
-        self,
-        handler: callable,
-        request_data: dict[str, Any],
-        fail_fast: bool
+        self, handler: callable, request_data: dict[str, Any], fail_fast: bool
     ) -> Any:
         """Process a single request in a batch."""
         try:
@@ -740,6 +742,7 @@ class OptimizedAPIRouter:
         """
         Create optimized streaming response.
         """
+
         async def generate():
             async for chunk in data_generator():
                 # Add newline for JSONL format
@@ -782,6 +785,7 @@ class OptimizedAPIRouter:
 # Utility Functions
 # =====================================================
 
+
 def create_optimized_api_app() -> tuple[FastAPI, OptimizedAPIRouter]:
     """
     Create FastAPI app with optimization features.
@@ -797,7 +801,7 @@ def create_optimized_api_app() -> tuple[FastAPI, OptimizedAPIRouter]:
 
     # Add global exception handler for performance
     @app.exception_handler(Exception)
-    async def performance_exception_handler(request: Request, exc: Exception):  # noqa: ARG001
+    async def performance_exception_handler(request: Request, exc: Exception):
         logger.error(f"API error: {exc}")
         return JSONResponse(
             status_code=500,

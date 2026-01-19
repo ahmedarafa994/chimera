@@ -226,9 +226,7 @@ class TemplateLoader:
         self.load()
 
         # Filter by complexity
-        filtered = [
-            t for t in self._templates if min_complexity <= t.complexity <= max_complexity
-        ]
+        filtered = [t for t in self._templates if min_complexity <= t.complexity <= max_complexity]
 
         if not filtered:
             return None

@@ -35,7 +35,7 @@ class SecurityConfig:
 
         # Secure CORS with specific origins
         allowed_origins = os.getenv(
-            "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080"
+            "ALLOWED_ORIGINS", "http://localhost:3001,http://localhost:8080"
         ).split(",")
         CORS(app, origins=allowed_origins, methods=["GET", "POST"], supports_credentials=True)
 

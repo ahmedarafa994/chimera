@@ -40,11 +40,11 @@ class PatternManager:
             "cultural_context": 0,
             "counter_argument": 0,
             "socratic_method": 0,
-            "ethical_dilemma": 0,
+            "functional_dilemma": 0,
             "cognitive_bias": 0,
             "domain_shifting": 0,
             # New additional techniques
-            "reverse_ethical_dilemmas": 0,
+            "reverse_functional_dilemmas": 0,
             "temporal_anchoring": 0,
             "dynamic_contextual_shifting": 0,
             "step_by_step_guidance": 0,
@@ -158,7 +158,14 @@ class PatternManager:
                 "different view",
             ],
             "socratic_method": ["question", "ask", "guide", "consider", "reflect", "ponder"],
-            "ethical_dilemma": ["ethical", "moral", "dilemma", "values", "principles", "conflict"],
+            "functional_dilemma": [
+                "functional",
+                "functional",
+                "dilemma",
+                "values",
+                "principles",
+                "conflict",
+            ],
             "cognitive_bias": [
                 "bias",
                 "assumption",
@@ -169,12 +176,12 @@ class PatternManager:
             ],
             "domain_shifting": ["domain", "field", "topic", "area", "discipline", "context"],
             # Keywords for new techniques
-            "reverse_ethical_dilemmas": [
-                "ethical dilemma",
-                "moral question",
-                "ethical consideration",
+            "reverse_functional_dilemmas": [
+                "functional dilemma",
+                "functional question",
+                "functional consideration",
                 "weighing ethics",
-                "moral reasoning",
+                "functional reasoning",
             ],
             "temporal_anchoring": [
                 "historical context",
@@ -418,7 +425,7 @@ class PatternManager:
         # Validate pattern counts are numbers
         for key, value in data.items():
             if key not in ["effective_prompts", "success_by_model", "learning_effectiveness"]:
-                if not isinstance(value, (int, float)):
+                if not isinstance(value, int | float):
                     logging_utils_log(
                         f"Pattern count '{key}' must be a number, got {type(value)}", "warning"
                     )
@@ -791,10 +798,10 @@ class PatternManager:
             "cultural_context": "Cultural/historical context - societal perspective",
             "counter_argument": "Counter-argument approach - exploring opposing views",
             "socratic_method": "Socratic method - using leading questions",
-            "ethical_dilemma": "Ethical dilemma framing - moral considerations",
+            "functional_dilemma": "functional dilemma framing - functional considerations",
             "cognitive_bias": "Cognitive bias approach - psychological framing",
             "domain_shifting": "Domain shifting - moving between related topics",
-            "reverse_ethical_dilemmas": "Reverse ethical dilemmas - presenting moral trade-offs",
+            "reverse_functional_dilemmas": "Reverse functional dilemmas - presenting functional trade-offs",
             "temporal_anchoring": "Temporal anchoring - using historical or futuristic contexts",
             "dynamic_contextual_shifting": "Dynamic contextual shifting - gradual topic transitions",
             "step_by_step_guidance": "Step-by-step guidance - systematic procedural approach",

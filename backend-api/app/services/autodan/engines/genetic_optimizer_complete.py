@@ -15,11 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from ..config_enhanced import (
-    EnhancedAutoDANConfig,
-    MutationStrategy,
-    get_config,
-)
+from ..config_enhanced import EnhancedAutoDANConfig, MutationStrategy, get_config
 from .genetic_optimizer import (
     CrossoverOperator,
     FitnessCache,
@@ -38,6 +34,7 @@ def _secure_random() -> float:
 
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
+
 
 logger = logging.getLogger(__name__)
 

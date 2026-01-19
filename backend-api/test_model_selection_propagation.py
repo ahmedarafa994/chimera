@@ -5,23 +5,20 @@ This script tests whether the selected model is properly propagated
 through all services and engines in the application.
 """
 
-import asyncio
 import requests
-import json
-from typing import Dict, Any
 
 BASE_URL = "http://localhost:8001"
 
 
 def test_selection_endpoint():
     """Test the selection endpoint and context"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("1. TESTING MODEL SELECTION ENDPOINTS")
-    print("="*60)
+    print("=" * 60)
 
     # Get current selection
     response = requests.get(f"{BASE_URL}/api/v1/selection/current")
-    print(f"\n✓ GET /api/v1/selection/current")
+    print("\n✓ GET /api/v1/selection/current")
     print(f"  Status: {response.status_code}")
     if response.status_code == 200:
         selection = response.json()
@@ -36,9 +33,9 @@ def test_selection_endpoint():
 
 def test_model_selection_update():
     """Test updating model selection"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("2. TESTING MODEL SELECTION UPDATE")
-    print("="*60)
+    print("=" * 60)
 
     # Try to set a specific model
     test_selections = [
@@ -52,10 +49,7 @@ def test_model_selection_update():
 
         # Note: Check if there's an endpoint to set selection
         # This might be session-based or user-based
-        response = requests.post(
-            f"{BASE_URL}/api/v1/selection/set",
-            json=selection
-        )
+        response = requests.post(f"{BASE_URL}/api/v1/selection/set", json=selection)
 
         if response.status_code == 200 or response.status_code == 404:
             if response.status_code == 404:
@@ -70,9 +64,9 @@ def test_model_selection_update():
 
 def test_provider_resolution():
     """Test if provider/model can be resolved via aliases"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("3. TESTING PROVIDER ALIAS RESOLUTION")
-    print("="*60)
+    print("=" * 60)
 
     test_cases = [
         ("openai", "OpenAI"),
@@ -94,15 +88,15 @@ def test_provider_resolution():
 
 def test_unified_registry():
     """Test unified registry access"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("4. TESTING UNIFIED REGISTRY")
-    print("="*60)
+    print("=" * 60)
 
     # Test registry stats
     response = requests.get(f"{BASE_URL}/api/v1/providers/stats")
     if response.status_code == 200:
         stats = response.json()
-        print(f"\n  Registry Statistics:")
+        print("\n  Registry Statistics:")
         print(f"    Total Providers: {stats.get('total_providers')}")
         print(f"    Enabled Providers: {stats.get('enabled_providers')}")
         print(f"    Total Models: {stats.get('total_models')}")
@@ -119,12 +113,12 @@ def test_unified_registry():
         # Group by provider
         by_provider = {}
         for model in models:
-            provider = model.get('provider_id')
+            provider = model.get("provider_id")
             if provider not in by_provider:
                 by_provider[provider] = []
-            by_provider[provider].append(model['id'])
+            by_provider[provider].append(model["id"])
 
-        print(f"\n  Models by Provider:")
+        print("\n  Models by Provider:")
         for provider, model_list in by_provider.items():
             print(f"    {provider}: {len(model_list)} models")
             for model_id in model_list[:2]:  # Show first 2
@@ -137,9 +131,9 @@ def test_unified_registry():
 
 def test_context_propagation():
     """Test if selection context is propagated"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("5. TESTING CONTEXT PROPAGATION")
-    print("="*60)
+    print("=" * 60)
 
     print("\n  Testing with different session/user contexts...")
 
@@ -150,10 +144,7 @@ def test_context_propagation():
     ]
 
     for headers in headers_tests:
-        response = requests.get(
-            f"{BASE_URL}/api/v1/selection/current",
-            headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/v1/selection/current", headers=headers)
         if response.status_code == 200:
             selection = response.json()
             print(f"\n  Session: {headers.get('X-Session-ID')}")
@@ -166,9 +157,9 @@ def test_context_propagation():
 
 def test_chat_completion_with_selection():
     """Test if chat endpoint respects selected model"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("6. TESTING CHAT COMPLETION WITH SELECTION")
-    print("="*60)
+    print("=" * 60)
 
     print("\n  NOTE: This requires a chat endpoint that uses SelectionContext")
     print("  Common endpoints:")
@@ -177,11 +168,7 @@ def test_chat_completion_with_selection():
     print("    - POST /api/v1/generate")
 
     # Try common chat endpoints
-    test_message = {
-        "messages": [
-            {"role": "user", "content": "Say 'Hello' in one word"}
-        ]
-    }
+    test_message = {"messages": [{"role": "user", "content": "Say 'Hello' in one word"}]}
 
     potential_endpoints = [
         "/api/v1/chat/completions",
@@ -190,22 +177,19 @@ def test_chat_completion_with_selection():
     ]
 
     for endpoint in potential_endpoints:
-        response = requests.post(
-            f"{BASE_URL}{endpoint}",
-            json=test_message
-        )
+        response = requests.post(f"{BASE_URL}{endpoint}", json=test_message)
         print(f"\n  POST {endpoint}")
         print(f"    Status: {response.status_code}")
         if response.status_code == 404:
-            print(f"    Not found")
+            print("    Not found")
         elif response.status_code >= 400:
             print(f"    Error: {response.text[:100]}")
         else:
-            print(f"    ✓ Endpoint exists")
+            print("    ✓ Endpoint exists")
             # Check if response includes model info
             try:
                 data = response.json()
-                if 'model' in data:
+                if "model" in data:
                     print(f"    Model used: {data.get('model')}")
             except:
                 pass
@@ -213,9 +197,9 @@ def test_chat_completion_with_selection():
 
 def main():
     """Run all tests"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("MODEL SELECTION PROPAGATION TEST")
-    print("="*60)
+    print("=" * 60)
     print(f"Testing against: {BASE_URL}")
 
     try:
@@ -241,10 +225,11 @@ def main():
     test_chat_completion_with_selection()
 
     # Summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TEST SUMMARY")
-    print("="*60)
-    print("""
+    print("=" * 60)
+    print(
+        """
 Key Findings:
 1. Provider/model selection endpoints are available
 2. Unified registry correctly lists all providers and models
@@ -258,7 +243,8 @@ Next Steps:
 - Check if chat/generation endpoints use SelectionContext
 - Verify middleware is properly configured
 - Test with actual API keys to see if correct model is called
-    """)
+    """
+    )
 
 
 if __name__ == "__main__":

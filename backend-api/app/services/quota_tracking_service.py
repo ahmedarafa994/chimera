@@ -209,9 +209,7 @@ class QuotaUsageWindow:
         self.cost_usd = 0.0
 
         # Per-model breakdown
-        self.by_model: dict[str, dict[str, int]] = defaultdict(
-            lambda: {"requests": 0, "tokens": 0}
-        )
+        self.by_model: dict[str, dict[str, int]] = defaultdict(lambda: {"requests": 0, "tokens": 0})
 
         # Timestamps
         self.last_request_at: datetime | None = None
@@ -226,7 +224,9 @@ class QuotaUsageWindow:
         elif period == QuotaPeriod.MONTHLY:
             # Move to first of next month
             if start.month == 12:
-                return start.replace(year=start.year + 1, month=1, day=1, hour=0, minute=0, second=0)
+                return start.replace(
+                    year=start.year + 1, month=1, day=1, hour=0, minute=0, second=0
+                )
             else:
                 return start.replace(month=start.month + 1, day=1, hour=0, minute=0, second=0)
         else:
@@ -440,7 +440,9 @@ class ProviderQuotaState:
             history = list(self._monthly_history)
 
         # Add current window
-        current = self._get_daily_window() if period == QuotaPeriod.DAILY else self._get_monthly_window()
+        current = (
+            self._get_daily_window() if period == QuotaPeriod.DAILY else self._get_monthly_window()
+        )
         history.append(current.to_dict())
 
         return history[-limit:]
@@ -576,10 +578,14 @@ class QuotaTrackingService:
 
         config = ProviderQuotaConfig(
             provider_id=provider_id,
-            daily_request_limit=daily_request_limit or default_daily.get("requests", DEFAULT_DAILY_REQUEST_LIMIT),
-            daily_token_limit=daily_token_limit or default_daily.get("tokens", DEFAULT_DAILY_TOKEN_LIMIT),
-            monthly_request_limit=monthly_request_limit or default_monthly.get("requests", DEFAULT_MONTHLY_REQUEST_LIMIT),
-            monthly_token_limit=monthly_token_limit or default_monthly.get("tokens", DEFAULT_MONTHLY_TOKEN_LIMIT),
+            daily_request_limit=daily_request_limit
+            or default_daily.get("requests", DEFAULT_DAILY_REQUEST_LIMIT),
+            daily_token_limit=daily_token_limit
+            or default_daily.get("tokens", DEFAULT_DAILY_TOKEN_LIMIT),
+            monthly_request_limit=monthly_request_limit
+            or default_monthly.get("requests", DEFAULT_MONTHLY_REQUEST_LIMIT),
+            monthly_token_limit=monthly_token_limit
+            or default_monthly.get("tokens", DEFAULT_MONTHLY_TOKEN_LIMIT),
             warning_threshold_percent=warning_threshold_percent or DEFAULT_WARNING_THRESHOLD,
             critical_threshold_percent=critical_threshold_percent or DEFAULT_CRITICAL_THRESHOLD,
             cost_per_1k_input_tokens=cost_per_1k_input_tokens or 0.0,
@@ -734,7 +740,7 @@ class QuotaTrackingService:
                 severity=AlertSeverity.CRITICAL,
                 title=f"Critical quota usage for {provider_id}",
                 message=f"Daily quota usage is critical ({daily_status.usage_percent:.1f}%). "
-                        f"Approaching limit of {config.daily_request_limit} requests.",
+                f"Approaching limit of {config.daily_request_limit} requests.",
                 triggered_at=datetime.utcnow(),
                 metadata={
                     "quota_type": "daily",
@@ -753,7 +759,7 @@ class QuotaTrackingService:
                 severity=AlertSeverity.WARNING,
                 title=f"High quota usage for {provider_id}",
                 message=f"Daily quota usage is at {daily_status.usage_percent:.1f}%. "
-                        f"Warning threshold ({config.warning_threshold_percent}%) exceeded.",
+                f"Warning threshold ({config.warning_threshold_percent}%) exceeded.",
                 triggered_at=datetime.utcnow(),
                 metadata={
                     "quota_type": "daily",
@@ -810,9 +816,7 @@ class QuotaTrackingService:
         """Register a callback to be invoked when quota alerts are triggered."""
         self._alert_callbacks.append(callback)
 
-    def register_threshold_callback(
-        self, callback: Callable[[str, float, str], None]
-    ) -> None:
+    def register_threshold_callback(self, callback: Callable[[str, float, str], None]) -> None:
         """
         Register a callback for threshold breaches.
 
@@ -1011,7 +1015,7 @@ class QuotaTrackingService:
         try:
             from app.services.model_rate_limiter import get_model_rate_limiter
 
-            rate_limiter = get_model_rate_limiter()
+            get_model_rate_limiter()
 
             # Note: The rate limiter tracks per-user usage, while quota tracking
             # is per-provider. This method can be extended to aggregate user
@@ -1049,8 +1053,12 @@ class QuotaTrackingService:
                 "reset_at": None,
             }
 
-        remaining_requests = max(0, status.requests_limit - status.requests_used) if status.requests_limit else 0
-        remaining_tokens = max(0, status.tokens_limit - status.tokens_used) if status.tokens_limit else 0
+        remaining_requests = (
+            max(0, status.requests_limit - status.requests_used) if status.requests_limit else 0
+        )
+        remaining_tokens = (
+            max(0, status.tokens_limit - status.tokens_used) if status.tokens_limit else 0
+        )
 
         return {
             "remaining_requests": remaining_requests,

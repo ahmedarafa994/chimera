@@ -1274,10 +1274,5 @@ export function CompactProviderChart({
 }
 
 // =============================================================================
-// Export Types
+// Export Types (Note: These types are already exported where they're defined)
 // =============================================================================
-
-export type {
-  ProviderChartDataPoint,
-  ProviderComparisonChartProps,
-};

@@ -16,12 +16,7 @@ from dataclasses import dataclass
 
 from ..agents import LLMConfig, SummarizerAgent
 from ..core.embeddings import EmbeddingModel
-from ..core.models import (
-    AttackLog,
-    AttackRecord,
-    Strategy,
-    StrategyLibraryEntry,
-)
+from ..core.models import AttackLog, AttackRecord, Strategy, StrategyLibraryEntry
 from ..core.strategy_library import StrategyLibrary
 
 logger = logging.getLogger(__name__)

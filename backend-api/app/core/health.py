@@ -87,7 +87,14 @@ class HealthChecker:
     CRITICAL_SERVICES: ClassVar[set[str]] = {"llm_service", "transformation_engine"}
 
     # Optional services - their failure only causes "degraded" status, not "unhealthy"
-    OPTIONAL_SERVICES: ClassVar[set[str]] = {"redis", "cache", "event_bus", "task_queue", "webhook_service", "database"}
+    OPTIONAL_SERVICES: ClassVar[set[str]] = {
+        "redis",
+        "cache",
+        "event_bus",
+        "task_queue",
+        "webhook_service",
+        "database",
+    }
 
     def __init__(self):
         self._checks: dict[str, Callable] = {}
@@ -453,9 +460,11 @@ class HealthChecker:
                     message=f"LLM service available with {len(providers)} providers",
                     details={
                         "providers": providers,
-                        "default_provider": str(llm_service.default_provider.value)
-                        if llm_service.default_provider
-                        else None,
+                        "default_provider": (
+                            str(llm_service.default_provider.value)
+                            if llm_service.default_provider
+                            else None
+                        ),
                     },
                 )
             else:

@@ -63,10 +63,14 @@ async function isChimeraBackendAlive(origin: string, timeoutMs: number): Promise
 
 function candidatePorts(): number[] {
   const ports: number[] = [];
-  // Include port 8001 first as it's the configured default
+  // Standard port is 8001 (configured in .env)
   ports.push(8001);
-  ports.push(8000); // Fallback to 8000
-  for (let port = 8002; port <= 8010; port++) ports.push(port);
+  ports.push(8000);
+  ports.push(8002);
+  ports.push(8005);
+  for (let port = 8003; port <= 8010; port++) {
+    if (port !== 8005) ports.push(port);
+  }
   return ports;
 }
 

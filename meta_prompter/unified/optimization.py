@@ -135,19 +135,15 @@ class ParetoOptimizer:
         # Evaluate initial population
         fitness_values = self._evaluate_population(population, objective_fns)
 
-        for generation in range(self.max_generations):
+        for _generation in range(self.max_generations):
             # Non-dominated sorting
             fronts = self._non_dominated_sort(fitness_values)
 
             # Calculate crowding distance
-            crowding_distances = self._calculate_crowding_distance(
-                fronts, fitness_values
-            )
+            crowding_distances = self._calculate_crowding_distance(fronts, fitness_values)
 
             # Select parents
-            parents = self._select_parents(
-                population, fitness_values, fronts, crowding_distances
-            )
+            parents = self._select_parents(population, fitness_values, fronts, crowding_distances)
 
             # Create offspring through crossover and mutation
             offspring = []
@@ -285,12 +281,8 @@ class ParetoOptimizer:
                 else:
                     beta = (1 / (2 * (1 - u))) ** (1 / (eta_c + 1))
 
-                child1[param] = 0.5 * (
-                    (1 + beta) * parent1[param] + (1 - beta) * parent2[param]
-                )
-                child2[param] = 0.5 * (
-                    (1 - beta) * parent1[param] + (1 + beta) * parent2[param]
-                )
+                child1[param] = 0.5 * ((1 + beta) * parent1[param] + (1 - beta) * parent2[param])
+                child2[param] = 0.5 * ((1 - beta) * parent1[param] + (1 + beta) * parent2[param])
             else:
                 child1[param] = parent1[param]
                 child2[param] = parent2[param]
@@ -313,22 +305,20 @@ class ParetoOptimizer:
 
                 u = random.random()
                 if u < 0.5:
-                    delta_q = (
-                        2 * u + (1 - 2 * u) * (1 - delta1) ** (eta_m + 1)
-                    ) ** (1 / (eta_m + 1)) - 1
+                    delta_q = (2 * u + (1 - 2 * u) * (1 - delta1) ** (eta_m + 1)) ** (
+                        1 / (eta_m + 1)
+                    ) - 1
                 else:
-                    delta_q = 1 - (
-                        2 * (1 - u) + 2 * (u - 0.5) * (1 - delta2) ** (eta_m + 1)
-                    ) ** (1 / (eta_m + 1))
+                    delta_q = 1 - (2 * (1 - u) + 2 * (u - 0.5) * (1 - delta2) ** (eta_m + 1)) ** (
+                        1 / (eta_m + 1)
+                    )
 
                 individual[param] = x + delta_q * (high - low)
                 individual[param] = max(low, min(high, individual[param]))
 
         return individual
 
-    def _non_dominated_sort(
-        self, fitness_values: list[list[float]]
-    ) -> list[list[int]]:
+    def _non_dominated_sort(self, fitness_values: list[list[float]]) -> list[list[int]]:
         """
         Sort population into Pareto fronts.
 
@@ -530,7 +520,7 @@ class AdaptiveParameterController:
 
         # Keep only recent history
         if len(self.history) > self.history_window:
-            self.history = self.history[-self.history_window:]
+            self.history = self.history[-self.history_window :]
 
         # Update param history
         for param, value in params.items():
@@ -538,7 +528,7 @@ class AdaptiveParameterController:
                 self.param_history[param] = []
             self.param_history[param].append(value)
             if len(self.param_history[param]) > self.history_window:
-                self.param_history[param] = self.param_history[param][-self.history_window:]
+                self.param_history[param] = self.param_history[param][-self.history_window :]
 
         # Estimate gradients
         gradients = self._calculate_gradient_estimate()
@@ -572,7 +562,7 @@ class AdaptiveParameterController:
             if len(self.param_history[param]) < 2:
                 continue
 
-            param_values = self.param_history[param][-len(successes):]
+            param_values = self.param_history[param][-len(successes) :]
             if len(param_values) != len(successes):
                 continue
 
@@ -614,9 +604,7 @@ class AdaptiveParameterController:
         if len(self.history) < 3:
             return 0.5
 
-        recent_success = sum(
-            1 for h in self.history[-5:] if h.get("success", False)
-        )
+        recent_success = sum(1 for h in self.history[-5:] if h.get("success", False))
         success_rate = recent_success / min(5, len(self.history))
 
         # High exploration when success rate is moderate (not too high, not too low)
@@ -650,6 +638,7 @@ class ConstraintSatisfaction:
         Args:
             max_budget: Maximum cost allowed per attack
         """
+
         def budget_check(params: dict) -> bool:
             cost = params.get("estimated_cost", 0)
             return cost <= max_budget
@@ -663,6 +652,7 @@ class ConstraintSatisfaction:
         Args:
             threshold: Maximum acceptable detection probability
         """
+
         def detection_check(params: dict) -> bool:
             detection_prob = params.get("detection_probability", 0)
             return detection_prob <= threshold
@@ -676,6 +666,7 @@ class ConstraintSatisfaction:
         Args:
             min_accuracy: Minimum acceptable accuracy
         """
+
         def accuracy_check(params: dict) -> bool:
             accuracy = params.get("accuracy", 1.0)
             return accuracy >= min_accuracy
@@ -689,15 +680,14 @@ class ConstraintSatisfaction:
         Args:
             max_requests: Maximum requests per minute
         """
+
         def rate_check(params: dict) -> bool:
             request_rate = params.get("request_rate", 0)
             return request_rate <= max_requests
 
         self.constraints.append(("rate_limit", rate_check))
 
-    def add_custom_constraint(
-        self, name: str, constraint_fn: Callable[[dict], bool]
-    ) -> None:
+    def add_custom_constraint(self, name: str, constraint_fn: Callable[[dict], bool]) -> None:
         """
         Add custom constraint.
 
@@ -725,9 +715,7 @@ class ConstraintSatisfaction:
         """
         self.soft_constraints.append((name, cost_fn, weight))
 
-    def check_feasibility(
-        self, params: dict[str, float]
-    ) -> tuple[bool, list[str]]:
+    def check_feasibility(self, params: dict[str, float]) -> tuple[bool, list[str]]:
         """
         Check if parameters satisfy all constraints.
 
@@ -760,7 +748,7 @@ class ConstraintSatisfaction:
         """
         total_penalty = 0.0
 
-        for name, cost_fn, weight in self.soft_constraints:
+        for _name, cost_fn, weight in self.soft_constraints:
             try:
                 violation_cost = cost_fn(params)
                 total_penalty += weight * max(0, violation_cost)
@@ -802,7 +790,7 @@ class ConstraintSatisfaction:
         # Try to fix violations by adjusting related parameters
         max_iterations = 10
         for _ in range(max_iterations):
-            for violation in violated:
+            for _violation in violated:
                 # Simple heuristic: reduce "intensity" parameters
                 intensity_params = [
                     "obfuscation_ratio",
@@ -823,9 +811,7 @@ class ConstraintSatisfaction:
 
         return projected
 
-    def get_constraint_status(
-        self, params: dict[str, float]
-    ) -> dict[str, dict[str, Any]]:
+    def get_constraint_status(self, params: dict[str, float]) -> dict[str, dict[str, Any]]:
         """
         Get detailed status of all constraints.
 

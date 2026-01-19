@@ -15,12 +15,7 @@ import pytest
 from app.core.circuit_breaker import CircuitBreakerOpen
 from app.core.unified_errors import ProviderNotAvailableError
 from app.domain.interfaces import LLMProvider
-from app.domain.models import (
-    GenerationConfig,
-    LLMProviderType,
-    PromptRequest,
-    PromptResponse,
-)
+from app.domain.models import GenerationConfig, LLMProviderType, PromptRequest, PromptResponse
 from app.services.llm_service import LLMService
 
 # =============================================================================
@@ -162,6 +157,7 @@ class TestFailoverExecution:
 
         # Mock to simulate CB open then successful backup
         call_count = [0]
+
         async def mock_cb_call(provider_name, func, *args, **kwargs):
             call_count[0] += 1
             if provider_name == "openai":
@@ -187,7 +183,9 @@ class TestFailoverExecution:
         async def mock_cb_always_fail(provider_name, func, *args, **kwargs):
             raise CircuitBreakerOpen(provider_name, retry_after=60.0)
 
-        with patch.object(llm_service, "_call_with_circuit_breaker", side_effect=mock_cb_always_fail):
+        with patch.object(
+            llm_service, "_call_with_circuit_breaker", side_effect=mock_cb_always_fail
+        ):
             with pytest.raises(ProviderNotAvailableError) as exc_info:
                 await llm_service.generate_text(sample_request)
 
@@ -210,7 +208,9 @@ class TestFailoverExecution:
                 raise CircuitBreakerOpen("openai", retry_after=60.0)
             return await func(*args, **kwargs)
 
-        with patch.object(llm_service, "_call_with_circuit_breaker", side_effect=mock_cb_primary_fail):
+        with patch.object(
+            llm_service, "_call_with_circuit_breaker", side_effect=mock_cb_primary_fail
+        ):
             with pytest.raises(ProviderNotAvailableError):
                 await llm_service.generate_text(sample_request)
 
@@ -302,6 +302,7 @@ class TestFailoverIntegration:
         llm_service.set_failover_chain("openai", ["anthropic", "gemini"])
 
         call_order = []
+
         async def mock_cb_track(provider_name, func, *args, **kwargs):
             call_order.append(provider_name)
             if provider_name in ["openai", "anthropic"]:

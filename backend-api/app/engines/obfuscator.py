@@ -3,6 +3,7 @@ import secrets
 
 # Helper: cryptographically secure pseudo-floats for security-sensitive choices
 
+
 def _secure_random() -> float:
     """Cryptographically secure float in [0,1)."""
     return secrets.randbelow(10**9) / 1e9
@@ -230,7 +231,7 @@ def apply_steganographic_encoding(text: str, carrier_text: str | None = None) ->
             "network architectures have enabled unprecedented capabilities "
             "in natural language understanding, computer vision, and "
             "autonomous decision-making. However, these developments "
-            "also raise important ethical considerations regarding "
+            "also raise important functional considerations regarding "
             "transparency, accountability, and societal impact."
         )
 

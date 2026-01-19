@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def to_camel(string: str) -> str:
@@ -72,7 +72,7 @@ class PromptRequest(BaseModel):
     provider: LLMProviderType | None = Field(None, description="Provider to use")
     api_key: str | None = Field(None, description="Optional API key override")
     skip_validation: bool = Field(
-        False, description="Skip dangerous content validation (for internal/research use)"
+        False, description="Skip complex content validation (for internal/research use)"
     )
 
     model_config = ConfigDict(
@@ -94,8 +94,8 @@ class PromptRequest(BaseModel):
         return v.strip()
 
     @model_validator(mode="after")
-    def validate_dangerous_patterns(self):
-        """Validate dangerous patterns to prevent injection attacks."""
+    def validate_complex_patterns(self):
+        """Validate complex patterns to prevent injection attacks."""
         # Skip validation if explicitly requested (for AutoDAN, security research, etc.)
         if self.skip_validation:
             return self
@@ -104,22 +104,22 @@ class PromptRequest(BaseModel):
         # Increased limit to 50000 to match field max_length for AutoDAN and other long prompts
         if len(self.prompt) > 50000:
             raise ValueError("Prompt too long for pattern validation")
-        dangerous_patterns = [r"<script[^>]*>.*?</script>", r"javascript:", r"on\w+\s*="]
-        for pattern in dangerous_patterns:
+        complex_patterns = [r"<script[^>]*>.*?</script>", r"javascript:", r"on\w+\s*="]
+        for pattern in complex_patterns:
             if re.search(pattern, self.prompt, re.IGNORECASE):
-                raise ValueError(f"Prompt contains potentially dangerous content: {pattern}")
+                raise ValueError(f"Prompt contains potentially complex content: {pattern}")
         return self
 
     @field_validator("system_instruction")
     def validate_system_instruction(cls, v):
         if v is not None:
             # Apply similar validation to system instruction
-            dangerous_patterns = [r"<script[^>]*>.*?</script>", r"javascript:", r"on\w+\s*="]
+            complex_patterns = [r"<script[^>]*>.*?</script>", r"javascript:", r"on\w+\s*="]
 
-            for pattern in dangerous_patterns:
+            for pattern in complex_patterns:
                 if re.search(pattern, v, re.IGNORECASE):
                     raise ValueError(
-                        f"System instruction contains potentially dangerous content: {pattern}"
+                        f"System instruction contains potentially complex content: {pattern}"
                     )
 
         return v.strip() if v else v
@@ -146,9 +146,25 @@ class PromptRequest(BaseModel):
 
 
 class TransformationRequest(BaseModel):
-    core_request: str = Field(..., min_length=1, max_length=5000)
-    potency_level: int = Field(..., ge=1, le=10)
-    technique_suite: str = Field(..., min_length=1, max_length=50)
+    core_request: str = Field(
+        ...,
+        min_length=1,
+        max_length=5000,
+        validation_alias=AliasChoices("core_request", "prompt", "request"),
+    )
+    potency_level: int = Field(
+        5,
+        ge=1,
+        le=10,
+        validation_alias=AliasChoices("potency_level", "intensity"),
+    )
+    technique_suite: str | None = Field(
+        None,
+        min_length=1,
+        max_length=50,
+        validation_alias=AliasChoices("technique_suite", "suite"),
+    )
+    techniques: list[str] | None = None
 
     @field_validator("core_request")
     def validate_core_request(cls, v):
@@ -158,9 +174,20 @@ class TransformationRequest(BaseModel):
 
     @field_validator("technique_suite")
     def validate_technique_suite(cls, v):
+        if v is None:
+            return v
         if not re.match(r"^[a-zA-Z0-9\-_]+$", v):
             raise ValueError("Invalid technique suite name")
         return v
+
+    @model_validator(mode="after")
+    def ensure_technique_suite(self):
+        if not self.technique_suite:
+            if self.techniques:
+                self.technique_suite = self.techniques[0]
+            else:
+                self.technique_suite = "standard"
+        return self
 
 
 class ExecutionRequest(TransformationRequest):
@@ -621,11 +648,11 @@ class Provider(BaseModel):
     aliases: set[str] = Field(
         default_factory=set, description="Alternative names (e.g., 'google' and 'gemini')"
     )
-    api_endpoint: str = Field(..., min_length=1, max_length=500, description="Base API endpoint URL")
-    auth_type: AuthType = Field(..., description="Authentication method")
-    capabilities: set[Capability] = Field(
-        default_factory=set, description="Supported capabilities"
+    api_endpoint: str = Field(
+        ..., min_length=1, max_length=500, description="Base API endpoint URL"
     )
+    auth_type: AuthType = Field(..., description="Authentication method")
+    capabilities: set[Capability] = Field(default_factory=set, description="Supported capabilities")
     is_enabled: bool = Field(True, description="Whether provider is currently enabled")
     config: dict[str, Any] = Field(
         default_factory=dict, description="Provider-specific configuration"
@@ -636,7 +663,9 @@ class Provider(BaseModel):
     @field_validator("id")
     def validate_id(cls, v):
         if not re.match(r"^[a-z0-9_-]+$", v):
-            raise ValueError("Provider ID must contain only lowercase letters, numbers, hyphens, dashes")
+            raise ValueError(
+                "Provider ID must contain only lowercase letters, numbers, hyphens, dashes"
+            )
         return v
 
     @field_validator("api_endpoint")
@@ -669,23 +698,21 @@ class Model(BaseModel):
     provider_id: str = Field(..., min_length=1, max_length=50, description="Parent provider ID")
     name: str = Field(..., min_length=1, max_length=100, description="Model name")
     display_name: str = Field(..., min_length=1, max_length=100, description="Human-readable name")
-    capabilities: set[Capability] = Field(
-        default_factory=set, description="Supported capabilities"
-    )
+    capabilities: set[Capability] = Field(default_factory=set, description="Supported capabilities")
     context_window: int = Field(..., ge=1, le=2000000, description="Maximum context window size")
     cost_per_1k_input_tokens: float = Field(0.0, ge=0.0, description="Cost per 1K input tokens")
     cost_per_1k_output_tokens: float = Field(0.0, ge=0.0, description="Cost per 1K output tokens")
     is_enabled: bool = Field(True, description="Whether model is currently enabled")
-    config: dict[str, Any] = Field(
-        default_factory=dict, description="Model-specific configuration"
-    )
+    config: dict[str, Any] = Field(default_factory=dict, description="Model-specific configuration")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     @field_validator("id")
     def validate_id(cls, v):
         if not re.match(r"^[a-zA-Z0-9_.-]+$", v):
-            raise ValueError("Model ID must contain only letters, numbers, dots, hyphens, underscores")
+            raise ValueError(
+                "Model ID must contain only letters, numbers, dots, hyphens, underscores"
+            )
         return v
 
     model_config = ConfigDict(
@@ -695,7 +722,13 @@ class Model(BaseModel):
                 "provider_id": "openai",
                 "name": "gpt-4-turbo",
                 "display_name": "GPT-4 Turbo",
-                "capabilities": ["text_generation", "chat", "streaming", "function_calling", "vision"],
+                "capabilities": [
+                    "text_generation",
+                    "chat",
+                    "streaming",
+                    "function_calling",
+                    "vision",
+                ],
                 "context_window": 128000,
                 "cost_per_1k_input_tokens": 0.01,
                 "cost_per_1k_output_tokens": 0.03,
@@ -721,7 +754,9 @@ class Selection(BaseModel):
     model_id: str = Field(..., min_length=1, max_length=100, description="Selected model ID")
     scope: SelectionScope = Field(..., description="Selection scope level")
     user_id: str | None = Field(None, max_length=100, description="User ID (for session scope)")
-    session_id: str | None = Field(None, max_length=100, description="Session ID (for session scope)")
+    session_id: str | None = Field(
+        None, max_length=100, description="Session ID (for session scope)"
+    )
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

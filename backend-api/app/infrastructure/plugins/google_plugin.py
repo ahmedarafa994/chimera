@@ -7,7 +7,7 @@ Gemini Flash, and other Google AI models through the unified provider interface.
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 import google.generativeai as genai
 
@@ -65,8 +65,8 @@ class GoogleClient(BaseLLMClient):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ) -> PromptResponse:
         """
@@ -110,7 +110,7 @@ class GoogleClient(BaseLLMClient):
 
             # Build usage info (Google API doesn't always provide detailed usage)
             usage = {}
-            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            if hasattr(response, "usage_metadata") and response.usage_metadata:
                 usage = {
                     "prompt_tokens": response.usage_metadata.prompt_token_count,
                     "completion_tokens": response.usage_metadata.candidates_token_count,
@@ -123,7 +123,9 @@ class GoogleClient(BaseLLMClient):
                 provider=self._provider_id,
                 model=self._model_id,
                 usage=usage,
-                finish_reason=response.candidates[0].finish_reason.name if response.candidates else None,
+                finish_reason=(
+                    response.candidates[0].finish_reason.name if response.candidates else None
+                ),
             )
 
         except Exception as e:
@@ -134,8 +136,8 @@ class GoogleClient(BaseLLMClient):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ):
         """
@@ -227,7 +229,7 @@ class GooglePlugin(BaseProviderPlugin):
             Capability.VISION,
         }
 
-    def _get_api_key(self) -> Optional[str]:
+    def _get_api_key(self) -> str | None:
         """Get Google API key from environment."""
         return os.getenv(self._api_key_env_var)
 

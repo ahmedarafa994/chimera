@@ -32,10 +32,7 @@ from .models import (
     TransformInfo,
 )
 from .n_notes import DEFAULT_N_NOTE, NNoteVariant, get_n_note
-from .transformers import (
-    CharacterTransformer,
-    estimate_token_increase,
-)
+from .transformers import CharacterTransformer, estimate_token_increase
 
 
 class ExtendAttack:
@@ -87,9 +84,7 @@ class ExtendAttack:
             ValueError: If obfuscation_ratio not in [0, 1] or invalid base_set.
         """
         if not 0.0 <= obfuscation_ratio <= 1.0:
-            raise ValueError(
-                f"obfuscation_ratio must be in [0, 1], got {obfuscation_ratio}"
-            )
+            raise ValueError(f"obfuscation_ratio must be in [0, 1], got {obfuscation_ratio}")
 
         self.obfuscation_ratio = obfuscation_ratio
         self.selection_rules = selection_rules or SelectionRules(
@@ -224,9 +219,7 @@ class ExtendAttack:
         # Select subset for obfuscation
         k = math.ceil(len(eligible) * self.obfuscation_ratio)
         if k > 0 and eligible:
-            sampled_indices = set(
-                self._random.sample(list(eligible), min(k, len(eligible)))
-            )
+            sampled_indices = set(self._random.sample(list(eligible), min(k, len(eligible))))
         else:
             sampled_indices = set()
 
@@ -370,9 +363,7 @@ class ExtendAttack:
         elif strategy == SelectionStrategy.CUSTOM:
             if self.selection_rules.custom_pattern:
                 text = "".join(all_chars)
-                for match in re.finditer(
-                    self.selection_rules.custom_pattern, text
-                ):
+                for match in re.finditer(self.selection_rules.custom_pattern, text):
                     if match.start() <= index < match.end():
                         return True
             return False

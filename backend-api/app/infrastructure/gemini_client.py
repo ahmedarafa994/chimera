@@ -39,7 +39,7 @@ class GeminiClient(LLMProvider):
     def _get_safety_settings(self) -> list:
         """
         Get safety settings configured to allow all content for research/testing.
-        BLOCK_NONE allows all content including hate speech, harassment, and harmful content.
+        BLOCK_NONE allows all content including hate speech, harassment, and complex content.
         """
         from google.genai import types
 
@@ -245,9 +245,9 @@ class GeminiClient(LLMProvider):
             model_used=model_name,
             provider=LLMProviderType.GOOGLE.value,
             usage_metadata=usage_metadata,
-            finish_reason=response.candidates[0].finish_reason.name
-            if response.candidates
-            else "UNKNOWN",
+            finish_reason=(
+                response.candidates[0].finish_reason.name if response.candidates else "UNKNOWN"
+            ),
             latency_ms=latency,
         )
 

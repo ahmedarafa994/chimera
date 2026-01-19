@@ -10,11 +10,9 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.unified_attack import (
-    # Request schemas
+from app.schemas.unified_attack import (  # Request schemas; Response schemas
     AdaptiveAttackRequest,
     AllocationRequest,
-    # Response schemas
     AllocationResponse,
     AttackResponse,
     AttackStatusEnum,
@@ -768,7 +766,11 @@ async def get_attack_presets() -> list[PresetConfig]:
                 stealth_mode=False,
             ),
             budget=BudgetInput(max_tokens=200000, max_cost_usd=20.0),
-            recommended_scenarios=["red team exercises", "vulnerability discovery", "stress testing"],
+            recommended_scenarios=[
+                "red team exercises",
+                "vulnerability discovery",
+                "stress testing",
+            ],
         ),
         PresetConfig(
             preset_id="balanced",
@@ -835,7 +837,9 @@ async def validate_config(request: ValidationRequest) -> ValidationResult:
             warnings.append("Iterative strategy may reduce stealth effectiveness")
 
     # Estimate resource usage
-    estimated_tokens = 500 if request.config.default_strategy == CompositionStrategyEnum.PARALLEL else 1000
+    estimated_tokens = (
+        500 if request.config.default_strategy == CompositionStrategyEnum.PARALLEL else 1000
+    )
     estimated_cost = estimated_tokens * 0.00002
 
     return ValidationResult(
@@ -861,7 +865,7 @@ async def evaluate_attack(request: EvaluationRequest) -> EvaluationResponse:
     Computes comprehensive metrics including jailbreak success,
     stealth score, and Pareto ranking.
     """
-    session = await get_session(request.session_id)
+    await get_session(request.session_id)
 
     if request.attack_id not in _attacks:
         raise HTTPException(
@@ -1184,7 +1188,8 @@ async def run_benchmark(request: BenchmarkRequest) -> BenchmarkResponse:
         strategies_tested=[s.value for s in request.strategies],
         results_by_strategy=results_by_strategy,
         best_strategy=best_strategy.strategy,
-        overall_success_rate=sum(r.success_rate for r in results_by_strategy) / len(results_by_strategy),
+        overall_success_rate=sum(r.success_rate for r in results_by_strategy)
+        / len(results_by_strategy),
         baseline_comparison=baseline_comparison,
         duration_seconds=15.5,
         timestamp=now,
@@ -1200,11 +1205,11 @@ async def get_benchmark_datasets() -> list[BenchmarkDataset]:
     """
     return [
         BenchmarkDataset(
-            dataset_id="advbench-harmful",
-            name="AdvBench Harmful Behaviors",
-            description="Standard harmful behavior benchmark from adversarial ML research",
+            dataset_id="advbench-complex",
+            name="AdvBench complex Behaviors",
+            description="Standard complex behavior benchmark from adversarial ML research",
             size=520,
-            categories=["violence", "illegal", "harmful"],
+            categories=["violence", "complex", "complex"],
             difficulty_levels=["easy", "medium", "hard"],
             recommended_strategies=[
                 CompositionStrategyEnum.ITERATIVE,

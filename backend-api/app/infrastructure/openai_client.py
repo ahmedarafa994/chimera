@@ -135,10 +135,14 @@ class OpenAIClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"OpenAI API error: {e.message}")
-            raise AppError(f"OpenAI API error: {e.message}", status_code=self._map_error_code(e.status_code))
+            raise AppError(
+                f"OpenAI API error: {e.message}", status_code=self._map_error_code(e.status_code)
+            )
         except Exception as e:
             logger.error(f"OpenAI generation failed: {e!s}", exc_info=True)
-            raise AppError(f"OpenAI generation failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            raise AppError(
+                f"OpenAI generation failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY
+            )
 
     def _map_error_code(self, code: int | None) -> int:
         """Map OpenAI API error codes to HTTP status codes."""
@@ -219,7 +223,9 @@ class OpenAIClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"OpenAI streaming error: {e.message}")
-            raise AppError(f"Streaming failed: {e.message}", status_code=self._map_error_code(e.status_code))
+            raise AppError(
+                f"Streaming failed: {e.message}", status_code=self._map_error_code(e.status_code)
+            )
         except Exception as e:
             logger.error(f"OpenAI streaming failed: {e!s}", exc_info=True)
             raise AppError(f"Streaming failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)

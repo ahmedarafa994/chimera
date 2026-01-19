@@ -351,7 +351,7 @@ function ComparisonWaitingState({
       </div>
       <h3 className="font-semibold text-lg mb-2">Select More Campaigns</h3>
       <p className="text-sm text-muted-foreground max-w-md mb-4">
-        You've selected {selectedCount} campaign. Select at least one more to see the comparison.
+        You&apos;ve selected {selectedCount} campaign. Select at least one more to see the comparison.
       </p>
       <Badge variant="secondary" className="text-xs">
         {selectedCount} of 2-4 campaigns selected
@@ -430,7 +430,7 @@ function CombinedView({
   error: string | null;
   onRetry: () => void;
   onCampaignClick?: (campaignId: string) => void;
-  chartRef?: React.RefObject<HTMLDivElement>;
+  chartRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -807,5 +807,5 @@ export function DetailedComparisonPanel({
 // Exports
 // =============================================================================
 
-export type { ComparisonViewMode };
+// Note: ComparisonViewMode type is already exported where it's defined above
 export default CampaignComparisonPanel;

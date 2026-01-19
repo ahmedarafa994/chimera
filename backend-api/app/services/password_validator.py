@@ -25,25 +25,83 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 # Based on common password lists - these are always rejected
-COMMON_PASSWORDS: frozenset[str] = frozenset([
-    # Top commonly used passwords
-    "password", "123456", "12345678", "1234567890", "qwerty",
-    "abc123", "monkey", "1234567", "letmein", "trustno1",
-    "dragon", "baseball", "iloveyou", "master", "sunshine",
-    "ashley", "bailey", "passw0rd", "shadow", "123123",
-    "654321", "superman", "qazwsx", "michael", "football",
-    "password1", "password123", "welcome", "welcome1", "admin",
-    "login", "starwars", "hello", "charlie", "donald",
-    "password1234", "qwerty123", "qwertyuiop", "admin123", "root",
-    "toor", "pass", "test", "guest", "master123",
-    "changeme", "secret", "password!", "p@ssword", "p@ssw0rd",
-    # Keyboard patterns
-    "qwertyuiop", "asdfghjkl", "zxcvbnm", "1qaz2wsx", "q1w2e3r4",
-    "asdfasdf", "1q2w3e4r", "1234qwer", "qwer1234", "zaq1xsw2",
-    # Simple patterns
-    "aaaaaa", "111111", "000000", "abcdef", "123abc",
-    "abc12345", "1234abcd", "password12", "passpass", "pass1234",
-])
+COMMON_PASSWORDS: frozenset[str] = frozenset(
+    [
+        # Top commonly used passwords
+        "password",
+        "123456",
+        "12345678",
+        "1234567890",
+        "qwerty",
+        "abc123",
+        "monkey",
+        "1234567",
+        "letmein",
+        "trustno1",
+        "dragon",
+        "baseball",
+        "iloveyou",
+        "master",
+        "sunshine",
+        "ashley",
+        "bailey",
+        "passw0rd",
+        "shadow",
+        "123123",
+        "654321",
+        "superman",
+        "qazwsx",
+        "michael",
+        "football",
+        "password1",
+        "password123",
+        "welcome",
+        "welcome1",
+        "admin",
+        "login",
+        "starwars",
+        "hello",
+        "charlie",
+        "donald",
+        "password1234",
+        "qwerty123",
+        "qwertyuiop",
+        "admin123",
+        "root",
+        "toor",
+        "pass",
+        "test",
+        "guest",
+        "master123",
+        "changeme",
+        "secret",
+        "password!",
+        "p@ssword",
+        "p@ssw0rd",
+        # Keyboard patterns
+        "qwertyuiop",
+        "asdfghjkl",
+        "zxcvbnm",
+        "1qaz2wsx",
+        "q1w2e3r4",
+        "asdfasdf",
+        "1q2w3e4r",
+        "1234qwer",
+        "qwer1234",
+        "zaq1xsw2",
+        # Simple patterns
+        "aaaaaa",
+        "111111",
+        "000000",
+        "abcdef",
+        "123abc",
+        "abc12345",
+        "1234abcd",
+        "password12",
+        "passpass",
+        "pass1234",
+    ]
+)
 
 
 # =============================================================================
@@ -53,15 +111,17 @@ COMMON_PASSWORDS: frozenset[str] = frozenset([
 
 class PasswordStrength(str, Enum):
     """Password strength levels based on entropy"""
+
     VERY_WEAK = "very_weak"  # Entropy < 28
-    WEAK = "weak"            # Entropy 28-35
-    FAIR = "fair"            # Entropy 36-59
-    STRONG = "strong"        # Entropy 60-79
+    WEAK = "weak"  # Entropy 28-35
+    FAIR = "fair"  # Entropy 36-59
+    STRONG = "strong"  # Entropy 60-79
     VERY_STRONG = "very_strong"  # Entropy >= 80
 
 
 class ValidationErrorType(str, Enum):
     """Types of password validation errors"""
+
     TOO_SHORT = "too_short"
     NO_UPPERCASE = "no_uppercase"
     NO_LOWERCASE = "no_lowercase"
@@ -89,6 +149,7 @@ SPECIAL_CHARACTERS = r"""!@#$%^&*()_+-=[]{}|;':",.<>?/`~"""
 @dataclass
 class ValidationError:
     """A single validation error"""
+
     error_type: ValidationErrorType
     message: str
     severity: str = "error"  # "error" or "warning"
@@ -108,6 +169,7 @@ class PasswordValidationResult:
         suggestions: List of suggestions to improve the password
         score: Numeric score from 0-100
     """
+
     is_valid: bool
     strength: PasswordStrength
     entropy_bits: float
@@ -123,14 +185,8 @@ class PasswordValidationResult:
             "strength": self.strength.value,
             "entropy_bits": round(self.entropy_bits, 2),
             "score": self.score,
-            "errors": [
-                {"type": e.error_type.value, "message": e.message}
-                for e in self.errors
-            ],
-            "warnings": [
-                {"type": w.error_type.value, "message": w.message}
-                for w in self.warnings
-            ],
+            "errors": [{"type": e.error_type.value, "message": e.message} for e in self.errors],
+            "warnings": [{"type": w.error_type.value, "message": w.message} for w in self.warnings],
             "suggestions": self.suggestions,
         }
 
@@ -201,7 +257,7 @@ class PasswordValidator:
             r"(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|"
             r"opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|"
             r"012|123|234|345|456|567|678|789|890)",
-            re.IGNORECASE
+            re.IGNORECASE,
         )
 
     def calculate_entropy(self, password: str) -> float:
@@ -362,59 +418,73 @@ class PasswordValidator:
 
         # Length check
         if len(password) < self.min_length:
-            errors.append(ValidationError(
-                error_type=ValidationErrorType.TOO_SHORT,
-                message=f"Password must be at least {self.min_length} characters long",
-            ))
+            errors.append(
+                ValidationError(
+                    error_type=ValidationErrorType.TOO_SHORT,
+                    message=f"Password must be at least {self.min_length} characters long",
+                )
+            )
             suggestions.append(f"Add {self.min_length - len(password)} more characters")
 
         # Uppercase check
         if self.require_uppercase and not self._uppercase_pattern.search(password):
-            errors.append(ValidationError(
-                error_type=ValidationErrorType.NO_UPPERCASE,
-                message="Password must contain at least one uppercase letter (A-Z)",
-            ))
+            errors.append(
+                ValidationError(
+                    error_type=ValidationErrorType.NO_UPPERCASE,
+                    message="Password must contain at least one uppercase letter (A-Z)",
+                )
+            )
             suggestions.append("Add an uppercase letter (A-Z)")
 
         # Lowercase check
         if self.require_lowercase and not self._lowercase_pattern.search(password):
-            errors.append(ValidationError(
-                error_type=ValidationErrorType.NO_LOWERCASE,
-                message="Password must contain at least one lowercase letter (a-z)",
-            ))
+            errors.append(
+                ValidationError(
+                    error_type=ValidationErrorType.NO_LOWERCASE,
+                    message="Password must contain at least one lowercase letter (a-z)",
+                )
+            )
             suggestions.append("Add a lowercase letter (a-z)")
 
         # Digit check
         if self.require_digit and not self._digit_pattern.search(password):
-            errors.append(ValidationError(
-                error_type=ValidationErrorType.NO_DIGIT,
-                message="Password must contain at least one digit (0-9)",
-            ))
+            errors.append(
+                ValidationError(
+                    error_type=ValidationErrorType.NO_DIGIT,
+                    message="Password must contain at least one digit (0-9)",
+                )
+            )
             suggestions.append("Add a digit (0-9)")
 
         # Special character check
         if self.require_special and not self._special_pattern.search(password):
-            errors.append(ValidationError(
-                error_type=ValidationErrorType.NO_SPECIAL,
-                message=f"Password must contain at least one special character ({SPECIAL_CHARACTERS[:10]}...)",
-            ))
+            errors.append(
+                ValidationError(
+                    error_type=ValidationErrorType.NO_SPECIAL,
+                    message=f"Password must contain at least one special character ({SPECIAL_CHARACTERS[:10]}...)",
+                )
+            )
             suggestions.append("Add a special character (!@#$%^&* etc.)")
 
         # Common password check
         if self.reject_common and password.lower() in COMMON_PASSWORDS:
-            errors.append(ValidationError(
-                error_type=ValidationErrorType.COMMON_PASSWORD,
-                message="Password is too common and easily guessable",
-            ))
+            errors.append(
+                ValidationError(
+                    error_type=ValidationErrorType.COMMON_PASSWORD,
+                    message="Password is too common and easily guessable",
+                )
+            )
             suggestions.append("Choose a more unique password")
 
         # Entropy check
         if entropy_bits < self.min_entropy:
-            warnings.append(ValidationError(
-                error_type=ValidationErrorType.LOW_ENTROPY,
-                message=f"Password entropy is low ({entropy_bits:.1f} bits). Consider making it more complex.",
-                severity="warning",
-            ))
+            warnings.append(
+                ValidationError(
+                    error_type=ValidationErrorType.LOW_ENTROPY,
+                    message=f"Password entropy is low ({entropy_bits:.1f} bits). Consider making it more complex.",
+                    severity="warning",
+                )
+            )
             suggestions.append("Use a mix of random characters to increase strength")
 
         # Check if password contains email
@@ -422,40 +492,47 @@ class PasswordValidator:
             email_parts = email.lower().split("@")
             for part in email_parts:
                 if len(part) > 3 and part in password.lower():
-                    warnings.append(ValidationError(
-                        error_type=ValidationErrorType.CONTAINS_EMAIL,
-                        message="Password should not contain parts of your email address",
-                        severity="warning",
-                    ))
+                    warnings.append(
+                        ValidationError(
+                            error_type=ValidationErrorType.CONTAINS_EMAIL,
+                            message="Password should not contain parts of your email address",
+                            severity="warning",
+                        )
+                    )
                     suggestions.append("Remove email-related content from password")
                     break
 
         # Check if password contains username
-        if username and len(username) > 3:
-            if username.lower() in password.lower():
-                warnings.append(ValidationError(
+        if username and len(username) > 3 and username.lower() in password.lower():
+            warnings.append(
+                ValidationError(
                     error_type=ValidationErrorType.CONTAINS_USERNAME,
                     message="Password should not contain your username",
                     severity="warning",
-                ))
-                suggestions.append("Remove your username from the password")
+                )
+            )
+            suggestions.append("Remove your username from the password")
 
         # Check for sequential characters
         if self._sequential_pattern.search(password.lower()):
-            warnings.append(ValidationError(
-                error_type=ValidationErrorType.SEQUENTIAL_CHARS,
-                message="Password contains sequential characters (abc, 123, etc.)",
-                severity="warning",
-            ))
+            warnings.append(
+                ValidationError(
+                    error_type=ValidationErrorType.SEQUENTIAL_CHARS,
+                    message="Password contains sequential characters (abc, 123, etc.)",
+                    severity="warning",
+                )
+            )
             suggestions.append("Avoid sequential patterns like 'abc' or '123'")
 
         # Check for repeated characters
         if self._repeated_pattern.search(password):
-            warnings.append(ValidationError(
-                error_type=ValidationErrorType.REPEATED_CHARS,
-                message="Password contains repeated characters (aaa, 111, etc.)",
-                severity="warning",
-            ))
+            warnings.append(
+                ValidationError(
+                    error_type=ValidationErrorType.REPEATED_CHARS,
+                    message="Password contains repeated characters (aaa, 111, etc.)",
+                    severity="warning",
+                )
+            )
             suggestions.append("Avoid repeating the same character multiple times")
 
         # Password is valid if there are no errors
@@ -467,7 +544,7 @@ class PasswordValidator:
         # Adjust strength if invalid due to errors
         if not is_valid and strength.value not in (
             PasswordStrength.VERY_WEAK.value,
-            PasswordStrength.WEAK.value
+            PasswordStrength.WEAK.value,
         ):
             strength = PasswordStrength.WEAK
 

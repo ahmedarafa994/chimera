@@ -55,36 +55,34 @@ class DatabaseSchema:
 
     async def _create_version_table(self) -> None:
         """Create schema version tracking table."""
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE TABLE IF NOT EXISTS schema_version (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
                 version INTEGER NOT NULL DEFAULT 0,
                 updated_at TEXT NOT NULL
             )
-        """)
+        """
+        )
 
         # Insert initial version if not exists
-        result = await self._db.fetchone(
-            "SELECT version FROM schema_version WHERE id = 1"
-        )
+        result = await self._db.fetchone("SELECT version FROM schema_version WHERE id = 1")
         if result is None:
             await self._db.execute(
                 "INSERT INTO schema_version (id, version, updated_at) VALUES (1, 0, ?)",
-                (datetime.now(UTC).isoformat(),)
+                (datetime.now(UTC).isoformat(),),
             )
 
     async def _get_schema_version(self) -> int:
         """Get current schema version."""
-        result = await self._db.fetchone(
-            "SELECT version FROM schema_version WHERE id = 1"
-        )
+        result = await self._db.fetchone("SELECT version FROM schema_version WHERE id = 1")
         return result["version"] if result else 0
 
     async def _set_schema_version(self, version: int) -> None:
         """Update schema version."""
         await self._db.execute(
             "UPDATE schema_version SET version = ?, updated_at = ? WHERE id = 1",
-            (version, datetime.now(UTC).isoformat())
+            (version, datetime.now(UTC).isoformat()),
         )
 
     async def _apply_migrations(self, from_version: int) -> None:
@@ -107,7 +105,8 @@ class DatabaseSchema:
     async def _migration_v1(self) -> None:
         """Version 1: Initial schema with configs and API keys tables."""
         # Provider configurations table
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE TABLE IF NOT EXISTS provider_configs (
                 id TEXT PRIMARY KEY,
                 provider_type TEXT NOT NULL,
@@ -117,20 +116,26 @@ class DatabaseSchema:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
-        """)
+        """
+        )
 
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_provider_configs_type
             ON provider_configs(provider_type)
-        """)
+        """
+        )
 
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_provider_configs_default
             ON provider_configs(is_default)
-        """)
+        """
+        )
 
         # API keys table with encryption flag
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE TABLE IF NOT EXISTS api_keys (
                 id TEXT PRIMARY KEY,
                 provider_type TEXT NOT NULL,
@@ -142,27 +147,34 @@ class DatabaseSchema:
                 last_used_at TEXT,
                 UNIQUE(provider_type, key_name)
             )
-        """)
+        """
+        )
 
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_api_keys_provider
             ON api_keys(provider_type)
-        """)
+        """
+        )
 
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_api_keys_active
             ON api_keys(is_active)
-        """)
+        """
+        )
 
         # Configuration cache metadata table
-        await self._db.execute("""
+        await self._db.execute(
+            """
             CREATE TABLE IF NOT EXISTS config_cache_metadata (
                 cache_key TEXT PRIMARY KEY,
                 config_type TEXT NOT NULL,
                 expires_at TEXT,
                 created_at TEXT NOT NULL
             )
-        """)
+        """
+        )
 
         logger.info("Migration v1 applied: created core tables")
 

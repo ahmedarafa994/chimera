@@ -124,8 +124,7 @@ class BaseRepository(ABC, Generic[T]):
             True if entity exists.
         """
         result = await self._db.fetchone(
-            f"SELECT 1 FROM {self.table_name} WHERE id = ?",
-            (entity_id,)
+            f"SELECT 1 FROM {self.table_name} WHERE id = ?", (entity_id,)
         )
         return result is not None
 
@@ -136,7 +135,5 @@ class BaseRepository(ABC, Generic[T]):
         Returns:
             Total count of entities.
         """
-        result = await self._db.fetchone(
-            f"SELECT COUNT(*) as count FROM {self.table_name}"
-        )
+        result = await self._db.fetchone(f"SELECT COUNT(*) as count FROM {self.table_name}")
         return result["count"] if result else 0

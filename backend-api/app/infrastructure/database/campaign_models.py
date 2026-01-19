@@ -216,7 +216,7 @@ class CampaignTelemetryEvent(Base):
     error_code = Column(String(50), nullable=True)
 
     # Additional metadata
-    metadata = Column(JSON, default=dict)
+    event_metadata = Column(JSON, default=dict)
     # Example metadata:
     # {
     #     "request_id": "...",

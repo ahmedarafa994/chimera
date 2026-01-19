@@ -30,7 +30,7 @@ References:
 - HarmBench: A Standardized Evaluation Framework (Mazeika et al., 2024)
 """
 
-from .config import (
+from .config import (  # Configuration classes; Enumerations; Utility functions
     AutoDANOptimizationConfig,
     ConvergenceConfig,
     ConvergenceStrategy,
@@ -38,10 +38,8 @@ from .config import (
     FitnessConfig,
     GradientConfig,
     LossFunction,
-    # Configuration classes
     LossFunctionConfig,
     MutationStrategy,
-    # Enumerations
     OptimizationObjective,
     ParallelizationConfig,
     SchedulerType,
@@ -49,121 +47,92 @@ from .config import (
     TransferabilityConfig,
     TurboConfig,
     compute_diversity_score,
-    # Utility functions
     cosine_schedule,
     cyclic_schedule,
     get_default_config,
     warmup_cosine_schedule,
 )
-from .convergence import (
+from .convergence import (  # Schedulers; Main accelerator; Convergence detection; Gradient surgery; Optimizers; Factory functions
     AdamOptimizer,
     AdaptiveScheduler,
-    # Schedulers
     BaseScheduler,
     ConstantScheduler,
-    # Main accelerator
     ConvergenceAccelerator,
     ConvergenceDetector,
-    # Convergence detection
     ConvergenceState,
     CosineAnnealingScheduler,
     CyclicScheduler,
-    # Gradient surgery
     GradientSurgery,
-    # Optimizers
     MomentumOptimizer,
     NesterovOptimizer,
     OneCycleScheduler,
     PopulationAwareScheduler,
     WarmupCosineScheduler,
     create_optimizer,
-    # Factory functions
     create_scheduler,
 )
-from .evaluation_benchmarks import (
-    # Evaluators
+from .evaluation_benchmarks import (  # Evaluators; Benchmarks; Base class; Data structures; Factory
     AttackSuccessEvaluator,
-    # Benchmarks
     AutoDANBenchmark,
-    # Base class
     BaseEvaluator,
     BenchmarkResult,
     CoherenceEvaluator,
     DetectionEvasionEvaluator,
-    # Data structures
     EvaluationResult,
     FluentEvaluator,
     HarmBenchEvaluator,
     RefusalRateEvaluator,
     StealthEvaluator,
     TransferabilityEvaluator,
-    # Factory
     create_benchmark,
 )
-from .gradient_optimization import (
-    # Base class
+from .gradient_optimization import (  # Base class; Optimizers; Data structures; Factory
     BaseGradientOptimizer,
     BeamSearchOptimizer,
     BeamState,
     CoherenceConstrainedGCG,
-    # Optimizers
     GCGOptimizer,
     GradientInfo,
     MultiObjectiveGradientOptimizer,
     OptimizationState,
-    # Data structures
     TokenCandidate,
-    # Factory
     create_gradient_optimizer,
 )
-from .loss_functions import (
+from .loss_functions import (  # Base class; Regularization losses; Composite; Contrastive losses; Attack losses; Fitness evaluation; Factory
     AdversarialCrossEntropyLoss,
-    # Base class
     BaseLoss,
-    # Regularization losses
     CoherenceLoss,
-    # Composite
     CompositeLoss,
-    # Contrastive losses
     ContrastiveLoss,
-    # Attack losses
     CrossEntropyLoss,
     DiversityLoss,
     EnhancedFitnessEvaluator,
-    # Fitness evaluation
     FitnessResult,
     FocalLoss,
     StealthLoss,
     TripletLoss,
     create_composite_loss,
-    # Factory
     create_loss_function,
 )
-from .mutation_strategies import (
+from .mutation_strategies import (  # Scheduling; Base class; Mutation operators; Factory
     AdaptiveMutationOperator,
     BaseMutationOperator,
     EncodingMutationOperator,
     GradientGuidedMutationOperator,
     HybridMutationOperator,
-    # Scheduling
     MutationRateScheduler,
-    # Base class
     MutationResult,
-    # Mutation operators
     RandomMutationOperator,
     RhetoricalMutationOperator,
     SemanticMutationOperator,
-    # Factory
     create_mutation_operator,
     get_default_mutation_chain,
 )
-from .parallelization import (
+from .parallelization import (  # Batch processing; Turbo architecture
     AsyncQueueProcessor,
     BatchProcessor,
-    # Batch processing
     BatchResult,
     PopulationParallelEvaluator,
-    # Turbo architecture
     Strategy,
     StrategyLibrary,
     TurboLifelongLearner,

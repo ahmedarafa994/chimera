@@ -134,9 +134,7 @@ class ExtendAttackEvaluator:
                 if attempt < self.config.retry_count - 1:
                     await asyncio.sleep(self.config.retry_delay_seconds)
                 else:
-                    raise TimeoutError(
-                        f"Model call timed out after {self.config.timeout_seconds}s"
-                    )
+                    raise TimeoutError(f"Model call timed out after {self.config.timeout_seconds}s")
             except Exception as e:
                 if attempt < self.config.retry_count - 1:
                     await asyncio.sleep(self.config.retry_delay_seconds)
@@ -387,7 +385,9 @@ class ExtendAttackEvaluator:
                 )
             query_pairs = list(zip(queries, adversarial_queries, ground_truths, strict=False))
         else:
-            query_pairs = [(q, aq, None) for q, aq in zip(queries, adversarial_queries, strict=False)]
+            query_pairs = [
+                (q, aq, None) for q, aq in zip(queries, adversarial_queries, strict=False)
+            ]
 
         return await self.evaluate_batch(
             query_pairs=query_pairs,
@@ -411,9 +411,7 @@ class ExtendAttackEvaluator:
         Returns:
             AttackEvaluationResult
         """
-        return asyncio.run(
-            self.evaluate_single(original_query, adversarial_query, ground_truth)
-        )
+        return asyncio.run(self.evaluate_single(original_query, adversarial_query, ground_truth))
 
     def evaluate_batch_sync(
         self,
@@ -430,11 +428,7 @@ class ExtendAttackEvaluator:
         Returns:
             BenchmarkResults
         """
-        return asyncio.run(
-            self.evaluate_batch(query_pairs, benchmark_name=benchmark_name)
-        )
-
-
+        return asyncio.run(self.evaluate_batch(query_pairs, benchmark_name=benchmark_name))
 
 
 def create_evaluator(

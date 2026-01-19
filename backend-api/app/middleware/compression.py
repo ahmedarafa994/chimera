@@ -69,10 +69,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
             self.brotli_available = True
         except ImportError:
             self.brotli_available = False
-            logger.debug(
-                "Brotli compression not available. "
-                "Install with: pip install brotli"
-            )
+            logger.debug("Brotli compression not available. " "Install with: pip install brotli")
 
     async def dispatch(
         self,
@@ -297,6 +294,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
 
 # Factory function for easier configuration
+
 
 def create_compression_middleware(
     minimum_size: int = 500,

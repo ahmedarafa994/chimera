@@ -13,21 +13,11 @@ import pytest
 
 def pytest_configure(config):
     """Register custom markers."""
-    config.addinivalue_line(
-        "markers", "integration: mark test as integration test"
-    )
-    config.addinivalue_line(
-        "markers", "security: mark test as security test"
-    )
-    config.addinivalue_line(
-        "markers", "scenario: mark test as scenario test"
-    )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow-running"
-    )
-    config.addinivalue_line(
-        "markers", "requires_api: mark test as requiring API connection"
-    )
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "security: mark test as security test")
+    config.addinivalue_line("markers", "scenario: mark test as scenario test")
+    config.addinivalue_line("markers", "slow: mark test as slow-running")
+    config.addinivalue_line("markers", "requires_api: mark test as requiring API connection")
 
 
 @pytest.fixture

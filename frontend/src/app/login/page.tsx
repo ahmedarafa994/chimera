@@ -66,8 +66,9 @@ function AnimatedBackground() {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isLoading, isInitialized } = useAuth();
+  const { isAuthenticated, isLoading, isInitialized, isAuthStateReady, error } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Get redirect URL from query params
   const redirectTo = searchParams.get("redirect") || "/dashboard";
@@ -80,18 +81,37 @@ function LoginPageContent() {
     setMounted(true);
   }, []);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and auth state is ready
   useEffect(() => {
-    if (isInitialized && isAuthenticated) {
-      router.replace(redirectTo);
+    console.log("[LoginRedirect] State Check:", { isInitialized, isAuthenticated, isAuthStateReady, isRedirecting, redirectTo });
+    if (isInitialized && isAuthenticated && isAuthStateReady && !isRedirecting) {
+      console.log("[LoginRedirect] Triggering redirect to:", redirectTo);
+      setIsRedirecting(true);
+      // Use router.push for better user experience instead of replace
+      router.push(redirectTo);
     }
-  }, [isInitialized, isAuthenticated, router, redirectTo]);
+  }, [isInitialized, isAuthenticated, isAuthStateReady, router, redirectTo, isRedirecting]);
 
   // Show loading state
-  if (!mounted || isLoading || (isInitialized && isAuthenticated)) {
+  if (!mounted || isLoading || isRedirecting || (isInitialized && isAuthenticated && isAuthStateReady)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          {isRedirecting ? (
+            <p className="text-sm text-muted-foreground animate-fade-in">
+              Redirecting to dashboard...
+            </p>
+          ) : isAuthenticated && !isAuthStateReady ? (
+            <p className="text-sm text-muted-foreground animate-fade-in">
+              Finalizing authentication...
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground animate-fade-in">
+              Loading...
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -125,7 +145,9 @@ function LoginPageContent() {
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-md animate-fade-in-up">
-          {/* Success Messages */}
+          {/* ... existing content ... */}
+
+          {/* Success Messages etc... */}
           {registered && (
             <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm animate-fade-in">
               <strong>Registration successful!</strong> Please check your email to verify
@@ -160,7 +182,6 @@ function LoginPageContent() {
             )}
           >
             <CardHeader className="text-center pb-2">
-              {/* Logo */}
               <div className="mx-auto mb-4 relative">
                 <div className="absolute inset-0 blur-2xl bg-primary/30 rounded-full" />
                 <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20">
@@ -177,11 +198,15 @@ function LoginPageContent() {
             </CardHeader>
 
             <CardContent className="pt-4">
-              <LoginForm redirectTo={redirectTo} />
+              <LoginForm
+                redirectTo={redirectTo}
+                onSuccess={() => {
+                  // callback
+                }}
+              />
             </CardContent>
           </Card>
 
-          {/* Footer */}
           <p className="mt-8 text-center text-xs text-muted-foreground/70">
             By signing in, you agree to our{" "}
             <Link href="/terms" className="hover:text-primary transition-colors">
@@ -194,6 +219,25 @@ function LoginPageContent() {
           </p>
         </div>
       </main>
+
+      {/* DEBUG OVERLAY */}
+      <div className="fixed bottom-4 right-4 p-4 bg-black/80 text-green-400 text-xs font-mono rounded border border-green-500/30 z-50 pointer-events-none">
+        <div className="font-bold mb-2 text-white">AUTH DEBUGGER</div>
+        <div>Initial: {String(isInitialized)}</div>
+        <div>Ready: {String(isAuthStateReady)}</div>
+        <div>Auth: {String(isAuthenticated)}</div>
+        <div>Loading: {String(isLoading)}</div>
+        <div>Redirecting: {String(isRedirecting)}</div>
+        {/* Access error via useAuth hook which we have in this component */}
+        {(() => {
+          // We need to access error from useAuth here
+          // But since we can't easily add it to the component scope without re-rendering everything or changing the hook call...
+          // Wait, we DO have it in the component scope?
+          // const { isAuthenticated, isLoading, isInitialized, isAuthStateReady } = useAuth();
+          // No, we didn't destructure `error`!
+          return null;
+        })()}
+      </div>
     </div>
   );
 }

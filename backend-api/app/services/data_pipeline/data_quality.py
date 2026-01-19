@@ -145,11 +145,17 @@ class DataQualityFramework:
             ],
             "model": [
                 {"expectation_type": "expect_column_values_to_not_be_null"},
-                {"expectation_type": "expect_column_value_lengths_to_be_between", "kwargs": {"min_value": 1, "max_value": 100}},
+                {
+                    "expectation_type": "expect_column_value_lengths_to_be_between",
+                    "kwargs": {"min_value": 1, "max_value": 100},
+                },
             ],
             "prompt": [
                 {"expectation_type": "expect_column_values_to_not_be_null"},
-                {"expectation_type": "expect_column_value_lengths_to_be_between", "kwargs": {"min_value": 1, "max_value": 50000}},
+                {
+                    "expectation_type": "expect_column_value_lengths_to_be_between",
+                    "kwargs": {"min_value": 1, "max_value": 50000},
+                },
             ],
             "latency_ms": [
                 {"expectation_type": "expect_column_values_to_not_be_null"},
@@ -174,7 +180,10 @@ class DataQualityFramework:
             ],
             "created_at": [
                 {"expectation_type": "expect_column_values_to_not_be_null"},
-                {"expectation_type": "expect_column_values_to_be_of_type", "kwargs": {"type_": "datetime64"}},
+                {
+                    "expectation_type": "expect_column_values_to_be_of_type",
+                    "kwargs": {"type_": "datetime64"},
+                },
             ],
         }
 
@@ -232,7 +241,10 @@ class DataQualityFramework:
             ],
             "success": [
                 {"expectation_type": "expect_column_values_to_not_be_null"},
-                {"expectation_type": "expect_column_values_to_be_of_type", "kwargs": {"type_": "bool"}},
+                {
+                    "expectation_type": "expect_column_values_to_be_of_type",
+                    "kwargs": {"type_": "bool"},
+                },
             ],
         }
 
@@ -320,7 +332,9 @@ class DataQualityFramework:
         )
 
         # Log results
-        pass_rate = statistics.get("successful_expectations", 0) / max(statistics.get("evaluated_expectations", 1), 1)
+        pass_rate = statistics.get("successful_expectations", 0) / max(
+            statistics.get("evaluated_expectations", 1), 1
+        )
         logger.info(
             f"Validation {data_asset_name}: {'PASSED' if success else 'FAILED'} "
             f"(pass rate: {pass_rate:.2%})"
@@ -366,9 +380,7 @@ class DataQualityFramework:
         suites = self.context.list_expectation_suite_names()
         return suites
 
-    def get_validation_history(
-        self, data_asset_name: str, limit: int = 10
-    ) -> list[dict[str, Any]]:
+    def get_validation_history(self, data_asset_name: str, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get validation history for a data asset.
 

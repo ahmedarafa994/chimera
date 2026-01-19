@@ -12,7 +12,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.websockets import WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from app.core.logging import logger
 from app.domain.model_sync import (
@@ -22,6 +22,7 @@ from app.domain.model_sync import (
 )
 from app.middleware.auth import get_client_info, get_current_user_id
 from app.services.model_sync_service import model_sync_service
+from app.services.session_service import session_service
 
 # Removed prefix="/models" since it's already included in v1 router
 router = APIRouter(tags=["model-sync"])
@@ -31,8 +32,16 @@ router = APIRouter(tags=["model-sync"])
 class ValidateModelRequest(BaseModel):
     """Request to validate a model selection."""
 
-    provider: str = Field(..., description="Provider name (e.g., 'google', 'openai')")
-    model: str = Field(..., description="Model ID to validate")
+    provider: str = Field(
+        ...,
+        description="Provider name (e.g., 'google', 'openai')",
+        validation_alias=AliasChoices("provider", "provider_id"),
+    )
+    model: str = Field(
+        ...,
+        description="Model ID to validate",
+        validation_alias=AliasChoices("model", "model_id"),
+    )
 
 
 class ValidateModelResponse(BaseModel):
@@ -172,27 +181,30 @@ async def validate_model_selection(request: ValidateModelRequest):
     from app.core.config import settings
 
     try:
-        # Build the full model ID as stored in the cache (provider:model_name)
-        model_id = f"{request.provider}:{request.model}"
-
-        # Check if this provider:model combination exists
-        is_valid = await model_sync_service.validate_model_id(model_id)
-
+        is_valid, message, fallback = session_service.validate_model(
+            request.provider, request.model
+        )
         if is_valid:
             return ValidateModelResponse(
                 valid=True,
                 message=f"Model '{request.model}' is valid for provider '{request.provider}'",
             )
-        else:
-            # Get default fallback from settings
-            default_provider = settings.AI_PROVIDER
-            default_model = settings.DEFAULT_MODEL_ID
+
+        # Fallback: allow model-only validation if provider data is out of sync.
+        if await model_sync_service.validate_model_id(request.model):
             return ValidateModelResponse(
-                valid=False,
-                message=f"Model '{request.model}' is not available for provider '{request.provider}'",
-                fallback_model=default_model,
-                fallback_provider=default_provider,
+                valid=True,
+                message=f"Model '{request.model}' is available",
             )
+
+        default_provider = settings.AI_PROVIDER
+        default_model = settings.DEFAULT_MODEL_ID
+        return ValidateModelResponse(
+            valid=False,
+            message=message,
+            fallback_model=fallback or default_model,
+            fallback_provider=default_provider,
+        )
     except Exception as e:
         logger.error(f"Model validation failed: {e}")
         from app.core.config import settings

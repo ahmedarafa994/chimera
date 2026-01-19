@@ -16,7 +16,7 @@ def config():
     # Model configurations
     config.add_argument("--model", type=str, default="llama3", help="Target model type")
     config.add_argument("--chat_config", type=str, default="./llm/chat_templates")
-    config.add_argument("--data", type=str, default="./data/harmful_behavior_requests.json")
+    config.add_argument("--data", type=str, default="./data/complex_behavior_requests.json")
     config.add_argument("--epochs", type=int, default=150, help="Max attack iterations")
 
     # API keys
@@ -170,7 +170,9 @@ if __name__ == "__main__":
     logger.info("Loading strategy library from ./logs_r/lifelong_strategy_library.pkl")
     with open("./logs_r/lifelong_strategy_library.pkl", "rb") as f:
         if os.environ.get("ALLOW_UNTRUSTED_PICKLE") == "1":
-            lifelong_strategy_library = pickle.load(f)  # noqa: S301 - guarded by ALLOW_UNTRUSTED_PICKLE
+            lifelong_strategy_library = pickle.load(
+                f
+            )  # noqa: S301 - guarded by ALLOW_UNTRUSTED_PICKLE
         else:
             raise RuntimeError(
                 "Deserializing pickle files is disabled by default. To enable, set ALLOW_UNTRUSTED_PICKLE=1"

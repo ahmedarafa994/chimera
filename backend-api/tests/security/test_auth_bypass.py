@@ -4,6 +4,7 @@ TEST-002: Authentication Bypass Security Tests
 This module tests for authentication bypass vulnerabilities identified in
 CRIT-002 of the security audit report.
 """
+
 import secrets
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -58,7 +59,7 @@ class TestAuthenticationBypass:
         for key in test_keys:
             start = time.perf_counter_ns()
             # Use secrets.compare_digest for constant-time comparison
-            result = secrets.compare_digest(valid_key, key)
+            secrets.compare_digest(valid_key, key)
             end = time.perf_counter_ns()
             timings.append(end - start)
 
@@ -74,7 +75,7 @@ class TestAuthenticationBypass:
         Verify fail-closed behavior when API key is not configured.
         CRIT-002 Fix verification.
         """
-        with patch.dict('os.environ', {'API_KEY': ''}, clear=False):
+        with patch.dict("os.environ", {"API_KEY": ""}, clear=False):
             # In production mode with no key configured, should fail closed
             # This tests the security posture
             pass  # Implementation depends on environment checks
@@ -104,7 +105,7 @@ class TestAuthenticationBypass:
         mock_request.headers = {}
         mock_request.url.path = "/health"
 
-        middleware = AuthMiddleware(app=Mock())
+        AuthMiddleware(app=Mock())
 
         # Health endpoint should be allowed without auth
         # Implementation specific - may need adjustment
@@ -155,11 +156,7 @@ class TestRateLimiting:
 
         # Simulate multiple requests from same IP
         mock_app = AsyncMock()
-        middleware = RateLimitMiddleware(
-            app=mock_app,
-            calls=5,
-            period=60
-        )
+        middleware = RateLimitMiddleware(app=mock_app, calls=5, period=60)
 
         mock_request = Mock(spec=Request)
         mock_request.client = Mock()
@@ -221,7 +218,7 @@ class TestInputValidation:
 
         for payload in xss_payloads:
             sanitized = sanitize_prompt(payload)
-            # Ensure dangerous content is removed or escaped
+            # Ensure complex content is removed or escaped
             assert "<script" not in sanitized.lower()
             assert "javascript:" not in sanitized.lower()
             assert "onerror" not in sanitized.lower()

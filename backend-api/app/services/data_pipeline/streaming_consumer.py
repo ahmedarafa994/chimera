@@ -59,6 +59,7 @@ DEFAULT_IDLE_MS = 60000 * 60  # 1 hour before pending entries claimed
 @dataclass
 class StreamEntry:
     """Single stream entry with parsed data"""
+
     stream_key: str
     entry_id: str
     event_type: str
@@ -106,6 +107,7 @@ class StreamEntry:
 @dataclass
 class ConsumerStats:
     """Consumer processing statistics"""
+
     consumer_name: str
     stream_key: str
     group_name: str
@@ -123,7 +125,9 @@ class ConsumerStats:
             "group_name": self.group_name,
             "total_processed": self.total_processed,
             "total_errors": self.total_errors,
-            "last_processed_at": self.last_processed_at.isoformat() if self.last_processed_at else None,
+            "last_processed_at": (
+                self.last_processed_at.isoformat() if self.last_processed_at else None
+            ),
             "lag": self.lag,
             "pending": self.pending,
         }
@@ -203,7 +207,7 @@ class StreamConsumer:
     @staticmethod
     def _get_redis_url() -> str:
         """Get Redis URL from settings with fallback"""
-        if hasattr(settings, 'REDIS_URL'):
+        if hasattr(settings, "REDIS_URL"):
             return settings.REDIS_URL
         return "redis://localhost:6379/0"
 
@@ -236,8 +240,7 @@ class StreamConsumer:
 
             self._is_initialized = True
             logger.info(
-                f"Stream consumer initialized: {self.consumer_name} "
-                f"in group {self.group_name}"
+                f"Stream consumer initialized: {self.consumer_name} " f"in group {self.group_name}"
             )
 
         except RedisError as e:
@@ -527,16 +530,16 @@ class StreamConsumer:
             Dictionary with consumer statistics
         """
         if stream_key:
-            return self._stats.get(stream_key, ConsumerStats(
-                consumer_name=self.consumer_name,
-                stream_key=stream_key,
-                group_name=self.group_name,
-            )).to_dict()
+            return self._stats.get(
+                stream_key,
+                ConsumerStats(
+                    consumer_name=self.consumer_name,
+                    stream_key=stream_key,
+                    group_name=self.group_name,
+                ),
+            ).to_dict()
 
-        return {
-            stream_key: stats.to_dict()
-            for stream_key, stats in self._stats.items()
-        }
+        return {stream_key: stats.to_dict() for stream_key, stats in self._stats.items()}
 
     async def get_group_info(
         self,
@@ -620,8 +623,7 @@ class StreamConsumer:
 
             # Parse entries
             stream_entries = [
-                StreamEntry.from_raw(stream_key, entry_id, data)
-                for entry_id, data in entries
+                StreamEntry.from_raw(stream_key, entry_id, data) for entry_id, data in entries
             ]
 
             logger.info(f"Claimed {len(stream_entries)} pending entries from {stream_key}")

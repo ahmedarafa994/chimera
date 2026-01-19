@@ -15,8 +15,9 @@ References:
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, AsyncIterator, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
@@ -44,9 +45,9 @@ class CachedSelection(BaseModel):
     provider: str
     model: str
     version: int = 1
-    user_id: Optional[str] = None
+    user_id: str | None = None
     cached_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
@@ -61,9 +62,7 @@ class CachedSelection(BaseModel):
             "version": self.version,
             "user_id": self.user_id,
             "cached_at": self.cached_at.isoformat(),
-            "expires_at": (
-                self.expires_at.isoformat() if self.expires_at else None
-            ),
+            "expires_at": (self.expires_at.isoformat() if self.expires_at else None),
             "metadata": self.metadata,
         }
 
@@ -94,8 +93,8 @@ class SelectionChangeEvent(BaseModel):
     """Event published when a selection changes."""
 
     session_id: str
-    old_provider: Optional[str] = None
-    old_model: Optional[str] = None
+    old_provider: str | None = None
+    old_model: str | None = None
     new_provider: str
     new_model: str
     version: int
@@ -133,17 +132,15 @@ class SelectionCache:
     # Default TTL (1 hour)
     DEFAULT_TTL = 3600
 
-    def __init__(self, redis_url: Optional[str] = None):
+    def __init__(self, redis_url: str | None = None):
         """
         Initialize the selection cache.
 
         Args:
             redis_url: Redis connection URL (defaults to settings)
         """
-        self._redis_url = redis_url or getattr(
-            settings, "REDIS_URL", "redis://localhost:6379"
-        )
-        self._client: Optional["Redis"] = None
+        self._redis_url = redis_url or getattr(settings, "REDIS_URL", "redis://localhost:6379")
+        self._client: Redis | None = None
         self._pubsub = None
         self._initialized = False
         self._local_cache: dict[str, CachedSelection] = {}
@@ -177,17 +174,13 @@ class SelectionCache:
             return True
 
         except ImportError:
-            logger.warning(
-                "redis.asyncio not available, using local cache fallback"
-            )
+            logger.warning("redis.asyncio not available, using local cache fallback")
             self._use_local_fallback = True
             self._initialized = True
             return False
 
         except Exception as e:
-            logger.warning(
-                f"Redis connection failed: {e}. Using local cache fallback"
-            )
+            logger.warning(f"Redis connection failed: {e}. Using local cache fallback")
             self._use_local_fallback = True
             self._initialized = True
             return False
@@ -208,7 +201,7 @@ class SelectionCache:
         """Generate Redis key for a session."""
         return f"{self.CACHE_PREFIX}{session_id}"
 
-    async def get(self, session_id: str) -> Optional[CachedSelection]:
+    async def get(self, session_id: str) -> CachedSelection | None:
         """
         Get cached selection for a session.
 
@@ -224,10 +217,9 @@ class SelectionCache:
         # Local fallback
         if self._use_local_fallback:
             cached = self._local_cache.get(session_id)
-            if cached and cached.expires_at:
-                if datetime.utcnow() > cached.expires_at:
-                    del self._local_cache[session_id]
-                    return None
+            if cached and cached.expires_at and datetime.utcnow() > cached.expires_at:
+                del self._local_cache[session_id]
+                return None
             return cached
 
         try:
@@ -264,6 +256,7 @@ class SelectionCache:
 
         # Update expiration
         from datetime import timedelta
+
         selection.expires_at = datetime.utcnow() + timedelta(seconds=ttl)
         selection.cached_at = datetime.utcnow()
 
@@ -403,7 +396,7 @@ class SelectionCache:
         self,
         session_id: str,
         selection: CachedSelection,
-        old_selection: Optional[CachedSelection] = None,
+        old_selection: CachedSelection | None = None,
     ) -> bool:
         """
         Publish selection change notification.
@@ -446,7 +439,7 @@ class SelectionCache:
 
     async def subscribe_changes(
         self,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
     ) -> AsyncIterator[SelectionChangeEvent]:
         """
         Subscribe to selection change notifications.
@@ -468,9 +461,7 @@ class SelectionCache:
             async for message in pubsub.listen():
                 if message["type"] == "message":
                     try:
-                        event = SelectionChangeEvent.model_validate_json(
-                            message["data"]
-                        )
+                        event = SelectionChangeEvent.model_validate_json(message["data"])
 
                         # Filter by session_id if specified
                         if session_id and event.session_id != session_id:
@@ -492,7 +483,7 @@ class SelectionCache:
     async def mget(
         self,
         session_ids: list[str],
-    ) -> dict[str, Optional[CachedSelection]]:
+    ) -> dict[str, CachedSelection | None]:
         """
         Get multiple cached selections.
 
@@ -516,11 +507,9 @@ class SelectionCache:
             keys = [self._cache_key(sid) for sid in session_ids]
             values = await self._client.mget(keys)
 
-            for sid, value in zip(session_ids, values):
+            for sid, value in zip(session_ids, values, strict=False):
                 if value:
-                    results[sid] = CachedSelection.from_cache_dict(
-                        json.loads(value)
-                    )
+                    results[sid] = CachedSelection.from_cache_dict(json.loads(value))
                 else:
                     results[sid] = self._local_cache.get(sid)
 
@@ -594,7 +583,7 @@ class SelectionCache:
 # =============================================================================
 
 
-_selection_cache_instance: Optional[SelectionCache] = None
+_selection_cache_instance: SelectionCache | None = None
 
 
 def get_selection_cache() -> SelectionCache:
@@ -627,8 +616,8 @@ async def initialize_selection_cache() -> SelectionCache:
 # =============================================================================
 
 __all__ = [
-    "SelectionCache",
     "CachedSelection",
+    "SelectionCache",
     "SelectionChangeEvent",
     "get_selection_cache",
     "initialize_selection_cache",

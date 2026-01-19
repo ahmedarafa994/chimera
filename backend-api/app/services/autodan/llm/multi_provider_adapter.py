@@ -317,9 +317,11 @@ class AnthropicProvider(BaseLLMProvider):
                 model=model_name,
                 provider=ProviderType.ANTHROPIC,
                 latency_ms=latency_ms,
-                tokens_used=response.usage.input_tokens + response.usage.output_tokens
-                if response.usage
-                else 0,
+                tokens_used=(
+                    response.usage.input_tokens + response.usage.output_tokens
+                    if response.usage
+                    else 0
+                ),
                 prompt_tokens=response.usage.input_tokens if response.usage else 0,
                 completion_tokens=response.usage.output_tokens if response.usage else 0,
                 metadata={"stop_reason": response.stop_reason},

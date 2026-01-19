@@ -4,5 +4,18 @@
       "Bash(~/.claude/plugins/claude-hud/config.json)",
       "Bash(cat ~/.claude/plugins/claude-hud/config.json)"
     ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "brv hook-prompt-submit",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ]
   }
 }

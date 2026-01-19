@@ -72,7 +72,7 @@ class TestRemediationFixes:
 
     def test_validation_regex_removal(self):
         """Verify SQL injection regexes are removed"""
-        # Check that the dangerous pattern list is gone
+        # Check that the complex pattern list is gone
         assert not hasattr(Sanitizer, "SQL_INJECTION_PATTERNS")
 
         # Check that check_sql_injection method is gone

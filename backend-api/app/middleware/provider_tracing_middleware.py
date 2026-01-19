@@ -18,7 +18,8 @@ Usage:
 import logging
 import time
 import uuid
-from typing import Any, Callable, Optional, Set
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -42,7 +43,7 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
     """
 
     # Default paths to exclude from tracing
-    DEFAULT_EXCLUDE_PATHS: Set[str] = {
+    DEFAULT_EXCLUDE_PATHS: set[str] = {
         "/health",
         "/health/ping",
         "/health/ready",
@@ -51,12 +52,14 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
         "/redoc",
         "/favicon.ico",
+        "/api/v1/health",
+        "/api/v1/auth",  # Exclude auth
     }
 
     def __init__(
         self,
         app,
-        exclude_paths: Optional[Set[str]] = None,
+        exclude_paths: set[str] | None = None,
         include_timing: bool = True,
         include_metadata: bool = False,
         trace_header_prefix: str = "X-Selection-",
@@ -80,14 +83,9 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
         self._header_prefix = trace_header_prefix
         self._log_selections = log_selections
 
-        logger.info(
-            f"ProviderTracingMiddleware initialized "
-            f"(prefix={trace_header_prefix})"
-        )
+        logger.info(f"ProviderTracingMiddleware initialized " f"(prefix={trace_header_prefix})")
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Trace provider/model selection through request.
 
@@ -163,14 +161,13 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
             if selection:
                 info["provider"] = selection.provider_id
                 info["model"] = selection.model_id
-                info["scope"] = (
-                    selection.scope.value if selection.scope else None
-                )
+                info["scope"] = selection.scope.value if selection.scope else None
                 info["source"] = info["scope"]  # Same for now
 
         # Try to get validation result if available
         try:
             from app.core.request_context import ContextManager
+
             if ContextManager.has_context():
                 ctx = ContextManager.get_context()
                 info["provider"] = info["provider"] or ctx.provider
@@ -196,9 +193,7 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
         response.headers[f"{prefix}Trace-ID"] = trace_id
 
         # Provider/model headers
-        provider = post_selection.get("provider") or pre_selection.get(
-            "provider"
-        )
+        provider = post_selection.get("provider") or pre_selection.get("provider")
         model = post_selection.get("model") or pre_selection.get("model")
 
         if provider:
@@ -220,8 +215,9 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
             response.headers[f"{prefix}Time-Ms"] = f"{elapsed_ms:.2f}"
 
         # Check for selection changes
-        if (pre_selection.get("provider") != post_selection.get("provider") or
-                pre_selection.get("model") != post_selection.get("model")):
+        if pre_selection.get("provider") != post_selection.get("provider") or pre_selection.get(
+            "model"
+        ) != post_selection.get("model"):
             response.headers[f"{prefix}Changed"] = "true"
         else:
             response.headers[f"{prefix}Changed"] = "false"
@@ -298,18 +294,20 @@ class SelectionTracer:
             model: Model ID
             source: Source of the selection
         """
-        self._events.append({
-            "type": "selection",
-            "provider": provider,
-            "model": model,
-            "source": source,
-            "timestamp_ms": self._elapsed_ms(),
-        })
+        self._events.append(
+            {
+                "type": "selection",
+                "provider": provider,
+                "model": model,
+                "source": source,
+                "timestamp_ms": self._elapsed_ms(),
+            }
+        )
 
     def record_event(
         self,
         event_type: str,
-        data: Optional[dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> None:
         """
         Record a custom event.
@@ -318,11 +316,13 @@ class SelectionTracer:
             event_type: Type of event
             data: Additional event data
         """
-        self._events.append({
-            "type": event_type,
-            "data": data or {},
-            "timestamp_ms": self._elapsed_ms(),
-        })
+        self._events.append(
+            {
+                "type": event_type,
+                "data": data or {},
+                "timestamp_ms": self._elapsed_ms(),
+            }
+        )
 
     def _elapsed_ms(self) -> float:
         """Get elapsed time in milliseconds."""
@@ -344,7 +344,7 @@ class SelectionTracer:
             level,
             f"[Trace:{self._trace_id}] {self._operation} "
             f"completed in {trace['duration_ms']:.2f}ms "
-            f"with {len(self._events)} events"
+            f"with {len(self._events)} events",
         )
 
 
@@ -364,10 +364,7 @@ class TracingContext:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         if exc_type:
-            self._tracer.record_event(
-                "error",
-                {"type": str(exc_type), "message": str(exc_val)}
-            )
+            self._tracer.record_event("error", {"type": str(exc_type), "message": str(exc_val)})
         self._tracer.log_trace()
 
 

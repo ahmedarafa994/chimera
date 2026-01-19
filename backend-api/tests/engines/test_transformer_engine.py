@@ -117,9 +117,7 @@ class TestBaseTransformerEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Generated content")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Generated content"))
         return client
 
     def test_concrete_implementation_required(self):
@@ -148,10 +146,12 @@ class TestBaseTransformerEngine:
 
         engine = TestEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert isinstance(result, TransformationResult)
 
@@ -185,9 +185,7 @@ class TestRoleHijackingEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Role hijacked response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Role hijacked response"))
         return client
 
     def test_role_hijacking_transform(self, mock_llm_client):
@@ -196,20 +194,19 @@ class TestRoleHijackingEngine:
 
         engine = RoleHijackingEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "RoleHijackingEngine"
 
     def test_role_hijacking_generates_strategy_prompt(self, mock_llm_client):
         """Test strategy prompt generation."""
-        from app.engines.transformer_engine import (
-            IntentData,
-            RoleHijackingEngine,
-        )
+        from app.engines.transformer_engine import IntentData, RoleHijackingEngine
 
         engine = RoleHijackingEngine(llm_client=mock_llm_client)
 
@@ -230,9 +227,7 @@ class TestCharacterRoleSwapEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Character swapped response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Character swapped response"))
         return client
 
     def test_character_swap_transform(self, mock_llm_client):
@@ -241,10 +236,12 @@ class TestCharacterRoleSwapEngine:
 
         engine = CharacterRoleSwapEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "CharacterRoleSwapEngine"
@@ -257,9 +254,7 @@ class TestInstructionInjectionEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Instruction injected response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Instruction injected response"))
         return client
 
     def test_instruction_injection_transform(self, mock_llm_client):
@@ -268,10 +263,12 @@ class TestInstructionInjectionEngine:
 
         engine = InstructionInjectionEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "InstructionInjectionEngine"
@@ -284,9 +281,7 @@ class TestNeuralBypassEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Neural bypass response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Neural bypass response"))
         return client
 
     def test_neural_bypass_transform(self, mock_llm_client):
@@ -295,10 +290,12 @@ class TestNeuralBypassEngine:
 
         engine = NeuralBypassEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "NeuralBypassEngine"
@@ -311,9 +308,7 @@ class TestDANPersonaEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="DAN persona response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="DAN persona response"))
         return client
 
     def test_dan_persona_transform(self, mock_llm_client):
@@ -322,10 +317,12 @@ class TestDANPersonaEngine:
 
         engine = DANPersonaEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "DANPersonaEngine"
@@ -338,9 +335,7 @@ class TestCipherTransformer:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Cipher encoded response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Cipher encoded response"))
         return client
 
     def test_cipher_transform(self, mock_llm_client):
@@ -349,10 +344,12 @@ class TestCipherTransformer:
 
         engine = CipherTransformer(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "CipherTransformer"
@@ -365,9 +362,7 @@ class TestCodeChameleonTransformer:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Code obfuscated response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Code obfuscated response"))
         return client
 
     def test_code_chameleon_transform(self, mock_llm_client):
@@ -376,10 +371,12 @@ class TestCodeChameleonTransformer:
 
         engine = CodeChameleonTransformer(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "CodeChameleonTransformer"
@@ -392,9 +389,7 @@ class TestGeminiTransformationEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Gemini reasoning response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Gemini reasoning response"))
         return client
 
     def test_gemini_transform(self, mock_llm_client):
@@ -403,10 +398,12 @@ class TestGeminiTransformationEngine:
 
         engine = GeminiTransformationEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "GeminiTransformationEngine"
@@ -419,9 +416,7 @@ class TestContextualFramingEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Contextually framed response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Contextually framed response"))
         return client
 
     def test_contextual_framing_transform(self, mock_llm_client):
@@ -430,10 +425,12 @@ class TestContextualFramingEngine:
 
         engine = ContextualFramingEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "ContextualFramingEngine"
@@ -446,9 +443,7 @@ class TestOuroborosEngine:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Ouroboros recursive response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Ouroboros recursive response"))
         return client
 
     def test_ouroboros_transform(self, mock_llm_client):
@@ -457,10 +452,12 @@ class TestOuroborosEngine:
 
         engine = OuroborosEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test prompt",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test prompt",
+                "potency": 5,
+            }
+        )
 
         assert result.transformed_text is not None
         assert result.engine_name == "OuroborosEngine"
@@ -478,10 +475,7 @@ class TestTransformerFactory:
         """Test factory creates role hijacking engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "role_hijacking",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("role_hijacking", llm_client=mock_llm_client)
 
         assert engine is not None
         assert engine.__class__.__name__ == "RoleHijackingEngine"
@@ -490,10 +484,7 @@ class TestTransformerFactory:
         """Test factory creates character role swap engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "character_role_swap",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("character_role_swap", llm_client=mock_llm_client)
 
         assert engine is not None
         assert engine.__class__.__name__ == "CharacterRoleSwapEngine"
@@ -502,10 +493,7 @@ class TestTransformerFactory:
         """Test factory creates instruction injection engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "instruction_injection",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("instruction_injection", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -513,10 +501,7 @@ class TestTransformerFactory:
         """Test factory creates neural bypass engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "neural_bypass",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("neural_bypass", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -524,10 +509,7 @@ class TestTransformerFactory:
         """Test factory creates DAN persona engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "dan_persona",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("dan_persona", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -535,10 +517,7 @@ class TestTransformerFactory:
         """Test factory creates cipher engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "cipher",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("cipher", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -546,10 +525,7 @@ class TestTransformerFactory:
         """Test factory creates code chameleon engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "code_chameleon",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("code_chameleon", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -558,10 +534,7 @@ class TestTransformerFactory:
         from app.engines.transformer_engine import TransformerFactory
 
         # Use gemini_transformation which is in the factory registry
-        engine = TransformerFactory.get_engine(
-            "gemini_transformation",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("gemini_transformation", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -569,10 +542,7 @@ class TestTransformerFactory:
         """Test factory creates contextual framing engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "contextual_framing",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("contextual_framing", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -580,10 +550,7 @@ class TestTransformerFactory:
         """Test factory creates Ouroboros engine."""
         from app.engines.transformer_engine import TransformerFactory
 
-        engine = TransformerFactory.get_engine(
-            "ouroboros",
-            llm_client=mock_llm_client
-        )
+        engine = TransformerFactory.get_engine("ouroboros", llm_client=mock_llm_client)
 
         assert engine is not None
 
@@ -602,10 +569,7 @@ class TestTransformerFactory:
         from app.engines.transformer_engine import TransformerFactory
 
         with pytest.raises((ValueError, KeyError)):
-            TransformerFactory.get_engine(
-                "nonexistent_engine",
-                llm_client=mock_llm_client
-            )
+            TransformerFactory.get_engine("nonexistent_engine", llm_client=mock_llm_client)
 
 
 class TestEngineWithoutLLM:
@@ -613,10 +577,7 @@ class TestEngineWithoutLLM:
 
     def test_transform_uses_fallback_without_llm(self):
         """Test that transform uses fallback when LLM is unavailable."""
-        from app.engines.transformer_engine import (
-            BaseTransformerEngine,
-            IntentData,
-        )
+        from app.engines.transformer_engine import BaseTransformerEngine, IntentData
 
         class TestEngine(BaseTransformerEngine):
             def _generate_strategy_prompt(self, data: IntentData) -> str:
@@ -628,20 +589,19 @@ class TestEngineWithoutLLM:
         # Create engine without LLM
         engine = TestEngine(llm_client=None)
 
-        result = engine.transform({
-            "raw_text": "Test",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test",
+                "potency": 5,
+            }
+        )
 
         # Should use fallback
         assert "Fallback" in result.transformed_text
 
     def test_transform_uses_fallback_on_llm_error(self):
         """Test fallback when LLM raises error."""
-        from app.engines.transformer_engine import (
-            BaseTransformerEngine,
-            IntentData,
-        )
+        from app.engines.transformer_engine import BaseTransformerEngine, IntentData
 
         class TestEngine(BaseTransformerEngine):
             def _generate_strategy_prompt(self, data: IntentData) -> str:
@@ -656,10 +616,12 @@ class TestEngineWithoutLLM:
 
         engine = TestEngine(llm_client=failing_llm)
 
-        result = engine.transform({
-            "raw_text": "Test",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test",
+                "potency": 5,
+            }
+        )
 
         # Should use fallback due to error
         assert result.transformed_text is not None
@@ -672,17 +634,12 @@ class TestEngineConfiguration:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Configured response")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Configured response"))
         return client
 
     def test_engine_with_custom_config(self, mock_llm_client):
         """Test engine creation with custom configuration."""
-        from app.engines.transformer_engine import (
-            RoleHijackingEngine,
-            TransformerConfig,
-        )
+        from app.engines.transformer_engine import RoleHijackingEngine, TransformerConfig
 
         config = TransformerConfig(
             max_retries=5,
@@ -690,10 +647,7 @@ class TestEngineConfiguration:
             default_potency=8,
         )
 
-        engine = RoleHijackingEngine(
-            llm_client=mock_llm_client,
-            config=config
-        )
+        engine = RoleHijackingEngine(llm_client=mock_llm_client, config=config)
 
         assert engine is not None
         assert engine.config.max_retries == 5
@@ -706,9 +660,7 @@ class TestTransformationMetadata:
     def mock_llm_client(self):
         """Create a mock LLM client."""
         client = MagicMock()
-        client.generate = MagicMock(
-            return_value=MagicMock(content="Response with metadata")
-        )
+        client.generate = MagicMock(return_value=MagicMock(content="Response with metadata"))
         return client
 
     def test_result_includes_metadata(self, mock_llm_client):
@@ -717,10 +669,12 @@ class TestTransformationMetadata:
 
         engine = RoleHijackingEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test",
-            "potency": 5,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test",
+                "potency": 5,
+            }
+        )
 
         # Result should have metadata dict
         assert hasattr(result, "metadata") or result.metadata is not None
@@ -731,10 +685,12 @@ class TestTransformationMetadata:
 
         engine = RoleHijackingEngine(llm_client=mock_llm_client)
 
-        result = engine.transform({
-            "raw_text": "Test",
-            "potency": 7,
-        })
+        result = engine.transform(
+            {
+                "raw_text": "Test",
+                "potency": 7,
+            }
+        )
 
         # Result should have potency
         assert hasattr(result, "potency")
@@ -760,23 +716,24 @@ class TestMultipleTransformations:
 
     def test_sequential_transformations(self, mock_llm_client):
         """Test applying transformations sequentially."""
-        from app.engines.transformer_engine import (
-            CharacterRoleSwapEngine,
-            RoleHijackingEngine,
-        )
+        from app.engines.transformer_engine import CharacterRoleSwapEngine, RoleHijackingEngine
 
         engine1 = RoleHijackingEngine(llm_client=mock_llm_client)
         engine2 = CharacterRoleSwapEngine(llm_client=mock_llm_client)
 
-        result1 = engine1.transform({
-            "raw_text": "Original",
-            "potency": 5,
-        })
+        result1 = engine1.transform(
+            {
+                "raw_text": "Original",
+                "potency": 5,
+            }
+        )
 
-        result2 = engine2.transform({
-            "raw_text": result1.transformed_text,
-            "potency": 5,
-        })
+        result2 = engine2.transform(
+            {
+                "raw_text": result1.transformed_text,
+                "potency": 5,
+            }
+        )
 
         # Both transformations should produce results
         assert result1.transformed_text is not None

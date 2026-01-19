@@ -22,7 +22,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field
 
@@ -47,22 +47,14 @@ class SelectionLock(BaseModel):
     """
 
     lock_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
-        description="Unique lock identifier"
+        default_factory=lambda: str(uuid.uuid4()), description="Unique lock identifier"
     )
     session_id: str = Field(..., description="Session being locked")
     acquired_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When lock was acquired"
+        default_factory=datetime.utcnow, description="When lock was acquired"
     )
-    expires_at: datetime = Field(
-        ...,
-        description="When lock expires"
-    )
-    owner: Optional[str] = Field(
-        None,
-        description="Owner identifier (request ID)"
-    )
+    expires_at: datetime = Field(..., description="When lock expires")
+    owner: str | None = Field(None, description="Owner identifier (request ID)")
 
     def is_expired(self) -> bool:
         """Check if lock has expired."""
@@ -76,15 +68,9 @@ class SelectionUpdateResult(BaseModel):
     provider: str = Field(..., description="Provider after update")
     model: str = Field(..., description="Model after update")
     version: int = Field(..., description="Version after update")
-    previous_version: Optional[int] = Field(
-        None,
-        description="Version before update"
-    )
-    conflict: bool = Field(
-        default=False,
-        description="Whether version conflict occurred"
-    )
-    error: Optional[str] = Field(None, description="Error message if failed")
+    previous_version: int | None = Field(None, description="Version before update")
+    conflict: bool = Field(default=False, description="Whether version conflict occurred")
+    error: str | None = Field(None, description="Error message if failed")
 
 
 class SelectionWithVersion(BaseModel):
@@ -94,7 +80,7 @@ class SelectionWithVersion(BaseModel):
     provider: str
     model: str
     version: int
-    user_id: Optional[str] = None
+    user_id: str | None = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -115,17 +101,15 @@ class SelectionLockManager:
     DEFAULT_LOCK_TIMEOUT = 5.0  # seconds
     DEFAULT_LOCK_TTL = 10  # seconds
 
-    def __init__(self, redis_url: Optional[str] = None):
+    def __init__(self, redis_url: str | None = None):
         """
         Initialize the lock manager.
 
         Args:
             redis_url: Redis connection URL
         """
-        self._redis_url = redis_url or getattr(
-            settings, "REDIS_URL", "redis://localhost:6379"
-        )
-        self._client: Optional["Redis"] = None
+        self._redis_url = redis_url or getattr(settings, "REDIS_URL", "redis://localhost:6379")
+        self._client: Redis | None = None
         self._local_locks: dict[str, SelectionLock] = {}
         self._local_lock = asyncio.Lock()
         self._use_local = False
@@ -152,9 +136,7 @@ class SelectionLockManager:
             return True
 
         except Exception as e:
-            logger.warning(
-                f"Redis unavailable for locks: {e}. Using local locks."
-            )
+            logger.warning(f"Redis unavailable for locks: {e}. Using local locks.")
             self._use_local = True
             self._initialized = True
             return False
@@ -164,8 +146,8 @@ class SelectionLockManager:
         session_id: str,
         timeout: float = DEFAULT_LOCK_TIMEOUT,
         ttl: int = DEFAULT_LOCK_TTL,
-        owner: Optional[str] = None,
-    ) -> Optional[SelectionLock]:
+        owner: str | None = None,
+    ) -> SelectionLock | None:
         """
         Acquire a lock on a session's selection.
 
@@ -185,12 +167,11 @@ class SelectionLockManager:
         start_time = time.time()
 
         while (time.time() - start_time) < timeout:
-            acquired = await self._try_acquire(
-                session_id, lock_id, ttl, owner
-            )
+            acquired = await self._try_acquire(session_id, lock_id, ttl, owner)
 
             if acquired:
                 from datetime import timedelta
+
                 lock = SelectionLock(
                     lock_id=lock_id,
                     session_id=session_id,
@@ -212,13 +193,11 @@ class SelectionLockManager:
         session_id: str,
         lock_id: str,
         ttl: int,
-        owner: Optional[str],
+        owner: str | None,
     ) -> bool:
         """Try to acquire lock (single attempt)."""
         if self._use_local:
-            return await self._try_acquire_local(
-                session_id, lock_id, ttl, owner
-            )
+            return await self._try_acquire_local(session_id, lock_id, ttl, owner)
 
         try:
             key = f"{self.LOCK_PREFIX}{session_id}"
@@ -235,16 +214,14 @@ class SelectionLockManager:
 
         except Exception as e:
             logger.error(f"Redis lock error: {e}")
-            return await self._try_acquire_local(
-                session_id, lock_id, ttl, owner
-            )
+            return await self._try_acquire_local(session_id, lock_id, ttl, owner)
 
     async def _try_acquire_local(
         self,
         session_id: str,
         lock_id: str,
         ttl: int,
-        owner: Optional[str],
+        owner: str | None,
     ) -> bool:
         """Try to acquire local lock."""
         async with self._local_lock:
@@ -256,6 +233,7 @@ class SelectionLockManager:
 
             # Create new lock
             from datetime import timedelta
+
             self._local_locks[session_id] = SelectionLock(
                 lock_id=lock_id,
                 session_id=session_id,
@@ -296,9 +274,7 @@ class SelectionLockManager:
                 logger.debug(f"Lock released: {lock.session_id}")
                 return True
 
-            logger.warning(
-                f"Lock release failed (not owner): {lock.session_id}"
-            )
+            logger.warning(f"Lock release failed (not owner): {lock.session_id}")
             return False
 
         except Exception as e:
@@ -337,9 +313,8 @@ class SelectionLockManager:
                 existing = self._local_locks.get(lock.session_id)
                 if existing and existing.lock_id == lock.lock_id:
                     from datetime import timedelta
-                    existing.expires_at = (
-                        datetime.utcnow() + timedelta(seconds=additional_ttl)
-                    )
+
+                    existing.expires_at = datetime.utcnow() + timedelta(seconds=additional_ttl)
                     return True
             return False
 
@@ -355,9 +330,7 @@ class SelectionLockManager:
             end
             """
 
-            result = await self._client.eval(
-                script, 1, key, lock.lock_id, additional_ttl
-            )
+            result = await self._client.eval(script, 1, key, lock.lock_id, additional_ttl)
             return bool(result)
 
         except Exception as e:
@@ -434,7 +407,7 @@ class ConcurrentSelectionHandler:
         self,
         session_id: str,
         timeout: float = 5.0,
-        owner: Optional[str] = None,
+        owner: str | None = None,
     ):
         """
         Context manager for acquiring a selection lock.
@@ -462,9 +435,7 @@ class ConcurrentSelectionHandler:
         )
 
         if not lock:
-            raise TimeoutError(
-                f"Could not acquire selection lock for {session_id}"
-            )
+            raise TimeoutError(f"Could not acquire selection lock for {session_id}")
 
         try:
             yield lock
@@ -475,7 +446,7 @@ class ConcurrentSelectionHandler:
         self,
         session_id: str,
         timeout: float = 5.0,
-        owner: Optional[str] = None,
+        owner: str | None = None,
     ) -> SelectionLock:
         """
         Acquire a lock on a session's selection.
@@ -498,9 +469,7 @@ class ConcurrentSelectionHandler:
         )
 
         if not lock:
-            raise TimeoutError(
-                f"Could not acquire selection lock for {session_id}"
-            )
+            raise TimeoutError(f"Could not acquire selection lock for {session_id}")
 
         return lock
 
@@ -525,9 +494,9 @@ class ConcurrentSelectionHandler:
         session_id: str,
         provider: str,
         model: str,
-        expected_version: Optional[int] = None,
-        user_id: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        expected_version: int | None = None,
+        user_id: str | None = None,
+        metadata: dict | None = None,
         db_session=None,
     ) -> SelectionUpdateResult:
         """
@@ -575,9 +544,7 @@ class ConcurrentSelectionHandler:
 
                 # Update cache
                 if self._cache:
-                    from app.infrastructure.cache.selection_cache import (
-                        CachedSelection,
-                    )
+                    from app.infrastructure.cache.selection_cache import CachedSelection
 
                     selection = CachedSelection(
                         session_id=session_id,
@@ -597,11 +564,11 @@ class ConcurrentSelectionHandler:
                             provider=current[0].provider,
                             model=current[0].model,
                             version=current_version,
-                        ) if current else None
+                        )
+                        if current
+                        else None
                     )
-                    await self._cache.publish_change(
-                        session_id, selection, old_selection
-                    )
+                    await self._cache.publish_change(session_id, selection, old_selection)
 
                 # Update persistence
                 if self._persistence and db_session:
@@ -651,7 +618,7 @@ class ConcurrentSelectionHandler:
     async def get_selection_with_version(
         self,
         session_id: str,
-    ) -> Optional[tuple[SelectionWithVersion, int]]:
+    ) -> tuple[SelectionWithVersion, int] | None:
         """
         Get selection with its current version.
 
@@ -701,7 +668,7 @@ class ConcurrentSelectionHandler:
         self,
         session_id: str,
         require_lock: bool = False,
-    ) -> Optional[SelectionWithVersion]:
+    ) -> SelectionWithVersion | None:
         """
         Get selection with read consistency.
 
@@ -783,8 +750,8 @@ def get_concurrent_selection_handler() -> ConcurrentSelectionHandler:
 __all__ = [
     "ConcurrentSelectionHandler",
     "SelectionLock",
+    "SelectionLockManager",
     "SelectionUpdateResult",
     "SelectionWithVersion",
-    "SelectionLockManager",
     "get_concurrent_selection_handler",
 ]

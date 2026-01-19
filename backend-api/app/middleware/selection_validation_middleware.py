@@ -20,7 +20,7 @@ Usage:
 
 import logging
 import time
-from typing import Callable, Optional, Set
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -30,13 +30,13 @@ from app.core.selection_context import SelectionContext
 from app.schemas.validation_errors import (
     SelectionValidationError,
     ValidationErrorType,
-    ValidationResult,
     ValidationMetrics,
-    create_invalid_provider_error,
+    ValidationResult,
+    create_context_missing_error,
     create_invalid_model_error,
+    create_invalid_provider_error,
     create_missing_api_key_error,
     create_provider_unhealthy_error,
-    create_context_missing_error,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
     """
 
     # Default paths that bypass validation
-    DEFAULT_BYPASS_PATHS: Set[str] = {
+    DEFAULT_BYPASS_PATHS: set[str] = {
         "/",
         "/health",
         "/health/ping",
@@ -86,10 +86,11 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
         "/api/v1/providers",
         "/api/v1/unified-providers",
         "/api/v1/admin",
+        "/api/v1/auth",  # Exclude auth
     }
 
     # Path prefixes to bypass
-    DEFAULT_BYPASS_PREFIXES: Set[str] = {
+    DEFAULT_BYPASS_PREFIXES: set[str] = {
         "/api/v1/unified-providers/",
         "/api/v1/health/",
         "/api/v1/admin/",
@@ -98,8 +99,8 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        bypass_paths: Optional[list[str]] = None,
-        bypass_prefixes: Optional[Set[str]] = None,
+        bypass_paths: list[str] | None = None,
+        bypass_prefixes: set[str] | None = None,
         fail_on_invalid: bool = False,
         enable_health_check: bool = True,
         check_api_key: bool = True,
@@ -135,9 +136,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
             f"check_api_key={check_api_key})"
         )
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Validate selection and process request.
 
@@ -158,9 +157,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
         # Perform validation
         start_time = time.time()
         validation_result = await self._validate_selection(request, request_id)
-        validation_result.validation_time_ms = (
-            (time.time() - start_time) * 1000
-        )
+        validation_result.validation_time_ms = (time.time() - start_time) * 1000
 
         # Record metrics
         _validation_metrics.record_validation(validation_result)
@@ -191,15 +188,9 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
             return True
 
         # Prefix match
-        for prefix in self._bypass_prefixes:
-            if path.startswith(prefix):
-                return True
+        return any(path.startswith(prefix) for prefix in self._bypass_prefixes)
 
-        return False
-
-    async def _validate_selection(
-        self, request: Request, request_id: str
-    ) -> ValidationResult:
+    async def _validate_selection(self, request: Request, request_id: str) -> ValidationResult:
         """
         Perform comprehensive selection validation.
 
@@ -231,47 +222,37 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
         source = selection.scope.value if selection.scope else "unknown"
 
         # Validate provider exists
-        provider_valid, available_providers = await self._validate_provider(
-            provider_id
-        )
+        provider_valid, available_providers = await self._validate_provider(provider_id)
         if not provider_valid:
-            errors.append(create_invalid_provider_error(
-                provider_id, available_providers, request_id
-            ))
+            errors.append(
+                create_invalid_provider_error(provider_id, available_providers, request_id)
+            )
 
         # Validate model exists for provider
         if provider_valid:
-            model_valid, available_models = await self._validate_model(
-                provider_id, model_id
-            )
+            model_valid, available_models = await self._validate_model(provider_id, model_id)
             if not model_valid:
-                errors.append(create_invalid_model_error(
-                    provider_id, model_id, available_models, request_id
-                ))
+                errors.append(
+                    create_invalid_model_error(provider_id, model_id, available_models, request_id)
+                )
 
         # Check API key if enabled
         api_key_configured = None
         if self._check_api_key and provider_valid:
-            api_key_configured = await self._check_api_key_configured(
-                provider_id
-            )
+            api_key_configured = await self._check_api_key_configured(provider_id)
             if not api_key_configured:
-                errors.append(create_missing_api_key_error(
-                    provider_id, request_id
-                ))
+                errors.append(create_missing_api_key_error(provider_id, request_id))
 
         # Check provider health if enabled
         provider_health = None
         if self._check_health and provider_valid:
             provider_health = await self._check_provider_health(provider_id)
             if provider_health == "unhealthy":
-                errors.append(create_provider_unhealthy_error(
-                    provider_id, provider_health, request_id
-                ))
-            elif provider_health == "degraded":
-                warnings.append(
-                    f"Provider '{provider_id}' is degraded"
+                errors.append(
+                    create_provider_unhealthy_error(provider_id, provider_health, request_id)
                 )
+            elif provider_health == "degraded":
+                warnings.append(f"Provider '{provider_id}' is degraded")
 
         return ValidationResult(
             is_valid=len(errors) == 0,
@@ -296,9 +277,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    async def _validate_provider(
-        self, provider_id: str
-    ) -> tuple[bool, list[str]]:
+    async def _validate_provider(self, provider_id: str) -> tuple[bool, list[str]]:
         """
         Validate that provider exists in registry.
 
@@ -306,10 +285,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
             Tuple of (is_valid, available_providers)
         """
         try:
-            from app.services.provider_plugins import (
-                is_plugin_registered,
-                get_all_provider_types,
-            )
+            from app.services.provider_plugins import get_all_provider_types, is_plugin_registered
 
             is_valid = is_plugin_registered(provider_id)
             available = get_all_provider_types()
@@ -323,9 +299,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
             logger.error(f"Provider validation error: {e}")
             return True, []
 
-    async def _validate_model(
-        self, provider_id: str, model_id: str
-    ) -> tuple[bool, list[str]]:
+    async def _validate_model(self, provider_id: str, model_id: str) -> tuple[bool, list[str]]:
         """
         Validate that model exists for provider.
 
@@ -361,8 +335,9 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
     async def _check_api_key_configured(self, provider_id: str) -> bool:
         """Check if API key is configured for provider."""
         try:
-            from app.services.provider_plugins import get_plugin
             import os
+
+            from app.services.provider_plugins import get_plugin
 
             plugin = get_plugin(provider_id)
             if not plugin:
@@ -383,19 +358,13 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
                 f"{provider_id.upper()}_API_KEY",
                 f"{provider_id.upper().replace('-', '_')}_API_KEY",
             ]
-            for pattern in common_patterns:
-                if os.environ.get(pattern):
-                    return True
-
-            return False
+            return any(os.environ.get(pattern) for pattern in common_patterns)
 
         except Exception as e:
             logger.error(f"API key check error: {e}")
             return True  # Don't block on check errors
 
-    async def _check_provider_health(
-        self, provider_id: str
-    ) -> Optional[str]:
+    async def _check_provider_health(self, provider_id: str) -> str | None:
         """
         Check provider health status.
 
@@ -419,15 +388,13 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
             logger.error(f"Health check error: {e}")
             return None
 
-    def _log_validation(
-        self, request_id: str, result: ValidationResult
-    ) -> None:
+    def _log_validation(self, request_id: str, result: ValidationResult) -> None:
         """Log validation result at appropriate level."""
         if result.is_valid:
             logger.log(
                 self._log_level,
                 f"[{request_id}] Selection validated: "
-                f"{result.provider}/{result.model} (source={result.source})"
+                f"{result.provider}/{result.model} (source={result.source})",
             )
         else:
             error_types = [e.error_type.value for e in result.errors]
@@ -436,9 +403,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
                 f"{result.provider}/{result.model} - errors={error_types}"
             )
 
-    def _create_error_response(
-        self, result: ValidationResult
-    ) -> JSONResponse:
+    def _create_error_response(self, result: ValidationResult) -> JSONResponse:
         """Create error response for invalid selection."""
         first_error = result.first_error
         if not first_error:

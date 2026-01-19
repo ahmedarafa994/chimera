@@ -314,6 +314,7 @@ export function useWebSocketEnhanced<TReceive = unknown, TSend = unknown>(
         startHeartbeat,
         scheduleReconnect,
         options,
+        pingStartTime,
     ]);
 
     // Keep connectRef in sync with connect

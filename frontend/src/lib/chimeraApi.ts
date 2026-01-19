@@ -1,6 +1,6 @@
 /**
  * Chimera API Client
- * 
+ *
  * Provides typed API methods for the Chimera Evasion Platform including:
  * - Target LLM model management
  * - Metamorphosis strategy retrieval
@@ -25,65 +25,122 @@ const chimeraApi = axios.create({
 
 // =============================================================================
 // Target Models API
-// Backend endpoints: /api/v1/target-models/
+// Backend endpoints: /api/v1/models (Unified Model Sync)
 // =============================================================================
 
 /**
  * Get all registered LLM models
- * GET /api/v1/target-models/
+ * GET /api/v1/models
  */
 export const getLLMModels = async (): Promise<LLMModel[]> => {
-  const response = await chimeraApi.get('/target-models/');
-  return response.data;
+  try {
+    const response = await chimeraApi.get('/models');
+    
+    // Transform /models response (ModelsListResponse) to LLMModel[]
+    if (response.data && response.data.providers) {
+      const models: LLMModel[] = [];
+      for (const provider of response.data.providers) {
+        if (provider.models_detail) {
+          for (const model of provider.models_detail) {
+            models.push({
+              id: model.id,
+              name: model.name,
+              provider: provider.provider,
+              description: model.description,
+              config: {
+                max_tokens: model.max_tokens,
+                supports_streaming: model.supports_streaming,
+                is_default: model.is_default
+              }
+            });
+          }
+        }
+      }
+      return models;
+    }
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch models:", error);
+    return [];
+  }
 };
 
 /**
  * Register a new target LLM model
- * POST /api/v1/target-models/
+ * NOT SUPPORTED in current backend version.
  */
 export const registerLLMModel = async (modelData: LLMModelCreate): Promise<LLMModel> => {
-  const response = await chimeraApi.post('/target-models/', modelData);
-  return response.data;
+  console.warn("Dynamic model registration is not supported by the backend.");
+  throw new Error("Dynamic model registration is not supported.");
 };
 
 /**
  * Get a specific LLM model by ID
- * GET /api/v1/target-models/{model_id}
+ * GET /api/v1/models/validate/{model_id} (Approximation)
+ * Note: There is no direct "get model by ID" endpoint that returns full config.
  */
-export const getLLMModelById = async (modelId: number): Promise<LLMModel> => {
-  const response = await chimeraApi.get(`/target-models/${modelId}`);
-  return response.data;
+export const getLLMModelById = async (modelId: number | string): Promise<LLMModel> => {
+  // We have to fetch all and find it, or use validate
+  const models = await getLLMModels();
+  const model = models.find(m => m.id === modelId || m.id === String(modelId));
+  if (!model) {
+    throw new Error(`Model with ID ${modelId} not found`);
+  }
+  return model;
 };
 
 /**
  * Delete an LLM model by ID
- * DELETE /api/v1/target-models/{model_id}
+ * NOT SUPPORTED
  */
-export const deleteLLMModel = async (modelId: number): Promise<void> => {
-  await chimeraApi.delete(`/target-models/${modelId}`);
+export const deleteLLMModel = async (modelId: number | string): Promise<void> => {
+  console.warn("Model deletion is not supported by the backend.");
+  throw new Error("Model deletion is not supported.");
 };
 
 // =============================================================================
 // Strategies API
-// Backend endpoints: /api/v1/strategies/
+// Backend endpoints: /api/v1/metamorph/suites
 // =============================================================================
 
 /**
  * Get all available metamorphosis strategies
- * GET /api/v1/strategies/
+ * GET /api/v1/metamorph/suites
  */
 export const getMetamorphosisStrategies = async (): Promise<MetamorphosisStrategyInfo[]> => {
-  const response = await chimeraApi.get('/strategies/');
-  return response.data;
+  try {
+    const response = await chimeraApi.get('/metamorph/suites');
+    // Map SuiteInfo to MetamorphosisStrategyInfo
+    if (Array.isArray(response.data)) {
+      return response.data.map((suite: any) => ({
+        name: suite.name,
+        description: `Suite with ${suite.transformers_count} transformers, ${suite.framers_count} framers, ${suite.obfuscators_count} obfuscators.`,
+        parameters: {} // Backend doesn't expose params yet
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch strategies:", error);
+    return [];
+  }
 };
 
 /**
  * Get a specific strategy by name
- * GET /api/v1/strategies/{strategy_name}
+ * Client-side filtering of getMetamorphosisStrategies
  */
 export const getStrategyByName = async (strategyName: string): Promise<MetamorphosisStrategyInfo> => {
-  const response = await chimeraApi.get(`/strategies/${encodeURIComponent(strategyName)}`);
-  return response.data;
+  const strategies = await getMetamorphosisStrategies();
+  const strategy = strategies.find(s => s.name === strategyName);
+  if (!strategy) {
+    // Fallback if not found in list (maybe name mismatch)
+    return {
+      name: strategyName,
+      description: "Strategy details not available",
+      parameters: {}
+    };
+  }
+  return strategy;
 };
 
 // =============================================================================

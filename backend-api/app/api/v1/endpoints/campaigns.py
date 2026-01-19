@@ -11,7 +11,6 @@ All endpoints require authentication and check campaign ownership/admin permissi
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -21,13 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.audit import AuditAction, audit_log
 from app.core.auth import TokenPayload, get_current_user
 from app.core.database import get_async_session_factory
-from app.db.models import (
-    Campaign,
-    CampaignShare,
-    CampaignSharePermission,
-    User,
-    UserRole,
-)
+from app.db.models import Campaign, CampaignShare, CampaignSharePermission, User
 from app.services.campaign_auth_service import CampaignAuthService
 
 logger = logging.getLogger(__name__)
@@ -98,10 +91,10 @@ class CampaignShareResponse(BaseModel):
     user_email: str
     username: str
     permission: str
-    shared_by_id: Optional[int] = None
-    shared_by_email: Optional[str] = None
+    shared_by_id: int | None = None
+    shared_by_email: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         json_schema_extra = {
@@ -279,7 +272,7 @@ async def _check_share_permission(
 def _share_to_response(
     share: CampaignShare,
     user: User,
-    shared_by: Optional[User] = None,
+    shared_by: User | None = None,
 ) -> CampaignShareResponse:
     """
     Convert a CampaignShare model to a CampaignShareResponse.
@@ -591,8 +584,7 @@ async def list_campaign_shares(
         share_responses.append(_share_to_response(share, share_user, shared_by))
 
     logger.info(
-        f"Listed {len(share_responses)} shares for campaign {campaign_id} "
-        f"by user {user.id}"
+        f"Listed {len(share_responses)} shares for campaign {campaign_id} " f"by user {user.id}"
     )
 
     return CampaignShareListResponse(

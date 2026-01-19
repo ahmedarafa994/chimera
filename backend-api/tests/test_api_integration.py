@@ -98,7 +98,7 @@ class TestCORSHeaders:
         response = client.options(
             "/api/v1/providers",
             headers={
-                "Origin": "http://localhost:3000",
+                "Origin": "http://localhost:3001",
                 "Access-Control-Request-Method": "GET",
             },
         )
@@ -107,7 +107,7 @@ class TestCORSHeaders:
 
     def test_cors_allowed_origin(self, client):
         """Test that allowed origins receive CORS headers"""
-        response = client.get("/api/v1/providers", headers={"Origin": "http://localhost:3000"})
+        response = client.get("/api/v1/providers", headers={"Origin": "http://localhost:3001"})
         # Check for CORS headers (may vary based on middleware config)
         assert response.status_code == 200
 

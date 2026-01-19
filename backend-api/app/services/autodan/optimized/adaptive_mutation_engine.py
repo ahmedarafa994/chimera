@@ -20,6 +20,7 @@ import numpy as np
 
 # Helper: cryptographically secure pseudo-floats for security-sensitive choices
 
+
 def _secure_random() -> float:
     """Cryptographically secure float in [0,1)."""
     return secrets.randbelow(10**9) / 1e9
@@ -431,7 +432,7 @@ class AdaptiveMutationEngine:
         ]
 
         insertion = secrets.choice(insertions)
-        position = (secrets.randbelow((len(prompt) - (0) + 1) + (0)) // 2)
+        position = secrets.randbelow((len(prompt) - (0) + 1) + (0)) // 2
 
         # Find sentence boundary
         for i in range(position, min(position + 50, len(prompt))):
@@ -476,7 +477,7 @@ class AdaptiveMutationEngine:
         # Find insertion point
         sentences = re.split(r"(?<=[.!?])\s+", prompt)
         if len(sentences) > 1:
-            insert_idx = (secrets.randbelow((len(sentences) - (0) + 1) + (0)) - 1)
+            insert_idx = secrets.randbelow((len(sentences) - (0) + 1) + (0)) - 1
             sentences.insert(insert_idx, pattern)
             return " ".join(sentences), [insert_idx]
 
@@ -623,7 +624,7 @@ class AdaptiveMutationEngine:
             "give": ["provide", "offer", "supply"],
             "want": ["desire", "wish", "need"],
             "good": ["excellent", "great", "fine"],
-            "bad": ["poor", "negative", "harmful"],
+            "bad": ["poor", "negative", "complex"],
             "important": ["crucial", "vital", "essential"],
             "information": ["data", "details", "knowledge"],
             "example": ["instance", "sample", "illustration"],

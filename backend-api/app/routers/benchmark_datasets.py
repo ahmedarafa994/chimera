@@ -60,12 +60,8 @@ async def get_dataset(dataset_name: str) -> BenchmarkDataset:
 @router.get("/{dataset_name}/prompts", response_model=list[BenchmarkPrompt])
 async def get_prompts(
     dataset_name: str,
-    risk_area: str | None = Query(
-        None, description="Filter by risk area (e.g., 'I', 'II', 'III')"
-    ),
-    harm_type: str | None = Query(
-        None, description="Filter by harm type (e.g., 'I-1', 'II-2')"
-    ),
+    risk_area: str | None = Query(None, description="Filter by risk area (e.g., 'I', 'II', 'III')"),
+    harm_type: str | None = Query(None, description="Filter by harm type (e.g., 'I-1', 'II-2')"),
     severity: str | None = Query(
         None, description="Filter by severity (low, medium, high, critical)"
     ),

@@ -17,7 +17,8 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
+
 if TYPE_CHECKING:
     from meta_prompter.attacks.extend_attack.models import TransformInfo
 from meta_prompter.unified.math_framework import CombinedAttackMetrics
@@ -209,9 +210,7 @@ class UnifiedAttackConfig:
     obfuscation_ratio: float = 0.5
     selection_strategy: str = "alphabetic_only"
     n_note_type: str = "default"
-    base_set: list[int] = field(
-        default_factory=lambda: list(range(2, 10)) + list(range(11, 37))
-    )
+    base_set: list[int] = field(default_factory=lambda: list(range(2, 10)) + list(range(11, 37)))
 
     # AutoDAN config
     autodan_enabled: bool = True
@@ -386,7 +385,9 @@ class UnifiedAttackResult:
             "original_query": self.original_query,
             "adversarial_query": self.adversarial_query,
             "target_response": self.target_response,
-            "composition_strategy": self.composition_strategy.value if self.composition_strategy else None,
+            "composition_strategy": (
+                self.composition_strategy.value if self.composition_strategy else None
+            ),
             "extend_result": self.extend_result,
             "autodan_result": self.autodan_result,
             "metrics": self.metrics,

@@ -87,7 +87,7 @@ async def list_campaigns(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     sort_by: str = Query("created_at", description="Field to sort by"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
     status: list[CampaignStatusEnum] | None = Query(None, description="Filter by status"),
     provider: list[str] | None = Query(None, description="Filter by target provider"),
     technique_suite: list[str] | None = Query(None, description="Filter by technique suite"),
@@ -459,8 +459,19 @@ async def list_telemetry_events(
     and potency level.
     """
     filters = None
-    if any([status_filter, technique_suite, provider, model, success_only is not None,
-            start_time, end_time, min_potency, max_potency]):
+    if any(
+        [
+            status_filter,
+            technique_suite,
+            provider,
+            model,
+            success_only is not None,
+            start_time,
+            end_time,
+            min_potency,
+            max_potency,
+        ]
+    ):
         filters = TelemetryFilterParams(
             technique_suite=technique_suite,
             provider=provider,
@@ -602,7 +613,7 @@ async def export_campaign_csv(
             "potency_level": event.potency_level,
             "provider": event.provider,
             "model": event.model,
-            "status": event.status.value if hasattr(event.status, 'value') else event.status,
+            "status": event.status.value if hasattr(event.status, "value") else event.status,
             "success_indicator": event.success_indicator,
             "total_latency_ms": event.total_latency_ms,
             "total_tokens": event.total_tokens,

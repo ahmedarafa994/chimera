@@ -14,6 +14,7 @@ High-performance FastAPI backend for the Chimera adversarial prompting and red t
 ## Quick Start
 
 ### Prerequisites
+
 - Python 3.11+
 - Poetry (recommended) or pip
 
@@ -94,12 +95,14 @@ backend-api/
 ## API Endpoints
 
 ### Health & Status
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check with service status |
 | GET | `/api/v1/health/detailed` | Detailed health with provider status |
 
 ### Providers
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/providers` | List available LLM providers |
@@ -107,6 +110,7 @@ backend-api/
 | POST | `/api/v1/providers/select` | Set active provider/model |
 
 ### Generation
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/generate` | Generate content from LLM |
@@ -114,14 +118,23 @@ backend-api/
 | POST | `/api/v1/generation/jailbreak/generate` | Jailbreak research |
 
 ### WebSocket
+
 | Endpoint | Description |
 |----------|-------------|
 | `/ws/enhance` | Real-time prompt enhancement |
 | `/ws/status` | Live status updates |
 
+### Adversarial Generation (AutoDAN)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/autodan-enhanced/jailbreak` | Weaponized jailbreak generation (Supports: turbo, adaptive, genetic) |
+| GET | `/api/v1/autodan-enhanced/metrics` | Service performance metrics |
+
 ## Security Features
 
 ### Middleware Stack
+
 The API includes comprehensive security middleware:
 
 1. **SecurityHeadersMiddleware** - Sets security headers (CSP, X-Frame-Options, etc.)
@@ -131,6 +144,7 @@ The API includes comprehensive security middleware:
 5. **AuthMiddleware** - API key authentication
 
 ### Authentication
+
 ```bash
 # Include API key in request header
 curl -X GET "http://localhost:8001/api/v1/providers" \
@@ -138,7 +152,9 @@ curl -X GET "http://localhost:8001/api/v1/providers" \
 ```
 
 ### Rate Limiting
+
 Configure via environment variables:
+
 ```env
 RATE_LIMIT_CALLS=100
 RATE_LIMIT_PERIOD=60
@@ -158,7 +174,7 @@ PORT=8001
 # Security
 API_KEY=your-secure-api-key
 SECRET_KEY=your-secret-key
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:3001
 
 # LLM Providers
 GOOGLE_API_KEY=your-google-api-key
@@ -211,19 +227,22 @@ poetry run alembic downgrade -1
 ## API Documentation
 
 Once the server is running:
-- **Swagger UI**: http://localhost:8001/docs
-- **ReDoc**: http://localhost:8001/redoc
-- **OpenAPI JSON**: http://localhost:8001/openapi.json
+
+- **Swagger UI**: <http://localhost:8001/docs>
+- **ReDoc**: <http://localhost:8001/redoc>
+- **OpenAPI JSON**: <http://localhost:8001/openapi.json>
 
 ## Performance
 
 ### Optimization Features
+
 - Async/await throughout for non-blocking I/O
 - Connection pooling for database and HTTP clients
 - Response caching with configurable TTL
 - Circuit breaker pattern for LLM providers
 
 ### Monitoring
+
 - Prometheus metrics at `/metrics`
 - Structured JSON logging
 - Request tracing with correlation IDs

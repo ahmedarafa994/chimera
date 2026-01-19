@@ -3,6 +3,48 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+// Performance metric interfaces
+interface PerformanceMetric {
+  name: string;
+  value: number;
+  rating: 'good' | 'needs-improvement' | 'poor';
+  unit?: string;
+  url?: string;
+  connectionType?: string;
+  deviceMemory?: number;
+  hardwareConcurrency?: number;
+  viewport?: string;
+  routeName?: string;
+  totalDuration?: number;
+  interactionCount?: number;
+  apiCallCount?: number;
+  errorCount?: number;
+}
+
+interface AnalyticsData {
+  sessionId: string;
+  metricType: string;
+  metric: PerformanceMetric & {
+    timestamp: string;
+    url: string | null;
+    userAgent: string | null;
+    ip: string;
+    connectionType: string;
+    deviceMemory?: number;
+    hardwareConcurrency?: number;
+    viewport?: string;
+  };
+  environment: string;
+}
+
+interface StoredMetric {
+  id: string;
+  sessionId: string;
+  metricType: string;
+  data: PerformanceMetric;
+  timestamp: string;
+}
+
 // Single POST endpoint for all performance metrics
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Log metric in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[${metricType.toUpperCase()}] ${metric.name}: ${metric.value}${metric.unit || 'ms'} (${metric.rating})`);
+      console.warn(`[${metricType.toUpperCase()}] ${metric.name}: ${metric.value}${metric.unit || 'ms'} (${metric.rating})`);
 
       // Warn about poor performance
       if (metric.rating === 'poor') {
@@ -37,8 +79,8 @@ export async function POST(request: NextRequest) {
         url: metric.url || request.headers.get('referer'),
         userAgent: request.headers.get('user-agent'),
         ip: request.headers.get('x-forwarded-for') ||
-            request.headers.get('x-real-ip') ||
-            'unknown',
+          request.headers.get('x-real-ip') ||
+          'unknown',
         connectionType: metric.connectionType || 'unknown',
         deviceMemory: metric.deviceMemory,
         hardwareConcurrency: metric.hardwareConcurrency,
@@ -109,7 +151,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Helper function to send metrics to backend analytics service
-async function sendToAnalyticsService(data: any): Promise<void> {
+async function sendToAnalyticsService(data: AnalyticsData): Promise<void> {
   const analyticsEndpoint = process.env.BACKEND_URL
     ? `${process.env.BACKEND_URL}/api/v1/analytics/frontend`
     : process.env.ANALYTICS_ENDPOINT || 'http://localhost:8001/api/v1/analytics/frontend';
@@ -138,7 +180,7 @@ async function sendToAnalyticsService(data: any): Promise<void> {
 
     // Log successful transmission in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`📊 Sent ${data.metricType} metric to analytics service`);
+      console.warn(`📊 Sent ${data.metricType} metric to analytics service`);
     }
 
   } catch (error) {
@@ -166,7 +208,7 @@ async function storeMetricInDatabase(data: any): Promise<void> {
   }
 
   if (data.metricType === 'user_journey') {
-    console.log(`🗺️ User Journey Completed:`, {
+    console.warn(`🗺️ User Journey Completed:`, {
       route: data.metric.routeName,
       duration: data.metric.totalDuration,
       interactions: data.metric.interactionCount,

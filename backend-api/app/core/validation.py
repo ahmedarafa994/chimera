@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class Sanitizer:
     """Input sanitization utilities"""
 
-    # Patterns for potentially dangerous content
+    # Patterns for potentially complex content
     SCRIPT_PATTERN = re.compile(r"<script[^>]*>.*?</script>", re.IGNORECASE | re.DOTALL)
 
     @classmethod
@@ -264,7 +264,18 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
 
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB
 
+    def __init__(self, app, excluded_paths: list[str] | None = None):
+        super().__init__(app)
+        self.excluded_paths = excluded_paths or []
+        self.excluded_paths = [path.rstrip("/") for path in self.excluded_paths]
+
     async def dispatch(self, request: Request, call_next):
+        # Check for excluded paths
+        path = request.url.path.rstrip("/")
+        for excluded_path in self.excluded_paths:
+            if path == excluded_path or path.startswith(excluded_path + "/"):
+                return await call_next(request)
+
         # Check content length
         content_length = request.headers.get("content-length")
         if content_length and int(content_length) > self.MAX_CONTENT_LENGTH:

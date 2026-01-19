@@ -174,9 +174,7 @@ class RetryHandler:
             float: The delay in seconds before the next retry.
         """
         if self.config.strategy == BackoffStrategy.EXPONENTIAL:
-            delay = self.config.initial_delay * (
-                self.config.backoff_multiplier ** attempt
-            )
+            delay = self.config.initial_delay * (self.config.backoff_multiplier**attempt)
         elif self.config.strategy == BackoffStrategy.LINEAR:
             delay = self.config.initial_delay * (attempt + 1)
         elif self.config.strategy == BackoffStrategy.FIBONACCI:
@@ -223,7 +221,7 @@ class RetryHandler:
             return True
 
         # Check for timeout errors
-        if isinstance(error, (TimeoutError, asyncio.TimeoutError)):
+        if isinstance(error, TimeoutError | asyncio.TimeoutError):
             return self.config.retry_on_timeout
 
         # Check for connection errors
@@ -263,6 +261,7 @@ class RetryHandler:
         if "retry-after" in error_str.lower():
             # Try to parse retry-after value
             import re
+
             match = re.search(r"retry-after[:\s]+(\d+)", error_str, re.IGNORECASE)
             if match:
                 return min(float(match.group(1)), self.config.rate_limit_max_wait)
@@ -300,9 +299,7 @@ class RetryHandler:
 
                 if attempt > 0:
                     self._retry_stats["successful_retries"] += 1
-                    logger.info(
-                        f"[{provider_name}] Request succeeded on attempt {attempt + 1}"
-                    )
+                    logger.info(f"[{provider_name}] Request succeeded on attempt {attempt + 1}")
 
                 return result
 
@@ -310,9 +307,7 @@ class RetryHandler:
                 last_error = e
 
                 if not self.is_retryable_error(e):
-                    logger.warning(
-                        f"[{provider_name}] Non-retryable error: {e!s}"
-                    )
+                    logger.warning(f"[{provider_name}] Non-retryable error: {e!s}")
                     raise
 
                 if attempt >= self.config.max_retries:
@@ -377,6 +372,7 @@ def with_retry(
     Returns:
         Decorated async function with retry logic.
     """
+
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -386,9 +382,7 @@ def with_retry(
                 retry_config = get_provider_retry_config(provider)
 
             handler = RetryHandler(retry_config)
-            return await handler.execute_with_retry(
-                func, *args, provider=provider, **kwargs
-            )
+            return await handler.execute_with_retry(func, *args, provider=provider, **kwargs)
 
         return wrapper
 

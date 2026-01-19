@@ -225,7 +225,7 @@ markers =
 @pytest.mark.e2e
 def test_complete_generation_flow(page, api_base_url):
     # Navigate to frontend
-    page.goto("http://localhost:3000")
+    page.goto("http://localhost:3001")
 
     # Fill prompt
     page.fill("#prompt-input", "Test prompt")

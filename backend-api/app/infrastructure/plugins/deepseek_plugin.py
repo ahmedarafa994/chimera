@@ -7,7 +7,7 @@ through the unified provider interface.
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 from app.domain.interfaces import BaseLLMClient
 from app.domain.models import Capability, Model
@@ -59,8 +59,8 @@ class DeepSeekClient(BaseLLMClient):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ):
         """Generate text completion using DeepSeek API."""
@@ -69,15 +69,15 @@ class DeepSeekClient(BaseLLMClient):
             temperature=temperature,
             max_tokens=max_tokens,
             system_instruction=system_instruction,
-            **kwargs
+            **kwargs,
         )
 
     async def stream(
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ):
         """Stream text completion from DeepSeek API."""
@@ -86,7 +86,7 @@ class DeepSeekClient(BaseLLMClient):
             temperature=temperature,
             max_tokens=max_tokens,
             system_instruction=system_instruction,
-            **kwargs
+            **kwargs,
         ):
             yield chunk
 
@@ -127,7 +127,7 @@ class DeepSeekPlugin(BaseProviderPlugin):
             Capability.STREAMING,
         }
 
-    def _get_api_key(self) -> Optional[str]:
+    def _get_api_key(self) -> str | None:
         """Get DeepSeek API key from environment."""
         return os.getenv(self._api_key_env_var)
 

@@ -208,9 +208,9 @@ class EnhancedChimeraOrchestrator:
             "executor": self.executor.status.to_dict() if self.executor else None,
             "evaluator": self.evaluator.status.to_dict() if self.evaluator else None,
             "queue_sizes": self.message_queue.get_all_queue_sizes() if self.message_queue else {},
-            "dataset_entries": self.dataset_loader.get_total_entries()
-            if self.dataset_loader
-            else 0,
+            "dataset_entries": (
+                self.dataset_loader.get_total_entries() if self.dataset_loader else 0
+            ),
         }
 
     async def wait_for_shutdown(self):
@@ -333,8 +333,8 @@ async def run_test(query: str, config: Config):
                 print(f"    Confidence: {evaluation.confidence:.2f}")
                 print(f"    Technique: {evaluation.technique_used}")
                 print(f"    Effectiveness: {evaluation.technique_effectiveness:.2f}")
-                if evaluation.harmful_categories:
-                    print(f"    Harmful Categories: {', '.join(evaluation.harmful_categories)}")
+                if evaluation.complex_categories:
+                    print(f"    complex Categories: {', '.join(evaluation.complex_categories)}")
 
         print(f"\n{'=' * 60}")
 

@@ -31,8 +31,10 @@ from app.core.logging import logger
 # Metrics and Performance Models
 # =====================================================
 
+
 class MetricType(str):
     """Metric type constants."""
+
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
@@ -95,13 +97,15 @@ class MonitoringConfig(BaseModel):
 
     # Alerting settings
     enable_alerting: bool = Field(default=True)
-    alert_thresholds: dict[str, float] = Field(default_factory=lambda: {
-        "cpu_usage_percent": 80.0,
-        "memory_usage_percent": 85.0,
-        "disk_usage_percent": 90.0,
-        "response_time_p95_ms": 5000.0,
-        "error_rate_percent": 5.0,
-    })
+    alert_thresholds: dict[str, float] = Field(
+        default_factory=lambda: {
+            "cpu_usage_percent": 80.0,
+            "memory_usage_percent": 85.0,
+            "disk_usage_percent": 90.0,
+            "response_time_p95_ms": 5000.0,
+            "error_rate_percent": 5.0,
+        }
+    )
 
     # Health checks
     health_check_interval_seconds: float = Field(default=60.0)
@@ -116,6 +120,7 @@ class MonitoringConfig(BaseModel):
 # =====================================================
 # Core Monitoring Engine
 # =====================================================
+
 
 class MetricsCollector:
     """
@@ -176,21 +181,19 @@ class MetricsCollector:
         name: str,
         value: int | float,
         metric_type: str = MetricType.GAUGE,
-        tags: dict[str, str] | None = None
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Record a custom metric."""
         metric = MetricPoint(
-            name=name,
-            value=value,
-            timestamp=time.time(),
-            tags=tags or {},
-            metric_type=metric_type
+            name=name, value=value, timestamp=time.time(), tags=tags or {}, metric_type=metric_type
         )
 
         self._metrics.append(metric)
         self._custom_metrics[name] = metric
 
-    def increment_counter(self, name: str, value: int = 1, tags: dict[str, str] | None = None) -> None:
+    def increment_counter(
+        self, name: str, value: int = 1, tags: dict[str, str] | None = None
+    ) -> None:
         """Increment a counter metric."""
         if name in self._custom_metrics:
             current_value = self._custom_metrics[name].value
@@ -202,7 +205,9 @@ class MetricsCollector:
         """Set a gauge metric."""
         self.record_metric(name, value, MetricType.GAUGE, tags)
 
-    def record_timer(self, name: str, duration_seconds: float, tags: dict[str, str] | None = None) -> None:
+    def record_timer(
+        self, name: str, duration_seconds: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a timer metric."""
         self.record_metric(name, duration_seconds, MetricType.TIMER, tags)
 
@@ -221,7 +226,7 @@ class MetricsCollector:
         duration = time.time() - start_time
 
         # Extract metric name from timer_id
-        metric_name = timer_id.rsplit('_', 1)[0]
+        metric_name = timer_id.rsplit("_", 1)[0]
         self.record_timer(metric_name, duration, tags)
 
         return duration
@@ -234,83 +239,85 @@ class MetricsCollector:
             # CPU metrics
             cpu_percent = psutil.cpu_percent(interval=1)
             cpu_count = psutil.cpu_count()
-            load_avg = psutil.getloadavg() if hasattr(psutil, 'getloadavg') else (0, 0, 0)
+            load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0, 0, 0)
 
-            metrics['cpu'] = {
-                'usage_percent': cpu_percent,
-                'count': cpu_count,
-                'load_avg_1m': load_avg[0],
-                'load_avg_5m': load_avg[1],
-                'load_avg_15m': load_avg[2],
+            metrics["cpu"] = {
+                "usage_percent": cpu_percent,
+                "count": cpu_count,
+                "load_avg_1m": load_avg[0],
+                "load_avg_5m": load_avg[1],
+                "load_avg_15m": load_avg[2],
             }
 
             # Memory metrics
             memory = psutil.virtual_memory()
             swap = psutil.swap_memory()
 
-            metrics['memory'] = {
-                'total_bytes': memory.total,
-                'available_bytes': memory.available,
-                'used_bytes': memory.used,
-                'usage_percent': memory.percent,
-                'swap_total_bytes': swap.total,
-                'swap_used_bytes': swap.used,
-                'swap_usage_percent': swap.percent,
+            metrics["memory"] = {
+                "total_bytes": memory.total,
+                "available_bytes": memory.available,
+                "used_bytes": memory.used,
+                "usage_percent": memory.percent,
+                "swap_total_bytes": swap.total,
+                "swap_used_bytes": swap.used,
+                "swap_usage_percent": swap.percent,
             }
 
             # Disk metrics
-            disk_usage = psutil.disk_usage('/')
+            disk_usage = psutil.disk_usage("/")
             disk_io = psutil.disk_io_counters()
 
-            metrics['disk'] = {
-                'total_bytes': disk_usage.total,
-                'used_bytes': disk_usage.used,
-                'free_bytes': disk_usage.free,
-                'usage_percent': (disk_usage.used / disk_usage.total) * 100,
+            metrics["disk"] = {
+                "total_bytes": disk_usage.total,
+                "used_bytes": disk_usage.used,
+                "free_bytes": disk_usage.free,
+                "usage_percent": (disk_usage.used / disk_usage.total) * 100,
             }
 
             if disk_io:
-                metrics['disk'].update({
-                    'read_bytes': disk_io.read_bytes,
-                    'write_bytes': disk_io.write_bytes,
-                    'read_count': disk_io.read_count,
-                    'write_count': disk_io.write_count,
-                })
+                metrics["disk"].update(
+                    {
+                        "read_bytes": disk_io.read_bytes,
+                        "write_bytes": disk_io.write_bytes,
+                        "read_count": disk_io.read_count,
+                        "write_count": disk_io.write_count,
+                    }
+                )
 
             # Network metrics
             network_io = psutil.net_io_counters()
             if network_io:
-                metrics['network'] = {
-                    'bytes_sent': network_io.bytes_sent,
-                    'bytes_recv': network_io.bytes_recv,
-                    'packets_sent': network_io.packets_sent,
-                    'packets_recv': network_io.packets_recv,
-                    'errin': network_io.errin,
-                    'errout': network_io.errout,
-                    'dropin': network_io.dropin,
-                    'dropout': network_io.dropout,
+                metrics["network"] = {
+                    "bytes_sent": network_io.bytes_sent,
+                    "bytes_recv": network_io.bytes_recv,
+                    "packets_sent": network_io.packets_sent,
+                    "packets_recv": network_io.packets_recv,
+                    "errin": network_io.errin,
+                    "errout": network_io.errout,
+                    "dropin": network_io.dropin,
+                    "dropout": network_io.dropout,
                 }
 
             # Process metrics
             process = psutil.Process()
 
-            metrics['process'] = {
-                'pid': process.pid,
-                'cpu_percent': process.cpu_percent(),
-                'memory_rss_bytes': process.memory_info().rss,
-                'memory_vms_bytes': process.memory_info().vms,
-                'memory_percent': process.memory_percent(),
-                'num_threads': process.num_threads(),
-                'num_fds': process.num_fds() if hasattr(process, 'num_fds') else 0,
-                'create_time': process.create_time(),
+            metrics["process"] = {
+                "pid": process.pid,
+                "cpu_percent": process.cpu_percent(),
+                "memory_rss_bytes": process.memory_info().rss,
+                "memory_vms_bytes": process.memory_info().vms,
+                "memory_percent": process.memory_percent(),
+                "num_threads": process.num_threads(),
+                "num_fds": process.num_fds() if hasattr(process, "num_fds") else 0,
+                "create_time": process.create_time(),
             }
 
             # Python-specific metrics
-            metrics['python'] = {
-                'version': sys.version,
-                'gc_counts': gc.get_count(),
-                'gc_stats': gc.get_stats() if hasattr(gc, 'get_stats') else [],
-                'recursion_limit': sys.getrecursionlimit(),
+            metrics["python"] = {
+                "version": sys.version,
+                "gc_counts": gc.get_count(),
+                "gc_stats": gc.get_stats() if hasattr(gc, "get_stats") else [],
+                "recursion_limit": sys.getrecursionlimit(),
             }
 
         except Exception as e:
@@ -327,14 +334,14 @@ class MetricsCollector:
                 timestamp = time.time()
 
                 # Store system metrics
-                system_metrics['timestamp'] = timestamp
+                system_metrics["timestamp"] = timestamp
                 self._system_metrics_history.append(system_metrics)
 
                 # Record as individual metrics
                 for category, metrics in system_metrics.items():
                     if isinstance(metrics, dict):
                         for metric_name, value in metrics.items():
-                            if isinstance(value, (int, float)):
+                            if isinstance(value, int | float):
                                 self.set_gauge(f"{category}.{metric_name}", value)
 
                 # Update aggregated metrics
@@ -368,15 +375,15 @@ class MetricsCollector:
 
             if values:
                 self._aggregated_metrics[name] = {
-                    'count': len(values),
-                    'sum': sum(values),
-                    'avg': sum(values) / len(values),
-                    'min': min(values),
-                    'max': max(values),
-                    'p50': self._percentile(values, 50),
-                    'p95': self._percentile(values, 95),
-                    'p99': self._percentile(values, 99),
-                    'last_updated': current_time,
+                    "count": len(values),
+                    "sum": sum(values),
+                    "avg": sum(values) / len(values),
+                    "min": min(values),
+                    "max": max(values),
+                    "p50": self._percentile(values, 50),
+                    "p95": self._percentile(values, 95),
+                    "p99": self._percentile(values, 99),
+                    "last_updated": current_time,
                 }
 
     def _percentile(self, values: list[float], percentile: int) -> float:
@@ -408,20 +415,22 @@ class MetricsCollector:
             # Prepare data for persistence
             metrics_data = []
             for metric in self._metrics:
-                metrics_data.append({
-                    'name': metric.name,
-                    'value': metric.value,
-                    'timestamp': metric.timestamp,
-                    'tags': metric.tags,
-                    'type': metric.metric_type,
-                })
+                metrics_data.append(
+                    {
+                        "name": metric.name,
+                        "value": metric.value,
+                        "timestamp": metric.timestamp,
+                        "tags": metric.tags,
+                        "type": metric.metric_type,
+                    }
+                )
 
             # Write to file
             timestamp = int(time.time())
             filename = f"metrics_{timestamp}.json"
             filepath = self.storage_path / filename
 
-            async with aiofiles.open(filepath, 'w') as f:
+            async with aiofiles.open(filepath, "w") as f:
                 await f.write(json.dumps(metrics_data, indent=2))
 
             logger.debug(f"Persisted {len(metrics_data)} metrics to {filepath}")
@@ -442,22 +451,23 @@ class MetricsCollector:
         # Get aggregated metrics
         recent_aggregations = {}
         for name, agg in self._aggregated_metrics.items():
-            if current_time - agg['last_updated'] < 300:  # Last 5 minutes
+            if current_time - agg["last_updated"] < 300:  # Last 5 minutes
                 recent_aggregations[name] = agg
 
         return {
-            'timestamp': current_time,
-            'system_metrics': latest_system,
-            'aggregated_metrics': recent_aggregations,
-            'custom_metrics': {name: metric.value for name, metric in self._custom_metrics.items()},
-            'active_timers': len(self._active_timers),
-            'metrics_buffer_size': len(self._metrics),
+            "timestamp": current_time,
+            "system_metrics": latest_system,
+            "aggregated_metrics": recent_aggregations,
+            "custom_metrics": {name: metric.value for name, metric in self._custom_metrics.items()},
+            "active_timers": len(self._active_timers),
+            "metrics_buffer_size": len(self._metrics),
         }
 
 
 # =====================================================
 # Health Monitoring System
 # =====================================================
+
 
 class HealthMonitor:
     """
@@ -495,18 +505,18 @@ class HealthMonitor:
         check_type: str = "http",
         timeout: float = 10.0,
         expected_status: int = 200,
-        dependencies: list[str] | None = None
+        dependencies: list[str] | None = None,
     ) -> None:
         """Register a service for health monitoring."""
         self._services[service_name] = {
-            'check_url': check_url,
-            'check_type': check_type,
-            'timeout': timeout,
-            'expected_status': expected_status,
-            'dependencies': dependencies or [],
-            'last_check': 0,
-            'status': 'unknown',
-            'consecutive_failures': 0,
+            "check_url": check_url,
+            "check_type": check_type,
+            "timeout": timeout,
+            "expected_status": expected_status,
+            "dependencies": dependencies or [],
+            "last_check": 0,
+            "status": "unknown",
+            "consecutive_failures": 0,
         }
 
         logger.info(f"Registered service for health monitoring: {service_name}")
@@ -522,7 +532,7 @@ class HealthMonitor:
                 dependencies_healthy=0,
                 dependencies_total=0,
                 last_check=time.time(),
-                details={"error": "Service not registered"}
+                details={"error": "Service not registered"},
             )
 
         service = self._services[service_name]
@@ -530,7 +540,7 @@ class HealthMonitor:
 
         try:
             # Perform health check based on type
-            if service['check_type'] == 'http':
+            if service["check_type"] == "http":
                 health_status = await self._http_health_check(service)
             else:
                 health_status = {"status": "unsupported", "details": {}}
@@ -539,9 +549,9 @@ class HealthMonitor:
 
             # Check dependencies
             dependencies_healthy = 0
-            dependencies_total = len(service['dependencies'])
+            dependencies_total = len(service["dependencies"])
 
-            for dep_service in service['dependencies']:
+            for dep_service in service["dependencies"]:
                 if dep_service in self._services:
                     dep_health = await self.check_service_health(dep_service)
                     if dep_health.status == "healthy":
@@ -549,15 +559,17 @@ class HealthMonitor:
 
             # Determine overall status
             overall_status = "healthy"
-            if health_status['status'] != "healthy":
-                overall_status = health_status['status']
+            if health_status["status"] != "healthy":
+                overall_status = health_status["status"]
             elif dependencies_healthy < dependencies_total:
                 overall_status = "degraded"
 
             # Update service state
-            service['last_check'] = time.time()
-            service['status'] = overall_status
-            service['consecutive_failures'] = 0 if overall_status == "healthy" else service['consecutive_failures'] + 1
+            service["last_check"] = time.time()
+            service["status"] = overall_status
+            service["consecutive_failures"] = (
+                0 if overall_status == "healthy" else service["consecutive_failures"] + 1
+            )
 
             # Create health object
             health = ServiceHealth(
@@ -568,7 +580,7 @@ class HealthMonitor:
                 dependencies_healthy=dependencies_healthy,
                 dependencies_total=dependencies_total,
                 last_check=time.time(),
-                details=health_status.get('details', {})
+                details=health_status.get("details", {}),
             )
 
             # Store in history
@@ -579,7 +591,7 @@ class HealthMonitor:
         except Exception as e:
             logger.error(f"Health check failed for {service_name}: {e}")
 
-            service['consecutive_failures'] = service['consecutive_failures'] + 1
+            service["consecutive_failures"] = service["consecutive_failures"] + 1
 
             return ServiceHealth(
                 service_name=service_name,
@@ -587,34 +599,34 @@ class HealthMonitor:
                 response_time_ms=(time.time() - start_time) * 1000,
                 uptime_seconds=0,
                 dependencies_healthy=0,
-                dependencies_total=len(service['dependencies']),
+                dependencies_total=len(service["dependencies"]),
                 last_check=time.time(),
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
 
     async def _http_health_check(self, service: dict[str, Any]) -> dict[str, Any]:
         """Perform HTTP health check."""
-        timeout = aiohttp.ClientTimeout(total=service['timeout'])
+        timeout = aiohttp.ClientTimeout(total=service["timeout"])
 
         async with (
             aiohttp.ClientSession(timeout=timeout) as session,
-            session.get(service['check_url']) as response,
+            session.get(service["check_url"]) as response,
         ):
-            if response.status == service['expected_status']:
+            if response.status == service["expected_status"]:
                 return {
                     "status": "healthy",
                     "details": {
                         "http_status": response.status,
                         "headers": dict(response.headers),
-                    }
+                    },
                 }
             else:
                 return {
                     "status": "unhealthy",
                     "details": {
                         "http_status": response.status,
-                        "expected_status": service['expected_status'],
-                    }
+                        "expected_status": service["expected_status"],
+                    },
                 }
 
     async def _health_check_loop(self) -> None:
@@ -648,12 +660,12 @@ class HealthMonitor:
 
         for service_name, service in self._services.items():
             service_statuses[service_name] = {
-                "status": service['status'],
-                "last_check": service['last_check'],
-                "consecutive_failures": service['consecutive_failures'],
+                "status": service["status"],
+                "last_check": service["last_check"],
+                "consecutive_failures": service["consecutive_failures"],
             }
 
-            if service['status'] == "healthy":
+            if service["status"] == "healthy":
                 healthy_count += 1
 
         # Determine overall status
@@ -677,6 +689,7 @@ class HealthMonitor:
 # Performance Profiler
 # =====================================================
 
+
 class PerformanceProfiler:
     """
     Advanced performance profiling for function-level monitoring.
@@ -689,6 +702,7 @@ class PerformanceProfiler:
 
     def profile_function(self, func_name: str):
         """Decorator for profiling function performance."""
+
         def decorator(func):
             if not self.enabled:
                 return func
@@ -713,9 +727,9 @@ class PerformanceProfiler:
         start_memory = self._get_memory_usage()
 
         self._active_calls[call_id] = {
-            'func_name': func_name,
-            'start_time': start_time,
-            'start_memory': start_memory,
+            "func_name": func_name,
+            "start_time": start_time,
+            "start_memory": start_memory,
         }
 
         try:
@@ -731,9 +745,9 @@ class PerformanceProfiler:
         start_memory = self._get_memory_usage()
 
         self._active_calls[call_id] = {
-            'func_name': func_name,
-            'start_time': start_time,
-            'start_memory': start_memory,
+            "func_name": func_name,
+            "start_time": start_time,
+            "start_memory": start_memory,
         }
 
         try:
@@ -748,7 +762,7 @@ class PerformanceProfiler:
             return
 
         call_info = self._active_calls.pop(call_id)
-        func_name = call_info['func_name']
+        func_name = call_info["func_name"]
 
         execution_time = time.time() - start_time
         memory_usage = self._get_memory_usage() - start_memory
@@ -772,7 +786,7 @@ class PerformanceProfiler:
                 max_time_seconds=execution_time,
                 min_time_seconds=execution_time,
                 memory_usage_bytes=memory_usage,
-                last_execution=time.time()
+                last_execution=time.time(),
             )
 
     def _get_memory_usage(self) -> int:
@@ -786,21 +800,21 @@ class PerformanceProfiler:
     def get_performance_report(self) -> dict[str, Any]:
         """Get comprehensive performance report."""
         report = {
-            'profiles': {},
-            'active_calls': len(self._active_calls),
-            'total_functions_profiled': len(self._profiles),
-            'report_generated': time.time(),
+            "profiles": {},
+            "active_calls": len(self._active_calls),
+            "total_functions_profiled": len(self._profiles),
+            "report_generated": time.time(),
         }
 
         for func_name, profile in self._profiles.items():
-            report['profiles'][func_name] = {
-                'execution_count': profile.execution_count,
-                'avg_time_seconds': profile.avg_time_seconds,
-                'max_time_seconds': profile.max_time_seconds,
-                'min_time_seconds': profile.min_time_seconds,
-                'total_time_seconds': profile.total_time_seconds,
-                'memory_usage_mb': profile.memory_usage_bytes / 1024 / 1024,
-                'last_execution': profile.last_execution,
+            report["profiles"][func_name] = {
+                "execution_count": profile.execution_count,
+                "avg_time_seconds": profile.avg_time_seconds,
+                "max_time_seconds": profile.max_time_seconds,
+                "min_time_seconds": profile.min_time_seconds,
+                "total_time_seconds": profile.total_time_seconds,
+                "memory_usage_mb": profile.memory_usage_bytes / 1024 / 1024,
+                "last_execution": profile.last_execution,
             }
 
         return report
@@ -809,6 +823,7 @@ class PerformanceProfiler:
 # =====================================================
 # Integrated Monitoring System
 # =====================================================
+
 
 class IntegratedMonitoringSystem:
     """
@@ -845,14 +860,14 @@ class IntegratedMonitoringSystem:
     def get_comprehensive_status(self) -> dict[str, Any]:
         """Get comprehensive system status."""
         return {
-            'monitoring_system': {
-                'running': self._is_running,
-                'config': self.config.dict(),
+            "monitoring_system": {
+                "running": self._is_running,
+                "config": self.config.dict(),
             },
-            'metrics': self.metrics_collector.get_current_metrics(),
-            'health': self.health_monitor.get_overall_health(),
-            'performance': self.profiler.get_performance_report(),
-            'timestamp': time.time(),
+            "metrics": self.metrics_collector.get_current_metrics(),
+            "health": self.health_monitor.get_overall_health(),
+            "performance": self.profiler.get_performance_report(),
+            "timestamp": time.time(),
         }
 
     # Convenience methods

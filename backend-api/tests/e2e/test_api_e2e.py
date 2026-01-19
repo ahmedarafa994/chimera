@@ -29,9 +29,7 @@ class TestAPIEndToEnd:
         assert response.status_code == 200
         data = response.json()
         # Accept any valid health status
-        valid_statuses = [
-            "healthy", "operational", "degraded", "starting", "ok"
-        ]
+        valid_statuses = ["healthy", "operational", "degraded", "starting", "ok"]
         assert data["status"] in valid_statuses
 
     def test_provider_list_workflow(self, api_base_url, authenticated_client):

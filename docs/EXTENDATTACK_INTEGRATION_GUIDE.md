@@ -110,7 +110,7 @@ result = integrator.chain_attack(
 ### Example API Request
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/extend-attack/attack \
+curl -X POST http://localhost:8001/api/v1/extend-attack/attack \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What is 2+2?",

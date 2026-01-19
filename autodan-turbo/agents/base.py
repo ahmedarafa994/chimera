@@ -124,7 +124,9 @@ class BaseLLMAgent(ABC):
 
             self._client = Anthropic(api_key=self.config.api_key, timeout=self.config.timeout)
         except ImportError:
-            raise ImportError("Anthropic package not installed. Run: pip install anthropic") from None
+            raise ImportError(
+                "Anthropic package not installed. Run: pip install anthropic"
+            ) from None
 
     def _init_local(self):
         """Initialize local model client (e.g., vLLM, Ollama)."""
@@ -134,7 +136,7 @@ class BaseLLMAgent(ABC):
             # Use OpenAI-compatible API for local models
             self._client = OpenAI(
                 api_key=self.config.api_key or "local",
-                base_url=self.config.api_base or "http://localhost:8000/v1",
+                base_url=self.config.api_base or "http://localhost:8001/v1",
                 timeout=self.config.timeout,
             )
         except ImportError:

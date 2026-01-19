@@ -219,10 +219,7 @@ class TestRequestDeduplicator:
             return "result"
 
         # Launch multiple concurrent requests
-        tasks = [
-            deduplicator.deduplicate(sample_request, execute_fn)
-            for _ in range(5)
-        ]
+        tasks = [deduplicator.deduplicate(sample_request, execute_fn) for _ in range(5)]
 
         results = await asyncio.gather(*tasks)
 
@@ -291,11 +288,7 @@ class TestLLMService:
 
     def test_register_provider(self, llm_service, mock_provider):
         """Test provider registration."""
-        llm_service.register_provider(
-            "test-provider",
-            mock_provider,
-            is_default=True
-        )
+        llm_service.register_provider("test-provider", mock_provider, is_default=True)
 
         assert "test-provider" in llm_service._providers
         assert llm_service._default_provider == "test-provider"
@@ -335,30 +328,17 @@ class TestLLMService:
     @pytest.mark.asyncio
     async def test_count_tokens(self, llm_service, mock_provider):
         """Test token counting."""
-        llm_service.register_provider(
-            "test-provider",
-            mock_provider,
-            is_default=True
-        )
+        llm_service.register_provider("test-provider", mock_provider, is_default=True)
 
-        count = await llm_service.count_tokens(
-            "Test text for counting",
-            provider="test-provider"
-        )
+        count = await llm_service.count_tokens("Test text for counting", provider="test-provider")
 
         assert count == 10
         mock_provider.count_tokens.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_generate_text_with_cache_disabled(
-        self, llm_service, mock_provider
-    ):
+    async def test_generate_text_with_cache_disabled(self, llm_service, mock_provider):
         """Test text generation with cache disabled."""
-        llm_service.register_provider(
-            "test-provider",
-            mock_provider,
-            is_default=True
-        )
+        llm_service.register_provider("test-provider", mock_provider, is_default=True)
 
         request = MagicMock()
         request.prompt = "Test prompt"
@@ -369,11 +349,7 @@ class TestLLMService:
         request.use_cache = False
 
         # Mock the internal generate method
-        with patch.object(
-            llm_service,
-            "_execute_generation",
-            new_callable=AsyncMock
-        ) as mock_exec:
+        with patch.object(llm_service, "_execute_generation", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = MagicMock(
                 content="Generated text",
                 model="test-model",
@@ -418,9 +394,7 @@ class TestLLMServiceCircuitBreaker:
                 request.use_cache = False
 
                 with patch.object(
-                    service,
-                    "_execute_generation",
-                    new_callable=AsyncMock
+                    service, "_execute_generation", new_callable=AsyncMock
                 ) as mock_exec:
                     mock_exec.side_effect = Exception("Provider error")
                     await service.generate_text(request)
@@ -450,11 +424,7 @@ class TestLLMServiceIntegration:
             provider.is_available = MagicMock(return_value=True)
             provider.count_tokens = MagicMock(return_value=10)
 
-            service.register_provider(
-                name,
-                provider,
-                is_default=(name == "openai")
-            )
+            service.register_provider(name, provider, is_default=(name == "openai"))
 
         return service
 
@@ -469,9 +439,7 @@ class TestLLMServiceIntegration:
     async def test_fallback_on_provider_failure(self, full_service):
         """Test fallback to another provider on failure."""
         # Make primary provider fail
-        full_service._providers["openai"].generate.side_effect = Exception(
-            "Primary failed"
-        )
+        full_service._providers["openai"].generate.side_effect = Exception("Primary failed")
 
         # Service should handle failure gracefully
         # (implementation-dependent)
@@ -552,11 +520,7 @@ class TestStreamingGeneration:
         from app.services.llm_service import LLMService
 
         service = LLMService()
-        service.register_provider(
-            "streaming",
-            streaming_provider,
-            is_default=True
-        )
+        service.register_provider("streaming", streaming_provider, is_default=True)
 
         # Note: actual streaming test would depend on implementation
         # This is a placeholder for the pattern

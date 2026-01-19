@@ -18,13 +18,7 @@ import time
 import traceback
 from pathlib import Path
 
-from fastapi import (
-    Depends,
-    FastAPI,
-    HTTPException,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse, JSONResponse
@@ -43,69 +37,56 @@ for _path in (_BACKEND_DIR, _REPO_ROOT):
 # Core imports
 import contextlib
 
-from fastapi.exceptions import RequestValidationError  # noqa: E402
+from fastapi.exceptions import RequestValidationError
 
-from app.api.api_routes import router as api_router  # noqa: E402
-from app.core.dependencies import (  # noqa: E402
-    get_jailbreak_enhancer,
-    get_prompt_enhancer,
-)
-from app.core.errors import (  # noqa: E402
+from app.api.api_routes import router as api_router
+from app.api.v1.endpoints.unified_providers import router as unified_providers_router
+from app.core.dependencies import get_jailbreak_enhancer, get_prompt_enhancer
+from app.core.errors import (
     AppError,
     app_exception_handler,
     global_exception_handler,
     http_exception_handler,
 )
-from app.core.handlers import chimera_exception_handler  # noqa: E402
+from app.core.handlers import chimera_exception_handler
 
 # Performance optimization (PERF-014): Import health checker at module level
 # to avoid import overhead on every health check request
-from app.core.health import health_checker  # noqa: E402
-from app.core.lifespan import lifespan  # noqa: E402
-from app.core.observability import (  # noqa: E402
+from app.core.health import health_checker
+from app.core.lifespan import lifespan
+from app.core.observability import (
     ObservabilityMiddleware,
     get_logger,
     setup_logging,
     setup_tracing,
 )
-from app.core.unified_errors import ChimeraError  # noqa: E402
-from app.middleware.auth import APIKeyMiddleware  # noqa: E402
-from app.middleware.auth_rate_limit import (  # noqa: E402
+from app.core.unified_errors import ChimeraError
+from app.middleware.auth import APIKeyMiddleware
+from app.middleware.auth_rate_limit import (
     AuthRateLimitMiddleware,
     set_auth_rate_limiter,
 )
-from app.middleware.compression import CompressionMiddleware  # noqa: E402
-from app.middleware.cost_tracking_middleware import (  # noqa: E402
-    CostTrackingMiddleware,
-)
-
-# Provider middleware imports
-from app.middleware.selection_middleware import (  # noqa: E402
-    SelectionMiddleware,
-)
-from app.middleware.rate_limit_middleware import (  # noqa: E402
-    ProviderRateLimitMiddleware,
-)
-from app.middleware.request_logging import (  # noqa: E402
+from app.middleware.compression import CompressionMiddleware
+from app.middleware.context_middleware import ContextPropagationMiddleware
+from app.middleware.cost_tracking_middleware import CostTrackingMiddleware
+from app.middleware.provider_tracing_middleware import ProviderTracingMiddleware
+from app.middleware.rate_limit_middleware import ProviderRateLimitMiddleware
+from app.middleware.request_logging import (
     MetricsMiddleware,
     RequestLoggingMiddleware,
     set_metrics_middleware,
 )
-from app.middleware.context_middleware import ContextPropagationMiddleware  # noqa: E402
+
+# Provider middleware imports
+from app.middleware.selection_middleware import SelectionMiddleware
 
 # Unified Provider System middleware imports (Phase 2)
-from app.middleware.selection_validation_middleware import (  # noqa: E402
+from app.middleware.selection_validation_middleware import (
     SelectionValidationMiddleware,
 )
-from app.middleware.provider_tracing_middleware import (  # noqa: E402
-    ProviderTracingMiddleware,
-)
-from app.api.v1.endpoints.unified_providers import router as unified_providers_router  # noqa: E402
-from app.routers.auth import router as auth_router  # noqa: E402
-from meta_prompter.jailbreak_enhancer import (  # noqa: E402
-    JailbreakPromptEnhancer,
-)
-from meta_prompter.prompt_enhancer import PromptEnhancer  # noqa: E402
+from app.routers.auth import router as auth_router
+from meta_prompter.jailbreak_enhancer import JailbreakPromptEnhancer
+from meta_prompter.prompt_enhancer import PromptEnhancer
 
 # =============================================================================
 # Application Setup
@@ -375,6 +356,9 @@ app.add_middleware(
         "/v1/completions",
         "/v1/models",
         "/v1/messages",
+        "/api/v1/provider-sync",
+        # AUTH-001: Exclude auth endpoints from API key requirement
+        "/api/v1/auth",
     ],
 )
 
@@ -393,6 +377,7 @@ app.add_middleware(
         "/openapi.json",
         "/redoc",
         "/favicon.ico",
+        "/api/v1/auth",  # Exclude auth
     ],
     slow_request_threshold_ms=2000,  # Reduced from 5000ms for better alerting
 )
@@ -425,7 +410,18 @@ app.add_middleware(RateLimitMiddleware, calls=rate_limit_calls, period=rate_limi
 logger.info(f"Rate limiting middleware enabled: {rate_limit_calls} calls per {rate_limit_period}s")
 
 # Input validation middleware (validates content-type and size)
-app.add_middleware(InputValidationMiddleware)
+# Input validation middleware (validates content-type and size)
+app.add_middleware(
+    InputValidationMiddleware,
+    excluded_paths=[
+        "/health",
+        "/docs",
+        "/openapi.json",
+        "/redoc",
+        "/api/v1/health",
+        "/api/v1/auth",  # Exclude auth
+    ],
+)
 logger.info("Input validation middleware enabled")
 
 # CSRF protection (enabled with enforce=True in production)
@@ -448,6 +444,7 @@ app.add_middleware(
         "/api/v1/providers",
         "/api/v1/techniques",
         "/api/v1/models",
+        "/api/v1/auth",  # Exclude auth
     ],
 )
 logger.info(f"CSRF middleware enabled (enforce={csrf_enforce})")
@@ -470,7 +467,15 @@ app.add_middleware(
     SelectionMiddleware,
     default_provider=os.getenv("DEFAULT_PROVIDER", "openai"),
     default_model=os.getenv("DEFAULT_MODEL", "gpt-4-turbo"),
-    enable_session_lookup=True
+    enable_session_lookup=True,
+    excluded_paths=[
+        "/health",
+        "/docs",
+        "/openapi.json",
+        "/redoc",
+        "/api/v1/health",
+        "/api/v1/auth",  # Exclude auth endpoints
+    ],
 )
 logger.info("Selection middleware enabled with database-backed session preferences")
 
@@ -478,7 +483,17 @@ logger.info("Selection middleware enabled with database-backed session preferenc
 # Creates request-scoped context with provider/model from GlobalModelSelectionState
 # Integrates with the new unified provider system
 if os.getenv("ENABLE_UNIFIED_PROVIDER_SYSTEM", "false").lower() == "true":
-    app.add_middleware(ContextPropagationMiddleware)
+    app.add_middleware(
+        ContextPropagationMiddleware,
+        excluded_paths=[
+            "/health",
+            "/docs",
+            "/openapi.json",
+            "/redoc",
+            "/api/v1/health",
+            "/api/v1/auth",  # Exclude auth endpoints
+        ],
+    )
     logger.info("Context propagation middleware enabled (Unified Provider System)")
 
     # Selection Validation Middleware - validates provider/model at request time
@@ -546,8 +561,8 @@ else:
     # Development: Allow localhost origins
     allowed_origins_str = os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:3000,http://localhost:3001,http://localhost:8080,"
-        "http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:8080",
+        "http://localhost:3001,http://localhost:3002,http://localhost:8080,"
+        "http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:8080",
     )
     allowed_origins = [
         origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()
@@ -555,16 +570,18 @@ else:
 
     # Add common dev origins if not already present
     dev_origins = [
-        "http://localhost:3000",
         "http://localhost:3001",
+        "http://localhost:3002",
         "http://localhost:3700",
         "http://localhost:8080",
-        "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
+        "http://127.0.0.1:3002",
         "http://127.0.0.1:3700",
         "http://127.0.0.1:8080",
     ]
-    allowed_origins = list(set(allowed_origins + dev_origins))
+    for origin in dev_origins:
+        if origin not in allowed_origins:
+            allowed_origins.append(origin)
 
 app.add_middleware(
     CORSMiddleware,
@@ -630,11 +647,14 @@ app.add_exception_handler(Exception, global_exception_handler)
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
-app.include_router(unified_providers_router, prefix="/api/v1")  # NEW - Phase 2: Unified Provider System
+app.include_router(
+    unified_providers_router, prefix="/api/v1"
+)  # NEW - Phase 2: Unified Provider System
 
 # Chimera+AutoDAN unified router
 try:
     from app.routers.chimera_autodan import router as chimera_autodan_router
+
     app.include_router(chimera_autodan_router, prefix="/api/v1")
     logger.info("Chimera+AutoDAN router registered successfully")
 except ImportError as e:
@@ -994,10 +1014,9 @@ async def websocket_model_selection(websocket: WebSocket, user_id: str = "defaul
     except ImportError as e:
         logger.error(f"Failed to import model selection WebSocket handler: {e}")
         await websocket.accept()
-        await websocket.send_json({
-            "type": "ERROR",
-            "data": {"message": "Model selection WebSocket not available"}
-        })
+        await websocket.send_json(
+            {"type": "ERROR", "data": {"message": "Model selection WebSocket not available"}}
+        )
         await websocket.close()
     except Exception as e:
         logger.error(f"Model selection WebSocket error: {e}", exc_info=True)

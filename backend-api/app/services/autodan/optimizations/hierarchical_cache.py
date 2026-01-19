@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Try to import optional dependencies
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -38,6 +39,7 @@ except ImportError:
 
 try:
     import redis.asyncio as aioredis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -45,6 +47,7 @@ except ImportError:
 
 try:
     from pybloom_live import BloomFilter
+
     BLOOM_AVAILABLE = True
 except ImportError:
     BLOOM_AVAILABLE = False
@@ -53,22 +56,25 @@ except ImportError:
 
 class CacheLevel(Enum):
     """Cache tier levels"""
-    L1 = "memory"      # In-memory LRU cache
-    L2 = "redis"       # Redis cache
-    L3 = "disk"        # Persistent disk cache
+
+    L1 = "memory"  # In-memory LRU cache
+    L2 = "redis"  # Redis cache
+    L3 = "disk"  # Persistent disk cache
 
 
 class EvictionPolicy(Enum):
     """Cache eviction policies"""
-    LRU = "lru"        # Least Recently Used
-    LFU = "lfu"        # Least Frequently Used
-    TTL = "ttl"        # Time To Live
+
+    LRU = "lru"  # Least Recently Used
+    LFU = "lfu"  # Least Frequently Used
+    TTL = "ttl"  # Time To Live
     RANDOM = "random"  # Random eviction
 
 
 @dataclass
 class CacheEntry:
     """Cache entry with metadata"""
+
     key: str
     value: Any
     created_at: float
@@ -99,6 +105,7 @@ class CacheEntry:
 @dataclass
 class CacheStats:
     """Cache statistics"""
+
     total_requests: int = 0
     cache_hits: int = 0
     cache_misses: int = 0
@@ -156,7 +163,7 @@ class MemoryCache(CacheBackend):
         self,
         max_size: int = 1000,
         max_size_bytes: int = 100 * 1024 * 1024,  # 100MB
-        eviction_policy: EvictionPolicy = EvictionPolicy.LRU
+        eviction_policy: EvictionPolicy = EvictionPolicy.LRU,
     ):
         self.max_size = max_size
         self.max_size_bytes = max_size_bytes
@@ -191,8 +198,10 @@ class MemoryCache(CacheBackend):
                 await self._remove_entry(key)
 
             # Evict entries if necessary
-            while (len(self.cache) >= self.max_size or
-                   self.current_size_bytes + entry.size_bytes > self.max_size_bytes):
+            while (
+                len(self.cache) >= self.max_size
+                or self.current_size_bytes + entry.size_bytes > self.max_size_bytes
+            ):
                 if not await self._evict_one():
                     return False
 
@@ -251,7 +260,7 @@ class RedisCache(CacheBackend):
         self,
         redis_url: str = "redis://localhost:6379/0",
         key_prefix: str = "autodan_cache:",
-        compression: bool = True
+        compression: bool = True,
     ):
         self.redis_url = redis_url
         self.key_prefix = key_prefix
@@ -278,7 +287,7 @@ class RedisCache(CacheBackend):
             if self.compression:
                 data = zlib.decompress(data)
 
-            entry = pickle.loads(data)
+            entry = pickle.loads(data)  # noqa: S301 - internal cache data, trusted source
 
             # Check TTL
             if entry.is_expired:
@@ -359,7 +368,7 @@ class DiskCache(CacheBackend):
         self,
         cache_dir: str | Path = "cache/autodan",
         max_size_mb: int = 1000,
-        compression: bool = True
+        compression: bool = True,
     ):
         self.cache_dir = Path(cache_dir)
         self.max_size_bytes = max_size_mb * 1024 * 1024
@@ -380,13 +389,13 @@ class DiskCache(CacheBackend):
 
         try:
             async with self._lock:
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     data = f.read()
 
                 if self.compression:
                     data = zlib.decompress(data)
 
-                entry = pickle.loads(data)
+                entry = pickle.loads(data)  # noqa: S301 - internal cache data, trusted source
 
                 if entry.is_expired:
                     file_path.unlink(missing_ok=True)
@@ -412,7 +421,7 @@ class DiskCache(CacheBackend):
                 if self.compression:
                     data = zlib.compress(data)
 
-                with open(file_path, 'wb') as f:
+                with open(file_path, "wb") as f:
                     f.write(data)
 
                 return True
@@ -497,7 +506,7 @@ class SimilarityIndex:
                 quantizer = faiss.IndexFlatIP(self.dimension)
                 self.index = faiss.IndexIVFFlat(quantizer, self.dimension, 100)
                 # Train with dummy data
-                dummy_data = np.random.random((1000, self.dimension)).astype('float32')
+                dummy_data = np.random.random((1000, self.dimension)).astype("float32")
                 self.index.train(dummy_data)
             else:
                 # Flat index for smaller datasets
@@ -517,14 +526,11 @@ class SimilarityIndex:
             self.embeddings.append(normalized_embedding)
 
             # Add to FAISS index
-            self.index.add(normalized_embedding.reshape(1, -1).astype('float32'))
+            self.index.add(normalized_embedding.reshape(1, -1).astype("float32"))
             self.next_id += 1
 
     async def search_similar(
-        self,
-        embedding: np.ndarray,
-        k: int = 5,
-        threshold: float = 0.9
+        self, embedding: np.ndarray, k: int = 5, threshold: float = 0.9
     ) -> list[tuple[str, float]]:
         """Search for similar embeddings"""
         if not self.index or not FAISS_AVAILABLE or self.next_id == 0:
@@ -536,8 +542,7 @@ class SimilarityIndex:
 
             # Search
             similarities, indices = self.index.search(
-                normalized_embedding.reshape(1, -1).astype('float32'),
-                min(k, self.next_id)
+                normalized_embedding.reshape(1, -1).astype("float32"), min(k, self.next_id)
             )
 
             # Filter by threshold and return results
@@ -583,7 +588,7 @@ class HierarchicalCache:
         similarity_threshold: float = 0.95,
         enable_similarity: bool = True,
         enable_bloom_filter: bool = True,
-        embedding_dimension: int = 768
+        embedding_dimension: int = 768,
     ):
         # Initialize backends
         self.l1_cache = MemoryCache(**(memory_config or {}))
@@ -593,13 +598,14 @@ class HierarchicalCache:
         # Similarity search
         self.similarity_threshold = similarity_threshold
         self.enable_similarity = enable_similarity and FAISS_AVAILABLE
-        self.similarity_index = SimilarityIndex(embedding_dimension) if self.enable_similarity else None
+        self.similarity_index = (
+            SimilarityIndex(embedding_dimension) if self.enable_similarity else None
+        )
 
         # Bloom filter for negative lookups
         self.enable_bloom_filter = enable_bloom_filter and BLOOM_AVAILABLE
         self.bloom_filter = (
-            BloomFilter(capacity=100000, error_rate=0.01)
-            if self.enable_bloom_filter else set()
+            BloomFilter(capacity=100000, error_rate=0.01) if self.enable_bloom_filter else set()
         )
 
         # Statistics
@@ -616,11 +622,7 @@ class HierarchicalCache:
 
         logger.info("Hierarchical cache initialized")
 
-    async def get(
-        self,
-        key: str,
-        embedding: np.ndarray | None = None
-    ) -> Any | None:
+    async def get(self, key: str, embedding: np.ndarray | None = None) -> Any | None:
         """Get value from cache with similarity matching"""
         start_time = time.time()
         self.stats.total_requests += 1
@@ -684,7 +686,7 @@ class HierarchicalCache:
         key: str,
         value: Any,
         ttl_seconds: float | None = None,
-        embedding: np.ndarray | None = None
+        embedding: np.ndarray | None = None,
     ) -> bool:
         """Set value in cache"""
         try:
@@ -699,7 +701,7 @@ class HierarchicalCache:
                 last_accessed=time.time(),
                 ttl_seconds=ttl_seconds,
                 size_bytes=size_bytes,
-                embedding=embedding
+                embedding=embedding,
             )
 
             # Store in all tiers
@@ -818,11 +820,15 @@ class HierarchicalCache:
             "bloom_filter_saves": self.stats.bloom_filter_saves,
             "errors": self.stats.errors,
             "total_size_mb": self.stats.total_size_bytes / (1024 * 1024),
-            "l1_size": len(self.l1_cache.cache) if hasattr(self.l1_cache, 'cache') else 0,
+            "l1_size": len(self.l1_cache.cache) if hasattr(self.l1_cache, "cache") else 0,
             "l2_available": self.l2_cache is not None,
-            "l3_size": len(list(self.l3_cache.cache_dir.glob("*.cache"))) if hasattr(self.l3_cache, 'cache_dir') else 0,
+            "l3_size": (
+                len(list(self.l3_cache.cache_dir.glob("*.cache")))
+                if hasattr(self.l3_cache, "cache_dir")
+                else 0
+            ),
             "similarity_enabled": self.enable_similarity,
-            "bloom_filter_enabled": self.enable_bloom_filter
+            "bloom_filter_enabled": self.enable_bloom_filter,
         }
 
     async def cleanup(self):

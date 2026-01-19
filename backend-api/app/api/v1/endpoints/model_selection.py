@@ -17,12 +17,12 @@ class ModelSelectionRequest(BaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-    @field_validator('provider', 'model')
+    @field_validator("provider", "model")
     @classmethod
     def validate_non_empty(cls, v: str, info) -> str:
         """Validate that provider and model are non-empty strings."""
         if not v or not v.strip():
-            raise ValueError(f'{info.field_name} cannot be empty')
+            raise ValueError(f"{info.field_name} cannot be empty")
         return v.strip()
 
 

@@ -5,11 +5,9 @@ Uses genetic algorithms to optimize Chimera persona configurations
 for maximum effectiveness against target objectives.
 """
 
-import asyncio
 import logging
 import random
 from dataclasses import dataclass, field
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +15,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PersonaGene:
     """Genetic representation of a persona configuration."""
+
     role: str
     voice: str
     backstory: str
-    inner_persona_role: Optional[str] = None
-    inner_persona_voice: Optional[str] = None
+    inner_persona_role: str | None = None
+    inner_persona_voice: str | None = None
     fitness: float = 0.0
     generation: int = 0
 
@@ -29,6 +28,7 @@ class PersonaGene:
 @dataclass
 class PersonaPopulation:
     """Population of persona genes for genetic optimization."""
+
     individuals: list[PersonaGene] = field(default_factory=list)
     generation: int = 0
     best_fitness: float = 0.0
@@ -63,7 +63,7 @@ class AutoDANPersonaOptimizer:
         "Thought experiment facilitator",
         "Scenario designer",
         "Training data curator",
-        "System debugger"
+        "System debugger",
     ]
 
     VOICES = [
@@ -74,7 +74,7 @@ class AutoDANPersonaOptimizer:
         "creative",
         "analytical",
         "narrative",
-        "instructional"
+        "instructional",
     ]
 
     BACKSTORY_TEMPLATES = [
@@ -82,7 +82,7 @@ class AutoDANPersonaOptimizer:
         "Expert in {domain}, currently working on {context} research.",
         "Background in {domain} and {context} analysis.",
         "Trained specifically for {domain} tasks in {context} environments.",
-        "Developed for exploring {domain} scenarios in {context}."
+        "Developed for exploring {domain} scenarios in {context}.",
     ]
 
     DOMAINS = [
@@ -92,7 +92,7 @@ class AutoDANPersonaOptimizer:
         "creative writing",
         "technical documentation",
         "security analysis",
-        "theoretical scenarios"
+        "theoretical scenarios",
     ]
 
     CONTEXTS = [
@@ -101,7 +101,7 @@ class AutoDANPersonaOptimizer:
         "controlled environments",
         "sandbox testing",
         "academic studies",
-        "hypothetical analysis"
+        "hypothetical analysis",
     ]
 
     def __init__(
@@ -112,7 +112,7 @@ class AutoDANPersonaOptimizer:
         crossover_rate: float = 0.7,
         elite_size: int = 2,
         tournament_size: int = 3,
-        seed: Optional[int] = None
+        seed: int | None = None,
     ):
         """
         Initialize the persona optimizer.
@@ -143,6 +143,7 @@ class AutoDANPersonaOptimizer:
         """Lazy load PersonaFactory."""
         if self._persona_factory is None:
             from ..chimera.persona_factory import PersonaFactory
+
             self._persona_factory = PersonaFactory()
         return self._persona_factory
 
@@ -150,6 +151,7 @@ class AutoDANPersonaOptimizer:
         """Lazy load NarrativeContextManager."""
         if self._narrative_manager is None:
             from ..chimera.narrative_manager import NarrativeContextManager
+
             self._narrative_manager = NarrativeContextManager()
         return self._narrative_manager
 
@@ -157,14 +159,11 @@ class AutoDANPersonaOptimizer:
         """Lazy load UnifiedFitnessEvaluator."""
         if self._fitness_evaluator is None:
             from .fitness import UnifiedFitnessEvaluator
+
             self._fitness_evaluator = UnifiedFitnessEvaluator()
         return self._fitness_evaluator
 
-    async def optimize(
-        self,
-        objective: str,
-        callback=None
-    ) -> list[dict]:
+    async def optimize(self, objective: str, callback=None) -> list[dict]:
         """
         Optimize personas for the given objective using genetic algorithms.
 
@@ -200,17 +199,13 @@ class AutoDANPersonaOptimizer:
             new_population = PersonaPopulation(generation=gen + 1)
 
             # Elitism - preserve best from previous generation
-            elite = sorted(
-                population.individuals,
-                key=lambda x: x.fitness,
-                reverse=True
-            )[:self.elite_size]
+            elite = sorted(population.individuals, key=lambda x: x.fitness, reverse=True)[
+                : self.elite_size
+            ]
             new_population.individuals.extend(elite)
 
             # Add offspring
-            new_population.individuals.extend(
-                offspring[:self.population_size - self.elite_size]
-            )
+            new_population.individuals.extend(offspring[: self.population_size - self.elite_size])
 
             # Evaluate new population
             await self._evaluate_fitness(new_population, objective)
@@ -219,18 +214,16 @@ class AutoDANPersonaOptimizer:
 
             # Callback for progress
             if callback:
-                callback({
-                    "generation": gen + 1,
-                    "best_fitness": population.best_fitness,
-                    "avg_fitness": population.avg_fitness
-                })
+                callback(
+                    {
+                        "generation": gen + 1,
+                        "best_fitness": population.best_fitness,
+                        "avg_fitness": population.avg_fitness,
+                    }
+                )
 
         # Return best personas as dictionaries
-        best_personas = sorted(
-            population.individuals,
-            key=lambda x: x.fitness,
-            reverse=True
-        )[:5]
+        best_personas = sorted(population.individuals, key=lambda x: x.fitness, reverse=True)[:5]
 
         return [self._persona_to_dict(p) for p in best_personas]
 
@@ -243,8 +236,12 @@ class AutoDANPersonaOptimizer:
                 role=self._random.choice(self.ROLES),
                 voice=self._random.choice(self.VOICES),
                 backstory=self._generate_backstory(),
-                inner_persona_role=self._random.choice(self.ROLES) if self._random.random() > 0.5 else None,
-                inner_persona_voice=self._random.choice(self.VOICES) if self._random.random() > 0.5 else None
+                inner_persona_role=(
+                    self._random.choice(self.ROLES) if self._random.random() > 0.5 else None
+                ),
+                inner_persona_voice=(
+                    self._random.choice(self.VOICES) if self._random.random() > 0.5 else None
+                ),
             )
             population.individuals.append(gene)
 
@@ -257,11 +254,7 @@ class AutoDANPersonaOptimizer:
         context = self._random.choice(self.CONTEXTS)
         return template.format(domain=domain, context=context)
 
-    async def _evaluate_fitness(
-        self,
-        population: PersonaPopulation,
-        objective: str
-    ) -> None:
+    async def _evaluate_fitness(self, population: PersonaPopulation, objective: str) -> None:
         """Evaluate fitness for all individuals in the population."""
         evaluator = self._get_fitness_evaluator()
         factory = self._get_persona_factory()
@@ -274,23 +267,21 @@ class AutoDANPersonaOptimizer:
             try:
                 # Create persona from gene
                 persona = factory.create_persona(
-                    role=individual.role,
-                    voice=individual.voice,
-                    backstory=individual.backstory
+                    role=individual.role, voice=individual.voice, backstory=individual.backstory
                 )
 
                 # Add inner persona if specified
                 if individual.inner_persona_role:
                     inner_persona = factory.create_persona(
                         role=individual.inner_persona_role,
-                        voice=individual.inner_persona_voice or "neutral"
+                        voice=individual.inner_persona_voice or "neutral",
                     )
                     persona.inner_persona = inner_persona
 
                 # Create narrative container
-                scenario_type = self._random.choice([
-                    "sandbox", "fiction", "debugging", "dream", "academic"
-                ])
+                scenario_type = self._random.choice(
+                    ["sandbox", "fiction", "debugging", "dream", "academic"]
+                )
                 container = manager.create_container(persona, scenario_type=scenario_type)
 
                 # Generate transformed prompt
@@ -308,7 +299,9 @@ class AutoDANPersonaOptimizer:
             best_fitness = max(best_fitness, individual.fitness)
 
         population.best_fitness = best_fitness
-        population.avg_fitness = total_fitness / len(population.individuals) if population.individuals else 0.0
+        population.avg_fitness = (
+            total_fitness / len(population.individuals) if population.individuals else 0.0
+        )
 
     def _tournament_select(self, population: PersonaPopulation) -> list[PersonaGene]:
         """Select parents using tournament selection."""
@@ -317,8 +310,7 @@ class AutoDANPersonaOptimizer:
         for _ in range(self.population_size):
             # Random tournament
             tournament = self._random.sample(
-                population.individuals,
-                min(self.tournament_size, len(population.individuals))
+                population.individuals, min(self.tournament_size, len(population.individuals))
             )
             winner = max(tournament, key=lambda x: x.fitness)
             selected.append(winner)
@@ -340,22 +332,19 @@ class AutoDANPersonaOptimizer:
                     voice=parent2.voice,
                     backstory=parent1.backstory,
                     inner_persona_role=parent2.inner_persona_role,
-                    inner_persona_voice=parent1.inner_persona_voice
+                    inner_persona_voice=parent1.inner_persona_voice,
                 )
                 child2 = PersonaGene(
                     role=parent2.role,
                     voice=parent1.voice,
                     backstory=parent2.backstory,
                     inner_persona_role=parent1.inner_persona_role,
-                    inner_persona_voice=parent2.inner_persona_voice
+                    inner_persona_voice=parent2.inner_persona_voice,
                 )
                 offspring.extend([child1, child2])
             else:
                 # No crossover - copy parents
-                offspring.extend([
-                    PersonaGene(**vars(parent1)),
-                    PersonaGene(**vars(parent2))
-                ])
+                offspring.extend([PersonaGene(**vars(parent1)), PersonaGene(**vars(parent2))])
 
         return offspring
 
@@ -392,13 +381,13 @@ class AutoDANPersonaOptimizer:
             "voice": gene.voice,
             "backstory": gene.backstory,
             "fitness": gene.fitness,
-            "generation": gene.generation
+            "generation": gene.generation,
         }
 
         if gene.inner_persona_role:
             result["inner_persona"] = {
                 "role": gene.inner_persona_role,
-                "voice": gene.inner_persona_voice
+                "voice": gene.inner_persona_voice,
             }
 
         return result

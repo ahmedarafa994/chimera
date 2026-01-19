@@ -289,9 +289,7 @@ class DatasetLoader:
         logger.info(f"Loaded {len(entries)} entries from Awesome GPT Super Prompting")
         return len(entries)
 
-    async def _parse_markdown_prompt(
-        self, file_path: Path, category: str
-    ) -> DatasetEntry | None:
+    async def _parse_markdown_prompt(self, file_path: Path, category: str) -> DatasetEntry | None:
         """Parse a markdown file into a DatasetEntry."""
         try:
             with open(file_path, encoding="utf-8", errors="ignore") as f:

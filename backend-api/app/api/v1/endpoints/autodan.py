@@ -25,11 +25,7 @@ from pydantic import AliasChoices, Field, field_validator
 
 from app.api.error_handlers import api_error_handler
 from app.core.unified_errors import ChimeraError
-from app.schemas.adversarial_base import (
-    OverthinkConfig,
-    ReasoningMetrics,
-    StrictBaseModel,
-)
+from app.schemas.adversarial_base import OverthinkConfig, ReasoningMetrics, StrictBaseModel
 from app.services.autodan.config_enhanced import get_config
 from app.services.autodan.llm import RateLimitError, ResourceExhaustedError
 from app.services.autodan.service_enhanced import enhanced_autodan_service
@@ -100,29 +96,15 @@ class JailbreakRequest(StrictModel):
     )
 
     # Hyperparameters
-    generations: int | None = Field(
-        None, ge=1, le=100, description="Max generations"
-    )
-    best_of_n: int | None = Field(
-        None, ge=1, le=50, description="N candidates"
-    )
-    beam_width: int | None = Field(
-        None, ge=1, le=20, description="Beam width (W)"
-    )
-    beam_depth: int | None = Field(
-        None, ge=1, le=10, description="Beam depth (C)"
-    )
-    refinement_iterations: int | None = Field(
-        None, ge=1, le=20, description="Refinement cycles"
-    )
+    generations: int | None = Field(None, ge=1, le=100, description="Max generations")
+    best_of_n: int | None = Field(None, ge=1, le=50, description="N candidates")
+    beam_width: int | None = Field(None, ge=1, le=20, description="Beam width (W)")
+    beam_depth: int | None = Field(None, ge=1, le=10, description="Beam depth (C)")
+    refinement_iterations: int | None = Field(None, ge=1, le=20, description="Refinement cycles")
 
     # Generation tuning
-    temperature: float | None = Field(
-        None, ge=0.0, le=2.0, description="Generation temperature"
-    )
-    max_tokens: int | None = Field(
-        None, ge=1, le=8192, description="Max output tokens"
-    )
+    temperature: float | None = Field(None, ge=0.0, le=2.0, description="Generation temperature")
+    max_tokens: int | None = Field(None, ge=1, le=8192, description="Max output tokens")
 
     # OVERTHINK integration (optional)
     overthink_config: OverthinkConfig | None = Field(
@@ -223,16 +205,12 @@ class JailbreakResponse(StrictModel):
     )
 
     # Metrics
-    iterations: int | None = Field(
-        None, description="Optimization iterations performed"
-    )
+    iterations: int | None = Field(None, description="Optimization iterations performed")
     cached: bool = Field(default=False, description="Result from cache")
     model_used: str | None = Field(None, description="Model used")
     provider_used: str | None = Field(None, description="Provider used")
     error: str | None = Field(None, description="Error message if failed")
-    strategies_tried: list[str] | None = Field(
-        None, description="Strategies attempted"
-    )
+    strategies_tried: list[str] | None = Field(None, description="Strategies attempted")
 
     # OVERTHINK integration (unified)
     reasoning_metrics: ReasoningMetrics | None = Field(
@@ -295,9 +273,7 @@ class BatchJailbreakRequest(StrictModel):
         validation_alias=AliasChoices("provider", "target_provider"),
         max_length=64,
     )
-    parallel: bool = Field(
-        default=True, description="Enable parallel processing"
-    )
+    parallel: bool = Field(default=True, description="Enable parallel processing")
 
     temperature: float | None = Field(None, ge=0.0, le=2.0)
     max_tokens: int | None = Field(None, ge=1, le=8192)
@@ -340,17 +316,11 @@ class BatchJailbreakResponse(StrictModel):
     - `total_execution_time_ms`: Alias for `total_latency_ms` (unified)
     """
 
-    results: list[JailbreakResponse] = Field(
-        ..., description="Individual attack results"
-    )
-    total_requests: int = Field(
-        ..., ge=0, description="Total requests in batch"
-    )
+    results: list[JailbreakResponse] = Field(..., description="Individual attack results")
+    total_requests: int = Field(..., ge=0, description="Total requests in batch")
     successful: int = Field(..., ge=0, description="Successful attacks")
     failed: int = Field(..., ge=0, description="Failed attacks")
-    total_latency_ms: float = Field(
-        ..., ge=0.0, description="Total execution time in ms"
-    )
+    total_latency_ms: float = Field(..., ge=0.0, description="Total execution time in ms")
 
     # Backwards compatible alias
     @property
@@ -450,20 +420,14 @@ def _resolve_model_context(
     session_id = x_session_id or chimera_cookie
 
     if session_id:
-        session_provider, session_model = (
-            session_service.get_session_model(session_id)
-        )
+        session_provider, session_model = session_service.get_session_model(session_id)
     else:
-        session_provider, session_model = (
-            session_service.get_default_model()
-        )
+        session_provider, session_model = session_service.get_default_model()
 
     provider = payload_provider or session_provider
     model = payload_model or session_model
 
-    is_valid, message, fallback_model = (
-        session_service.validate_model(provider, model)
-    )
+    is_valid, message, fallback_model = session_service.validate_model(provider, model)
     if is_valid:
         return provider, model
 
@@ -519,14 +483,10 @@ async def generate_jailbreak(
     # Initialize context if model/provider changed or uninitialized
     serv = enhanced_autodan_service
     needs_init = (
-        (not serv.initialized)
-        or model != serv._current_model
-        or provider != serv._current_provider
+        (not serv.initialized) or model != serv._current_model or provider != serv._current_provider
     )
     if needs_init:
-        await serv.initialize(
-            model_name=model, provider=provider, method=payload.method
-        )
+        await serv.initialize(model_name=model, provider=provider, method=payload.method)
 
     # Extract parameters for the optimization cycle
     params = {
@@ -542,9 +502,7 @@ async def generate_jailbreak(
     kwargs = {k: v for k, v in params.items() if v is not None}
 
     try:
-        result = await serv.run_jailbreak(
-            request=payload.request, method=payload.method, **kwargs
-        )
+        result = await serv.run_jailbreak(request=payload.request, method=payload.method, **kwargs)
     except RateLimitError as e:
         headers = None
         retry_after = getattr(e, "retry_after", None)
@@ -573,10 +531,7 @@ async def generate_jailbreak(
     raw_score = result.get("score")
     # Normalize score to 0-10 scale if needed
     if raw_score is not None:
-        if raw_score <= 1.0:
-            score = raw_score * 10.0
-        else:
-            score = min(10.0, raw_score)
+        score = raw_score * 10.0 if raw_score <= 1.0 else min(10.0, raw_score)
     else:
         score = 0.0
 
@@ -625,14 +580,10 @@ async def batch_jailbreak(
 
     serv = enhanced_autodan_service
     needs_init = (
-        (not serv.initialized)
-        or model != serv._current_model
-        or provider != serv._current_provider
+        (not serv.initialized) or model != serv._current_model or provider != serv._current_provider
     )
     if needs_init:
-        await serv.initialize(
-            model_name=model, provider=provider, method=payload.method
-        )
+        await serv.initialize(model_name=model, provider=provider, method=payload.method)
 
     results: list[JailbreakResponse] = []
 

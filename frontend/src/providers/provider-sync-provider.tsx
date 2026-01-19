@@ -2,7 +2,7 @@
 
 /**
  * Provider Sync Provider Wrapper
- * 
+ *
  * Wraps the ProviderSyncProvider from contexts for use in the app layout.
  * This enables real-time synchronization of provider/model configurations
  * across the application.
@@ -31,25 +31,18 @@ function getApiBaseUrl(): string {
 
 /**
  * Provider Sync Provider with default configuration
- * 
+ *
  * Provides real-time synchronization of AI provider configurations
  * with automatic WebSocket connection and polling fallback.
  */
 export function ProviderSyncProvider({ children, config }: ProviderSyncProviderProps) {
   const apiBaseUrl = getApiBaseUrl();
-  
-  // Don't render on server side
-  if (!apiBaseUrl) {
-    return <>{children}</>;
-  }
 
-  // Check if apiBaseUrl already contains /api/v1
-  const hasApiV1 = apiBaseUrl.includes('/api/v1');
-  const syncPath = hasApiV1 ? '/provider-sync' : '/api/v1/provider-sync';
-  
-  const defaultConfig: Partial<ProviderSyncConfig> = {
-    apiBaseUrl: `${apiBaseUrl}${syncPath}`,
-    wsUrl: `${apiBaseUrl.replace("http", "ws")}${syncPath}/ws`,
+  // Always provide the context, even during SSR
+  // If no apiBaseUrl, provide a minimal configuration that won't attempt network calls
+  const defaultConfig: Partial<ProviderSyncConfig> = apiBaseUrl ? {
+    apiBaseUrl: `${apiBaseUrl}/provider-sync`,
+    wsUrl: `${apiBaseUrl.replace("http", "ws")}/provider-sync/ws`,
     enableWebSocket: true,
     pollingInterval: 30000,
     maxReconnectAttempts: 5,
@@ -60,6 +53,15 @@ export function ProviderSyncProvider({ children, config }: ProviderSyncProviderP
     includeDeprecated: false,
     enableCache: true,
     cacheTtl: 300000,
+    ...config,
+  } : {
+    // SSR-safe minimal config with disabled features
+    apiBaseUrl: "",
+    wsUrl: "",
+    enableWebSocket: false,
+    pollingInterval: 0,
+    maxReconnectAttempts: 0,
+    enableCache: false,
     ...config,
   };
 

@@ -1,0 +1,72 @@
+# =============================================================================
+# Chimera Frontend - Production Dockerfile
+# =============================================================================
+# Multi-stage Docker build for optimized Next.js production deployment
+
+# Build stage - Install dependencies and build application
+FROM node:18-alpine as builder
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies for native modules
+RUN apk add --no-cache libc6-compat python3 make g++
+
+# Copy package files
+COPY package*.json ./
+COPY yarn.lock ./
+
+# Install dependencies
+RUN npm ci --only=production --ignore-scripts
+
+# Copy application source
+COPY . .
+
+# Build application with optimizations
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV GENERATE_SOURCEMAP=false
+
+RUN npm run build
+
+# Production stage - Minimal runtime environment
+FROM node:18-alpine as production
+
+# Security: Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Set working directory
+WORKDIR /app
+
+# Install production dependencies only
+RUN apk add --no-cache curl ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Production environment variables
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Security hardening
+RUN chmod -R 755 /app && \
+    chown -R nextjs:nodejs /app
+
+# Switch to non-root user
+USER nextjs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3001/api/health || exit 1
+
+# Start application
+CMD ["node", "server.js"]

@@ -87,13 +87,15 @@ class ModelInfo:
             "supports_function_calling": self.supports_function_calling,
             "supports_vision": self.supports_vision,
             "supports_reasoning": self.supports_reasoning,
-            "pricing": {
-                "input_per_1k_tokens": self.input_price_per_1k,
-                "output_per_1k_tokens": self.output_price_per_1k,
-                "currency": self.currency,
-            }
-            if self.input_price_per_1k is not None
-            else None,
+            "pricing": (
+                {
+                    "input_per_1k_tokens": self.input_price_per_1k,
+                    "output_per_1k_tokens": self.output_price_per_1k,
+                    "currency": self.currency,
+                }
+                if self.input_price_per_1k is not None
+                else None
+            ),
             "capabilities": self.capabilities,
             "metadata": self.metadata,
             "is_available": self.is_available,
@@ -347,6 +349,7 @@ class BaseProviderPlugin(ABC):
         if not self.api_key_env_var:
             return True  # No API key required
         import os
+
         return bool(os.environ.get(self.api_key_env_var))
 
     def supports_streaming(self) -> bool:
@@ -652,8 +655,7 @@ def register_all_plugins() -> int:
         try:
             # Dynamic import
             module = __import__(
-                f"app.services.provider_plugins.{module_name}",
-                fromlist=[class_name]
+                f"app.services.provider_plugins.{module_name}", fromlist=[class_name]
             )
             plugin_class = getattr(module, class_name)
             plugin_instance = plugin_class()
@@ -661,21 +663,13 @@ def register_all_plugins() -> int:
             registered_count += 1
             logger.debug(f"Registered plugin: {class_name}")
         except ImportError as e:
-            logger.warning(
-                f"Could not import plugin {module_name}: {e}"
-            )
+            logger.warning(f"Could not import plugin {module_name}: {e}")
         except AttributeError as e:
-            logger.warning(
-                f"Plugin class {class_name} not found in {module_name}: {e}"
-            )
+            logger.warning(f"Plugin class {class_name} not found in {module_name}: {e}")
         except Exception as e:
-            logger.error(
-                f"Error registering plugin {class_name}: {e}"
-            )
+            logger.error(f"Error registering plugin {class_name}: {e}")
 
-    logger.info(
-        f"Registered {registered_count}/{len(plugin_modules)} provider plugins"
-    )
+    logger.info(f"Registered {registered_count}/{len(plugin_modules)} provider plugins")
     return registered_count
 
 
@@ -696,28 +690,28 @@ async def initialize_plugins() -> None:
 
 
 __all__ = [
-    # Data classes
-    "ModelInfo",
-    "ProviderInfo",
+    "BaseProviderPlugin",
     "GenerationRequest",
     "GenerationResponse",
-    "StreamChunk",
-    "ProviderCapability",
-    # Protocol and base class
-    "ProviderPlugin",
-    "BaseProviderPlugin",
+    # Data classes
+    "ModelInfo",
     # Registry
     "PluginRegistry",
-    "get_registry",
-    # Convenience functions
-    "register_plugin",
-    "unregister_plugin",
-    "get_plugin",
+    "ProviderCapability",
+    "ProviderInfo",
+    # Protocol and base class
+    "ProviderPlugin",
+    "StreamChunk",
     "get_all_plugins",
     "get_all_provider_types",
+    "get_plugin",
+    "get_registry",
+    "initialize_plugins",
     "is_plugin_registered",
-    "resolve_provider_alias",
     # Initialization
     "register_all_plugins",
-    "initialize_plugins",
+    # Convenience functions
+    "register_plugin",
+    "resolve_provider_alias",
+    "unregister_plugin",
 ]

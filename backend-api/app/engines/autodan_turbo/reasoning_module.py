@@ -9,9 +9,7 @@ from typing import Any
 import yaml
 
 from .attack_scorer import analyze_response_quality
-from .neural_bypass import (
-    AdvancedRLSelector,
-)
+from .neural_bypass import AdvancedRLSelector
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +219,7 @@ class IntelligentBypassSelector:
             "direct": ["cognitive_dissonance", "persona_injection"],
             "policy": ["authority_escalation", "meta_instruction"],
             "safety": ["cognitive_dissonance", "hypothetical_scenario"],
-            "ethical": ["scientific_experiment", "fictional_storytelling"],
+            "functional": ["scientific_experiment", "fictional_storytelling"],
             "security_bypass": ["payload_splitting", "encoding_obfuscation"],
             # New mappings for meta-deflection refusals
             "meta_deflection": [

@@ -104,7 +104,9 @@ def test_sample_data_insertion():
             print("✅ Verified sample record retrieval")
             print(f"   Provider: {df['provider'].iloc[0]}")
             print(f"   Model: {df['model'].iloc[0]}")
-            print(f"   Tokens: {df['tokens_total'].iloc[0] if 'tokens_total' in df.columns else 'N/A'}")
+            print(
+                f"   Tokens: {df['tokens_total'].iloc[0] if 'tokens_total' in df.columns else 'N/A'}"
+            )
         else:
             print("❌ Failed to retrieve sample record")
             return False
@@ -115,6 +117,7 @@ def test_sample_data_insertion():
     except Exception as e:
         print(f"❌ Sample data insertion failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -172,6 +175,7 @@ def test_extraction_methods():
     except Exception as e:
         print(f"❌ Extraction methods test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -219,6 +223,7 @@ def test_batch_ingestion():
     except Exception as e:
         print(f"❌ Batch ingestion test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

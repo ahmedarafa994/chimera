@@ -362,7 +362,7 @@ function VerificationError({
               <CardDescription className="text-muted-foreground">
                 {isExpired
                   ? "This verification link has expired"
-                  : "We couldn't verify your email"}
+                  : "We couldn&apos;t verify your email"}
               </CardDescription>
             </CardHeader>
 
@@ -381,7 +381,7 @@ function VerificationError({
                     <div className="space-y-3">
                       <p className="text-sm text-muted-foreground">
                         {isExpired
-                          ? "Don't worry! You can request a new verification email."
+                          ? "Don&apos;t worry! You can request a new verification email."
                           : "Please try the following:"}
                       </p>
                       {!isExpired && (

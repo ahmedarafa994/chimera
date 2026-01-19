@@ -15,7 +15,7 @@ import asyncio
 import hashlib
 import statistics
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import and_, case, desc, func, select
@@ -25,7 +25,6 @@ from app.core.logging import logger
 from app.infrastructure.database.campaign_models import (
     Campaign,
     CampaignResult,
-    CampaignStatus,
     CampaignTelemetryEvent,
     ExecutionStatus,
 )
@@ -53,7 +52,6 @@ from app.schemas.campaign_analytics import (
     TimeGranularity,
     TimeSeriesDataPoint,
 )
-
 
 # =============================================================================
 # Analytics Cache
@@ -107,18 +105,14 @@ class AnalyticsCache:
             logger.debug(f"Analytics cache hit for key: {prefix}")
             return entry["value"]
 
-    async def set(
-        self, value: Any, prefix: str, *args: Any, ttl: int | None = None
-    ) -> None:
+    async def set(self, value: Any, prefix: str, *args: Any, ttl: int | None = None) -> None:
         """Cache value with key."""
         key = self._generate_key(prefix, *args)
 
         async with self._lock:
             # Evict oldest entries if cache is full
             if len(self._cache) >= self._max_size:
-                oldest_key = min(
-                    self._cache.keys(), key=lambda k: self._cache[k]["created_at"]
-                )
+                oldest_key = min(self._cache.keys(), key=lambda k: self._cache[k]["created_at"])
                 del self._cache[oldest_key]
 
             self._cache[key] = {
@@ -137,8 +131,7 @@ class AnalyticsCache:
         """Invalidate all cache entries for a campaign."""
         async with self._lock:
             keys_to_delete = [
-                k for k, v in self._cache.items()
-                if campaign_id in str(v.get("value", ""))
+                k for k, v in self._cache.items() if campaign_id in str(v.get("value", ""))
             ]
             for key in keys_to_delete:
                 del self._cache[key]
@@ -383,7 +376,9 @@ class CampaignAnalyticsService:
         success_rate_stats = self._calculate_distribution_stats(success_values)
 
         # Calculate semantic success distribution
-        semantic_values = [e.semantic_success_score for e in events if e.semantic_success_score is not None]
+        semantic_values = [
+            e.semantic_success_score for e in events if e.semantic_success_score is not None
+        ]
         semantic_success_stats = self._calculate_distribution_stats(semantic_values)
 
         # Calculate latency distribution
@@ -392,7 +387,9 @@ class CampaignAnalyticsService:
 
         # Calculate token distributions
         prompt_token_values = [float(e.prompt_tokens) for e in events if e.prompt_tokens > 0]
-        completion_token_values = [float(e.completion_tokens) for e in events if e.completion_tokens > 0]
+        completion_token_values = [
+            float(e.completion_tokens) for e in events if e.completion_tokens > 0
+        ]
         total_token_values = [float(e.total_tokens) for e in events if e.total_tokens > 0]
 
         prompt_token_stats = self._calculate_distribution_stats(prompt_token_values)
@@ -495,21 +492,16 @@ class CampaignAnalyticsService:
         # Add metric-specific aggregation
         if metric == "success_rate":
             stmt = stmt.add_columns(
-                func.avg(
-                    case(
-                        (CampaignTelemetryEvent.success_indicator == True, 1.0),
-                        else_=0.0
-                    )
-                ).label("value")
+                func.avg(case((CampaignTelemetryEvent.success_indicator, 1.0), else_=0.0)).label(
+                    "value"
+                )
             )
         elif metric == "latency":
             stmt = stmt.add_columns(
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("value")
             )
         elif metric == "tokens":
-            stmt = stmt.add_columns(
-                func.avg(CampaignTelemetryEvent.total_tokens).label("value")
-            )
+            stmt = stmt.add_columns(func.avg(CampaignTelemetryEvent.total_tokens).label("value"))
         elif metric == "cost":
             stmt = stmt.add_columns(
                 func.sum(CampaignTelemetryEvent.estimated_cost_cents).label("value")
@@ -521,12 +513,9 @@ class CampaignAnalyticsService:
         else:
             # Default to success rate
             stmt = stmt.add_columns(
-                func.avg(
-                    case(
-                        (CampaignTelemetryEvent.success_indicator == True, 1.0),
-                        else_=0.0
-                    )
-                ).label("value")
+                func.avg(case((CampaignTelemetryEvent.success_indicator, 1.0), else_=0.0)).label(
+                    "value"
+                )
             )
 
         # Apply time range filters
@@ -545,11 +534,13 @@ class CampaignAnalyticsService:
         # Build data points
         data_points = []
         for row in rows:
-            data_points.append(TimeSeriesDataPoint(
-                timestamp=row.bucket,
-                value=float(row.value) if row.value is not None else 0.0,
-                count=row.count,
-            ))
+            data_points.append(
+                TimeSeriesDataPoint(
+                    timestamp=row.bucket,
+                    value=float(row.value) if row.value is not None else 0.0,
+                    count=row.count,
+                )
+            )
 
         # Determine time range
         series_start = start_time or (campaign.started_at if campaign else None)
@@ -626,17 +617,20 @@ class CampaignAnalyticsService:
                 success_rate=summary.success_rate,
                 semantic_success_mean=stats.semantic_success.mean,
                 latency_mean=stats.latency_ms.mean,
-                latency_p95=stats.latency_ms.percentiles.p95 if stats.latency_ms.percentiles else None,
+                latency_p95=(
+                    stats.latency_ms.percentiles.p95 if stats.latency_ms.percentiles else None
+                ),
                 avg_tokens=stats.total_tokens.mean,
                 total_tokens=stats.total_tokens_used,
                 total_cost_cents=stats.total_cost_cents,
                 avg_cost_per_attempt=(
                     stats.total_cost_cents / stats.attempts.total
-                    if stats.attempts.total > 0 else None
+                    if stats.attempts.total > 0
+                    else None
                 ),
                 duration_seconds=stats.total_duration_seconds,
                 best_technique=None,  # Will be populated from breakdown
-                best_provider=None,   # Will be populated from breakdown
+                best_provider=None,  # Will be populated from breakdown
             )
             campaigns_data.append(item)
 
@@ -648,11 +642,13 @@ class CampaignAnalyticsService:
         best_success_rate = max(campaigns_data, key=lambda c: c.success_rate or 0)
         best_latency = min(
             campaigns_data,
-            key=lambda c: c.latency_mean if c.latency_mean is not None else float('inf')
+            key=lambda c: c.latency_mean if c.latency_mean is not None else float("inf"),
         )
         best_cost = min(
             campaigns_data,
-            key=lambda c: c.avg_cost_per_attempt if c.avg_cost_per_attempt is not None else float('inf')
+            key=lambda c: (
+                c.avg_cost_per_attempt if c.avg_cost_per_attempt is not None else float("inf")
+            ),
         )
 
         # Calculate deltas for 2-campaign comparison
@@ -720,12 +716,9 @@ class CampaignAnalyticsService:
             select(
                 CampaignTelemetryEvent.technique_suite,
                 func.count(CampaignTelemetryEvent.id).label("attempts"),
-                func.sum(
-                    case(
-                        (CampaignTelemetryEvent.success_indicator == True, 1),
-                        else_=0
-                    )
-                ).label("successes"),
+                func.sum(case((CampaignTelemetryEvent.success_indicator, 1), else_=0)).label(
+                    "successes"
+                ),
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
                 func.avg(CampaignTelemetryEvent.total_tokens).label("avg_tokens"),
                 func.sum(CampaignTelemetryEvent.estimated_cost_cents).label("total_cost"),
@@ -805,12 +798,9 @@ class CampaignAnalyticsService:
             select(
                 CampaignTelemetryEvent.provider,
                 func.count(CampaignTelemetryEvent.id).label("attempts"),
-                func.sum(
-                    case(
-                        (CampaignTelemetryEvent.success_indicator == True, 1),
-                        else_=0
-                    )
-                ).label("successes"),
+                func.sum(case((CampaignTelemetryEvent.success_indicator, 1), else_=0)).label(
+                    "successes"
+                ),
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
                 func.avg(CampaignTelemetryEvent.total_tokens).label("avg_tokens"),
                 func.sum(CampaignTelemetryEvent.estimated_cost_cents).label("total_cost"),
@@ -884,12 +874,9 @@ class CampaignAnalyticsService:
             select(
                 CampaignTelemetryEvent.potency_level,
                 func.count(CampaignTelemetryEvent.id).label("attempts"),
-                func.sum(
-                    case(
-                        (CampaignTelemetryEvent.success_indicator == True, 1),
-                        else_=0
-                    )
-                ).label("successes"),
+                func.sum(case((CampaignTelemetryEvent.success_indicator, 1), else_=0)).label(
+                    "successes"
+                ),
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
                 func.avg(CampaignTelemetryEvent.total_tokens).label("avg_tokens"),
                 func.sum(CampaignTelemetryEvent.estimated_cost_cents).label("total_cost"),
@@ -1072,7 +1059,7 @@ class CampaignAnalyticsService:
             safety_trigger_detected=event.safety_trigger_detected,
             error_message=event.error_message,
             error_code=event.error_code,
-            metadata=event.metadata or {},
+            metadata=event.event_metadata or {},
         )
 
     # =========================================================================
@@ -1104,9 +1091,7 @@ class CampaignAnalyticsService:
     async def _build_campaign_summary(self, campaign: Campaign) -> CampaignSummary:
         """Build campaign summary from campaign entity."""
         # Try to get pre-computed results first
-        results_stmt = select(CampaignResult).where(
-            CampaignResult.campaign_id == campaign.id
-        )
+        results_stmt = select(CampaignResult).where(CampaignResult.campaign_id == campaign.id)
         results_result = await self.session.execute(results_stmt)
         results = results_result.scalar_one_or_none()
 
@@ -1120,19 +1105,13 @@ class CampaignAnalyticsService:
             avg_latency = results.latency_mean
         else:
             # Calculate from events
-            count_stmt = (
-                select(
-                    func.count(CampaignTelemetryEvent.id).label("total"),
-                    func.avg(
-                        case(
-                            (CampaignTelemetryEvent.success_indicator == True, 1.0),
-                            else_=0.0
-                        )
-                    ).label("success_rate"),
-                    func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
-                )
-                .where(CampaignTelemetryEvent.campaign_id == campaign.id)
-            )
+            count_stmt = select(
+                func.count(CampaignTelemetryEvent.id).label("total"),
+                func.avg(case((CampaignTelemetryEvent.success_indicator, 1.0), else_=0.0)).label(
+                    "success_rate"
+                ),
+                func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
+            ).where(CampaignTelemetryEvent.campaign_id == campaign.id)
             count_result = await self.session.execute(count_stmt)
             counts = count_result.one()
             total_attempts = counts.total or 0
@@ -1164,9 +1143,7 @@ class CampaignAnalyticsService:
             updated_at=campaign.updated_at,
         )
 
-    def _calculate_attempt_counts(
-        self, events: list[CampaignTelemetryEvent]
-    ) -> AttemptCounts:
+    def _calculate_attempt_counts(self, events: list[CampaignTelemetryEvent]) -> AttemptCounts:
         """Calculate attempt counts by status."""
         counts = {
             "total": len(events),
@@ -1192,9 +1169,7 @@ class CampaignAnalyticsService:
 
         return AttemptCounts(**counts)
 
-    def _calculate_distribution_stats(
-        self, values: list[float]
-    ) -> DistributionStats:
+    def _calculate_distribution_stats(self, values: list[float]) -> DistributionStats:
         """Calculate distribution statistics for a list of values."""
         if not values:
             return DistributionStats()
@@ -1269,11 +1244,13 @@ class CampaignAnalyticsService:
 
             # Overall effectiveness (average of normalized metrics)
             normalized_values = [
-                v for v in [
+                v
+                for v in [
                     campaign.normalized_success_rate,
                     campaign.normalized_latency,
                     campaign.normalized_cost,
-                ] if v is not None
+                ]
+                if v is not None
             ]
             if normalized_values:
                 campaign.normalized_effectiveness = statistics.mean(normalized_values)
@@ -1284,20 +1261,11 @@ class CampaignAnalyticsService:
         """Get SQL expression for time bucketing based on granularity."""
         # SQLite-compatible time bucketing
         if granularity == TimeGranularity.MINUTE:
-            return func.strftime(
-                "%Y-%m-%d %H:%M:00",
-                CampaignTelemetryEvent.created_at
-            )
+            return func.strftime("%Y-%m-%d %H:%M:00", CampaignTelemetryEvent.created_at)
         elif granularity == TimeGranularity.HOUR:
-            return func.strftime(
-                "%Y-%m-%d %H:00:00",
-                CampaignTelemetryEvent.created_at
-            )
+            return func.strftime("%Y-%m-%d %H:00:00", CampaignTelemetryEvent.created_at)
         else:  # DAY
-            return func.strftime(
-                "%Y-%m-%d 00:00:00",
-                CampaignTelemetryEvent.created_at
-            )
+            return func.strftime("%Y-%m-%d 00:00:00", CampaignTelemetryEvent.created_at)
 
     def _apply_campaign_filters(self, stmt, filters: CampaignFilterParams):
         """Apply filters to campaign query."""
@@ -1312,14 +1280,12 @@ class CampaignAnalyticsService:
             # JSON array contains check (SQLite compatible)
             for technique in filters.technique_suite:
                 stmt = stmt.where(
-                    func.json_extract(Campaign.technique_suites, '$').contains(technique)
+                    func.json_extract(Campaign.technique_suites, "$").contains(technique)
                 )
 
         if filters.tags:
             for tag in filters.tags:
-                stmt = stmt.where(
-                    func.json_extract(Campaign.tags, '$').contains(tag)
-                )
+                stmt = stmt.where(func.json_extract(Campaign.tags, "$").contains(tag))
 
         if filters.start_date:
             stmt = stmt.where(Campaign.created_at >= filters.start_date)
@@ -1330,8 +1296,7 @@ class CampaignAnalyticsService:
         if filters.search:
             search_pattern = f"%{filters.search}%"
             stmt = stmt.where(
-                (Campaign.name.ilike(search_pattern)) |
-                (Campaign.description.ilike(search_pattern))
+                (Campaign.name.ilike(search_pattern)) | (Campaign.description.ilike(search_pattern))
             )
 
         return stmt
@@ -1343,9 +1308,7 @@ class CampaignAnalyticsService:
             stmt = stmt.where(CampaignTelemetryEvent.status.in_(status_values))
 
         if filters.technique_suite:
-            stmt = stmt.where(
-                CampaignTelemetryEvent.technique_suite.in_(filters.technique_suite)
-            )
+            stmt = stmt.where(CampaignTelemetryEvent.technique_suite.in_(filters.technique_suite))
 
         if filters.provider:
             stmt = stmt.where(CampaignTelemetryEvent.provider.in_(filters.provider))
@@ -1354,9 +1317,7 @@ class CampaignAnalyticsService:
             stmt = stmt.where(CampaignTelemetryEvent.model.in_(filters.model))
 
         if filters.success_only is not None:
-            stmt = stmt.where(
-                CampaignTelemetryEvent.success_indicator == filters.success_only
-            )
+            stmt = stmt.where(CampaignTelemetryEvent.success_indicator == filters.success_only)
 
         if filters.start_time:
             stmt = stmt.where(CampaignTelemetryEvent.created_at >= filters.start_time)

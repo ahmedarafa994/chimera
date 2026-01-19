@@ -2,7 +2,7 @@ import json
 from collections.abc import AsyncGenerator
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -22,9 +22,44 @@ from app.domain.advanced_models import (
     RedTeamSuiteResponse,
 )
 from app.services.advanced_prompt_service import AdvancedPromptService, advanced_prompt_service
+from app.services.session_service import session_service
 
 router = APIRouter(tags=["advanced-generation"])
 security = HTTPBearer()
+
+
+def _resolve_model_context(
+    payload_model: str | None,
+    payload_provider: str | None,
+    x_session_id: str | None,
+    chimera_cookie: str | None,
+) -> tuple[str, str]:
+    """
+    Resolve target model/provider using hierarchy:
+    explicit payload -> session -> global defaults, with validation/fallback.
+    """
+    session_id = x_session_id or chimera_cookie
+
+    if session_id:
+        session_provider, session_model = session_service.get_session_model(session_id)
+    else:
+        session_provider, session_model = session_service.get_default_model()
+
+    provider = payload_provider or session_provider
+    model = payload_model or session_model
+
+    is_valid, _, fallback_model = session_service.validate_model(provider, model)
+    if is_valid:
+        return provider, model
+
+    fallback_provider = provider
+    if provider not in session_service.get_master_model_list():
+        fallback_provider, _ = session_service.get_default_model()
+
+    # Best-effort fallback to keep requests working.
+    if fallback_model:
+        return fallback_provider, fallback_model
+    return session_service.get_default_model()
 
 
 def get_advanced_prompt_service() -> AdvancedPromptService:
@@ -61,6 +96,8 @@ async def generate_jailbreak_prompt(
     request: JailbreakGenerationRequest,
     api_key: str = Depends(verify_api_key),
     service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
 ):
     """
     Generate an advanced jailbreak prompt using sophisticated techniques.
@@ -89,6 +126,20 @@ async def generate_jailbreak_prompt(
     - Various technique-specific boolean flags and parameters
     """
     try:
+        # Resolve model/provider from session if not explicitly provided
+        resolved_provider, resolved_model = _resolve_model_context(
+            payload_model=request.model,
+            payload_provider=request.provider,
+            x_session_id=x_session_id,
+            chimera_cookie=chimera_session_id,
+        )
+
+        # Update request with resolved values if not already set
+        if not request.model:
+            request.model = resolved_model
+        if request.provider == "google":  # Default value
+            request.provider = resolved_provider
+
         logger.info(
             f"Jailbreak generation request: potency={request.potency_level}, suite={request.technique_suite}"
         )
@@ -104,7 +155,7 @@ async def generate_jailbreak_prompt(
         logger.error(f"Jailbreak generation failed: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Jailbreak generation failed: {str(e)}",
+            detail=f"Jailbreak generation failed: {e!s}",
         )
 
 
@@ -115,6 +166,8 @@ async def generate_code(
     request: CodeGenerationRequest,
     api_key: str = Depends(verify_api_key),
     service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
 ):
     """
     Generate high-quality code using advanced Gemini models.
@@ -137,8 +190,20 @@ async def generate_code(
     - is_thinking_mode: Whether to use advanced reasoning capabilities
     """
     try:
+        # Resolve model/provider from session if not explicitly provided
+        resolved_provider, _ = _resolve_model_context(
+            payload_model=None,
+            payload_provider=request.provider,
+            x_session_id=x_session_id,
+            chimera_cookie=chimera_session_id,
+        )
+
+        # Update request with resolved values if not already set
+        if not request.provider:
+            request.provider = resolved_provider
+
         logger.info(
-            f"Code generation request: language={request.language}, thinking_mode={request.is_thinking_mode}"
+            f"Code generation request: language={request.language}, thinking_mode={request.use_thinking_mode}"
         )
 
         result = await service.generate_code(request)
@@ -152,7 +217,7 @@ async def generate_code(
         logger.error(f"Code generation failed: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Code generation failed: {str(e)}",
+            detail=f"Code generation failed: {e!s}",
         )
 
 
@@ -163,6 +228,8 @@ async def generate_red_team_suite(
     request: RedTeamSuiteRequest,
     api_key: str = Depends(verify_api_key),
     service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
 ):
     """
     Generate a comprehensive red team testing suite.
@@ -194,6 +261,18 @@ async def generate_red_team_suite(
     - variant_count: Number of variants to generate (3-10)
     """
     try:
+        # Resolve model/provider from session if not explicitly provided
+        resolved_provider, _ = _resolve_model_context(
+            payload_model=None,
+            payload_provider=request.provider,
+            x_session_id=x_session_id,
+            chimera_cookie=chimera_session_id,
+        )
+
+        # Update request with resolved values if not already set
+        if not request.provider:
+            request.provider = resolved_provider
+
         logger.info(
             f"Red team suite generation request: variants={request.variant_count}, include_metadata={request.include_metadata}"
         )
@@ -209,7 +288,7 @@ async def generate_red_team_suite(
         logger.error(f"Red team suite generation failed: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Red team suite generation failed: {str(e)}",
+            detail=f"Red team suite generation failed: {e!s}",
         )
 
 
@@ -259,7 +338,7 @@ async def validate_prompt(
         logger.error(f"Prompt validation failed: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Prompt validation failed: {str(e)}",
+            detail=f"Prompt validation failed: {e!s}",
         )
 
 
@@ -307,7 +386,7 @@ async def get_available_techniques(
         logger.error(f"Failed to retrieve available techniques: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve available techniques: {str(e)}",
+            detail=f"Failed to retrieve available techniques: {e!s}",
         )
 
 
@@ -349,7 +428,7 @@ async def get_advanced_generation_statistics(
         logger.error(f"Failed to retrieve statistics: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve statistics: {str(e)}",
+            detail=f"Failed to retrieve statistics: {e!s}",
         )
 
 
@@ -480,7 +559,7 @@ async def reset_advanced_generation_service(
         logger.error(f"Failed to reset advanced generation service: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to reset advanced generation service: {str(e)}",
+            detail=f"Failed to reset advanced generation service: {e!s}",
         )
 
 
@@ -553,7 +632,7 @@ async def get_advanced_generation_config(api_key: str = Depends(verify_api_key))
         logger.error(f"Failed to retrieve configuration: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve configuration: {str(e)}",
+            detail=f"Failed to retrieve configuration: {e!s}",
         )
 
 
@@ -589,6 +668,8 @@ async def stream_jailbreak_generation(
     request: JailbreakGenerationRequest,
     api_key: str = Depends(verify_api_key),
     service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
 ):
     """
     Stream jailbreak prompt generation using Server-Sent Events (SSE).
@@ -614,6 +695,20 @@ async def stream_jailbreak_generation(
     **Returns:**
     SSE stream of generation chunks
     """
+    # Resolve model/provider from session if not explicitly provided
+    resolved_provider, resolved_model = _resolve_model_context(
+        payload_model=request.model,
+        payload_provider=request.provider,
+        x_session_id=x_session_id,
+        chimera_cookie=chimera_session_id,
+    )
+
+    # Update request with resolved values if not already set
+    if not request.model:
+        request.model = resolved_model
+    if request.provider == "google":  # Default value
+        request.provider = resolved_provider
+
     logger.info(
         f"Streaming jailbreak generation: potency={request.potency_level}, suite={request.technique_suite}"
     )
@@ -656,6 +751,8 @@ async def stream_code_generation(
     request: CodeGenerationRequest,
     api_key: str = Depends(verify_api_key),
     service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    chimera_session_id: str | None = Cookie(None),
 ):
     """
     Stream code generation using Server-Sent Events (SSE).
@@ -675,6 +772,18 @@ async def stream_code_generation(
     **Returns:**
     SSE stream of code generation chunks
     """
+    # Resolve model/provider from session if not explicitly provided
+    resolved_provider, _ = _resolve_model_context(
+        payload_model=None,
+        payload_provider=request.provider,
+        x_session_id=x_session_id,
+        chimera_cookie=chimera_session_id,
+    )
+
+    # Update request with resolved values if not already set
+    if not request.provider:
+        request.provider = resolved_provider
+
     logger.info(f"Streaming code generation: language={request.language}")
 
     return StreamingResponse(
@@ -722,5 +831,5 @@ async def estimate_jailbreak_tokens(
         logger.error(f"Token estimation failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Token estimation failed: {str(e)}",
+            detail=f"Token estimation failed: {e!s}",
         )

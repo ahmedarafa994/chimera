@@ -30,8 +30,8 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.logging import logger
-from app.domain.models import GenerationConfig, PromptRequest
-from app.services.llm_service import LLMResponseCache
+from app.domain.models import GenerationConfig, PromptRequest, PromptResponse
+from app.services.llm_service import LLMResponseCache, LLMService
 
 
 @dataclass
@@ -97,11 +97,7 @@ class PerformanceProfiler:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def profile_module(
-        self,
-        module_func: Callable,
-        *args,
-        duration: int = 60,
-        **kwargs
+        self, module_func: Callable, *args, duration: int = 60, **kwargs
     ) -> PerformanceMetrics:
         """
         Profile a module function for specified duration.
@@ -117,10 +113,7 @@ class PerformanceProfiler:
         """
         logger.info(f"Profiling {module_func.__name__} for {duration} seconds...")
 
-        metrics = PerformanceMetrics(
-            module_name=module_func.__name__,
-            duration_seconds=duration
-        )
+        metrics = PerformanceMetrics(module_name=module_func.__name__, duration_seconds=duration)
 
         # CPU profiling
         profiler = cProfile.Profile()
@@ -150,16 +143,18 @@ class PerformanceProfiler:
             metrics.avg_time_per_call = metrics.total_time / metrics.total_calls
 
         # Extract hotspots (top 10 functions by cumulative time)
-        stats.sort_stats('cumulative')
+        stats.sort_stats("cumulative")
         hotspots_data = []
-        for func, (cc, nc, tt, ct, callers) in stats.stats.items()[:10]:
-            hotspots_data.append({
-                "function": f"{func[0]}:{func[1]}:{func[2]}",
-                "cumulative_time": ct,
-                "total_time": tt,
-                "calls": nc,
-                "callers": len(callers)
-            })
+        for func, (_cc, nc, tt, ct, callers) in stats.stats.items()[:10]:
+            hotspots_data.append(
+                {
+                    "function": f"{func[0]}:{func[1]}:{func[2]}",
+                    "cumulative_time": ct,
+                    "total_time": tt,
+                    "calls": nc,
+                    "callers": len(callers),
+                }
+            )
         metrics.hotspots = hotspots_data
 
         # Save CPU profile
@@ -169,32 +164,31 @@ class PerformanceProfiler:
         metrics.cpu_profile_path = str(profile_path)
 
         # Extract cache metrics if available
-        if hasattr(module_func, '__self__') and hasattr(module_func.__self__, '_response_cache'):
+        if hasattr(module_func, "__self__") and hasattr(module_func.__self__, "_response_cache"):
             cache_stats = module_func.__self__._response_cache.get_stats()
-            metrics.cache_hits = cache_stats.get('hits', 0)
-            metrics.cache_misses = cache_stats.get('misses', 0)
+            metrics.cache_hits = cache_stats.get("hits", 0)
+            metrics.cache_misses = cache_stats.get("misses", 0)
 
             total = metrics.cache_hits + metrics.cache_misses
             if total > 0:
                 metrics.cache_hit_rate = metrics.cache_hits / total
 
         # Extract deduplication metrics if available
-        if hasattr(module_func, '__self__') and hasattr(module_func.__self__, '_deduplicator'):
+        if hasattr(module_func, "__self__") and hasattr(module_func.__self__, "_deduplicator"):
             dedup_stats = module_func.__self__._deduplicator.get_stats()
-            metrics.deduplicated_requests = dedup_stats.get('deduplicated_count', 0)
+            metrics.deduplicated_requests = dedup_stats.get("deduplicated_count", 0)
 
             if metrics.total_calls > 0:
                 metrics.deduplication_rate = metrics.deduplicated_requests / metrics.total_calls
 
-        logger.info(f"Profiling complete: {metrics.total_calls} calls, {metrics.total_time:.2f}s total")
+        logger.info(
+            f"Profiling complete: {metrics.total_calls} calls, {metrics.total_time:.2f}s total"
+        )
 
         return metrics
 
     async def profile_endpoint(
-        self,
-        endpoint: str,
-        request_data: dict,
-        num_requests: int = 100
+        self, endpoint: str, request_data: dict, num_requests: int = 100
     ) -> PerformanceMetrics:
         """
         Profile an API endpoint.
@@ -215,7 +209,7 @@ class PerformanceProfiler:
 
         metrics = PerformanceMetrics(
             module_name=f"endpoint{endpoint.replace('/', '_')}",
-            duration_seconds=0  # Will be calculated
+            duration_seconds=0,  # Will be calculated
         )
 
         # CPU profiling
@@ -232,11 +226,7 @@ class PerformanceProfiler:
 
                 try:
                     if endpoint == "/api/v1/generate":
-                        response = await client.post(
-                            endpoint,
-                            json=request_data,
-                            timeout=30.0
-                        )
+                        await client.post(endpoint, json=request_data, timeout=30.0)
                         latency = time.time() - request_start
                         latencies.append(latency)
                 except Exception as e:
@@ -255,17 +245,19 @@ class PerformanceProfiler:
         # Process CPU profile
         stats = pstats.Stats(profiler)
         stats.strip_dirs()
-        stats.sort_stats('cumulative')
+        stats.sort_stats("cumulative")
 
         # Extract hotspots
         hotspots_data = []
-        for func, (cc, nc, tt, ct, callers) in stats.stats.items()[:10]:
-            hotspots_data.append({
-                "function": f"{func[0]}:{func[1]}:{func[2]}",
-                "cumulative_time": ct,
-                "total_time": tt,
-                "calls": nc,
-            })
+        for func, (_cc, nc, tt, ct, _callers) in stats.stats.items()[:10]:
+            hotspots_data.append(
+                {
+                    "function": f"{func[0]}:{func[1]}:{func[2]}",
+                    "cumulative_time": ct,
+                    "total_time": tt,
+                    "calls": nc,
+                }
+            )
         metrics.hotspots = hotspots_data
 
         # Save profile
@@ -307,11 +299,11 @@ async def profile_llm_service(duration: int = 60):
             if time.time() >= end_time:
                 break
 
-            request = PromptRequest(
+            PromptRequest(
                 prompt=prompt,
                 provider="google",
                 model="gemini-1.5-pro",
-                config=GenerationConfig(temperature=0.7, max_tokens=100)
+                config=GenerationConfig(temperature=0.7, max_tokens=100),
             )
 
             try:
@@ -337,7 +329,7 @@ def profile_memory_usage():
 
         # Profile LLM service memory
         def memory_test():
-            service = LLMService()
+            LLMService()
 
             # Simulate load
             for i in range(100):
@@ -347,7 +339,7 @@ def profile_memory_usage():
                         prompt=f"Test prompt {i}",
                         provider="google",
                         model="gemini-1.5-pro",
-                        config=GenerationConfig()
+                        config=GenerationConfig(),
                     ),
                     PromptResponse(
                         generated_text="Test response",
@@ -356,23 +348,19 @@ def profile_memory_usage():
                         tokens_prompt=10,
                         tokens_completion=20,
                         tokens_total=30,
-                        latency_ms=100
-                    )
+                        latency_ms=100,
+                    ),
                 )
 
         # Measure memory usage
-        mem_usage = memory_usage(
-            memory_test,
-            interval=0.1,
-            timeout=60
-        )
+        mem_usage = memory_usage(memory_test, interval=0.1, timeout=60)
 
         # Plot memory usage
         plt.figure(figsize=(12, 6))
         plt.plot(mem_usage)
-        plt.xlabel('Time (seconds)')
-        plt.ylabel('Memory Usage (MB)')
-        plt.title('Chimera Backend Memory Usage')
+        plt.xlabel("Time (seconds)")
+        plt.ylabel("Memory Usage (MB)")
+        plt.title("Chimera Backend Memory Usage")
         plt.grid(True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -383,7 +371,7 @@ def profile_memory_usage():
         return {
             "peak_memory_mb": max(mem_usage),
             "avg_memory_mb": sum(mem_usage) / len(mem_usage),
-            "plot_path": str(plot_path)
+            "plot_path": str(plot_path),
         }
 
     except ImportError:
@@ -396,43 +384,20 @@ def main():
     parser = ArgumentParser(description="Profile Chimera backend performance")
 
     parser.add_argument(
-        "--module",
-        choices=["llm_service", "transformation", "autodan"],
-        help="Module to profile"
+        "--module", choices=["llm_service", "transformation", "autodan"], help="Module to profile"
     )
     parser.add_argument(
-        "--endpoint",
-        type=str,
-        help="API endpoint to profile (e.g., /api/v1/generate)"
+        "--endpoint", type=str, help="API endpoint to profile (e.g., /api/v1/generate)"
+    )
+    parser.add_argument("--duration", type=int, default=60, help="Profiling duration in seconds")
+    parser.add_argument(
+        "--requests", type=int, default=100, help="Number of requests for endpoint profiling"
     )
     parser.add_argument(
-        "--duration",
-        type=int,
-        default=60,
-        help="Profiling duration in seconds"
+        "--output-dir", type=str, default="profiles", help="Output directory for profiles"
     )
-    parser.add_argument(
-        "--requests",
-        type=int,
-        default=100,
-        help="Number of requests for endpoint profiling"
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default="profiles",
-        help="Output directory for profiles"
-    )
-    parser.add_argument(
-        "--memory",
-        action="store_true",
-        help="Profile memory usage"
-    )
-    parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Run all profiling tasks"
-    )
+    parser.add_argument("--memory", action="store_true", help="Profile memory usage")
+    parser.add_argument("--all", action="store_true", help="Run all profiling tasks")
 
     args = parser.parse_args()
 
@@ -445,30 +410,29 @@ def main():
         all_metrics = []
 
         # LLM service
-        metrics = profiler.profile_module(
-            profile_llm_service,
-            duration=args.duration
-        )
+        metrics = profiler.profile_module(profile_llm_service, duration=args.duration)
         all_metrics.append(metrics)
 
         # Memory profiling
         if args.memory:
             memory_metrics = profile_memory_usage()
             if memory_metrics:
-                logger.info(f"Memory usage: peak={memory_metrics['peak_memory_mb']:.2f}MB, avg={memory_metrics['avg_memory_mb']:.2f}MB")
+                logger.info(
+                    f"Memory usage: peak={memory_metrics['peak_memory_mb']:.2f}MB, avg={memory_metrics['avg_memory_mb']:.2f}MB"
+                )
 
         # Save combined report
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_path = Path(args.output_dir) / f"performance_report_{timestamp}.json"
 
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             json.dump(
                 {
                     "timestamp": datetime.now().isoformat(),
-                    "metrics": [m.to_dict() for m in all_metrics]
+                    "metrics": [m.to_dict() for m in all_metrics],
                 },
                 f,
-                indent=2
+                indent=2,
             )
 
         logger.info(f"Performance report saved to {report_path}")
@@ -476,10 +440,7 @@ def main():
     elif args.module:
         # Profile specific module
         if args.module == "llm_service":
-            metrics = profiler.profile_module(
-                profile_llm_service,
-                duration=args.duration
-            )
+            metrics = profiler.profile_module(profile_llm_service, duration=args.duration)
         else:
             logger.error(f"Module {args.module} profiling not yet implemented")
             return
@@ -503,15 +464,11 @@ def main():
             "prompt": "Test prompt for profiling",
             "provider": "google",
             "model": "gemini-1.5-pro",
-            "config": {"temperature": 0.7, "max_tokens": 100}
+            "config": {"temperature": 0.7, "max_tokens": 100},
         }
 
         metrics = asyncio.run(
-            profiler.profile_endpoint(
-                args.endpoint,
-                request_data,
-                num_requests=args.requests
-            )
+            profiler.profile_endpoint(args.endpoint, request_data, num_requests=args.requests)
         )
 
         # Print summary

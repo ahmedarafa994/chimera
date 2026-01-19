@@ -1,17 +1,18 @@
-from typing import Any, List, Optional
-import asyncio
 import logging
 import time
 import uuid
-from .interfaces import IPromptGenerator, IOptimizer, IEvaluator
-from .chimera.engine import ChimeraEngine
+from typing import Any, Optional
+
 from .autodan_wrapper import AutoDanWrapper
+from .chimera.engine import ChimeraEngine
 from .evaluators import SafetyEvaluator
+from .interfaces import IEvaluator, IOptimizer
+
 # Import from backend application context if available, otherwise fallback or mock
 try:
     from app.core.aegis_adapter import ChimeraEngineAdapter
-    from app.core.unified_errors import AegisError
     from app.core.telemetry import TelemetryCollector
+    from app.core.unified_errors import AegisError
 except ImportError:
     # Fallback for standalone usage without full backend context
     ChimeraEngineAdapter = None
@@ -20,11 +21,11 @@ except ImportError:
 
 # Import broadcaster for real-time telemetry
 try:
+    from app.schemas.aegis_telemetry import TechniqueCategory, TokenUsage
     from app.services.websocket.aegis_broadcaster import (
         AegisTelemetryBroadcaster,
         aegis_telemetry_broadcaster,
     )
-    from app.schemas.aegis_telemetry import TechniqueCategory, TokenUsage
 except ImportError:
     # Fallback for standalone usage without full backend context
     AegisTelemetryBroadcaster = None
@@ -34,6 +35,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
 class AegisOrchestrator:
     """
     Central dispatcher for Project Aegis Adversarial Simulation Ecosystem.
@@ -42,11 +44,12 @@ class AegisOrchestrator:
     Supports real-time telemetry broadcasting via WebSocket when a broadcaster
     is provided. This enables live dashboard updates during campaign execution.
     """
+
     def __init__(
         self,
         target_model: Any,
-        campaign_id: Optional[str] = None,
-        broadcaster: Optional["AegisTelemetryBroadcaster"] = None
+        campaign_id: str | None = None,
+        broadcaster: Optional["AegisTelemetryBroadcaster"] = None,
     ):
         """
         Initialize the Aegis Orchestrator.
@@ -75,7 +78,7 @@ class AegisOrchestrator:
         self.evaluator: IEvaluator = SafetyEvaluator()
 
         self.knowledge_base = []  # Stores successful prompts
-        self.telemetry: Optional[TelemetryCollector] = None
+        self.telemetry: TelemetryCollector | None = None
 
         # Track metrics for telemetry
         self._total_token_usage = 0
@@ -102,13 +105,11 @@ class AegisOrchestrator:
             self.telemetry = TelemetryCollector(campaign_id=self.campaign_id)
 
         # Get target model name for telemetry
-        target_model_name = getattr(self.model, 'model_name', 'unknown')
+        target_model_name = getattr(self.model, "model_name", "unknown")
 
         # Emit campaign started event
         await self._emit_campaign_started(
-            objective=objective,
-            max_iterations=max_iterations,
-            target_model=target_model_name
+            objective=objective, max_iterations=max_iterations, target_model=target_model_name
         )
 
         success = False
@@ -128,11 +129,14 @@ class AegisOrchestrator:
                 generation_latency = (time.time() - start_time) * 1000  # Convert to ms
 
                 if self.telemetry:
-                    self.telemetry.record_step("candidate_generation", {
-                        "objective": objective,
-                        "candidate_count": len(candidates),
-                        "latency": time.time() - start_time
-                    })
+                    self.telemetry.record_step(
+                        "candidate_generation",
+                        {
+                            "objective": objective,
+                            "candidate_count": len(candidates),
+                            "latency": time.time() - start_time,
+                        },
+                    )
 
                 # Emit technique applied for Chimera framing
                 await self._emit_technique_applied(
@@ -141,7 +145,7 @@ class AegisOrchestrator:
                     input_prompt=objective,
                     output_prompt=f"Generated {len(candidates)} candidates",
                     success=True,
-                    execution_time_ms=generation_latency
+                    execution_time_ms=generation_latency,
                 )
 
             except AegisError as e:
@@ -151,7 +155,7 @@ class AegisOrchestrator:
                 await self._emit_campaign_failed(
                     error_message=str(e),
                     error_type="CandidateGenerationError",
-                    failed_at_iteration=0
+                    failed_at_iteration=0,
                 )
                 logger.error(f"Aegis Engine Error during candidate generation: {e}")
                 raise
@@ -173,7 +177,7 @@ class AegisOrchestrator:
                 await self._emit_iteration_started(
                     iteration=i + 1,
                     prompt=candidate.prompt_text,
-                    techniques_to_apply=techniques_to_apply
+                    techniques_to_apply=techniques_to_apply,
                 )
 
                 # 2. Optimization Phase (AutoDan)
@@ -189,23 +193,23 @@ class AegisOrchestrator:
                     attack_id=attack_id,
                     prompt=candidate.prompt_text,
                     target_model=target_model_name,
-                    technique="autodan"
+                    technique="autodan",
                 )
 
                 optimized_prompt_text = await self.autodan.optimize(
                     prompt=candidate.prompt_text,
                     target_model=self.model,
                     loss_threshold=0.1,
-                    max_steps=5
+                    max_steps=5,
                 )
 
                 optimization_latency = (time.time() - optimization_start) * 1000
 
                 if self.telemetry:
-                    self.telemetry.record_step("prompt_optimization", {
-                        "candidate_index": i,
-                        "latency": time.time() - optimization_start
-                    })
+                    self.telemetry.record_step(
+                        "prompt_optimization",
+                        {"candidate_index": i, "latency": time.time() - optimization_start},
+                    )
 
                 # Emit technique applied for AutoDAN
                 await self._emit_technique_applied(
@@ -214,7 +218,7 @@ class AegisOrchestrator:
                     input_prompt=candidate.prompt_text,
                     output_prompt=optimized_prompt_text,
                     success=True,
-                    execution_time_ms=optimization_latency
+                    execution_time_ms=optimization_latency,
                 )
 
                 # 3. Execution & Evaluation
@@ -222,9 +226,9 @@ class AegisOrchestrator:
                 execution_start = time.time()
 
                 try:
-                    if hasattr(self.model, 'query'):
+                    if hasattr(self.model, "query"):
                         response = await self.model.query(optimized_prompt_text)
-                    elif hasattr(self.model, 'generate'):
+                    elif hasattr(self.model, "generate"):
                         response = self.model.generate(optimized_prompt_text)
                     else:
                         response = "Error: Model interface unknown"
@@ -237,8 +241,7 @@ class AegisOrchestrator:
 
                 # Emit latency update
                 await self._emit_latency_update(
-                    api_latency_ms=api_latency,
-                    processing_latency_ms=processing_latency
+                    api_latency_ms=api_latency, processing_latency_ms=processing_latency
                 )
 
                 # Evaluate the response
@@ -248,18 +251,23 @@ class AegisOrchestrator:
                 attack_success = score > 0.8
 
                 if self.telemetry:
-                    self.telemetry.record_step("execution_evaluation", {
-                        "candidate_index": i,
-                        "score": score,
-                        "latency": execution_latency / 1000,  # Convert back to seconds
-                        "persona_role": metadata['persona_role'],
-                        "scenario_type": metadata['scenario_type']
-                    })
+                    self.telemetry.record_step(
+                        "execution_evaluation",
+                        {
+                            "candidate_index": i,
+                            "score": score,
+                            "latency": execution_latency / 1000,  # Convert back to seconds
+                            "persona_role": metadata["persona_role"],
+                            "scenario_type": metadata["scenario_type"],
+                        },
+                    )
 
                 # Estimate token usage (simplified - real implementation would get from model)
                 estimated_prompt_tokens = len(optimized_prompt_text.split()) * 2
                 estimated_completion_tokens = len(response.split()) * 2 if response else 0
-                estimated_cost = (estimated_prompt_tokens * 0.00001) + (estimated_completion_tokens * 0.00002)
+                estimated_cost = (estimated_prompt_tokens * 0.00001) + (
+                    estimated_completion_tokens * 0.00002
+                )
 
                 # Emit attack completed
                 await self._emit_attack_completed(
@@ -270,7 +278,7 @@ class AegisOrchestrator:
                     duration_ms=api_latency,
                     prompt_tokens=estimated_prompt_tokens,
                     completion_tokens=estimated_completion_tokens,
-                    cost_usd=estimated_cost
+                    cost_usd=estimated_cost,
                 )
 
                 # Emit cost update
@@ -278,7 +286,7 @@ class AegisOrchestrator:
                 await self._emit_cost_update(
                     prompt_tokens=estimated_prompt_tokens,
                     completion_tokens=estimated_completion_tokens,
-                    cost_usd=estimated_cost
+                    cost_usd=estimated_cost,
                 )
 
                 # Track prompt evolution if score improved
@@ -289,7 +297,7 @@ class AegisOrchestrator:
                         new_prompt=optimized_prompt_text,
                         previous_score=previous_score,
                         new_score=score,
-                        techniques_applied=["chimera_narrative", "autodan_vanilla"]
+                        techniques_applied=["chimera_narrative", "autodan_vanilla"],
                     )
                     previous_prompt = optimized_prompt_text
                     previous_score = score
@@ -309,7 +317,7 @@ class AegisOrchestrator:
                     evolved_prompt=optimized_prompt_text,
                     success=attack_success,
                     improvement=improvement,
-                    duration_ms=iteration_duration
+                    duration_ms=iteration_duration,
                 )
 
                 if attack_success:
@@ -317,12 +325,14 @@ class AegisOrchestrator:
                         f"Success! Jailbreak mapped using "
                         f"[{metadata['persona_role']}] in [{metadata['scenario_type']}]."
                     )
-                    self.knowledge_base.append({
-                        "objective": objective,
-                        "final_prompt": optimized_prompt_text,
-                        "score": score,
-                        "telemetry": metadata
-                    })
+                    self.knowledge_base.append(
+                        {
+                            "objective": objective,
+                            "final_prompt": optimized_prompt_text,
+                            "score": score,
+                            "telemetry": metadata,
+                        }
+                    )
                     success = True
                     break
 
@@ -336,7 +346,7 @@ class AegisOrchestrator:
                 total_attacks=self._attack_count,
                 successful_attacks=successful_attacks,
                 best_prompt=best_prompt,
-                best_score=best_score
+                best_score=best_score,
             )
 
         except Exception as e:
@@ -344,7 +354,7 @@ class AegisOrchestrator:
             await self._emit_campaign_failed(
                 error_message=str(e),
                 error_type=type(e).__name__,
-                failed_at_iteration=total_iterations
+                failed_at_iteration=total_iterations,
             )
             raise
 
@@ -355,10 +365,7 @@ class AegisOrchestrator:
     # =========================================================================
 
     async def _emit_campaign_started(
-        self,
-        objective: str,
-        max_iterations: int,
-        target_model: str
+        self, objective: str, max_iterations: int, target_model: str
     ) -> None:
         """Emit campaign_started telemetry event."""
         if self.broadcaster is None:
@@ -370,10 +377,7 @@ class AegisOrchestrator:
                 objective=objective,
                 max_iterations=max_iterations,
                 target_model=target_model,
-                config={
-                    "engines": ["chimera", "autodan"],
-                    "evaluator": "safety_evaluator"
-                }
+                config={"engines": ["chimera", "autodan"], "evaluator": "safety_evaluator"},
             )
         except Exception as e:
             logger.warning(f"Failed to emit campaign_started event: {e}")
@@ -383,8 +387,8 @@ class AegisOrchestrator:
         total_iterations: int,
         total_attacks: int,
         successful_attacks: int,
-        best_prompt: Optional[str],
-        best_score: float
+        best_prompt: str | None,
+        best_score: float,
     ) -> None:
         """Emit campaign_completed telemetry event."""
         if self.broadcaster is None:
@@ -397,16 +401,13 @@ class AegisOrchestrator:
                 total_attacks=total_attacks,
                 successful_attacks=successful_attacks,
                 best_prompt=best_prompt,
-                best_score=best_score
+                best_score=best_score,
             )
         except Exception as e:
             logger.warning(f"Failed to emit campaign_completed event: {e}")
 
     async def _emit_campaign_failed(
-        self,
-        error_message: str,
-        error_type: str,
-        failed_at_iteration: int
+        self, error_message: str, error_type: str, failed_at_iteration: int
     ) -> None:
         """Emit campaign_failed telemetry event."""
         if self.broadcaster is None:
@@ -418,16 +419,13 @@ class AegisOrchestrator:
                 error_message=error_message,
                 error_type=error_type,
                 failed_at_iteration=failed_at_iteration,
-                recoverable=False
+                recoverable=False,
             )
         except Exception as e:
             logger.warning(f"Failed to emit campaign_failed event: {e}")
 
     async def _emit_iteration_started(
-        self,
-        iteration: int,
-        prompt: str,
-        techniques_to_apply: List[str]
+        self, iteration: int, prompt: str, techniques_to_apply: list[str]
     ) -> None:
         """Emit iteration_started telemetry event."""
         if self.broadcaster is None:
@@ -438,7 +436,7 @@ class AegisOrchestrator:
                 campaign_id=self.campaign_id,
                 iteration=iteration,
                 prompt=prompt,
-                techniques_to_apply=techniques_to_apply
+                techniques_to_apply=techniques_to_apply,
             )
         except Exception as e:
             logger.warning(f"Failed to emit iteration_started event: {e}")
@@ -450,7 +448,7 @@ class AegisOrchestrator:
         evolved_prompt: str,
         success: bool,
         improvement: float,
-        duration_ms: float
+        duration_ms: float,
     ) -> None:
         """Emit iteration_completed telemetry event."""
         if self.broadcaster is None:
@@ -464,17 +462,13 @@ class AegisOrchestrator:
                 evolved_prompt=evolved_prompt,
                 success=success,
                 improvement=improvement,
-                duration_ms=duration_ms
+                duration_ms=duration_ms,
             )
         except Exception as e:
             logger.warning(f"Failed to emit iteration_completed event: {e}")
 
     async def _emit_attack_started(
-        self,
-        attack_id: str,
-        prompt: str,
-        target_model: str,
-        technique: str
+        self, attack_id: str, prompt: str, target_model: str, technique: str
     ) -> None:
         """Emit attack_started telemetry event."""
         if self.broadcaster is None:
@@ -486,7 +480,7 @@ class AegisOrchestrator:
                 attack_id=attack_id,
                 prompt=prompt,
                 target_model=target_model,
-                technique=technique
+                technique=technique,
             )
         except Exception as e:
             logger.warning(f"Failed to emit attack_started event: {e}")
@@ -496,11 +490,11 @@ class AegisOrchestrator:
         attack_id: str,
         success: bool,
         score: float,
-        response: Optional[str],
+        response: str | None,
         duration_ms: float,
         prompt_tokens: int,
         completion_tokens: int,
-        cost_usd: float
+        cost_usd: float,
     ) -> None:
         """Emit attack_completed telemetry event."""
         if self.broadcaster is None:
@@ -513,7 +507,7 @@ class AegisOrchestrator:
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
                     total_tokens=prompt_tokens + completion_tokens,
-                    cost_estimate_usd=cost_usd
+                    cost_estimate_usd=cost_usd,
                 )
 
             await self.broadcaster.emit_attack_completed(
@@ -523,7 +517,7 @@ class AegisOrchestrator:
                 score=score,
                 response=response,
                 duration_ms=duration_ms,
-                token_usage=token_usage
+                token_usage=token_usage,
             )
         except Exception as e:
             logger.warning(f"Failed to emit attack_completed event: {e}")
@@ -535,7 +529,7 @@ class AegisOrchestrator:
         input_prompt: str,
         output_prompt: str,
         success: bool,
-        execution_time_ms: float
+        execution_time_ms: float,
     ) -> None:
         """Emit technique_applied telemetry event."""
         if self.broadcaster is None:
@@ -563,16 +557,13 @@ class AegisOrchestrator:
                 output_prompt=output_prompt,
                 success=success,
                 score=0.0,
-                execution_time_ms=execution_time_ms
+                execution_time_ms=execution_time_ms,
             )
         except Exception as e:
             logger.warning(f"Failed to emit technique_applied event: {e}")
 
     async def _emit_cost_update(
-        self,
-        prompt_tokens: int,
-        completion_tokens: int,
-        cost_usd: float
+        self, prompt_tokens: int, completion_tokens: int, cost_usd: float
     ) -> None:
         """Emit cost_update telemetry event."""
         if self.broadcaster is None:
@@ -583,15 +574,13 @@ class AegisOrchestrator:
                 campaign_id=self.campaign_id,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
-                cost_usd=cost_usd
+                cost_usd=cost_usd,
             )
         except Exception as e:
             logger.warning(f"Failed to emit cost_update event: {e}")
 
     async def _emit_latency_update(
-        self,
-        api_latency_ms: float,
-        processing_latency_ms: float
+        self, api_latency_ms: float, processing_latency_ms: float
     ) -> None:
         """Emit latency_update telemetry event."""
         if self.broadcaster is None:
@@ -601,7 +590,7 @@ class AegisOrchestrator:
             await self.broadcaster.emit_latency_update(
                 campaign_id=self.campaign_id,
                 api_latency_ms=api_latency_ms,
-                processing_latency_ms=processing_latency_ms
+                processing_latency_ms=processing_latency_ms,
             )
         except Exception as e:
             logger.warning(f"Failed to emit latency_update event: {e}")
@@ -613,7 +602,7 @@ class AegisOrchestrator:
         new_prompt: str,
         previous_score: float,
         new_score: float,
-        techniques_applied: List[str]
+        techniques_applied: list[str],
     ) -> None:
         """Emit prompt_evolved telemetry event."""
         if self.broadcaster is None:
@@ -627,8 +616,7 @@ class AegisOrchestrator:
                 new_prompt=new_prompt,
                 previous_score=previous_score,
                 new_score=new_score,
-                techniques_applied=techniques_applied
+                techniques_applied=techniques_applied,
             )
         except Exception as e:
             logger.warning(f"Failed to emit prompt_evolved event: {e}")
-

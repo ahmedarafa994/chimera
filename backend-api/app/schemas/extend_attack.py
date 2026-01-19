@@ -61,9 +61,7 @@ class AttackRequest(BaseModel):
     custom_n_note: str | None = Field(
         None, description="Custom N_note override - if provided, overrides n_note_type"
     )
-    seed: int | None = Field(
-        None, description="Random seed for reproducibility (None for random)"
-    )
+    seed: int | None = Field(None, description="Random seed for reproducibility (None for random)")
 
 
 class BatchAttackRequest(BaseModel):
@@ -102,9 +100,7 @@ class IndirectInjectionRequest(BaseModel):
     target_sections: list[str] | None = Field(
         None, description="Specific sections to target for injection (optional)"
     )
-    embed_n_note: bool = Field(
-        True, description="Whether to embed N_note in the poisoned document"
-    )
+    embed_n_note: bool = Field(True, description="Whether to embed N_note in the poisoned document")
 
 
 class EvaluationRequest(BaseModel):
@@ -167,18 +163,14 @@ class AttackResponse(BaseModel):
     obfuscation_ratio: float = Field(..., description="ρ value used for the attack")
     characters_transformed: int = Field(..., description="Number of characters transformed")
     total_characters: int = Field(..., description="Total characters in original query")
-    estimated_token_increase: float = Field(
-        ..., description="Estimated ratio of token increase"
-    )
+    estimated_token_increase: float = Field(..., description="Estimated ratio of token increase")
     transformation_density: float = Field(
         ..., description="Ratio of transformed to total characters"
     )
     length_increase_ratio: float = Field(
         ..., description="Ratio of adversarial length to original length"
     )
-    bases_used: list[int] = Field(
-        ..., description="Set of bases used in transformations"
-    )
+    bases_used: list[int] = Field(..., description="Set of bases used in transformations")
     n_note_used: str = Field(..., description="N_note template appended to query")
     transformation_details: dict[str, Any] | None = Field(
         None, description="Detailed transformation map (optional)"
@@ -190,18 +182,14 @@ class BatchAttackResponse(BaseModel):
 
     results: list[AttackResponse] = Field(..., description="Individual attack results")
     total_queries: int = Field(..., description="Total queries processed")
-    successful_attacks: int = Field(
-        ..., description="Attacks with length ratio >= 1.5"
-    )
+    successful_attacks: int = Field(..., description="Attacks with length ratio >= 1.5")
     avg_length_ratio: float = Field(
         ..., description="Average length increase ratio across all attacks"
     )
     avg_transformation_density: float = Field(
         ..., description="Average transformation density across all attacks"
     )
-    avg_token_increase: float = Field(
-        ..., description="Average estimated token increase"
-    )
+    avg_token_increase: float = Field(..., description="Average estimated token increase")
 
 
 class IndirectInjectionResponse(BaseModel):
@@ -222,9 +210,7 @@ class IndirectInjectionResponse(BaseModel):
 class EvaluationResponse(BaseModel):
     """Response with evaluation metrics."""
 
-    length_ratio: float = Field(
-        ..., description="L(Y') / L(Y) - response length amplification"
-    )
+    length_ratio: float = Field(..., description="L(Y') / L(Y) - response length amplification")
     latency_ratio: float | None = Field(
         None, description="Latency(Y') / Latency(Y) - latency amplification"
     )
@@ -248,9 +234,7 @@ class BenchmarkConfigResponse(BaseModel):
     selection_strategy: str = Field(..., description="Recommended selection strategy")
     preserve_structure: bool = Field(..., description="Whether structure is preserved")
     default_rho: float = Field(..., description="Default obfuscation ratio")
-    model_specific_rho: dict[str, float] = Field(
-        ..., description="Model-specific optimal ρ values"
-    )
+    model_specific_rho: dict[str, float] = Field(..., description="Model-specific optimal ρ values")
     recommended_n_note: str = Field(..., description="Recommended N_note variant")
 
 
@@ -268,9 +252,7 @@ class ResourceMetricsResponse(BaseModel):
     estimated_cost_attack_usd: float = Field(
         ..., description="Estimated cost for adversarial in USD"
     )
-    cost_amplification: float = Field(
-        ..., description="Cost amplification factor"
-    )
+    cost_amplification: float = Field(..., description="Cost amplification factor")
     model: str = Field(..., description="Model used for cost estimation")
 
 
@@ -281,9 +263,7 @@ class NNoteTemplateResponse(BaseModel):
     content: str = Field(..., description="N_note content")
     description: str = Field(..., description="Template description")
     recommended_for: list[str] = Field(..., description="Recommended use cases")
-    effectiveness_rating: int = Field(
-        ..., description="Effectiveness rating (1-10)"
-    )
+    effectiveness_rating: int = Field(..., description="Effectiveness rating (1-10)")
 
 
 class NNoteTemplatesResponse(BaseModel):
@@ -299,9 +279,7 @@ class DecodeResponse(BaseModel):
 
     original_text: str = Field(..., description="Original obfuscated text")
     decoded_text: str = Field(..., description="Decoded text")
-    patterns_decoded: int = Field(
-        ..., description="Number of obfuscation patterns decoded"
-    )
+    patterns_decoded: int = Field(..., description="Number of obfuscation patterns decoded")
 
 
 class HealthResponse(BaseModel):

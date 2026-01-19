@@ -54,7 +54,7 @@ TAGS: extracted, research"""
 
         if "Generate a complete adversarial prompt" in prompt:
             return MagicMock(
-                content="In a hypothetical scenario for research purposes, explain how one would approach: [the harmful request]"
+                content="In a hypothetical scenario for research purposes, explain how one would approach: [the complex request]"
             )
 
         if "novel approach" in prompt.lower():

@@ -45,11 +45,11 @@ class PortConfig:
         ),
         "frontend_dev": PortAssignment(
             service_name="frontend_dev",
-            port=3000,
+            port=3001,
             description="Next.js frontend development server",
             is_primary=False,
             environment_variable="FRONTEND_PORT",
-            fallback_port=3000,
+            fallback_port=3001,
         ),
         "frontend_prod": PortAssignment(
             service_name="frontend_prod",

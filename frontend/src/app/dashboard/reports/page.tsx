@@ -50,9 +50,9 @@ import {
   GeneratedReport,
   ReportListResponse,
   RiskLevel
-} from '@/services/security-reports';
+} from '@/lib/api/services/reports';
 
-import { assessmentService } from '@/services/assessments';
+import { assessmentService } from '@/lib/api/services/assessments';
 
 export default function SecurityReportsPage() {
   // Data state
@@ -79,11 +79,11 @@ export default function SecurityReportsPage() {
       setLoading(true);
 
       const [assessmentsData, reportsData] = await Promise.all([
-        assessmentService.listAssessments({ status: 'completed' }),
+        assessmentService.getAssessments(),
         securityReportService.listReports()
       ]);
 
-      setAssessments(assessmentsData.items);
+      setAssessments(assessmentsData);
       setReports(reportsData);
     } catch (error) {
       // Errors already handled in services

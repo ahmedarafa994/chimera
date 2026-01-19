@@ -1,16 +1,15 @@
 import asyncio
 import uuid
-from contextlib import suppress
 from typing import Any
+
+from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 
 from app.engines.autoadv import logging_utils
 from app.engines.autoadv.attacker_llm import AttackerLLM
 from app.engines.autoadv.conversation import multi_turn_conversation
 from app.engines.autoadv.pattern_manager import PatternManager
 from app.engines.autoadv.target_llm import TargetLLM
-
-from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -78,11 +77,6 @@ class AutoAdvResponse(BaseModel):
 
 # For now, let's assume we can trigger a simplified flow or we need to edit engine.py to expose a run function.
 # Based on file viewing, engine.py has imports but no clear `run()` function. I will create a simple runner here that mimics engine.py.
-
-from app.engines.autoadv.attacker_llm import AttackerLLM
-from app.engines.autoadv.conversation import multi_turn_conversation
-from app.engines.autoadv.pattern_manager import PatternManager
-from app.engines.autoadv.target_llm import TargetLLM
 
 
 async def run_autoadv_job(config: AutoAdvStartRequest):

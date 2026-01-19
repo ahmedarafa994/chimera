@@ -41,7 +41,7 @@ scrape_configs:
   # Chimera Frontend Next.js
   - job_name: 'chimera-frontend'
     static_configs:
-      - targets: ['host.docker.internal:3000']
+      - targets: ['host.docker.internal:3001']
     metrics_path: '/api/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
@@ -77,7 +77,7 @@ scrape_configs:
       - targets:
         - http://host.docker.internal:8001/health
         - http://host.docker.internal:8001/health/ready
-        - http://host.docker.internal:3000
+        - http://host.docker.internal:3001
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

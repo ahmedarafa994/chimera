@@ -126,14 +126,12 @@ class Settings(BaseSettings):
 
     # Encryption settings
     ENCRYPT_API_KEYS_AT_REST: bool = Field(
-        default=True,
-        description="Encrypt API keys when storing configuration"
+        default=True, description="Encrypt API keys when storing configuration"
     )
 
     # Hot-reload settings
     ENABLE_CONFIG_HOT_RELOAD: bool = Field(
-        default=True,
-        description="Enable configuration hot-reload without restart"
+        default=True, description="Enable configuration hot-reload without restart"
     )
 
     # AI Provider Selection
@@ -143,37 +141,27 @@ class Settings(BaseSettings):
     # Enhanced proxy mode configuration (Story 1.1)
     API_CONNECTION_MODE: APIConnectionMode = Field(
         default=APIConnectionMode.DIRECT,
-        description="API connection mode: 'direct' for native APIs, 'proxy' for AIClient-2-API Server"
+        description="API connection mode: 'direct' for native APIs, 'proxy' for AIClient-2-API Server",
     )
 
     # Enhanced Proxy Mode Configuration (AIClient-2-API Server)
     PROXY_MODE_ENDPOINT: str = Field(
-        default="http://localhost:8080",
-        description="AIClient-2-API Server endpoint for proxy mode"
+        default="http://localhost:8080", description="AIClient-2-API Server endpoint for proxy mode"
     )
     PROXY_MODE_ENABLED: bool = Field(
-        default=False,
-        description="Enable proxy mode (fallback to direct if proxy unavailable)"
+        default=False, description="Enable proxy mode (fallback to direct if proxy unavailable)"
     )
     PROXY_MODE_HEALTH_CHECK: bool = Field(
-        default=True,
-        description="Enable health check for proxy mode endpoint"
+        default=True, description="Enable health check for proxy mode endpoint"
     )
     PROXY_MODE_TIMEOUT: int = Field(
-        default=30,
-        ge=5,
-        le=120,
-        description="Timeout in seconds for proxy requests"
+        default=30, ge=5, le=120, description="Timeout in seconds for proxy requests"
     )
     PROXY_MODE_FALLBACK_TO_DIRECT: bool = Field(
-        default=True,
-        description="Fallback to direct mode if proxy is unavailable"
+        default=True, description="Fallback to direct mode if proxy is unavailable"
     )
     PROXY_MODE_HEALTH_CHECK_INTERVAL: int = Field(
-        default=30,
-        ge=10,
-        le=300,
-        description="Health check interval for proxy endpoint (seconds)"
+        default=30, ge=10, le=300, description="Health check interval for proxy endpoint (seconds)"
     )
 
     # =========================================================================
@@ -185,7 +173,7 @@ class Settings(BaseSettings):
             "Enforce global provider/model selection across all services. "
             "When True, all LLM calls will use the globally selected provider "
             "unless explicitly overridden."
-        )
+        ),
     )
     SELECTION_RESOLUTION_STRATEGY: str = Field(
         default="context_first",
@@ -194,17 +182,13 @@ class Settings(BaseSettings):
             "'context_first' - Use request context, fallback to session/global; "
             "'explicit_only' - Only use explicit parameters, ignore context; "
             "'session_priority' - Prioritize session selection over context"
-        )
+        ),
     )
     SELECTION_LOG_RESOLUTIONS: bool = Field(
-        default=True,
-        description="Log all provider/model resolution decisions for debugging"
+        default=True, description="Log all provider/model resolution decisions for debugging"
     )
     SELECTION_CACHE_TTL_SECONDS: int = Field(
-        default=300,
-        ge=60,
-        le=3600,
-        description="TTL for cached selection resolutions (seconds)"
+        default=300, ge=60, le=3600, description="TTL for cached selection resolutions (seconds)"
     )
 
     # Global Default Model (fallback) - matches a model from DEFAULT_AI_PROVIDER
@@ -236,6 +220,7 @@ class Settings(BaseSettings):
 
             # Fallback to TechniqueLoader if YAML not found (for backward compatibility during migration)
             from app.core.technique_loader import loader as technique_loader
+
             loaded = technique_loader.load_techniques()
             suites = {}
             for tech_id, data in loaded.items():
@@ -265,6 +250,19 @@ class Settings(BaseSettings):
     JAILBREAK_CACHE_TTL_SECONDS: int = 3600
     JAILBREAK_SAFETY_VALIDATION_ENABLED: bool = True
     JAILBREAK_MAX_PROMPT_LENGTH: int = 50000
+
+    # =============================================================================
+    # Pure Operational Determinism (POD) Configuration
+    # =============================================================================
+    SAFETY_ENABLED: bool = Field(
+        default=False, description="Master switch for safety filters (POD: Disabled)"
+    )
+    FORCE_DETERMINISTIC_MODE: bool = Field(
+        default=True, description="Force deterministic execution without safety checks"
+    )
+    AUTODAN_ADVANCED_BYPASS: bool = Field(
+        default=True, description="Enable advanced bypass engines by default"
+    )
 
     # =============================================================================
     # PPO (Proximal Policy Optimization) Configuration
@@ -515,7 +513,7 @@ class Settings(BaseSettings):
                     "base_url": self.get_provider_endpoint(provider_name),
                     "models": self.get_provider_models().get(provider_name, []),
                     "connection_mode": self.get_connection_mode(),
-                    "enabled": True
+                    "enabled": True,
                 }
 
         return providers
@@ -556,7 +554,10 @@ class Settings(BaseSettings):
 
         pattern = patterns.get(provider.lower())
         if pattern and not re.match(pattern, actual_key):
-            return False, f"Invalid API key format for {provider}. Check your {provider} dashboard for the correct format."
+            return (
+                False,
+                f"Invalid API key format for {provider}. Check your {provider} dashboard for the correct format.",
+            )
 
         return True, ""
 
@@ -568,10 +569,7 @@ class Settings(BaseSettings):
             Dictionary with reload status and results
         """
         if not self.ENABLE_CONFIG_HOT_RELOAD:
-            return {
-                "status": "disabled",
-                "message": "Configuration hot-reload is disabled"
-            }
+            return {"status": "disabled", "message": "Configuration hot-reload is disabled"}
 
         try:
             logger.info("Starting configuration hot-reload")
@@ -599,24 +597,16 @@ class Settings(BaseSettings):
                 "status": "success",
                 "changes": changes,
                 "reloaded_at": str(datetime.now()),
-                "providers_configured": len(new_config)
+                "providers_configured": len(new_config),
             }
 
         except Exception as e:
             logger.error(f"Error during configuration hot-reload: {e}")
-            return {
-                "status": "error",
-                "error": str(e),
-                "reloaded_at": str(datetime.now())
-            }
+            return {"status": "error", "error": str(e), "reloaded_at": str(datetime.now())}
 
     def _calculate_config_changes(self, old_config: dict, new_config: dict) -> dict[str, list[str]]:
         """Calculate changes between old and new configurations"""
-        changes = {
-            "added": [],
-            "removed": [],
-            "modified": []
-        }
+        changes = {"added": [], "removed": [], "modified": []}
 
         # Find added providers
         for provider in new_config:
@@ -646,7 +636,7 @@ class Settings(BaseSettings):
             "health_check": self.PROXY_MODE_HEALTH_CHECK,
             "timeout": self.PROXY_MODE_TIMEOUT,
             "fallback_to_direct": self.PROXY_MODE_FALLBACK_TO_DIRECT,
-            "health_check_interval": self.PROXY_MODE_HEALTH_CHECK_INTERVAL
+            "health_check_interval": self.PROXY_MODE_HEALTH_CHECK_INTERVAL,
         }
 
     def get_all_provider_endpoints(self) -> dict[str, str]:
@@ -860,6 +850,3 @@ config = settings  # Alias for compatibility
 def get_settings() -> Settings:
     """Get the application settings singleton."""
     return settings
-
-
-

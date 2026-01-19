@@ -20,12 +20,8 @@ from meta_prompter.jailbreak_enhancer import JailbreakPromptEnhancer
 from meta_prompter.prompt_enhancer import PromptEnhancer
 
 if TYPE_CHECKING:
-    from app.services.global_model_selection_state import (
-        GlobalModelSelectionState,
-    )
-    from app.services.provider_resolution_service import (
-        ProviderResolutionService,
-    )
+    from app.services.global_model_selection_state import GlobalModelSelectionState
+    from app.services.provider_resolution_service import ProviderResolutionService
 
 # =============================================================================
 # Application-Scoped Dependencies (Singletons)
@@ -392,13 +388,9 @@ def get_global_model_selection_state() -> "GlobalModelSelectionState":
     global _global_model_selection_state_instance
 
     if _global_model_selection_state_instance is None:
-        from app.services.global_model_selection_state import (
-            GlobalModelSelectionState,
-        )
+        from app.services.global_model_selection_state import GlobalModelSelectionState
 
-        _global_model_selection_state_instance = (
-            GlobalModelSelectionState.get_instance()
-        )
+        _global_model_selection_state_instance = GlobalModelSelectionState.get_instance()
 
     return _global_model_selection_state_instance
 
@@ -578,10 +570,7 @@ async def get_resolved_provider_model_with_metadata(
 
     # Extract user_id and request_id from request
     user_id = getattr(request.state, "user_id", None)
-    request_id = (
-        request.headers.get("X-Request-ID")
-        or getattr(request.state, "request_id", None)
-    )
+    request_id = request.headers.get("X-Request-ID") or getattr(request.state, "request_id", None)
 
     result = await resolution_service.resolve_with_metadata(
         explicit_provider=explicit_provider,

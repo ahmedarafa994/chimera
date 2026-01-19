@@ -255,11 +255,17 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         "/docs",
         "/openapi.json",
         "/redoc",
+        "/api/v1/auth",
     }
 
     # PERF-024: Known non-existent paths that generate high 404 traffic
     # These are typically from clients expecting OpenAI/Anthropic API compatibility
-    KNOWN_404_PREFIXES: ClassVar[set[str]] = {"/v1/chat/", "/v1/messages", "/v1/models", "/v1/api/event_logging"}
+    KNOWN_404_PREFIXES: ClassVar[set[str]] = {
+        "/v1/chat/",
+        "/v1/messages",
+        "/v1/models",
+        "/v1/api/event_logging",
+    }
 
     def __init__(self, app, logger: logging.Logger | None = None):
         super().__init__(app)
@@ -422,7 +428,7 @@ class MetricsCollector:
         self.model_tokens_total = Counter(
             "model_tokens_total",
             "Total tokens consumed",
-            ["model", "type"],  # type: prompt or completion
+            ["model", "type"],  # info: prompt or completion
         )
 
     def increment(self, name: str, value: int = 1, labels: dict[str, str] | None = None):

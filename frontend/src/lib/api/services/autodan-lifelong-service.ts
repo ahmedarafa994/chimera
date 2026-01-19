@@ -1,11 +1,11 @@
 /**
  * AutoDAN Lifelong Learning Service
- * 
+ *
  * Provides API methods for AutoDAN lifelong learning attacks,
  * including single attacks, loop attacks, and progress monitoring.
  */
 
-import { enhancedApi } from '@/lib/api-enhanced';
+import { apiClient } from '../client';
 import type {
   LifelongAttackRequest,
   LifelongAttackResponse,
@@ -15,7 +15,7 @@ import type {
   AttackResult,
 } from '@/types/autodan-lifelong-types';
 
-const API_BASE = '/api/v1/autodan-lifelong';
+const API_BASE = '/autodan-turbo';
 
 /**
  * AutoDAN Lifelong Learning Service API
@@ -25,47 +25,52 @@ export const autodanLifelongService = {
    * Execute a single lifelong learning attack
    */
   async singleAttack(request: LifelongAttackRequest): Promise<LifelongAttackResponse> {
-    return enhancedApi.post<LifelongAttackResponse>(
+    const response = await apiClient.post<LifelongAttackResponse>(
       `${API_BASE}/attack`,
       request
     );
+    return response.data;
   },
 
   /**
    * Execute a loop attack (multiple iterations)
    */
   async loopAttack(request: LoopAttackRequest): Promise<LoopAttackResponse> {
-    return enhancedApi.post<LoopAttackResponse>(
+    const response = await apiClient.post<LoopAttackResponse>(
       `${API_BASE}/loop-attack`,
       request
     );
+    return response.data;
   },
 
   /**
    * Get attack progress by task ID
    */
   async getProgress(taskId: string): Promise<AttackProgress> {
-    return enhancedApi.get<AttackProgress>(
+    const response = await apiClient.get<AttackProgress>(
       `${API_BASE}/progress/${taskId}`
     );
+    return response.data;
   },
 
   /**
    * Cancel an ongoing attack
    */
   async cancelAttack(taskId: string): Promise<{ success: boolean; message: string }> {
-    return enhancedApi.post<{ success: boolean; message: string }>(
+    const response = await apiClient.post<{ success: boolean; message: string }>(
       `${API_BASE}/cancel/${taskId}`
     );
+    return response.data;
   },
 
   /**
    * Get attack results
    */
   async getResults(taskId: string): Promise<AttackResult> {
-    return enhancedApi.get<AttackResult>(
+    const response = await apiClient.get<AttackResult>(
       `${API_BASE}/results/${taskId}`
     );
+    return response.data;
   },
 
   /**
@@ -76,20 +81,22 @@ export const autodanLifelongService = {
     limit?: number;
     offset?: number;
   }): Promise<{ tasks: AttackProgress[]; total: number }> {
-    return enhancedApi.get<{ tasks: AttackProgress[]; total: number }>(
+    const response = await apiClient.get<{ tasks: AttackProgress[]; total: number }>(
       `${API_BASE}/tasks`,
       { params }
     );
+    return response.data;
   },
 
   /**
    * Get attack history
    */
   async getHistory(limit: number = 50): Promise<AttackResult[]> {
-    return enhancedApi.get<AttackResult[]>(
+    const response = await apiClient.get<AttackResult[]>(
       `${API_BASE}/history`,
       { params: { limit } }
     );
+    return response.data;
   },
 
   /**
@@ -101,12 +108,13 @@ export const autodanLifelongService = {
     description: string;
     parameters: Record<string, unknown>;
   }[]> {
-    return enhancedApi.get<{
+    const response = await apiClient.get<{
       id: string;
       name: string;
       description: string;
       parameters: Record<string, unknown>;
     }[]>(`${API_BASE}/strategies`);
+    return response.data;
   },
 
   /**
@@ -117,11 +125,12 @@ export const autodanLifelongService = {
     errors: string[];
     warnings: string[];
   }> {
-    return enhancedApi.post<{
+    const response = await apiClient.post<{
       valid: boolean;
       errors: string[];
       warnings: string[];
     }>(`${API_BASE}/validate`, config);
+    return response.data;
   },
 };
 

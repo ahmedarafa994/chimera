@@ -31,7 +31,6 @@ export type {
 export {
   TechniqueEffectivenessChart,
   TechniqueEffectivenessChartSkeleton,
-  TechniqueEffectivenessChartError,
   TechniqueEffectivenessChartEmpty,
   SimpleTechniqueChart,
   TechniqueRadarChart,
@@ -40,11 +39,7 @@ export {
 
 export type {
   TechniqueEffectivenessChartProps,
-  TechniqueChartDataPoint,
-  ChartViewMode,
-  SortField,
-  SortDirection,
-  SuccessTier,
+  TechniqueEffectivenessData,
 } from "./TechniqueEffectivenessChart";
 
 // =============================================================================

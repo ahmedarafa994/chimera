@@ -31,7 +31,7 @@ class SecurityConfig:
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 60
     cors_origins: list[str] = field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:8080"]
+        default_factory=lambda: ["http://localhost:3001", "http://localhost:8080"]
     )
 
 
@@ -168,7 +168,7 @@ class Settings:
             rate_limit_enabled=security_config.get("rate_limit_enabled", True),
             rate_limit_per_minute=security_config.get("rate_limit_per_minute", 60),
             cors_origins=security_config.get(
-                "cors_origins", ["http://localhost:3000", "http://localhost:8080"]
+                "cors_origins", ["http://localhost:3001", "http://localhost:8080"]
             ),
         )
 

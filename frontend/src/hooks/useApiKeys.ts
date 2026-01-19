@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { ApiKeyFormData, ApiKeyItem, ProviderId, ProviderKeySummary } from "../api-keys";
+import type { ApiKeyFormData, ApiKeyItem, ProviderId, ProviderKeySummary } from "../components/api-keys";
 
 // =============================================================================
 // API Configuration

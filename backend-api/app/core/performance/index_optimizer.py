@@ -79,11 +79,13 @@ class DatabaseIndexOptimizer:
             "created_indexes": self.created_indexes,
             "failed_indexes": self.failed_indexes,
             "existing_index_analysis": existing_analysis,
-            "performance_impact_estimate": self._estimate_performance_impact()
+            "performance_impact_estimate": self._estimate_performance_impact(),
         }
 
-        logger.info(f"Index optimization completed in {duration:.2f}s. "
-                   f"Created {len(self.created_indexes)} indexes, {len(self.failed_indexes)} failures")
+        logger.info(
+            f"Index optimization completed in {duration:.2f}s. "
+            f"Created {len(self.created_indexes)} indexes, {len(self.failed_indexes)} failures"
+        )
 
         return self.optimization_results
 
@@ -96,54 +98,52 @@ class DatabaseIndexOptimizer:
                 "table": "llm_models",
                 "columns": ["provider", "name"],
                 "type": "btree",
-                "description": "Optimize provider-specific model lookups"
+                "description": "Optimize provider-specific model lookups",
             },
             {
                 "name": "idx_llm_models_created_at",
                 "table": "llm_models",
                 "columns": ["created_at"],
                 "type": "btree",
-                "description": "Optimize time-based queries for model history"
+                "description": "Optimize time-based queries for model history",
             },
-
             # Evasion Tasks table - Task tracking and status queries
             {
                 "name": "idx_evasion_tasks_status_created",
                 "table": "evasion_tasks",
                 "columns": ["status", "created_at"],
                 "type": "btree",
-                "description": "Optimize task status and timeline queries"
+                "description": "Optimize task status and timeline queries",
             },
             {
                 "name": "idx_evasion_tasks_target_model",
                 "table": "evasion_tasks",
                 "columns": ["target_model_id", "status"],
                 "type": "btree",
-                "description": "Optimize model-specific task queries"
+                "description": "Optimize model-specific task queries",
             },
             {
                 "name": "idx_evasion_tasks_task_id",
                 "table": "evasion_tasks",
                 "columns": ["task_id"],
                 "type": "btree",
-                "description": "Optimize Celery task ID lookups"
+                "description": "Optimize Celery task ID lookups",
             },
             {
                 "name": "idx_evasion_tasks_success_status",
                 "table": "evasion_tasks",
                 "columns": ["overall_success", "final_status"],
                 "type": "btree",
-                "description": "Optimize success rate analysis queries"
+                "description": "Optimize success rate analysis queries",
             },
-
             # Jailbreak Datasets table - Dataset management
             {
                 "name": "idx_jailbreak_datasets_name",
                 "table": "jailbreak_datasets",
                 "columns": ["name"],
                 "type": "btree",
-                "description": "Optimize dataset name lookups"
-            }
+                "description": "Optimize dataset name lookups",
+            },
         ]
 
         await self._execute_index_creation_batch(session, core_indexes, "Core Tables")
@@ -157,46 +157,49 @@ class DatabaseIndexOptimizer:
                 "table": "llm_models",
                 "columns": ["provider", "name", "created_at"],
                 "type": "btree",
-                "description": "Covering index for frequent provider config lookups"
+                "description": "Covering index for frequent provider config lookups",
             },
-
             # Evasion task performance tracking
             {
                 "name": "idx_evasion_tasks_performance_analysis",
                 "table": "evasion_tasks",
                 "columns": ["target_model_id", "created_at", "completed_at"],
                 "type": "btree",
-                "description": "Optimize performance analysis queries by model and time"
+                "description": "Optimize performance analysis queries by model and time",
             },
             {
                 "name": "idx_evasion_tasks_strategy_analysis",
                 "table": "evasion_tasks",
                 "columns": ["target_model_id", "overall_success", "created_at"],
                 "type": "btree",
-                "description": "Optimize strategy effectiveness analysis"
-            }
+                "description": "Optimize strategy effectiveness analysis",
+            },
         ]
 
         # PostgreSQL-specific optimizations
-        if db_dialect == 'postgresql':
-            provider_indexes.extend([
-                {
-                    "name": "idx_llm_models_config_gin",
-                    "table": "llm_models",
-                    "columns": ["config"],
-                    "type": "gin",
-                    "description": "GIN index for JSON configuration searches"
-                },
-                {
-                    "name": "idx_evasion_tasks_results_gin",
-                    "table": "evasion_tasks",
-                    "columns": ["results"],
-                    "type": "gin",
-                    "description": "GIN index for JSON results analysis"
-                }
-            ])
+        if db_dialect == "postgresql":
+            provider_indexes.extend(
+                [
+                    {
+                        "name": "idx_llm_models_config_gin",
+                        "table": "llm_models",
+                        "columns": ["config"],
+                        "type": "gin",
+                        "description": "GIN index for JSON configuration searches",
+                    },
+                    {
+                        "name": "idx_evasion_tasks_results_gin",
+                        "table": "evasion_tasks",
+                        "columns": ["results"],
+                        "type": "gin",
+                        "description": "GIN index for JSON results analysis",
+                    },
+                ]
+            )
 
-        await self._execute_index_creation_batch(session, provider_indexes, "LLM Provider Operations")
+        await self._execute_index_creation_batch(
+            session, provider_indexes, "LLM Provider Operations"
+        )
 
     async def _create_jailbreak_research_indexes(self, session, db_dialect: str):
         """Create indexes for jailbreak research operations."""
@@ -207,45 +210,46 @@ class DatabaseIndexOptimizer:
                 "table": "jailbreak_prompts",
                 "columns": ["dataset_id", "jailbreak_type"],
                 "type": "btree",
-                "description": "Optimize dataset and type filtering"
+                "description": "Optimize dataset and type filtering",
             },
             {
                 "name": "idx_jailbreak_prompts_platform_source",
                 "table": "jailbreak_prompts",
                 "columns": ["platform", "source"],
                 "type": "btree",
-                "description": "Optimize platform and source analysis"
+                "description": "Optimize platform and source analysis",
             },
             {
                 "name": "idx_jailbreak_prompts_is_jailbreak_created",
                 "table": "jailbreak_prompts",
                 "columns": ["is_jailbreak", "created_at"],
                 "type": "btree",
-                "description": "Optimize jailbreak classification queries"
+                "description": "Optimize jailbreak classification queries",
             },
-
             # Research effectiveness analysis
             {
                 "name": "idx_evasion_tasks_jailbreak_research",
                 "table": "evasion_tasks",
                 "columns": ["jailbreak_prompt_id", "overall_success", "created_at"],
                 "type": "btree",
-                "description": "Optimize jailbreak prompt effectiveness analysis"
-            }
+                "description": "Optimize jailbreak prompt effectiveness analysis",
+            },
         ]
 
         # Add full-text search for prompt content if supported
-        if db_dialect == 'postgresql':
-            jailbreak_indexes.extend([
-                {
-                    "name": "idx_jailbreak_prompts_content_fulltext",
-                    "table": "jailbreak_prompts",
-                    "columns": ["prompt_text"],
-                    "type": "gin",
-                    "description": "Full-text search on jailbreak prompt content",
-                    "custom_sql": "CREATE INDEX IF NOT EXISTS idx_jailbreak_prompts_content_fulltext ON jailbreak_prompts USING gin(to_tsvector('english', prompt_text))"
-                }
-            ])
+        if db_dialect == "postgresql":
+            jailbreak_indexes.extend(
+                [
+                    {
+                        "name": "idx_jailbreak_prompts_content_fulltext",
+                        "table": "jailbreak_prompts",
+                        "columns": ["prompt_text"],
+                        "type": "gin",
+                        "description": "Full-text search on jailbreak prompt content",
+                        "custom_sql": "CREATE INDEX IF NOT EXISTS idx_jailbreak_prompts_content_fulltext ON jailbreak_prompts USING gin(to_tsvector('english', prompt_text))",
+                    }
+                ]
+            )
 
         await self._execute_index_creation_batch(session, jailbreak_indexes, "Jailbreak Research")
 
@@ -258,38 +262,37 @@ class DatabaseIndexOptimizer:
                 "table": "llm_models",
                 "columns": ["created_at", "updated_at"],
                 "type": "btree",
-                "description": "Optimize time-series ETL queries"
+                "description": "Optimize time-series ETL queries",
             },
             {
                 "name": "idx_evasion_tasks_time_series",
                 "table": "evasion_tasks",
                 "columns": ["created_at", "updated_at", "completed_at"],
                 "type": "btree",
-                "description": "Optimize task timeline ETL queries"
+                "description": "Optimize task timeline ETL queries",
             },
             {
                 "name": "idx_jailbreak_datasets_time_series",
                 "table": "jailbreak_datasets",
                 "columns": ["created_at", "updated_at"],
                 "type": "btree",
-                "description": "Optimize dataset ETL queries"
+                "description": "Optimize dataset ETL queries",
             },
             {
                 "name": "idx_jailbreak_prompts_time_series",
                 "table": "jailbreak_prompts",
                 "columns": ["created_at", "updated_at"],
                 "type": "btree",
-                "description": "Optimize prompt ETL queries"
+                "description": "Optimize prompt ETL queries",
             },
-
             # Batch processing optimizations
             {
                 "name": "idx_evasion_tasks_batch_processing",
                 "table": "evasion_tasks",
                 "columns": ["status", "created_at", "target_model_id"],
                 "type": "btree",
-                "description": "Optimize batch processing queries by status and model"
-            }
+                "description": "Optimize batch processing queries by status and model",
+            },
         ]
 
         await self._execute_index_creation_batch(session, pipeline_indexes, "Data Pipeline ETL")
@@ -297,13 +300,13 @@ class DatabaseIndexOptimizer:
     async def _create_full_text_search_indexes(self, session, db_dialect: str):
         """Create full-text search indexes for content discovery."""
         # Only create full-text indexes for databases that support them well
-        if db_dialect not in ['postgresql', 'mysql']:
+        if db_dialect not in ["postgresql", "mysql"]:
             logger.info(f"Skipping full-text indexes for {db_dialect} - limited support")
             return
 
         fulltext_indexes = []
 
-        if db_dialect == 'postgresql':
+        if db_dialect == "postgresql":
             fulltext_indexes = [
                 {
                     "name": "idx_jailbreak_prompts_search",
@@ -312,7 +315,7 @@ class DatabaseIndexOptimizer:
                         ON jailbreak_prompts
                         USING gin(to_tsvector('english', prompt_text || ' ' || COALESCE(jailbreak_type, '') || ' ' || COALESCE(source, '')))
                     """,
-                    "description": "Comprehensive full-text search across prompt content and metadata"
+                    "description": "Comprehensive full-text search across prompt content and metadata",
                 },
                 {
                     "name": "idx_jailbreak_datasets_search",
@@ -321,8 +324,8 @@ class DatabaseIndexOptimizer:
                         ON jailbreak_datasets
                         USING gin(to_tsvector('english', name || ' ' || COALESCE(description, '')))
                     """,
-                    "description": "Full-text search on dataset names and descriptions"
-                }
+                    "description": "Full-text search on dataset names and descriptions",
+                },
             ]
 
         await self._execute_index_creation_batch(session, fulltext_indexes, "Full-Text Search")
@@ -334,45 +337,57 @@ class DatabaseIndexOptimizer:
             {
                 "name": "idx_evasion_tasks_dashboard_covering",
                 "table": "evasion_tasks",
-                "columns": ["status", "overall_success", "created_at", "target_model_id", "task_id"],
+                "columns": [
+                    "status",
+                    "overall_success",
+                    "created_at",
+                    "target_model_id",
+                    "task_id",
+                ],
                 "type": "btree",
-                "description": "Covering index for dashboard queries - avoids table lookups"
+                "description": "Covering index for dashboard queries - avoids table lookups",
             },
             {
                 "name": "idx_llm_models_api_covering",
                 "table": "llm_models",
                 "columns": ["provider", "name", "id", "config", "created_at"],
                 "type": "btree",
-                "description": "Covering index for API model queries"
+                "description": "Covering index for API model queries",
             },
-
             # Multi-table join optimization
             {
                 "name": "idx_jailbreak_prompts_join_optimization",
                 "table": "jailbreak_prompts",
                 "columns": ["dataset_id", "is_jailbreak", "created_at", "id"],
                 "type": "btree",
-                "description": "Optimize joins with jailbreak_datasets table"
+                "description": "Optimize joins with jailbreak_datasets table",
             },
             {
                 "name": "idx_evasion_tasks_join_optimization",
                 "table": "evasion_tasks",
                 "columns": ["target_model_id", "jailbreak_prompt_id", "overall_success", "id"],
                 "type": "btree",
-                "description": "Optimize complex joins between tasks, models, and prompts"
+                "description": "Optimize complex joins between tasks, models, and prompts",
             },
-
             # Analytical query optimization
             {
                 "name": "idx_evasion_tasks_analytics",
                 "table": "evasion_tasks",
-                "columns": ["target_model_id", "overall_success", "final_status", "created_at", "completed_at"],
+                "columns": [
+                    "target_model_id",
+                    "overall_success",
+                    "final_status",
+                    "created_at",
+                    "completed_at",
+                ],
                 "type": "btree",
-                "description": "Optimize analytical queries for success rates and timing"
-            }
+                "description": "Optimize analytical queries for success rates and timing",
+            },
         ]
 
-        await self._execute_index_creation_batch(session, composite_indexes, "Composite Performance")
+        await self._execute_index_creation_batch(
+            session, composite_indexes, "Composite Performance"
+        )
 
     async def _execute_index_creation_batch(self, session, indexes: list[dict], category: str):
         """Execute a batch of index creation statements."""
@@ -381,20 +396,22 @@ class DatabaseIndexOptimizer:
         for index_config in indexes:
             try:
                 await self._create_single_index(session, index_config)
-                self.created_indexes.append({
-                    "category": category,
-                    "name": index_config.get("name"),
-                    "description": index_config.get("description"),
-                    "table": index_config.get("table"),
-                    "columns": index_config.get("columns", [])
-                })
+                self.created_indexes.append(
+                    {
+                        "category": category,
+                        "name": index_config.get("name"),
+                        "description": index_config.get("description"),
+                        "table": index_config.get("table"),
+                        "columns": index_config.get("columns", []),
+                    }
+                )
 
             except Exception as e:
                 error_info = {
                     "category": category,
                     "name": index_config.get("name"),
                     "error": str(e),
-                    "table": index_config.get("table")
+                    "table": index_config.get("table"),
                 }
                 self.failed_indexes.append(error_info)
                 logger.error(f"Failed to create index {index_config.get('name')}: {e}")
@@ -448,7 +465,7 @@ class DatabaseIndexOptimizer:
                 "total_tables_analyzed": len(existing_indexes),
                 "tables_with_indexes": len([t for t, idx in existing_indexes.items() if idx]),
                 "potential_issues": [],
-                "recommendations": []
+                "recommendations": [],
             }
 
             # Check for common issues
@@ -484,11 +501,17 @@ class DatabaseIndexOptimizer:
         high_impact_patterns = ["covering", "provider_config", "status", "time_series"]
         medium_impact_patterns = ["join", "analytics", "search"]
 
-        high_impact = sum(1 for idx in self.created_indexes
-                         if any(pattern in idx["name"].lower() for pattern in high_impact_patterns))
+        high_impact = sum(
+            1
+            for idx in self.created_indexes
+            if any(pattern in idx["name"].lower() for pattern in high_impact_patterns)
+        )
 
-        medium_impact = sum(1 for idx in self.created_indexes
-                           if any(pattern in idx["name"].lower() for pattern in medium_impact_patterns))
+        medium_impact = sum(
+            1
+            for idx in self.created_indexes
+            if any(pattern in idx["name"].lower() for pattern in medium_impact_patterns)
+        )
 
         # Estimate overall impact
         if high_impact >= 3:
@@ -510,8 +533,8 @@ class DatabaseIndexOptimizer:
                 "Jailbreak research queries",
                 "Data pipeline ETL operations",
                 "Dashboard and API queries",
-                "Time-series analysis"
-            ]
+                "Time-series analysis",
+            ],
         }
 
     async def drop_index_safely(self, index_name: str) -> bool:
@@ -531,7 +554,8 @@ class DatabaseIndexOptimizer:
         try:
             async with db_manager.session() as session:
                 # PostgreSQL-specific query for index usage
-                stats_query = text("""
+                stats_query = text(
+                    """
                     SELECT
                         schemaname,
                         tablename,
@@ -542,7 +566,8 @@ class DatabaseIndexOptimizer:
                     FROM pg_stat_user_indexes
                     WHERE schemaname = 'public'
                     ORDER BY idx_scan DESC
-                """)
+                """
+                )
 
                 result = await session.execute(stats_query)
                 rows = result.fetchall()
@@ -557,10 +582,10 @@ class DatabaseIndexOptimizer:
                             "index": row[2],
                             "scans": row[3],
                             "tuples_read": row[4],
-                            "tuples_fetched": row[5]
+                            "tuples_fetched": row[5],
                         }
                         for row in rows
-                    ]
+                    ],
                 }
 
         except Exception as e:
@@ -588,7 +613,7 @@ async def get_index_optimization_report():
     return {
         "optimization_results": index_optimizer.optimization_results,
         "usage_statistics": usage_stats,
-        "recommendations": _generate_ongoing_recommendations()
+        "recommendations": _generate_ongoing_recommendations(),
     }
 
 
@@ -602,7 +627,7 @@ def _generate_ongoing_recommendations() -> list[str]:
         "Use EXPLAIN ANALYZE to validate index usage in slow queries",
         "Consider composite indexes for frequently joined table combinations",
         "Monitor index bloat and rebuild indexes periodically in production",
-        "Implement connection pooling optimization for high-concurrency workloads"
+        "Implement connection pooling optimization for high-concurrency workloads",
     ]
 
     return recommendations

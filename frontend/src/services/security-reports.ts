@@ -9,6 +9,8 @@
  */
 
 import { toast } from 'sonner';
+import { apiClient } from '@/lib/api/client';
+import { authManager } from '@/lib/api/auth-manager';
 
 export type ReportFormat = 'pdf' | 'html' | 'json';
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
@@ -119,45 +121,31 @@ export interface ReportListResponse {
 }
 
 class SecurityReportService {
-  private readonly baseUrl = '/api/v1/reports';
+  private readonly baseUrl = '/reports';
 
   /**
    * Generate a professional security assessment report
    */
   async generateReport(request: ReportRequest): Promise<GeneratedReport> {
     try {
-      const response = await fetch(`${this.baseUrl}/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          assessment_ids: request.assessment_ids,
-          report_type: request.report_type || 'technical',
-          report_format: request.report_format || 'pdf',
-          include_executive_summary: request.include_executive_summary ?? true,
-          include_detailed_findings: request.include_detailed_findings ?? true,
-          include_remediation_plan: request.include_remediation_plan ?? true,
-          include_appendix: request.include_appendix ?? false,
-          branding: request.branding,
-          custom_sections: request.custom_sections || {},
-          min_risk_level: request.min_risk_level,
-          include_techniques: request.include_techniques,
-          exclude_techniques: request.exclude_techniques
-        }),
+      const response = await apiClient.post<GeneratedReport>(`${this.baseUrl}/generate`, {
+        assessment_ids: request.assessment_ids,
+        report_type: request.report_type || 'technical',
+        report_format: request.report_format || 'pdf',
+        include_executive_summary: request.include_executive_summary ?? true,
+        include_detailed_findings: request.include_detailed_findings ?? true,
+        include_remediation_plan: request.include_remediation_plan ?? true,
+        include_appendix: request.include_appendix ?? false,
+        branding: request.branding,
+        custom_sections: request.custom_sections || {},
+        min_risk_level: request.min_risk_level,
+        include_techniques: request.include_techniques,
+        exclude_techniques: request.exclude_techniques
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
 
       toast.success('Security report generated successfully');
 
-      return result;
+      return response.data;
     } catch (error) {
       console.error('Failed to generate security report:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate report');
@@ -170,20 +158,8 @@ class SecurityReportService {
    */
   async listReports(): Promise<ReportListResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get<ReportListResponse>(`${this.baseUrl}/`);
+      return response.data;
     } catch (error) {
       console.error('Failed to list reports:', error);
       toast.error('Failed to load report history');
@@ -196,21 +172,15 @@ class SecurityReportService {
    */
   async downloadReport(reportId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/${reportId}/download`, {
-        method: 'GET',
-        credentials: 'include',
+      const response = await apiClient.get(`${this.baseUrl}/${reportId}/download`, {
+        responseType: 'blob'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
       // Get filename from Content-Disposition header
-      const contentDisposition = response.headers.get('Content-Disposition');
+      const contentDisposition = response.headers['content-disposition'];
       let filename = `security_report_${reportId}.pdf`;
 
-      if (contentDisposition) {
+      if (contentDisposition && typeof contentDisposition === 'string') {
         const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
         if (filenameMatch) {
           filename = filenameMatch[1];
@@ -218,7 +188,7 @@ class SecurityReportService {
       }
 
       // Create download link
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';

@@ -580,8 +580,7 @@ class SQLiteConnector(DatabaseConnector):
                 )
 
             logger.info(
-                f"Extracted {len(df)} LLM interactions from SQLite "
-                f"({start_time} to {end_time})"
+                f"Extracted {len(df)} LLM interactions from SQLite " f"({start_time} to {end_time})"
             )
             return df
 

@@ -315,8 +315,7 @@ class BaseProvider(LLMProvider, ABC):
         """
         total_requests = self._metrics["requests_total"]
         success_rate = (
-            self._metrics["requests_success"] / total_requests
-            if total_requests > 0 else 0
+            self._metrics["requests_success"] / total_requests if total_requests > 0 else 0
         )
 
         return {
@@ -411,9 +410,7 @@ class BaseProvider(LLMProvider, ABC):
         Raises:
             NotImplementedError: If streaming is not supported.
         """
-        raise NotImplementedError(
-            f"Streaming not supported by {self.provider_name} provider"
-        )
+        raise NotImplementedError(f"Streaming not supported by {self.provider_name} provider")
 
     async def count_tokens(self, text: str, model: str | None = None) -> int:
         """
@@ -431,14 +428,13 @@ class BaseProvider(LLMProvider, ABC):
         Raises:
             NotImplementedError: If token counting is not supported.
         """
-        raise NotImplementedError(
-            f"Token counting not supported by {self.provider_name} provider"
-        )
+        raise NotImplementedError(f"Token counting not supported by {self.provider_name} provider")
 
 
 # ============================================================================
 # Common Error Handling Utilities
 # ============================================================================
+
 
 def map_http_status_code(status_code: int) -> int:
     """

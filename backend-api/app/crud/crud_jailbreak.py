@@ -8,7 +8,7 @@ Provides database operations for jailbreak datasets and prompts including:
 - Listing and filtering operations
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -19,9 +19,9 @@ from app.db.models import JailbreakDataset, JailbreakPrompt
 def create_dataset(
     db: Session,
     name: str,
-    description: Optional[str] = None,
-    source_url: Optional[str] = None,
-    license: Optional[str] = None,
+    description: str | None = None,
+    source_url: str | None = None,
+    license: str | None = None,
 ) -> JailbreakDataset:
     """Create a new jailbreak dataset."""
     db_dataset = JailbreakDataset(
@@ -36,14 +36,12 @@ def create_dataset(
     return db_dataset
 
 
-def get_dataset_by_name(db: Session, name: str) -> Optional[JailbreakDataset]:
+def get_dataset_by_name(db: Session, name: str) -> JailbreakDataset | None:
     """Get a jailbreak dataset by name."""
     return db.query(JailbreakDataset).filter(JailbreakDataset.name == name).first()
 
 
-def get_datasets(
-    db: Session, skip: int = 0, limit: int = 100
-) -> List[JailbreakDataset]:
+def get_datasets(db: Session, skip: int = 0, limit: int = 100) -> list[JailbreakDataset]:
     """Get all jailbreak datasets with pagination."""
     return (
         db.query(JailbreakDataset)
@@ -58,12 +56,12 @@ def create_prompt(
     db: Session,
     dataset_id: int,
     prompt_text: str,
-    jailbreak_type: Optional[str] = None,
+    jailbreak_type: str | None = None,
     is_jailbreak: bool = True,
-    platform: Optional[str] = None,
-    source: Optional[str] = None,
-    community: Optional[str] = None,
-    source_metadata: Optional[Dict[str, Any]] = None,
+    platform: str | None = None,
+    source: str | None = None,
+    community: str | None = None,
+    source_metadata: dict[str, Any] | None = None,
 ) -> JailbreakPrompt:
     """Create a new jailbreak prompt."""
     db_prompt = JailbreakPrompt(
@@ -84,11 +82,11 @@ def create_prompt(
 
 def get_prompts(
     db: Session,
-    dataset_id: Optional[int] = None,
-    jailbreak_type: Optional[str] = None,
+    dataset_id: int | None = None,
+    jailbreak_type: str | None = None,
     skip: int = 0,
     limit: int = 100,
-) -> List[JailbreakPrompt]:
+) -> list[JailbreakPrompt]:
     """Get jailbreak prompts with optional filtering."""
     query = db.query(JailbreakPrompt)
 
@@ -98,17 +96,10 @@ def get_prompts(
     if jailbreak_type is not None:
         query = query.filter(JailbreakPrompt.jailbreak_type == jailbreak_type)
 
-    return (
-        query.order_by(desc(JailbreakPrompt.created_at))
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    return query.order_by(desc(JailbreakPrompt.created_at)).offset(skip).limit(limit).all()
 
 
-def bulk_insert_prompts(
-    db: Session, prompts_data: List[Dict[str, Any]]
-) -> List[JailbreakPrompt]:
+def bulk_insert_prompts(db: Session, prompts_data: list[dict[str, Any]]) -> list[JailbreakPrompt]:
     """Bulk insert jailbreak prompts for efficiency."""
     db_prompts = [JailbreakPrompt(**prompt_data) for prompt_data in prompts_data]
     db.add_all(db_prompts)

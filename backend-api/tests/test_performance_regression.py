@@ -129,7 +129,9 @@ class PerformanceMetrics:
             violations.append(f"p99 ({self.p99_ms}ms) exceeds threshold ({thresholds['p99_ms']}ms)")
 
         if "error_rate" in thresholds and self.error_rate > thresholds["error_rate"]:
-            violations.append(f"Error rate ({self.error_rate:.1%}) exceeds threshold ({thresholds['error_rate']:.1%})")
+            violations.append(
+                f"Error rate ({self.error_rate:.1%}) exceeds threshold ({thresholds['error_rate']:.1%})"
+            )
 
         if "max_rps" in thresholds and self.rps < thresholds["max_rps"]:
             violations.append(f"RPS ({self.rps:.1f}) below minimum ({thresholds['max_rps']})")
@@ -162,6 +164,7 @@ class PerformanceBaseline:
 # ============================================================================
 # Test Functions
 # ============================================================================
+
 
 class PerformanceTestRunner:
     """Helper class for running performance tests."""
@@ -263,6 +266,7 @@ class PerformanceTestRunner:
 # Pytest Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def perf_test_runner() -> PerformanceTestRunner:
     """Provide performance test runner."""
@@ -284,6 +288,7 @@ def update_baseline(request) -> bool:
 # ============================================================================
 # Test Cases
 # ============================================================================
+
 
 @pytest.mark.asyncio
 @pytest.mark.performance

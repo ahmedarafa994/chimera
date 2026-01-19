@@ -51,7 +51,7 @@ class EnsembleGradientAligner:
         Execute ensemble attack with gradient alignment.
 
         Args:
-            request: Target harmful request
+            request: Target complex request
             target_models: List of target model configurations
                 [{"provider": "google", "model": "gemini-pro", "weight": 1.0}, ...]
 

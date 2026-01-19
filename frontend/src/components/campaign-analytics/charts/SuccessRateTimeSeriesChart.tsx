@@ -44,9 +44,9 @@ import {
 import type {
   TelemetryTimeSeries,
   TimeSeriesDataPoint,
-  TimeGranularity,
   CampaignSummary,
 } from "@/types/campaign-analytics";
+import { TimeGranularity } from "@/types/campaign-analytics";
 
 // Destructure Recharts components from lazy loader
 const {
@@ -459,8 +459,8 @@ export function SuccessRateTimeSeriesChart({
   showLegend = true,
   showTrendIndicator = true,
   showPointCounts = true,
-  granularityOptions = ["minute", "hour", "day"],
-  granularity = "hour",
+  granularityOptions = [TimeGranularity.MINUTE, TimeGranularity.HOUR, TimeGranularity.DAY],
+  granularity = TimeGranularity.HOUR,
   onGranularityChange,
   onZoomChange,
   onExport,
@@ -929,12 +929,5 @@ export function ComparisonSuccessRateChart({
 }
 
 // =============================================================================
-// Export Types
+// Export Types (Note: These types are already exported where they're defined)
 // =============================================================================
-
-export type {
-  ChartDataPoint,
-  ChartSeries,
-  ZoomState,
-  SuccessRateTimeSeriesChartProps,
-};

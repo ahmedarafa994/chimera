@@ -10,15 +10,13 @@ Subtask 9.1: Create Backend Unit Tests
 """
 
 import asyncio
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from app.infrastructure.database.campaign_models import (
     Campaign,
-    CampaignResult,
     CampaignStatus,
     CampaignTelemetryEvent,
     ExecutionStatus,
@@ -30,18 +28,13 @@ from app.schemas.campaign_analytics import (
     CampaignStatusEnum,
     CampaignSummary,
     DistributionStats,
-    PercentileStats,
     PotencyBreakdown,
     ProviderBreakdown,
     TechniqueBreakdown,
     TelemetryTimeSeries,
     TimeGranularity,
 )
-from app.services.campaign_analytics_service import (
-    AnalyticsCache,
-    CampaignAnalyticsService,
-)
-
+from app.services.campaign_analytics_service import AnalyticsCache, CampaignAnalyticsService
 
 # =============================================================================
 # Test Fixtures
@@ -109,7 +102,9 @@ def sample_telemetry_events():
         event.potency_level = 5 + (i % 5)
         event.provider = "openai" if i % 3 != 0 else "anthropic"
         event.model = "gpt-4" if i % 3 != 0 else "claude-3"
-        event.status = ExecutionStatus.SUCCESS.value if i % 4 != 0 else ExecutionStatus.FAILURE.value
+        event.status = (
+            ExecutionStatus.SUCCESS.value if i % 4 != 0 else ExecutionStatus.FAILURE.value
+        )
         event.success_indicator = i % 4 != 0
         event.execution_time_ms = 500.0 + (i * 100)
         event.transformation_time_ms = 50.0 + (i * 10)
@@ -127,7 +122,7 @@ def sample_telemetry_events():
         event.error_message = None if i % 4 != 0 else "Test error"
         event.error_code = None if i % 4 != 0 else "ERR_TEST"
         event.applied_techniques = ["technique_1", "technique_2"]
-        event.metadata = {}
+        event.event_metadata = {}
         event.created_at = datetime(2024, 1, 1, 10, i, 0)
         events.append(event)
     return events
@@ -380,9 +375,7 @@ class TestCampaignAnalyticsServiceStatistics:
         assert result.attempts.failed == 3
 
     @pytest.mark.asyncio
-    async def test_calculate_statistics_empty_campaign(
-        self, analytics_service, mock_async_session
-    ):
+    async def test_calculate_statistics_empty_campaign(self, analytics_service, mock_async_session):
         """Test statistics calculation with no events (empty campaign)."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -513,8 +506,8 @@ class TestCampaignAnalyticsServiceComparison:
     async def test_compare_campaigns_two_campaigns(self, analytics_service, mock_async_session):
         """Test comparing two campaigns."""
         # Create mock summaries and statistics
-        with patch.object(analytics_service, 'get_campaign_summary') as mock_summary:
-            with patch.object(analytics_service, 'calculate_statistics') as mock_stats:
+        with patch.object(analytics_service, "get_campaign_summary") as mock_summary:
+            with patch.object(analytics_service, "calculate_statistics") as mock_stats:
                 # Mock campaign summaries
                 summary1 = MagicMock()
                 summary1.id = "campaign-001"
@@ -553,9 +546,7 @@ class TestCampaignAnalyticsServiceComparison:
 
                 mock_stats.side_effect = [stats1, stats2]
 
-                result = await analytics_service.compare_campaigns(
-                    ["campaign-001", "campaign-002"]
-                )
+                result = await analytics_service.compare_campaigns(["campaign-001", "campaign-002"])
 
                 assert result is not None
                 assert isinstance(result, CampaignComparison)
@@ -574,40 +565,30 @@ class TestCampaignAnalyticsServiceComparison:
 
         # Test with 5 campaigns
         with pytest.raises(ValueError, match="Compare requires 2-4 campaign IDs"):
-            await analytics_service.compare_campaigns([
-                "campaign-001", "campaign-002", "campaign-003",
-                "campaign-004", "campaign-005"
-            ])
+            await analytics_service.compare_campaigns(
+                ["campaign-001", "campaign-002", "campaign-003", "campaign-004", "campaign-005"]
+            )
 
     @pytest.mark.asyncio
     async def test_compare_campaigns_missing_campaign(self, analytics_service):
         """Test comparison when one campaign doesn't exist."""
-        with patch.object(analytics_service, 'get_campaign_summary') as mock_summary:
+        with patch.object(analytics_service, "get_campaign_summary") as mock_summary:
             # First campaign exists, second doesn't
             mock_summary.side_effect = [MagicMock(), None]
 
-            result = await analytics_service.compare_campaigns(
-                ["campaign-001", "nonexistent"]
-            )
+            result = await analytics_service.compare_campaigns(["campaign-001", "nonexistent"])
 
             assert result is None
 
     def test_normalize_comparison_metrics(self, analytics_service):
         """Test normalization of comparison metrics."""
-        from app.schemas.campaign_analytics import CampaignComparisonItem
 
         campaigns = [
             MagicMock(
-                campaign_id="c1",
-                success_rate=0.8,
-                latency_mean=1000.0,
-                avg_cost_per_attempt=0.5
+                campaign_id="c1", success_rate=0.8, latency_mean=1000.0, avg_cost_per_attempt=0.5
             ),
             MagicMock(
-                campaign_id="c2",
-                success_rate=0.4,
-                latency_mean=2000.0,
-                avg_cost_per_attempt=1.0
+                campaign_id="c2", success_rate=0.4, latency_mean=2000.0, avg_cost_per_attempt=1.0
             ),
         ]
 
@@ -637,9 +618,7 @@ class TestCampaignAnalyticsServiceBreakdowns:
     """Tests for breakdown methods in CampaignAnalyticsService."""
 
     @pytest.mark.asyncio
-    async def test_get_technique_breakdown(
-        self, analytics_service, mock_async_session
-    ):
+    async def test_get_technique_breakdown(self, analytics_service, mock_async_session):
         """Test technique breakdown retrieval."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -680,9 +659,7 @@ class TestCampaignAnalyticsServiceBreakdowns:
         assert result.worst_technique == "cognitive_hacking"
 
     @pytest.mark.asyncio
-    async def test_get_provider_breakdown(
-        self, analytics_service, mock_async_session
-    ):
+    async def test_get_provider_breakdown(self, analytics_service, mock_async_session):
         """Test provider breakdown retrieval."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -722,9 +699,7 @@ class TestCampaignAnalyticsServiceBreakdowns:
         assert result.best_provider == "openai"  # 80% vs 70% success rate
 
     @pytest.mark.asyncio
-    async def test_get_potency_breakdown(
-        self, analytics_service, mock_async_session
-    ):
+    async def test_get_potency_breakdown(self, analytics_service, mock_async_session):
         """Test potency breakdown retrieval."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -764,9 +739,7 @@ class TestCampaignAnalyticsServiceBreakdowns:
         assert result.best_potency_level == 9  # 90% vs 50% success rate
 
     @pytest.mark.asyncio
-    async def test_breakdown_nonexistent_campaign(
-        self, analytics_service, mock_async_session
-    ):
+    async def test_breakdown_nonexistent_campaign(self, analytics_service, mock_async_session):
         """Test breakdown returns None for non-existent campaign."""
         # Mock campaign not found
         mock_result = MagicMock()
@@ -820,9 +793,7 @@ class TestCampaignAnalyticsServiceTimeSeries:
         ]
 
         result = await analytics_service.get_time_series(
-            "test-campaign-001",
-            metric="success_rate",
-            granularity=TimeGranularity.HOUR
+            "test-campaign-001", metric="success_rate", granularity=TimeGranularity.HOUR
         )
 
         assert result is not None
@@ -934,7 +905,9 @@ class TestCampaignAnalyticsServiceSummary:
 
         # Mock count query
         mock_count_result = MagicMock()
-        mock_count_result.one.return_value = MagicMock(total=100, success_rate=0.75, avg_latency=1200.0)
+        mock_count_result.one.return_value = MagicMock(
+            total=100, success_rate=0.75, avg_latency=1200.0
+        )
 
         mock_async_session.execute.side_effect = [
             mock_campaign_result,
@@ -951,9 +924,7 @@ class TestCampaignAnalyticsServiceSummary:
         assert result.status == CampaignStatusEnum.COMPLETED
 
     @pytest.mark.asyncio
-    async def test_get_campaign_summary_nonexistent(
-        self, analytics_service, mock_async_session
-    ):
+    async def test_get_campaign_summary_nonexistent(self, analytics_service, mock_async_session):
         """Test getting summary for non-existent campaign."""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -1137,7 +1108,9 @@ class TestCampaignAnalyticsServiceEdgeCases:
         mock_results_result.scalar_one_or_none.return_value = None
 
         mock_count_result = MagicMock()
-        mock_count_result.one.return_value = MagicMock(total=100, success_rate=0.75, avg_latency=1200.0)
+        mock_count_result.one.return_value = MagicMock(
+            total=100, success_rate=0.75, avg_latency=1200.0
+        )
 
         mock_async_session.execute.side_effect = [
             mock_campaign_result,
@@ -1168,8 +1141,9 @@ class TestCampaignAnalyticsServiceFilters:
 
     def test_apply_campaign_filters_status(self, analytics_service):
         """Test applying status filter to campaign query."""
-        from app.schemas.campaign_analytics import CampaignFilterParams
         from sqlalchemy import select
+
+        from app.schemas.campaign_analytics import CampaignFilterParams
 
         stmt = select(Campaign)
         filters = CampaignFilterParams(
@@ -1183,8 +1157,9 @@ class TestCampaignAnalyticsServiceFilters:
 
     def test_apply_campaign_filters_provider(self, analytics_service):
         """Test applying provider filter to campaign query."""
-        from app.schemas.campaign_analytics import CampaignFilterParams
         from sqlalchemy import select
+
+        from app.schemas.campaign_analytics import CampaignFilterParams
 
         stmt = select(Campaign)
         filters = CampaignFilterParams(provider=["openai", "anthropic"])
@@ -1195,13 +1170,13 @@ class TestCampaignAnalyticsServiceFilters:
 
     def test_apply_campaign_filters_date_range(self, analytics_service):
         """Test applying date range filter to campaign query."""
-        from app.schemas.campaign_analytics import CampaignFilterParams
         from sqlalchemy import select
+
+        from app.schemas.campaign_analytics import CampaignFilterParams
 
         stmt = select(Campaign)
         filters = CampaignFilterParams(
-            start_date=datetime(2024, 1, 1),
-            end_date=datetime(2024, 12, 31)
+            start_date=datetime(2024, 1, 1), end_date=datetime(2024, 12, 31)
         )
 
         result = analytics_service._apply_campaign_filters(stmt, filters)
@@ -1210,8 +1185,9 @@ class TestCampaignAnalyticsServiceFilters:
 
     def test_apply_campaign_filters_search(self, analytics_service):
         """Test applying search filter to campaign query."""
-        from app.schemas.campaign_analytics import CampaignFilterParams
         from sqlalchemy import select
+
+        from app.schemas.campaign_analytics import CampaignFilterParams
 
         stmt = select(Campaign)
         filters = CampaignFilterParams(search="jailbreak")
@@ -1222,8 +1198,9 @@ class TestCampaignAnalyticsServiceFilters:
 
     def test_apply_telemetry_filters_status(self, analytics_service):
         """Test applying status filter to telemetry query."""
-        from app.schemas.campaign_analytics import ExecutionStatusEnum, TelemetryFilterParams
         from sqlalchemy import select
+
+        from app.schemas.campaign_analytics import ExecutionStatusEnum, TelemetryFilterParams
 
         stmt = select(CampaignTelemetryEvent)
         filters = TelemetryFilterParams(
@@ -1236,8 +1213,9 @@ class TestCampaignAnalyticsServiceFilters:
 
     def test_apply_telemetry_filters_success_only(self, analytics_service):
         """Test applying success_only filter to telemetry query."""
-        from app.schemas.campaign_analytics import TelemetryFilterParams
         from sqlalchemy import select
+
+        from app.schemas.campaign_analytics import TelemetryFilterParams
 
         stmt = select(CampaignTelemetryEvent)
         filters = TelemetryFilterParams(success_only=True)
@@ -1248,8 +1226,9 @@ class TestCampaignAnalyticsServiceFilters:
 
     def test_apply_telemetry_filters_potency_range(self, analytics_service):
         """Test applying potency range filter to telemetry query."""
-        from app.schemas.campaign_analytics import TelemetryFilterParams
         from sqlalchemy import select
+
+        from app.schemas.campaign_analytics import TelemetryFilterParams
 
         stmt = select(CampaignTelemetryEvent)
         filters = TelemetryFilterParams(min_potency=5, max_potency=9)

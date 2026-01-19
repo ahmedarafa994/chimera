@@ -383,24 +383,24 @@ async def startup():
 
 ```bash
 # Use default provider
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Hello, world!"}'
 
 # Override provider via header
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -H "X-Provider: openai" \
   -H "X-Model: gpt-4" \
   -d '{"prompt": "Hello, world!"}'
 
 # Override via query parameter
-curl -X POST "http://localhost:8000/api/v1/generate?provider=anthropic&model=claude-3-opus" \
+curl -X POST "http://localhost:8001/api/v1/generate?provider=anthropic&model=claude-3-opus" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Hello, world!"}'
 
 # Use named failover chain
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -H "X-Failover-Chain: premium" \
   -d '{"prompt": "Hello, world!"}'
@@ -940,14 +940,14 @@ failover_chains:
 
 **Via Header:**
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "X-Failover-Chain: premium" \
   -d '{"prompt": "Generate high-quality text"}'
 ```
 
 **Via Query Parameter:**
 ```bash
-curl -X POST "http://localhost:8000/api/v1/generate?failover_chain=cost_optimized" \
+curl -X POST "http://localhost:8001/api/v1/generate?failover_chain=cost_optimized" \
   -d '{"prompt": "Generate text efficiently"}'
 ```
 
@@ -1171,7 +1171,7 @@ print(f"Estimated cost: ${estimated_cost:.6f}")
 
 ```bash
 # Check provider status
-curl http://localhost:8000/api/v1/health/providers
+curl http://localhost:8001/api/v1/health/providers
 ```
 
 #### Rate Limit Exceeded
@@ -1226,13 +1226,13 @@ logging.getLogger("app.middleware").setLevel(logging.DEBUG)
 
 ```bash
 # System health
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 
 # Provider health
-curl http://localhost:8000/api/v1/health/providers
+curl http://localhost:8001/api/v1/health/providers
 
 # Config status
-curl http://localhost:8000/api/v1/config/status
+curl http://localhost:8001/api/v1/config/status
 ```
 
 ---
@@ -1310,13 +1310,13 @@ Use the cost tracking API:
 
 ```bash
 # Get cost summary
-curl http://localhost:8000/api/v1/costs/summary
+curl http://localhost:8001/api/v1/costs/summary
 
 # Get costs by provider
-curl http://localhost:8000/api/v1/costs/by-provider
+curl http://localhost:8001/api/v1/costs/by-provider
 
 # Get daily costs
-curl http://localhost:8000/api/v1/costs/daily
+curl http://localhost:8001/api/v1/costs/daily
 ```
 
 ### Q: What happens if all providers fail?

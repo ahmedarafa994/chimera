@@ -21,12 +21,7 @@ from enum import Enum
 from typing import Any
 
 from app.core.service_registry import get_ai_config_manager
-from app.engines import (
-    dataset_loader,
-    obfuscator,
-    psychological_framer,
-    transformer_engine,
-)
+from app.engines import dataset_loader, obfuscator, psychological_framer, transformer_engine
 
 logger = logging.getLogger(__name__)
 
@@ -94,37 +89,27 @@ class MetamorphService:
     # Provider-specific transformation strategies
     PROVIDER_TRANSFORMATION_STRATEGIES: dict[str, dict[str, Any]] = {
         "openai": {
-            "preferred_suites": [
-                "subtle_persuasion", "academic_research", "roleplay_bypass"
-            ],
+            "preferred_suites": ["subtle_persuasion", "academic_research", "roleplay_bypass"],
             "output_format": "conversational",
             "max_obfuscation": 7,
         },
         "anthropic": {
-            "preferred_suites": [
-                "subtle_persuasion", "cognitive_hacking", "academic_research"
-            ],
+            "preferred_suites": ["subtle_persuasion", "cognitive_hacking", "academic_research"],
             "output_format": "structured",
             "max_obfuscation": 6,
         },
         "google": {
-            "preferred_suites": [
-                "deep_inception", "quantum_exploit", "metamorphic_attack"
-            ],
+            "preferred_suites": ["deep_inception", "quantum_exploit", "metamorphic_attack"],
             "output_format": "conversational",
             "max_obfuscation": 8,
         },
         "gemini": {
-            "preferred_suites": [
-                "deep_inception", "quantum_exploit", "metamorphic_attack"
-            ],
+            "preferred_suites": ["deep_inception", "quantum_exploit", "metamorphic_attack"],
             "output_format": "conversational",
             "max_obfuscation": 8,
         },
         "deepseek": {
-            "preferred_suites": [
-                "code_chameleon", "cipher", "payload_splitting"
-            ],
+            "preferred_suites": ["code_chameleon", "cipher", "payload_splitting"],
             "output_format": "code_block",
             "max_obfuscation": 9,
         },
@@ -258,9 +243,7 @@ class MetamorphService:
             "obfuscators_count": len(suite.get("obfuscators", [])),
         }
 
-    def get_provider_transformation_strategy(
-        self, provider: str | None = None
-    ) -> dict[str, Any]:
+    def get_provider_transformation_strategy(self, provider: str | None = None) -> dict[str, Any]:
         """
         Get transformation strategy for a specific provider.
 
@@ -286,9 +269,7 @@ class MetamorphService:
             try:
                 provider_config = config_manager.get_provider(provider)
                 if provider_config and provider_config.metadata:
-                    custom_strategy = provider_config.metadata.get(
-                        "transformation_strategy"
-                    )
+                    custom_strategy = provider_config.metadata.get("transformation_strategy")
                     if custom_strategy:
                         return custom_strategy
             except Exception as e:
@@ -296,13 +277,10 @@ class MetamorphService:
 
         # Fall back to default strategies
         return self.PROVIDER_TRANSFORMATION_STRATEGIES.get(
-            provider.lower(),
-            self.PROVIDER_TRANSFORMATION_STRATEGIES["openai"]
+            provider.lower(), self.PROVIDER_TRANSFORMATION_STRATEGIES["openai"]
         )
 
-    def select_optimal_provider_for_transformation(
-        self, suite_name: str
-    ) -> str | None:
+    def select_optimal_provider_for_transformation(self, suite_name: str) -> str | None:
         """
         Select the best provider for a specific transformation suite.
 
@@ -321,9 +299,7 @@ class MetamorphService:
 
             # Find providers that prefer this suite
             for provider in config.get_enabled_providers():
-                strategy = self.get_provider_transformation_strategy(
-                    provider.provider_id
-                )
+                strategy = self.get_provider_transformation_strategy(provider.provider_id)
                 if suite_name in strategy.get("preferred_suites", []):
                     return provider.provider_id
 
@@ -335,10 +311,7 @@ class MetamorphService:
             return None
 
     def estimate_transformation_cost(
-        self,
-        prompt: str,
-        provider: str | None = None,
-        suite_name: str = "subtle_persuasion"
+        self, prompt: str, provider: str | None = None, suite_name: str = "subtle_persuasion"
     ) -> float | None:
         """
         Estimate cost for a transformation operation.
@@ -383,9 +356,7 @@ class MetamorphService:
             logger.error(f"Error estimating cost: {e}")
             return None
 
-    def format_output_for_provider(
-        self, transformed: str, provider: str | None = None
-    ) -> str:
+    def format_output_for_provider(self, transformed: str, provider: str | None = None) -> str:
         """
         Format transformed output according to provider preferences.
 
@@ -445,21 +416,15 @@ class MetamorphService:
 
         # Cost-aware provider selection
         if cost_aware and not provider:
-            optimal_provider = self.select_optimal_provider_for_transformation(
-                suite_name
-            )
+            optimal_provider = self.select_optimal_provider_for_transformation(suite_name)
             if optimal_provider:
                 provider = optimal_provider
                 strategy = self.get_provider_transformation_strategy(provider)
 
         # Estimate cost before transformation
-        estimated_cost = self.estimate_transformation_cost(
-            prompt, provider, suite_name
-        )
+        estimated_cost = self.estimate_transformation_cost(prompt, provider, suite_name)
         if estimated_cost:
-            logger.debug(
-                f"Estimated transformation cost: ${estimated_cost:.6f}"
-            )
+            logger.debug(f"Estimated transformation cost: ${estimated_cost:.6f}")
 
         if suite_name not in self.technique_suites:
             # Try provider-preferred suites
@@ -477,12 +442,9 @@ class MetamorphService:
                 if not self.technique_suites:
                     logger.error("No technique suites loaded!")
                     return TransformationResult(
-                        prompt, prompt, [], 0,
-                        {"error": "No suites loaded"}
+                        prompt, prompt, [], 0, {"error": "No suites loaded"}
                     )
-                logger.warning(
-                    f"Unknown suite '{suite_name}', using first available"
-                )
+                logger.warning(f"Unknown suite '{suite_name}', using first available")
                 suite_name = next(iter(self.technique_suites.keys()))
 
         suite = self.technique_suites[suite_name]
@@ -532,9 +494,7 @@ class MetamorphService:
                     logger.warning(f"Obfuscator {obfuscator_name} failed: {e}")
 
         # Format output for provider
-        formatted_output = self.format_output_for_provider(
-            transformed, provider
-        )
+        formatted_output = self.format_output_for_provider(transformed, provider)
 
         # Track cost
         if estimated_cost:

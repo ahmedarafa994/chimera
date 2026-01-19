@@ -22,7 +22,7 @@ import httpx
 
 async def test_rest_endpoints():
     """Test REST API endpoints"""
-    print("\n🧪 Testing REST API Endpoints\n" + "="*50)
+    print("\n🧪 Testing REST API Endpoints\n" + "=" * 50)
 
     base_url = "http://localhost:8001/api/v1"
 
@@ -73,7 +73,9 @@ async def test_rest_endpoints():
             response = await client.get(f"{base_url}/selection/current")
             if response.status_code == 200:
                 selection = response.json()
-                print(f"   ✅ Current selection: {selection['provider_id']}/{selection['model_id']}")
+                print(
+                    f"   ✅ Current selection: {selection['provider_id']}/{selection['model_id']}"
+                )
                 print(f"      Scope: {selection['scope']}")
             else:
                 print(f"   ⚠️  Status {response.status_code}: {response.text[:100]}")
@@ -86,7 +88,7 @@ async def test_rest_endpoints():
             response = await client.get(f"{base_url}/providers/stats")
             if response.status_code == 200:
                 stats = response.json()
-                print(f"   ✅ Registry stats:")
+                print("   ✅ Registry stats:")
                 print(f"      Total providers: {stats['total_providers']}")
                 print(f"      Total models: {stats['total_models']}")
                 print(f"      Enabled providers: {stats['enabled_providers']}")
@@ -98,7 +100,7 @@ async def test_rest_endpoints():
 
 async def test_websocket():
     """Test WebSocket endpoint"""
-    print("\n\n🧪 Testing WebSocket Endpoint\n" + "="*50)
+    print("\n\n🧪 Testing WebSocket Endpoint\n" + "=" * 50)
 
     try:
         import websockets
@@ -106,8 +108,7 @@ async def test_websocket():
         print("\n📡 Connecting to ws://localhost:8001/ws/model-selection?user_id=test")
 
         async with websockets.connect(
-            "ws://localhost:8001/ws/model-selection?user_id=test",
-            timeout=5
+            "ws://localhost:8001/ws/model-selection?user_id=test", timeout=5
         ) as websocket:
             print("   ✅ Connected successfully")
 
@@ -116,7 +117,7 @@ async def test_websocket():
             message = await asyncio.wait_for(websocket.recv(), timeout=3)
             data = json.loads(message)
             print(f"   ✅ Received: {data['type']}")
-            if data['type'] == 'SELECTION_CHANGED':
+            if data["type"] == "SELECTION_CHANGED":
                 print(f"      Provider: {data['data']['provider']}")
                 print(f"      Model: {data['data']['model']}")
 
@@ -134,7 +135,7 @@ async def test_websocket():
     except ImportError:
         print("   ⚠️  websockets library not installed")
         print("      Run: pip install websockets")
-    except asyncio.TimeoutError:
+    except TimeoutError:
         print("   ⚠️  Timeout waiting for WebSocket message")
     except Exception as e:
         print(f"   ❌ WebSocket test failed: {e}")
@@ -142,9 +143,9 @@ async def test_websocket():
 
 async def main():
     """Run all tests"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🚀 Unified Provider System Integration Tests")
-    print("="*60)
+    print("=" * 60)
 
     # Test REST endpoints
     await test_rest_endpoints()
@@ -152,9 +153,9 @@ async def main():
     # Test WebSocket
     await test_websocket()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ Test suite complete!")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 if __name__ == "__main__":
@@ -165,4 +166,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\n❌ Test suite failed: {e}")
         import traceback
+
         traceback.print_exc()

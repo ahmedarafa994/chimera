@@ -209,9 +209,7 @@ class TargetLLM(LLM):
 
                 api_args["messages"] = anthropic_messages  # Add formatted messages
 
-                completion = self.client.messages.create(
-                    **api_args  # Pass prepared args
-                )
+                completion = self.client.messages.create(**api_args)  # Pass prepared args
                 if completion.content:
                     response_content = completion.content[0].text
                 completion_details = completion  # Keep for potential usage info

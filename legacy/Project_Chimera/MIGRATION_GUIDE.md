@@ -195,7 +195,7 @@ CHIMERA_HOST=0.0.0.0
 CHIMERA_PORT=5000
 CHIMERA_DATABASE_URL=sqlite:///chimera_logs.db
 CHIMERA_DEFAULT_PROVIDER=openai
-CHIMERA_CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+CHIMERA_CORS_ORIGINS=http://localhost:3001,http://localhost:8080
 ```
 
 ### Configuration File (Optional)
@@ -210,7 +210,7 @@ security:
   rate_limit_enabled: true
   rate_limit_per_minute: 60
   cors_origins:
-    - "http://localhost:3000"
+    - "http://localhost:3001"
     - "http://localhost:8080"
 
 database:

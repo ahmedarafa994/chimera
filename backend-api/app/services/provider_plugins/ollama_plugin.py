@@ -52,10 +52,7 @@ class OllamaPlugin(BaseProviderPlugin):
 
     @property
     def base_url(self) -> str:
-        return os.environ.get(
-            "OLLAMA_BASE_URL",
-            "http://localhost:11434"
-        )
+        return os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 
     @property
     def capabilities(self) -> list[ProviderCapability]:
@@ -226,9 +223,7 @@ class OllamaPlugin(BaseProviderPlugin):
             logger.warning(f"Failed to fetch Ollama models: {e}")
             return self._get_static_models()
 
-    async def _fetch_models_from_api(
-        self, api_key: str | None = None
-    ) -> list[ModelInfo]:
+    async def _fetch_models_from_api(self, api_key: str | None = None) -> list[ModelInfo]:
         """Fetch models from local Ollama server."""
         headers: dict[str, str] = {"Content-Type": "application/json"}
         key = self._get_api_key(api_key)
@@ -255,31 +250,35 @@ class OllamaPlugin(BaseProviderPlugin):
             if base_name in static_models:
                 model_info = static_models[base_name]
                 # Update model_id to actual name with tag
-                models.append(ModelInfo(
-                    model_id=model_name,
-                    provider_id="ollama",
-                    display_name=model_info.display_name,
-                    context_window=model_info.context_window,
-                    max_output_tokens=model_info.max_output_tokens,
-                    supports_streaming=model_info.supports_streaming,
-                    supports_vision=model_info.supports_vision,
-                    supports_reasoning=model_info.supports_reasoning,
-                    capabilities=model_info.capabilities,
-                ))
+                models.append(
+                    ModelInfo(
+                        model_id=model_name,
+                        provider_id="ollama",
+                        display_name=model_info.display_name,
+                        context_window=model_info.context_window,
+                        max_output_tokens=model_info.max_output_tokens,
+                        supports_streaming=model_info.supports_streaming,
+                        supports_vision=model_info.supports_vision,
+                        supports_reasoning=model_info.supports_reasoning,
+                        capabilities=model_info.capabilities,
+                    )
+                )
             elif model_name in static_models:
                 models.append(static_models[model_name])
             else:
                 # Create basic info for unknown models
                 size_gb = model.get("size", 0) / (1024**3)
-                models.append(ModelInfo(
-                    model_id=model_name,
-                    provider_id="ollama",
-                    display_name=f"{model_name} ({size_gb:.1f}GB)",
-                    context_window=4096,
-                    max_output_tokens=2048,
-                    supports_streaming=True,
-                    capabilities=["chat"],
-                ))
+                models.append(
+                    ModelInfo(
+                        model_id=model_name,
+                        provider_id="ollama",
+                        display_name=f"{model_name} ({size_gb:.1f}GB)",
+                        context_window=4096,
+                        max_output_tokens=2048,
+                        supports_streaming=True,
+                        capabilities=["chat"],
+                    )
+                )
 
         return models if models else self._get_static_models()
 
@@ -314,10 +313,7 @@ class OllamaPlugin(BaseProviderPlugin):
         # Build messages for chat format
         messages = []
         if request.system_instruction:
-            messages.append({
-                "role": "system",
-                "content": request.system_instruction
-            })
+            messages.append({"role": "system", "content": request.system_instruction})
 
         if request.messages:
             messages.extend(request.messages)
@@ -372,10 +368,7 @@ class OllamaPlugin(BaseProviderPlugin):
                 usage = {
                     "prompt_tokens": data.get("prompt_eval_count", 0),
                     "completion_tokens": data.get("eval_count", 0),
-                    "total_tokens": (
-                        data.get("prompt_eval_count", 0) +
-                        data.get("eval_count", 0)
-                    ),
+                    "total_tokens": (data.get("prompt_eval_count", 0) + data.get("eval_count", 0)),
                 }
 
             return GenerationResponse(
@@ -402,10 +395,7 @@ class OllamaPlugin(BaseProviderPlugin):
         # Build messages
         messages = []
         if request.system_instruction:
-            messages.append({
-                "role": "system",
-                "content": request.system_instruction
-            })
+            messages.append({"role": "system", "content": request.system_instruction})
 
         if request.messages:
             messages.extend(request.messages)
@@ -441,38 +431,41 @@ class OllamaPlugin(BaseProviderPlugin):
             headers["Authorization"] = f"Bearer {key}"
 
         try:
-            async with httpx.AsyncClient(timeout=300.0) as client:
-                async with client.stream(
+            async with (
+                httpx.AsyncClient(timeout=300.0) as client,
+                client.stream(
                     "POST",
                     f"{self.base_url}/api/chat",
                     headers=headers,
                     json=payload,
-                ) as response:
-                    response.raise_for_status()
+                ) as response,
+            ):
+                response.raise_for_status()
 
-                    async for line in response.aiter_lines():
-                        if not line:
-                            continue
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
 
-                        try:
-                            import json
-                            data = json.loads(line)
+                    try:
+                        import json
 
-                            message = data.get("message", {})
-                            content = message.get("content", "")
+                        data = json.loads(line)
 
-                            if content:
-                                yield StreamChunk(
-                                    text=content,
-                                    is_final=False,
-                                )
+                        message = data.get("message", {})
+                        content = message.get("content", "")
 
-                            if data.get("done"):
-                                yield StreamChunk(text="", is_final=True)
-                                break
-                        except Exception as e:
-                            logger.warning(f"Parse error: {e}")
-                            continue
+                        if content:
+                            yield StreamChunk(
+                                text=content,
+                                is_final=False,
+                            )
+
+                        if data.get("done"):
+                            yield StreamChunk(text="", is_final=True)
+                            break
+                    except Exception as e:
+                        logger.warning(f"Parse error: {e}")
+                        continue
         except Exception as e:
             logger.error(f"Ollama streaming error: {e}")
             raise

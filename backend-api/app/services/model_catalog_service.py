@@ -10,12 +10,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-from app.services.provider_plugins import (
-    ModelInfo,
-    ProviderInfo,
-    get_all_plugins,
-    get_plugin,
-)
+from app.services.provider_plugins import ModelInfo, ProviderInfo, get_all_plugins, get_plugin
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +45,7 @@ class ModelCatalogCache:
 
             return self._cache[provider]
 
-    async def set(
-        self, provider: str, models: list[ModelInfo]
-    ) -> None:
+    async def set(self, provider: str, models: list[ModelInfo]) -> None:
         """Set cached models for a provider."""
         async with self._lock:
             self._cache[provider] = models
@@ -112,9 +105,7 @@ class ModelCatalogService:
         self._discovery_lock = asyncio.Lock()
         self._last_full_refresh: datetime | None = None
 
-    async def discover_models(
-        self, provider: str, force_refresh: bool = False
-    ) -> list[ModelInfo]:
+    async def discover_models(self, provider: str, force_refresh: bool = False) -> list[ModelInfo]:
         """
         Discover models for a specific provider.
 
@@ -145,21 +136,15 @@ class ModelCatalogService:
             # Cache the results
             await self._cache.set(provider, models)
 
-            logger.info(
-                f"Discovered {len(models)} models for {provider}"
-            )
+            logger.info(f"Discovered {len(models)} models for {provider}")
             return models
         except Exception as e:
-            logger.error(
-                f"Error discovering models for {provider}: {e}"
-            )
+            logger.error(f"Error discovering models for {provider}: {e}")
             # Return cached data if available, even if expired
             cached = await self._cache.get(provider)
             return cached if cached else []
 
-    async def refresh_catalog(
-        self, provider: str | None = None
-    ) -> dict[str, list[ModelInfo]]:
+    async def refresh_catalog(self, provider: str | None = None) -> dict[str, list[ModelInfo]]:
         """
         Force refresh of model catalog.
 
@@ -174,18 +159,14 @@ class ModelCatalogService:
             if provider:
                 # Refresh single provider
                 await self._cache.invalidate(provider)
-                models = await self.discover_models(
-                    provider, force_refresh=True
-                )
+                models = await self.discover_models(provider, force_refresh=True)
                 return {provider: models}
             else:
                 # Refresh all providers
                 await self._cache.invalidate()
                 return await self._discover_all_providers(force_refresh=True)
 
-    async def get_available_models(
-        self, provider: str
-    ) -> list[ModelInfo]:
+    async def get_available_models(self, provider: str) -> list[ModelInfo]:
         """
         Get available models for a provider.
 
@@ -199,9 +180,7 @@ class ModelCatalogService:
         """
         return await self.discover_models(provider, force_refresh=False)
 
-    async def get_all_providers_with_models(
-        self
-    ) -> dict[str, list[ModelInfo]]:
+    async def get_all_providers_with_models(self) -> dict[str, list[ModelInfo]]:
         """
         Get all providers with their available models.
 
@@ -229,31 +208,21 @@ class ModelCatalogService:
             return {}
 
         # Discover models concurrently with timeout
-        async def discover_with_timeout(
-            provider_type: str
-        ) -> tuple[str, list[ModelInfo]]:
+        async def discover_with_timeout(provider_type: str) -> tuple[str, list[ModelInfo]]:
             try:
                 models = await asyncio.wait_for(
-                    self.discover_models(provider_type, force_refresh),
-                    timeout=30.0
+                    self.discover_models(provider_type, force_refresh), timeout=30.0
                 )
                 return (provider_type, models)
-            except asyncio.TimeoutError:
-                logger.warning(
-                    f"Timeout discovering models for {provider_type}"
-                )
+            except TimeoutError:
+                logger.warning(f"Timeout discovering models for {provider_type}")
                 return (provider_type, [])
             except Exception as e:
-                logger.error(
-                    f"Error discovering {provider_type}: {e}"
-                )
+                logger.error(f"Error discovering {provider_type}: {e}")
                 return (provider_type, [])
 
         # Create tasks for all providers
-        tasks = [
-            discover_with_timeout(plugin.provider_type)
-            for plugin in plugins
-        ]
+        tasks = [discover_with_timeout(plugin.provider_type) for plugin in plugins]
 
         # Run all discoveries concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -268,9 +237,7 @@ class ModelCatalogService:
         self._last_full_refresh = datetime.utcnow()
         return catalog
 
-    async def get_provider_info(
-        self, provider: str
-    ) -> ProviderInfo | None:
+    async def get_provider_info(self, provider: str) -> ProviderInfo | None:
         """
         Get detailed information about a provider.
 
@@ -340,9 +307,7 @@ class ModelCatalogService:
             for model in models:
                 # Apply filters
                 if query:
-                    search_text = (
-                        f"{model.model_id} {model.display_name}".lower()
-                    )
+                    search_text = f"{model.model_id} {model.display_name}".lower()
                     if query.lower() not in search_text:
                         continue
 
@@ -401,8 +366,7 @@ class ModelCatalogService:
         """Get statistics about the model cache."""
         return {
             "last_full_refresh": (
-                self._last_full_refresh.isoformat()
-                if self._last_full_refresh else None
+                self._last_full_refresh.isoformat() if self._last_full_refresh else None
             ),
             "cache_ttl_seconds": self._cache._ttl.total_seconds(),
         }
@@ -434,8 +398,7 @@ async def initialize_model_catalog() -> None:
         catalog = await service.get_all_providers_with_models()
         total_models = sum(len(models) for models in catalog.values())
         logger.info(
-            f"Model catalog initialized: {len(catalog)} providers, "
-            f"{total_models} total models"
+            f"Model catalog initialized: {len(catalog)} providers, " f"{total_models} total models"
         )
     except Exception as e:
         logger.error(f"Error initializing model catalog: {e}")

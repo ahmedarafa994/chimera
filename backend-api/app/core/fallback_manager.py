@@ -116,10 +116,7 @@ class ProviderFailureRecord:
             return False
 
         window = timedelta(seconds=skip_window_seconds)
-        if datetime.utcnow() - self.last_failure_time > window:
-            return False
-
-        return True
+        return not datetime.utcnow() - self.last_failure_time > window
 
 
 @dataclass
@@ -129,9 +126,7 @@ class FallbackStats:
     total_fallbacks: int = 0
     successful_fallbacks: int = 0
     failed_fallbacks: int = 0
-    provider_failures: dict[str, ProviderFailureRecord] = field(
-        default_factory=dict
-    )
+    provider_failures: dict[str, ProviderFailureRecord] = field(default_factory=dict)
     fallback_reasons: dict[str, int] = field(default_factory=dict)
     avg_attempts_per_request: float = 0.0
     total_requests: int = 0
@@ -298,14 +293,11 @@ class FallbackManager:
                 provider_config = config_manager.get_provider(current_provider)
                 if provider_config:
                     default_model = provider_config.get_default_model()
-                    current_model = (
-                        default_model.model_id if default_model else ""
-                    )
+                    current_model = default_model.model_id if default_model else ""
 
             try:
                 logger.info(
-                    f"Attempt {attempt}/{len(chain)}: "
-                    f"Trying provider '{current_provider}'"
+                    f"Attempt {attempt}/{len(chain)}: " f"Trying provider '{current_provider}'"
                 )
 
                 # Execute the operation
@@ -493,14 +485,14 @@ class FallbackManager:
             provider = config.get_provider(provider_id)
             if provider:
                 # Start with the provider itself, then its chain
-                chain = [provider_id] + list(provider.failover_chain)
+                chain = [provider_id, *list(provider.failover_chain)]
                 return chain
 
         # Use default provider's chain
         default_provider_id = config.global_config.default_provider
         default_provider = config.get_provider(default_provider_id)
         if default_provider:
-            chain = [default_provider_id] + list(default_provider.failover_chain)
+            chain = [default_provider_id, *list(default_provider.failover_chain)]
             return chain
 
         # Last resort: all enabled providers by priority
@@ -655,9 +647,7 @@ class FallbackManager:
             "failure_rate": record.failure_rate,
             "should_skip": should_skip,
             "last_failure": (
-                record.last_failure_time.isoformat()
-                if record.last_failure_time
-                else None
+                record.last_failure_time.isoformat() if record.last_failure_time else None
             ),
             "last_error": record.last_error,
         }

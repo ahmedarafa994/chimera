@@ -47,6 +47,7 @@ def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
 """
 
+
 def patch_file(filepath):
     if not os.path.exists(filepath):
         print(f"Skipping missing file: {filepath}")
@@ -78,8 +79,8 @@ def patch_file(filepath):
 
     # 4. Replace random.sample -> secrets.SystemRandom().sample
     if "random.sample" in content:
-        if "import secrets" not in content: # Should be there from helper, but just in case
-             content = "import secrets\n" + content
+        if "import secrets" not in content:  # Should be there from helper, but just in case
+            content = "import secrets\n" + content
         content = content.replace("random.sample", "secrets.SystemRandom().sample")
 
     # 5. Replace random.shuffle -> secrets.SystemRandom().shuffle
@@ -92,6 +93,7 @@ def patch_file(filepath):
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
+
 
 def annotate_file(filepath):
     if not os.path.exists(filepath):
@@ -113,6 +115,7 @@ def annotate_file(filepath):
     with open(filepath, "w", encoding="utf-8") as f:
         f.writelines(new_lines)
 
+
 def main():
     print("Starting S311 remediation...")
 
@@ -123,6 +126,7 @@ def main():
         annotate_file(os.path.abspath(f))
 
     print("Done.")
+
 
 if __name__ == "__main__":
     main()

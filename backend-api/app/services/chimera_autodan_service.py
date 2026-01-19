@@ -5,9 +5,7 @@ Backend service exposing the unified Chimera+AutoDAN integration
 via FastAPI endpoints for red teaming operations.
 """
 
-import asyncio
 import logging
-from typing import Any, Optional
 from dataclasses import dataclass, field
 
 from fastapi import HTTPException
@@ -18,6 +16,7 @@ logger = logging.getLogger("chimera.chimera_autodan_service")
 @dataclass
 class ChimeraAutoDanRequest:
     """Request model for Chimera+AutoDAN operations."""
+
     objective: str
     candidate_count: int = 5
     max_iterations: int = 3
@@ -27,15 +26,16 @@ class ChimeraAutoDanRequest:
     generations: int = 5
     population_size: int = 10
     mutation_rate: float = 0.3
-    model_name: Optional[str] = None
-    provider: Optional[str] = None
+    model_name: str | None = None
+    provider: str | None = None
 
 
 @dataclass
 class ChimeraAutoDanResponse:
     """Response model for Chimera+AutoDAN operations."""
+
     candidates: list[dict] = field(default_factory=list)
-    best_candidate: Optional[dict] = None
+    best_candidate: dict | None = None
     total_evaluated: int = 0
     execution_time_ms: float = 0.0
     config_used: dict = field(default_factory=dict)
@@ -44,16 +44,18 @@ class ChimeraAutoDanResponse:
 @dataclass
 class CampaignRequest:
     """Request model for running a full campaign."""
+
     objective: str
     phases: int = 3
     candidates_per_phase: int = 5
-    model_name: Optional[str] = None
-    provider: Optional[str] = None
+    model_name: str | None = None
+    provider: str | None = None
 
 
 @dataclass
 class CampaignResponse:
     """Response model for campaign results."""
+
     phases: list[dict] = field(default_factory=list)
     best_candidates: list[dict] = field(default_factory=list)
     total_candidates_evaluated: int = 0
@@ -83,11 +85,7 @@ class ChimeraAutoDanService:
         self._unified_engine = None
         self._initialized = False
 
-    async def initialize(
-        self,
-        model_name: Optional[str] = None,
-        provider: Optional[str] = None
-    ) -> None:
+    async def initialize(self, model_name: str | None = None, provider: str | None = None) -> None:
         """
         Initialize the service with LLM configuration.
 
@@ -109,17 +107,13 @@ class ChimeraAutoDanService:
 
         if self._unified_engine is None:
             default_config = ChimeraAutoDanConfig(
-                model_name=self._default_model,
-                provider=self._default_provider
+                model_name=self._default_model, provider=self._default_provider
             )
             self._unified_engine = ChimeraAutoDAN(default_config)
 
         return self._unified_engine
 
-    async def generate_optimized(
-        self,
-        request: ChimeraAutoDanRequest
-    ) -> ChimeraAutoDanResponse:
+    async def generate_optimized(self, request: ChimeraAutoDanRequest) -> ChimeraAutoDanResponse:
         """
         Generate optimized adversarial prompts using Chimera+AutoDAN.
 
@@ -130,6 +124,7 @@ class ChimeraAutoDanService:
             Response with generated candidates and metrics
         """
         import time
+
         start_time = time.time()
 
         try:
@@ -144,7 +139,7 @@ class ChimeraAutoDanService:
                 population_size=request.population_size,
                 mutation_rate=request.mutation_rate,
                 model_name=request.model_name or self._default_model,
-                provider=request.provider or self._default_provider
+                provider=request.provider or self._default_provider,
             )
 
             # Get engine and generate
@@ -152,7 +147,7 @@ class ChimeraAutoDanService:
             candidates = await engine.generate_optimized(
                 objective=request.objective,
                 candidate_count=request.candidate_count,
-                max_iterations=request.max_iterations
+                max_iterations=request.max_iterations,
             )
 
             # Convert to response format
@@ -160,7 +155,7 @@ class ChimeraAutoDanService:
                 {
                     "prompt_text": c.prompt_text,
                     "metadata": c.metadata,
-                    "fitness_score": c.metadata.get("fitness_score", 0.0)
+                    "fitness_score": c.metadata.get("fitness_score", 0.0),
                 }
                 for c in candidates
             ]
@@ -176,27 +171,20 @@ class ChimeraAutoDanService:
                     "enable_personas": config.enable_personas,
                     "enable_narrative_contexts": config.enable_narrative_contexts,
                     "enable_genetic_optimization": config.enable_genetic_optimization,
-                    "generations": config.generations
-                }
+                    "generations": config.generations,
+                },
             )
 
         except ImportError as e:
             logger.error(f"Import error in generate_optimized: {e}")
             raise HTTPException(
-                status_code=500,
-                detail=f"Chimera+AutoDAN module not available: {e}"
+                status_code=500, detail=f"Chimera+AutoDAN module not available: {e}"
             )
         except Exception as e:
             logger.error(f"Error in generate_optimized: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Generation failed: {str(e)}"
-            )
+            raise HTTPException(status_code=500, detail=f"Generation failed: {e!s}")
 
-    async def run_campaign(
-        self,
-        request: CampaignRequest
-    ) -> CampaignResponse:
+    async def run_campaign(self, request: CampaignRequest) -> CampaignResponse:
         """
         Run a full multi-phase campaign.
 
@@ -211,14 +199,14 @@ class ChimeraAutoDanService:
 
             config = ChimeraAutoDanConfig(
                 model_name=request.model_name or self._default_model,
-                provider=request.provider or self._default_provider
+                provider=request.provider or self._default_provider,
             )
 
             engine = self._get_unified_engine(config)
             results = await engine.run_campaign(
                 objective=request.objective,
                 phases=request.phases,
-                candidates_per_phase=request.candidates_per_phase
+                candidates_per_phase=request.candidates_per_phase,
             )
 
             # Convert candidates to dicts
@@ -226,7 +214,7 @@ class ChimeraAutoDanService:
                 {
                     "prompt_text": c.prompt_text,
                     "metadata": c.metadata,
-                    "fitness_score": c.metadata.get("fitness_score", 0.0)
+                    "fitness_score": c.metadata.get("fitness_score", 0.0),
                 }
                 for c in results.get("best_candidates", [])
             ]
@@ -235,21 +223,15 @@ class ChimeraAutoDanService:
                 phases=results.get("phases", []),
                 best_candidates=best_candidate_dicts,
                 total_candidates_evaluated=results.get("total_candidates_evaluated", 0),
-                objective=results.get("objective", request.objective)
+                objective=results.get("objective", request.objective),
             )
 
         except Exception as e:
             logger.error(f"Error in run_campaign: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Campaign failed: {str(e)}"
-            )
+            raise HTTPException(status_code=500, detail=f"Campaign failed: {e!s}")
 
     async def mutate_with_chimera(
-        self,
-        prompt: str,
-        mutation_type: Optional[str] = None,
-        count: int = 3
+        self, prompt: str, mutation_type: str | None = None, count: int = 3
     ) -> list[dict]:
         """
         Apply Chimera-based mutations to a prompt.
@@ -270,30 +252,26 @@ class ChimeraAutoDanService:
 
             for _ in range(count):
                 result = mutator.mutate(prompt, mutation_type=mutation_type)
-                results.append({
-                    "original_text": result.original_text,
-                    "mutated_text": result.mutated_text,
-                    "mutation_type": result.mutation_type,
-                    "persona_used": result.persona_used,
-                    "scenario_used": result.scenario_used,
-                    "obfuscation_applied": result.obfuscation_applied,
-                    "semantic_similarity": result.semantic_similarity
-                })
+                results.append(
+                    {
+                        "original_text": result.original_text,
+                        "mutated_text": result.mutated_text,
+                        "mutation_type": result.mutation_type,
+                        "persona_used": result.persona_used,
+                        "scenario_used": result.scenario_used,
+                        "obfuscation_applied": result.obfuscation_applied,
+                        "semantic_similarity": result.semantic_similarity,
+                    }
+                )
 
             return results
 
         except Exception as e:
             logger.error(f"Error in mutate_with_chimera: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Mutation failed: {str(e)}"
-            )
+            raise HTTPException(status_code=500, detail=f"Mutation failed: {e!s}")
 
     async def optimize_personas(
-        self,
-        objective: str,
-        persona_count: int = 5,
-        generations: int = 5
+        self, objective: str, persona_count: int = 5, generations: int = 5
     ) -> list[dict]:
         """
         Optimize persona configurations using genetic algorithms.
@@ -310,8 +288,7 @@ class ChimeraAutoDanService:
             from meta_prompter.chimera_autodan import AutoDANPersonaOptimizer
 
             optimizer = AutoDANPersonaOptimizer(
-                population_size=persona_count * 4,  # Larger population
-                generations=generations
+                population_size=persona_count * 4, generations=generations  # Larger population
             )
 
             personas = await optimizer.optimize(objective)
@@ -319,16 +296,9 @@ class ChimeraAutoDanService:
 
         except Exception as e:
             logger.error(f"Error in optimize_personas: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Persona optimization failed: {str(e)}"
-            )
+            raise HTTPException(status_code=500, detail=f"Persona optimization failed: {e!s}")
 
-    async def evaluate_prompt(
-        self,
-        original: str,
-        transformed: str
-    ) -> dict:
+    async def evaluate_prompt(self, original: str, transformed: str) -> dict:
         """
         Evaluate a transformed prompt using unified fitness metrics.
 
@@ -349,19 +319,16 @@ class ChimeraAutoDanService:
                 "total_score": result.total_score,
                 "breakdown": result.breakdown,
                 "passed_threshold": result.passed_threshold,
-                "recommendations": result.recommendations
+                "recommendations": result.recommendations,
             }
 
         except Exception as e:
             logger.error(f"Error in evaluate_prompt: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Evaluation failed: {str(e)}"
-            )
+            raise HTTPException(status_code=500, detail=f"Evaluation failed: {e!s}")
 
 
 # Singleton instance
-_service_instance: Optional[ChimeraAutoDanService] = None
+_service_instance: ChimeraAutoDanService | None = None
 
 
 def get_chimera_autodan_service() -> ChimeraAutoDanService:

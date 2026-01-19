@@ -15,6 +15,7 @@ from ..domain.provider_models import ProviderType
 
 class ConnectionMode(str, Enum):
     """API connection modes"""
+
     DIRECT = "direct"
     PROXY = "proxy"
 
@@ -42,8 +43,11 @@ class ProviderConnectionConfig(BaseModel):
     def validate_name(cls, v):
         """Validate provider name format"""
         import re
+
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError("Provider name must contain only alphanumeric characters, underscores, and hyphens")
+            raise ValueError(
+                "Provider name must contain only alphanumeric characters, underscores, and hyphens"
+            )
         return v.lower()
 
     @field_validator("base_url")
@@ -60,28 +64,19 @@ class ProxyModeConfig(BaseModel):
 
     enabled: bool = Field(default=False, description="Enable proxy mode")
     endpoint: str = Field(
-        default="http://localhost:8080",
-        description="AIClient-2-API Server endpoint"
+        default="http://localhost:8080", description="AIClient-2-API Server endpoint"
     )
     health_check_enabled: bool = Field(
-        default=True,
-        description="Enable health check for proxy endpoint"
+        default=True, description="Enable health check for proxy endpoint"
     )
     health_check_interval: int = Field(
-        default=30,
-        ge=10,
-        le=300,
-        description="Health check interval in seconds"
+        default=30, ge=10, le=300, description="Health check interval in seconds"
     )
     timeout_seconds: int = Field(
-        default=30,
-        ge=5,
-        le=120,
-        description="Request timeout for proxy calls"
+        default=30, ge=5, le=120, description="Request timeout for proxy calls"
     )
     fallback_to_direct: bool = Field(
-        default=True,
-        description="Fallback to direct mode if proxy unavailable"
+        default=True, description="Fallback to direct mode if proxy unavailable"
     )
 
     @field_validator("endpoint")
@@ -138,7 +133,9 @@ class EncryptionConfig(BaseModel):
     enabled: bool = Field(default=True, description="Enable API key encryption at rest")
     algorithm: str = Field(default="AES-256", description="Encryption algorithm")
     key_rotation_enabled: bool = Field(default=False, description="Enable automatic key rotation")
-    key_rotation_days: int = Field(default=90, ge=30, le=365, description="Days between key rotations")
+    key_rotation_days: int = Field(
+        default=90, ge=30, le=365, description="Days between key rotations"
+    )
 
 
 class ChimeraConfiguration(BaseModel):
@@ -164,7 +161,9 @@ class ChimeraConfiguration(BaseModel):
 
     # Validation settings
     validate_on_startup: bool = Field(default=True, description="Validate configuration on startup")
-    validate_connectivity: bool = Field(default=True, description="Test provider connectivity during validation")
+    validate_connectivity: bool = Field(
+        default=True, description="Test provider connectivity during validation"
+    )
 
     # Hot-reload settings
     hot_reload_enabled: bool = Field(default=True, description="Enable configuration hot-reload")
@@ -176,7 +175,9 @@ class ChimeraConfiguration(BaseModel):
 
     # Logging
     log_level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
-    log_api_keys: bool = Field(default=False, description="Log API keys (NEVER enable in production)")
+    log_api_keys: bool = Field(
+        default=False, description="Log API keys (NEVER enable in production)"
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -194,17 +195,11 @@ class ChimeraConfiguration(BaseModel):
                         "base_url": "https://api.openai.com/v1",
                         "default_model": "gpt-4o",
                         "models": ["gpt-4o", "gpt-4", "gpt-3.5-turbo"],
-                        "enabled": True
+                        "enabled": True,
                     }
                 },
-                "proxy_mode": {
-                    "enabled": False,
-                    "endpoint": "http://localhost:8080"
-                },
-                "encryption": {
-                    "enabled": True,
-                    "algorithm": "AES-256"
-                }
+                "proxy_mode": {"enabled": False, "endpoint": "http://localhost:8080"},
+                "encryption": {"enabled": True, "algorithm": "AES-256"},
             }
         }
     }
@@ -240,4 +235,6 @@ class ConfigurationUpdateRequest(BaseModel):
     proxy_mode: ProxyModeConfig | None = None
     encryption: EncryptionConfig | None = None
     reload_immediately: bool = Field(default=True, description="Apply changes immediately")
-    validate_before_apply: bool = Field(default=True, description="Validate configuration before applying")
+    validate_before_apply: bool = Field(
+        default=True, description="Validate configuration before applying"
+    )

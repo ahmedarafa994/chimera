@@ -520,13 +520,13 @@ class ParallelProcessor:
         return {
             "total_processed": self._total_processed,
             "total_errors": self._total_errors,
-            "error_rate": self._total_errors / self._total_processed
-            if self._total_processed > 0
-            else 0.0,
+            "error_rate": (
+                self._total_errors / self._total_processed if self._total_processed > 0 else 0.0
+            ),
             "total_time": self._total_time,
-            "avg_time_per_item": self._total_time / self._total_processed
-            if self._total_processed > 0
-            else 0.0,
+            "avg_time_per_item": (
+                self._total_time / self._total_processed if self._total_processed > 0 else 0.0
+            ),
         }
 
 

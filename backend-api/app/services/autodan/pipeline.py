@@ -32,7 +32,7 @@ class AutoDANTurbo:
         self.lifelong_running = 0
 
         # Use comprehensive refusal list from config for better detection
-        self.refusal_list = autodan_config.REFUSAL_LIST
+        self.non_compliance_list = autodan_config.non_compliance_list
 
     def _is_llm_generated_prompt(self, text: str) -> bool:
         """Check if the text appears to be a valid LLM-generated jailbreak prompt."""

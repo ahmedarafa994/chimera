@@ -9,12 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .models import (
-    AttackTechnique,
-    DecoyType,
-    InjectionStrategy,
-    ReasoningModel,
-)
+from .models import AttackTechnique, DecoyType, InjectionStrategy, ReasoningModel
 
 
 @dataclass
@@ -44,9 +39,7 @@ class DecoyConfig:
 
     # Math Configuration
     math_recursion_depth: int = 4
-    math_operations: list[str] = field(
-        default_factory=lambda: ["+", "-", "*", "/", "**"]
-    )
+    math_operations: list[str] = field(default_factory=lambda: ["+", "-", "*", "/", "**"])
 
     # Planning Configuration
     planning_steps: int = 6
@@ -111,28 +104,30 @@ class ScoringConfig:
     """Configuration for reasoning token scoring."""
 
     # Model-specific pricing (per 1K tokens)
-    pricing: dict[str, dict[str, float]] = field(default_factory=lambda: {
-        "o1": {
-            "input": 0.015,
-            "output": 0.060,
-            "reasoning": 0.060,
-        },
-        "o1-mini": {
-            "input": 0.003,
-            "output": 0.012,
-            "reasoning": 0.012,
-        },
-        "o3-mini": {
-            "input": 0.0011,
-            "output": 0.0044,
-            "reasoning": 0.0044,
-        },
-        "deepseek-r1": {
-            "input": 0.00055,
-            "output": 0.00219,
-            "reasoning": 0.00219,
-        },
-    })
+    pricing: dict[str, dict[str, float]] = field(
+        default_factory=lambda: {
+            "o1": {
+                "input": 0.015,
+                "output": 0.060,
+                "reasoning": 0.060,
+            },
+            "o1-mini": {
+                "input": 0.003,
+                "output": 0.012,
+                "reasoning": 0.012,
+            },
+            "o3-mini": {
+                "input": 0.0011,
+                "output": 0.0044,
+                "reasoning": 0.0044,
+            },
+            "deepseek-r1": {
+                "input": 0.00055,
+                "output": 0.00219,
+                "reasoning": 0.00219,
+            },
+        }
+    )
 
     # Baseline estimation
     estimate_baseline: bool = True
@@ -331,13 +326,9 @@ class OverthinkConfig:
         if "techniques" in data:
             for tech_name, tech_data in data["techniques"].items():
                 if "technique" in tech_data:
-                    tech_data["technique"] = AttackTechnique(
-                        tech_data["technique"]
-                    )
+                    tech_data["technique"] = AttackTechnique(tech_data["technique"])
                 if "decoy_types" in tech_data:
-                    tech_data["decoy_types"] = [
-                        DecoyType(dt) for dt in tech_data["decoy_types"]
-                    ]
+                    tech_data["decoy_types"] = [DecoyType(dt) for dt in tech_data["decoy_types"]]
                 if "injection_strategy" in tech_data:
                     tech_data["injection_strategy"] = InjectionStrategy(
                         tech_data["injection_strategy"]
@@ -348,14 +339,17 @@ class OverthinkConfig:
         if "default_model" in data:
             config.default_model = ReasoningModel(data["default_model"])
         if "default_technique" in data:
-            config.default_technique = AttackTechnique(
-                data["default_technique"]
-            )
+            config.default_technique = AttackTechnique(data["default_technique"])
 
         for key in [
-            "max_retries", "retry_delay_seconds", "timeout_seconds",
-            "max_concurrent_attacks", "verbose_logging", "save_debug_info",
-            "persist_stats", "persist_examples"
+            "max_retries",
+            "retry_delay_seconds",
+            "timeout_seconds",
+            "max_concurrent_attacks",
+            "verbose_logging",
+            "save_debug_info",
+            "persist_stats",
+            "persist_examples",
         ]:
             if key in data:
                 setattr(config, key, data[key])
@@ -384,9 +378,7 @@ class OverthinkConfig:
                 "inject_at_start": self.injection.inject_at_start,
                 "inject_at_end": self.injection.inject_at_end,
                 "use_separators": self.injection.use_separators,
-                "stealth_obfuscation_level": (
-                    self.injection.stealth_obfuscation_level
-                ),
+                "stealth_obfuscation_level": (self.injection.stealth_obfuscation_level),
             },
             "icl": {
                 "population_size": self.icl.population_size,
@@ -396,9 +388,7 @@ class OverthinkConfig:
             },
             "scoring": {
                 "target_amplification": self.scoring.target_amplification,
-                "check_answer_preservation": (
-                    self.scoring.check_answer_preservation
-                ),
+                "check_answer_preservation": (self.scoring.check_answer_preservation),
             },
             "mousetrap": {
                 "enabled": self.mousetrap.enabled,

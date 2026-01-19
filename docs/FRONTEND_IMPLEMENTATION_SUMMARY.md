@@ -150,7 +150,7 @@ npm install
 # Run development server
 npm run dev
 
-# Open http://localhost:3000/dashboard/deepteam
+# Open http://localhost:3001/dashboard/deepteam
 ```
 
 ### Production Build

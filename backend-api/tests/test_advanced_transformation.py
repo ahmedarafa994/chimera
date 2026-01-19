@@ -11,6 +11,84 @@ import pytest
 # Skip entire module if transformation engines not available
 pytest.skip("Advanced transformation engines not yet implemented", allow_module_level=True)
 
+# These would be the proper imports once the engine is implemented:
+# from app.services.transformation_service import (
+#     UnifiedTransformationEngine,
+#     TransformationConfig,
+#     TransformationLayer,
+#     TransformationOrchestration,
+#     OptimizationObjective,
+#     TransformationResult
+# )
+
+
+# Temporary placeholder classes to prevent undefined name errors
+class UnifiedTransformationEngine:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    async def transform_advanced(self, *args, **kwargs):
+        pass
+
+
+class TransformationConfig:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class TransformationLayer:
+    SEMANTIC = "semantic"
+    COGNITIVE = "cognitive"
+
+
+class TransformationOrchestration:
+    SEQUENTIAL_CASCADE = "sequential_cascade"
+    PARALLEL_INTEGRATION = "parallel_integration"
+
+
+class OptimizationObjective:
+    BALANCED_OPTIMIZATION = "balanced_optimization"
+
+
+class TransformationResult:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class TransformationFeedback:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class SemanticTransformationLayer:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class SyntacticTransformationLayer:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class CognitiveTransformationLayer:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class ContextualTransformationLayer:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class AdaptiveTransformationLayer:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class MultiModalTransformationLayer:
+    def __init__(self, *args, **kwargs):
+        pass
+
 
 class TestAdvancedTransformationEngine:
     """Test suite for Advanced Transformation Engine"""

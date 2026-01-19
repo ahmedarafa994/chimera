@@ -21,11 +21,11 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, select, update
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.infrastructure.cache.selection_cache import SelectionCache
 
 logger = logging.getLogger(__name__)
 
@@ -46,23 +46,13 @@ class SelectionRecord(BaseModel):
     provider: str = Field(..., description="Provider identifier")
     model: str = Field(..., description="Model identifier")
     version: int = Field(default=1, description="Version for optimistic concurrency")
-    user_id: Optional[str] = Field(None, description="User identifier")
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Creation timestamp"
-    )
+    user_id: str | None = Field(None, description="User identifier")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Last update timestamp"
+        default_factory=datetime.utcnow, description="Last update timestamp"
     )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata"
-    )
-    expires_at: Optional[datetime] = Field(
-        None,
-        description="Expiration timestamp"
-    )
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    expires_at: datetime | None = Field(None, description="Expiration timestamp")
 
     class Config:
         from_attributes = True
@@ -73,8 +63,8 @@ class SelectionSaveResult(BaseModel):
     """Result of a selection save operation."""
 
     success: bool
-    record: Optional[SelectionRecord] = None
-    error: Optional[str] = None
+    record: SelectionRecord | None = None
+    error: str | None = None
     version: int = 0
 
 
@@ -82,7 +72,7 @@ class SelectionLoadResult(BaseModel):
     """Result of a selection load operation."""
 
     found: bool
-    record: Optional[SelectionRecord] = None
+    record: SelectionRecord | None = None
     source: str = "none"  # "cache", "database", "default"
 
 
@@ -128,7 +118,7 @@ class SessionSelectionPersistenceService:
         if getattr(self, "_initialized", False):
             return
 
-        self._cache: Optional["SelectionCache"] = None
+        self._cache: SelectionCache | None = None
         self._db_available = False
         self._cache_available = False
         self._default_provider = getattr(settings, "DEFAULT_PROVIDER", "openai")
@@ -139,7 +129,7 @@ class SessionSelectionPersistenceService:
 
     async def initialize(
         self,
-        cache: Optional["SelectionCache"] = None,
+        cache: SelectionCache | None = None,
     ) -> None:
         """
         Initialize the service with optional cache.
@@ -164,9 +154,9 @@ class SessionSelectionPersistenceService:
         session_id: str,
         provider: str,
         model: str,
-        user_id: Optional[str] = None,
-        metadata: Optional[dict] = None,
-        db_session: Optional[AsyncSession] = None,
+        user_id: str | None = None,
+        metadata: dict | None = None,
+        db_session: AsyncSession | None = None,
         ttl_hours: int = DEFAULT_TTL_HOURS,
     ) -> SelectionSaveResult:
         """
@@ -199,7 +189,7 @@ class SessionSelectionPersistenceService:
                 provider=provider,
                 model=model,
                 user_id=user_id,
-                metadata=metadata or {},
+                selection_metadata=metadata or {},
                 created_at=now,
                 updated_at=now,
                 expires_at=expires_at,
@@ -239,8 +229,8 @@ class SessionSelectionPersistenceService:
     async def load_selection(
         self,
         session_id: str,
-        user_id: Optional[str] = None,
-        db_session: Optional[AsyncSession] = None,
+        user_id: str | None = None,
+        db_session: AsyncSession | None = None,
     ) -> SelectionLoadResult:
         """
         Load a provider/model selection for a session.
@@ -271,9 +261,7 @@ class SessionSelectionPersistenceService:
 
         # Try database
         if db_session:
-            record = await self._load_from_database(
-                session_id, user_id, db_session
-            )
+            record = await self._load_from_database(session_id, user_id, db_session)
             if record:
                 # Populate cache
                 if self._cache_available and self._cache:
@@ -296,7 +284,7 @@ class SessionSelectionPersistenceService:
     async def delete_selection(
         self,
         session_id: str,
-        db_session: Optional[AsyncSession] = None,
+        db_session: AsyncSession | None = None,
     ) -> bool:
         """
         Delete a selection for a session.
@@ -363,7 +351,7 @@ class SessionSelectionPersistenceService:
                     created_at=r.created_at,
                     updated_at=r.updated_at,
                     version=getattr(r, "version", 1),
-                    metadata=getattr(r, "metadata", {}),
+                    metadata=getattr(r, "selection_metadata", {}),
                 )
                 for r in records
             ]
@@ -393,9 +381,7 @@ class SessionSelectionPersistenceService:
             cutoff_time = datetime.utcnow() - timedelta(hours=max_age_hours)
 
             # Delete expired records
-            query = delete(SelectionModel).where(
-                SelectionModel.updated_at < cutoff_time
-            )
+            query = delete(SelectionModel).where(SelectionModel.updated_at < cutoff_time)
 
             result = await db_session.execute(query)
             await db_session.commit()
@@ -424,9 +410,7 @@ class SessionSelectionPersistenceService:
             from app.infrastructure.database.models import SelectionModel
 
             # Check for existing record
-            query = select(SelectionModel).where(
-                SelectionModel.session_id == record.session_id
-            )
+            query = select(SelectionModel).where(SelectionModel.session_id == record.session_id)
             if record.user_id:
                 query = query.where(SelectionModel.user_id == record.user_id)
 
@@ -468,16 +452,14 @@ class SessionSelectionPersistenceService:
     async def _load_from_database(
         self,
         session_id: str,
-        user_id: Optional[str],
+        user_id: str | None,
         db_session: AsyncSession,
-    ) -> Optional[SelectionRecord]:
+    ) -> SelectionRecord | None:
         """Load selection from database."""
         try:
             from app.infrastructure.database.models import SelectionModel
 
-            query = select(SelectionModel).where(
-                SelectionModel.session_id == session_id
-            )
+            query = select(SelectionModel).where(SelectionModel.session_id == session_id)
             if user_id:
                 query = query.where(SelectionModel.user_id == user_id)
 
@@ -511,9 +493,7 @@ class SessionSelectionPersistenceService:
         try:
             from app.infrastructure.database.models import SelectionModel
 
-            query = delete(SelectionModel).where(
-                SelectionModel.session_id == session_id
-            )
+            query = delete(SelectionModel).where(SelectionModel.session_id == session_id)
             await db_session.execute(query)
             await db_session.commit()
 
@@ -528,8 +508,8 @@ class SessionSelectionPersistenceService:
     async def migrate_legacy_selection(
         self,
         old_format: dict,
-        db_session: Optional[AsyncSession] = None,
-    ) -> Optional[SelectionRecord]:
+        db_session: AsyncSession | None = None,
+    ) -> SelectionRecord | None:
         """
         Migrate from old selection format to new format.
 
@@ -548,25 +528,23 @@ class SessionSelectionPersistenceService:
         try:
             # Extract provider
             provider = (
-                old_format.get("provider_id") or
-                old_format.get("selected_provider") or
-                old_format.get("provider") or
-                self._default_provider
+                old_format.get("provider_id")
+                or old_format.get("selected_provider")
+                or old_format.get("provider")
+                or self._default_provider
             )
 
             # Extract model
             model = (
-                old_format.get("model_id") or
-                old_format.get("selected_model") or
-                old_format.get("model") or
-                self._default_model
+                old_format.get("model_id")
+                or old_format.get("selected_model")
+                or old_format.get("model")
+                or self._default_model
             )
 
             # Extract session_id
             session_id = (
-                old_format.get("session_id") or
-                old_format.get("session") or
-                old_format.get("id")
+                old_format.get("session_id") or old_format.get("session") or old_format.get("id")
             )
 
             if not session_id:
@@ -594,10 +572,7 @@ class SessionSelectionPersistenceService:
             )
 
             if result.success:
-                logger.info(
-                    f"Migrated legacy selection: {session_id} -> "
-                    f"{provider}/{model}"
-                )
+                logger.info(f"Migrated legacy selection: {session_id} -> " f"{provider}/{model}")
                 return result.record
 
             return None
@@ -644,9 +619,7 @@ class SessionSelectionPersistenceService:
 
             # Load remaining from database
             if cache_misses:
-                query = select(SelectionModel).where(
-                    SelectionModel.session_id.in_(cache_misses)
-                )
+                query = select(SelectionModel).where(SelectionModel.session_id.in_(cache_misses))
                 result = await db_session.execute(query)
                 records = result.scalars().all()
 
@@ -659,7 +632,7 @@ class SessionSelectionPersistenceService:
                         created_at=r.created_at,
                         updated_at=r.updated_at,
                         version=getattr(r, "version", 1),
-                        metadata=getattr(r, "metadata", {}),
+                        metadata=getattr(r, "selection_metadata", {}),
                     )
                     results[r.session_id] = record
 
@@ -698,9 +671,9 @@ def get_selection_persistence_service() -> SessionSelectionPersistenceService:
 # =============================================================================
 
 __all__ = [
-    "SessionSelectionPersistenceService",
+    "SelectionLoadResult",
     "SelectionRecord",
     "SelectionSaveResult",
-    "SelectionLoadResult",
+    "SessionSelectionPersistenceService",
     "get_selection_persistence_service",
 ]

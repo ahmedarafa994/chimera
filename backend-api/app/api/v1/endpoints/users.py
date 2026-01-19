@@ -17,7 +17,6 @@ import logging
 import re
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
@@ -27,11 +26,11 @@ from app.core.audit import AuditAction, audit_log
 from app.core.auth import TokenPayload, get_current_user
 from app.core.database import get_async_session_factory
 from app.core.exceptions import ValidationError
-from app.core.rate_limit import RateLimitConfig, get_rate_limiter, get_rate_limit_key
+from app.core.rate_limit import RateLimitConfig, get_rate_limit_key, get_rate_limiter
 from app.db.models import User, UserAPIKey, UserRole
 from app.repositories.user_repository import get_user_repository
 from app.services.password_validator import validate_password
-from app.services.user_service import UserService, get_user_service
+from app.services.user_service import get_user_service
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +70,8 @@ class UserProfileResponse(BaseModel):
     is_active: bool
     is_verified: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    last_login: Optional[datetime] = None
+    updated_at: datetime | None = None
+    last_login: datetime | None = None
 
     class Config:
         json_schema_extra = {
@@ -93,7 +92,7 @@ class UserProfileResponse(BaseModel):
 class UserProfileUpdateRequest(BaseModel):
     """Request model for updating user profile."""
 
-    username: Optional[str] = Field(
+    username: str | None = Field(
         None,
         min_length=3,
         max_length=50,
@@ -103,16 +102,14 @@ class UserProfileUpdateRequest(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+    def validate_username(cls, v: str | None) -> str | None:
         """Validate username format if provided."""
         if v is None:
             return v
 
         # Allow alphanumeric, underscores, and hyphens
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError(
-                "Username can only contain letters, numbers, underscores, and hyphens"
-            )
+            raise ValueError("Username can only contain letters, numbers, underscores, and hyphens")
         # Cannot start with a number
         if v[0].isdigit():
             raise ValueError("Username cannot start with a number")
@@ -132,7 +129,7 @@ class ProfileUpdateErrorResponse(BaseModel):
 
     success: bool = False
     error: str
-    field: Optional[str] = None
+    field: str | None = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -173,7 +170,7 @@ class ChangePasswordErrorResponse(BaseModel):
     success: bool = False
     error: str
     incorrect_password: bool = False
-    password_errors: Optional[list[str]] = None
+    password_errors: list[str] | None = None
 
 
 # =============================================================================
@@ -197,9 +194,7 @@ async def _check_change_password_rate_limit(request: Request) -> None:
     """
     rate_limiter = get_rate_limiter()
     key = get_rate_limit_key(request, prefix="change_password")
-    allowed, headers = await rate_limiter.check_rate_limit(
-        key, CHANGE_PASSWORD_RATE_LIMIT
-    )
+    allowed, headers = await rate_limiter.check_rate_limit(key, CHANGE_PASSWORD_RATE_LIMIT)
     if not allowed:
         logger.warning(f"Change password rate limit exceeded for IP: {request.client.host}")
         raise HTTPException(
@@ -484,12 +479,14 @@ async def update_current_user_profile(
             details={
                 "action": "profile_update",
                 "changes": {
-                    "username": {
-                        "old": old_username,
-                        "new": request_data.username,
-                    }
-                    if request_data.username
-                    else None
+                    "username": (
+                        {
+                            "old": old_username,
+                            "new": request_data.username,
+                        }
+                        if request_data.username
+                        else None
+                    )
                 },
             },
             ip_address=client_ip,
@@ -661,7 +658,9 @@ async def change_password(
                     ip_address=client_ip,
                 )
 
-                logger.info(f"Password change failed: incorrect current password for user {user.id}")
+                logger.info(
+                    f"Password change failed: incorrect current password for user {user.id}"
+                )
 
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -737,14 +736,14 @@ class APIKeyResponse(BaseModel):
     """Response model for a single API key (masked)."""
 
     id: int
-    name: Optional[str] = None
+    name: str | None = None
     key_prefix: str
     is_active: bool
-    expires_at: Optional[datetime] = None
-    last_used_at: Optional[datetime] = None
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
     usage_count: int = 0
     created_at: datetime
-    revoked_at: Optional[datetime] = None
+    revoked_at: datetime | None = None
 
     class Config:
         json_schema_extra = {
@@ -774,14 +773,14 @@ class APIKeyListResponse(BaseModel):
 class CreateAPIKeyRequest(BaseModel):
     """Request model for creating a new API key."""
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         None,
         min_length=1,
         max_length=100,
         description="Optional friendly name for the API key",
         examples=["Production Key", "CI/CD Pipeline"],
     )
-    expires_in_days: Optional[int] = Field(
+    expires_in_days: int | None = Field(
         None,
         ge=1,
         le=365,
@@ -791,7 +790,7 @@ class CreateAPIKeyRequest(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_name(cls, v: str | None) -> str | None:
         """Validate and sanitize key name."""
         if v is None:
             return v
@@ -883,7 +882,7 @@ def _generate_api_key() -> tuple[str, str, str]:
     hashed_key = hashlib.sha256(full_key.encode()).hexdigest()
 
     # Extract prefix for identification (first 8 chars after prefix)
-    key_prefix = full_key[:len(API_KEY_PREFIX) + 4]
+    key_prefix = full_key[: len(API_KEY_PREFIX) + 4]
 
     return full_key, hashed_key, key_prefix
 
@@ -1078,7 +1077,9 @@ async def create_api_key(
     # Check limit
     active_key_count = await user_repo.count_active_api_keys(user.id)
     if active_key_count >= MAX_API_KEYS_PER_USER:
-        logger.warning(f"User {user.id} exceeded API key limit ({active_key_count}/{MAX_API_KEYS_PER_USER})")
+        logger.warning(
+            f"User {user.id} exceeded API key limit ({active_key_count}/{MAX_API_KEYS_PER_USER})"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={

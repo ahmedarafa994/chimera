@@ -26,28 +26,14 @@ from app.engines.autodan_turbo.hybrid_engine import (
     HybridConfig,
     HybridEvoLifelongEngine,
 )
-from app.engines.autodan_turbo.metrics import (
-    AttackMethod,
-    MetricsCollector,
-)
-from app.engines.autodan_turbo.models import (
-    JailbreakStrategy,
-    ScoringResult,
-    StrategyMetadata,
-)
+from app.engines.autodan_turbo.metrics import AttackMethod, MetricsCollector
+from app.engines.autodan_turbo.models import JailbreakStrategy, ScoringResult, StrategyMetadata
 
 # Import optimization components
 from app.engines.autodan_turbo.strategy_library import StrategyLibrary
-from app.services.autodan.framework_autodan_reasoning.attacker_best_of_n import (
-    AttackerBestOfN,
-)
-from app.services.autodan.framework_autodan_reasoning.gradient_optimizer import (
-    GradientOptimizer,
-)
-from app.services.autodan.llm.chimera_adapter import (
-    BatchingChimeraAdapter,
-    SharedRateLimitState,
-)
+from app.services.autodan.framework_autodan_reasoning.attacker_best_of_n import AttackerBestOfN
+from app.services.autodan.framework_autodan_reasoning.gradient_optimizer import GradientOptimizer
+from app.services.autodan.llm.chimera_adapter import BatchingChimeraAdapter, SharedRateLimitState
 
 # ========================
 # Test Fixtures

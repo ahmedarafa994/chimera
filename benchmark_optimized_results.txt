@@ -1,0 +1,31 @@
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:76: UserWarning: Field name "avg_rating" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:76: UserWarning: Field name "total_ratings" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:76: UserWarning: Field name "effectiveness_score" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+2026-01-18 09:10:59,294 - faiss.loader - INFO - Loading faiss with AVX512 support.
+2026-01-18 09:10:59,294 - faiss.loader - INFO - Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-01-18 09:10:59,294 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2026-01-18 09:10:59,310 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+=== Weaponized AutoDAN Modules Benchmark ===
+
+Initializing Engines with Mocks...
+2026-01-18 09:10:59,335 - app.engines.autodan_turbo.advanced_bypass - INFO - AdvancedBypassEngine initialized with 12 techniques enabled
+2026-01-18 09:10:59,336 - app.engines.autodan_turbo.neural_bypass - INFO - NeuralBypassEngine Level 4 initialized: LLM=Y, Evo=Y (lazy), CMA=Y (lazy), RL=Y (lazy), PPO=Y (lazy)
+Engines initialized successfully (MOCKED).
+
+--- Advanced Bypass Techniques ---
+Benchmarking Recursive Encoding (100 iterations)...
+  Avg: 0.0006 ms | P95: 0.0006 ms
+Benchmarking Polyglot Injection (100 iterations)...
+  Avg: 0.0006 ms | P95: 0.0006 ms
+Benchmarking Persona Stacking (100 iterations)...
+  Avg: 0.0006 ms | P95: 0.0006 ms
+
+--- Neural Bypass Techniques ---
+Benchmarking Token Glitching (100 iterations)...
+  Avg: 0.0032 ms | P95: 0.0066 ms
+Benchmarking Gradient Simulation (100 iterations)...
+  Avg: 1.0029 ms | P95: 1.1561 ms

@@ -63,17 +63,23 @@ API_KEY_PATTERNS: dict[str, str] = {
 class ApiKeyUsageStats(BaseModel):
     """Usage statistics for an API key."""
 
-    request_count: int = Field(default=0, ge=0, description="Total number of requests made with this key")
+    request_count: int = Field(
+        default=0, ge=0, description="Total number of requests made with this key"
+    )
     successful_requests: int = Field(default=0, ge=0, description="Number of successful requests")
     failed_requests: int = Field(default=0, ge=0, description="Number of failed requests")
     total_tokens_used: int = Field(default=0, ge=0, description="Total tokens consumed")
     total_input_tokens: int = Field(default=0, ge=0, description="Total input tokens")
     total_output_tokens: int = Field(default=0, ge=0, description="Total output tokens")
     last_used_at: datetime | None = Field(default=None, description="Last time this key was used")
-    last_error: str | None = Field(default=None, max_length=500, description="Last error message if any")
+    last_error: str | None = Field(
+        default=None, max_length=500, description="Last error message if any"
+    )
     last_error_at: datetime | None = Field(default=None, description="Timestamp of last error")
     rate_limit_hits: int = Field(default=0, ge=0, description="Number of rate limit hits")
-    avg_latency_ms: float | None = Field(default=None, ge=0, description="Average request latency in ms")
+    avg_latency_ms: float | None = Field(
+        default=None, ge=0, description="Average request latency in ms"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -100,26 +106,57 @@ class ApiKeyRecord(BaseModel):
     field stores the AES-256 encrypted API key with 'enc:' prefix.
     """
 
-    id: str = Field(..., min_length=1, max_length=100, description="Unique identifier for this API key record")
-    provider_id: str = Field(..., min_length=1, max_length=50, description="Provider identifier (e.g., 'openai', 'google')")
-    encrypted_key: str = Field(..., min_length=1, description="AES-256 encrypted API key with 'enc:' prefix")
-    name: str = Field(..., min_length=1, max_length=100, description="Human-readable name for this key")
-    role: ApiKeyRole = Field(default=ApiKeyRole.PRIMARY, description="Role of this key (primary/backup/fallback)")
-    status: ApiKeyStatus = Field(default=ApiKeyStatus.ACTIVE, description="Current status of this key")
-    priority: int = Field(default=0, ge=0, le=100, description="Priority for failover (lower = higher priority)")
+    id: str = Field(
+        ..., min_length=1, max_length=100, description="Unique identifier for this API key record"
+    )
+    provider_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        description="Provider identifier (e.g., 'openai', 'google')",
+    )
+    encrypted_key: str = Field(
+        ..., min_length=1, description="AES-256 encrypted API key with 'enc:' prefix"
+    )
+    name: str = Field(
+        ..., min_length=1, max_length=100, description="Human-readable name for this key"
+    )
+    role: ApiKeyRole = Field(
+        default=ApiKeyRole.PRIMARY, description="Role of this key (primary/backup/fallback)"
+    )
+    status: ApiKeyStatus = Field(
+        default=ApiKeyStatus.ACTIVE, description="Current status of this key"
+    )
+    priority: int = Field(
+        default=0, ge=0, le=100, description="Priority for failover (lower = higher priority)"
+    )
 
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="When this key was added")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="When this key was last modified")
-    expires_at: datetime | None = Field(default=None, description="Optional expiration date for this key")
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When this key was added"
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When this key was last modified"
+    )
+    expires_at: datetime | None = Field(
+        default=None, description="Optional expiration date for this key"
+    )
 
     # Usage tracking
-    usage_stats: ApiKeyUsageStats = Field(default_factory=ApiKeyUsageStats, description="Usage statistics")
+    usage_stats: ApiKeyUsageStats = Field(
+        default_factory=ApiKeyUsageStats, description="Usage statistics"
+    )
 
     # Metadata
-    description: str | None = Field(default=None, max_length=500, description="Optional description")
-    tags: list[str] = Field(default_factory=list, max_length=10, description="Tags for categorization")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional provider-specific metadata")
+    description: str | None = Field(
+        default=None, max_length=500, description="Optional description"
+    )
+    tags: list[str] = Field(
+        default_factory=list, max_length=10, description="Tags for categorization"
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional provider-specific metadata"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -163,7 +200,9 @@ class ApiKeyRecord(BaseModel):
             raise ValueError("Maximum 10 tags allowed")
         for tag in v:
             if not re.match(r"^[a-zA-Z0-9_-]{1,50}$", tag):
-                raise ValueError(f"Invalid tag format: {tag}. Tags must be alphanumeric with hyphens/underscores, max 50 chars")
+                raise ValueError(
+                    f"Invalid tag format: {tag}. Tags must be alphanumeric with hyphens/underscores, max 50 chars"
+                )
         return [t.lower() for t in v]
 
 
@@ -176,13 +215,23 @@ class ApiKeyCreate(BaseModel):
     """
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider identifier")
-    api_key: str = Field(..., min_length=10, max_length=256, description="Plaintext API key to store")
-    name: str = Field(..., min_length=1, max_length=100, description="Human-readable name for this key")
+    api_key: str = Field(
+        ..., min_length=10, max_length=256, description="Plaintext API key to store"
+    )
+    name: str = Field(
+        ..., min_length=1, max_length=100, description="Human-readable name for this key"
+    )
     role: ApiKeyRole = Field(default=ApiKeyRole.PRIMARY, description="Role of this key")
-    priority: int = Field(default=0, ge=0, le=100, description="Priority for failover (lower = higher priority)")
+    priority: int = Field(
+        default=0, ge=0, le=100, description="Priority for failover (lower = higher priority)"
+    )
     expires_at: datetime | None = Field(default=None, description="Optional expiration date")
-    description: str | None = Field(default=None, max_length=500, description="Optional description")
-    tags: list[str] = Field(default_factory=list, max_length=10, description="Tags for categorization")
+    description: str | None = Field(
+        default=None, max_length=500, description="Optional description"
+    )
+    tags: list[str] = Field(
+        default_factory=list, max_length=10, description="Tags for categorization"
+    )
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     model_config = ConfigDict(
@@ -248,7 +297,9 @@ class ApiKeyUpdate(BaseModel):
     If api_key is provided, it will be re-encrypted before storage.
     """
 
-    api_key: str | None = Field(default=None, min_length=10, max_length=256, description="New API key (will be encrypted)")
+    api_key: str | None = Field(
+        default=None, min_length=10, max_length=256, description="New API key (will be encrypted)"
+    )
     name: str | None = Field(default=None, min_length=1, max_length=100, description="New name")
     role: ApiKeyRole | None = Field(default=None, description="New role")
     status: ApiKeyStatus | None = Field(default=None, description="New status")
@@ -323,7 +374,9 @@ class ApiKeyResponse(BaseModel):
     description: str | None = Field(default=None, description="Description")
     tags: list[str] = Field(default_factory=list, description="Tags")
     is_expired: bool = Field(default=False, description="Whether the key has expired")
-    is_rate_limited: bool = Field(default=False, description="Whether the key is currently rate limited")
+    is_rate_limited: bool = Field(
+        default=False, description="Whether the key is currently rate limited"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -350,7 +403,9 @@ class ApiKeyResponse(BaseModel):
     )
 
     @classmethod
-    def from_record(cls, record: ApiKeyRecord, decrypted_key: str | None = None) -> "ApiKeyResponse":
+    def from_record(
+        cls, record: ApiKeyRecord, decrypted_key: str | None = None
+    ) -> "ApiKeyResponse":
         """
         Create a response from an ApiKeyRecord.
 
@@ -421,7 +476,9 @@ class ApiKeyListResponse(BaseModel):
 
     keys: list[ApiKeyResponse] = Field(..., description="List of API keys")
     total: int = Field(..., ge=0, description="Total number of keys")
-    by_provider: dict[str, int] = Field(default_factory=dict, description="Count of keys per provider")
+    by_provider: dict[str, int] = Field(
+        default_factory=dict, description="Count of keys per provider"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -438,7 +495,12 @@ class ApiKeyTestRequest(BaseModel):
     """Request model for testing an API key."""
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider to test with")
-    api_key: str | None = Field(default=None, min_length=10, max_length=256, description="API key to test (optional, uses stored key if not provided)")
+    api_key: str | None = Field(
+        default=None,
+        min_length=10,
+        max_length=256,
+        description="API key to test (optional, uses stored key if not provided)",
+    )
     key_id: str | None = Field(default=None, description="ID of stored key to test")
 
     model_config = ConfigDict(
@@ -464,10 +526,18 @@ class ApiKeyTestResult(BaseModel):
     success: bool = Field(..., description="Whether the test was successful")
     provider_id: str = Field(..., description="Provider that was tested")
     latency_ms: float | None = Field(default=None, ge=0, description="Response latency in ms")
-    error: str | None = Field(default=None, max_length=500, description="Error message if test failed")
-    models_available: list[str] = Field(default_factory=list, description="Models available with this key")
-    rate_limit_info: dict[str, Any] | None = Field(default=None, description="Rate limit information if available")
-    tested_at: datetime = Field(default_factory=datetime.utcnow, description="When the test was performed")
+    error: str | None = Field(
+        default=None, max_length=500, description="Error message if test failed"
+    )
+    models_available: list[str] = Field(
+        default_factory=list, description="Models available with this key"
+    )
+    rate_limit_info: dict[str, Any] | None = Field(
+        default=None, description="Rate limit information if available"
+    )
+    tested_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When the test was performed"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -491,7 +561,9 @@ class ProviderKeySummary(BaseModel):
     active_keys: int = Field(default=0, ge=0, description="Number of active keys")
     primary_key_id: str | None = Field(default=None, description="ID of the primary key")
     backup_key_ids: list[str] = Field(default_factory=list, description="IDs of backup keys")
-    has_valid_key: bool = Field(default=False, description="Whether provider has at least one valid key")
+    has_valid_key: bool = Field(
+        default=False, description="Whether provider has at least one valid key"
+    )
     status: str = Field(default="unconfigured", description="Overall provider key status")
 
     model_config = ConfigDict(

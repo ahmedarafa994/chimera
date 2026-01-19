@@ -467,7 +467,7 @@ export function ProviderSettingsPage() {
 
   // Use the provider sync context for real-time synchronization
   // This provides access to provider/model data with WebSocket updates
-  const syncContext = useProviderSyncSafe();
+  const syncContext = useProviderSync();
 
   // Extract sync context values for easier access
   const syncProviders = syncContext?.providers ?? [];

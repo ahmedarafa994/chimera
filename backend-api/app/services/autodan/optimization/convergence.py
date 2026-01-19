@@ -21,11 +21,7 @@ from typing import Any
 
 import numpy as np
 
-from .config import (
-    ConvergenceConfig,
-    ConvergenceStrategy,
-    SchedulerType,
-)
+from .config import ConvergenceConfig, ConvergenceStrategy, SchedulerType
 
 # =============================================================================
 # BASE SCHEDULER

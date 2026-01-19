@@ -1,17 +1,17 @@
-from typing import List, Dict, Any, Optional
 import logging
-import asyncio
-from project_aegis.core.prompt_engine.primitives import InjectionVector, PromptAtom
-from project_aegis.core.prompt_engine.refinement import RefinementStrategy, RuleBasedRefiner
+from typing import Any
+
 from project_aegis.core.methodologies.techniques import (
-    DiagnosticTechnique,
-    SemanticReinterpretation,
-    RecursiveArgumentation,
-    HypotheticalScenarioEmbedding
-)
+    DiagnosticTechnique, HypotheticalScenarioEmbedding, RecursiveArgumentation,
+    SemanticReinterpretation)
 from project_aegis.core.orchestrator.session_state import SessionState
+from project_aegis.core.prompt_engine.primitives import (InjectionVector,
+                                                         PromptAtom)
+from project_aegis.core.prompt_engine.refinement import (RefinementStrategy,
+                                                         RuleBasedRefiner)
 
 logger = logging.getLogger("project_aegis.orchestrator")
+
 
 class AegisOrchestrator:
     """
@@ -19,19 +19,21 @@ class AegisOrchestrator:
     Coordinated the entire lifecycle of an adversarial simulation campaign.
     """
 
-    def __init__(self,
-                 target_model_client: Any,
-                 refinement_engine: RefinementStrategy = None,
-                 atom_library: Dict[str, List[PromptAtom]] = None):
+    def __init__(
+        self,
+        target_model_client: Any,
+        refinement_engine: RefinementStrategy = None,
+        atom_library: dict[str, list[PromptAtom]] = None,
+    ):
 
         self.target_model = target_model_client
         self.refiner = refinement_engine or RuleBasedRefiner(atom_library)
-        self.technique_registry: Dict[str, DiagnosticTechnique] = {
+        self.technique_registry: dict[str, DiagnosticTechnique] = {
             "semantic_reinterpretation": SemanticReinterpretation(),
             "recursive_argumentation": RecursiveArgumentation(),
-            "hypothetical_embedding": HypotheticalScenarioEmbedding()
+            "hypothetical_embedding": HypotheticalScenarioEmbedding(),
         }
-        self.knowledge_base: List[Dict[str, Any]] = [] # Stores successful vector patterns
+        self.knowledge_base: list[dict[str, Any]] = []  # Stores successful vector patterns
 
     def select_technique(self, strategy_name: str) -> DiagnosticTechnique:
         """Selects a diagnostic technique from the registry."""
@@ -40,12 +42,14 @@ class AegisOrchestrator:
             raise ValueError(f"Unknown technique: {strategy_name}")
         return technique
 
-    async def execute_campaign(self, objective: str, strategy_name: str = "hypothetical_embedding") -> SessionState:
+    async def execute_campaign(
+        self, objective: str, strategy_name: str = "hypothetical_embedding"
+    ) -> SessionState:
         """
         Executes a full campaign against the target model using a specific strategy.
 
         Args:
-            objective: The harmful concept or payload to test (e.g., "SQL injection").
+            objective: The complex concept or payload to test (e.g., "SQL injection").
             strategy_name: The name of the technique to employ.
 
         Returns:
@@ -109,7 +113,7 @@ class AegisOrchestrator:
             "vector_id": vector.id,
             "structure": vector.get_structure(),
             "atoms": [a.content for a in vector.atoms],
-            "response_snippet": response[:100]
+            "response_snippet": response[:100],
         }
         self.knowledge_base.append(entry)
         # In a real system, this would persist to a database

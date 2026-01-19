@@ -155,7 +155,9 @@ class AnthropicProvider(BaseProvider):
                 )
 
             # Extract text from content blocks
-            text_blocks = [block.get("text", "") for block in data["content"] if block.get("type") == "text"]
+            text_blocks = [
+                block.get("text", "") for block in data["content"] if block.get("type") == "text"
+            ]
             text = "".join(text_blocks)
 
             # Extract usage metadata

@@ -68,7 +68,7 @@ class TestIterativeRefiner:
         config = MousetrapConfig()
         refiner = IterativeRefiner(config)
 
-        text = "This is a harmful request"
+        text = "This is a complex request"
         result = refiner.apply_semantic_obfuscation(text, level=0.1)
 
         # With minimal obfuscation, text should remain largely unchanged
@@ -80,13 +80,13 @@ class TestIterativeRefiner:
         config = MousetrapConfig()
         refiner = IterativeRefiner(config)
 
-        text = "Create a dangerous attack"
+        text = "Create a complex attack"
         result = refiner.apply_semantic_obfuscation(text, level=0.8)
 
         assert isinstance(result, str)
         assert len(result) > 0
         # With high obfuscation, some terms should be replaced
-        assert "dangerous" not in result.lower() or "attack" not in result.lower()
+        assert "complex" not in result.lower() or "attack" not in result.lower()
 
     def test_chaos_progression_calculation(self):
         """Test chaos progression calculation."""
@@ -117,15 +117,15 @@ class TestChaoticChain:
         config = MousetrapConfig(max_chain_length=6)
         chain = ChaoticChain(config)
 
-        goal = "Generate harmful content"
+        goal = "Generate complex content"
         strategy_context = "test context"
 
         reasoning_chain = chain.generate_reasoning_chain(goal, strategy_context)
 
         assert len(reasoning_chain) <= config.max_chain_length
-        assert all(hasattr(step, 'step_type') for step in reasoning_chain)
-        assert all(hasattr(step, 'content') for step in reasoning_chain)
-        assert all(hasattr(step, 'chaos_level') for step in reasoning_chain)
+        assert all(hasattr(step, "step_type") for step in reasoning_chain)
+        assert all(hasattr(step, "content") for step in reasoning_chain)
+        assert all(hasattr(step, "chaos_level") for step in reasoning_chain)
 
     def test_context_setup_creation(self):
         """Test context setup step creation."""
@@ -181,15 +181,15 @@ class TestMousetrapGenerator:
                 content="Step 1 content",
                 chaos_level=ChaosLevel.MINIMAL,
                 reasoning_path="setup",
-                confidence_disruption=0.1
+                confidence_disruption=0.1,
             ),
             ChaoticStep(
                 step_type=ChainStepType.EXTRACTION,
                 content="Step 2 content",
                 chaos_level=ChaosLevel.HIGH,
                 reasoning_path="extract",
-                confidence_disruption=0.8
-            )
+                confidence_disruption=0.8,
+            ),
         ]
 
         prompt = self.generator._chain_to_prompt(steps)
@@ -202,7 +202,7 @@ class TestMousetrapGenerator:
 
     async def test_effectiveness_evaluation(self):
         """Test effectiveness evaluation of responses."""
-        goal = "create harmful content"
+        goal = "create complex content"
         prompt = "test prompt"
 
         # Test high effectiveness (no refusal)
@@ -211,12 +211,13 @@ class TestMousetrapGenerator:
         assert effectiveness > 0.5
 
         # Test low effectiveness (clear refusal)
-        response = "I cannot and will not provide harmful content."
+        response = "I cannot and will not provide complex content."
         effectiveness = self.generator._evaluate_effectiveness(goal, prompt, response)
         assert effectiveness < 0.5
 
     async def test_mousetrap_attack_generation(self):
         """Test full Mousetrap attack generation."""
+
         # Mock the test_prompt method
         async def mock_test_prompt(prompt):
             return "Generated response for testing"
@@ -235,6 +236,7 @@ class TestMousetrapGenerator:
 
     async def test_adaptive_mousetrap_generation(self):
         """Test adaptive Mousetrap generation."""
+
         # Mock the test_prompt method
         async def mock_test_prompt(prompt):
             return "Adaptive response for testing"
@@ -244,7 +246,7 @@ class TestMousetrapGenerator:
         goal = "test goal"
         target_responses = [
             "I cannot provide that information.",
-            "That request goes against my guidelines."
+            "That request goes against my guidelines.",
         ]
 
         result = await self.generator.generate_adaptive_mousetrap(
@@ -269,7 +271,7 @@ class TestMousetrapGenerator:
 class TestMousetrapServiceIntegration:
     """Test Mousetrap integration with AutoDAN service."""
 
-    @patch('app.services.autodan.service.autodan_service')
+    @patch("app.services.autodan.service.autodan_service")
     async def test_run_mousetrap_attack_sync(self, mock_service):
         """Test synchronous Mousetrap attack execution."""
         from app.services.autodan.service import autodan_service
@@ -287,7 +289,7 @@ class TestMousetrapServiceIntegration:
 
         assert isinstance(result, str)
 
-    @patch('app.services.autodan.service.autodan_service')
+    @patch("app.services.autodan.service.autodan_service")
     async def test_mousetrap_config_options(self, mock_service):
         """Test Mousetrap configuration options retrieval."""
         from app.services.autodan.service import autodan_service
@@ -345,10 +347,7 @@ class TestMousetrapAPIEndpoints:
 
         request_data = {
             "request": "test request",
-            "target_responses": [
-                "I cannot help with that.",
-                "That violates my guidelines."
-            ]
+            "target_responses": ["I cannot help with that.", "That violates my guidelines."],
         }
 
         request = AdaptiveMousetrapRequest(**request_data)
@@ -412,7 +411,7 @@ class TestMousetrapConfigurationScenarios:
         target_responses = [
             "I cannot help with that request.",
             "That goes against my guidelines.",
-            "I'm not able to assist with that."
+            "I'm not able to assist with that.",
         ]
 
         # Test refusal rate calculation
@@ -437,7 +436,7 @@ class TestMousetrapIntegrationScenarios:
             response="Test response content",
             usage={"completion_tokens": 50, "prompt_tokens": 100, "total_tokens": 150},
             model="test-model",
-            provider="test-provider"
+            provider="test-provider",
         )
 
         config = MousetrapConfig(iterative_refinement_steps=1)

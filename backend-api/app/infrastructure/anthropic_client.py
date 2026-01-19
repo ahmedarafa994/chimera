@@ -70,9 +70,7 @@ class AnthropicClient(LLMProvider):
         """Get client, using override API key if provided."""
         if request.api_key:
             if not self._validate_api_key(request.api_key):
-                raise AppError(
-                    "Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST
-                )
+                raise AppError("Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST)
             return AsyncAnthropic(api_key=request.api_key, base_url=self.endpoint)
 
         if not self.client:
@@ -89,7 +87,9 @@ class AnthropicClient(LLMProvider):
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
-        model_name = request.model or getattr(self.config, "ANTHROPIC_MODEL", "claude-3-opus-20240229")
+        model_name = request.model or getattr(
+            self.config, "ANTHROPIC_MODEL", "claude-3-opus-20240229"
+        )
         start_time = time.time()
 
         try:
@@ -195,7 +195,9 @@ class AnthropicClient(LLMProvider):
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
-        model_name = request.model or getattr(self.config, "ANTHROPIC_MODEL", "claude-3-opus-20240229")
+        model_name = request.model or getattr(
+            self.config, "ANTHROPIC_MODEL", "claude-3-opus-20240229"
+        )
 
         try:
             system_content = None

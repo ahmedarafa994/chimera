@@ -233,7 +233,9 @@ class OptimizedHttpClient:
         """GET request."""
         return await self.request("GET", url, params=params, **kwargs)
 
-    async def post(self, url: str, data: dict | None = None, json: dict | None = None, **kwargs) -> Response:
+    async def post(
+        self, url: str, data: dict | None = None, json: dict | None = None, **kwargs
+    ) -> Response:
         """POST request."""
         if json and not data:
             data = json
@@ -242,7 +244,9 @@ class OptimizedHttpClient:
 
         return await self.request("POST", url, data=data, **kwargs)
 
-    async def put(self, url: str, data: dict | None = None, json: dict | None = None, **kwargs) -> Response:
+    async def put(
+        self, url: str, data: dict | None = None, json: dict | None = None, **kwargs
+    ) -> Response:
         """PUT request."""
         if json and not data:
             data = json

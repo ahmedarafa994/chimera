@@ -18,7 +18,7 @@ import {
 // Configuration
 // =============================================================================
 
-const WS_ENDPOINT = "/api/v1/models/updates";
+const WS_ENDPOINT = "/models/updates";
 
 // =============================================================================
 // Types
@@ -192,7 +192,7 @@ export class ModelUpdatesManager {
     if (
       this.options.providerFilter &&
       this.options.providerFilter.length > 0 &&
-      !this.options.providerFilter.includes(message.provider_id)
+      (!message.provider_id || !this.options.providerFilter.includes(message.provider_id))
     ) {
       return;
     }
@@ -206,7 +206,7 @@ export class ModelUpdatesManager {
     // Handle specific update types
     switch (message.type) {
       case "model_added":
-        if (message.data && typeof message.data === "object") {
+        if (message.provider_id && message.data && typeof message.data === "object") {
           this.callbacks.onModelAdded?.(
             message.provider_id,
             message.data as unknown as ModelInfo
@@ -215,13 +215,13 @@ export class ModelUpdatesManager {
         break;
 
       case "model_removed":
-        if (message.model_id) {
+        if (message.provider_id && message.model_id) {
           this.callbacks.onModelRemoved?.(message.provider_id, message.model_id);
         }
         break;
 
       case "model_updated":
-        if (message.model_id && message.data) {
+        if (message.provider_id && message.model_id && message.data) {
           this.callbacks.onModelUpdated?.(
             message.provider_id,
             message.model_id,
@@ -231,12 +231,15 @@ export class ModelUpdatesManager {
         break;
 
       case "provider_status_changed":
-        if (message.data && "status" in message.data) {
+        if (message.provider_id && message.data && "status" in message.data) {
           this.callbacks.onProviderStatusChanged?.(
             message.provider_id,
             message.data.status as ProviderStatus
           );
         }
+        break;
+      case "model_availability":
+        // Availability updates do not include provider context; rely on refresh polling.
         break;
     }
 

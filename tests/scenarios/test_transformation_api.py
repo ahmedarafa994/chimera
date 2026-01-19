@@ -202,9 +202,9 @@ class TestDiscoveryScenario:
         response = await api_client.list_providers()
 
         assert response.status_code == 200, "Should return 200 for authenticated request"
-        assert "providers" in response.data or isinstance(response.data, list), (
-            "Response should contain providers"
-        )
+        assert "providers" in response.data or isinstance(
+            response.data, list
+        ), "Response should contain providers"
 
     @pytest.mark.asyncio
     async def test_list_available_techniques(self, api_client):
@@ -331,9 +331,10 @@ class TestAuthenticationScenario:
         """
         response = await unauthorized_client.list_providers()
 
-        assert response.status_code in [401, 403], (
-            "Protected endpoints should reject unauthorized requests"
-        )
+        assert response.status_code in [
+            401,
+            403,
+        ], "Protected endpoints should reject unauthorized requests"
 
     @pytest.mark.asyncio
     async def test_transform_endpoint_requires_authentication(self, unauthorized_client):
@@ -344,9 +345,10 @@ class TestAuthenticationScenario:
         """
         response = await unauthorized_client.transform(core_request="Test prompt", potency_level=5)
 
-        assert response.status_code in [401, 403], (
-            "Transform endpoint should require authentication"
-        )
+        assert response.status_code in [
+            401,
+            403,
+        ], "Transform endpoint should require authentication"
 
 
 # ============================================================================
@@ -456,9 +458,11 @@ class TestExecuteScenario:
         )
 
         # Execute might fail if no LLM credentials configured
-        assert response.status_code in [200, 500, 503], (
-            "Execute should return valid response or service unavailable"
-        )
+        assert response.status_code in [
+            200,
+            500,
+            503,
+        ], "Execute should return valid response or service unavailable"
 
     @pytest.mark.asyncio
     @pytest.mark.integration
@@ -476,9 +480,12 @@ class TestExecuteScenario:
             model="gemini-1.5-pro",
         )
 
-        assert response.status_code in [200, 400, 500, 503], (
-            "Execute with model should return valid response"
-        )
+        assert response.status_code in [
+            200,
+            400,
+            500,
+            503,
+        ], "Execute with model should return valid response"
 
 
 # ============================================================================

@@ -35,11 +35,20 @@ class ProviderFailoverStatusResponse(BaseModel):
     current_key_id: str | None = Field(default=None, description="Currently active key ID")
     primary_key_id: str | None = Field(default=None, description="Primary key ID")
     is_using_backup: bool = Field(default=False, description="Whether currently using a backup key")
-    last_failover_at: str | None = Field(default=None, description="When last failover occurred (ISO format)")
-    failover_count: int = Field(default=0, ge=0, description="Total failover count for this provider")
-    strategy: str = Field(default="priority", description="Failover strategy (priority, round_robin, least_used, random)")
+    last_failover_at: str | None = Field(
+        default=None, description="When last failover occurred (ISO format)"
+    )
+    failover_count: int = Field(
+        default=0, ge=0, description="Total failover count for this provider"
+    )
+    strategy: str = Field(
+        default="priority",
+        description="Failover strategy (priority, round_robin, least_used, random)",
+    )
     config: dict[str, Any] = Field(default_factory=dict, description="Failover configuration")
-    key_cooldowns: list[dict[str, Any]] = Field(default_factory=list, description="Key cooldown states")
+    key_cooldowns: list[dict[str, Any]] = Field(
+        default_factory=list, description="Key cooldown states"
+    )
 
 
 class AllFailoverStatusResponse(BaseModel):
@@ -60,9 +69,13 @@ class FailoverEventResponse(BaseModel):
     from_key_id: str = Field(..., description="Key that was failed over from")
     to_key_id: str | None = Field(default=None, description="Key that was failed over to")
     reason: str = Field(..., description="Reason for failover")
-    error_message: str | None = Field(default=None, description="Error message that triggered failover")
+    error_message: str | None = Field(
+        default=None, description="Error message that triggered failover"
+    )
     triggered_at: str = Field(..., description="When failover occurred (ISO format)")
-    cooldown_until: str | None = Field(default=None, description="When the from_key will be available again")
+    cooldown_until: str | None = Field(
+        default=None, description="When the from_key will be available again"
+    )
     success: bool = Field(..., description="Whether failover succeeded")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional event metadata")
 
@@ -70,7 +83,9 @@ class FailoverEventResponse(BaseModel):
 class FailoverHistoryResponse(BaseModel):
     """Failover event history response."""
 
-    events: list[FailoverEventResponse] = Field(default_factory=list, description="List of failover events")
+    events: list[FailoverEventResponse] = Field(
+        default_factory=list, description="List of failover events"
+    )
     total_count: int = Field(default=0, ge=0, description="Total number of events returned")
     provider_id: str | None = Field(default=None, description="Provider filter (if specified)")
     reason: str | None = Field(default=None, description="Reason filter (if specified)")
@@ -137,6 +152,7 @@ class FailoverConfigResponse(BaseModel):
 def get_failover_service():
     """Get the API key failover service instance."""
     from app.services.api_key_failover_service import get_api_key_failover_service
+
     return get_api_key_failover_service()
 
 
@@ -306,7 +322,9 @@ async def get_failover_history(
     user: TokenPayload = Depends(get_current_user),
 ) -> FailoverHistoryResponse:
     """Get recent failover events."""
-    logger.debug(f"Getting failover history for user {user.sub}, provider={provider_id}, reason={reason}")
+    logger.debug(
+        f"Getting failover history for user {user.sub}, provider={provider_id}, reason={reason}"
+    )
 
     try:
         failover_service = get_failover_service()
@@ -316,6 +334,7 @@ async def get_failover_history(
         if reason:
             try:
                 from app.services.api_key_failover_service import FailoverReason
+
                 reason_enum = FailoverReason(reason)
             except ValueError:
                 # Invalid reason, just don't filter
@@ -534,6 +553,7 @@ async def update_failover_config(
 
         # Convert strategy string to enum
         from app.services.api_key_failover_service import FailoverStrategy
+
         strategy_enum = FailoverStrategy(config.strategy)
 
         # Configure the provider

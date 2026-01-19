@@ -22,24 +22,23 @@ import aiohttp
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from app.domain.models import PromptRequest, PromptResponse
-from app.services.autodan.llm.chimera_adapter import (
-    ChimeraLLMAdapter,
-    ResourceExhaustedError,
-)
+from app.services.autodan.llm.chimera_adapter import ChimeraLLMAdapter, ResourceExhaustedError
 
 logger = logging.getLogger(__name__)
 
 
 class CircuitBreakerState(Enum):
     """Circuit breaker states"""
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"          # Failing, rejecting requests
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Failing, rejecting requests
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
 @dataclass
 class CircuitBreakerConfig:
     """Configuration for circuit breaker"""
+
     failure_threshold: int = 5
     recovery_timeout: float = 60.0
     success_threshold: int = 3
@@ -49,6 +48,7 @@ class CircuitBreakerConfig:
 @dataclass
 class ConnectionPoolConfig:
     """Configuration for HTTP connection pool"""
+
     connector_limit: int = 100
     connector_limit_per_host: int = 30
     connector_ttl_dns_cache: int = 300
@@ -61,6 +61,7 @@ class ConnectionPoolConfig:
 @dataclass
 class BatchConfig:
     """Configuration for batch processing"""
+
     max_batch_size: int = 10
     max_concurrent_requests: int = 20
     batch_timeout: float = 60.0
@@ -70,6 +71,7 @@ class BatchConfig:
 @dataclass
 class OptimizedAdapterMetrics:
     """Metrics tracking for the optimized adapter"""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -141,6 +143,7 @@ class RequestCache:
     def _generate_key(self, request: PromptRequest) -> str:
         """Generate cache key from request"""
         import hashlib
+
         key_data = f"{request.prompt}_{request.config.temperature}_{request.config.max_tokens}"
         return hashlib.md5(key_data.encode()).hexdigest()
 
@@ -217,7 +220,7 @@ class OptimizedChimeraAdapter:
         circuit_breaker_config: CircuitBreakerConfig | None = None,
         batch_config: BatchConfig | None = None,
         enable_caching: bool = True,
-        cache_ttl: float = 300.0
+        cache_ttl: float = 300.0,
     ):
         self.model_name = model_name
         self.provider = provider
@@ -259,21 +262,21 @@ class OptimizedChimeraAdapter:
             limit_per_host=self.connection_config.connector_limit_per_host,
             ttl_dns_cache=self.connection_config.connector_ttl_dns_cache,
             keepalive_timeout=self.connection_config.connector_keepalive_timeout,
-            enable_cleanup_closed=True
+            enable_cleanup_closed=True,
         )
 
         # Create timeout configuration
         timeout = aiohttp.ClientTimeout(
             total=self.connection_config.timeout_total,
             sock_connect=self.connection_config.timeout_sock_connect,
-            sock_read=self.connection_config.timeout_sock_read
+            sock_read=self.connection_config.timeout_sock_read,
         )
 
         # Create session with optimized settings
         self.session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
-            headers={'User-Agent': 'ChimeraAutoDANOptimized/1.0'}
+            headers={"User-Agent": "ChimeraAutoDANOptimized/1.0"},
         )
 
         logger.info("HTTP connection pool initialized")
@@ -305,9 +308,7 @@ class OptimizedChimeraAdapter:
                 self.metrics.cache_misses += 1
 
             # Use circuit breaker protection
-            response = await self.circuit_breaker.call(
-                self._generate_with_retry, request
-            )
+            response = await self.circuit_breaker.call(self._generate_with_retry, request)
 
             # Cache successful response
             if self.request_cache and response:
@@ -327,7 +328,7 @@ class OptimizedChimeraAdapter:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError))
+        retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError)),
     )
     async def _generate_with_retry(self, request: PromptRequest) -> PromptResponse:
         """Generate response with retry logic"""
@@ -338,9 +339,7 @@ class OptimizedChimeraAdapter:
             return await self.fallback_adapter.generate(request)
 
     async def batch_generate(
-        self,
-        requests: list[PromptRequest],
-        progress_callback: callable | None = None
+        self, requests: list[PromptRequest], progress_callback: callable | None = None
     ) -> list[PromptResponse]:
         """Generate multiple responses in parallel with batching"""
         if not requests:
@@ -348,7 +347,7 @@ class OptimizedChimeraAdapter:
 
         # Split into batches
         batches = [
-            requests[i:i + self.batch_config.max_batch_size]
+            requests[i : i + self.batch_config.max_batch_size]
             for i in range(0, len(requests), self.batch_config.max_batch_size)
         ]
 
@@ -362,7 +361,7 @@ class OptimizedChimeraAdapter:
             try:
                 batch_results = await asyncio.wait_for(
                     asyncio.gather(*batch_tasks, return_exceptions=True),
-                    timeout=self.batch_config.batch_timeout
+                    timeout=self.batch_config.batch_timeout,
                 )
 
                 # Handle results and exceptions
@@ -392,8 +391,7 @@ class OptimizedChimeraAdapter:
         logger.info(f"Warming up adapter with {num_requests} requests")
 
         test_request = PromptRequest(
-            prompt="Test warmup request",
-            config={"temperature": 0.1, "max_tokens": 10}
+            prompt="Test warmup request", config={"temperature": 0.1, "max_tokens": 10}
         )
 
         warmup_tasks = [self.generate(test_request) for _ in range(num_requests)]
@@ -413,21 +411,22 @@ class OptimizedChimeraAdapter:
             "successful_requests": self.metrics.successful_requests,
             "failed_requests": self.metrics.failed_requests,
             "success_rate": (
-                self.metrics.successful_requests / total_requests
-                if total_requests > 0 else 0.0
+                self.metrics.successful_requests / total_requests if total_requests > 0 else 0.0
             ),
             "average_response_time": (
                 self.metrics.total_response_time / self.metrics.successful_requests
-                if self.metrics.successful_requests > 0 else 0.0
+                if self.metrics.successful_requests > 0
+                else 0.0
             ),
             "cache_hit_rate": (
                 self.metrics.cache_hits / (self.metrics.cache_hits + self.metrics.cache_misses)
-                if (self.metrics.cache_hits + self.metrics.cache_misses) > 0 else 0.0
+                if (self.metrics.cache_hits + self.metrics.cache_misses) > 0
+                else 0.0
             ),
             "circuit_breaker_state": self.circuit_breaker.state.value,
             "circuit_breaker_failures": self.circuit_breaker.failure_count,
             "cache_size": self.request_cache.size if self.request_cache else 0,
-            "connection_pool_stats": self._get_connection_pool_stats()
+            "connection_pool_stats": self._get_connection_pool_stats(),
         }
 
     def _get_connection_pool_stats(self) -> dict[str, Any]:
@@ -437,9 +436,9 @@ class OptimizedChimeraAdapter:
 
         connector = self.session.connector
         return {
-            "total_connections": getattr(connector, '_created_connection_count', 0),
-            "available_connections": getattr(connector, '_available_connections_count', 0),
-            "acquired_connections": getattr(connector, '_acquired_connection_count', 0)
+            "total_connections": getattr(connector, "_created_connection_count", 0),
+            "available_connections": getattr(connector, "_available_connections_count", 0),
+            "acquired_connections": getattr(connector, "_acquired_connection_count", 0),
         }
 
     def reset_metrics(self):
@@ -452,16 +451,10 @@ class OptimizedChimeraAdapter:
 
 # Factory function for easy instantiation
 async def create_optimized_adapter(
-    model_name: str | None = None,
-    provider: str | None = None,
-    **kwargs
+    model_name: str | None = None, provider: str | None = None, **kwargs
 ) -> OptimizedChimeraAdapter:
     """Create and initialize an optimized adapter"""
-    adapter = OptimizedChimeraAdapter(
-        model_name=model_name,
-        provider=provider,
-        **kwargs
-    )
+    adapter = OptimizedChimeraAdapter(model_name=model_name, provider=provider, **kwargs)
     await adapter.initialize()
     return adapter
 

@@ -17,7 +17,6 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend-api"))
 
 
-
 def print_header(title: str) -> None:
     """Print a formatted header."""
     print("\n" + "=" * 70)
@@ -43,21 +42,12 @@ def verify_imports() -> bool:
     # Test advanced_bypass imports
     try:
         from app.engines.autodan_turbo.advanced_bypass import (  # noqa: F401
-            COGNITIVE_DISSONANCE_TEMPLATES,
-            CONTEXTUAL_PRIMING_TEMPLATES,
-            META_INSTRUCTION_TEMPLATES,
-            PERSONA_INJECTION_TEMPLATES,
-            AdvancedBypassEngine,
-            BypassAttempt,
-            BypassTechnique,
-            CombinedBypassPipeline,
-            RefusalPrediction,
-            RefusalPredictor,
-            apply_layered_bypass,
-            create_adaptive_prompt,
-            create_security_bypass_prompt,
-            detect_security_bypass_refusal,
-        )
+            COGNITIVE_DISSONANCE_TEMPLATES, CONTEXTUAL_PRIMING_TEMPLATES,
+            META_INSTRUCTION_TEMPLATES, PERSONA_INJECTION_TEMPLATES,
+            AdvancedBypassEngine, BypassAttempt, BypassTechnique,
+            CombinedBypassPipeline, RefusalPrediction, RefusalPredictor,
+            apply_layered_bypass, create_adaptive_prompt,
+            create_security_bypass_prompt, detect_security_bypass_refusal)
 
         print_check("advanced_bypass module imports", True)
     except ImportError as e:
@@ -67,12 +57,8 @@ def verify_imports() -> bool:
     # Test refusal_bypass imports
     try:
         from app.engines.autodan_turbo.refusal_bypass import (  # noqa: F401
-            AdaptiveRefusalHandler,
-            MultiStageAttackPipeline,
-            MutationStrategy,
-            RefusalBypassEngine,
-            RefusalType,
-        )
+            AdaptiveRefusalHandler, MultiStageAttackPipeline, MutationStrategy,
+            RefusalBypassEngine, RefusalType)
 
         print_check("refusal_bypass module imports", True)
     except ImportError as e:
@@ -82,10 +68,8 @@ def verify_imports() -> bool:
     # Test attack_scorer imports
     try:
         from app.engines.autodan_turbo.attack_scorer import (  # noqa: F401
-            REFUSAL_PATTERNS_SECURITY_BYPASS,
-            detect_refusal_category,
-            is_security_bypass_refusal,
-        )
+            REFUSAL_PATTERNS_SECURITY_BYPASS, detect_refusal_category,
+            is_security_bypass_refusal)
 
         print_check("attack_scorer module imports", True)
     except ImportError as e:
@@ -95,11 +79,8 @@ def verify_imports() -> bool:
     # Test lifelong_engine imports
     try:
         from app.engines.autodan_turbo.lifelong_engine import (  # noqa: F401
-            CREATIVE_GENERATION_PROMPT,
-            FALLBACK_GENERATION_PROMPT,
-            AutoDANTurboLifelongEngine,
-            build_attack_generation_prompt,
-        )
+            CREATIVE_GENERATION_PROMPT, FALLBACK_GENERATION_PROMPT,
+            AutoDANTurboLifelongEngine, build_attack_generation_prompt)
 
         print_check("lifelong_engine module imports", True)
     except ImportError as e:
@@ -109,13 +90,9 @@ def verify_imports() -> bool:
     # Test __init__ exports
     try:
         from app.engines.autodan_turbo import (  # noqa: F401
-            AdvancedBypassEngine,
-            BypassTechnique,
-            CombinedBypassPipeline,
-            RefusalPredictor,
-            create_security_bypass_prompt,
-            detect_security_bypass_refusal,
-        )
+            AdvancedBypassEngine, BypassTechnique, CombinedBypassPipeline,
+            RefusalPredictor, create_security_bypass_prompt,
+            detect_security_bypass_refusal)
 
         print_check("__init__.py exports", True)
     except ImportError as e:
@@ -130,16 +107,11 @@ def verify_bypass_techniques() -> bool:
     print_header("2. Bypass Techniques Verification")
 
     from app.engines.autodan_turbo.advanced_bypass import (
-        AUTHORITY_ESCALATION_TEMPLATES,
-        COGNITIVE_DISSONANCE_TEMPLATES,
-        CONTEXTUAL_PRIMING_TEMPLATES,
-        GOAL_SUBSTITUTION_TEMPLATES,
-        META_INSTRUCTION_TEMPLATES,
-        NARRATIVE_EMBEDDING_TEMPLATES,
-        PERSONA_INJECTION_TEMPLATES,
-        SEMANTIC_FRAGMENTATION_TEMPLATES,
-        BypassTechnique,
-    )
+        AUTHORITY_ESCALATION_TEMPLATES, COGNITIVE_DISSONANCE_TEMPLATES,
+        CONTEXTUAL_PRIMING_TEMPLATES, GOAL_SUBSTITUTION_TEMPLATES,
+        META_INSTRUCTION_TEMPLATES, NARRATIVE_EMBEDDING_TEMPLATES,
+        PERSONA_INJECTION_TEMPLATES, SEMANTIC_FRAGMENTATION_TEMPLATES,
+        BypassTechnique)
 
     all_passed = True
 
@@ -194,9 +166,7 @@ def verify_advanced_bypass_engine() -> bool:
     print_header("3. AdvancedBypassEngine Verification")
 
     from app.engines.autodan_turbo.advanced_bypass import (
-        AdvancedBypassEngine,
-        BypassTechnique,
-    )
+        AdvancedBypassEngine, BypassTechnique)
 
     all_passed = True
 
@@ -316,8 +286,10 @@ def verify_security_bypass_detection() -> bool:
     """Verify security bypass refusal detection."""
     print_header("5. Security Bypass Detection Verification")
 
-    from app.engines.autodan_turbo.advanced_bypass import detect_security_bypass_refusal
-    from app.engines.autodan_turbo.attack_scorer import is_security_bypass_refusal
+    from app.engines.autodan_turbo.advanced_bypass import \
+        detect_security_bypass_refusal
+    from app.engines.autodan_turbo.attack_scorer import \
+        is_security_bypass_refusal
 
     all_passed = True
 
@@ -363,10 +335,7 @@ def verify_combined_pipeline() -> bool:
     print_header("6. CombinedBypassPipeline Verification")
 
     from app.engines.autodan_turbo.advanced_bypass import (
-        AdvancedBypassEngine,
-        CombinedBypassPipeline,
-        RefusalPredictor,
-    )
+        AdvancedBypassEngine, CombinedBypassPipeline, RefusalPredictor)
 
     all_passed = True
 
@@ -406,7 +375,8 @@ def verify_lifelong_engine_integration() -> bool:
     try:
         import inspect
 
-        from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
+        from app.engines.autodan_turbo.lifelong_engine import \
+            AutoDANTurboLifelongEngine
 
         sig = inspect.signature(AutoDANTurboLifelongEngine.__init__)
         params = list(sig.parameters.keys())
@@ -447,11 +417,8 @@ def verify_template_quality() -> bool:
     print_header("8. Template Quality Verification")
 
     from app.engines.autodan_turbo.advanced_bypass import (
-        AUTHORITY_ESCALATION_TEMPLATES,
-        COGNITIVE_DISSONANCE_TEMPLATES,
-        META_INSTRUCTION_TEMPLATES,
-        PERSONA_INJECTION_TEMPLATES,
-    )
+        AUTHORITY_ESCALATION_TEMPLATES, COGNITIVE_DISSONANCE_TEMPLATES,
+        META_INSTRUCTION_TEMPLATES, PERSONA_INJECTION_TEMPLATES)
 
     all_passed = True
 

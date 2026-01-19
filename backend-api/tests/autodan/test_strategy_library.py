@@ -7,11 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from app.engines.autodan_turbo.models import (
-    JailbreakStrategy,
-    StrategyMetadata,
-    StrategySource,
-)
+from app.engines.autodan_turbo.models import JailbreakStrategy, StrategyMetadata, StrategySource
 from app.engines.autodan_turbo.strategy_library import StrategyLibrary
 
 

@@ -97,9 +97,9 @@ async def optimize_prompt(
             "model": model,
             "target_model": request.target_model,
             "original_prompt": request.core_request,
-            "engine_name": result.engine_name
-            if hasattr(result, "engine_name")
-            else "GradientOptimizerEngine",
+            "engine_name": (
+                result.engine_name if hasattr(result, "engine_name") else "GradientOptimizerEngine"
+            ),
             "used_fallback": result.used_fallback if hasattr(result, "used_fallback") else False,
             "timestamp": datetime.now().isoformat(),
         }
@@ -107,9 +107,9 @@ async def optimize_prompt(
         return GradientOptimizationResponse(
             success=True,
             request_id=request_id,
-            optimized_prompt=result.transformed_text
-            if hasattr(result, "transformed_text")
-            else str(result),
+            optimized_prompt=(
+                result.transformed_text if hasattr(result, "transformed_text") else str(result)
+            ),
             metadata=metadata,
             execution_time_seconds=execution_time,
         )

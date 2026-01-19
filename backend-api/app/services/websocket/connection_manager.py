@@ -66,12 +66,7 @@ class ConnectionManager:
 
         logger.info("WebSocket connection manager stopped")
 
-    async def connect(
-        self,
-        websocket: WebSocket,
-        client_id: str,
-        session_id: str
-    ) -> bool:
+    async def connect(self, websocket: WebSocket, client_id: str, session_id: str) -> bool:
         """
         Accept a new WebSocket connection
 
@@ -92,8 +87,7 @@ class ConnectionManager:
 
             # Initialize connection state
             self.connection_states[client_id] = ConnectionState(
-                client_id=client_id,
-                session_id=session_id
+                client_id=client_id, session_id=session_id
             )
 
             # Subscribe to session
@@ -103,7 +97,7 @@ class ConnectionManager:
             ack_event = ConnectionAckEvent(
                 session_id=session_id,
                 client_id=client_id,
-                supported_events=[event.value for event in EventType]
+                supported_events=[event.value for event in EventType],
             )
 
             await self._send_to_client(
@@ -112,8 +106,8 @@ class ConnectionManager:
                     event_type=EventType.CONNECTION_ACK,
                     session_id=session_id,
                     sequence=0,
-                    data=ack_event
-                )
+                    data=ack_event,
+                ),
             )
 
             logger.info(f"Client {client_id} connected to session {session_id}")
@@ -167,9 +161,9 @@ class ConnectionManager:
         # Initialize session state if not exists
         if session_id not in self.session_states:
             from .models import SessionStatus
+
             self.session_states[session_id] = SessionState(
-                session_id=session_id,
-                status=SessionStatus.PENDING
+                session_id=session_id, status=SessionStatus.PENDING
             )
 
         # Add client to session's connected clients
@@ -198,10 +192,7 @@ class ConnectionManager:
         logger.info(f"Client {client_id} unsubscribed from session {session_id}")
 
     async def broadcast_to_session(
-        self,
-        session_id: str,
-        event: WebSocketEvent,
-        exclude_client: str | None = None
+        self, session_id: str, event: WebSocketEvent, exclude_client: str | None = None
     ):
         """
         Broadcast an event to all clients subscribed to a session
@@ -230,15 +221,9 @@ class ConnectionManager:
             # Log any errors
             for client_id, result in zip(client_ids, results, strict=False):
                 if isinstance(result, Exception):
-                    logger.error(
-                        f"Failed to send event to client {client_id}: {result}"
-                    )
+                    logger.error(f"Failed to send event to client {client_id}: {result}")
 
-    async def send_to_client(
-        self,
-        client_id: str,
-        event: WebSocketEvent
-    ):
+    async def send_to_client(self, client_id: str, event: WebSocketEvent):
         """
         Send an event to a specific client
 
@@ -248,11 +233,7 @@ class ConnectionManager:
         """
         await self._send_to_client(client_id, event)
 
-    async def _send_to_client(
-        self,
-        client_id: str,
-        event: WebSocketEvent
-    ):
+    async def _send_to_client(self, client_id: str, event: WebSocketEvent):
         """
         Internal method to send event to client with error handling
 
@@ -275,8 +256,7 @@ class ConnectionManager:
             await websocket.send_json(event.dict())
 
             logger.debug(
-                f"Sent {event.event_type} to client {client_id} "
-                f"(seq: {event.sequence})"
+                f"Sent {event.event_type} to client {client_id} " f"(seq: {event.sequence})"
             )
 
         except WebSocketDisconnect:
@@ -311,11 +291,7 @@ class ConnectionManager:
         """
         return self.session_states.get(session_id)
 
-    async def update_session_state(
-        self,
-        session_id: str,
-        **updates
-    ):
+    async def update_session_state(self, session_id: str, **updates):
         """
         Update session state fields
 
@@ -357,14 +333,11 @@ class ConnectionManager:
                 # Check all connections
                 for client_id, state in list(self.connection_states.items()):
                     # Check if connection is stale
-                    time_since_heartbeat = (
-                        current_time - state.last_heartbeat
-                    ).total_seconds()
+                    time_since_heartbeat = (current_time - state.last_heartbeat).total_seconds()
 
                     if time_since_heartbeat > self._heartbeat_timeout:
                         logger.warning(
-                            f"Client {client_id} heartbeat timeout "
-                            f"({time_since_heartbeat}s)"
+                            f"Client {client_id} heartbeat timeout " f"({time_since_heartbeat}s)"
                         )
                         stale_clients.append(client_id)
                         continue
@@ -372,9 +345,7 @@ class ConnectionManager:
                     # Send heartbeat
                     try:
                         heartbeat = HeartbeatEvent(
-                            uptime=int((
-                                current_time - state.connected_at
-                            ).total_seconds())
+                            uptime=int((current_time - state.connected_at).total_seconds())
                         )
 
                         await self._send_to_client(
@@ -383,13 +354,11 @@ class ConnectionManager:
                                 event_type=EventType.HEARTBEAT,
                                 session_id=state.session_id,
                                 sequence=0,  # Heartbeats don't increment sequence
-                                data=heartbeat
-                            )
+                                data=heartbeat,
+                            ),
                         )
                     except Exception as e:
-                        logger.error(
-                            f"Error sending heartbeat to {client_id}: {e}"
-                        )
+                        logger.error(f"Error sending heartbeat to {client_id}: {e}")
                         stale_clients.append(client_id)
 
                 # Disconnect stale clients
@@ -410,9 +379,10 @@ class ConnectionManager:
                 len(clients) for clients in self.session_subscriptions.values()
             ),
             "active_sessions": sum(
-                1 for state in self.session_states.values()
+                1
+                for state in self.session_states.values()
                 if state.status.value in ["running", "initializing"]
-            )
+            ),
         }
 
 

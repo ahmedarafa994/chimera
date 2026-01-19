@@ -29,14 +29,10 @@ class FlameGraphGenerator:
         self.profilers = {}
         self.active_profiles = set()
 
-    def profile_with_py_spy(
-        self, pid: int, duration: int = 60, rate: int = 100
-    ) -> str:
+    def profile_with_py_spy(self, pid: int, duration: int = 60, rate: int = 100) -> str:
         """Profile using py-spy for production environments"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = (
-            self.output_dir / f"py_spy_flamegraph_{pid}_{timestamp}.svg"
-        )
+        output_file = self.output_dir / f"py_spy_flamegraph_{pid}_{timestamp}.svg"
 
         try:
             cmd = [
@@ -78,9 +74,7 @@ class FlameGraphGenerator:
         """Profile using cProfile for detailed function analysis"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         prof_file = self.output_dir / f"cprofile_{timestamp}.prof"
-        flamegraph_file = (
-            self.output_dir / f"cprofile_flamegraph_{timestamp}.svg"
-        )
+        flamegraph_file = self.output_dir / f"cprofile_flamegraph_{timestamp}.svg"
 
         try:
             # Run profiling
@@ -98,9 +92,7 @@ class FlameGraphGenerator:
             profiler.dump_stats(str(prof_file))
 
             # Generate flame graph using flameprof or custom converter
-            self._convert_cprofile_to_flamegraph(
-                str(prof_file), str(flamegraph_file)
-            )
+            self._convert_cprofile_to_flamegraph(str(prof_file), str(flamegraph_file))
 
             print(f"cProfile flame graph generated: {flamegraph_file}")
             return str(flamegraph_file)
@@ -109,9 +101,7 @@ class FlameGraphGenerator:
             print(f"cProfile profiling failed: {e}")
             return None
 
-    def _convert_cprofile_to_flamegraph(
-        self, prof_file: str, output_file: str
-    ):
+    def _convert_cprofile_to_flamegraph(self, prof_file: str, output_file: str):
         """Convert cProfile output to flame graph format"""
         try:
             # Try using flameprof if available
@@ -123,9 +113,7 @@ class FlameGraphGenerator:
                 "-o",
                 output_file,
             ]
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, check=False
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
             if result.returncode != 0:
                 # Fallback to manual conversion
@@ -138,7 +126,7 @@ class FlameGraphGenerator:
     def _manual_cprofile_conversion(self, prof_file: str, output_file: str):
         """Manually convert cProfile to flame graph format"""
         stats = pstats.Stats(prof_file)
-        stats.sort_stats('cumulative')
+        stats.sort_stats("cumulative")
 
         # Extract call stack information
         flame_data = []
@@ -147,19 +135,19 @@ class FlameGraphGenerator:
 
             # Create flame graph entry
             stack = f"{filename}:{funcname}"
-            flame_data.append({
-                'stack': stack,
-                'samples': int(ct * 1000),  # Convert to samples
-                'cumulative_time': ct,
-                'total_time': tt
-            })
+            flame_data.append(
+                {
+                    "stack": stack,
+                    "samples": int(ct * 1000),  # Convert to samples
+                    "cumulative_time": ct,
+                    "total_time": tt,
+                }
+            )
 
         # Generate simplified SVG (basic flame graph)
         self._generate_simple_flamegraph(flame_data, output_file)
 
-    def _generate_simple_flamegraph(
-        self, flame_data: list[dict], output_file: str
-    ):
+    def _generate_simple_flamegraph(self, flame_data: list[dict], output_file: str):
         """Generate a simple SVG flame graph"""
         # Sort by cumulative time
         flame_data.sort(key=lambda x: x["cumulative_time"], reverse=True)
@@ -190,14 +178,12 @@ class FlameGraphGenerator:
 """
             y_pos += 25
 
-        svg_content += '</svg>'
+        svg_content += "</svg>"
 
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             f.write(svg_content)
 
-    def profile_asyncio_application(
-        self, app_factory, duration: int = 60
-    ) -> str:
+    def profile_asyncio_application(self, app_factory, duration: int = 60) -> str:
         """Profile an asyncio application"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -220,21 +206,16 @@ class FlameGraphGenerator:
                 profiler.disable()
 
                 # Save and convert profile
-                prof_file = (
-                    self.output_dir / f"asyncio_profile_{timestamp}.prof"
-                )
+                prof_file = self.output_dir / f"asyncio_profile_{timestamp}.prof"
                 profiler.dump_stats(str(prof_file))
 
-                flamegraph_file = (
-                    self.output_dir / f"asyncio_flamegraph_{timestamp}.svg"
-                )
-                self._convert_cprofile_to_flamegraph(
-                    str(prof_file), str(flamegraph_file)
-                )
+                flamegraph_file = self.output_dir / f"asyncio_flamegraph_{timestamp}.svg"
+                self._convert_cprofile_to_flamegraph(str(prof_file), str(flamegraph_file))
 
             return str(flamegraph_file)
 
         return asyncio.run(run_profiling())
+
 
 class MemoryAnalyzer:
     """Advanced memory analysis and leak detection"""
@@ -278,9 +259,7 @@ class MemoryAnalyzer:
         self.snapshots[name] = snapshot_data
 
         # Save detailed analysis
-        report_file = (
-            self.output_dir / f"memory_snapshot_{name}_{timestamp}.json"
-        )
+        report_file = self.output_dir / f"memory_snapshot_{name}_{timestamp}.json"
         self._generate_snapshot_report(snapshot_data, str(report_file))
 
         return str(report_file)
@@ -291,55 +270,53 @@ class MemoryAnalyzer:
         memory_info = process.memory_info()
 
         return {
-            'rss': memory_info.rss,
-            'vms': memory_info.vms,
-            'percent': process.memory_percent(),
-            'available': psutil.virtual_memory().available,
-            'total': psutil.virtual_memory().total
+            "rss": memory_info.rss,
+            "vms": memory_info.vms,
+            "percent": process.memory_percent(),
+            "available": psutil.virtual_memory().available,
+            "total": psutil.virtual_memory().total,
         }
 
     def _get_gc_stats(self) -> dict[str, Any]:
         """Get garbage collection statistics"""
-        return {
-            'counts': gc.get_count(),
-            'stats': gc.get_stats(),
-            'threshold': gc.get_threshold()
-        }
+        return {"counts": gc.get_count(), "stats": gc.get_stats(), "threshold": gc.get_threshold()}
 
     def _generate_snapshot_report(self, snapshot_data: dict, output_file: str):
         """Generate detailed memory snapshot report"""
-        snapshot = snapshot_data['snapshot']
-        stats = snapshot.statistics('lineno')
+        snapshot = snapshot_data["snapshot"]
+        stats = snapshot.statistics("lineno")
 
         report = {
-            'timestamp': snapshot_data['timestamp'].isoformat(),
-            'process_info': snapshot_data['process_info'],
-            'gc_stats': snapshot_data['gc_stats'],
-            'top_allocations': []
+            "timestamp": snapshot_data["timestamp"].isoformat(),
+            "process_info": snapshot_data["process_info"],
+            "gc_stats": snapshot_data["gc_stats"],
+            "top_allocations": [],
         }
 
         # Top memory allocations
         for i, stat in enumerate(stats[:50]):
-            report['top_allocations'].append({
-                'rank': i + 1,
-                'size': stat.size,
-                'size_mb': stat.size / 1024 / 1024,
-                'count': stat.count,
-                'traceback': stat.traceback.format()
-            })
+            report["top_allocations"].append(
+                {
+                    "rank": i + 1,
+                    "size": stat.size,
+                    "size_mb": stat.size / 1024 / 1024,
+                    "count": stat.count,
+                    "traceback": stat.traceback.format(),
+                }
+            )
 
         # Save as JSON
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
         # Generate human-readable report
-        text_file = output_file.replace('.json', '.txt')
-        with open(text_file, 'w') as f:
+        text_file = output_file.replace(".json", ".txt")
+        with open(text_file, "w") as f:
             f.write(f"Memory Snapshot Report - {snapshot_data['timestamp']}\n")
             f.write("=" * 60 + "\n\n")
 
             # Process information
-            proc_info = snapshot_data['process_info']
+            proc_info = snapshot_data["process_info"]
             f.write("Process Memory Usage:\n")
             f.write(f"  RSS: {proc_info['rss'] / 1024 / 1024:.2f} MB\n")
             f.write(f"  VMS: {proc_info['vms'] / 1024 / 1024:.2f} MB\n")
@@ -355,14 +332,9 @@ class MemoryAnalyzer:
                 )
                 f.write(f"    {allocation['traceback'][0]}\n")
 
-    def compare_snapshots(
-        self, snapshot1_name: str, snapshot2_name: str
-    ) -> str:
+    def compare_snapshots(self, snapshot1_name: str, snapshot2_name: str) -> str:
         """Compare two memory snapshots to detect leaks"""
-        if (
-            snapshot1_name not in self.snapshots
-            or snapshot2_name not in self.snapshots
-        ):
+        if snapshot1_name not in self.snapshots or snapshot2_name not in self.snapshots:
             raise ValueError("Invalid snapshot names")
 
         snapshot1 = self.snapshots[snapshot1_name]["snapshot"]
@@ -370,14 +342,13 @@ class MemoryAnalyzer:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_file = (
-            self.output_dir
-            / f"memory_diff_{snapshot1_name}_to_{snapshot2_name}_{timestamp}.txt"
+            self.output_dir / f"memory_diff_{snapshot1_name}_to_{snapshot2_name}_{timestamp}.txt"
         )
 
         # Compare snapshots
-        top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+        top_stats = snapshot2.compare_to(snapshot1, "lineno")
 
-        with open(report_file, 'w') as f:
+        with open(report_file, "w") as f:
             f.write(f"Memory Comparison: {snapshot1_name} → {snapshot2_name}\n")
             f.write(f"Generated: {datetime.now().isoformat()}\n")
             f.write("=" * 60 + "\n\n")
@@ -402,18 +373,18 @@ class MemoryAnalyzer:
         """Detect potential memory leaks"""
         comparison = self.compare_snapshots(baseline_name, current_name)
 
-        baseline_proc = self.snapshots[baseline_name]['process_info']
-        current_proc = self.snapshots[current_name]['process_info']
+        baseline_proc = self.snapshots[baseline_name]["process_info"]
+        current_proc = self.snapshots[current_name]["process_info"]
 
-        memory_growth = current_proc['rss'] - baseline_proc['rss']
-        growth_percent = (memory_growth / baseline_proc['rss']) * 100
+        memory_growth = current_proc["rss"] - baseline_proc["rss"]
+        growth_percent = (memory_growth / baseline_proc["rss"]) * 100
 
         return {
-            'memory_growth_bytes': memory_growth,
-            'memory_growth_mb': memory_growth / 1024 / 1024,
-            'growth_percent': growth_percent,
-            'is_potential_leak': growth_percent > 20,  # 20% growth threshold
-            'comparison_report': comparison
+            "memory_growth_bytes": memory_growth,
+            "memory_growth_mb": memory_growth / 1024 / 1024,
+            "growth_percent": growth_percent,
+            "is_potential_leak": growth_percent > 20,  # 20% growth threshold
+            "comparison_report": comparison,
         }
 
     def profile_memory_usage_over_time(self, duration: int = 300, interval: int = 10) -> str:
@@ -430,21 +401,23 @@ class MemoryAnalyzer:
             memory_info = self._get_process_info()
             gc_stats = self._get_gc_stats()
 
-            timeline_data.append({
-                'timestamp': time.time(),
-                'elapsed': time.time() - start_time,
-                'memory': memory_info,
-                'gc': gc_stats
-            })
+            timeline_data.append(
+                {
+                    "timestamp": time.time(),
+                    "elapsed": time.time() - start_time,
+                    "memory": memory_info,
+                    "gc": gc_stats,
+                }
+            )
 
             time.sleep(interval)
 
         # Save timeline data
-        with open(data_file, 'w') as f:
+        with open(data_file, "w") as f:
             json.dump(timeline_data, f, indent=2)
 
         # Generate visualization script
-        self._generate_memory_timeline_chart(timeline_data, str(data_file).replace('.json', '.png'))
+        self._generate_memory_timeline_chart(timeline_data, str(data_file).replace(".json", ".png"))
 
         return str(data_file)
 
@@ -458,35 +431,36 @@ class MemoryAnalyzer:
 
             _fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
 
-            times = [datetime.fromtimestamp(d['timestamp']) for d in timeline_data]
-            rss_values = [d['memory']['rss'] / 1024 / 1024 for d in timeline_data]  # MB
-            percent_values = [d['memory']['percent'] for d in timeline_data]
+            times = [datetime.fromtimestamp(d["timestamp"]) for d in timeline_data]
+            rss_values = [d["memory"]["rss"] / 1024 / 1024 for d in timeline_data]  # MB
+            percent_values = [d["memory"]["percent"] for d in timeline_data]
 
             # RSS usage
-            ax1.plot(times, rss_values, 'b-', linewidth=2)
-            ax1.set_ylabel('RSS Memory (MB)')
-            ax1.set_title('Memory Usage Over Time')
+            ax1.plot(times, rss_values, "b-", linewidth=2)
+            ax1.set_ylabel("RSS Memory (MB)")
+            ax1.set_title("Memory Usage Over Time")
             ax1.grid(True, alpha=0.3)
 
             # Memory percentage
-            ax2.plot(times, percent_values, 'r-', linewidth=2)
-            ax2.set_ylabel('Memory Percentage (%)')
-            ax2.set_xlabel('Time')
+            ax2.plot(times, percent_values, "r-", linewidth=2)
+            ax2.set_ylabel("Memory Percentage (%)")
+            ax2.set_xlabel("Time")
             ax2.grid(True, alpha=0.3)
 
             # Format x-axis
-            ax2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+            ax2.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
             ax2.xaxis.set_major_locator(mdates.MinuteLocator(interval=1))
             plt.xticks(rotation=45)
 
             plt.tight_layout()
-            plt.savefig(output_file, dpi=300, bbox_inches='tight')
+            plt.savefig(output_file, dpi=300, bbox_inches="tight")
             plt.close()
 
             print(f"Memory timeline chart saved: {output_file}")
 
         except ImportError:
             print("Matplotlib not available for chart generation")
+
 
 class HotPathProfiler:
     """Profile hot paths and performance bottlenecks in real-time"""
@@ -522,26 +496,26 @@ class HotPathProfiler:
 
     def _trace_calls(self, frame, event, _arg):
         """Trace function calls for hot path analysis"""
-        if event == 'call':
+        if event == "call":
             func_name = f"{frame.f_code.co_filename}:{frame.f_code.co_name}"
 
             if func_name not in self.call_graph:
                 self.call_graph[func_name] = {
-                    'count': 0,
-                    'total_time': 0,
-                    'callers': set(),
-                    'callees': set()
+                    "count": 0,
+                    "total_time": 0,
+                    "callers": set(),
+                    "callees": set(),
                 }
 
-            self.call_graph[func_name]['count'] += 1
+            self.call_graph[func_name]["count"] += 1
 
             # Track caller-callee relationship
             if frame.f_back:
                 caller = f"{frame.f_back.f_code.co_filename}:{frame.f_back.f_code.co_name}"
-                self.call_graph[func_name]['callers'].add(caller)
+                self.call_graph[func_name]["callers"].add(caller)
 
                 if caller in self.call_graph:
-                    self.call_graph[caller]['callees'].add(func_name)
+                    self.call_graph[caller]["callees"].add(func_name)
 
         return self._trace_calls
 
@@ -551,33 +525,31 @@ class HotPathProfiler:
         serializable_data = {}
         for func_name, data in self.call_graph.items():
             serializable_data[func_name] = {
-                'count': data['count'],
-                'total_time': data['total_time'],
-                'callers': list(data['callers']),
-                'callees': list(data['callees'])
+                "count": data["count"],
+                "total_time": data["total_time"],
+                "callers": list(data["callers"]),
+                "callees": list(data["callees"]),
             }
 
         report = {
-            'timestamp': datetime.now().isoformat(),
-            'profiling_duration': time.time() - self.start_time,
-            'total_functions': len(self.call_graph),
-            'call_graph': serializable_data
+            "timestamp": datetime.now().isoformat(),
+            "profiling_duration": time.time() - self.start_time,
+            "total_functions": len(self.call_graph),
+            "call_graph": serializable_data,
         }
 
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(report, f, indent=2)
 
         # Generate human-readable summary
-        summary_file = output_file.replace('.json', '_summary.txt')
-        with open(summary_file, 'w') as f:
+        summary_file = output_file.replace(".json", "_summary.txt")
+        with open(summary_file, "w") as f:
             f.write("Hot Path Analysis Summary\n")
             f.write("=" * 30 + "\n\n")
 
             # Top functions by call count
             sorted_functions = sorted(
-                self.call_graph.items(),
-                key=lambda x: x[1]['count'],
-                reverse=True
+                self.call_graph.items(), key=lambda x: x[1]["count"], reverse=True
             )
 
             f.write("Top 20 Functions by Call Count:\n")
@@ -585,17 +557,18 @@ class HotPathProfiler:
             for func_name, data in sorted_functions[:20]:
                 f.write(f"{data['count']:8d} calls - {func_name}\n")
 
+
 def run_comprehensive_profiling():
     """Run comprehensive performance profiling"""
 
     # Find Python processes running Chimera
     chimera_processes = []
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
-            if 'python' in proc.info['name'].lower() and proc.info['cmdline']:
-                cmdline = ' '.join(proc.info['cmdline'])
-                if 'chimera' in cmdline.lower() or 'uvicorn' in cmdline.lower():
-                    chimera_processes.append(proc.info['pid'])
+            if "python" in proc.info["name"].lower() and proc.info["cmdline"]:
+                cmdline = " ".join(proc.info["cmdline"])
+                if "chimera" in cmdline.lower() or "uvicorn" in cmdline.lower():
+                    chimera_processes.append(proc.info["pid"])
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
 
@@ -639,10 +612,13 @@ def run_comprehensive_profiling():
     print(f"Flame Graph: {flame_graph}")
     print(f"Memory Timeline: {memory_timeline}")
     print(f"Hot Path Report: {hotpath_report}")
-    print(f"Memory Growth: {leak_analysis['memory_growth_mb']:.2f} MB ({leak_analysis['growth_percent']:.1f}%)")
+    print(
+        f"Memory Growth: {leak_analysis['memory_growth_mb']:.2f} MB ({leak_analysis['growth_percent']:.1f}%)"
+    )
 
-    if leak_analysis['is_potential_leak']:
+    if leak_analysis["is_potential_leak"]:
         print("⚠️  Potential memory leak detected!")
+
 
 def run_sample_profiling():
     """Run sample profiling for demonstration"""
@@ -656,8 +632,10 @@ def run_sample_profiling():
             # Simulate some computation
             # Use secrets for occasional randomness to satisfy S311
             import secrets
+
             value = math.sin((secrets.randbelow(1000) / 1000.0) * math.pi)
             import secrets
+
             data.append(value * (secrets.randbelow(100) + 1))
 
             # Simulate string operations
@@ -690,6 +668,7 @@ def run_sample_profiling():
     print("\nSample Profiling Complete:")
     print(f"Flame Graph: {flame_graph}")
     print(f"Memory Analysis: {leak_analysis}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sample":

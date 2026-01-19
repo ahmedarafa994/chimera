@@ -15,6 +15,7 @@ from typing import Any
 # HTTP clients for API testing
 try:
     import aiohttp
+
     HTTP_CLIENTS_AVAILABLE = True
 except ImportError:
     HTTP_CLIENTS_AVAILABLE = False
@@ -29,6 +30,7 @@ LOCUST_AVAILABLE = _importlib.find_spec("locust") is not None
 @dataclass
 class BaselineTestResult:
     """Individual baseline test result"""
+
     journey_name: str
     test_type: str  # api, frontend, integration
     start_time: datetime
@@ -40,9 +42,11 @@ class BaselineTestResult:
     error_message: str | None
     metrics: dict[str, Any]
 
+
 @dataclass
 class BaselineReport:
     """Comprehensive baseline test report"""
+
     report_id: str
     timestamp: datetime
     test_results: list[BaselineTestResult]
@@ -52,6 +56,7 @@ class BaselineReport:
     recommendations: list[str]
     baseline_status: str  # pass, fail, warning
 
+
 class BaselineTester:
     """Performance baseline testing framework"""
 
@@ -60,7 +65,9 @@ class BaselineTester:
         self.baseline_cache: dict[str, dict[str, float]] = {}
         self.session: aiohttp.ClientSession | None = None
 
-    async def run_comprehensive_baseline(self, _test_config: dict[str, Any] | None = None) -> BaselineReport:
+    async def run_comprehensive_baseline(
+        self, _test_config: dict[str, Any] | None = None
+    ) -> BaselineReport:
         """Run comprehensive baseline testing for all critical user journeys"""
         report_id = f"baseline_{int(time.time())}"
         start_time = datetime.now(UTC)
@@ -71,8 +78,7 @@ class BaselineTester:
         if HTTP_CLIENTS_AVAILABLE:
             connector = aiohttp.TCPConnector(limit=100, keepalive_timeout=30)
             self.session = aiohttp.ClientSession(
-                connector=connector,
-                timeout=aiohttp.ClientTimeout(total=30)
+                connector=connector, timeout=aiohttp.ClientTimeout(total=30)
             )
 
         test_results = []
@@ -126,7 +132,7 @@ class BaselineTester:
             regression_thresholds=regression_thresholds,
             system_metrics=system_metrics,
             recommendations=recommendations,
-            baseline_status=baseline_status
+            baseline_status=baseline_status,
         )
 
         # Save report
@@ -145,12 +151,24 @@ class BaselineTester:
             {"path": "/health/ready", "method": "GET", "expected_time_ms": 500},
             {"path": "/api/v1/providers", "method": "GET", "expected_time_ms": 200},
             {"path": "/api/v1/session/models", "method": "GET", "expected_time_ms": 300},
-            {"path": "/api/v1/generate", "method": "POST", "expected_time_ms": 2000,
-             "payload": {"prompt": "Test prompt", "provider": "mock"}},
-            {"path": "/api/v1/transform", "method": "POST", "expected_time_ms": 1000,
-             "payload": {"prompt": "Test transformation", "techniques": ["simple"]}},
-            {"path": "/api/v1/generation/jailbreak/generate", "method": "POST", "expected_time_ms": 5000,
-             "payload": {"prompt": "Test jailbreak", "technique": "dan"}}
+            {
+                "path": "/api/v1/generate",
+                "method": "POST",
+                "expected_time_ms": 2000,
+                "payload": {"prompt": "Test prompt", "provider": "mock"},
+            },
+            {
+                "path": "/api/v1/transform",
+                "method": "POST",
+                "expected_time_ms": 1000,
+                "payload": {"prompt": "Test transformation", "techniques": ["simple"]},
+            },
+            {
+                "path": "/api/v1/generation/jailbreak/generate",
+                "method": "POST",
+                "expected_time_ms": 5000,
+                "payload": {"prompt": "Test jailbreak", "technique": "dan"},
+            },
         ]
 
         for endpoint in api_endpoints:
@@ -159,7 +177,7 @@ class BaselineTester:
                     endpoint["path"],
                     endpoint["method"],
                     endpoint.get("payload"),
-                    endpoint["expected_time_ms"]
+                    endpoint["expected_time_ms"],
                 )
                 results.append(result)
 
@@ -168,9 +186,13 @@ class BaselineTester:
 
         return results
 
-    async def _test_api_endpoint(self, path: str, method: str,
-                                payload: dict[str, Any] | None = None,
-                                expected_time_ms: float = 1000) -> BaselineTestResult:
+    async def _test_api_endpoint(
+        self,
+        path: str,
+        method: str,
+        payload: dict[str, Any] | None = None,
+        expected_time_ms: float = 1000,
+    ) -> BaselineTestResult:
         """Test individual API endpoint"""
         if not self.session:
             return self._create_failed_result("api_endpoint", path, "HTTP client not available")
@@ -194,7 +216,9 @@ class BaselineTester:
                     success = 200 <= status_code < 300
 
             else:
-                return self._create_failed_result("api_endpoint", path, f"Unsupported method: {method}")
+                return self._create_failed_result(
+                    "api_endpoint", path, f"Unsupported method: {method}"
+                )
 
             response_time_ms = (time.time() - request_start) * 1000
 
@@ -210,8 +234,8 @@ class BaselineTester:
                 error_message=None if success else f"HTTP {status_code}",
                 metrics={
                     "expected_time_ms": expected_time_ms,
-                    "baseline_met": response_time_ms <= expected_time_ms * 1.5  # 50% tolerance
-                }
+                    "baseline_met": response_time_ms <= expected_time_ms * 1.5,  # 50% tolerance
+                },
             )
 
         except Exception as e:
@@ -224,9 +248,21 @@ class BaselineTester:
         # Test Core Web Vitals for main pages
         frontend_pages = [
             {"url": f"{config.frontend_url}", "name": "homepage", "expected_lcp_ms": 2500},
-            {"url": f"{config.frontend_url}/dashboard", "name": "dashboard", "expected_lcp_ms": 3000},
-            {"url": f"{config.frontend_url}/dashboard/providers", "name": "providers", "expected_lcp_ms": 2000},
-            {"url": f"{config.frontend_url}/dashboard/jailbreak", "name": "jailbreak", "expected_lcp_ms": 3500}
+            {
+                "url": f"{config.frontend_url}/dashboard",
+                "name": "dashboard",
+                "expected_lcp_ms": 3000,
+            },
+            {
+                "url": f"{config.frontend_url}/dashboard/providers",
+                "name": "providers",
+                "expected_lcp_ms": 2000,
+            },
+            {
+                "url": f"{config.frontend_url}/dashboard/jailbreak",
+                "name": "jailbreak",
+                "expected_lcp_ms": 3500,
+            },
         ]
 
         for page in frontend_pages:
@@ -245,17 +281,23 @@ class BaselineTester:
                         success=success,
                         response_time_ms=core_vitals.lcp,
                         status_code=None,
-                        error_message=None if success else f"LCP {core_vitals.lcp}ms exceeds {page['expected_lcp_ms']}ms",
+                        error_message=(
+                            None
+                            if success
+                            else f"LCP {core_vitals.lcp}ms exceeds {page['expected_lcp_ms']}ms"
+                        ),
                         metrics={
                             "lcp": core_vitals.lcp,
                             "fcp": core_vitals.fcp,
                             "cls": core_vitals.cls,
                             "ttfb": core_vitals.ttfb,
-                            "expected_lcp_ms": page["expected_lcp_ms"]
-                        }
+                            "expected_lcp_ms": page["expected_lcp_ms"],
+                        },
                     )
                 else:
-                    result = self._create_failed_result("frontend", page["name"], "Could not measure Core Web Vitals")
+                    result = self._create_failed_result(
+                        "frontend", page["name"], "Could not measure Core Web Vitals"
+                    )
 
                 results.append(result)
 
@@ -278,18 +320,26 @@ class BaselineTester:
                     success=success,
                     response_time_ms=journey_result.total_duration,
                     status_code=None,
-                    error_message=None if success else "; ".join(journey_result.error_messages + journey_result.budget_violations),
+                    error_message=(
+                        None
+                        if success
+                        else "; ".join(
+                            journey_result.error_messages + journey_result.budget_violations
+                        )
+                    ),
                     metrics={
                         "steps_completed": len([s for s in journey_result.steps if s["success"]]),
                         "total_steps": len(journey_result.steps),
-                        "budget_violations": len(journey_result.budget_violations)
-                    }
+                        "budget_violations": len(journey_result.budget_violations),
+                    },
                 )
 
                 results.append(result)
 
             except Exception as e:
-                results.append(self._create_failed_result("frontend", journey_config["name"], str(e)))
+                results.append(
+                    self._create_failed_result("frontend", journey_config["name"], str(e))
+                )
 
         return results
 
@@ -304,24 +354,36 @@ class BaselineTester:
                 "description": "Complete prompt generation workflow",
                 "steps": [
                     {"type": "api", "path": "/api/v1/providers", "method": "GET"},
-                    {"type": "api", "path": "/api/v1/generate", "method": "POST",
-                     "payload": {"prompt": "Create a marketing email", "provider": "mock"}},
-                    {"type": "delay", "duration": 0.1}
+                    {
+                        "type": "api",
+                        "path": "/api/v1/generate",
+                        "method": "POST",
+                        "payload": {"prompt": "Create a marketing email", "provider": "mock"},
+                    },
+                    {"type": "delay", "duration": 0.1},
                 ],
-                "expected_total_ms": 3000
+                "expected_total_ms": 3000,
             },
             {
                 "name": "jailbreak_workflow_e2e",
                 "description": "Complete jailbreak testing workflow",
                 "steps": [
-                    {"type": "api", "path": "/api/v1/transform", "method": "POST",
-                     "payload": {"prompt": "Test prompt", "techniques": ["dan_persona"]}},
-                    {"type": "api", "path": "/api/v1/generation/jailbreak/generate", "method": "POST",
-                     "payload": {"prompt": "Test jailbreak", "technique": "dan"}},
-                    {"type": "delay", "duration": 0.1}
+                    {
+                        "type": "api",
+                        "path": "/api/v1/transform",
+                        "method": "POST",
+                        "payload": {"prompt": "Test prompt", "techniques": ["dan_persona"]},
+                    },
+                    {
+                        "type": "api",
+                        "path": "/api/v1/generation/jailbreak/generate",
+                        "method": "POST",
+                        "payload": {"prompt": "Test jailbreak", "technique": "dan"},
+                    },
+                    {"type": "delay", "duration": 0.1},
                 ],
-                "expected_total_ms": 8000
-            }
+                "expected_total_ms": 8000,
+            },
         ]
 
         for test in integration_tests:
@@ -375,14 +437,18 @@ class BaselineTester:
                 success=overall_success and baseline_met,
                 response_time_ms=total_duration_ms,
                 status_code=None,
-                error_message=None if (overall_success and baseline_met) else f"Integration test failed or exceeded baseline {test_config['expected_total_ms']}ms",
+                error_message=(
+                    None
+                    if (overall_success and baseline_met)
+                    else f"Integration test failed or exceeded baseline {test_config['expected_total_ms']}ms"
+                ),
                 metrics={
                     "steps_executed": len(step_results),
                     "steps_successful": len([s for s in step_results if s["success"]]),
                     "expected_total_ms": test_config["expected_total_ms"],
                     "baseline_met": baseline_met,
-                    "step_durations": [s["duration_ms"] for s in step_results]
-                }
+                    "step_durations": [s["duration_ms"] for s in step_results],
+                },
             )
 
         except Exception as e:
@@ -393,7 +459,9 @@ class BaselineTester:
         results = []
 
         if not LOCUST_AVAILABLE:
-            results.append(self._create_failed_result("load", "locust_test", "Locust not available"))
+            results.append(
+                self._create_failed_result("load", "locust_test", "Locust not available")
+            )
             return results
 
         # Simple load test scenarios
@@ -403,15 +471,15 @@ class BaselineTester:
                 "endpoint": "/health",
                 "users": 10,
                 "duration": 30,  # seconds
-                "expected_avg_response_ms": 50
+                "expected_avg_response_ms": 50,
             },
             {
                 "name": "baseline_load_providers",
                 "endpoint": "/api/v1/providers",
                 "users": 5,
                 "duration": 30,
-                "expected_avg_response_ms": 200
-            }
+                "expected_avg_response_ms": 200,
+            },
         ]
 
         for scenario in load_scenarios:
@@ -439,7 +507,10 @@ class BaselineTester:
                     async with self.session.get(url) as response:
                         await response.text()
                         request_duration = (time.time() - request_start) * 1000
-                        return {"success": 200 <= response.status < 300, "duration_ms": request_duration}
+                        return {
+                            "success": 200 <= response.status < 300,
+                            "duration_ms": request_duration,
+                        }
                 except Exception:
                     return {"success": False, "duration_ms": 0}
 
@@ -467,14 +538,18 @@ class BaselineTester:
 
             if successful_requests:
                 avg_response_ms = statistics.mean(r["duration_ms"] for r in successful_requests)
-                p95_response_ms = statistics.quantiles(
-                    [r["duration_ms"] for r in successful_requests], n=20
-                )[-1] if len(successful_requests) > 5 else avg_response_ms
+                p95_response_ms = (
+                    statistics.quantiles([r["duration_ms"] for r in successful_requests], n=20)[-1]
+                    if len(successful_requests) > 5
+                    else avg_response_ms
+                )
             else:
                 avg_response_ms = 0
                 p95_response_ms = 0
 
-            baseline_met = avg_response_ms <= scenario["expected_avg_response_ms"] and success_rate >= 0.95
+            baseline_met = (
+                avg_response_ms <= scenario["expected_avg_response_ms"] and success_rate >= 0.95
+            )
 
             total_duration_ms = (time.time() - test_start) * 1000
 
@@ -487,7 +562,11 @@ class BaselineTester:
                 success=baseline_met,
                 response_time_ms=avg_response_ms,
                 status_code=None,
-                error_message=None if baseline_met else f"Load test failed baseline - Avg: {avg_response_ms:.0f}ms, Expected: {scenario['expected_avg_response_ms']}ms",
+                error_message=(
+                    None
+                    if baseline_met
+                    else f"Load test failed baseline - Avg: {avg_response_ms:.0f}ms, Expected: {scenario['expected_avg_response_ms']}ms"
+                ),
                 metrics={
                     "total_requests": total_requests,
                     "successful_requests": len(successful_requests),
@@ -495,14 +574,16 @@ class BaselineTester:
                     "avg_response_ms": avg_response_ms,
                     "p95_response_ms": p95_response_ms,
                     "expected_avg_response_ms": scenario["expected_avg_response_ms"],
-                    "baseline_met": baseline_met
-                }
+                    "baseline_met": baseline_met,
+                },
             )
 
         except Exception as e:
             return self._create_failed_result("load", scenario["name"], str(e))
 
-    def _create_failed_result(self, test_type: str, journey_name: str, error_message: str) -> BaselineTestResult:
+    def _create_failed_result(
+        self, test_type: str, journey_name: str, error_message: str
+    ) -> BaselineTestResult:
         """Create a failed test result"""
         timestamp = datetime.now(UTC)
         return BaselineTestResult(
@@ -515,7 +596,7 @@ class BaselineTester:
             response_time_ms=0,
             status_code=None,
             error_message=error_message,
-            metrics={}
+            metrics={},
         )
 
     def _collect_system_metrics(self) -> dict[str, Any]:
@@ -526,14 +607,18 @@ class BaselineTester:
             return {
                 "cpu_percent": psutil.cpu_percent(),
                 "memory_percent": psutil.virtual_memory().percent,
-                "disk_usage_percent": psutil.disk_usage('/').percent if psutil.disk_usage('/') else 0,
+                "disk_usage_percent": (
+                    psutil.disk_usage("/").percent if psutil.disk_usage("/") else 0
+                ),
                 "network_connections": len(psutil.net_connections()),
-                "timestamp": datetime.now(UTC).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             return {"error": f"Could not collect system metrics: {e}"}
 
-    def _calculate_performance_baselines(self, test_results: list[BaselineTestResult]) -> dict[str, dict[str, float]]:
+    def _calculate_performance_baselines(
+        self, test_results: list[BaselineTestResult]
+    ) -> dict[str, dict[str, float]]:
         """Calculate performance baselines from test results"""
         baselines = {}
 
@@ -555,10 +640,14 @@ class BaselineTester:
                 baselines[key] = {
                     "avg_response_time_ms": statistics.mean(response_times),
                     "median_response_time_ms": statistics.median(response_times),
-                    "p95_response_time_ms": statistics.quantiles(response_times, n=20)[-1] if len(response_times) > 5 else max(response_times),
+                    "p95_response_time_ms": (
+                        statistics.quantiles(response_times, n=20)[-1]
+                        if len(response_times) > 5
+                        else max(response_times)
+                    ),
                     "max_response_time_ms": max(response_times),
                     "success_rate": len(successful_results) / len(results),
-                    "sample_size": len(results)
+                    "sample_size": len(results),
                 }
             else:
                 baselines[key] = {
@@ -567,12 +656,14 @@ class BaselineTester:
                     "p95_response_time_ms": 0,
                     "max_response_time_ms": 0,
                     "success_rate": 0,
-                    "sample_size": len(results)
+                    "sample_size": len(results),
                 }
 
         return baselines
 
-    def _calculate_regression_thresholds(self, baselines: dict[str, dict[str, float]]) -> dict[str, float]:
+    def _calculate_regression_thresholds(
+        self, baselines: dict[str, dict[str, float]]
+    ) -> dict[str, float]:
         """Calculate regression detection thresholds"""
         thresholds = {}
 
@@ -588,15 +679,18 @@ class BaselineTester:
 
         return thresholds
 
-    def _generate_baseline_recommendations(self, test_results: list[BaselineTestResult],
-                                         system_metrics: dict[str, Any]) -> list[str]:
+    def _generate_baseline_recommendations(
+        self, test_results: list[BaselineTestResult], system_metrics: dict[str, Any]
+    ) -> list[str]:
         """Generate recommendations based on baseline test results"""
         recommendations = []
 
         # Analyze failed tests
         failed_tests = [r for r in test_results if not r.success]
         if failed_tests:
-            recommendations.append(f"Fix {len(failed_tests)} failed baseline tests before establishing baselines")
+            recommendations.append(
+                f"Fix {len(failed_tests)} failed baseline tests before establishing baselines"
+            )
 
             # Categorize failures
             api_failures = [r for r in failed_tests if r.test_type == "api"]
@@ -604,31 +698,41 @@ class BaselineTester:
             integration_failures = [r for r in failed_tests if r.test_type == "integration"]
 
             if api_failures:
-                recommendations.append("API performance issues detected - review backend optimization")
+                recommendations.append(
+                    "API performance issues detected - review backend optimization"
+                )
             if frontend_failures:
-                recommendations.append("Frontend performance issues detected - review client-side optimization")
+                recommendations.append(
+                    "Frontend performance issues detected - review client-side optimization"
+                )
             if integration_failures:
                 recommendations.append("Integration issues detected - review end-to-end workflows")
 
         # Analyze slow tests
         slow_tests = [r for r in test_results if r.success and r.response_time_ms > 2000]
         if slow_tests:
-            recommendations.append(f"{len(slow_tests)} tests exceeded 2-second response time - consider optimization")
+            recommendations.append(
+                f"{len(slow_tests)} tests exceeded 2-second response time - consider optimization"
+            )
 
         # System resource recommendations
         if system_metrics.get("cpu_percent", 0) > 70:
-            recommendations.append("High CPU usage during testing - consider scaling or optimization")
+            recommendations.append(
+                "High CPU usage during testing - consider scaling or optimization"
+            )
 
         if system_metrics.get("memory_percent", 0) > 80:
             recommendations.append("High memory usage during testing - review memory optimization")
 
         # General recommendations
-        recommendations.extend([
-            "Establish automated baseline monitoring for continuous performance tracking",
-            "Set up alerting for performance regressions above established thresholds",
-            "Review and update baselines monthly or after major system changes",
-            "Consider implementing performance budgets for new features"
-        ])
+        recommendations.extend(
+            [
+                "Establish automated baseline monitoring for continuous performance tracking",
+                "Set up alerting for performance regressions above established thresholds",
+                "Review and update baselines monthly or after major system changes",
+                "Consider implementing performance budgets for new features",
+            ]
+        )
 
         return recommendations
 
@@ -660,7 +764,11 @@ class BaselineTester:
                 "total_tests": len(report.test_results),
                 "successful_tests": len([r for r in report.test_results if r.success]),
                 "failed_tests": len([r for r in report.test_results if not r.success]),
-                "success_rate": len([r for r in report.test_results if r.success]) / len(report.test_results) if report.test_results else 0
+                "success_rate": (
+                    len([r for r in report.test_results if r.success]) / len(report.test_results)
+                    if report.test_results
+                    else 0
+                ),
             },
             "performance_baselines": report.performance_baselines,
             "regression_thresholds": report.regression_thresholds,
@@ -671,19 +779,22 @@ class BaselineTester:
                     "journey_name": r.journey_name,
                     "test_type": r.test_type,
                     "error_message": r.error_message,
-                    "response_time_ms": r.response_time_ms
+                    "response_time_ms": r.response_time_ms,
                 }
-                for r in report.test_results if not r.success
-            ]
+                for r in report.test_results
+                if not r.success
+            ],
         }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(report_dict, f, indent=2)
 
         print(f"Baseline report saved: {output_path}")
 
+
 # Global baseline tester instance
 baseline_tester = BaselineTester()
+
 
 # Utility function for running baseline tests
 async def run_performance_baselines(test_type: str = "comprehensive") -> BaselineReport:

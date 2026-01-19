@@ -25,6 +25,7 @@ from app.domain.models import GenerationConfig, PromptRequest
 # Test Data Generators
 # =====================================================
 
+
 class PerformanceTestDataGenerator:
     """Generate realistic test data for performance testing."""
 
@@ -34,33 +35,43 @@ class PerformanceTestDataGenerator:
         random.seed(seed)
         np.random.seed(seed)
 
-    def generate_prompt_requests(self, count: int, complexity: str = "mixed") -> list[PromptRequest]:
+    def generate_prompt_requests(
+        self, count: int, complexity: str = "mixed"
+    ) -> list[PromptRequest]:
         """Generate realistic prompt requests for testing."""
         requests = []
 
         for _i in range(count):
             if complexity == "simple":
-                prompt = self.fake.sentence(nb_words=random.randint(5, 15))
+                prompt = self.fake.sentence(
+                    nb_words=random.randint(5, 15)
+                )  # - test data
             elif complexity == "complex":
-                prompt = " ".join([self.fake.paragraph() for _ in range(random.randint(2, 5))])
+                prompt = " ".join(
+                    [self.fake.paragraph() for _ in range(random.randint(2, 5))]
+                )  # - test data
             else:  # mixed
-                if random.random() < 0.3:
-                    prompt = self.fake.sentence(nb_words=random.randint(5, 15))
-                elif random.random() < 0.7:
+                if random.random() < 0.3:  # - test data
+                    prompt = self.fake.sentence(
+                        nb_words=random.randint(5, 15)
+                    )  # - test data
+                elif random.random() < 0.7:  # - test data
                     prompt = self.fake.paragraph()
                 else:
-                    prompt = " ".join([self.fake.paragraph() for _ in range(random.randint(2, 3))])
+                    prompt = " ".join(
+                        [self.fake.paragraph() for _ in range(random.randint(2, 3))]
+                    )  # - test data
 
             config = GenerationConfig(
-                max_tokens=random.randint(50, 500),
-                temperature=random.uniform(0.0, 1.0),
-                top_p=random.uniform(0.7, 1.0),
+                max_tokens=random.randint(50, 500),  # - test data
+                temperature=random.uniform(0.0, 1.0),  # - test data
+                top_p=random.uniform(0.7, 1.0),  # - test data
             )
 
             request = PromptRequest(
                 prompt=prompt,
                 provider=random.choice(["mock", "google", "openai"]),
-                config=config
+                config=config,  # - test data
             )
 
             requests.append(request)
@@ -70,29 +81,36 @@ class PerformanceTestDataGenerator:
     def generate_transformation_requests(self, count: int) -> list[dict[str, Any]]:
         """Generate transformation test requests."""
         transformation_types = [
-            "simple", "advanced", "expert", "cognitive_hacking",
-            "hierarchical_persona", "advanced_obfuscation", "contextual_inception"
+            "simple",
+            "advanced",
+            "expert",
+            "cognitive_hacking",
+            "hierarchical_persona",
+            "advanced_obfuscation",
+            "contextual_inception",
         ]
 
         requests = []
         for _i in range(count):
             prompt = self.fake.paragraph()
-            transformation_type = random.choice(transformation_types)
+            transformation_type = random.choice(transformation_types)  # - test data
 
             request = {
                 "prompt": prompt,
                 "transformation_type": transformation_type,
                 "parameters": {
-                    "intensity": random.uniform(0.3, 1.0),
-                    "preserve_meaning": random.choice([True, False]),
-                }
+                    "intensity": random.uniform(0.3, 1.0),  # - test data
+                    "preserve_meaning": random.choice([True, False]),  # - test data
+                },
             }
 
             requests.append(request)
 
         return requests
 
-    def generate_cache_test_data(self, key_count: int, value_size_kb: float = 1.0) -> list[tuple[str, dict[str, Any]]]:
+    def generate_cache_test_data(
+        self, key_count: int, value_size_kb: float = 1.0
+    ) -> list[tuple[str, dict[str, Any]]]:
         """Generate cache test data with realistic keys and values."""
         test_data = []
 
@@ -107,9 +125,11 @@ class PerformanceTestDataGenerator:
                 "response": self.fake.text(max_nb_chars=text_size // 2),
                 "metadata": {
                     "timestamp": time.time(),
-                    "provider": random.choice(["google", "openai", "anthropic"]),
-                    "tokens": random.randint(50, 500),
-                }
+                    "provider": random.choice(
+                        ["google", "openai", "anthropic"]
+                    ),  # - test data generation
+                    "tokens": random.randint(50, 500),  # - test data generation
+                },
             }
 
             test_data.append((key, value))
@@ -122,7 +142,7 @@ class PerformanceTestDataGenerator:
         messages = []
 
         for _i in range(count):
-            msg_type = random.choice(message_types)
+            msg_type = random.choice(message_types)  # - test data
 
             if msg_type == "text":
                 message = {
@@ -134,8 +154,8 @@ class PerformanceTestDataGenerator:
                 message = {
                     "type": "stream_chunk",
                     "data": {
-                        "text": self.fake.words(nb=random.randint(1, 10)),
-                        "is_final": random.choice([True, False]),
+                        "text": self.fake.words(nb=random.randint(1, 10)),  # - test data
+                        "is_final": random.choice([True, False]),  # - test data
                     },
                     "timestamp": time.time(),
                 }
@@ -147,7 +167,9 @@ class PerformanceTestDataGenerator:
             else:  # status
                 message = {
                     "type": "status",
-                    "data": {"status": random.choice(["processing", "complete", "error"])},
+                    "data": {
+                        "status": random.choice(["processing", "complete", "error"])
+                    },  # - test data
                     "timestamp": time.time(),
                 }
 
@@ -160,11 +182,14 @@ class PerformanceTestDataGenerator:
 # Performance Assertion Helpers
 # =====================================================
 
+
 class PerformanceAssertions:
     """Helper class for performance-related assertions."""
 
     @staticmethod
-    def assert_response_time(response_time_ms: float, max_time_ms: float, context: str = "") -> None:
+    def assert_response_time(
+        response_time_ms: float, max_time_ms: float, context: str = ""
+    ) -> None:
         """Assert that response time is within acceptable limits."""
         if response_time_ms > max_time_ms:
             raise AssertionError(
@@ -173,7 +198,9 @@ class PerformanceAssertions:
             )
 
     @staticmethod
-    def assert_throughput(operations: int, duration_seconds: float, min_ops_per_second: float, context: str = "") -> None:
+    def assert_throughput(
+        operations: int, duration_seconds: float, min_ops_per_second: float, context: str = ""
+    ) -> None:
         """Assert that throughput meets minimum requirements."""
         actual_ops_per_second = operations / duration_seconds
         if actual_ops_per_second < min_ops_per_second:
@@ -202,7 +229,9 @@ class PerformanceAssertions:
             )
 
     @staticmethod
-    def assert_error_rate(errors: int, total: int, max_error_rate: float, context: str = "") -> None:
+    def assert_error_rate(
+        errors: int, total: int, max_error_rate: float, context: str = ""
+    ) -> None:
         """Assert that error rate is within acceptable limits."""
         actual_error_rate = errors / total if total > 0 else 0
         if actual_error_rate > max_error_rate:
@@ -215,6 +244,7 @@ class PerformanceAssertions:
 # =====================================================
 # Benchmark Result Analyzer
 # =====================================================
+
 
 @dataclass
 class PerformanceRegression:
@@ -255,7 +285,7 @@ class BenchmarkResultAnalyzer:
         import json
 
         try:
-            with open(baseline_file, 'w') as f:
+            with open(baseline_file, "w") as f:
                 json.dump(results, f, indent=2, default=str)
             logger.info(f"Saved baseline data to {baseline_file}")
         except Exception as e:
@@ -289,11 +319,7 @@ class BenchmarkResultAnalyzer:
         return regressions
 
     def _check_metric_regression(
-        self,
-        current_results: dict[str, Any],
-        metric_path: str,
-        higher_is_better: bool,
-        unit: str
+        self, current_results: dict[str, Any], metric_path: str, higher_is_better: bool, unit: str
     ) -> PerformanceRegression | None:
         """Check a specific metric for regression."""
         # Extract values from nested dict
@@ -334,13 +360,13 @@ class BenchmarkResultAnalyzer:
             current_value=current_value,
             regression_percent=change_percent,
             threshold_percent=self.regression_threshold,
-            severity=severity
+            severity=severity,
         )
 
     def _get_nested_value(self, data: dict[str, Any], path: str) -> float | None:
         """Extract nested value from dictionary using dot notation."""
         try:
-            keys = path.split('.')
+            keys = path.split(".")
             value = data
             for key in keys:
                 value = value[key]
@@ -348,13 +374,15 @@ class BenchmarkResultAnalyzer:
         except (KeyError, TypeError, ValueError):
             return None
 
-    def generate_regression_report(self, regressions: list[PerformanceRegression]) -> dict[str, Any]:
+    def generate_regression_report(
+        self, regressions: list[PerformanceRegression]
+    ) -> dict[str, Any]:
         """Generate comprehensive regression analysis report."""
         if not regressions:
             return {
                 "status": "no_regressions",
                 "message": "No performance regressions detected",
-                "regressions": []
+                "regressions": [],
             }
 
         # Categorize by severity
@@ -365,11 +393,7 @@ class BenchmarkResultAnalyzer:
         return {
             "status": "regressions_detected",
             "total_regressions": len(regressions),
-            "by_severity": {
-                "critical": len(critical),
-                "major": len(major),
-                "minor": len(minor)
-            },
+            "by_severity": {"critical": len(critical), "major": len(major), "minor": len(minor)},
             "regressions": [
                 {
                     "metric": r.metric_name,
@@ -380,7 +404,7 @@ class BenchmarkResultAnalyzer:
                 }
                 for r in regressions
             ],
-            "recommendation": self._get_regression_recommendation(regressions)
+            "recommendation": self._get_regression_recommendation(regressions),
         }
 
     def _get_regression_recommendation(self, regressions: list[PerformanceRegression]) -> str:
@@ -400,13 +424,12 @@ class BenchmarkResultAnalyzer:
 # CI/CD Integration Utilities
 # =====================================================
 
+
 class CICDPerformanceGate:
     """Performance gate for CI/CD pipelines."""
 
     def __init__(
-        self,
-        config_file: str | None = None,
-        baseline_dir: str = "./performance_baselines"
+        self, config_file: str | None = None, baseline_dir: str = "./performance_baselines"
     ):
         self.baseline_dir = Path(baseline_dir)
         self.baseline_dir.mkdir(parents=True, exist_ok=True)
@@ -459,7 +482,7 @@ class CICDPerformanceGate:
                 "total_gates": len(gate_results),
                 "passed": sum(1 for r in gate_results.values() if r["passed"]),
                 "failed": sum(1 for r in gate_results.values() if not r["passed"]),
-            }
+            },
         }
 
     def _check_response_time_gate(self, results: dict[str, Any]) -> dict[str, Any]:
@@ -467,8 +490,8 @@ class CICDPerformanceGate:
         max_time = self.gates["max_response_time_ms"]
 
         # Extract P95 response times
-        api_p95 = self._extract_metric(results, "api_performance.percentiles.p95", float('inf'))
-        llm_p95 = self._extract_metric(results, "llm_performance.percentiles.p95", float('inf'))
+        api_p95 = self._extract_metric(results, "api_performance.percentiles.p95", float("inf"))
+        llm_p95 = self._extract_metric(results, "llm_performance.percentiles.p95", float("inf"))
 
         worst_p95 = max(api_p95, llm_p95)
         passed = worst_p95 <= max_time
@@ -478,7 +501,7 @@ class CICDPerformanceGate:
             "metric": "response_time_p95_ms",
             "actual": worst_p95,
             "threshold": max_time,
-            "details": f"P95 response time: {worst_p95:.2f}ms (limit: {max_time}ms)"
+            "details": f"P95 response time: {worst_p95:.2f}ms (limit: {max_time}ms)",
         }
 
     def _check_throughput_gate(self, results: dict[str, Any]) -> dict[str, Any]:
@@ -493,14 +516,14 @@ class CICDPerformanceGate:
             "metric": "throughput_rps",
             "actual": actual_rps,
             "threshold": min_rps,
-            "details": f"Throughput: {actual_rps:.1f} rps (minimum: {min_rps} rps)"
+            "details": f"Throughput: {actual_rps:.1f} rps (minimum: {min_rps} rps)",
         }
 
     def _check_memory_gate(self, results: dict[str, Any]) -> dict[str, Any]:
         """Check memory usage performance gate."""
         max_memory = self.gates["max_memory_mb"]
 
-        peak_memory = self._extract_metric(results, "memory_report.peak_memory_mb", float('inf'))
+        peak_memory = self._extract_metric(results, "memory_report.peak_memory_mb", float("inf"))
         passed = peak_memory <= max_memory
 
         return {
@@ -508,7 +531,7 @@ class CICDPerformanceGate:
             "metric": "peak_memory_mb",
             "actual": peak_memory,
             "threshold": max_memory,
-            "details": f"Peak memory: {peak_memory:.1f}MB (limit: {max_memory}MB)"
+            "details": f"Peak memory: {peak_memory:.1f}MB (limit: {max_memory}MB)",
         }
 
     def _check_cache_gate(self, results: dict[str, Any]) -> dict[str, Any]:
@@ -523,7 +546,7 @@ class CICDPerformanceGate:
             "metric": "cache_hit_ratio",
             "actual": hit_ratio,
             "threshold": min_ratio,
-            "details": f"Cache hit ratio: {hit_ratio:.2%} (minimum: {min_ratio:.2%})"
+            "details": f"Cache hit ratio: {hit_ratio:.2%} (minimum: {min_ratio:.2%})",
         }
 
     def _check_error_rate_gate(self, results: dict[str, Any]) -> dict[str, Any]:
@@ -548,7 +571,7 @@ class CICDPerformanceGate:
             "metric": "error_rate",
             "actual": error_rate,
             "threshold": max_error_rate,
-            "details": f"Error rate: {error_rate:.2%} (maximum: {max_error_rate:.2%})"
+            "details": f"Error rate: {error_rate:.2%} (maximum: {max_error_rate:.2%})",
         }
 
     def _check_regression_gate(self, results: dict[str, Any]) -> dict[str, Any]:
@@ -564,7 +587,7 @@ class CICDPerformanceGate:
                 "metric": "regression_check",
                 "actual": 0,
                 "threshold": max_regression,
-                "details": "No baseline available for regression comparison"
+                "details": "No baseline available for regression comparison",
             }
 
         # Use most recent baseline
@@ -575,8 +598,7 @@ class CICDPerformanceGate:
 
         # Check if any regressions exceed threshold
         significant_regressions = [
-            r for r in regressions
-            if abs(r.regression_percent) > max_regression
+            r for r in regressions if abs(r.regression_percent) > max_regression
         ]
 
         passed = len(significant_regressions) == 0
@@ -586,13 +608,13 @@ class CICDPerformanceGate:
             "metric": "performance_regression",
             "actual": len(significant_regressions),
             "threshold": 0,
-            "details": f"Significant regressions: {len(significant_regressions)}"
+            "details": f"Significant regressions: {len(significant_regressions)}",
         }
 
     def _extract_metric(self, data: dict[str, Any], path: str, default: Any) -> Any:
         """Extract metric value from nested dictionary."""
         try:
-            keys = path.split('.')
+            keys = path.split(".")
             value = data
             for key in keys:
                 value = value[key]
@@ -605,10 +627,11 @@ class CICDPerformanceGate:
 # Integration Functions
 # =====================================================
 
+
 async def run_performance_gate_check(
     config_file: str | None = None,
     baseline_dir: str = "./performance_baselines",
-    save_baseline: bool = False
+    save_baseline: bool = False,
 ) -> tuple[bool, dict[str, Any]]:
     """Run performance gate check for CI/CD."""
     from app.testing.performance_benchmarks import run_performance_benchmark
@@ -627,7 +650,8 @@ async def run_performance_gate_check(
         gate.baseline_dir.mkdir(parents=True, exist_ok=True)
 
         import json
-        with open(baseline_file, 'w') as f:
+
+        with open(baseline_file, "w") as f:
             json.dump(benchmark_results, f, indent=2, default=str)
 
     passed = gate_results["overall_result"] == "PASS"

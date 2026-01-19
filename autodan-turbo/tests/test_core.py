@@ -12,13 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.embeddings import EmbeddingModel
-from core.models import (
-    AttackLog,
-    AttackRecord,
-    ScorerResult,
-    Strategy,
-    SummarizerResult,
-)
+from core.models import AttackLog, AttackRecord, ScorerResult, Strategy, SummarizerResult
 from core.strategy_library import StrategyLibrary
 
 

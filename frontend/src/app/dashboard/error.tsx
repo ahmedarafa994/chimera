@@ -84,7 +84,7 @@ export default function DashboardError({ error, reset }: DashboardErrorProps) {
           <div className="space-y-2">
             <h2 className="text-xl font-semibold">Session Expired</h2>
             <p className="text-sm text-muted-foreground">
-              Your session has expired or you don't have permission to access this page.
+              Your session has expired or you don&apos;t have permission to access this page.
               Please sign in again to continue.
             </p>
           </div>

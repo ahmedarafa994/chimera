@@ -24,15 +24,18 @@ from app.core.logging import logger
 # Core Resilience Patterns and Models
 # =====================================================
 
+
 class CircuitState(Enum):
     """Circuit breaker states."""
-    CLOSED = "closed"           # Normal operation
-    OPEN = "open"              # Failures detected, rejecting requests
-    HALF_OPEN = "half_open"    # Testing if service recovered
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Failures detected, rejecting requests
+    HALF_OPEN = "half_open"  # Testing if service recovered
 
 
 class RetryStrategy(Enum):
     """Retry strategy types."""
+
     FIXED_DELAY = "fixed_delay"
     EXPONENTIAL_BACKOFF = "exponential_backoff"
     LINEAR_BACKOFF = "linear_backoff"
@@ -41,6 +44,7 @@ class RetryStrategy(Enum):
 
 class ThrottleStrategy(Enum):
     """Throttling strategy types."""
+
     TOKEN_BUCKET = "token_bucket"
     LEAKY_BUCKET = "leaky_bucket"
     SLIDING_WINDOW = "sliding_window"
@@ -105,12 +109,12 @@ class RetryConfig:
     jitter_factor: float = 0.1
 
     # Conditional retry
-    retryable_exceptions: set[str] = field(default_factory=lambda: {
-        "TimeoutError", "ConnectionError", "HTTPError"
-    })
-    non_retryable_exceptions: set[str] = field(default_factory=lambda: {
-        "AuthenticationError", "AuthorizationError", "ValidationError"
-    })
+    retryable_exceptions: set[str] = field(
+        default_factory=lambda: {"TimeoutError", "ConnectionError", "HTTPError"}
+    )
+    non_retryable_exceptions: set[str] = field(
+        default_factory=lambda: {"AuthenticationError", "AuthorizationError", "ValidationError"}
+    )
 
 
 @dataclass
@@ -132,6 +136,7 @@ class ThrottleConfig:
 # =====================================================
 # Advanced Circuit Breaker Implementation
 # =====================================================
+
 
 class CircuitBreakerException(Exception):
     """Exception raised when circuit breaker is open."""
@@ -157,12 +162,14 @@ class CircuitMetrics:
     p95_response_time_ms: float = 0.0
     error_rate: float = 0.0
 
-    state_transitions: dict[str, int] = field(default_factory=lambda: {
-        "closed_to_open": 0,
-        "open_to_half_open": 0,
-        "half_open_to_closed": 0,
-        "half_open_to_open": 0,
-    })
+    state_transitions: dict[str, int] = field(
+        default_factory=lambda: {
+            "closed_to_open": 0,
+            "open_to_half_open": 0,
+            "half_open_to_closed": 0,
+            "half_open_to_open": 0,
+        }
+    )
 
     last_failure_time: float = 0.0
     last_success_time: float = 0.0
@@ -203,11 +210,7 @@ class AdvancedCircuitBreaker:
         async with self._state_lock:
             if not await self._can_proceed():
                 self.metrics.rejected_requests += 1
-                raise CircuitBreakerException(
-                    self.name,
-                    self.state,
-                    self._get_retry_after()
-                )
+                raise CircuitBreakerException(self.name, self.state, self._get_retry_after())
 
         # Track active request
         self._active_requests.add(request_id)
@@ -217,7 +220,7 @@ class AdvancedCircuitBreaker:
             # Execute with timeout
             result = await asyncio.wait_for(
                 self._execute_function(func, *args, **kwargs),
-                timeout=self.config.request_timeout_seconds
+                timeout=self.config.request_timeout_seconds,
             )
 
             # Record success
@@ -350,9 +353,11 @@ class AdvancedCircuitBreaker:
             return True
 
         # Adaptive threshold based on error rate
-        if self.config.adaptive_threshold and len(self._request_history) >= self.config.min_request_threshold:
-            if self.metrics.error_rate >= self.config.error_rate_threshold:
-                return True
+        if (
+            self.config.adaptive_threshold
+            and len(self._request_history) >= self.config.min_request_threshold
+        ) and self.metrics.error_rate >= self.config.error_rate_threshold:
+            return True
 
         # Check slow call rate
         return self._get_slow_call_rate() >= self.config.slow_call_rate_threshold
@@ -362,8 +367,9 @@ class AdvancedCircuitBreaker:
         if not self._response_times:
             return 0.0
 
-        slow_calls = sum(1 for rt in self._response_times
-                        if rt >= self.config.slow_call_threshold_seconds * 1000)
+        slow_calls = sum(
+            1 for rt in self._response_times if rt >= self.config.slow_call_threshold_seconds * 1000
+        )
         return slow_calls / len(self._response_times)
 
     async def _transition_to_open(self) -> None:
@@ -409,9 +415,8 @@ class AdvancedCircuitBreaker:
             self.metrics.error_rate = 0.0
         else:
             self.metrics.error_rate = (
-                (self.metrics.failed_requests + self.metrics.timeout_requests) /
-                self.metrics.total_requests
-            )
+                self.metrics.failed_requests + self.metrics.timeout_requests
+            ) / self.metrics.total_requests
 
     def _get_retry_after(self) -> float:
         """Get retry after time for rejected requests."""
@@ -448,6 +453,7 @@ class AdvancedCircuitBreaker:
 # =====================================================
 # Bulkhead Implementation for Resource Isolation
 # =====================================================
+
 
 @dataclass
 class BulkheadMetrics:
@@ -548,7 +554,9 @@ class BulkheadIsolation:
 
                 # Update average processing time
                 if self._processing_times:
-                    self.metrics.avg_processing_time_ms = sum(self._processing_times) / len(self._processing_times)
+                    self.metrics.avg_processing_time_ms = sum(self._processing_times) / len(
+                        self._processing_times
+                    )
 
                 return result
 
@@ -565,7 +573,9 @@ class BulkheadIsolation:
         """Check if resource limits allow new requests."""
         # Check memory limit
         if self._memory_usage_mb > self.config.max_memory_mb:
-            logger.warning(f"Bulkhead '{self.name}' memory limit exceeded: {self._memory_usage_mb}MB")
+            logger.warning(
+                f"Bulkhead '{self.name}' memory limit exceeded: {self._memory_usage_mb}MB"
+            )
             return False
 
         # Check CPU limit
@@ -610,7 +620,8 @@ class BulkheadIsolation:
             "timeout_requests": self.metrics.timeout_requests,
             "avg_processing_time_ms": self.metrics.avg_processing_time_ms,
             "queue_utilization": self._request_queue.qsize() / self.config.queue_capacity,
-            "semaphore_utilization": (self.config.max_concurrent_calls - self._semaphore._value) / self.config.max_concurrent_calls,
+            "semaphore_utilization": (self.config.max_concurrent_calls - self._semaphore._value)
+            / self.config.max_concurrent_calls,
             "resource_utilization": self.metrics.resource_utilization,
             "memory_usage_mb": self._memory_usage_mb,
             "cpu_usage_percent": self._cpu_usage_percent,
@@ -620,6 +631,7 @@ class BulkheadIsolation:
 # =====================================================
 # Rate Limiting and Throttling
 # =====================================================
+
 
 class TokenBucketThrottle:
     """Token bucket rate limiting implementation."""
@@ -661,6 +673,7 @@ class TokenBucketThrottle:
 # =====================================================
 # Retry Mechanism with Backoff Strategies
 # =====================================================
+
 
 class RetryHandler:
     """Advanced retry handler with multiple backoff strategies."""
@@ -715,8 +728,11 @@ class RetryHandler:
 
         # Default behavior for common retryable exceptions
         retryable_types = {
-            "TimeoutError", "ConnectionError", "HTTPError",
-            "ServiceUnavailableError", "TooManyRequestsError"
+            "TimeoutError",
+            "ConnectionError",
+            "HTTPError",
+            "ServiceUnavailableError",
+            "TooManyRequestsError",
         }
 
         return exception_name in retryable_types
@@ -727,7 +743,7 @@ class RetryHandler:
             delay = self.config.initial_delay_seconds
 
         elif self.config.strategy == RetryStrategy.EXPONENTIAL_BACKOFF:
-            delay = self.config.initial_delay_seconds * (self.config.backoff_multiplier ** attempt)
+            delay = self.config.initial_delay_seconds * (self.config.backoff_multiplier**attempt)
 
         elif self.config.strategy == RetryStrategy.LINEAR_BACKOFF:
             delay = self.config.initial_delay_seconds * (attempt + 1)
@@ -742,6 +758,7 @@ class RetryHandler:
         if self.config.jitter:
             jitter_amount = delay * self.config.jitter_factor
             import random
+
             delay += random.uniform(-jitter_amount, jitter_amount)
 
         # Ensure delay doesn't exceed maximum
@@ -760,6 +777,7 @@ class RetryHandler:
 # =====================================================
 # Integrated Resilience Manager
 # =====================================================
+
 
 class ResilienceManager:
     """
@@ -783,7 +801,9 @@ class ResilienceManager:
             "throttle_rejections": 0,
         }
 
-    def register_circuit_breaker(self, name: str, config: CircuitBreakerConfig) -> AdvancedCircuitBreaker:
+    def register_circuit_breaker(
+        self, name: str, config: CircuitBreakerConfig
+    ) -> AdvancedCircuitBreaker:
         """Register a circuit breaker."""
         circuit_breaker = AdvancedCircuitBreaker(name, config)
         self._circuit_breakers[name] = circuit_breaker
@@ -819,7 +839,7 @@ class ResilienceManager:
         throttle: str | None = None,
         retry_handler: str | None = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> Any:
         """Execute function with specified resilience patterns."""
         self._global_metrics["total_requests"] += 1
@@ -895,19 +915,17 @@ class ResilienceManager:
         return {
             "global_metrics": self._global_metrics,
             "circuit_breakers": {
-                name: cb.get_metrics()
-                for name, cb in self._circuit_breakers.items()
+                name: cb.get_metrics() for name, cb in self._circuit_breakers.items()
             },
             "bulkheads": {
-                name: bulkhead.get_metrics()
-                for name, bulkhead in self._bulkheads.items()
+                name: bulkhead.get_metrics() for name, bulkhead in self._bulkheads.items()
             },
             "registered_components": {
                 "circuit_breakers": list(self._circuit_breakers.keys()),
                 "bulkheads": list(self._bulkheads.keys()),
                 "throttles": list(self._throttles.keys()),
                 "retry_handlers": list(self._retry_handlers.keys()),
-            }
+            },
         }
 
 

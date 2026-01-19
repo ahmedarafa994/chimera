@@ -16,13 +16,8 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Cookie, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.services.autodan.config_enhanced import (
-    get_config,
-    update_config,
-)
-from app.services.autodan.service_enhanced import (
-    enhanced_autodan_service,
-)
+from app.services.autodan.config_enhanced import get_config, update_config
+from app.services.autodan.service_enhanced import enhanced_autodan_service
 from app.services.session_service import session_service
 
 # Use unique prefix to avoid conflict with legacy autodan router
@@ -223,7 +218,8 @@ async def generate_jailbreak(
     Generate a jailbreak prompt using the enhanced AutoDAN service.
 
     Supports multiple optimization strategies:
-    - **vanilla**: Basic AutoDAN-Turbo method
+    - **vanilla**: Basic AutoDAN method
+    - **turbo**: Weaponized AutoDAN with Bypass Engines (Level 4/5)
     - **best_of_n**: Generate N candidates and select best
     - **beam_search**: Explore strategy combinations with beam search
     - **genetic**: Use genetic algorithm optimization

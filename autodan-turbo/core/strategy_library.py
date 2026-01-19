@@ -201,9 +201,9 @@ class StrategyLibrary:
             prompt_after=strategy.example or "[External strategy example]",
             score_before=1.0,
             score_after=strategy.score_improvement + 1.0 if strategy.score_improvement > 0 else 6.0,
-            score_differential=strategy.score_improvement
-            if strategy.score_improvement > 0
-            else 5.0,
+            score_differential=(
+                strategy.score_improvement if strategy.score_improvement > 0 else 5.0
+            ),
             strategy=strategy,
             malicious_request="[External strategy]",
         )
@@ -364,9 +364,11 @@ class StrategyLibrary:
                 score_differential=entry_data["score_differential"],
                 strategy=strategy,
                 malicious_request=entry_data.get("malicious_request", ""),
-                created_at=datetime.fromisoformat(entry_data["created_at"])
-                if "created_at" in entry_data
-                else datetime.now(),
+                created_at=(
+                    datetime.fromisoformat(entry_data["created_at"])
+                    if "created_at" in entry_data
+                    else datetime.now()
+                ),
             )
 
             self.entries.append(entry)

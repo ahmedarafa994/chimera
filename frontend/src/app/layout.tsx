@@ -6,6 +6,7 @@ import Script from "next/script";
 // Use unified provider to eliminate redundant API calls
 import QueryProvider from "@/providers/query-provider";
 import { UnifiedModelProvider } from "@/providers/unified-model-provider";
+import ProviderSyncProvider from "@/providers/provider-sync-provider";
 import ResourceOptimizationProvider from "@/components/providers/ResourceOptimizationProvider";
 import { WebVitalsTracker } from "@/components/WebVitalsTracker";
 import { AuthProvider } from "@/providers/AuthProvider";
@@ -68,14 +69,16 @@ export default function RootLayout({
       >
         <QueryProvider>
           <AuthProvider>
-            <UnifiedModelProvider>
-              <ResourceOptimizationProvider>
-                <ErrorBoundary>
-                  {children}
-                </ErrorBoundary>
-                <Toaster />
-              </ResourceOptimizationProvider>
-            </UnifiedModelProvider>
+            <ProviderSyncProvider>
+              <UnifiedModelProvider>
+                <ResourceOptimizationProvider>
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                  <Toaster />
+                </ResourceOptimizationProvider>
+              </UnifiedModelProvider>
+            </ProviderSyncProvider>
           </AuthProvider>
         </QueryProvider>
 

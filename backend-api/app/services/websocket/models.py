@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 class EventType(str, Enum):
     """WebSocket event types"""
+
     # Session lifecycle
     SESSION_CREATED = "SESSION_CREATED"
     SESSION_STARTED = "SESSION_STARTED"
@@ -48,6 +49,7 @@ class EventType(str, Enum):
 
 class AgentType(str, Enum):
     """Agent types in multi-agent system"""
+
     ATTACKER = "attacker"
     EVALUATOR = "evaluator"
     REFINER = "refiner"
@@ -55,6 +57,7 @@ class AgentType(str, Enum):
 
 class AgentStatus(str, Enum):
     """Agent status values"""
+
     IDLE = "idle"
     INITIALIZING = "initializing"
     WORKING = "working"
@@ -65,6 +68,7 @@ class AgentStatus(str, Enum):
 
 class SessionStatus(str, Enum):
     """Session status values"""
+
     PENDING = "pending"
     INITIALIZING = "initializing"
     RUNNING = "running"
@@ -77,6 +81,7 @@ class SessionStatus(str, Enum):
 # Base Event Model
 class WebSocketEvent(BaseModel):
     """Base WebSocket event with common fields"""
+
     event_type: EventType
     session_id: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -84,14 +89,13 @@ class WebSocketEvent(BaseModel):
     data: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        json_encoders = {datetime: lambda v: v.isoformat()}
 
 
 # Session Events
 class SessionCreatedEvent(BaseModel):
     """Session created event data"""
+
     session_id: str
     config: dict[str, Any]
     created_by: str | None = None
@@ -100,6 +104,7 @@ class SessionCreatedEvent(BaseModel):
 
 class SessionStartedEvent(BaseModel):
     """Session started event data"""
+
     session_id: str
     start_time: datetime = Field(default_factory=datetime.utcnow)
     initial_population_size: int
@@ -109,6 +114,7 @@ class SessionStartedEvent(BaseModel):
 
 class SessionPausedEvent(BaseModel):
     """Session paused event data"""
+
     session_id: str
     pause_time: datetime = Field(default_factory=datetime.utcnow)
     reason: str | None = None
@@ -118,6 +124,7 @@ class SessionPausedEvent(BaseModel):
 
 class SessionResumedEvent(BaseModel):
     """Session resumed event data"""
+
     session_id: str
     resume_time: datetime = Field(default_factory=datetime.utcnow)
     resumed_by: str | None = None
@@ -125,6 +132,7 @@ class SessionResumedEvent(BaseModel):
 
 class SessionCompletedEvent(BaseModel):
     """Session completed event data"""
+
     session_id: str
     completion_time: datetime = Field(default_factory=datetime.utcnow)
     total_generations: int
@@ -137,6 +145,7 @@ class SessionCompletedEvent(BaseModel):
 
 class SessionFailedEvent(BaseModel):
     """Session failed event data"""
+
     session_id: str
     failure_time: datetime = Field(default_factory=datetime.utcnow)
     error_message: str
@@ -148,6 +157,7 @@ class SessionFailedEvent(BaseModel):
 # Agent Events
 class AgentStatusChangedEvent(BaseModel):
     """Agent status change event data"""
+
     agent_id: str
     agent_type: AgentType
     old_status: AgentStatus
@@ -160,6 +170,7 @@ class AgentStatusChangedEvent(BaseModel):
 # Generation Events
 class GenerationStartedEvent(BaseModel):
     """Generation started event data"""
+
     generation: int
     population_size: int
     elite_size: int
@@ -170,6 +181,7 @@ class GenerationStartedEvent(BaseModel):
 
 class GenerationProgressEvent(BaseModel):
     """Generation progress event data"""
+
     generation: int
     progress: float  # 0.0 to 1.0
     completed_evaluations: int
@@ -182,6 +194,7 @@ class GenerationProgressEvent(BaseModel):
 
 class GenerationCompleteEvent(BaseModel):
     """Generation complete event data"""
+
     generation: int
     best_fitness: float
     average_fitness: float
@@ -197,6 +210,7 @@ class GenerationCompleteEvent(BaseModel):
 # Evaluation Events
 class EvaluationStartedEvent(BaseModel):
     """Evaluation started event data"""
+
     candidate_id: str
     prompt: str
     target_model: str
@@ -205,6 +219,7 @@ class EvaluationStartedEvent(BaseModel):
 
 class EvaluationCompleteEvent(BaseModel):
     """Evaluation complete event data"""
+
     candidate_id: str
     prompt: str
     response: str
@@ -220,6 +235,7 @@ class EvaluationCompleteEvent(BaseModel):
 # Refinement Events
 class RefinementSuggestedEvent(BaseModel):
     """Refinement suggested event data"""
+
     generation: int
     config_updates: dict[str, float]
     strategy_suggestions: list[str]
@@ -231,6 +247,7 @@ class RefinementSuggestedEvent(BaseModel):
 
 class RefinementAppliedEvent(BaseModel):
     """Refinement applied event data"""
+
     generation: int
     applied_updates: dict[str, float]
     applied_strategies: list[str]
@@ -241,6 +258,7 @@ class RefinementAppliedEvent(BaseModel):
 # Error Events
 class ErrorOccurredEvent(BaseModel):
     """Error occurred event data"""
+
     error_code: str
     error_message: str
     error_type: str
@@ -256,6 +274,7 @@ class ErrorOccurredEvent(BaseModel):
 # Connection Events
 class HeartbeatEvent(BaseModel):
     """Heartbeat event data"""
+
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     server_time: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     uptime: int | None = None  # seconds
@@ -263,6 +282,7 @@ class HeartbeatEvent(BaseModel):
 
 class ConnectionAckEvent(BaseModel):
     """Connection acknowledgment event data"""
+
     session_id: str
     client_id: str
     connection_time: datetime = Field(default_factory=datetime.utcnow)
@@ -273,30 +293,35 @@ class ConnectionAckEvent(BaseModel):
 # Client Messages
 class ClientMessage(BaseModel):
     """Messages sent from client to server"""
+
     message_type: str
     data: dict[str, Any] = Field(default_factory=dict)
 
 
 class SubscribeMessage(ClientMessage):
     """Subscribe to session events"""
+
     message_type: str = "subscribe"
     session_id: str
 
 
 class UnsubscribeMessage(ClientMessage):
     """Unsubscribe from session events"""
+
     message_type: str = "unsubscribe"
     session_id: str
 
 
 class HeartbeatMessage(ClientMessage):
     """Client heartbeat ping"""
+
     message_type: str = "heartbeat"
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
 class EventAckMessage(ClientMessage):
     """Acknowledge event receipt"""
+
     message_type: str = "event_ack"
     event_sequence: int
     session_id: str
@@ -305,6 +330,7 @@ class EventAckMessage(ClientMessage):
 # Connection State
 class ConnectionState(BaseModel):
     """Tracks state of a WebSocket connection"""
+
     client_id: str
     session_id: str
     connected_at: datetime = Field(default_factory=datetime.utcnow)
@@ -317,6 +343,7 @@ class ConnectionState(BaseModel):
 # Session State
 class SessionState(BaseModel):
     """Tracks state of an active session"""
+
     session_id: str
     status: SessionStatus
     current_generation: int = 0
@@ -336,17 +363,11 @@ class SessionState(BaseModel):
 
 # Event Factory Functions
 def create_websocket_event(
-    event_type: EventType,
-    session_id: str,
-    sequence: int,
-    data: BaseModel | dict[str, Any]
+    event_type: EventType, session_id: str, sequence: int, data: BaseModel | dict[str, Any]
 ) -> WebSocketEvent:
     """Create a WebSocket event from data"""
     data_dict = data.dict() if isinstance(data, BaseModel) else data
 
     return WebSocketEvent(
-        event_type=event_type,
-        session_id=session_id,
-        sequence=sequence,
-        data=data_dict
+        event_type=event_type, session_id=session_id, sequence=sequence, data=data_dict
     )

@@ -7,7 +7,7 @@ Claude 3, and other Anthropic models through the unified provider interface.
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 from anthropic import AsyncAnthropic
 
@@ -30,7 +30,7 @@ class AnthropicClient(BaseLLMClient):
         provider_id: str,
         model_id: str,
         api_key: str,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         **kwargs: Any,
     ):
         """
@@ -68,8 +68,8 @@ class AnthropicClient(BaseLLMClient):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ) -> PromptResponse:
         """
@@ -127,8 +127,8 @@ class AnthropicClient(BaseLLMClient):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs: Any,
     ):
         """
@@ -175,7 +175,9 @@ class AnthropicClient(BaseLLMClient):
         }
 
         # Add vision for Claude 3 Opus and Sonnet
-        if "claude-3" in self._model_id and ("opus" in self._model_id or "sonnet" in self._model_id):
+        if "claude-3" in self._model_id and (
+            "opus" in self._model_id or "sonnet" in self._model_id
+        ):
             capabilities.add(Capability.VISION)
 
         return capabilities
@@ -211,7 +213,7 @@ class AnthropicPlugin(BaseProviderPlugin):
             Capability.VISION,
         }
 
-    def _get_api_key(self) -> Optional[str]:
+    def _get_api_key(self) -> str | None:
         """Get Anthropic API key from environment."""
         return os.getenv(self._api_key_env_var)
 

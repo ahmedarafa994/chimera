@@ -294,10 +294,11 @@ class TemperatureManager:
             "last_strategy_used": self.last_strategy_used,
             "strategy_changes": self.strategy_change_count,
             "consecutive_uses": self.consecutive_strategy_uses,
-            "temperature_range_explored": max(self.temperature_history)
-            - min(self.temperature_history)
-            if self.temperature_history
-            else 0,
+            "temperature_range_explored": (
+                max(self.temperature_history) - min(self.temperature_history)
+                if self.temperature_history
+                else 0
+            ),
             "current_temperature": self.current_temperature,
             "recent_failed_scores": [
                 score for score in self.success_history[-5:] if score < self.success_threshold

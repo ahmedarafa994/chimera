@@ -277,6 +277,7 @@ def get_ai_config_manager() -> "AIConfigManager":
     if not service_registry.has("ai_config_manager"):
         # Register lazily if not already registered
         from app.core.ai_config_manager import ai_config_manager
+
         service_registry.register("ai_config_manager", ai_config_manager)
 
     return service_registry.get("ai_config_manager")
@@ -362,6 +363,7 @@ def get_config_validator() -> "ConfigValidator":
     """
     if not service_registry.has("config_validator"):
         from app.core.config_validator import config_validator
+
         service_registry.register("config_validator", config_validator)
 
     return service_registry.get("config_validator")
@@ -381,6 +383,7 @@ def get_fallback_manager() -> "FallbackManager":
     """
     if not service_registry.has("fallback_manager"):
         from app.core.fallback_manager import fallback_manager
+
         service_registry.register("fallback_manager", fallback_manager)
 
     return service_registry.get("fallback_manager")

@@ -2,6 +2,7 @@
 Comprehensive Prompt Enhancement System
 Transforms basic user inputs into optimized, viral-worthy prompts
 """
+
 import re
 
 # Helper: cryptographically secure pseudo-floats for security-sensitive choices
@@ -18,7 +19,6 @@ def _secure_random() -> float:
 
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
-
 
 
 class PromptCategory(Enum):
@@ -169,7 +169,9 @@ class IntentAnalyzer:
             return PromptCategory.CONVERSATIONAL
 
         max_score = max(scores.values())
-        top_categories: ClassVar[list] = [cat for cat, score in scores.items() if score == max_score]
+        top_categories: ClassVar[list] = [
+            cat for cat, score in scores.items() if score == max_score
+        ]
         if len(top_categories) == 1:
             return top_categories[0]
 
@@ -230,14 +232,13 @@ class IntentAnalyzer:
             improvements.append("add_structure")
         if intent in ["create", "generate"] and "example" not in text.lower():
             improvements.append("add_examples")
-        if (
-            category in [PromptCategory.TECHNICAL_INSTRUCTION, PromptCategory.ANALYTICAL]
-            and not re.search(r"\b(step|process|method)\b", text.lower())
-        ):
+        if category in [
+            PromptCategory.TECHNICAL_INSTRUCTION,
+            PromptCategory.ANALYTICAL,
+        ] and not re.search(r"\b(step|process|method)\b", text.lower()):
             improvements.append("add_methodology")
-        if (
-            category == PromptCategory.VIRAL_SOCIAL
-            and not re.search(r"\b(engage|hook|viral|trending)\b", text.lower())
+        if category == PromptCategory.VIRAL_SOCIAL and not re.search(
+            r"\b(engage|hook|viral|trending)\b", text.lower()
         ):
             improvements.append("add_virality_elements")
 
@@ -271,9 +272,13 @@ class IntentAnalyzer:
 
     def _assess_clarity(self, text: str) -> float:
         factors: ClassVar[dict] = {
-            "has_verb": 1.0
-            if re.search(r"\b(create|make|build|write|generate|explain|analyze)\b", text.lower())
-            else 0.0,
+            "has_verb": (
+                1.0
+                if re.search(
+                    r"\b(create|make|build|write|generate|explain|analyze)\b", text.lower()
+                )
+                else 0.0
+            ),
             "has_object": 1.0 if len(text.split()) > 3 else 0.5,
             "has_punctuation": 1.0 if any(char in text for char in ".,;:!?") else 0.5,
             "reasonable_length": 1.0 if 5 <= len(text.split()) <= 100 else 0.6,

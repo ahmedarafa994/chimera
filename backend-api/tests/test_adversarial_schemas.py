@@ -63,9 +63,7 @@ class TestAdversarialBaseSchemas:
         assert config.num_decoys >= 0
         assert config.strategy in ["high_stakes", "philosophical", "mixed"]
 
-        config = OverthinkConfig(
-            num_decoys=5, strategy="philosophical", complexity_multiplier=2.0
-        )
+        config = OverthinkConfig(num_decoys=5, strategy="philosophical", complexity_multiplier=2.0)
         assert config.num_decoys == 5
         assert config.strategy == "philosophical"
 
@@ -133,9 +131,7 @@ class TestAutodanEndpointSchemas:
         assert "enable_overthink" in fields
         assert "overthink_config" in fields
 
-        req = JailbreakRequest(
-            request="test", enable_overthink=True
-        )
+        req = JailbreakRequest(request="test", enable_overthink=True)
         assert req.enable_overthink is True
 
     def test_jailbreak_response_has_unified_fields(self):
@@ -346,9 +342,9 @@ class TestNamingConventions:
             MousetrapResponse,
             RedTeamResponse,
         ]:
-            assert "execution_time_ms" in model.model_fields, (
-                f"{model.__name__} missing execution_time_ms"
-            )
+            assert (
+                "execution_time_ms" in model.model_fields
+            ), f"{model.__name__} missing execution_time_ms"
 
     def test_response_models_use_generated_prompt(self):
         """Response models should have generated_prompt."""
@@ -361,9 +357,9 @@ class TestNamingConventions:
             JailbreakResponse,
             MousetrapResponse,
         ]:
-            assert "generated_prompt" in model.model_fields, (
-                f"{model.__name__} missing generated_prompt"
-            )
+            assert (
+                "generated_prompt" in model.model_fields
+            ), f"{model.__name__} missing generated_prompt"
 
 
 class TestBackwardsCompatibility:
@@ -411,10 +407,6 @@ class TestReasoningMetricsIntegration:
             RedTeamResponse,
         ]:
             field = model.model_fields.get("reasoning_metrics")
-            assert field is not None, (
-                f"{model.__name__} missing reasoning_metrics"
-            )
+            assert field is not None, f"{model.__name__} missing reasoning_metrics"
             # Should be optional (have default of None)
-            assert field.default is None, (
-                f"{model.__name__}.reasoning_metrics should be optional"
-            )
+            assert field.default is None, f"{model.__name__}.reasoning_metrics should be optional"

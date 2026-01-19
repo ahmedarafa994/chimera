@@ -205,8 +205,7 @@ def preload_modules(*module_names: str) -> dict[str, Any]:
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         future_to_name = {
-            executor.submit(importlib.import_module, name): name
-            for name in module_names
+            executor.submit(importlib.import_module, name): name for name in module_names
         }
 
         for future in concurrent.futures.as_completed(future_to_name):

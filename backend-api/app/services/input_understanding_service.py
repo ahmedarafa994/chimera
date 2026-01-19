@@ -10,6 +10,7 @@ def _get_model_selection_service():
     """Get model_selection_service with lazy import to avoid circular imports."""
     try:
         from app.services.model_selection_service import model_selection_service
+
         return model_selection_service
     except Exception as e:
         logger.debug(f"model_selection_service not available: {e}")
@@ -20,6 +21,7 @@ def _get_llm_service():
     """Get LLMService with lazy import to avoid circular imports."""
     try:
         from app.services.llm_service import llm_service
+
         return llm_service
     except Exception as e:
         logger.debug(f"llm_service not available: {e}")
@@ -113,9 +115,7 @@ class InputUnderstandingService:
         # Priority 3: Fallback to default
         return self._default_model
 
-    def get_model_for_nlp_task(
-        self, task_type: str
-    ) -> tuple[str, str | None]:
+    def get_model_for_nlp_task(self, task_type: str) -> tuple[str, str | None]:
         """
         Get the best provider and model for a specific NLP task.
 
@@ -146,25 +146,19 @@ class InputUnderstandingService:
 
         try:
             config = config_manager.get_config()
-            required_capabilities = self.NLP_TASK_CAPABILITIES.get(
-                task_type, []
-            )
+            required_capabilities = self.NLP_TASK_CAPABILITIES.get(task_type, [])
 
             # Find best provider with required capabilities
             for provider in config.get_enabled_providers():
                 has_all = True
                 for capability in required_capabilities:
-                    if not getattr(
-                        provider.capabilities, capability, False
-                    ):
+                    if not getattr(provider.capabilities, capability, False):
                         has_all = False
                         break
 
                 if has_all:
                     default_model = provider.get_default_model()
-                    model_name = (
-                        default_model.model_id if default_model else None
-                    )
+                    model_name = default_model.model_id if default_model else None
                     logger.debug(
                         f"Selected {provider.provider_id}/{model_name} "
                         f"for NLP task '{task_type}'"
@@ -172,10 +166,7 @@ class InputUnderstandingService:
                     return provider.provider_id, model_name
 
             # Fall back to config default
-            return (
-                config.global_config.default_provider,
-                config.global_config.default_model
-            )
+            return (config.global_config.default_provider, config.global_config.default_model)
 
         except Exception as e:
             logger.error(f"Error selecting model for NLP task: {e}")
@@ -211,9 +202,7 @@ class InputUnderstandingService:
             missing = []
 
             for capability in required:
-                if not getattr(
-                    provider_config.capabilities, capability, False
-                ):
+                if not getattr(provider_config.capabilities, capability, False):
                     missing.append(capability)
 
             if missing:
@@ -228,9 +217,7 @@ class InputUnderstandingService:
             logger.error(f"Error checking capabilities: {e}")
             return True, []
 
-    def get_tokenization_settings(
-        self, provider: str | None = None
-    ) -> dict[str, Any]:
+    def get_tokenization_settings(self, provider: str | None = None) -> dict[str, Any]:
         """
         Get provider-specific tokenization settings.
 
@@ -263,9 +250,7 @@ class InputUnderstandingService:
                 default_model = provider_config.get_default_model()
                 if default_model:
                     settings["max_tokens"] = default_model.context_length
-                    settings["max_output_tokens"] = (
-                        default_model.max_output_tokens
-                    )
+                    settings["max_output_tokens"] = default_model.max_output_tokens
 
                 # Check token counting support
                 settings["token_counting_supported"] = (
@@ -274,9 +259,7 @@ class InputUnderstandingService:
 
                 # Provider-specific char/token ratio from metadata
                 if provider_config.metadata:
-                    ratio = provider_config.metadata.get(
-                        "chars_per_token"
-                    )
+                    ratio = provider_config.metadata.get("chars_per_token")
                     if ratio:
                         settings["estimated_chars_per_token"] = ratio
 
@@ -287,10 +270,7 @@ class InputUnderstandingService:
             return settings
 
     async def expand_input(
-        self,
-        core_request: str,
-        provider: str | None = None,
-        model: str | None = None
+        self, core_request: str, provider: str | None = None, model: str | None = None
     ) -> str:
         """
         Expands a raw user request into a detailed, high-quality prompt.
@@ -320,13 +300,9 @@ class InputUnderstandingService:
             return core_request
 
         # Check capabilities for this task
-        is_capable, missing = self.check_capability_for_task(
-            "expand_input", provider
-        )
+        is_capable, missing = self.check_capability_for_task("expand_input", provider)
         if not is_capable:
-            logger.warning(
-                f"Provider may not fully support expand_input: {missing}"
-            )
+            logger.warning(f"Provider may not fully support expand_input: {missing}")
 
         # Get model using priority hierarchy
         if not model:
@@ -343,8 +319,7 @@ class InputUnderstandingService:
         # Get tokenization settings
         token_settings = self.get_tokenization_settings(provider)
         max_output = min(
-            token_settings.get("max_output_tokens", 2048),
-            2048  # Cap at 2048 for expansion
+            token_settings.get("max_output_tokens", 2048), 2048  # Cap at 2048 for expansion
         )
 
         system_instruction = """You are an elite Prompt Engineering Architect and Intent Analysis Engine.
@@ -420,10 +395,7 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
             return core_request
 
     async def analyze_with_json_mode(
-        self,
-        input_text: str,
-        analysis_prompt: str,
-        provider: str | None = None
+        self, input_text: str, analysis_prompt: str, provider: str | None = None
     ) -> dict[str, Any] | None:
         """
         Analyze input and return structured JSON output.
@@ -439,13 +411,9 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
             Parsed JSON response or None on failure
         """
         # Check JSON mode capability
-        is_capable, _ = self.check_capability_for_task(
-            "analyze_intent", provider
-        )
+        is_capable, _ = self.check_capability_for_task("analyze_intent", provider)
         if not is_capable:
-            logger.warning(
-                "JSON mode analysis requested but provider may not support it"
-            )
+            logger.warning("JSON mode analysis requested but provider may not support it")
 
         llm_service = _get_llm_service()
         if not llm_service:
@@ -484,6 +452,7 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
 
             if response and response.text:
                 import json
+
                 # Try to parse JSON from response
                 text = response.text.strip()
                 if text.startswith("```"):
@@ -497,9 +466,7 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
             logger.error(f"Error in JSON mode analysis via LLMService: {e}")
             return None
 
-    def get_available_nlp_features(
-        self, provider: str | None = None
-    ) -> dict[str, bool]:
+    def get_available_nlp_features(self, provider: str | None = None) -> dict[str, bool]:
         """
         Get available NLP features for a provider.
 

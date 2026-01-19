@@ -15,7 +15,9 @@ def check_syntax(file_path):
 if __name__ == "__main__":
     for root, _dirs, files in os.walk("."):
         # Skip common non-source directories
-        if any(d in root for d in [".git", "__pycache__", "node_modules", ".venv", "dist", "build"]):
+        if any(
+            d in root for d in [".git", "__pycache__", "node_modules", ".venv", "dist", "build"]
+        ):
             continue
 
         for file in files:

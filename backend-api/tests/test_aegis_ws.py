@@ -11,13 +11,10 @@ Covers:
 - Heartbeat handling
 """
 
-import asyncio
-import json
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.schemas.aegis_telemetry import (
@@ -38,8 +35,8 @@ from app.schemas.aegis_telemetry import (
     IterationCompletedData,
     IterationStartedData,
     LatencyMetrics,
-    PromptEvolvedData,
     PromptEvolution,
+    PromptEvolvedData,
     TechniqueAppliedData,
     TechniqueCategory,
     TechniquePerformance,
@@ -47,11 +44,7 @@ from app.schemas.aegis_telemetry import (
     create_attack_metrics,
     create_telemetry_event,
 )
-from app.services.websocket.aegis_broadcaster import (
-    AegisTelemetryBroadcaster,
-    CampaignState,
-)
-
+from app.services.websocket.aegis_broadcaster import AegisTelemetryBroadcaster, CampaignState
 
 # ============================================================================
 # Telemetry Model Serialization Tests
@@ -942,13 +935,12 @@ class TestAegisTelemetryWebSocket:
     def test_client(self):
         """Create test client for the FastAPI app."""
         from app.main import app
+
         return TestClient(app)
 
     def test_websocket_connect_success(self, test_client):
         """Test successful WebSocket connection to telemetry endpoint."""
-        with test_client.websocket_connect(
-            "/api/v1/ws/aegis/telemetry/test-campaign"
-        ) as websocket:
+        with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Should receive connection acknowledgment
             response = websocket.receive_json()
             assert response["event_type"] == "connection_ack"
@@ -965,9 +957,7 @@ class TestAegisTelemetryWebSocket:
 
     def test_websocket_ping_pong(self, test_client):
         """Test ping/pong message handling."""
-        with test_client.websocket_connect(
-            "/api/v1/ws/aegis/telemetry/test-campaign"
-        ) as websocket:
+        with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
             websocket.receive_json()
 
@@ -981,9 +971,7 @@ class TestAegisTelemetryWebSocket:
 
     def test_websocket_get_summary(self, test_client):
         """Test get_summary message handling."""
-        with test_client.websocket_connect(
-            "/api/v1/ws/aegis/telemetry/test-campaign"
-        ) as websocket:
+        with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
             websocket.receive_json()
 
@@ -996,9 +984,7 @@ class TestAegisTelemetryWebSocket:
 
     def test_websocket_invalid_json_handling(self, test_client):
         """Test handling of invalid JSON messages."""
-        with test_client.websocket_connect(
-            "/api/v1/ws/aegis/telemetry/test-campaign"
-        ) as websocket:
+        with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
             websocket.receive_json()
 
@@ -1012,9 +998,7 @@ class TestAegisTelemetryWebSocket:
 
     def test_websocket_unsubscribe_closes_connection(self, test_client):
         """Test unsubscribe message closes connection."""
-        with test_client.websocket_connect(
-            "/api/v1/ws/aegis/telemetry/test-campaign"
-        ) as websocket:
+        with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
             websocket.receive_json()
 
@@ -1034,13 +1018,12 @@ class TestTelemetryInfoEndpoints:
     def test_client(self):
         """Create test client for the FastAPI app."""
         from app.main import app
+
         return TestClient(app)
 
     def test_get_campaign_telemetry_info_not_found(self, test_client):
         """Test getting info for non-existent campaign."""
-        response = test_client.get(
-            "/api/v1/ws/aegis/telemetry/unknown-campaign/info"
-        )
+        response = test_client.get("/api/v1/ws/aegis/telemetry/unknown-campaign/info")
 
         assert response.status_code == 200
         data = response.json()
@@ -1070,13 +1053,12 @@ class TestHeartbeatHandling:
     def test_client(self):
         """Create test client for the FastAPI app."""
         from app.main import app
+
         return TestClient(app)
 
     def test_pong_response_updates_last_heartbeat(self, test_client):
         """Test pong response updates connection timestamp."""
-        with test_client.websocket_connect(
-            "/api/v1/ws/aegis/telemetry/test-campaign"
-        ) as websocket:
+        with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
             websocket.receive_json()
 

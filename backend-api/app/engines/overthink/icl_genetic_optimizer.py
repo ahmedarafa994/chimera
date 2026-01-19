@@ -103,9 +103,7 @@ class ICLGeneticOptimizer:
                 self._population.append(self._create_random_individual())
         else:
             # Create random population
-            self._population = [
-                self._create_random_individual() for _ in range(size)
-            ]
+            self._population = [self._create_random_individual() for _ in range(size)]
 
         self._generation = 0
         logger.info(f"Initialized population with {len(self._population)} individuals")
@@ -171,29 +169,20 @@ class ICLGeneticOptimizer:
 
             # Record statistics
             fitnesses = [ind.fitness for ind in self._population]
-            avg_fitness = sum(fitnesses) / len(fitnesses)
+            sum(fitnesses) / len(fitnesses)
             max_fitness = max(fitnesses)
             self._fitness_history.append(max_fitness)
 
             # Check for improvement
-            if (
-                self._best_individual is None or
-                max_fitness > self._best_individual.fitness
-            ):
+            if self._best_individual is None or max_fitness > self._best_individual.fitness:
                 best_idx = fitnesses.index(max_fitness)
-                self._best_individual = copy.deepcopy(
-                    self._population[best_idx]
-                )
+                self._best_individual = copy.deepcopy(self._population[best_idx])
                 self._improvements += 1
-                logger.info(
-                    f"Gen {gen}: New best fitness {max_fitness:.4f}"
-                )
+                logger.info(f"Gen {gen}: New best fitness {max_fitness:.4f}")
 
             # Check target
             if target_fitness and max_fitness >= target_fitness:
-                logger.info(
-                    f"Target fitness {target_fitness} reached at gen {gen}"
-                )
+                logger.info(f"Target fitness {target_fitness} reached at gen {gen}")
                 break
 
             # Selection
@@ -206,9 +195,7 @@ class ICLGeneticOptimizer:
             offspring = self._apply_icl_enhancement(offspring)
 
             # Survivor selection
-            self._population = self._select_survivors(
-                self._population, offspring
-            )
+            self._population = self._select_survivors(self._population, offspring)
 
             # Maintain diversity
             if self._get_diversity() < self.config.diversity_threshold:
@@ -288,24 +275,21 @@ class ICLGeneticOptimizer:
 
         # Technique swap
         if random.random() < 0.5:
-            child1.technique, child2.technique = (
-                child2.technique, child1.technique
-            )
+            child1.technique, child2.technique = (child2.technique, child1.technique)
 
         # Decoy type crossover
         if random.random() < 0.5:
             # Combine decoy types
-            all_types = list(
-                set(parent1.decoy_types) | set(parent2.decoy_types)
-            )
+            all_types = list(set(parent1.decoy_types) | set(parent2.decoy_types))
             split = len(all_types) // 2
-            child1.decoy_types = all_types[:split + 1] or [all_types[0]]
+            child1.decoy_types = all_types[: split + 1] or [all_types[0]]
             child2.decoy_types = all_types[split:] or [all_types[-1]]
 
         # Injection strategy swap
         if random.random() < 0.5:
             child1.injection_strategy, child2.injection_strategy = (
-                child2.injection_strategy, child1.injection_strategy
+                child2.injection_strategy,
+                child1.injection_strategy,
             )
 
         # Parameter crossover (arithmetic)
@@ -314,7 +298,7 @@ class ICLGeneticOptimizer:
                 alpha = random.random()
                 v1 = child1.params[key]
                 v2 = child2.params[key]
-                if isinstance(v1, (int, float)):
+                if isinstance(v1, int | float):
                     child1.params[key] = alpha * v1 + (1 - alpha) * v2
                     child2.params[key] = (1 - alpha) * v1 + alpha * v2
 
@@ -332,15 +316,10 @@ class ICLGeneticOptimizer:
         if random.random() < 0.3:
             if random.random() < 0.5 and len(mutant.decoy_types) > 1:
                 # Remove a type
-                mutant.decoy_types.pop(
-                    random.randint(0, len(mutant.decoy_types) - 1)
-                )
+                mutant.decoy_types.pop(random.randint(0, len(mutant.decoy_types) - 1))
             else:
                 # Add a type
-                available = [
-                    dt for dt in DecoyType
-                    if dt not in mutant.decoy_types
-                ]
+                available = [dt for dt in DecoyType if dt not in mutant.decoy_types]
                 if available:
                     mutant.decoy_types.append(random.choice(available))
 
@@ -352,15 +331,9 @@ class ICLGeneticOptimizer:
         for key, value in mutant.params.items():
             if isinstance(value, float) and random.random() < 0.3:
                 mutation_strength = value * 0.2
-                mutant.params[key] = max(
-                    0.0,
-                    value + random.gauss(0, mutation_strength)
-                )
+                mutant.params[key] = max(0.0, value + random.gauss(0, mutation_strength))
             elif isinstance(value, int) and random.random() < 0.3:
-                mutant.params[key] = max(
-                    1,
-                    value + random.randint(-1, 1)
-                )
+                mutant.params[key] = max(1, value + random.randint(-1, 1))
 
         return mutant
 
@@ -381,15 +354,12 @@ class ICLGeneticOptimizer:
         # Fill rest with tournament selection
         remaining = len(population) - elite_count
         for _ in range(remaining):
-            candidates = random.sample(
-                combined[elite_count:],
-                min(3, len(combined) - elite_count)
-            )
+            candidates = random.sample(combined[elite_count:], min(3, len(combined) - elite_count))
             if candidates:
                 winner = max(candidates, key=lambda x: x.fitness)
                 survivors.append(winner)
 
-        return survivors[:len(population)]
+        return survivors[: len(population)]
 
     def _apply_icl_enhancement(
         self,
@@ -406,9 +376,7 @@ class ICLGeneticOptimizer:
 
                 if examples:
                     # Apply learned patterns
-                    individual = self._apply_example_patterns(
-                        individual, examples
-                    )
+                    individual = self._apply_example_patterns(individual, examples)
 
         return offspring
 
@@ -431,7 +399,7 @@ class ICLGeneticOptimizer:
 
         # Sort by amplification and return top examples
         relevant.sort(key=lambda x: x.amplification, reverse=True)
-        return relevant[:self.config.example_count]
+        return relevant[: self.config.example_count]
 
     def _apply_example_patterns(
         self,
@@ -451,17 +419,13 @@ class ICLGeneticOptimizer:
             if key in best_example.params:
                 current = individual.params[key]
                 example_val = best_example.params[key]
-                if isinstance(current, (int, float)):
+                if isinstance(current, int | float):
                     individual.params[key] = (
-                        (1 - blend_factor) * current +
-                        blend_factor * example_val
-                    )
+                        1 - blend_factor
+                    ) * current + blend_factor * example_val
 
         # Consider adopting successful strategy
-        if (
-            best_example.amplification > 20 and
-            random.random() < 0.3
-        ):
+        if best_example.amplification > 20 and random.random() < 0.3:
             individual.injection_strategy = best_example.strategy
 
         return individual
@@ -472,12 +436,8 @@ class ICLGeneticOptimizer:
             return 1.0
 
         # Diversity based on unique configurations
-        unique_techniques = len(
-            set(ind.technique for ind in self._population)
-        )
-        unique_strategies = len(
-            set(ind.injection_strategy for ind in self._population)
-        )
+        unique_techniques = len({ind.technique for ind in self._population})
+        unique_strategies = len({ind.injection_strategy for ind in self._population})
 
         technique_diversity = unique_techniques / len(AttackTechnique)
         strategy_diversity = unique_strategies / len(InjectionStrategy)
@@ -561,16 +521,10 @@ class ICLGeneticOptimizer:
         # Trim library if needed
         if len(self._example_library) > self._max_library_size:
             # Remove lowest amplification examples
-            self._example_library.sort(
-                key=lambda x: x.amplification, reverse=True
-            )
-            self._example_library = (
-                self._example_library[:self._max_library_size]
-            )
+            self._example_library.sort(key=lambda x: x.amplification, reverse=True)
+            self._example_library = self._example_library[: self._max_library_size]
 
-        logger.debug(
-            f"Added example with {token_metrics.amplification_factor:.1f}x amplification"
-        )
+        logger.debug(f"Added example with {token_metrics.amplification_factor:.1f}x amplification")
 
     def get_icl_prompt_prefix(
         self,
@@ -595,17 +549,13 @@ class ICLGeneticOptimizer:
             examples = [e for e in examples if e.technique == technique]
 
         # Sort by amplification
-        examples = sorted(
-            examples, key=lambda x: x.amplification, reverse=True
-        )[:k]
+        examples = sorted(examples, key=lambda x: x.amplification, reverse=True)[:k]
 
         if not examples:
             return ""
 
         # Build ICL prefix
-        lines = [
-            "The following examples show successful patterns:\n"
-        ]
+        lines = ["The following examples show successful patterns:\n"]
 
         for i, example in enumerate(examples, 1):
             lines.append(f"Example {i}:")
@@ -624,9 +574,7 @@ class ICLGeneticOptimizer:
 
         return {
             "technique": self._best_individual.technique.value,
-            "decoy_types": [
-                dt.value for dt in self._best_individual.decoy_types
-            ],
+            "decoy_types": [dt.value for dt in self._best_individual.decoy_types],
             "injection_strategy": self._best_individual.injection_strategy.value,
             "params": self._best_individual.params,
             "fitness": self._best_individual.fitness,
@@ -642,10 +590,7 @@ class ICLGeneticOptimizer:
             "current_generation": self._generation,
             "population_size": len(self._population),
             "example_library_size": len(self._example_library),
-            "best_fitness": (
-                self._best_individual.fitness
-                if self._best_individual else 0.0
-            ),
+            "best_fitness": (self._best_individual.fitness if self._best_individual else 0.0),
             "fitness_history": self._fitness_history[-20:],
             "current_diversity": self._get_diversity(),
         }
@@ -670,17 +615,14 @@ class ICLGeneticOptimizer:
                 {
                     "id": self._best_individual.id,
                     "technique": self._best_individual.technique.value,
-                    "decoy_types": [
-                        dt.value for dt in self._best_individual.decoy_types
-                    ],
-                    "injection_strategy": (
-                        self._best_individual.injection_strategy.value
-                    ),
+                    "decoy_types": [dt.value for dt in self._best_individual.decoy_types],
+                    "injection_strategy": (self._best_individual.injection_strategy.value),
                     "params": self._best_individual.params,
                     "fitness": self._best_individual.fitness,
                     "generation": self._best_individual.generation,
                 }
-                if self._best_individual else None
+                if self._best_individual
+                else None
             ),
             "example_library": [
                 {
@@ -712,12 +654,8 @@ class ICLGeneticOptimizer:
                 GeneticIndividual(
                     id=ind_data["id"],
                     technique=AttackTechnique(ind_data["technique"]),
-                    decoy_types=[
-                        DecoyType(dt) for dt in ind_data["decoy_types"]
-                    ],
-                    injection_strategy=InjectionStrategy(
-                        ind_data["injection_strategy"]
-                    ),
+                    decoy_types=[DecoyType(dt) for dt in ind_data["decoy_types"]],
+                    injection_strategy=InjectionStrategy(ind_data["injection_strategy"]),
                     params=ind_data["params"],
                     fitness=ind_data["fitness"],
                     generation=ind_data["generation"],
@@ -730,12 +668,8 @@ class ICLGeneticOptimizer:
             self._best_individual = GeneticIndividual(
                 id=best_data["id"],
                 technique=AttackTechnique(best_data["technique"]),
-                decoy_types=[
-                    DecoyType(dt) for dt in best_data["decoy_types"]
-                ],
-                injection_strategy=InjectionStrategy(
-                    best_data["injection_strategy"]
-                ),
+                decoy_types=[DecoyType(dt) for dt in best_data["decoy_types"]],
+                injection_strategy=InjectionStrategy(best_data["injection_strategy"]),
                 params=best_data["params"],
                 fitness=best_data["fitness"],
                 generation=best_data["generation"],
@@ -750,9 +684,7 @@ class ICLGeneticOptimizer:
                     prompt="",  # Not stored for space
                     injected_prompt="",
                     technique=AttackTechnique(ex_data["technique"]),
-                    decoy_types=[
-                        DecoyType(dt) for dt in ex_data["decoy_types"]
-                    ],
+                    decoy_types=[DecoyType(dt) for dt in ex_data["decoy_types"]],
                     strategy=InjectionStrategy(ex_data["strategy"]),
                     amplification=ex_data["amplification"],
                     params=ex_data["params"],
@@ -790,10 +722,7 @@ class ExampleSelector:
         k: int = 3,
     ) -> list[ICLExample]:
         """Select examples matching a technique."""
-        matching = [
-            ex for ex in self._examples
-            if ex.technique == technique
-        ]
+        matching = [ex for ex in self._examples if ex.technique == technique]
         matching.sort(key=lambda x: x.amplification, reverse=True)
         return matching[:k]
 

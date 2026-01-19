@@ -20,7 +20,7 @@ Usage:
 import logging
 import time
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -40,7 +40,17 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
     - Extracts user_id from authentication
     - Fetches current provider/model selection
     - Creates RequestContext and runs request within it
+    For every incoming request:
+    - Creates a unique request_id
+    - Extracts user_id from authentication
+    - Fetches current provider/model selection
+    - Creates RequestContext and runs request within it
     """
+
+    def __init__(self, app, excluded_paths: list[str] | None = None):
+        super().__init__(app)
+        self.excluded_paths = excluded_paths or []
+        self.excluded_paths = [path.rstrip("/") for path in self.excluded_paths]
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
@@ -54,7 +64,14 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
             Response from handler
         """
         start_time = time.time()
+        start_time = time.time()
         request_id = str(uuid.uuid4())
+
+        # Check for excluded paths
+        path = request.url.path.rstrip("/")
+        for excluded_path in self.excluded_paths:
+            if path == excluded_path or path.startswith(excluded_path + "/"):
+                return await call_next(request)
 
         try:
             # Extract user information
@@ -62,9 +79,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
             session_id = self._extract_session_id(request)
 
             # Get provider/model selection
-            provider, model = await self._get_provider_model_selection(
-                session_id, user_id
-            )
+            provider, model = await self._get_provider_model_selection(session_id, user_id)
 
             # Create request context
             context = RequestContext(
@@ -78,7 +93,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
                     "user_agent": request.headers.get("user-agent", "unknown"),
                     "path": request.url.path,
                     "method": request.method,
-                }
+                },
             )
 
             # Log context creation
@@ -110,15 +125,11 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(
-                f"Context middleware error: request_id={request_id}, error={str(e)}",
-                exc_info=True
+                f"Context middleware error: request_id={request_id}, error={e!s}", exc_info=True
             )
 
             # Even on error, try to add request ID to response
-            response = Response(
-                content=f"Internal server error: {str(e)}",
-                status_code=500
-            )
+            response = Response(content=f"Internal server error: {e!s}", status_code=500)
             response.headers["X-Request-ID"] = request_id
             return response
 
@@ -184,9 +195,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
         # Generate new session ID
         return str(uuid.uuid4())
 
-    async def _get_provider_model_selection(
-        self, session_id: str, user_id: str
-    ) -> tuple[str, str]:
+    async def _get_provider_model_selection(self, session_id: str, user_id: str) -> tuple[str, str]:
         """
         Get the current provider/model selection for a user/session.
 
@@ -205,13 +214,12 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
             selection = await state.get_current_selection(
                 session_id=session_id,
                 user_id=user_id,
-                db_session=None  # No DB session in middleware
+                db_session=None,  # No DB session in middleware
             )
             return selection.provider, selection.model_id
         except Exception as e:
             logger.error(
-                f"Failed to get selection for session {session_id}, "
-                f"user {user_id}: {e}"
+                f"Failed to get selection for session {session_id}, " f"user {user_id}: {e}"
             )
             # Return default
             return "openai", "gpt-4o"

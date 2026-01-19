@@ -13,22 +13,17 @@ All endpoints follow security best practices for user authentication.
 
 import logging
 import time
-from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_async_session_factory
-from app.core.rate_limit import (
-    RateLimitConfig,
-    get_rate_limiter,
-    get_rate_limit_key,
-)
+from app.core.rate_limit import RateLimitConfig, get_rate_limiter
 from app.db.models import UserRole
 from app.services.email_service import email_service
 from app.services.password_validator import validate_password
-from app.services.user_service import UserService, get_user_service
+from app.services.user_service import get_user_service
 
 logger = logging.getLogger(__name__)
 
@@ -85,11 +80,10 @@ class UserRegistrationRequest(BaseModel):
     def validate_username(cls, v: str) -> str:
         """Validate username format."""
         import re
+
         # Allow alphanumeric, underscores, and hyphens
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError(
-                "Username can only contain letters, numbers, underscores, and hyphens"
-            )
+            raise ValueError("Username can only contain letters, numbers, underscores, and hyphens")
         # Cannot start with a number
         if v[0].isdigit():
             raise ValueError("Username cannot start with a number")
@@ -111,15 +105,15 @@ class RegistrationErrorResponse(BaseModel):
 
     success: bool = False
     errors: list[str]
-    password_feedback: Optional[dict] = None
+    password_feedback: dict | None = None
 
 
 class PasswordStrengthRequest(BaseModel):
     """Request model for password strength check."""
 
     password: str = Field(..., min_length=1)
-    email: Optional[str] = None
-    username: Optional[str] = None
+    email: str | None = None
+    username: str | None = None
 
 
 class PasswordStrengthResponse(BaseModel):
@@ -213,7 +207,9 @@ class ResetPasswordResponse(BaseModel):
     """Response model for successful password reset."""
 
     success: bool = True
-    message: str = "Password has been reset successfully. You can now log in with your new password."
+    message: str = (
+        "Password has been reset successfully. You can now log in with your new password."
+    )
 
 
 class ResetPasswordErrorResponse(BaseModel):
@@ -222,7 +218,7 @@ class ResetPasswordErrorResponse(BaseModel):
     success: bool = False
     error: str
     token_expired: bool = False
-    password_errors: Optional[list[str]] = None
+    password_errors: list[str] | None = None
 
 
 # =============================================================================
@@ -507,7 +503,7 @@ async def verify_email(
 
     # Validate token format (should be 64 chars hex)
     if not token or len(token) != 64:
-        logger.warning(f"Email verification failed: invalid token format")
+        logger.warning("Email verification failed: invalid token format")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={

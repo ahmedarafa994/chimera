@@ -384,9 +384,7 @@ class HybridEventBus(EventBus):
         return await self._active_bus.unsubscribe(subscription_id)
 
 
-def create_event_bus(
-    bus_type: str = "memory", redis_url: str | None = None, **kwargs
-) -> EventBus:
+def create_event_bus(bus_type: str = "memory", redis_url: str | None = None, **kwargs) -> EventBus:
     """
     Factory function to create an event bus.
 

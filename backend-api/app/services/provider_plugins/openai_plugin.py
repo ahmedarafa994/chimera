@@ -5,7 +5,6 @@ Implements the ProviderPlugin protocol for OpenAI API integration,
 supporting models like GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo, and o1.
 """
 
-import asyncio
 import logging
 import os
 import time
@@ -270,22 +269,22 @@ class OpenAIPlugin(BaseProviderPlugin):
                 model_id = model.id
 
                 # Skip non-chat models
-                if not any(prefix in model_id for prefix in [
-                    "gpt-4", "gpt-3.5", "o1"
-                ]):
+                if not any(prefix in model_id for prefix in ["gpt-4", "gpt-3.5", "o1"]):
                     continue
 
                 # Use static info if available, otherwise create basic info
                 if model_id in static_models:
                     models.append(static_models[model_id])
                 else:
-                    models.append(ModelInfo(
-                        model_id=model_id,
-                        provider_id="openai",
-                        display_name=model_id,
-                        supports_streaming=True,
-                        capabilities=["chat"],
-                    ))
+                    models.append(
+                        ModelInfo(
+                            model_id=model_id,
+                            provider_id="openai",
+                            display_name=model_id,
+                            supports_streaming=True,
+                            capabilities=["chat"],
+                        )
+                    )
 
             # Add any static models not in API response
             api_model_ids = {m.model_id for m in models}
@@ -362,11 +361,15 @@ class OpenAIPlugin(BaseProviderPlugin):
                 model_used=response.model,
                 provider="openai",
                 finish_reason=response.choices[0].finish_reason,
-                usage={
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens,
-                    "total_tokens": response.usage.total_tokens,
-                } if response.usage else None,
+                usage=(
+                    {
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "total_tokens": response.usage.total_tokens,
+                    }
+                    if response.usage
+                    else None
+                ),
                 latency_ms=latency_ms,
                 request_id=response.id,
             )

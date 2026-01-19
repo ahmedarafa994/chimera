@@ -14,11 +14,11 @@ Key Features:
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from app.core.selection_context import SelectionContext
 from app.domain.interfaces import BaseLLMClient
-from app.domain.models import Selection, SelectionScope
+from app.domain.models import Selection
 from app.services.unified_provider_registry import unified_registry
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,9 @@ class ProviderFactory:
         """
         self._client_cache: dict[str, BaseLLMClient] = {}
         self._enable_caching = enable_caching
-        logger.debug(f"ProviderFactory initialized (caching={'enabled' if enable_caching else 'disabled'})")
+        logger.debug(
+            f"ProviderFactory initialized (caching={'enabled' if enable_caching else 'disabled'})"
+        )
 
     def get_client_from_context(self, **kwargs: Any) -> BaseLLMClient:
         """
@@ -95,15 +97,10 @@ class ProviderFactory:
             provider_id=selection.provider_id,
             model_id=selection.model_id,
             selection=selection,
-            **kwargs
+            **kwargs,
         )
 
-    def get_client(
-        self,
-        provider_id: str,
-        model_id: str,
-        **kwargs: Any
-    ) -> BaseLLMClient:
+    def get_client(self, provider_id: str, model_id: str, **kwargs: Any) -> BaseLLMClient:
         """
         Create a client for a specific provider and model.
 
@@ -138,19 +135,16 @@ class ProviderFactory:
             )
 
         return self._create_client_internal(
-            provider_id=provider_id,
-            model_id=model_id,
-            selection=None,
-            **kwargs
+            provider_id=provider_id, model_id=model_id, selection=None, **kwargs
         )
 
     def get_client_with_fallback(
         self,
         provider_id: str,
         model_id: str,
-        fallback_provider: Optional[str] = None,
-        fallback_model: Optional[str] = None,
-        **kwargs: Any
+        fallback_provider: str | None = None,
+        fallback_model: str | None = None,
+        **kwargs: Any,
     ) -> BaseLLMClient:
         """
         Create a client with automatic fallback if primary selection fails.
@@ -202,11 +196,7 @@ class ProviderFactory:
                 ) from fallback_error
 
     def _create_client_internal(
-        self,
-        provider_id: str,
-        model_id: str,
-        selection: Optional[Selection],
-        **kwargs: Any
+        self, provider_id: str, model_id: str, selection: Selection | None, **kwargs: Any
     ) -> BaseLLMClient:
         """
         Internal method to create a client with caching support.
@@ -248,16 +238,9 @@ class ProviderFactory:
             raise
         except Exception as e:
             logger.error(f"Failed to create client for {provider_id}/{model_id}: {e}")
-            raise RuntimeError(
-                f"Client creation failed for {provider_id}/{model_id}: {str(e)}"
-            ) from e
+            raise RuntimeError(f"Client creation failed for {provider_id}/{model_id}: {e!s}") from e
 
-    def _generate_cache_key(
-        self,
-        provider_id: str,
-        model_id: str,
-        kwargs: dict[str, Any]
-    ) -> str:
+    def _generate_cache_key(self, provider_id: str, model_id: str, kwargs: dict[str, Any]) -> str:
         """
         Generate a cache key for client instances.
 

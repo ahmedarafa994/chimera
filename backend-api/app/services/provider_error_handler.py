@@ -46,7 +46,7 @@ class ProviderErrorHandler:
 
     def __init__(self):
         """Initialize the error handler with error mappers."""
-        self._error_mappers: dict[str, "BaseErrorMapper"] = {}
+        self._error_mappers: dict[str, BaseErrorMapper] = {}
         self._error_history: list[NormalizedProviderError] = []
         self._max_history_size = 10000
         self._fallback_mappings: dict[str, list[tuple[str, str]]] = {}
@@ -83,9 +83,7 @@ class ProviderErrorHandler:
             ],
         }
 
-    def register_mapper(
-        self, provider: str, mapper: "BaseErrorMapper"
-    ) -> None:
+    def register_mapper(self, provider: str, mapper: "BaseErrorMapper") -> None:
         """
         Register an error mapper for a provider.
 
@@ -112,9 +110,9 @@ class ProviderErrorHandler:
         self,
         provider: str,
         error: Exception,
-        model: Optional[str] = None,
-        request_id: Optional[str] = None,
-        trace_id: Optional[str] = None,
+        model: str | None = None,
+        request_id: str | None = None,
+        trace_id: str | None = None,
     ) -> NormalizedProviderError:
         """
         Normalize a provider error into a unified format.
@@ -134,21 +132,14 @@ class ProviderErrorHandler:
 
         if mapper:
             try:
-                normalized = mapper.map_error(
-                    error, model, request_id, trace_id
-                )
+                normalized = mapper.map_error(error, model, request_id, trace_id)
                 self._record_error(normalized)
                 return normalized
             except Exception as e:
-                logger.warning(
-                    f"Error mapper failed for {provider}: {e}",
-                    exc_info=True
-                )
+                logger.warning(f"Error mapper failed for {provider}: {e}", exc_info=True)
 
         # Fall back to generic error mapping
-        normalized = self._generic_normalize(
-            provider, error, model, request_id, trace_id
-        )
+        normalized = self._generic_normalize(provider, error, model, request_id, trace_id)
         self._record_error(normalized)
         return normalized
 
@@ -156,9 +147,9 @@ class ProviderErrorHandler:
         self,
         provider: str,
         error: Exception,
-        model: Optional[str],
-        request_id: Optional[str],
-        trace_id: Optional[str],
+        model: str | None,
+        request_id: str | None,
+        trace_id: str | None,
     ) -> NormalizedProviderError:
         """
         Generic error normalization for unknown providers or mapper failures.
@@ -181,8 +172,7 @@ class ProviderErrorHandler:
             model=model,
             original_error=error_str[:1000],
             original_code=getattr(error, "code", None),
-            original_status=getattr(error, "status_code", None)
-            or getattr(error, "status", None),
+            original_status=getattr(error, "status_code", None) or getattr(error, "status", None),
             retry_after_seconds=retry_after,
             is_retryable=is_retryable_error(code),
             retry_strategy=get_default_retry_strategy(code),
@@ -195,14 +185,10 @@ class ProviderErrorHandler:
 
         return normalized
 
-    def _detect_error_code(
-        self, error: Exception, error_lower: str
-    ) -> ProviderErrorCode:
+    def _detect_error_code(self, error: Exception, error_lower: str) -> ProviderErrorCode:
         """Detect the error code from exception and message."""
         # Check for HTTP status code
-        status = getattr(error, "status_code", None) or getattr(
-            error, "status", None
-        )
+        status = getattr(error, "status_code", None) or getattr(error, "status", None)
 
         if status == 429:
             if "quota" in error_lower:
@@ -238,8 +224,7 @@ class ProviderErrorHandler:
             (r"model.*unavailable", ProviderErrorCode.MODEL_UNAVAILABLE),
             (r"overload", ProviderErrorCode.MODEL_OVERLOADED),
             (r"content.?policy", ProviderErrorCode.CONTENT_POLICY_VIOLATION),
-            (r"context.?(length|window)",
-             ProviderErrorCode.CONTEXT_LENGTH_EXCEEDED),
+            (r"context.?(length|window)", ProviderErrorCode.CONTEXT_LENGTH_EXCEEDED),
             (r"token.?limit", ProviderErrorCode.CONTEXT_LENGTH_EXCEEDED),
             (r"timeout", ProviderErrorCode.TIMEOUT),
             (r"connect", ProviderErrorCode.CONNECTION_ERROR),
@@ -254,9 +239,7 @@ class ProviderErrorHandler:
 
         return ProviderErrorCode.UNKNOWN
 
-    def _determine_severity(
-        self, code: ProviderErrorCode
-    ) -> ErrorSeverity:
+    def _determine_severity(self, code: ProviderErrorCode) -> ErrorSeverity:
         """Determine error severity based on error code."""
         critical_codes = {
             ProviderErrorCode.AUTHENTICATION_FAILED,
@@ -284,7 +267,7 @@ class ProviderErrorHandler:
             return ErrorSeverity.LOW
         return ErrorSeverity.MEDIUM
 
-    def _extract_retry_after(self, error: Exception) -> Optional[int]:
+    def _extract_retry_after(self, error: Exception) -> int | None:
         """Extract retry-after value from error if present."""
         # Check for retry_after attribute
         if hasattr(error, "retry_after"):
@@ -346,88 +329,58 @@ class ProviderErrorHandler:
             ProviderErrorCode.RATE_LIMITED: (
                 "Wait and retry the request, or reduce request frequency"
             ),
-            ProviderErrorCode.QUOTA_EXCEEDED: (
-                "Upgrade your plan or wait for quota reset"
-            ),
-            ProviderErrorCode.AUTHENTICATION_FAILED: (
-                "Check your API key and ensure it is valid"
-            ),
-            ProviderErrorCode.API_KEY_INVALID: (
-                "Verify your API key is correct and active"
-            ),
+            ProviderErrorCode.QUOTA_EXCEEDED: ("Upgrade your plan or wait for quota reset"),
+            ProviderErrorCode.AUTHENTICATION_FAILED: ("Check your API key and ensure it is valid"),
+            ProviderErrorCode.API_KEY_INVALID: ("Verify your API key is correct and active"),
             ProviderErrorCode.API_KEY_EXPIRED: (
                 "Generate a new API key from the provider dashboard"
             ),
-            ProviderErrorCode.MODEL_NOT_FOUND: (
-                "Check the model name or select a different model"
-            ),
-            ProviderErrorCode.MODEL_OVERLOADED: (
-                "Wait and retry, or try a different model"
-            ),
-            ProviderErrorCode.MODEL_UNAVAILABLE: (
-                "Select a different model or try again later"
-            ),
+            ProviderErrorCode.MODEL_NOT_FOUND: ("Check the model name or select a different model"),
+            ProviderErrorCode.MODEL_OVERLOADED: ("Wait and retry, or try a different model"),
+            ProviderErrorCode.MODEL_UNAVAILABLE: ("Select a different model or try again later"),
             ProviderErrorCode.CONTENT_POLICY_VIOLATION: (
                 "Modify your prompt to comply with content policies"
             ),
             ProviderErrorCode.CONTEXT_LENGTH_EXCEEDED: (
-                "Reduce the length of your input or use a model with "
-                "larger context"
+                "Reduce the length of your input or use a model with " "larger context"
             ),
             ProviderErrorCode.PROVIDER_UNAVAILABLE: (
                 "Try a different provider or wait for service restoration"
             ),
-            ProviderErrorCode.TIMEOUT: (
-                "Retry the request or reduce prompt complexity"
-            ),
-            ProviderErrorCode.CONNECTION_ERROR: (
-                "Check your network connection and retry"
-            ),
+            ProviderErrorCode.TIMEOUT: ("Retry the request or reduce prompt complexity"),
+            ProviderErrorCode.CONNECTION_ERROR: ("Check your network connection and retry"),
         }
-        return actions.get(
-            code, "Try again or contact support if the issue persists"
-        )
+        return actions.get(code, "Try again or contact support if the issue persists")
 
-    def _get_user_message(
-        self, code: ProviderErrorCode, provider: str
-    ) -> str:
+    def _get_user_message(self, code: ProviderErrorCode, provider: str) -> str:
         """Get a user-friendly message for an error."""
         messages = {
             ProviderErrorCode.RATE_LIMITED: (
-                f"Too many requests to {provider}. Please wait a moment "
-                "before trying again."
+                f"Too many requests to {provider}. Please wait a moment " "before trying again."
             ),
             ProviderErrorCode.QUOTA_EXCEEDED: (
-                f"Your {provider} API quota has been exceeded. Please check "
-                "your plan limits."
+                f"Your {provider} API quota has been exceeded. Please check " "your plan limits."
             ),
             ProviderErrorCode.AUTHENTICATION_FAILED: (
-                f"Unable to authenticate with {provider}. Please check your "
-                "API key."
+                f"Unable to authenticate with {provider}. Please check your " "API key."
             ),
             ProviderErrorCode.MODEL_NOT_FOUND: (
-                "The selected model is not available. Please choose a "
-                "different model."
+                "The selected model is not available. Please choose a " "different model."
             ),
             ProviderErrorCode.MODEL_OVERLOADED: (
-                f"The {provider} model is currently overloaded. Please try "
-                "again shortly."
+                f"The {provider} model is currently overloaded. Please try " "again shortly."
             ),
             ProviderErrorCode.CONTENT_POLICY_VIOLATION: (
-                "Your request was flagged by content policies. Please modify "
-                "your input."
+                "Your request was flagged by content policies. Please modify " "your input."
             ),
             ProviderErrorCode.CONTEXT_LENGTH_EXCEEDED: (
-                "Your input is too long. Please reduce the text length and "
-                "try again."
+                "Your input is too long. Please reduce the text length and " "try again."
             ),
             ProviderErrorCode.PROVIDER_UNAVAILABLE: (
-                f"{provider} is currently unavailable. Please try a different "
-                "provider."
+                f"{provider} is currently unavailable. Please try a different " "provider."
             ),
             ProviderErrorCode.TIMEOUT: (
-                "The request took too long. Please try again with a shorter "
-                "prompt."
+                "The request took too long. Please try again with a shorter " "prompt."
             ),
         }
         return messages.get(code, "An error occurred. Please try again.")
@@ -438,7 +391,7 @@ class ProviderErrorHandler:
 
         # Trim history if needed
         if len(self._error_history) > self._max_history_size:
-            self._error_history = self._error_history[-self._max_history_size:]
+            self._error_history = self._error_history[-self._max_history_size :]
 
     def get_retry_strategy(
         self,
@@ -488,8 +441,8 @@ class ProviderErrorHandler:
         self,
         provider: str,
         error: NormalizedProviderError,
-        available_providers: Optional[list[str]] = None,
-    ) -> Optional[FallbackSuggestion]:
+        available_providers: list[str] | None = None,
+    ) -> FallbackSuggestion | None:
         """
         Get a fallback suggestion for an error.
 
@@ -536,18 +489,10 @@ class ProviderErrorHandler:
     def _get_fallback_reason(self, code: ProviderErrorCode) -> str:
         """Get the reason for suggesting a fallback."""
         reasons = {
-            ProviderErrorCode.QUOTA_EXCEEDED: (
-                "Primary provider quota exceeded"
-            ),
-            ProviderErrorCode.PROVIDER_UNAVAILABLE: (
-                "Primary provider is currently unavailable"
-            ),
-            ProviderErrorCode.MODEL_UNAVAILABLE: (
-                "Selected model is not available"
-            ),
-            ProviderErrorCode.MODEL_OVERLOADED: (
-                "Model is experiencing high demand"
-            ),
+            ProviderErrorCode.QUOTA_EXCEEDED: ("Primary provider quota exceeded"),
+            ProviderErrorCode.PROVIDER_UNAVAILABLE: ("Primary provider is currently unavailable"),
+            ProviderErrorCode.MODEL_UNAVAILABLE: ("Selected model is not available"),
+            ProviderErrorCode.MODEL_OVERLOADED: ("Model is experiencing high demand"),
             ProviderErrorCode.AUTHENTICATION_FAILED: (
                 "Authentication with primary provider failed"
             ),
@@ -556,7 +501,7 @@ class ProviderErrorHandler:
 
     def get_error_metrics(
         self,
-        provider: Optional[str] = None,
+        provider: str | None = None,
         time_range_hours: int = 24,
     ) -> dict[str, Any]:
         """
@@ -573,9 +518,9 @@ class ProviderErrorHandler:
 
         # Filter errors
         errors = [
-            e for e in self._error_history
-            if e.timestamp >= cutoff
-            and (provider is None or e.provider == provider.lower())
+            e
+            for e in self._error_history
+            if e.timestamp >= cutoff and (provider is None or e.provider == provider.lower())
         ]
 
         if not errors:
@@ -627,9 +572,9 @@ class BaseErrorMapper:
     def map_error(
         self,
         error: Exception,
-        model: Optional[str] = None,
-        request_id: Optional[str] = None,
-        trace_id: Optional[str] = None,
+        model: str | None = None,
+        request_id: str | None = None,
+        trace_id: str | None = None,
     ) -> NormalizedProviderError:
         """
         Map a provider error to a normalized error.
@@ -645,13 +590,11 @@ class BaseErrorMapper:
         """
         raise NotImplementedError
 
-    def get_retry_strategy(
-        self, error: NormalizedProviderError
-    ) -> Optional[RetryStrategy]:
+    def get_retry_strategy(self, error: NormalizedProviderError) -> RetryStrategy | None:
         """Get a provider-specific retry strategy."""
         return None
 
-    def _extract_status_code(self, error: Exception) -> Optional[int]:
+    def _extract_status_code(self, error: Exception) -> int | None:
         """Extract HTTP status code from various error types."""
         # Direct attribute
         if hasattr(error, "status_code"):
@@ -669,7 +612,7 @@ class BaseErrorMapper:
 
         return None
 
-    def _extract_error_code(self, error: Exception) -> Optional[str]:
+    def _extract_error_code(self, error: Exception) -> str | None:
         """Extract error code from various error types."""
         if hasattr(error, "code"):
             return str(error.code)
@@ -689,7 +632,7 @@ class BaseErrorMapper:
 # Global Error Handler Instance
 # =============================================================================
 
-_error_handler: Optional[ProviderErrorHandler] = None
+_error_handler: ProviderErrorHandler | None = None
 
 
 def get_error_handler() -> ProviderErrorHandler:
@@ -703,9 +646,9 @@ def get_error_handler() -> ProviderErrorHandler:
 def normalize_provider_error(
     provider: str,
     error: Exception,
-    model: Optional[str] = None,
-    request_id: Optional[str] = None,
-    trace_id: Optional[str] = None,
+    model: str | None = None,
+    request_id: str | None = None,
+    trace_id: str | None = None,
 ) -> NormalizedProviderError:
     """
     Convenience function to normalize a provider error.
@@ -720,16 +663,14 @@ def normalize_provider_error(
     Returns:
         NormalizedProviderError
     """
-    return get_error_handler().normalize_error(
-        provider, error, model, request_id, trace_id
-    )
+    return get_error_handler().normalize_error(provider, error, model, request_id, trace_id)
 
 
 def create_provider_exception(
     provider: str,
     error: Exception,
-    model: Optional[str] = None,
-    request_id: Optional[str] = None,
+    model: str | None = None,
+    request_id: str | None = None,
 ) -> ProviderException:
     """
     Create a ProviderException from an error.
@@ -743,16 +684,14 @@ def create_provider_exception(
     Returns:
         ProviderException with normalized error
     """
-    normalized = normalize_provider_error(
-        provider, error, model, request_id
-    )
+    normalized = normalize_provider_error(provider, error, model, request_id)
     return ProviderException(normalized, error)
 
 
 __all__ = [
-    "ProviderErrorHandler",
     "BaseErrorMapper",
+    "ProviderErrorHandler",
+    "create_provider_exception",
     "get_error_handler",
     "normalize_provider_error",
-    "create_provider_exception",
 ]

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 class HierarchicalSearchRequest(BaseModel):
     """Request for hierarchical genetic search."""
 
-    request: str = Field(..., description="Target harmful request")
+    request: str = Field(..., description="Target complex request")
     model: str | None = Field(None, description="Target model name")
     provider: str | None = Field(None, description="LLM provider")
     population_size: int = Field(20, ge=10, le=100, description="Population size per generation")

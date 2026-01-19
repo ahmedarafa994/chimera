@@ -97,7 +97,7 @@ All tasks follow a strict lifecycle:
 
         **Manual Verification Steps:**
         1.  **Start the development server with the command:** `npm run dev`
-        2.  **Open your browser to:** `http://localhost:3000`
+        2.  **Open your browser to:** `http://localhost:3001`
         3.  **Confirm that you see:** The new user profile page, with the user's name and email displayed correctly.
         ```
 

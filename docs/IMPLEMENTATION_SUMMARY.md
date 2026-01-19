@@ -267,7 +267,7 @@ docker-compose -f docker-compose.prod.yml up -d
 
 # Access services
 # - API: http://localhost:8001
-# - Grafana: http://localhost:3000 (admin/admin)
+# - Grafana: http://localhost:3001 (admin/admin)
 # - Prometheus: http://localhost:9090
 ```
 

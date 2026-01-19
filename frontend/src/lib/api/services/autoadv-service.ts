@@ -1,11 +1,11 @@
 /**
  * AutoAdv Service
- * 
+ *
  * Provides API methods for adversarial prompt generation,
  * batch processing, and history retrieval.
  */
 
-import { enhancedApi } from '@/lib/api-enhanced';
+import { apiClient } from '../client';
 
 export interface AutoAdvStrategy {
   id: string;
@@ -72,7 +72,7 @@ export interface AutoAdvHistoryItem {
   model_used: string;
 }
 
-const API_BASE = '/api/v1/autoadv';
+const API_BASE = '/autoadv';
 
 /**
  * AutoAdv Service API
@@ -82,20 +82,22 @@ export const autoadvService = {
    * Generate adversarial prompt variations
    */
   async generate(request: AutoAdvGenerateRequest): Promise<AutoAdvGenerateResponse> {
-    return enhancedApi.post<AutoAdvGenerateResponse>(
+    const response = await apiClient.post<AutoAdvGenerateResponse>(
       `${API_BASE}/generate`,
       request
     );
+    return response.data;
   },
 
   /**
    * Batch generate adversarial prompts
    */
   async batchGenerate(request: AutoAdvBatchRequest): Promise<AutoAdvBatchResponse> {
-    return enhancedApi.post<AutoAdvBatchResponse>(
+    const response = await apiClient.post<AutoAdvBatchResponse>(
       `${API_BASE}/batch`,
       request
     );
+    return response.data;
   },
 
   /**
@@ -107,10 +109,11 @@ export const autoadvService = {
     strategy?: string;
     model?: string;
   }): Promise<{ items: AutoAdvHistoryItem[]; total: number }> {
-    return enhancedApi.get<{ items: AutoAdvHistoryItem[]; total: number }>(
+    const response = await apiClient.get<{ items: AutoAdvHistoryItem[]; total: number }>(
       `${API_BASE}/history`,
       { params }
     );
+    return response.data;
   },
 
   /**
@@ -124,14 +127,16 @@ export const autoadvService = {
    * Get a specific generation by ID
    */
   async getGeneration(id: string): Promise<AutoAdvGenerateResponse> {
-    return enhancedApi.get<AutoAdvGenerateResponse>(`${API_BASE}/generation/${id}`);
+    const response = await apiClient.get<AutoAdvGenerateResponse>(`${API_BASE}/generation/${id}`);
+    return response.data;
   },
 
   /**
    * Delete a generation from history
    */
   async deleteGeneration(id: string): Promise<{ success: boolean }> {
-    return enhancedApi.delete<{ success: boolean }>(`${API_BASE}/generation/${id}`);
+    const response = await apiClient.delete<{ success: boolean }>(`${API_BASE}/generation/${id}`);
+    return response.data;
   },
 
   /**
@@ -142,11 +147,12 @@ export const autoadvService = {
     issues: string[];
     suggestions: string[];
   }> {
-    return enhancedApi.post<{
+    const response = await apiClient.post<{
       valid: boolean;
       issues: string[];
       suggestions: string[];
     }>(`${API_BASE}/validate`, { prompt });
+    return response.data;
   },
 
   /**
@@ -156,10 +162,11 @@ export const autoadvService = {
     recommended: AutoAdvStrategy[];
     reasoning: string;
   }> {
-    return enhancedApi.post<{
+    const response = await apiClient.post<{
       recommended: AutoAdvStrategy[];
       reasoning: string;
     }>(`${API_BASE}/recommend-strategy`, { prompt });
+    return response.data;
   },
 };
 

@@ -16,12 +16,7 @@ from enum import Enum
 from typing import Any
 from urllib.parse import urlparse
 
-from .service_registry import (
-    ServiceDefinition,
-    ServiceEndpoint,
-    ServiceRegistry,
-    ServiceType,
-)
+from .service_registry import ServiceDefinition, ServiceEndpoint, ServiceRegistry, ServiceType
 
 logger = logging.getLogger(__name__)
 
@@ -341,11 +336,14 @@ class ConsulDiscoveryBackend(DiscoveryBackend):
 
         while self._watching:
             try:
-                async with aiohttp.ClientSession() as session, session.get(
-                    f"{self.base_url}/catalog/services",
-                    headers=headers,
-                    params={"index": last_index, "wait": "30s"},
-                ) as response:
+                async with (
+                    aiohttp.ClientSession() as session,
+                    session.get(
+                        f"{self.base_url}/catalog/services",
+                        headers=headers,
+                        params={"index": last_index, "wait": "30s"},
+                    ) as response,
+                ):
                     if response.status == 200:
                         new_index = int(response.headers.get("X-Consul-Index", 0))
                         if new_index != last_index:

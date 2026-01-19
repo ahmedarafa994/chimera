@@ -1,0 +1,11 @@
+INFO:StrategyVerification:Loaded 9 extended strategies.
+Verifying AutoDAN Strategy Integration...
+Current sys.path: ['K:\\MUZIK\\chimera', 'C:\\Users\\Mohamed Arafa\\AppData\\Local\\Programs\\Python\\Python313\\python313.zip', 'C:\\Users\\Mohamed Arafa\\AppData\\Local\\Programs\\Python\\Python313\\DLLs', 'C:\\Users\\Mohamed Arafa\\AppData\\Local\\Programs\\Python\\Python313\\Lib', 'C:\\Users\\Mohamed Arafa\\AppData\\Local\\Programs\\Python\\Python313', 'K:\\MUZIK\\chimera\\agent 2\\venv', 'K:\\MUZIK\\chimera\\agent 2\\venv\\Lib\\site-packages', 'K:\\MUZIK\\chimera\\safolab-wisc-autodan-reasoning']
+Attempting direct import of strategies...
+Direct import of Mist successful.
+Direct import of Jailbreak successful.
+Direct import of Prompt Frameworks successful.
+Instantiating AutoDANReasoning...
+Successfully loaded 9 extended strategies.
+Strategies found: ['mist_assistant', 'mongo_tom', 'dan', 'virtualization', 'google', 'langgpt', 'coast', 'tag', 'ape']
+SUCCESS: All required strategies loaded.

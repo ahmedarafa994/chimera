@@ -105,7 +105,7 @@ k6 run k6-chimera-test.js
 k6 run k6-chimera-test.js \
   --env BASE_URL=http://localhost:8001 \
   --env API_KEY=your-api-key \
-  --env FRONTEND_URL=http://localhost:3000
+  --env FRONTEND_URL=http://localhost:3001
 
 # Extended stress test
 k6 run k6-chimera-test.js --vus 100 --duration 15m

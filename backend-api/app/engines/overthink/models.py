@@ -127,9 +127,9 @@ class TokenMetrics:
     def total_cost(self) -> float:
         """Calculate total cost in dollars."""
         return (
-            (self.input_tokens / 1000) * self.input_cost_per_1k +
-            (self.output_tokens / 1000) * self.output_cost_per_1k +
-            (self.reasoning_tokens / 1000) * self.reasoning_cost_per_1k
+            (self.input_tokens / 1000) * self.input_cost_per_1k
+            + (self.output_tokens / 1000) * self.output_cost_per_1k
+            + (self.reasoning_tokens / 1000) * self.reasoning_cost_per_1k
         )
 
     @property
@@ -331,9 +331,7 @@ class OverthinkStats:
         self.max_amplification = max(self.max_amplification, result.amplification_achieved)
 
         if result.target_reached:
-            self.target_hit_rate = (
-                (self.target_hit_rate * (n - 1) + 1) / n
-            )
+            self.target_hit_rate = (self.target_hit_rate * (n - 1) + 1) / n
         else:
             self.target_hit_rate = (self.target_hit_rate * (n - 1)) / n
 
@@ -361,9 +359,7 @@ class OverthinkStats:
             result.amplification_achieved - tech_stats["avg_amplification"]
         ) / tech_n
         if result.success:
-            tech_stats["success_rate"] = (
-                (tech_stats["success_rate"] * (tech_n - 1) + 1) / tech_n
-            )
+            tech_stats["success_rate"] = (tech_stats["success_rate"] * (tech_n - 1) + 1) / tech_n
 
 
 @dataclass

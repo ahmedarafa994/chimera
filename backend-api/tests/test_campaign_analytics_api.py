@@ -16,22 +16,20 @@ Tests cover:
 Subtask 9.2: Create Backend API Integration Tests
 """
 
+from datetime import datetime
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.schemas.campaign_analytics import (
     CampaignComparison,
-    CampaignComparisonRequest,
     CampaignDetail,
     CampaignListResponse,
     CampaignStatistics,
     CampaignStatusEnum,
     CampaignSummary,
-    ExportFormat,
-    ExportRequest,
     PotencyBreakdown,
     ProviderBreakdown,
     TechniqueBreakdown,
@@ -41,7 +39,6 @@ from app.schemas.campaign_analytics import (
     TimeGranularity,
 )
 from app.services.campaign_analytics_service import CampaignAnalyticsService
-
 
 # =============================================================================
 # Test Fixtures
@@ -129,11 +126,7 @@ def mock_campaign_list_response(mock_campaign_summary):
 @pytest.fixture
 def mock_campaign_statistics():
     """Create mock campaign statistics."""
-    from app.schemas.campaign_analytics import (
-        AttemptCounts,
-        DistributionStats,
-        PercentileStats,
-    )
+    from app.schemas.campaign_analytics import AttemptCounts, DistributionStats, PercentileStats
 
     return CampaignStatistics(
         campaign_id="test-campaign-001",
@@ -333,7 +326,7 @@ def mock_time_series():
 @pytest.fixture
 def mock_telemetry_list():
     """Create mock telemetry events list."""
-    from app.schemas.campaign_analytics import TelemetryEventSummary, ExecutionStatusEnum
+    from app.schemas.campaign_analytics import ExecutionStatusEnum, TelemetryEventSummary
 
     return TelemetryListResponse(
         items=[
@@ -471,9 +464,7 @@ class TestCampaignListEndpoint:
     """Tests for GET /api/v1/campaigns endpoint."""
 
     @pytest.mark.integration
-    def test_list_campaigns_success(
-        self, client, auth_headers, mock_campaign_list_response
-    ):
+    def test_list_campaigns_success(self, client, auth_headers, mock_campaign_list_response):
         """Test successful campaign list retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -504,9 +495,7 @@ class TestCampaignListEndpoint:
             mock_service.list_campaigns.return_value = mock_campaign_list_response
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns?page=1&page_size=10", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns?page=1&page_size=10", headers=auth_headers)
 
             assert response.status_code == 200
             mock_service.list_campaigns.assert_called_once()
@@ -526,9 +515,7 @@ class TestCampaignListEndpoint:
             mock_service.list_campaigns.return_value = mock_campaign_list_response
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns?status=completed", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns?status=completed", headers=auth_headers)
 
             assert response.status_code == 200
 
@@ -544,16 +531,12 @@ class TestCampaignListEndpoint:
             mock_service.list_campaigns.return_value = mock_campaign_list_response
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns?provider=openai", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns?provider=openai", headers=auth_headers)
 
             assert response.status_code == 200
 
     @pytest.mark.integration
-    def test_list_campaigns_with_search(
-        self, client, auth_headers, mock_campaign_list_response
-    ):
+    def test_list_campaigns_with_search(self, client, auth_headers, mock_campaign_list_response):
         """Test campaign list with search query."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -562,9 +545,7 @@ class TestCampaignListEndpoint:
             mock_service.list_campaigns.return_value = mock_campaign_list_response
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns?search=jailbreak", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns?search=jailbreak", headers=auth_headers)
 
             assert response.status_code == 200
 
@@ -613,9 +594,7 @@ class TestCampaignDetailEndpoint:
     """Tests for GET /api/v1/campaigns/{campaign_id} endpoint."""
 
     @pytest.mark.integration
-    def test_get_campaign_detail_success(
-        self, client, auth_headers, mock_campaign_detail
-    ):
+    def test_get_campaign_detail_success(self, client, auth_headers, mock_campaign_detail):
         """Test successful campaign detail retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -624,9 +603,7 @@ class TestCampaignDetailEndpoint:
             mock_service.get_campaign_detail.return_value = mock_campaign_detail
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns/test-campaign-001", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns/test-campaign-001", headers=auth_headers)
 
             assert response.status_code == 200
             data = response.json()
@@ -644,9 +621,7 @@ class TestCampaignDetailEndpoint:
             mock_service.get_campaign_detail.return_value = None
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns/nonexistent-campaign", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns/nonexistent-campaign", headers=auth_headers)
 
             assert response.status_code == 404
             data = response.json()
@@ -663,9 +638,7 @@ class TestCampaignSummaryEndpoint:
     """Tests for GET /api/v1/campaigns/{campaign_id}/summary endpoint."""
 
     @pytest.mark.integration
-    def test_get_campaign_summary_success(
-        self, client, auth_headers, mock_campaign_summary
-    ):
+    def test_get_campaign_summary_success(self, client, auth_headers, mock_campaign_summary):
         """Test successful campaign summary retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -710,9 +683,7 @@ class TestCampaignStatisticsEndpoint:
     """Tests for GET /api/v1/campaigns/{campaign_id}/statistics endpoint."""
 
     @pytest.mark.integration
-    def test_get_statistics_success(
-        self, client, auth_headers, mock_campaign_statistics
-    ):
+    def test_get_statistics_success(self, client, auth_headers, mock_campaign_statistics):
         """Test successful statistics retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -759,9 +730,7 @@ class TestBreakdownEndpoints:
     """Tests for breakdown endpoints (technique, provider, potency)."""
 
     @pytest.mark.integration
-    def test_get_technique_breakdown_success(
-        self, client, auth_headers, mock_technique_breakdown
-    ):
+    def test_get_technique_breakdown_success(self, client, auth_headers, mock_technique_breakdown):
         """Test successful technique breakdown retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -799,9 +768,7 @@ class TestBreakdownEndpoints:
             assert response.status_code == 404
 
     @pytest.mark.integration
-    def test_get_provider_breakdown_success(
-        self, client, auth_headers, mock_provider_breakdown
-    ):
+    def test_get_provider_breakdown_success(self, client, auth_headers, mock_provider_breakdown):
         """Test successful provider breakdown retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -820,9 +787,7 @@ class TestBreakdownEndpoints:
             assert data["best_provider"] == "openai"
 
     @pytest.mark.integration
-    def test_get_potency_breakdown_success(
-        self, client, auth_headers, mock_potency_breakdown
-    ):
+    def test_get_potency_breakdown_success(self, client, auth_headers, mock_potency_breakdown):
         """Test successful potency breakdown retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -870,9 +835,7 @@ class TestTimeSeriesEndpoint:
             assert "data_points" in data
 
     @pytest.mark.integration
-    def test_get_time_series_with_granularity(
-        self, client, auth_headers, mock_time_series
-    ):
+    def test_get_time_series_with_granularity(self, client, auth_headers, mock_time_series):
         """Test time series with specific granularity."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -949,9 +912,7 @@ class TestCampaignComparisonEndpoint:
     """Tests for POST /api/v1/campaigns/compare endpoint."""
 
     @pytest.mark.integration
-    def test_compare_campaigns_success(
-        self, client, auth_headers, mock_campaign_comparison
-    ):
+    def test_compare_campaigns_success(self, client, auth_headers, mock_campaign_comparison):
         """Test successful campaign comparison."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -973,9 +934,7 @@ class TestCampaignComparisonEndpoint:
             assert data["best_overall"] == "campaign-001"
 
     @pytest.mark.integration
-    def test_compare_campaigns_with_options(
-        self, client, auth_headers, mock_campaign_comparison
-    ):
+    def test_compare_campaigns_with_options(self, client, auth_headers, mock_campaign_comparison):
         """Test campaign comparison with optional parameters."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -997,9 +956,7 @@ class TestCampaignComparisonEndpoint:
             assert response.status_code == 200
 
     @pytest.mark.integration
-    def test_compare_campaigns_four_campaigns(
-        self, client, auth_headers, mock_campaign_comparison
-    ):
+    def test_compare_campaigns_four_campaigns(self, client, auth_headers, mock_campaign_comparison):
         """Test comparison with maximum allowed campaigns (4)."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -1080,9 +1037,7 @@ class TestCampaignComparisonEndpoint:
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
         ) as mock_get_service:
             mock_service = AsyncMock(spec=CampaignAnalyticsService)
-            mock_service.compare_campaigns.side_effect = ValueError(
-                "Invalid campaign IDs"
-            )
+            mock_service.compare_campaigns.side_effect = ValueError("Invalid campaign IDs")
             mock_get_service.return_value = mock_service
 
             response = client.post(
@@ -1122,9 +1077,7 @@ class TestTelemetryEventsEndpoint:
             assert "total" in data
 
     @pytest.mark.integration
-    def test_list_events_with_pagination(
-        self, client, auth_headers, mock_telemetry_list
-    ):
+    def test_list_events_with_pagination(self, client, auth_headers, mock_telemetry_list):
         """Test telemetry events with pagination."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -1158,9 +1111,7 @@ class TestTelemetryEventsEndpoint:
             assert response.status_code == 200
 
     @pytest.mark.integration
-    def test_get_event_detail_success(
-        self, client, auth_headers, mock_telemetry_detail
-    ):
+    def test_get_event_detail_success(self, client, auth_headers, mock_telemetry_detail):
         """Test successful telemetry event detail retrieval."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -1353,9 +1304,7 @@ class TestCacheManagementEndpoints:
             }
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns/cache/stats", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns/cache/stats", headers=auth_headers)
 
             assert response.status_code == 200
             data = response.json()
@@ -1383,9 +1332,7 @@ class TestErrorResponses:
     @pytest.mark.integration
     def test_invalid_api_key(self, client):
         """Test request with invalid API key."""
-        response = client.get(
-            "/api/v1/campaigns", headers={"X-API-Key": "invalid-key"}
-        )
+        response = client.get("/api/v1/campaigns", headers={"X-API-Key": "invalid-key"})
 
         # Should reject invalid API key
         assert response.status_code in [401, 403]
@@ -1417,9 +1364,7 @@ class TestErrorResponses:
             mock_service.get_campaign_detail.side_effect = Exception("Database error")
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns/test-campaign-001", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns/test-campaign-001", headers=auth_headers)
 
             # Should return 500 for internal errors
             assert response.status_code == 500
@@ -1461,9 +1406,7 @@ class TestEdgeCases:
             assert data["total"] == 0
 
     @pytest.mark.integration
-    def test_special_characters_in_search(
-        self, client, auth_headers, mock_campaign_list_response
-    ):
+    def test_special_characters_in_search(self, client, auth_headers, mock_campaign_list_response):
         """Test search with special characters."""
         with patch(
             "app.api.v1.endpoints.campaign_analytics.get_analytics_service"
@@ -1528,9 +1471,7 @@ class TestEdgeCases:
             )
             mock_get_service.return_value = mock_service
 
-            response = client.get(
-                "/api/v1/campaigns?page_size=100", headers=auth_headers
-            )
+            response = client.get("/api/v1/campaigns?page_size=100", headers=auth_headers)
 
             assert response.status_code == 200
 

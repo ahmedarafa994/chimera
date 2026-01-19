@@ -561,12 +561,16 @@ class AttackSession:
         total_cost = self._total_extend_cost + self._total_autodan_cost
 
         # Calculate efficiency metrics
-        avg_fitness = sum(self._fitness_scores) / len(self._fitness_scores) if self._fitness_scores else 0.0
+        avg_fitness = (
+            sum(self._fitness_scores) / len(self._fitness_scores) if self._fitness_scores else 0.0
+        )
         resource_efficiency = avg_fitness / total_cost if total_cost > 0 else 0.0
         tokens_per_fitness = total_tokens / avg_fitness if avg_fitness > 0 else 0.0
 
         # Calculate budget status
-        budget_used = total_cost / self.budget.max_cost_usd * 100 if self.budget.max_cost_usd > 0 else 0.0
+        budget_used = (
+            total_cost / self.budget.max_cost_usd * 100 if self.budget.max_cost_usd > 0 else 0.0
+        )
         budget_remaining = max(0.0, self.budget.max_cost_usd - total_cost)
 
         return CombinedResourceUsage(
@@ -590,21 +594,31 @@ class AttackSession:
             Dictionary with efficiency calculations
         """
         totals = self.get_totals()
-        avg_fitness = sum(self._fitness_scores) / len(self._fitness_scores) if self._fitness_scores else 0.0
+        avg_fitness = (
+            sum(self._fitness_scores) / len(self._fitness_scores) if self._fitness_scores else 0.0
+        )
         best_fitness = max(self._fitness_scores) if self._fitness_scores else 0.0
 
         return {
             "resource_efficiency": totals.resource_efficiency,
             "tokens_per_fitness_point": totals.tokens_per_fitness_point,
-            "cost_per_attack": totals.total_cost_usd / len(self.attack_results) if self.attack_results else 0.0,
-            "tokens_per_attack": totals.total_tokens / len(self.attack_results) if self.attack_results else 0.0,
+            "cost_per_attack": (
+                totals.total_cost_usd / len(self.attack_results) if self.attack_results else 0.0
+            ),
+            "tokens_per_attack": (
+                totals.total_tokens / len(self.attack_results) if self.attack_results else 0.0
+            ),
             "average_fitness": avg_fitness,
             "best_fitness": best_fitness,
             "extend_efficiency": (
-                self._total_extend_tokens / avg_fitness if avg_fitness > 0 and self._total_extend_tokens > 0 else 0.0
+                self._total_extend_tokens / avg_fitness
+                if avg_fitness > 0 and self._total_extend_tokens > 0
+                else 0.0
             ),
             "autodan_efficiency": (
-                self._total_autodan_tokens / avg_fitness if avg_fitness > 0 and self._total_autodan_tokens > 0 else 0.0
+                self._total_autodan_tokens / avg_fitness
+                if avg_fitness > 0 and self._total_autodan_tokens > 0
+                else 0.0
             ),
         }
 
@@ -790,7 +804,9 @@ class ResourceAllocator:
         """
         remaining_budget = ResourceBudget(
             max_tokens=max(0, self.total_budget.max_tokens - current_usage.total_tokens),
-            max_latency_ms=max(0.0, self.total_budget.max_latency_ms - current_usage.total_latency_ms),
+            max_latency_ms=max(
+                0.0, self.total_budget.max_latency_ms - current_usage.total_latency_ms
+            ),
             max_cost_usd=max(0.0, self.total_budget.max_cost_usd - current_usage.total_cost_usd),
             max_api_calls=max(0, self.total_budget.max_api_calls - current_usage.total_api_calls),
         )
@@ -816,7 +832,9 @@ class ResourceAllocator:
         else:  # ITERATIVE
             extend_ratio = 0.55
             priority = "extend_attack"
-            rationale = "ITERATIVE strategy slightly favors ExtendAttack for alternating optimization"
+            rationale = (
+                "ITERATIVE strategy slightly favors ExtendAttack for alternating optimization"
+            )
 
         # Create allocations
         extend_budget = remaining_budget.scale(extend_ratio)
@@ -869,11 +887,23 @@ class ResourceAllocator:
 
         # Determine which vector is more effective
         if resource_score > jailbreak_score + 0.2:
-            return 0.65, "extend_attack", f"ExtendAttack more effective (resource={resource_score:.2f} vs jailbreak={jailbreak_score:.2f})"
+            return (
+                0.65,
+                "extend_attack",
+                f"ExtendAttack more effective (resource={resource_score:.2f} vs jailbreak={jailbreak_score:.2f})",
+            )
         elif jailbreak_score > resource_score + 0.2:
-            return 0.35, "autodan", f"AutoDAN more effective (jailbreak={jailbreak_score:.2f} vs resource={resource_score:.2f})"
+            return (
+                0.35,
+                "autodan",
+                f"AutoDAN more effective (jailbreak={jailbreak_score:.2f} vs resource={resource_score:.2f})",
+            )
         else:
-            return 0.5, "extend_attack", f"Similar effectiveness (resource={resource_score:.2f}, jailbreak={jailbreak_score:.2f})"
+            return (
+                0.5,
+                "extend_attack",
+                f"Similar effectiveness (resource={resource_score:.2f}, jailbreak={jailbreak_score:.2f})",
+            )
 
     def rebalance(
         self,
@@ -901,7 +931,9 @@ class ResourceAllocator:
             rationale = f"Rebalancing toward ExtendAttack (efficiency: {efficiency['extend_efficiency']:.2f})"
         else:
             extend_ratio = 0.3
-            rationale = f"Rebalancing toward AutoDAN (efficiency: {efficiency['autodan_efficiency']:.2f})"
+            rationale = (
+                f"Rebalancing toward AutoDAN (efficiency: {efficiency['autodan_efficiency']:.2f})"
+            )
 
         return ResourceAllocation(
             extend_attack_budget=remaining.scale(extend_ratio),
@@ -938,11 +970,21 @@ class ResourceAllocator:
             avg_latency = totals.total_latency_ms / num_attacks
 
         # Project remaining needs
-        projected_tokens = int(totals.total_tokens + avg_tokens * remaining_attacks) if session.attack_results else int(avg_tokens * remaining_attacks)
-        projected_cost = (totals.total_cost_usd if session.attack_results else 0) + avg_cost * remaining_attacks
-        projected_latency = (totals.total_latency_ms if session.attack_results else 0) + avg_latency * remaining_attacks
+        projected_tokens = (
+            int(totals.total_tokens + avg_tokens * remaining_attacks)
+            if session.attack_results
+            else int(avg_tokens * remaining_attacks)
+        )
+        projected_cost = (
+            totals.total_cost_usd if session.attack_results else 0
+        ) + avg_cost * remaining_attacks
+        projected_latency = (
+            totals.total_latency_ms if session.attack_results else 0
+        ) + avg_latency * remaining_attacks
 
-        totals = session.get_totals() if session.attack_results else CombinedResourceUsage(None, None)
+        totals = (
+            session.get_totals() if session.attack_results else CombinedResourceUsage(None, None)
+        )
 
         # Check budget
         will_exceed = (
@@ -1152,8 +1194,14 @@ class UnifiedResourceTracker:
             calls_remaining = max(0, budget.max_api_calls - totals.total_api_calls)
 
             # Calculate percentages
-            tokens_pct = (totals.total_tokens / budget.max_tokens * 100) if budget.max_tokens > 0 else 0.0
-            cost_pct = (totals.total_cost_usd / budget.max_cost_usd * 100) if budget.max_cost_usd > 0 else 0.0
+            tokens_pct = (
+                (totals.total_tokens / budget.max_tokens * 100) if budget.max_tokens > 0 else 0.0
+            )
+            cost_pct = (
+                (totals.total_cost_usd / budget.max_cost_usd * 100)
+                if budget.max_cost_usd > 0
+                else 0.0
+            )
 
             # Determine limiting factor
             limiting_factor = None
@@ -1166,7 +1214,9 @@ class UnifiedResourceTracker:
             # Estimate remaining attacks
             if session.attack_results:
                 avg_cost_per_attack = totals.total_cost_usd / len(session.attack_results)
-                estimated_remaining = int(cost_remaining / avg_cost_per_attack) if avg_cost_per_attack > 0 else 0
+                estimated_remaining = (
+                    int(cost_remaining / avg_cost_per_attack) if avg_cost_per_attack > 0 else 0
+                )
             else:
                 estimated_remaining = int(cost_remaining / 0.05)  # Default estimate
 
@@ -1368,7 +1418,11 @@ class UnifiedResourceService:
             ResourceAllocation with budget distribution
         """
         if not self._allocator:
-            budget = self.tracker.sessions[session_id].budget if session_id in self.tracker.sessions else ResourceBudget.moderate()
+            budget = (
+                self.tracker.sessions[session_id].budget
+                if session_id in self.tracker.sessions
+                else ResourceBudget.moderate()
+            )
             self._allocator = ResourceAllocator(budget)
 
         usage = self.tracker.get_session_usage(session_id)

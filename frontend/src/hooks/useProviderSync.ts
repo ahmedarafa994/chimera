@@ -1,6 +1,6 @@
 /**
  * Provider Sync Hooks
- * 
+ *
  * React Query hooks for provider/model synchronization with:
  * - Automatic caching and background refetching
  * - Optimistic updates
@@ -27,18 +27,22 @@ import {
 // =============================================================================
 
 const getApiBaseUrl = () => {
-  return process.env.NEXT_PUBLIC_CHIMERA_API_URL || 'http://localhost:8001/api';
+  return (
+    process.env.NEXT_PUBLIC_CHIMERA_API_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    'http://localhost:8001/api/v1'
+  );
 };
 
 async function fetchSyncState(includeDeprecated = false): Promise<SyncState> {
   const response = await fetch(
     `${getApiBaseUrl()}/provider-sync/state?include_deprecated=${includeDeprecated}`
   );
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch sync state: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -48,21 +52,21 @@ async function performSync(request: SyncRequest): Promise<SyncResponse> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Sync failed: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
 async function fetchSyncVersion(): Promise<{ version: number; server_time: string }> {
   const response = await fetch(`${getApiBaseUrl()}/provider-sync/version`);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch version: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -70,11 +74,11 @@ async function fetchProviderAvailability(providerId: string): Promise<ProviderAv
   const response = await fetch(
     `${getApiBaseUrl()}/provider-sync/providers/${providerId}/availability`
   );
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch provider availability: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -84,15 +88,15 @@ async function fetchModelAvailability(
 ): Promise<ModelAvailabilityInfo> {
   const params = new URLSearchParams();
   if (providerId) params.set('provider_id', providerId);
-  
+
   const response = await fetch(
     `${getApiBaseUrl()}/provider-sync/models/${modelId}/availability?${params}`
   );
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch model availability: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -105,13 +109,13 @@ async function fetchAllModels(options?: {
   if (options?.providerId) params.set('provider_id', options.providerId);
   if (options?.includeDeprecated) params.set('include_deprecated', 'true');
   if (options?.capability) params.set('capability', options.capability);
-  
+
   const response = await fetch(`${getApiBaseUrl()}/provider-sync/models?${params}`);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch models: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -128,7 +132,7 @@ export const providerSyncKeys = {
   providerAvailability: (id: string) => [...providerSyncKeys.provider(id), 'availability'] as const,
   models: () => [...providerSyncKeys.all, 'models'] as const,
   model: (id: string) => [...providerSyncKeys.models(), id] as const,
-  modelAvailability: (id: string, providerId?: string) => 
+  modelAvailability: (id: string, providerId?: string) =>
     [...providerSyncKeys.model(id), 'availability', providerId] as const,
   providerModels: (providerId: string) => [...providerSyncKeys.models(), 'provider', providerId] as const,
 };
@@ -168,7 +172,7 @@ export function useSyncVersion() {
  */
 export function usePerformSync() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: performSync,
     onSuccess: (response) => {
@@ -187,9 +191,9 @@ export function usePerformSync() {
  */
 export function useProviderList() {
   const { data: state, ...rest } = useSyncState();
-  
+
   const providers = useMemo(() => state?.providers ?? [], [state]);
-  
+
   return {
     providers,
     activeProviderId: state?.active_provider_id,
@@ -203,12 +207,12 @@ export function useProviderList() {
  */
 export function useProvider(providerId: string) {
   const { providers, ...rest } = useProviderList();
-  
+
   const provider = useMemo(
     () => providers.find((p) => p.id === providerId),
     [providers, providerId]
   );
-  
+
   return { provider, ...rest };
 }
 
@@ -234,7 +238,7 @@ export function useModelList(options?: {
   capability?: string;
 }) {
   return useQuery({
-    queryKey: options?.providerId 
+    queryKey: options?.providerId
       ? providerSyncKeys.providerModels(options.providerId)
       : providerSyncKeys.models(),
     queryFn: () => fetchAllModels(options),
@@ -251,25 +255,25 @@ export function useModelsFromState(options?: {
   excludeDeprecated?: boolean;
 }) {
   const { data: state, ...rest } = useSyncState();
-  
+
   const models = useMemo(() => {
     let filtered = state?.all_models ?? [];
-    
+
     if (options?.providerId) {
       filtered = filtered.filter((m) => m.provider_id === options.providerId);
     }
-    
+
     if (options?.availableOnly) {
       filtered = filtered.filter((m) => m.is_available);
     }
-    
+
     if (options?.excludeDeprecated) {
       filtered = filtered.filter((m) => m.deprecation_status === 'active');
     }
-    
+
     return filtered;
   }, [state, options?.providerId, options?.availableOnly, options?.excludeDeprecated]);
-  
+
   return { models, ...rest };
 }
 
@@ -278,12 +282,12 @@ export function useModelsFromState(options?: {
  */
 export function useModel(modelId: string) {
   const { data: state, ...rest } = useSyncState();
-  
+
   const model = useMemo(
     () => state?.all_models.find((m) => m.id === modelId),
     [state, modelId]
   );
-  
+
   return { model, ...rest };
 }
 
@@ -305,17 +309,17 @@ export function useModelAvailability(modelId: string, providerId?: string, enabl
  */
 export function useActiveSelection() {
   const { data: state, ...rest } = useSyncState();
-  
+
   const activeProvider = useMemo(
     () => state?.providers.find((p) => p.id === state.active_provider_id),
     [state]
   );
-  
+
   const activeModel = useMemo(
     () => state?.all_models.find((m) => m.id === state.active_model_id),
     [state]
   );
-  
+
   return {
     activeProvider,
     activeModel,
@@ -368,10 +372,10 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WebSocketMessage;
-          
+
           // Handle different event types
-          if (message.type === SyncEventType.INITIAL_STATE || 
-              message.type === SyncEventType.FULL_SYNC) {
+          if (message.type === SyncEventType.INITIAL_STATE ||
+            message.type === SyncEventType.FULL_SYNC) {
             // Update the cached state
             if (message.data) {
               queryClient.setQueryData(providerSyncKeys.state(), message.data);
@@ -385,7 +389,7 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
             // Invalidate queries to refetch
             queryClient.invalidateQueries({ queryKey: providerSyncKeys.state() });
           }
-          
+
           onEvent?.(message);
         } catch (error) {
           console.error('[SyncWS] Failed to parse message:', error);
@@ -402,7 +406,7 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
         if (enabled && reconnectAttempts < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
           console.log(`[SyncWS] Reconnecting in ${delay}ms...`);
-          
+
           reconnectTimeoutRef.current = setTimeout(() => {
             setReconnectAttempts((prev) => prev + 1);
             connect();
@@ -423,13 +427,13 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
-    
+
     if (wsRef.current) {
       wsRef.current.onclose = null;
       wsRef.current.close();
       wsRef.current = null;
     }
-    
+
     setIsConnected(false);
   }, []);
 
@@ -444,7 +448,7 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
     if (enabled) {
       connect();
     }
-    
+
     return () => {
       disconnect();
     };
@@ -471,10 +475,10 @@ export function useProviderSyncWithWebSocket(options?: {
   enableWebSocket?: boolean;
 }) {
   const { includeDeprecated = false, enableWebSocket = true } = options ?? {};
-  
+
   const stateQuery = useSyncState({ includeDeprecated });
   const syncMutation = usePerformSync();
-  
+
   const { isConnected, reconnectAttempts } = useSyncWebSocket({
     enabled: enableWebSocket,
   });
@@ -494,7 +498,7 @@ export function useProviderSyncWithWebSocket(options?: {
     activeProviderId: stateQuery.data?.active_provider_id,
     activeModelId: stateQuery.data?.active_model_id,
     version: stateQuery.data?.metadata.version ?? 0,
-    
+
     // Status
     isLoading: stateQuery.isLoading,
     isError: stateQuery.isError,
@@ -502,7 +506,7 @@ export function useProviderSyncWithWebSocket(options?: {
     isConnected,
     reconnectAttempts,
     isSyncing: syncMutation.isPending,
-    
+
     // Actions
     forceSync,
     refetch: stateQuery.refetch,

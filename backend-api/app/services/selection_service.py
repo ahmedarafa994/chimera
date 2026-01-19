@@ -7,11 +7,10 @@ unified provider registry.
 """
 
 import logging
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.models import Selection, SelectionScope
+from app.domain.models import Selection
 from app.repositories.selection_repository import get_selection_repository
 from app.services.unified_provider_registry import unified_registry
 
@@ -30,7 +29,7 @@ class SelectionService:
         self,
         session_id: str,
         session: AsyncSession,
-    ) -> Optional[Selection]:
+    ) -> Selection | None:
         """
         Get selection for a session.
 
@@ -48,7 +47,9 @@ class SelectionService:
             if selection:
                 # Validate selection is still valid
                 if self._validate_selection(selection):
-                    logger.debug(f"Retrieved valid session selection: {selection.provider_id}/{selection.model_id}")
+                    logger.debug(
+                        f"Retrieved valid session selection: {selection.provider_id}/{selection.model_id}"
+                    )
                     return selection
                 else:
                     logger.warning(
@@ -68,7 +69,7 @@ class SelectionService:
         self,
         user_id: str,
         session: AsyncSession,
-    ) -> Optional[Selection]:
+    ) -> Selection | None:
         """
         Get default selection for a user.
 
@@ -86,7 +87,9 @@ class SelectionService:
             if selection:
                 # Validate selection is still valid
                 if self._validate_selection(selection):
-                    logger.debug(f"Retrieved valid user selection: {selection.provider_id}/{selection.model_id}")
+                    logger.debug(
+                        f"Retrieved valid user selection: {selection.provider_id}/{selection.model_id}"
+                    )
                     return selection
                 else:
                     logger.warning(
@@ -108,7 +111,7 @@ class SelectionService:
         provider_id: str,
         model_id: str,
         session: AsyncSession,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> Selection:
         """
         Set selection for a session.
@@ -266,10 +269,7 @@ class SelectionService:
             True if valid, False otherwise
         """
         try:
-            return unified_registry.validate_selection(
-                selection.provider_id,
-                selection.model_id
-            )
+            return unified_registry.validate_selection(selection.provider_id, selection.model_id)
         except Exception as e:
             logger.warning(f"Selection validation failed: {e}")
             return False

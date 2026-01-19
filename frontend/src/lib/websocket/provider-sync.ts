@@ -17,7 +17,7 @@ import {
 // Configuration
 // =============================================================================
 
-const WS_ENDPOINT = "/api/v1/providers/ws/selection";
+const WS_ENDPOINT = "/providers/ws/selection";
 
 // =============================================================================
 // Types
@@ -127,15 +127,13 @@ export class ProviderSyncManager {
       return;
     }
 
-    const message: ProviderSelectionSyncMessage = {
-      type: "selection_update",
-      session_id: this.sessionId,
-      provider_id: providerId,
-      model_id: modelId,
+    // Backend selection updates are broadcast from /providers/select.
+    // Request current selection to sync local state.
+    this.wsManager.send({
+      type: "get_current",
+      data: { session_id: this.sessionId },
       timestamp: new Date().toISOString(),
-    };
-
-    this.wsManager.send(message);
+    });
   }
 
   /**
@@ -165,13 +163,11 @@ export class ProviderSyncManager {
       return;
     }
 
-    const message: ProviderSelectionSyncMessage = {
-      type: "sync_request",
-      session_id: this.sessionId,
+    this.wsManager.send({
+      type: "get_current",
+      data: { session_id: this.sessionId },
       timestamp: new Date().toISOString(),
-    };
-
-    this.wsManager.send(message);
+    });
   }
 
   /**
@@ -225,6 +221,26 @@ export class ProviderSyncManager {
     }
 
     switch (message.type) {
+      case "selection_change":
+        if (message.data) {
+          const provider =
+            typeof message.data.provider === "string" ? message.data.provider : null;
+          const model = typeof message.data.model === "string" ? message.data.model : null;
+          if (provider && model) {
+            this.callbacks.onSelectionUpdate?.(provider, model);
+          }
+        }
+        break;
+      case "current_selection":
+        if (message.data) {
+          const provider =
+            typeof message.data.provider === "string" ? message.data.provider : null;
+          const model = typeof message.data.model === "string" ? message.data.model : null;
+          if (provider && model) {
+            this.callbacks.onSelectionUpdate?.(provider, model);
+          }
+        }
+        break;
       case "selection_update":
         if (message.provider_id && message.model_id) {
           this.callbacks.onSelectionUpdate?.(message.provider_id, message.model_id);

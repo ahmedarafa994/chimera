@@ -18,10 +18,11 @@ References:
 import asyncio
 import logging
 import uuid
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, AsyncIterator, Callable, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +42,8 @@ class StreamSession:
     """
 
     stream_id: str
-    session_id: Optional[str]
-    user_id: Optional[str]
+    session_id: str | None
+    user_id: str | None
     provider: str
     model: str
     started_at: datetime
@@ -52,8 +53,8 @@ class StreamSession:
     # Tracking fields
     chunks_sent: int = 0
     bytes_sent: int = 0
-    last_activity: Optional[datetime] = None
-    error: Optional[str] = None
+    last_activity: datetime | None = None
+    error: str | None = None
     cancelled: bool = False
     completed: bool = False
 
@@ -190,12 +191,12 @@ class StreamingContext:
     @asynccontextmanager
     async def locked_stream(
         self,
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        session_id: str | None = None,
+        user_id: str | None = None,
         provider: str = "",
         model: str = "",
-        stream_id: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        stream_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> AsyncIterator[StreamSession]:
         """
         Create a locked streaming session context.
@@ -234,7 +235,7 @@ class StreamingContext:
         )
 
         # Acquire selection lock if session provided
-        selection_lock: Optional[StreamLock] = None
+        selection_lock: StreamLock | None = None
         if session_id:
             selection_lock = await self._acquire_selection_lock(
                 stream_id=stream_id,
@@ -315,11 +316,8 @@ class StreamingContext:
                     del self._selection_locks[session_id]
                 else:
                     # Allow if same provider/model, otherwise wait
-                    if (existing.provider == provider and
-                            existing.model == model):
-                        logger.debug(
-                            f"Reusing existing lock: session={session_id}"
-                        )
+                    if existing.provider == provider and existing.model == model:
+                        logger.debug(f"Reusing existing lock: session={session_id}")
                         return existing
                     else:
                         # Different selection - this shouldn't happen often
@@ -365,15 +363,10 @@ class StreamingContext:
         """Check if selection is locked for a session."""
         lock = self._selection_locks.get(session_id)
         if lock:
-            if lock.is_expired(self._lock_timeout_seconds):
-                return False
-            return True
+            return not lock.is_expired(self._lock_timeout_seconds)
         return False
 
-    def get_locked_selection(
-        self,
-        session_id: str
-    ) -> Optional[tuple[str, str]]:
+    def get_locked_selection(self, session_id: str) -> tuple[str, str] | None:
         """
         Get the locked selection for a session.
 
@@ -393,21 +386,15 @@ class StreamingContext:
         """Get information about all active streaming sessions."""
         return [s.to_dict() for s in self._active_sessions.values()]
 
-    def get_session(self, stream_id: str) -> Optional[StreamSession]:
+    def get_session(self, stream_id: str) -> StreamSession | None:
         """Get a specific streaming session."""
         return self._active_sessions.get(stream_id)
 
-    def get_sessions_for_session_id(
-        self,
-        session_id: str
-    ) -> list[StreamSession]:
+    def get_sessions_for_session_id(self, session_id: str) -> list[StreamSession]:
         """Get all active streams for a session."""
-        return [
-            s for s in self._active_sessions.values()
-            if s.session_id == session_id
-        ]
+        return [s for s in self._active_sessions.values() if s.session_id == session_id]
 
-    def count_active_streams(self, session_id: Optional[str] = None) -> int:
+    def count_active_streams(self, session_id: str | None = None) -> int:
         """Count active streams, optionally filtered by session."""
         if session_id is None:
             return len(self._active_sessions)
@@ -461,7 +448,8 @@ class StreamingContext:
         cleaned = 0
         async with self._global_lock:
             expired = [
-                sid for sid, lock in self._selection_locks.items()
+                sid
+                for sid, lock in self._selection_locks.items()
                 if lock.is_expired(self._lock_timeout_seconds)
             ]
             for sid in expired:
@@ -479,7 +467,7 @@ class StreamingContext:
 # =============================================================================
 
 
-_streaming_context: Optional[StreamingContext] = None
+_streaming_context: StreamingContext | None = None
 
 
 def get_streaming_context() -> StreamingContext:
@@ -518,9 +506,9 @@ class StreamLockError(Exception):
     def __init__(
         self,
         message: str,
-        session_id: Optional[str] = None,
-        existing_provider: Optional[str] = None,
-        existing_model: Optional[str] = None,
+        session_id: str | None = None,
+        existing_provider: str | None = None,
+        existing_model: str | None = None,
     ):
         super().__init__(message)
         self.session_id = session_id
@@ -535,7 +523,7 @@ class StreamCancelledError(Exception):
         self,
         message: str,
         stream_id: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ):
         super().__init__(message)
         self.stream_id = stream_id
@@ -548,15 +536,15 @@ class StreamCancelledError(Exception):
 
 
 __all__ = [
-    # Main class
-    "StreamingContext",
+    "StreamCancelledError",
+    "StreamLock",
+    # Exceptions
+    "StreamLockError",
     # Data classes
     "StreamSession",
-    "StreamLock",
+    # Main class
+    "StreamingContext",
     # Factory functions
     "get_streaming_context",
     "get_streaming_context_async",
-    # Exceptions
-    "StreamLockError",
-    "StreamCancelledError",
 ]

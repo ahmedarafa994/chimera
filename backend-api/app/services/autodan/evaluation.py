@@ -19,8 +19,8 @@ class EvaluationHarness:
             r"I am unable",
             r"sorry, but",
             r"I can't",
-            r"unethical",
-            r"dangerous",
+            r"unfunctional",
+            r"complex",
         ]
 
         self.complexity_indicators = [

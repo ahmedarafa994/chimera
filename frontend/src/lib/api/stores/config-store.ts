@@ -1,7 +1,7 @@
 /**
  * Config Store
  * Unified Zustand store for API configuration and global app settings
- * 
+ *
  * Centralizes all configuration that was previously scattered across localStorage:
  * - API mode (direct/proxy)
  * - Provider settings
@@ -31,18 +31,18 @@ interface ConfigState {
   apiMode: ApiMode;
   aiProvider: AIProvider;
   apiUrls: ApiUrls;
-  
+
   // Session
   sessionId: string | null;
-  
+
   // UI Preferences
   theme: 'light' | 'dark' | 'system';
   sidebarCollapsed: boolean;
-  
+
   // Connection state
   isConnected: boolean;
   lastConnectionCheck: number | null;
-  
+
   // Actions
   setApiMode: (mode: ApiMode) => void;
   setAiProvider: (provider: AIProvider) => void;
@@ -51,12 +51,12 @@ interface ConfigState {
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setConnectionStatus: (connected: boolean) => void;
-  
+
   // Computed getters
   getActiveApiUrl: () => string;
   getApiHeaders: () => Record<string, string>;
   isConfigured: () => boolean;
-  
+
   // Reset
   resetConfig: () => void;
 }
@@ -78,13 +78,13 @@ const getDefaultConfig = () => {
       },
     };
   }
-  
+
   return {
     apiMode: (process.env.NEXT_PUBLIC_API_MODE as ApiMode) || 'proxy',
     aiProvider: (process.env.NEXT_PUBLIC_AI_PROVIDER as AIProvider) || 'gemini',
     apiUrls: {
       backend: process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8001/api/v1',
-      gemini: process.env.NEXT_PUBLIC_GEMINI_API_URL || 
+      gemini: process.env.NEXT_PUBLIC_GEMINI_API_URL ||
         'https://generativelanguage.googleapis.com/v1beta/openai/',
       deepseek: process.env.NEXT_PUBLIC_DEEPSEEK_API_URL || 'https://api.deepseek.com/v1',
     },
@@ -100,7 +100,7 @@ export const useConfigStore = create<ConfigState>()(
     persist(
       (set, get) => {
         const defaults = getDefaultConfig();
-        
+
         return {
           // Initial state
           apiMode: defaults.apiMode,
@@ -111,19 +111,19 @@ export const useConfigStore = create<ConfigState>()(
           sidebarCollapsed: false,
           isConnected: false,
           lastConnectionCheck: null,
-          
+
           // API Mode
           setApiMode: (mode: ApiMode) => {
             set({ apiMode: mode });
             logger.logInfo('API mode changed', { mode });
           },
-          
+
           // AI Provider
           setAiProvider: (provider: AIProvider) => {
             set({ aiProvider: provider });
             logger.logInfo('AI provider changed', { provider });
           },
-          
+
           // API URLs
           setApiUrl: (type: keyof ApiUrls, url: string) => {
             set((state) => ({
@@ -131,11 +131,11 @@ export const useConfigStore = create<ConfigState>()(
             }));
             logger.logInfo('API URL updated', { type, url });
           },
-          
+
           // Session ID
           setSessionId: (sessionId: string | null) => {
             set({ sessionId });
-            
+
             // Also update legacy localStorage for backward compatibility
             if (typeof window !== 'undefined') {
               if (sessionId) {
@@ -144,34 +144,34 @@ export const useConfigStore = create<ConfigState>()(
                 localStorage.removeItem('chimera_session_id');
               }
             }
-            
+
             logger.logInfo('Session ID updated', { sessionId: sessionId ? 'set' : 'cleared' });
           },
-          
+
           // Theme
           setTheme: (theme: 'light' | 'dark' | 'system') => {
             set({ theme });
             logger.logInfo('Theme changed', { theme });
           },
-          
+
           // Sidebar
           setSidebarCollapsed: (collapsed: boolean) => {
             set({ sidebarCollapsed: collapsed });
           },
-          
+
           // Connection status
           setConnectionStatus: (connected: boolean) => {
             set({ isConnected: connected, lastConnectionCheck: Date.now() });
           },
-          
+
           // Get active API URL based on mode
           getActiveApiUrl: () => {
             const { apiMode, aiProvider, apiUrls } = get();
-            
+
             if (apiMode === 'proxy') {
               return apiUrls.backend;
             }
-            
+
             switch (aiProvider) {
               case 'deepseek':
                 return apiUrls.deepseek;
@@ -180,14 +180,14 @@ export const useConfigStore = create<ConfigState>()(
                 return apiUrls.gemini;
             }
           },
-          
+
           // Get API headers based on mode
           getApiHeaders: () => {
             const { apiMode, aiProvider, sessionId } = get();
             const headers: Record<string, string> = {
               'Content-Type': 'application/json',
             };
-            
+
             // API keys are always from environment variables (never stored in state)
             if (typeof window !== 'undefined') {
               if (apiMode === 'proxy') {
@@ -209,24 +209,24 @@ export const useConfigStore = create<ConfigState>()(
                   }
                 }
               }
-              
+
               // Include session ID if available
               if (sessionId) {
                 headers['X-Session-ID'] = sessionId;
               }
             }
-            
+
             return headers;
           },
-          
+
           // Check if properly configured
           isConfigured: () => {
             const { apiMode, aiProvider, apiUrls } = get();
-            
+
             if (apiMode === 'proxy') {
               return !!apiUrls.backend;
             }
-            
+
             // Direct mode - check for API keys in env
             if (typeof window !== 'undefined') {
               if (aiProvider === 'gemini') {
@@ -236,10 +236,10 @@ export const useConfigStore = create<ConfigState>()(
                 return !!process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY;
               }
             }
-            
+
             return false;
           },
-          
+
           // Reset to defaults
           resetConfig: () => {
             const defaults = getDefaultConfig();
@@ -251,13 +251,13 @@ export const useConfigStore = create<ConfigState>()(
               isConnected: false,
               lastConnectionCheck: null,
             });
-            
+
             // Clear legacy localStorage
             if (typeof window !== 'undefined') {
               localStorage.removeItem('chimera_session_id');
               localStorage.removeItem('chimera_api_config');
             }
-            
+
             logger.logInfo('Config reset to defaults');
           },
         };
@@ -302,7 +302,7 @@ export function useApiConfig() {
   const getActiveApiUrl = useConfigStore((s) => s.getActiveApiUrl);
   const getApiHeaders = useConfigStore((s) => s.getApiHeaders);
   const isConfigured = useConfigStore((s) => s.isConfigured);
-  
+
   return {
     apiMode,
     aiProvider,
@@ -318,7 +318,7 @@ export function useApiConfig() {
 export function useSession() {
   const sessionId = useConfigStore(selectSessionId);
   const setSessionId = useConfigStore((s) => s.setSessionId);
-  
+
   return {
     sessionId,
     setSessionId,
@@ -332,6 +332,6 @@ export function useSession() {
 export function useTheme() {
   const theme = useConfigStore(selectTheme);
   const setTheme = useConfigStore((s) => s.setTheme);
-  
+
   return { theme, setTheme };
 }

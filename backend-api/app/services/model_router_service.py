@@ -19,12 +19,7 @@ from typing import Any, ClassVar
 
 from app.core.config import settings
 from app.core.logging import logger
-from app.domain.models import (
-    GenerationConfig,
-    LLMProviderType,
-    PromptRequest,
-    PromptResponse,
-)
+from app.domain.models import GenerationConfig, LLMProviderType, PromptRequest, PromptResponse
 
 
 def _get_config_manager():
@@ -35,6 +30,7 @@ def _get_config_manager():
     """
     try:
         from app.core.service_registry import get_ai_config_manager
+
         config_manager = get_ai_config_manager()
         if config_manager.is_loaded():
             return config_manager
@@ -89,7 +85,11 @@ class ModelRouterService:
 
     # Supported providers for this feature (extended from config)
     SUPPORTED_PROVIDERS: ClassVar[set[str]] = {
-        "gemini", "google", "deepseek", "openai", "anthropic",
+        "gemini",
+        "google",
+        "deepseek",
+        "openai",
+        "anthropic",
     }
 
     # Provider aliases (normalize to canonical names for display)
@@ -114,9 +114,7 @@ class ModelRouterService:
 
     def __init__(self):
         self._provider_health: dict[str, ProviderHealth] = {}
-        self._selection_listeners: set[
-            Callable[[ModelSelectionEvent], Any]
-        ] = set()
+        self._selection_listeners: set[Callable[[ModelSelectionEvent], Any]] = set()
         self._initialized = False
         # Named failover chains from config
         self._failover_chains: dict[str, list[tuple[str, str]]] = {}
@@ -137,8 +135,7 @@ class ModelRouterService:
 
         self._initialized = True
         logger.info(
-            f"ModelRouterService initialized with providers: "
-            f"{', '.join(providers_to_init)}"
+            f"ModelRouterService initialized with providers: " f"{', '.join(providers_to_init)}"
         )
 
     def _load_config_settings(self) -> None:
@@ -160,10 +157,7 @@ class ModelRouterService:
             for chain_name, chain_def in config.failover_chains.items():
                 self._failover_chains[chain_name] = chain_def.chain
 
-            logger.info(
-                f"Loaded {len(self._failover_chains)} failover chains "
-                f"from config"
-            )
+            logger.info(f"Loaded {len(self._failover_chains)} failover chains " f"from config")
         except Exception as e:
             logger.warning(f"Failed to load config settings: {e}")
 
@@ -173,10 +167,7 @@ class ModelRouterService:
         if config_manager:
             try:
                 config = config_manager.get_config()
-                enabled = [
-                    pid for pid, p in config.providers.items()
-                    if p.enabled
-                ]
+                enabled = [pid for pid, p in config.providers.items() if p.enabled]
                 if enabled:
                     return enabled
             except Exception as e:
@@ -295,9 +286,11 @@ class ModelRouterService:
             system_instruction=request.system_instruction,
             config=request.config or GenerationConfig(),
             model=model_name,
-            provider=LLMProviderType(provider_name)
-            if provider_name in [e.value for e in LLMProviderType]
-            else None,
+            provider=(
+                LLMProviderType(provider_name)
+                if provider_name in [e.value for e in LLMProviderType]
+                else None
+            ),
             api_key=request.api_key,
         )
 
@@ -395,10 +388,9 @@ class ModelRouterService:
                 # Get default failover chain
                 chain = config_manager.get_failover_chain("cost_optimized")
                 if chain:
-                    for provider, model in chain:
-                        if (
-                            provider != failed_provider
-                            and await self._is_provider_healthy(provider)
+                    for provider, _model in chain:
+                        if provider != failed_provider and await self._is_provider_healthy(
+                            provider
                         ):
                             return provider
             except Exception as e:
@@ -418,9 +410,7 @@ class ModelRouterService:
 
         return None
 
-    def get_failover_chain(
-        self, chain_name: str
-    ) -> list[tuple[str, str]] | None:
+    def get_failover_chain(self, chain_name: str) -> list[tuple[str, str]] | None:
         """
         Get a named failover chain from config.
 
@@ -468,18 +458,14 @@ class ModelRouterService:
         chain = self.get_failover_chain(chain_name)
 
         if not chain:
-            logger.warning(
-                f"Failover chain '{chain_name}' not found, "
-                "using default routing"
-            )
+            logger.warning(f"Failover chain '{chain_name}' not found, " "using default routing")
             return await self.route_request(request, session_id)
 
         last_error = None
         for provider_name, model_name in chain:
             if not await self._is_provider_healthy(provider_name):
                 logger.debug(
-                    f"Skipping unhealthy provider {provider_name} "
-                    f"in chain {chain_name}"
+                    f"Skipping unhealthy provider {provider_name} " f"in chain {chain_name}"
                 )
                 continue
 
@@ -498,10 +484,7 @@ class ModelRouterService:
                     api_key=request.api_key,
                 )
 
-                logger.info(
-                    f"Routing via chain '{chain_name}' to "
-                    f"{provider_name}/{model_name}"
-                )
+                logger.info(f"Routing via chain '{chain_name}' to " f"{provider_name}/{model_name}")
 
                 response = await self._execute_with_tracking(
                     provider_name, llm_service.generate_text, final_request
@@ -511,19 +494,13 @@ class ModelRouterService:
 
             except Exception as e:
                 last_error = e
-                await self._update_provider_health(
-                    provider_name, False, str(e)
-                )
-                logger.warning(
-                    f"Provider {provider_name} in chain "
-                    f"'{chain_name}' failed: {e}"
-                )
+                await self._update_provider_health(provider_name, False, str(e))
+                logger.warning(f"Provider {provider_name} in chain " f"'{chain_name}' failed: {e}")
                 continue
 
         # All providers in chain failed
         raise RuntimeError(
-            f"All providers in chain '{chain_name}' failed. "
-            f"Last error: {last_error}"
+            f"All providers in chain '{chain_name}' failed. " f"Last error: {last_error}"
         )
 
     async def select_model(
@@ -666,9 +643,7 @@ class ModelRouterService:
         # Fallback to settings-based providers
         return self._get_settings_providers()
 
-    def _get_config_providers(
-        self, config_manager
-    ) -> list[dict[str, Any]]:
+    def _get_config_providers(self, config_manager) -> list[dict[str, Any]]:
         """Get providers from config manager."""
         config = config_manager.get_config()
         result = []
@@ -687,28 +662,22 @@ class ModelRouterService:
 
             health = self._provider_health.get(provider_id)
 
-            result.append({
-                "provider": provider_id,
-                "display_name": provider_cfg.name,
-                "models": models,
-                "default_model": default_model,
-                "is_healthy": health.is_healthy if health else True,
-                "status": (
-                    "active"
-                    if (health and health.is_healthy)
-                    else "unknown"
-                ),
-                "priority": provider_cfg.priority,
-                "capabilities": {
-                    "streaming": (
-                        provider_cfg.capabilities.supports_streaming
-                    ),
-                    "vision": provider_cfg.capabilities.supports_vision,
-                    "function_calling": (
-                        provider_cfg.capabilities.supports_function_calling
-                    ),
-                },
-            })
+            result.append(
+                {
+                    "provider": provider_id,
+                    "display_name": provider_cfg.name,
+                    "models": models,
+                    "default_model": default_model,
+                    "is_healthy": health.is_healthy if health else True,
+                    "status": ("active" if (health and health.is_healthy) else "unknown"),
+                    "priority": provider_cfg.priority,
+                    "capabilities": {
+                        "streaming": (provider_cfg.capabilities.supports_streaming),
+                        "vision": provider_cfg.capabilities.supports_vision,
+                        "function_calling": (provider_cfg.capabilities.supports_function_calling),
+                    },
+                }
+            )
 
         # Sort by priority
         result.sort(key=lambda p: p.get("priority", 999))
@@ -736,18 +705,16 @@ class ModelRouterService:
             }
             display_name = display_name_map.get(provider, provider.title())
 
-            result.append({
-                "provider": provider,
-                "display_name": display_name,
-                "models": models,
-                "default_model": models[0] if models else None,
-                "is_healthy": health.is_healthy if health else True,
-                "status": (
-                    "active"
-                    if (health and health.is_healthy)
-                    else "unknown"
-                ),
-            })
+            result.append(
+                {
+                    "provider": provider,
+                    "display_name": display_name,
+                    "models": models,
+                    "default_model": models[0] if models else None,
+                    "is_healthy": health.is_healthy if health else True,
+                    "status": ("active" if (health and health.is_healthy) else "unknown"),
+                }
+            )
 
         return result
 
@@ -765,9 +732,7 @@ class ModelRouterService:
             config = config_manager.get_config()
             result = {}
             for chain_name, chain_def in config.failover_chains.items():
-                result[chain_name] = [
-                    provider for provider, model in chain_def.chain
-                ]
+                result[chain_name] = [provider for provider, model in chain_def.chain]
             return result
         except Exception as e:
             logger.debug(f"Failed to get failover chains: {e}")
@@ -785,11 +750,7 @@ class ModelRouterService:
 
         try:
             config = config_manager.get_config()
-            providers = [
-                (pid, p.priority)
-                for pid, p in config.providers.items()
-                if p.enabled
-            ]
+            providers = [(pid, p.priority) for pid, p in config.providers.items() if p.enabled]
             providers.sort(key=lambda x: x[1])
             return [pid for pid, _ in providers]
         except Exception as e:

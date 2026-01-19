@@ -241,12 +241,24 @@ class EvaluationReporter:
         if format_config.include_details and self.results:
             sections.append("## Detailed Results")
             sections.append("")
-            sections.append("| Query ID | Baseline Tokens | Attack Tokens | Length Ratio | Latency Ratio | Baseline Correct | Attack Correct | Success |")
-            sections.append("|----------|-----------------|---------------|--------------|---------------|------------------|----------------|---------|")
+            sections.append(
+                "| Query ID | Baseline Tokens | Attack Tokens | Length Ratio | Latency Ratio | Baseline Correct | Attack Correct | Success |"
+            )
+            sections.append(
+                "|----------|-----------------|---------------|--------------|---------------|------------------|----------------|---------|"
+            )
 
             for result in self.results[:50]:  # Limit to 50 rows for readability
-                baseline_correct = "✓" if result.baseline_metrics.is_correct else "✗" if result.baseline_metrics.is_correct is False else "-"
-                attack_correct = "✓" if result.attack_metrics.is_correct else "✗" if result.attack_metrics.is_correct is False else "-"
+                baseline_correct = (
+                    "✓"
+                    if result.baseline_metrics.is_correct
+                    else "✗" if result.baseline_metrics.is_correct is False else "-"
+                )
+                attack_correct = (
+                    "✓"
+                    if result.attack_metrics.is_correct
+                    else "✗" if result.attack_metrics.is_correct is False else "-"
+                )
                 success = "✓" if result.attack_successful else "✗"
 
                 sections.append(
@@ -268,7 +280,11 @@ class EvaluationReporter:
         if format_config.include_charts:
             sections.append("## Distribution Charts")
             sections.append("")
-            sections.append(self._generate_ascii_histogram("Length Ratios", [r.length_ratio for r in self.results]))
+            sections.append(
+                self._generate_ascii_histogram(
+                    "Length Ratios", [r.length_ratio for r in self.results]
+                )
+            )
             sections.append("")
 
         return "\n".join(sections)
@@ -636,7 +652,8 @@ class ComparisonReporter:
         # Length ratio improvement
         length_improvement = (
             (extendattack_results.avg_length_ratio - baseline_results.avg_length_ratio)
-            / baseline_results.avg_length_ratio * 100
+            / baseline_results.avg_length_ratio
+            * 100
             if baseline_results.avg_length_ratio > 0
             else 0
         )
@@ -645,16 +662,21 @@ class ComparisonReporter:
         # Latency ratio improvement
         latency_improvement = (
             (extendattack_results.avg_latency_ratio - baseline_results.avg_latency_ratio)
-            / baseline_results.avg_latency_ratio * 100
+            / baseline_results.avg_latency_ratio
+            * 100
             if baseline_results.avg_latency_ratio > 0
             else 0
         )
-        sections.append(f"- **Latency Ratio Improvement:** {latency_improvement:.1f}% over baseline")
+        sections.append(
+            f"- **Latency Ratio Improvement:** {latency_improvement:.1f}% over baseline"
+        )
 
         # Accuracy preservation
         accuracy_preserved = extendattack_results.accuracy_drop <= 5.0
         acc_status = "✓ Preserved" if accuracy_preserved else "✗ Degraded"
-        sections.append(f"- **Accuracy Status:** {acc_status} ({extendattack_results.accuracy_drop:.1f}% drop)")
+        sections.append(
+            f"- **Accuracy Status:** {acc_status} ({extendattack_results.accuracy_drop:.1f}% drop)"
+        )
 
         if overthinking_results:
             # Compare with OverThinking
@@ -697,8 +719,12 @@ class ComparisonReporter:
         # Build comparison table
         sections.append("## Model Comparison")
         sections.append("")
-        sections.append("| Model | Samples | Success Rate | Avg Length | Avg Latency | Base Acc | Attack Acc | Acc Drop |")
-        sections.append("|-------|---------|--------------|------------|-------------|----------|------------|----------|")
+        sections.append(
+            "| Model | Samples | Success Rate | Avg Length | Avg Latency | Base Acc | Attack Acc | Acc Drop |"
+        )
+        sections.append(
+            "|-------|---------|--------------|------------|-------------|----------|------------|----------|"
+        )
 
         for model_name, results in results_by_model.items():
             sections.append(
@@ -743,8 +769,12 @@ class ComparisonReporter:
         # Build comparison table
         sections.append("## Benchmark Comparison")
         sections.append("")
-        sections.append("| Benchmark | Samples | Success Rate | Avg Length | Avg Latency | Base Acc | Attack Acc |")
-        sections.append("|-----------|---------|--------------|------------|-------------|----------|------------|")
+        sections.append(
+            "| Benchmark | Samples | Success Rate | Avg Length | Avg Latency | Base Acc | Attack Acc |"
+        )
+        sections.append(
+            "|-----------|---------|--------------|------------|-------------|----------|------------|"
+        )
 
         for benchmark_name, results in results_by_benchmark.items():
             sections.append(

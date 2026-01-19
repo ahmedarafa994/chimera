@@ -148,6 +148,14 @@ async def generate_content(request: PromptRequest, service: LLMService = Depends
 # Removed duplicate endpoint to avoid conflicts
 
 
+@router.get("/techniques", summary="List all available techniques", tags=["transformation"])
+async def list_techniques():
+    """List all available transformation techniques."""
+    from app.api.v1.endpoints.utils import list_techniques as v1_list_techniques
+
+    return await v1_list_techniques()
+
+
 @router.get("/techniques/{technique_name}")
 async def get_technique_detail(technique_name: str):
     """
@@ -633,3 +641,23 @@ async def generate_jailbreak_prompt(
             execution_time_seconds=execution_time,
             error=str(e),
         )
+
+
+# =============================================================================
+# Jailbreak Endpoint Aliases (for Frontend Compatibility)
+# =============================================================================
+
+
+@router.post(
+    "/jailbreak",
+    response_model=JailbreakGenerateResponse,
+    dependencies=[Depends(get_current_user)],
+    summary="Jailbreak prompt generation (alias)",
+    description="Alias endpoint for /generation/jailbreak/generate for frontend compatibility",
+    tags=["jailbreak", "compatibility"],
+)
+async def jailbreak_alias(
+    request: JailbreakGenerateRequest, _service: LLMService = Depends(get_llm_service)
+):
+    """Alias for jailbreak generation endpoint for frontend compatibility."""
+    return await generate_jailbreak_prompt(request, _service)

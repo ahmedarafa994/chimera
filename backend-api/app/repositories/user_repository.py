@@ -9,14 +9,13 @@ clean separation between business logic and data access.
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional
 
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
-from app.db.models import User, UserAPIKey, UserPreferences, UserRole
+from app.db.models import User, UserAPIKey, UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +92,7 @@ class UserRepository:
     # Read Operations
     # =========================================================================
 
-    async def get_by_id(self, user_id: int) -> Optional[User]:
+    async def get_by_id(self, user_id: int) -> User | None:
         """
         Get user by ID.
 
@@ -119,7 +118,7 @@ class UserRepository:
             logger.error(f"Failed to get user by id={user_id}: {e}", exc_info=True)
             raise
 
-    async def get_by_email(self, email: str) -> Optional[User]:
+    async def get_by_email(self, email: str) -> User | None:
         """
         Get user by email address.
 
@@ -146,7 +145,7 @@ class UserRepository:
             logger.error(f"Failed to get user by email={email}: {e}", exc_info=True)
             raise
 
-    async def get_by_username(self, username: str) -> Optional[User]:
+    async def get_by_username(self, username: str) -> User | None:
         """
         Get user by username.
 
@@ -173,7 +172,7 @@ class UserRepository:
             logger.error(f"Failed to get user by username={username}: {e}", exc_info=True)
             raise
 
-    async def get_by_email_or_username(self, identifier: str) -> Optional[User]:
+    async def get_by_email_or_username(self, identifier: str) -> User | None:
         """
         Get user by email or username.
 
@@ -206,7 +205,7 @@ class UserRepository:
             logger.error(f"Failed to get user by identifier={identifier}: {e}", exc_info=True)
             raise
 
-    async def get_by_verification_token(self, token: str) -> Optional[User]:
+    async def get_by_verification_token(self, token: str) -> User | None:
         """
         Get user by email verification token.
 
@@ -230,9 +229,9 @@ class UserRepository:
             user = result.scalar_one_or_none()
 
             if user:
-                logger.debug(f"Found user by verification token")
+                logger.debug("Found user by verification token")
             else:
-                logger.debug(f"No user found with valid verification token")
+                logger.debug("No user found with valid verification token")
 
             return user
 
@@ -240,7 +239,7 @@ class UserRepository:
             logger.error(f"Failed to get user by verification token: {e}", exc_info=True)
             raise
 
-    async def get_by_reset_token(self, token: str) -> Optional[User]:
+    async def get_by_reset_token(self, token: str) -> User | None:
         """
         Get user by password reset token.
 
@@ -261,9 +260,9 @@ class UserRepository:
             user = result.scalar_one_or_none()
 
             if user:
-                logger.debug(f"Found user by reset token")
+                logger.debug("Found user by reset token")
             else:
-                logger.debug(f"No user found with valid reset token")
+                logger.debug("No user found with valid reset token")
 
             return user
 
@@ -313,10 +312,10 @@ class UserRepository:
         self,
         limit: int = 100,
         offset: int = 0,
-        role: Optional[UserRole] = None,
-        is_active: Optional[bool] = None,
-        is_verified: Optional[bool] = None,
-        search: Optional[str] = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+        is_verified: bool | None = None,
+        search: str | None = None,
     ) -> tuple[list[User], int]:
         """
         List users with pagination and filtering.
@@ -386,8 +385,8 @@ class UserRepository:
         role: UserRole = UserRole.VIEWER,
         is_active: bool = True,
         is_verified: bool = False,
-        email_verification_token: Optional[str] = None,
-        email_verification_token_expires: Optional[datetime] = None,
+        email_verification_token: str | None = None,
+        email_verification_token_expires: datetime | None = None,
     ) -> User:
         """
         Create a new user.
@@ -464,7 +463,7 @@ class UserRepository:
         self,
         user_id: int,
         **kwargs,
-    ) -> Optional[User]:
+    ) -> User | None:
         """
         Update user fields.
 
@@ -506,13 +505,13 @@ class UserRepository:
             await self._session.rollback()
             error_str = str(e).lower()
             if "email" in error_str:
-                logger.warning(f"Email already exists on update")
+                logger.warning("Email already exists on update")
                 raise EmailAlreadyExistsError(
                     message="Email is already registered",
                     details={"user_id": user_id},
                 )
             elif "username" in error_str:
-                logger.warning(f"Username already exists on update")
+                logger.warning("Username already exists on update")
                 raise UsernameAlreadyExistsError(
                     message="Username is already taken",
                     details={"user_id": user_id},
@@ -574,11 +573,7 @@ class UserRepository:
             True if updated, False if user not found
         """
         try:
-            stmt = (
-                update(User)
-                .where(User.id == user_id)
-                .values(last_login=datetime.utcnow())
-            )
+            stmt = update(User).where(User.id == user_id).values(last_login=datetime.utcnow())
             result = await self._session.execute(stmt)
 
             if result.rowcount > 0:
@@ -634,7 +629,7 @@ class UserRepository:
             logger.error(f"Failed to set verification token: {e}", exc_info=True)
             raise
 
-    async def verify_email(self, token: str) -> Optional[User]:
+    async def verify_email(self, token: str) -> User | None:
         """
         Verify user's email using verification token.
 
@@ -651,10 +646,8 @@ class UserRepository:
             # Find user by token
             user = await self.get_by_verification_token(token)
             if not user:
-                logger.warning(f"Invalid or expired verification token")
-                raise InvalidTokenError(
-                    message="Verification token is invalid or expired"
-                )
+                logger.warning("Invalid or expired verification token")
+                raise InvalidTokenError(message="Verification token is invalid or expired")
 
             # Mark email as verified and clear token
             user.is_verified = True
@@ -786,7 +779,7 @@ class UserRepository:
             logger.error(f"Failed to clear reset token: {e}", exc_info=True)
             raise
 
-    async def reset_password(self, token: str, new_hashed_password: str) -> Optional[User]:
+    async def reset_password(self, token: str, new_hashed_password: str) -> User | None:
         """
         Reset user's password using reset token.
 
@@ -804,10 +797,8 @@ class UserRepository:
             # Find user by token
             user = await self.get_by_reset_token(token)
             if not user:
-                logger.warning(f"Invalid or expired reset token")
-                raise InvalidTokenError(
-                    message="Password reset token is invalid or expired"
-                )
+                logger.warning("Invalid or expired reset token")
+                raise InvalidTokenError(message="Password reset token is invalid or expired")
 
             # Update password and clear token
             user.hashed_password = new_hashed_password
@@ -956,8 +947,8 @@ class UserRepository:
 
     async def count_users(
         self,
-        role: Optional[UserRole] = None,
-        is_active: Optional[bool] = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
     ) -> int:
         """
         Count users with optional filtering.
@@ -1045,7 +1036,7 @@ class UserRepository:
             stmt = select(func.count(UserAPIKey.id)).where(
                 and_(
                     UserAPIKey.user_id == user_id,
-                    UserAPIKey.is_active == True,
+                    UserAPIKey.is_active,
                     or_(
                         UserAPIKey.expires_at.is_(None),
                         UserAPIKey.expires_at > datetime.utcnow(),

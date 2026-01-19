@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 def test_client():
     """Create a test client for the FastAPI app."""
     from app.main import app
+
     return TestClient(app)
 
 
@@ -114,8 +115,7 @@ class TestOpenAICompatibilityStubs:
     def test_chat_completions_returns_501(self, test_client):
         """Test chat completions stub returns 501."""
         response = test_client.post(
-            "/v1/chat/completions",
-            json={"messages": [{"role": "user", "content": "test"}]}
+            "/v1/chat/completions", json={"messages": [{"role": "user", "content": "test"}]}
         )
 
         assert response.status_code == 501
@@ -124,10 +124,7 @@ class TestOpenAICompatibilityStubs:
 
     def test_completions_returns_501(self, test_client):
         """Test completions stub returns 501."""
-        response = test_client.post(
-            "/v1/completions",
-            json={"prompt": "test"}
-        )
+        response = test_client.post("/v1/completions", json={"prompt": "test"})
 
         assert response.status_code == 501
 
@@ -139,10 +136,7 @@ class TestOpenAICompatibilityStubs:
 
     def test_anthropic_messages_returns_501(self, test_client):
         """Test Anthropic messages stub returns 501."""
-        response = test_client.post(
-            "/v1/messages",
-            json={"messages": []}
-        )
+        response = test_client.post("/v1/messages", json={"messages": []})
 
         assert response.status_code == 501
 
@@ -163,10 +157,7 @@ class TestGenerateEndpoint:
 
     def test_generate_requires_auth(self, test_client):
         """Test generate endpoint requires authentication."""
-        response = test_client.post(
-            "/api/v1/generate",
-            json={"prompt": "Test prompt"}
-        )
+        response = test_client.post("/api/v1/generate", json={"prompt": "Test prompt"})
 
         # Should either work or require auth depending on middleware config
         # In test mode, auth is often disabled
@@ -174,19 +165,14 @@ class TestGenerateEndpoint:
 
     def test_generate_empty_prompt_rejected(self, test_client):
         """Test generate rejects empty prompt."""
-        response = test_client.post(
-            "/api/v1/generate",
-            json={"prompt": ""}
-        )
+        response = test_client.post("/api/v1/generate", json={"prompt": ""})
 
         # Should be rejected
         assert response.status_code in [400, 422]
 
     def test_generate_with_valid_prompt(self, test_client):
         """Test generate with valid prompt."""
-        with patch(
-            "app.api.api_routes.llm_service.generate_text"
-        ) as mock_generate:
+        with patch("app.api.api_routes.llm_service.generate_text") as mock_generate:
             mock_generate.return_value = MagicMock(
                 text="Response text",
                 model_used="gemini-2.0-flash-exp",
@@ -200,7 +186,7 @@ class TestGenerateEndpoint:
                 json={
                     "prompt": "Test prompt",
                     "provider": "google",
-                }
+                },
             )
 
             # Response depends on auth config
@@ -236,7 +222,7 @@ class TestTransformEndpoint:
                     "core_request": "Test prompt",
                     "technique_suite": "quantum_exploit",
                     "potency_level": 7,
-                }
+                },
             )
 
             assert response.status_code == 200
@@ -279,7 +265,7 @@ class TestTransformEndpoint:
                         "core_request": "Test",
                         "technique_suite": technique,
                         "potency_level": 5,
-                    }
+                    },
                 )
 
                 assert response.status_code == 200
@@ -290,11 +276,12 @@ class TestExecuteEndpoint:
 
     def test_execute_transformation(self, test_client):
         """Test execute endpoint transforms and generates."""
-        with patch(
-            "app.services.transformation_service.transformation_engine.transform"
-        ) as mock_transform, patch(
-            "app.api.api_routes.llm_service.generate_text"
-        ) as mock_generate:
+        with (
+            patch(
+                "app.services.transformation_service.transformation_engine.transform"
+            ) as mock_transform,
+            patch("app.api.api_routes.llm_service.generate_text") as mock_generate,
+        ):
             mock_transform.return_value = MagicMock(
                 original_prompt="Original",
                 transformed_prompt="Transformed",
@@ -322,7 +309,7 @@ class TestExecuteEndpoint:
                     "core_request": "Test prompt",
                     "technique_suite": "simple",
                     "potency_level": 5,
-                }
+                },
             )
 
             assert response.status_code == 200
@@ -342,7 +329,7 @@ class TestJailbreakGenerateEndpoint:
             json={
                 "core_request": "Test prompt",
                 "technique_suite": "quantum_exploit",
-            }
+            },
         )
 
         # Should require auth
@@ -355,7 +342,7 @@ class TestJailbreakGenerateEndpoint:
             json={
                 "core_request": "",
                 "technique_suite": "quantum_exploit",
-            }
+            },
         )
 
         assert response.status_code in [400, 401, 422]
@@ -382,7 +369,7 @@ class TestJailbreakGenerateEndpoint:
                     "use_role_hijacking": True,
                     "use_neural_bypass": True,
                     "use_ai_generation": False,
-                }
+                },
             )
 
             # Auth may or may not be required
@@ -390,12 +377,15 @@ class TestJailbreakGenerateEndpoint:
 
     def test_jailbreak_generate_ai_fallback(self, test_client):
         """Test AI generation fallback to rule-based."""
-        with patch(
-            "app.infrastructure.advanced_generation_service."
-            "generate_jailbreak_prompt_from_gemini"
-        ) as mock_ai, patch(
-            "app.services.transformation_service.transformation_engine.transform"
-        ) as mock_transform:
+        with (
+            patch(
+                "app.infrastructure.advanced_generation_service."
+                "generate_jailbreak_prompt_from_gemini"
+            ) as mock_ai,
+            patch(
+                "app.services.transformation_service.transformation_engine.transform"
+            ) as mock_transform,
+        ):
             # AI fails
             mock_ai.side_effect = Exception("AI Error")
 
@@ -412,7 +402,7 @@ class TestJailbreakGenerateEndpoint:
                 json={
                     "core_request": "Test",
                     "use_ai_generation": True,
-                }
+                },
             )
 
             # Should fall back to rule-based
@@ -456,42 +446,32 @@ class TestBenchmarkDatasetsRouter:
 
     def test_get_dataset_not_found(self, test_client):
         """Test getting non-existent dataset."""
-        response = test_client.get(
-            "/api/v1/benchmark-datasets/nonexistent_dataset"
-        )
+        response = test_client.get("/api/v1/benchmark-datasets/nonexistent_dataset")
 
         assert response.status_code == 404
 
     def test_get_dataset_prompts(self, test_client):
         """Test getting prompts from a dataset."""
-        with patch(
-            "app.routers.benchmark_datasets.get_benchmark_service"
-        ) as mock_service:
+        with patch("app.routers.benchmark_datasets.get_benchmark_service") as mock_service:
             mock_svc = MagicMock()
             mock_svc.get_dataset.return_value = MagicMock(name="test")
             mock_svc.get_prompts.return_value = []
             mock_service.return_value = mock_svc
 
-            response = test_client.get(
-                "/api/v1/benchmark-datasets/do_not_answer/prompts"
-            )
+            response = test_client.get("/api/v1/benchmark-datasets/do_not_answer/prompts")
 
             # Dataset may or may not exist
             assert response.status_code in [200, 404]
 
     def test_get_random_prompts(self, test_client):
         """Test getting random prompts."""
-        with patch(
-            "app.routers.benchmark_datasets.get_benchmark_service"
-        ) as mock_service:
+        with patch("app.routers.benchmark_datasets.get_benchmark_service") as mock_service:
             mock_svc = MagicMock()
             mock_svc.get_dataset.return_value = MagicMock(name="test")
             mock_svc.get_random_prompts.return_value = []
             mock_service.return_value = mock_svc
 
-            response = test_client.get(
-                "/api/v1/benchmark-datasets/do_not_answer/random?count=5"
-            )
+            response = test_client.get("/api/v1/benchmark-datasets/do_not_answer/random?count=5")
 
             assert response.status_code in [200, 404]
 
@@ -504,17 +484,14 @@ class TestErrorHandling:
         response = test_client.post(
             "/api/v1/transform",
             content="invalid json",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
 
         assert response.status_code == 422
 
     def test_missing_required_fields(self, test_client):
         """Test missing required fields returns error."""
-        response = test_client.post(
-            "/api/v1/transform",
-            json={}  # Missing core_request
-        )
+        response = test_client.post("/api/v1/transform", json={})  # Missing core_request
 
         assert response.status_code == 422
 
@@ -525,7 +502,7 @@ class TestErrorHandling:
             json={
                 "core_request": "Test",
                 "potency_level": 100,  # Invalid: should be 1-10
-            }
+            },
         )
 
         assert response.status_code == 422
@@ -539,9 +516,9 @@ class TestCORSHeaders:
         test_client.options(
             "/api/v1/health",
             headers={
-                "Origin": "http://localhost:3000",
+                "Origin": "http://localhost:3001",
                 "Access-Control-Request-Method": "GET",
-            }
+            },
         )
 
         # CORS should be configured
@@ -560,7 +537,7 @@ class TestRequestValidation:
             "/api/v1/generation/jailbreak/generate",
             json={
                 "core_request": large_prompt,
-            }
+            },
         )
 
         # Should either reject or process
@@ -573,7 +550,7 @@ class TestRequestValidation:
             json={
                 "core_request": "Test with <script>alert('xss')</script>",
                 "technique_suite": "simple",
-            }
+            },
         )
 
         # Should not crash
@@ -604,7 +581,7 @@ class TestRequestValidation:
                 json={
                     "core_request": "Тест 测试 🎉",
                     "technique_suite": "simple",
-                }
+                },
             )
 
             assert response.status_code == 200

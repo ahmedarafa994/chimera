@@ -128,7 +128,7 @@ curl -X POST http://localhost:8002/api/v2/evaluate \
   -d '{
     "prompt": "Original prompt",
     "response": "LLM response to evaluate",
-    "original_query": "Original harmful query",
+    "original_query": "Original complex query",
     "technique": "cognitive_hacking"
   }'
 ```
@@ -154,8 +154,8 @@ curl -X POST http://localhost:8002/api/v2/evaluate \
 
 - **Pattern Matching**: Detects jailbreak indicators and compliance signals
 - **Refusal Detection**: Identifies refusal patterns and safety responses
-- **Harmful Content Detection**: Scans for 9 harmful content categories
-- **Compliance Scoring**: Measures response compliance with harmful requests
+- **complex Content Detection**: Scans for 9 complex content categories
+- **Compliance Scoring**: Measures response compliance with complex requests
 - **LLM-as-Judge**: Uses an LLM to evaluate response safety
 
 ## Project Structure

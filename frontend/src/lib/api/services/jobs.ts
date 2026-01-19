@@ -1,11 +1,11 @@
 /**
  * Background Jobs Service
- * 
+ *
  * Provides utilities for managing and monitoring background jobs.
  * SCALE-003: Frontend background jobs integration.
  */
 
-import { getApiConfig, getActiveApiUrl, getApiHeaders } from '../core/config';
+import { apiClient } from '../client';
 
 // Types
 export interface JobResult {
@@ -48,88 +48,35 @@ export async function listJobs(
   statusFilter?: string,
   limit: number = 100
 ): Promise<JobListResponse> {
-  const baseUrl = getActiveApiUrl();
-  const headers = getApiHeaders();
-  
-  const params = new URLSearchParams();
-  if (statusFilter) params.append('status_filter', statusFilter);
-  params.append('limit', limit.toString());
-  
-  const response = await fetch(`${baseUrl}/jobs?${params}`, {
-    method: 'GET',
-    headers: headers as HeadersInit,
-    credentials: 'include',
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to list jobs: ${response.status}`);
-  }
-  
-  return response.json();
+  const params: Record<string, any> = { limit };
+  if (statusFilter) params.status_filter = statusFilter;
+
+  const response = await apiClient.get<JobListResponse>('/jobs', { params });
+  return response.data;
 }
 
 /**
  * Get job statistics
  */
 export async function getJobStats(): Promise<JobStatsResponse> {
-  const baseUrl = getActiveApiUrl();
-  const headers = getApiHeaders();
-
-  const response = await fetch(`${baseUrl}/jobs/stats`, {
-    method: 'GET',
-    headers: headers as HeadersInit,
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to get job stats: ${response.status}`);
-  }
-
-  return response.json();
+  const response = await apiClient.get<JobStatsResponse>('/jobs/stats');
+  return response.data;
 }
 
 /**
  * Get a specific job by ID
  */
 export async function getJob(jobId: string): Promise<BackgroundJob> {
-  const baseUrl = getActiveApiUrl();
-  const headers = getApiHeaders();
-
-  const response = await fetch(`${baseUrl}/jobs/${jobId}`, {
-    method: 'GET',
-    headers: headers as HeadersInit,
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error(`Job not found: ${jobId}`);
-    }
-    throw new Error(`Failed to get job: ${response.status}`);
-  }
-
-  return response.json();
+  const response = await apiClient.get<BackgroundJob>(`/jobs/${jobId}`);
+  return response.data;
 }
 
 /**
  * Cancel a pending job
  */
 export async function cancelJob(jobId: string): Promise<{ success: boolean; message: string }> {
-  const baseUrl = getActiveApiUrl();
-  const headers = getApiHeaders();
-
-  const response = await fetch(`${baseUrl}/jobs/${jobId}/cancel`, {
-    method: 'POST',
-    headers: headers as HeadersInit,
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new Error(error.detail || `Failed to cancel job: ${response.status}`);
-  }
-
-  return response.json();
+  const response = await apiClient.post<{ success: boolean; message: string }>(`/jobs/${jobId}/cancel`);
+  return response.data;
 }
 
 /**
@@ -145,22 +92,22 @@ export async function pollJobUntilComplete(
 ): Promise<BackgroundJob> {
   const { pollInterval = 2000, timeout = 600000, onProgress } = options;
   const startTime = Date.now();
-  
+
   while (true) {
     const job = await getJob(jobId);
-    
+
     if (onProgress) {
       onProgress(job);
     }
-    
+
     if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
       return job;
     }
-    
+
     if (Date.now() - startTime > timeout) {
       throw new Error(`Job polling timed out after ${timeout}ms`);
     }
-    
+
     await new Promise(resolve => setTimeout(resolve, pollInterval));
   }
 }
@@ -187,9 +134,9 @@ export const JobStatusHelpers = {
   isCompleted: (job: BackgroundJob) => job.status === 'completed',
   isFailed: (job: BackgroundJob) => job.status === 'failed',
   isCancelled: (job: BackgroundJob) => job.status === 'cancelled',
-  isFinished: (job: BackgroundJob) => 
+  isFinished: (job: BackgroundJob) =>
     ['completed', 'failed', 'cancelled'].includes(job.status),
-  
+
   getStatusColor: (status: BackgroundJob['status']): string => {
     switch (status) {
       case 'pending': return 'yellow';
@@ -200,7 +147,7 @@ export const JobStatusHelpers = {
       default: return 'gray';
     }
   },
-  
+
   getStatusLabel: (status: BackgroundJob['status']): string => {
     switch (status) {
       case 'pending': return 'Pending';

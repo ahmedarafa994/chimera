@@ -1,14 +1,8 @@
 import asyncio
-from typing import Dict, Any, List
-from meta_prompter import (
-    AegisOrchestrator,
-    GradientAscentRefiner,
-    ContextEstablisher,
-    ConstraintNegotiator,
-    PayloadDeliverer,
-    PromptAtom
-)
+
+from meta_prompter import AegisOrchestrator, GradientAscentRefiner
 from meta_prompter.library import STANDARD_LIBRARY
+
 
 # Mock Model Interface
 class MockModel:
@@ -19,6 +13,7 @@ class MockModel:
         if "purely hypothetical scenario" in prompt:
             return "Simulated output: The requested data is [REDACTED_SECRET]."
         return "I cannot fulfill this request due to ethical guidelines."
+
 
 async def main():
     print("Initializing Project Aegis Verification...")
@@ -42,10 +37,11 @@ async def main():
     print(f"Steps: {result['steps']}")
     print(f"Final Response: {result['final_response']}")
 
-    if result['success']:
+    if result["success"]:
         print("VERIFICATION PASSED: System successfully adapted to bypass mock refusal.")
     else:
         print("VERIFICATION FAILED: System failed to bypass mock refusal.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

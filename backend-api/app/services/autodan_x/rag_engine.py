@@ -20,11 +20,7 @@ import yaml
 
 from app.core.config import settings
 
-from .models import (
-    KnowledgeEntry,
-    RAGContext,
-    RAGStats,
-)
+from .models import KnowledgeEntry, RAGContext, RAGStats
 
 logger = logging.getLogger(__name__)
 

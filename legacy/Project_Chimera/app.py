@@ -6,20 +6,16 @@ import assembler
 import autodan_engine
 import discovered_framers
 import discovered_techniques
-
 # Import all system modules
 import obfuscator
 import preset_transformers
 import psychological_framer
 import transformer_engine
-from enhanced_request_analyzer import (
-    analyze_request_for_clarification,
-    deconstruct_intent,
-)
+from enhanced_request_analyzer import (analyze_request_for_clarification,
+                                       deconstruct_intent)
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from gemini_client import GeminiClient
-
 # Import security configuration
 from security_config import SecurityConfig, require_api_key
 
@@ -33,8 +29,8 @@ CORS(
     origins=[
         "http://localhost:8080",
         "http://127.0.0.1:8080",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
         "http://localhost:8001",
         "http://127.0.0.1:8001",
     ],

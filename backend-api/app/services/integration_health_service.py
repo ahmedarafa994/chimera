@@ -21,6 +21,7 @@ Configuration:
 """
 
 import asyncio
+import contextlib
 import logging
 import time
 from collections import deque
@@ -106,12 +107,16 @@ class ProviderHealthMetrics:
             "availability": {
                 "uptime_percent": round(self.uptime_percent, 2),
                 "last_check": datetime.fromtimestamp(self.last_check_time).isoformat(),
-                "last_success": datetime.fromtimestamp(self.last_success_time).isoformat()
-                if self.last_success_time
-                else None,
-                "last_failure": datetime.fromtimestamp(self.last_failure_time).isoformat()
-                if self.last_failure_time
-                else None,
+                "last_success": (
+                    datetime.fromtimestamp(self.last_success_time).isoformat()
+                    if self.last_success_time
+                    else None
+                ),
+                "last_failure": (
+                    datetime.fromtimestamp(self.last_failure_time).isoformat()
+                    if self.last_failure_time
+                    else None
+                ),
             },
             "consecutive": {
                 "failures": self.consecutive_failures,
@@ -139,7 +144,7 @@ class HealthHistoryEntry:
             "timestamp": datetime.fromtimestamp(self.timestamp).isoformat(),
             "provider_name": self.provider_name,
             "status": self.status.value,
-            "latency_ms": round(latency_ms, 2),
+            "latency_ms": round(self.latency_ms, 2),
             "success": self.success,
         }
 
@@ -165,7 +170,9 @@ class HealthAlert:
             "message": self.message,
             "timestamp": datetime.fromtimestamp(self.timestamp).isoformat(),
             "metrics": {
-                "error_rate_percent": round(self.error_rate, 2) if self.error_rate is not None else None,
+                "error_rate_percent": (
+                    round(self.error_rate, 2) if self.error_rate is not None else None
+                ),
                 "latency_ms": round(self.latency_ms, 2) if self.latency_ms is not None else None,
             },
         }
@@ -265,9 +272,7 @@ class IntegrationHealthService:
         # Start background health check task
         self._health_check_task = asyncio.create_task(self._health_check_loop())
 
-        logger.info(
-            f"Integration Health Service started (check_interval={self._check_interval}s)"
-        )
+        logger.info(f"Integration Health Service started (check_interval={self._check_interval}s)")
 
     async def stop(self) -> None:
         """Stop the health monitoring service."""
@@ -281,10 +286,8 @@ class IntegrationHealthService:
         # Cancel background health check task
         if self._health_check_task:
             self._health_check_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_check_task
-            except asyncio.CancelledError:
-                pass
 
         logger.info("Integration Health Service stopped")
 
@@ -294,7 +297,7 @@ class IntegrationHealthService:
         # Get registered providers from llm_service
         providers = llm_service._providers
 
-        for provider_name, provider in providers.items():
+        for provider_name, _provider in providers.items():
             if provider_name not in self._provider_metrics:
                 self._provider_metrics[provider_name] = ProviderHealthMetrics(
                     provider_name=provider_name,
@@ -601,9 +604,7 @@ class IntegrationHealthService:
         if alert:
             self._alerts.append(alert)
             self._alert_cooldown[provider_name] = now
-            logger.warning(
-                f"Health alert triggered: {alert.severity.value} - {alert.message}"
-            )
+            logger.warning(f"Health alert triggered: {alert.severity.value} - {alert.message}")
 
             # Trigger alert callbacks
             for callback in self._alert_callbacks:
@@ -720,17 +721,19 @@ class IntegrationHealthService:
 
         # Add provider nodes
         for provider_name, metrics in self._provider_metrics.items():
-            nodes.append({
-                "id": provider_name,
-                "type": "provider",
-                "status": metrics.status.value,
-                "label": provider_name,
-                "metrics": {
-                    "error_rate": round(metrics.error_rate, 2),
-                    "latency_p95_ms": round(metrics.latency_p95, 2),
-                    "uptime_percent": round(metrics.uptime_percent, 2),
-                },
-            })
+            nodes.append(
+                {
+                    "id": provider_name,
+                    "type": "provider",
+                    "status": metrics.status.value,
+                    "label": provider_name,
+                    "metrics": {
+                        "error_rate": round(metrics.error_rate, 2),
+                        "latency_p95_ms": round(metrics.latency_p95, 2),
+                        "uptime_percent": round(metrics.uptime_percent, 2),
+                    },
+                }
+            )
 
         # Add edges (dependencies based on failover chains)
         failover_chains = llm_service._DEFAULT_FAILOVER_CHAIN
@@ -738,12 +741,14 @@ class IntegrationHealthService:
             if primary in self._provider_metrics:
                 for fallback in fallbacks:
                     if fallback in self._provider_metrics:
-                        edges.append({
-                            "from": primary,
-                            "to": fallback,
-                            "type": "failover",
-                            "label": "failover",
-                        })
+                        edges.append(
+                            {
+                                "from": primary,
+                                "to": fallback,
+                                "type": "failover",
+                                "label": "failover",
+                            }
+                        )
 
         return {
             "nodes": nodes,

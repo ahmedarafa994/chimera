@@ -515,7 +515,7 @@ export class MockServer {
 
   constructor(config: Partial<MockServerConfig> = {}) {
     this.config = {
-      baseUrl: 'http://localhost:8001',
+      baseUrl: 'http://localhost:8005',
       defaultDelay: 0,
       handlers: [],
       ...config,

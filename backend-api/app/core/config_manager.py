@@ -23,11 +23,13 @@ logger = logging.getLogger(__name__)
 
 class ConfigurationError(Exception):
     """Base exception for configuration errors"""
+
     pass
 
 
 class ValidationError(ConfigurationError):
     """Raised when configuration validation fails"""
+
     pass
 
 
@@ -57,7 +59,12 @@ class ProviderConfigValidator:
     DEFAULT_MODELS = {
         "google": ["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-1.5-pro", "gemini-1.5-flash"],
         "openai": ["gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-        "anthropic": ["claude-sonnet-4-5", "claude-3-5-sonnet", "claude-3-5-haiku", "claude-3-opus"],
+        "anthropic": [
+            "claude-sonnet-4-5",
+            "claude-3-5-sonnet",
+            "claude-3-5-haiku",
+            "claude-3-opus",
+        ],
         "deepseek": ["deepseek-chat", "deepseek-reasoner"],
         "qwen": ["qwen-turbo", "qwen-plus", "qwen-max"],
         "cursor": ["gpt-4o", "gpt-4", "gpt-4-turbo"],
@@ -91,6 +98,7 @@ class ProviderConfigValidator:
             return True, ""
 
         import re
+
         if not re.match(pattern, actual_key):
             return False, (
                 f"API key format invalid for {provider}. "
@@ -110,7 +118,9 @@ class ProviderConfigValidator:
         }
         return descriptions.get(provider.lower(), "Valid API key format")
 
-    async def validate_connectivity(self, provider: str, api_key: str, base_url: str) -> tuple[bool, str]:
+    async def validate_connectivity(
+        self, provider: str, api_key: str, base_url: str
+    ) -> tuple[bool, str]:
         """
         Test connectivity to a provider API.
 
@@ -131,28 +141,28 @@ class ProviderConfigValidator:
                 "openai": {
                     "endpoint": f"{base_url.rstrip('/')}/models",
                     "headers": {"Authorization": f"Bearer {actual_key}"},
-                    "method": "GET"
+                    "method": "GET",
                 },
                 "anthropic": {
                     "endpoint": f"{base_url.rstrip('/')}/messages",
                     "headers": {
                         "Authorization": f"Bearer {actual_key}",
                         "anthropic-version": "2023-06-01",
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
                     },
-                    "method": "HEAD"  # Just check if endpoint is accessible
+                    "method": "HEAD",  # Just check if endpoint is accessible
                 },
                 "google": {
                     "endpoint": f"{base_url.rstrip('/')}/models",
                     "headers": {},
                     "method": "GET",
-                    "params": {"key": actual_key}
+                    "params": {"key": actual_key},
                 },
                 "deepseek": {
                     "endpoint": f"{base_url.rstrip('/')}/models",
                     "headers": {"Authorization": f"Bearer {actual_key}"},
-                    "method": "GET"
-                }
+                    "method": "GET",
+                },
             }
 
             config = test_configs.get(provider.lower())
@@ -161,7 +171,7 @@ class ProviderConfigValidator:
                 config = {
                     "endpoint": base_url,
                     "headers": {"Authorization": f"Bearer {actual_key}"},
-                    "method": "GET"
+                    "method": "GET",
                 }
 
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
@@ -169,7 +179,7 @@ class ProviderConfigValidator:
                     method=config["method"],
                     url=config["endpoint"],
                     headers=config["headers"],
-                    params=config.get("params", {})
+                    params=config.get("params", {}),
                 ) as response:
                     # Accept various success codes
                     if response.status in [200, 201, 204, 401, 403]:
@@ -191,7 +201,7 @@ class ProviderConfigValidator:
         provider: str,
         api_key: str | None = None,
         base_url: str | None = None,
-        test_connectivity: bool = True
+        test_connectivity: bool = True,
     ) -> dict[str, Any]:
         """
         Comprehensive validation of a provider configuration.
@@ -210,7 +220,7 @@ class ProviderConfigValidator:
             "is_valid": True,
             "errors": [],
             "warnings": [],
-            "recommendations": []
+            "recommendations": [],
         }
 
         # Validate API key format
@@ -242,12 +252,14 @@ class ProviderConfigValidator:
             if not connected:
                 result["is_valid"] = False
                 result["errors"].append(f"Connectivity test failed: {conn_error}")
-                result["recommendations"].extend([
-                    f"Check your {provider} API key is active and has proper permissions",
-                    f"Verify the base URL {base_url} is correct",
-                    "Check your network connectivity and firewall settings",
-                    f"Visit {provider}'s documentation for troubleshooting"
-                ])
+                result["recommendations"].extend(
+                    [
+                        f"Check your {provider} API key is active and has proper permissions",
+                        f"Verify the base URL {base_url} is correct",
+                        "Check your network connectivity and firewall settings",
+                        f"Visit {provider}'s documentation for troubleshooting",
+                    ]
+                )
 
         return result
 
@@ -314,11 +326,9 @@ class EnhancedConfigManager:
                     callback_results.append({"callback": callback.__name__, "status": "success"})
                 except Exception as e:
                     logger.error(f"Error in reload callback {callback.__name__}: {e}")
-                    callback_results.append({
-                        "callback": callback.__name__,
-                        "status": "error",
-                        "error": str(e)
-                    })
+                    callback_results.append(
+                        {"callback": callback.__name__, "status": "error", "error": str(e)}
+                    )
 
             elapsed = (datetime.now() - start_time).total_seconds() * 1000
             self._last_reload = datetime.now()
@@ -329,7 +339,7 @@ class EnhancedConfigManager:
                 "elapsed_ms": elapsed,
                 "changes": changes,
                 "validation": validation_results,
-                "callbacks": callback_results
+                "callbacks": callback_results,
             }
 
             logger.info(f"Configuration hot-reload completed in {elapsed:.2f}ms")
@@ -337,11 +347,7 @@ class EnhancedConfigManager:
 
         except Exception as e:
             logger.error(f"Error during configuration hot-reload: {e}")
-            return {
-                "status": "error",
-                "error": str(e),
-                "reloaded_at": datetime.now().isoformat()
-            }
+            return {"status": "error", "error": str(e), "reloaded_at": datetime.now().isoformat()}
 
     def _get_configured_providers(self) -> dict[str, dict[str, Any]]:
         """Get current provider configuration"""
@@ -354,22 +360,16 @@ class EnhancedConfigManager:
                     "api_key": api_key,
                     "base_url": settings.get_provider_endpoint(provider_name),
                     "models": settings.get_provider_models().get(provider_name, []),
-                    "connection_mode": settings.get_connection_mode()
+                    "connection_mode": settings.get_connection_mode(),
                 }
 
         return providers
 
     def _calculate_config_changes(
-        self,
-        old_providers: dict[str, Any],
-        new_providers: dict[str, Any]
+        self, old_providers: dict[str, Any], new_providers: dict[str, Any]
     ) -> dict[str, Any]:
         """Calculate changes between old and new provider configurations"""
-        changes = {
-            "added": [],
-            "removed": [],
-            "modified": []
-        }
+        changes = {"added": [], "removed": [], "modified": []}
 
         # Find added providers
         for provider in new_providers:
@@ -395,7 +395,7 @@ class EnhancedConfigManager:
             "valid_providers": [],
             "invalid_providers": [],
             "total_providers": len(providers),
-            "validation_errors": []
+            "validation_errors": [],
         }
 
         for provider_name, config in providers.items():
@@ -403,7 +403,7 @@ class EnhancedConfigManager:
                 provider=provider_name,
                 api_key=config.get("api_key"),
                 base_url=config.get("base_url"),
-                test_connectivity=True
+                test_connectivity=True,
             )
 
             if result["is_valid"]:
@@ -416,12 +416,7 @@ class EnhancedConfigManager:
 
     async def validate_proxy_mode_config(self) -> dict[str, Any]:
         """Validate proxy mode configuration (AIClient-2-API Server)"""
-        result = {
-            "is_valid": True,
-            "errors": [],
-            "warnings": [],
-            "recommendations": []
-        }
+        result = {"is_valid": True, "errors": [], "warnings": [], "recommendations": []}
 
         if settings.API_CONNECTION_MODE == APIConnectionMode.PROXY:
             proxy_url = settings.PROXY_MODE_ENDPOINT
@@ -432,20 +427,26 @@ class EnhancedConfigManager:
                     async with session.get(f"{proxy_url}/health") as response:
                         if response.status != 200:
                             result["is_valid"] = False
-                            result["errors"].append(f"Proxy server at {proxy_url} returned status {response.status}")
-                            result["recommendations"].extend([
-                                "Ensure AIClient-2-API Server is running on localhost:8080",
-                                "Check if the health endpoint is available",
-                                "Consider fallback to direct mode if proxy is unavailable"
-                            ])
+                            result["errors"].append(
+                                f"Proxy server at {proxy_url} returned status {response.status}"
+                            )
+                            result["recommendations"].extend(
+                                [
+                                    "Ensure AIClient-2-API Server is running on localhost:8080",
+                                    "Check if the health endpoint is available",
+                                    "Consider fallback to direct mode if proxy is unavailable",
+                                ]
+                            )
             except Exception as e:
                 result["is_valid"] = False
                 result["errors"].append(f"Cannot connect to proxy server at {proxy_url}: {e}")
-                result["recommendations"].extend([
-                    "Start AIClient-2-API Server on localhost:8080",
-                    "Check network connectivity",
-                    "Verify proxy configuration in environment variables"
-                ])
+                result["recommendations"].extend(
+                    [
+                        "Start AIClient-2-API Server on localhost:8080",
+                        "Check network connectivity",
+                        "Verify proxy configuration in environment variables",
+                    ]
+                )
 
         return result
 
@@ -459,16 +460,26 @@ class EnhancedConfigManager:
             "connection_mode": settings.get_connection_mode(),
             "proxy_config": {
                 "enabled": settings.API_CONNECTION_MODE == APIConnectionMode.PROXY,
-                "endpoint": settings.PROXY_MODE_ENDPOINT if hasattr(settings, 'PROXY_MODE_ENDPOINT') else None,
-                "health_check": settings.PROXY_MODE_HEALTH_CHECK if hasattr(settings, 'PROXY_MODE_HEALTH_CHECK') else None
+                "endpoint": (
+                    settings.PROXY_MODE_ENDPOINT
+                    if hasattr(settings, "PROXY_MODE_ENDPOINT")
+                    else None
+                ),
+                "health_check": (
+                    settings.PROXY_MODE_HEALTH_CHECK
+                    if hasattr(settings, "PROXY_MODE_HEALTH_CHECK")
+                    else None
+                ),
             },
-            "encryption_status": {}
+            "encryption_status": {},
         }
 
         # Check encryption status for each provider
         for provider_name, config in providers.items():
             api_key = config.get("api_key")
-            summary["encryption_status"][provider_name] = is_encrypted(api_key) if api_key else False
+            summary["encryption_status"][provider_name] = (
+                is_encrypted(api_key) if api_key else False
+            )
 
         return summary
 

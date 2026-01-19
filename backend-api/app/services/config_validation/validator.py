@@ -84,7 +84,10 @@ class ConfigurationValidator:
         (r"(?i)(api[_-]?key|apikey)\s*[:=]\s*['\"]?([a-zA-Z0-9_\-]{20,})", "API Key"),
         (r"(?i)(secret|password|passwd)\s*[:=]\s*['\"]?([^\s\"']{8,})", "Secret/Password"),
         (r"(?i)(token|auth[_-]?token)\s*[:=]\s*['\"]?([a-zA-Z0-9_\-\.]{20,})", "Token"),
-        (r"(?i)(aws[_-]?access[_-]?key[_-]?id)\s*[:=]\s*['\"]?(AKIA[A-Z0-9]{16})", "AWS Access Key"),
+        (
+            r"(?i)(aws[_-]?access[_-]?key[_-]?id)\s*[:=]\s*['\"]?(AKIA[A-Z0-9]{16})",
+            "AWS Access Key",
+        ),
         (
             r"(?i)(aws[_-]?secret[_-]?access[_-]?key)\s*[:=]\s*['\"]?([A-Za-z0-9/+=]{40})",
             "AWS Secret Key",

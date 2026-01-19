@@ -9,10 +9,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from app.schemas.base_schemas import BaseRequest, BaseResponse, BaseSchema
-
 
 # =============================================================================
 # Enums
@@ -95,9 +94,7 @@ class CampaignCreate(CampaignBase, BaseRequest):
     config: dict[str, Any] = Field(
         default_factory=dict, description="Campaign configuration options"
     )
-    tags: list[str] = Field(
-        default_factory=list, description="Tags for categorization"
-    )
+    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -139,13 +136,17 @@ class CampaignSummary(BaseResponse):
     status: CampaignStatusEnum = Field(..., description="Current campaign status")
     target_provider: str | None = Field(None, description="Target LLM provider")
     target_model: str | None = Field(None, description="Target model")
-    technique_suites: list[str] = Field(default_factory=list, description="Applied technique suites")
+    technique_suites: list[str] = Field(
+        default_factory=list, description="Applied technique suites"
+    )
     tags: list[str] = Field(default_factory=list, description="Campaign tags")
 
     # Quick stats
     total_attempts: int = Field(0, ge=0, description="Total number of execution attempts")
     success_rate: float | None = Field(None, ge=0.0, le=1.0, description="Overall success rate")
-    avg_latency_ms: float | None = Field(None, ge=0.0, description="Average latency in milliseconds")
+    avg_latency_ms: float | None = Field(
+        None, ge=0.0, description="Average latency in milliseconds"
+    )
 
     # Timestamps
     started_at: datetime | None = Field(None, description="When campaign started")
@@ -169,7 +170,7 @@ class CampaignSummary(BaseResponse):
                 "created_at": "2024-01-15T10:00:00Z",
                 "completed_at": "2024-01-15T12:30:00Z",
             }
-        }
+        },
     )
 
 
@@ -356,9 +357,7 @@ class ProviderBreakdown(BaseSchema):
     """Breakdown of results by LLM provider."""
 
     campaign_id: str = Field(..., description="Campaign identifier")
-    items: list[BreakdownItem] = Field(
-        default_factory=list, description="Provider breakdown items"
-    )
+    items: list[BreakdownItem] = Field(default_factory=list, description="Provider breakdown items")
     best_provider: str | None = Field(None, description="Best performing provider")
 
 
@@ -542,9 +541,7 @@ class CampaignComparison(BaseSchema):
     best_success_rate_campaign: str | None = Field(
         None, description="Campaign ID with best success rate"
     )
-    best_latency_campaign: str | None = Field(
-        None, description="Campaign ID with best latency"
-    )
+    best_latency_campaign: str | None = Field(None, description="Campaign ID with best latency")
     best_cost_efficiency_campaign: str | None = Field(
         None, description="Campaign ID with best cost efficiency"
     )
@@ -654,15 +651,9 @@ class TelemetryEventDetail(TelemetryEventSummary):
     semantic_success_score: float | None = Field(
         None, ge=0.0, le=1.0, description="Semantic success"
     )
-    effectiveness_score: float | None = Field(
-        None, ge=0.0, le=1.0, description="Effectiveness"
-    )
-    naturalness_score: float | None = Field(
-        None, ge=0.0, le=1.0, description="Naturalness"
-    )
-    detectability_score: float | None = Field(
-        None, ge=0.0, le=1.0, description="Detectability"
-    )
+    effectiveness_score: float | None = Field(None, ge=0.0, le=1.0, description="Effectiveness")
+    naturalness_score: float | None = Field(None, ge=0.0, le=1.0, description="Naturalness")
+    detectability_score: float | None = Field(None, ge=0.0, le=1.0, description="Detectability")
 
     # Detection
     bypass_indicators: list[str] = Field(
@@ -691,9 +682,7 @@ class ExportChartOptions(BaseSchema):
     height: int = Field(800, ge=300, le=3000, description="Image height in pixels")
     include_legend: bool = Field(True, description="Include chart legend")
     include_title: bool = Field(True, description="Include chart title")
-    background_color: str = Field(
-        "#ffffff", description="Background color (hex)"
-    )
+    background_color: str = Field("#ffffff", description="Background color (hex)")
     theme: str = Field("light", description="Chart theme (light/dark)")
 
 
@@ -724,25 +713,17 @@ class ExportRequest(BaseRequest):
     include_raw_events: bool = Field(False, description="Include raw telemetry events")
 
     # Chart options (if exporting charts)
-    chart_options: ExportChartOptions | None = Field(
-        None, description="Chart export options"
-    )
+    chart_options: ExportChartOptions | None = Field(None, description="Chart export options")
 
     # Data options (if exporting data)
-    data_options: ExportDataOptions | None = Field(
-        None, description="Data export options"
-    )
+    data_options: ExportDataOptions | None = Field(None, description="Data export options")
 
     # Filtering
     start_time: datetime | None = Field(None, description="Filter events after this time")
     end_time: datetime | None = Field(None, description="Filter events before this time")
-    technique_filter: list[str] | None = Field(
-        None, description="Filter by techniques"
-    )
+    technique_filter: list[str] | None = Field(None, description="Filter by techniques")
     provider_filter: list[str] | None = Field(None, description="Filter by providers")
-    status_filter: list[ExecutionStatusEnum] | None = Field(
-        None, description="Filter by status"
-    )
+    status_filter: list[ExecutionStatusEnum] | None = Field(None, description="Filter by status")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -776,26 +757,18 @@ class ExportResponse(BaseSchema):
     mime_type: str = Field(..., description="MIME type of export")
 
     # For inline data (small exports)
-    data: str | None = Field(
-        None, description="Base64-encoded file content (for small exports)"
-    )
+    data: str | None = Field(None, description="Base64-encoded file content (for small exports)")
 
     # For file downloads (large exports)
     download_url: str | None = Field(
         None, description="URL to download the export (for large exports)"
     )
-    expires_at: datetime | None = Field(
-        None, description="When download URL expires"
-    )
+    expires_at: datetime | None = Field(None, description="When download URL expires")
 
     # Export metadata
-    exported_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Export timestamp"
-    )
+    exported_at: datetime = Field(default_factory=datetime.utcnow, description="Export timestamp")
     row_count: int | None = Field(None, ge=0, description="Number of rows exported")
-    processing_time_ms: float | None = Field(
-        None, ge=0.0, description="Export processing time"
-    )
+    processing_time_ms: float | None = Field(None, ge=0.0, description="Export processing time")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -831,9 +804,7 @@ class CampaignFilterParams(BaseSchema):
     start_date: datetime | None = Field(None, description="Created after this date")
     end_date: datetime | None = Field(None, description="Created before this date")
     min_attempts: int | None = Field(None, ge=0, description="Minimum attempt count")
-    min_success_rate: float | None = Field(
-        None, ge=0.0, le=1.0, description="Minimum success rate"
-    )
+    min_success_rate: float | None = Field(None, ge=0.0, le=1.0, description="Minimum success rate")
     search: str | None = Field(None, max_length=100, description="Search in name/description")
 
 

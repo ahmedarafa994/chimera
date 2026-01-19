@@ -6,7 +6,7 @@ export enum LLMProvider {
 }
 
 export interface LLMModel {
-  id: number;
+  id: number | string;
   name: string;
   provider: LLMProvider;
   description?: string;

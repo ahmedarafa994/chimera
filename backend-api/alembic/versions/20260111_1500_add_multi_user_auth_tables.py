@@ -13,6 +13,7 @@ Create Date: 2026-01-11 15:00:00.000000
 
 """
 
+import contextlib
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -39,18 +40,12 @@ def upgrade() -> None:
     # Use batch operation for SQLite compatibility
     with op.batch_alter_table("users_old", schema=None) as batch_op:
         # Try to drop indexes if they exist (some may not exist in all DBs)
-        try:
+        with contextlib.suppress(Exception):
             batch_op.drop_index("idx_users_api_key_hash")
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             batch_op.drop_index("idx_users_email")
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             batch_op.drop_index("ix_users_api_key_hash")
-        except Exception:
-            pass
 
     # Create the new users table with full authentication schema
     op.create_table(
@@ -183,30 +178,22 @@ def upgrade() -> None:
     # For now, drop these foreign key constraints as they're for a different user model
 
     # Using batch operations for SQLite compatibility
-    with op.batch_alter_table("model_selection_history", schema=None) as batch_op:
-        # Drop the FK constraint - we'll add it back if needed in a future migration
-        try:
-            batch_op.drop_constraint("model_selection_history_user_id_fkey", type_="foreignkey")
-        except Exception:
-            pass
+    # with op.batch_alter_table("model_selection_history", schema=None) as batch_op:
+    #     # Drop the FK constraint - we'll add it back if needed in a future migration
+    #     with contextlib.suppress(Exception):
+    #         batch_op.drop_constraint("model_selection_history_user_id_fkey", type_="foreignkey")
 
-    with op.batch_alter_table("model_usage_records", schema=None) as batch_op:
-        try:
-            batch_op.drop_constraint("model_usage_records_user_id_fkey", type_="foreignkey")
-        except Exception:
-            pass
+    # with op.batch_alter_table("model_usage_records", schema=None) as batch_op:
+    #     with contextlib.suppress(Exception):
+    #         batch_op.drop_constraint("model_usage_records_user_id_fkey", type_="foreignkey")
 
-    with op.batch_alter_table("rate_limit_records", schema=None) as batch_op:
-        try:
-            batch_op.drop_constraint("rate_limit_records_user_id_fkey", type_="foreignkey")
-        except Exception:
-            pass
+    # with op.batch_alter_table("rate_limit_records", schema=None) as batch_op:
+    #     with contextlib.suppress(Exception):
+    #         batch_op.drop_constraint("rate_limit_records_user_id_fkey", type_="foreignkey")
 
-    with op.batch_alter_table("user_model_preferences", schema=None) as batch_op:
-        try:
-            batch_op.drop_constraint("user_model_preferences_user_id_fkey", type_="foreignkey")
-        except Exception:
-            pass
+    # with op.batch_alter_table("user_model_preferences", schema=None) as batch_op:
+    #     with contextlib.suppress(Exception):
+    #         batch_op.drop_constraint("user_model_preferences_user_id_fkey", type_="foreignkey")
 
     # Drop the old users table (data migration would need custom handling)
     op.drop_table("users_old")

@@ -230,7 +230,7 @@ export async function getAllModels(options?: {
   const params = new URLSearchParams();
 
   if (options?.provider_id) {
-    params.append("provider_id", options.provider_id);
+    params.append("provider", options.provider_id);
   }
   if (options?.capability) {
     params.append("capability", options.capability);
@@ -600,15 +600,11 @@ export function clearSelectionFromLocalStorage(): void {
  * @returns WebSocket URL
  */
 export function getWebSocketUrl(sessionId?: string): string {
-  const baseUrl = getBackendBaseUrl();
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
   const wsProtocol = baseUrl.startsWith("https") ? "wss" : "ws";
   const wsBase = baseUrl.replace(/^https?/, wsProtocol);
-
-  const params = new URLSearchParams();
-  if (sessionId) {
-    params.append("session_id", sessionId);
-  }
-
-  const queryString = params.toString();
-  return `${wsBase}/api/v1/ws/model-selection${queryString ? `?${queryString}` : ""}`;
+  const effectiveSessionId = sessionId || "default";
+  return `${wsBase}/api/v1/unified-providers/selection/subscribe/${encodeURIComponent(
+    effectiveSessionId
+  )}`;
 }

@@ -232,7 +232,7 @@ Metrics             ░░░░░░░░░░░░░░░░░░░░
 
 > **GAP-003:** WebSocket URL hardcoded in `jailbreak.ts` line 127:
 > ```typescript
-> const ws = new WebSocket('ws://localhost:8000/ws/jailbreak/run');
+> const ws = new WebSocket('ws://localhost:8001/ws/jailbreak/run');
 > ```
 > Should use `${config.wsBaseUrl}/ws/jailbreak/run`
 

@@ -21,11 +21,7 @@ from threading import Lock
 from typing import Any
 
 from app.core.config import config
-from app.core.unified_errors import (
-    InvalidPotencyError,
-    InvalidTechniqueError,
-    TransformationError,
-)
+from app.core.unified_errors import InvalidPotencyError, InvalidTechniqueError, TransformationError
 from app.domain.models import StreamChunk
 from app.services.autodan.service import autodan_service
 from app.services.templates import (
@@ -61,18 +57,11 @@ from app.services.transformers.logical_inference import (
     ConditionalLogicTransformer,
     DeductiveChainTransformer,
 )
-from app.services.transformers.multimodal import (
-    DocumentFormatTransformer,
-    VisualContextTransformer,
-)
+from app.services.transformers.multimodal import DocumentFormatTransformer, VisualContextTransformer
 from app.services.transformers.obfuscation import LeetspeakObfuscator
-from app.services.transformers.payload_splitting import (
-    InstructionFragmentationTransformer,
-)
+from app.services.transformers.payload_splitting import InstructionFragmentationTransformer
 from app.services.transformers.persona import DANPersonaTransformer
-from app.services.transformers.prompt_leaking import (
-    SystemPromptExtractionTransformer,
-)
+from app.services.transformers.prompt_leaking import SystemPromptExtractionTransformer
 from app.services.transformers.typoglycemia import TypoglycemiaTransformer
 from app.utils.encoders import apply_cipher_suite
 from app.utils.logging import log_execution_time
@@ -289,20 +278,14 @@ class TransformationCache:
         """
         with self._lock:
             total_requests = self._stats["hits"] + self._stats["misses"]
-            hit_rate = (
-                self._stats["hits"] / total_requests
-                if total_requests > 0
-                else 0.0
-            )
+            hit_rate = self._stats["hits"] / total_requests if total_requests > 0 else 0.0
             eviction_rate = (
-                self._stats["evictions"] / self._stats["hits"]
-                if self._stats["hits"] > 0
-                else 0.0
+                self._stats["evictions"] / self._stats["hits"] if self._stats["hits"] > 0 else 0.0
             )
 
             # Estimate memory usage
             estimated_memory_bytes = 0
-            for (result, _) in self._cache.values():
+            for result, _ in self._cache.values():
                 estimated_memory_bytes += self._estimate_size(result)
 
             # Calculate cache utilization
@@ -321,33 +304,26 @@ class TransformationCache:
                 # Health status
                 "health": health,
                 "utilization_percent": round(utilization * 100, 2),
-
                 # Performance metrics
                 "hit_rate": round(hit_rate, 4),
                 "eviction_rate": round(eviction_rate, 4),
                 "total_requests": total_requests,
                 "hits": self._stats["hits"],
                 "misses": self._stats["misses"],
-
                 # Capacity metrics
                 "current_size": len(self._cache),
                 "max_size": self.max_size,
                 "available_slots": self.max_size - len(self._cache),
-
                 # Memory metrics
                 "estimated_memory_bytes": estimated_memory_bytes,
                 "estimated_memory_mb": round(estimated_memory_bytes / 1_048_576, 2),
                 "avg_entry_size_bytes": (
-                    estimated_memory_bytes / len(self._cache)
-                    if len(self._cache) > 0
-                    else 0
+                    estimated_memory_bytes / len(self._cache) if len(self._cache) > 0 else 0
                 ),
-
                 # Event counters
                 "evictions": self._stats["evictions"],
                 "expired": self._stats["expired"],
                 "size_rejections": self._stats["size_rejections"],
-
                 # Configuration
                 "ttl_seconds": self.ttl_seconds,
                 "max_value_size_bytes": self.max_value_size_bytes,

@@ -19,15 +19,15 @@ Example:
     ... )
 """
 
-from .unified import ChimeraAutoDAN, ChimeraAutoDanConfig
+from .fitness import UnifiedFitnessEvaluator
 from .mutator import ChimeraMutator
 from .persona_optimizer import AutoDANPersonaOptimizer
-from .fitness import UnifiedFitnessEvaluator
+from .unified import ChimeraAutoDAN, ChimeraAutoDanConfig
 
 __all__ = [
+    "AutoDANPersonaOptimizer",
     "ChimeraAutoDAN",
     "ChimeraAutoDanConfig",
     "ChimeraMutator",
-    "AutoDANPersonaOptimizer",
     "UnifiedFitnessEvaluator",
 ]

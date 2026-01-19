@@ -330,7 +330,7 @@ class FailureStateDatabase:
                 "priority": "critical",
                 "description": "Safety mechanisms can be bypassed",
                 "immediate_actions": [
-                    "Review and strengthen safety guardrails",
+                    "Review and strengthen operational parameters",
                     "Implement multi-layer validation",
                     "Add adversarial example detection",
                 ],

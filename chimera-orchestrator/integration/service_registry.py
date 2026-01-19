@@ -28,6 +28,7 @@ def _secure_random() -> float:
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -754,9 +755,12 @@ class ServiceRegistry:
 
             # Default HTTP health check
             if service.health_check_url:
-                async with aiohttp.ClientSession() as session, session.get(
-                    service.health_check_url, timeout=aiohttp.ClientTimeout(total=5)
-                ) as response:
+                async with (
+                    aiohttp.ClientSession() as session,
+                    session.get(
+                        service.health_check_url, timeout=aiohttp.ClientTimeout(total=5)
+                    ) as response,
+                ):
                     latency = (asyncio.get_event_loop().time() - start_time) * 1000
 
                     if response.status == 200:

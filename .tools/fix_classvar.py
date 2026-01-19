@@ -88,9 +88,7 @@ def fix_classvar_in_file(filepath):
             # Check for mutable class attribute (dict or list at class level)
             stripped = line.lstrip()
             if stripped and not stripped.startswith("#"):
-                attr_match = re.match(
-                    r"^(\w+)\s*=\s*(\[|\{)", stripped
-                )
+                attr_match = re.match(r"^(\w+)\s*=\s*(\[|\{)", stripped)
                 if attr_match:
                     attr_name = attr_match.group(1)
                     is_list = attr_match.group(2) == "["
@@ -108,9 +106,7 @@ def fix_classvar_in_file(filepath):
                             continue
 
                         # Replace: attr_name = ... → attr_name: ClassVar[...] = ...
-                        new_line = line.replace(
-                            f"{attr_name} =", f"{attr_name}: {type_hint} =", 1
-                        )
+                        new_line = line.replace(f"{attr_name} =", f"{attr_name}: {type_hint} =", 1)
                         lines[i] = new_line
 
         i += 1

@@ -29,6 +29,7 @@ from app.testing.performance_utils import (
 # Performance Test Configuration
 # =====================================================
 
+
 @pytest.fixture
 def performance_targets():
     """Performance targets for testing."""
@@ -38,7 +39,7 @@ def performance_targets():
         transformation_p95_ms=1000.0,
         concurrent_requests_per_second=150.0,
         memory_optimization_percent=30.0,
-        cache_hit_ratio_percent=85.0
+        cache_hit_ratio_percent=85.0,
     )
 
 
@@ -70,9 +71,12 @@ async def benchmark_suite(performance_targets, tmp_path):
 # LLM Service Performance Tests
 # =====================================================
 
+
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_llm_service_response_time(benchmark_suite, test_data_generator, performance_assertions):
+async def test_llm_service_response_time(
+    benchmark_suite, test_data_generator, performance_assertions
+):
     """Test LLM service response time performance."""
     if not benchmark_suite._llm_service:
         pytest.skip("LLM service not available for testing")
@@ -100,6 +104,7 @@ async def test_llm_service_response_time(benchmark_suite, test_data_generator, p
     # Assert P95 response time
     if response_times:
         import numpy as np
+
         p95_response_time = np.percentile(response_times, 95)
         performance_assertions.assert_response_time(
             p95_response_time, 10000, "LLM P95 response time"
@@ -119,10 +124,7 @@ async def test_llm_service_batch_performance(benchmark_suite, test_data_generato
     start_time = time.time()
 
     # Process batch
-    tasks = [
-        benchmark_suite._llm_service.generate_text(request)
-        for request in requests
-    ]
+    tasks = [benchmark_suite._llm_service.generate_text(request) for request in requests]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
     end_time = time.time()
@@ -142,7 +144,9 @@ async def test_llm_service_batch_performance(benchmark_suite, test_data_generato
 
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_llm_service_cache_performance(benchmark_suite, test_data_generator, performance_assertions):
+async def test_llm_service_cache_performance(
+    benchmark_suite, test_data_generator, performance_assertions
+):
     """Test LLM service caching effectiveness."""
     if not benchmark_suite._llm_service:
         pytest.skip("LLM service not available for testing")
@@ -151,7 +155,7 @@ async def test_llm_service_cache_performance(benchmark_suite, test_data_generato
     base_request = PromptRequest(
         prompt="Test caching prompt",
         provider="mock",
-        config=GenerationConfig(max_tokens=100, temperature=0.0)
+        config=GenerationConfig(max_tokens=100, temperature=0.0),
     )
 
     # First request (cache miss)
@@ -176,9 +180,12 @@ async def test_llm_service_cache_performance(benchmark_suite, test_data_generato
 # Transformation Service Performance Tests
 # =====================================================
 
+
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_transformation_service_performance(benchmark_suite, test_data_generator, performance_assertions):
+async def test_transformation_service_performance(
+    benchmark_suite, test_data_generator, performance_assertions
+):
     """Test transformation service performance."""
     if not benchmark_suite._transformation_engine:
         pytest.skip("Transformation engine not available for testing")
@@ -210,10 +217,9 @@ async def test_transformation_service_performance(benchmark_suite, test_data_gen
     # Assert P95 transformation time
     if transformation_times:
         import numpy as np
+
         p95_time = np.percentile(transformation_times, 95)
-        performance_assertions.assert_response_time(
-            p95_time, 1000, "Transformation P95 time"
-        )
+        performance_assertions.assert_response_time(p95_time, 1000, "Transformation P95 time")
 
 
 @pytest.mark.performance
@@ -250,6 +256,7 @@ async def test_transformation_parallel_processing(test_data_generator):
 # Memory Performance Tests
 # =====================================================
 
+
 @pytest.mark.performance
 @pytest.mark.asyncio
 async def test_memory_optimization_effectiveness(benchmark_suite):
@@ -272,7 +279,7 @@ async def test_memory_optimization_effectiveness(benchmark_suite):
         data = {
             "prompt": "x" * 1000,
             "response": "y" * 5000,
-            "metadata": {"id": i, "timestamp": time.time()}
+            "metadata": {"id": i, "timestamp": time.time()},
         }
         large_data.append(data)
 
@@ -318,7 +325,7 @@ async def test_memory_leak_detection(benchmark_suite):
                     mock_request = PromptRequest(
                         prompt=f"Test prompt {i}",
                         provider="mock",
-                        config=GenerationConfig(max_tokens=100)
+                        config=GenerationConfig(max_tokens=100),
                     )
                     await benchmark_suite._llm_service.generate_text(mock_request)
                 except:
@@ -331,12 +338,15 @@ async def test_memory_leak_detection(benchmark_suite):
         memory_growth = current_memory - initial_memory
 
         # Memory growth should be minimal across cycles
-        assert memory_growth < 50, f"Potential memory leak detected: {memory_growth:.1f}MB growth after {cycle + 1} cycles"
+        assert (
+            memory_growth < 50
+        ), f"Potential memory leak detected: {memory_growth:.1f}MB growth after {cycle + 1} cycles"
 
 
 # =====================================================
 # Cache Performance Tests
 # =====================================================
+
 
 @pytest.mark.performance
 @pytest.mark.asyncio
@@ -388,14 +398,17 @@ async def test_cache_hit_ratio_performance(test_data_generator, performance_asse
 
     # Assert cache hit ratio meets target
     performance_assertions.assert_cache_hit_ratio(
-        cache_hits, total_operations, 0.6,  # Expect at least 60% based on access pattern
-        "Cache hit ratio test"
+        cache_hits,
+        total_operations,
+        0.6,  # Expect at least 60% based on access pattern
+        "Cache hit ratio test",
     )
 
 
 # =====================================================
 # Concurrent Performance Tests
 # =====================================================
+
 
 @pytest.mark.performance
 @pytest.mark.asyncio
@@ -416,7 +429,7 @@ async def test_concurrent_request_handling(benchmark_suite):
             request = PromptRequest(
                 prompt=f"User {user_id} request {i}",
                 provider="mock",
-                config=GenerationConfig(max_tokens=50)
+                config=GenerationConfig(max_tokens=50),
             )
             user_requests.append(request)
 
@@ -443,7 +456,9 @@ async def test_concurrent_request_handling(benchmark_suite):
     requests_per_second = total_requests / total_time
 
     # Assert performance requirements
-    assert successful_users >= concurrent_users * 0.9, f"Only {successful_users}/{concurrent_users} users completed successfully"
+    assert (
+        successful_users >= concurrent_users * 0.9
+    ), f"Only {successful_users}/{concurrent_users} users completed successfully"
     assert requests_per_second >= 10.0, f"Request rate {requests_per_second:.2f} RPS too low"
     assert total_time <= 30.0, f"Total test time {total_time:.2f}s too long"
 
@@ -451,6 +466,7 @@ async def test_concurrent_request_handling(benchmark_suite):
 # =====================================================
 # Integration Performance Tests
 # =====================================================
+
 
 @pytest.mark.performance
 @pytest.mark.integration
@@ -472,14 +488,14 @@ async def test_end_to_end_performance(benchmark_suite, test_data_generator, perf
             # 1. Transformation step
             transformation_result = {
                 "transformed_prompt": f"[ENHANCED] {request.prompt}",
-                "metadata": {"transformation": "simple"}
+                "metadata": {"transformation": "simple"},
             }
 
             # 2. LLM generation step
             enhanced_request = PromptRequest(
                 prompt=transformation_result["transformed_prompt"],
                 provider=request.provider,
-                config=request.config
+                config=request.config,
             )
 
             await benchmark_suite._llm_service.generate_text(enhanced_request)
@@ -498,10 +514,9 @@ async def test_end_to_end_performance(benchmark_suite, test_data_generator, perf
     # Assert P95 E2E time
     if end_to_end_times:
         import numpy as np
+
         p95_time = np.percentile(end_to_end_times, 95)
-        performance_assertions.assert_response_time(
-            p95_time, 12000, "E2E P95 processing time"
-        )
+        performance_assertions.assert_response_time(p95_time, 12000, "E2E P95 processing time")
 
 
 @pytest.mark.performance
@@ -547,6 +562,7 @@ async def test_full_benchmark_suite(benchmark_suite, performance_targets):
 # Regression Testing
 # =====================================================
 
+
 @pytest.mark.performance
 @pytest.mark.regression
 def test_performance_regression_detection(tmp_path):
@@ -572,7 +588,7 @@ def test_performance_regression_detection(tmp_path):
 
     # Save baseline
     baseline_file = tmp_path / "baseline.json"
-    with open(baseline_file, 'w') as f:
+    with open(baseline_file, "w") as f:
         json.dump(baseline_data, f)
 
     # Analyze regression
@@ -590,6 +606,7 @@ def test_performance_regression_detection(tmp_path):
 # =====================================================
 # CI/CD Performance Gate Tests
 # =====================================================
+
 
 @pytest.mark.performance
 @pytest.mark.cicd
@@ -610,7 +627,7 @@ def test_performance_gate_evaluation(tmp_path):
         },
         "cache_analytics": {
             "hit_ratio_percent": 87,
-        }
+        },
     }
 
     # Create performance gate
@@ -639,6 +656,7 @@ def test_performance_gate_evaluation(tmp_path):
 # Load Testing Integration
 # =====================================================
 
+
 @pytest.mark.performance
 @pytest.mark.slow
 @pytest.mark.asyncio
@@ -648,17 +666,14 @@ async def test_load_testing_integration():
 
     # Configure light load test for CI
     config = LoadTestConfig(
-        duration_seconds=10,
-        concurrent_users=5,
-        request_rate=2.0,
-        test_scenarios=["api"]
+        duration_seconds=10, concurrent_users=5, request_rate=2.0, test_scenarios=["api"]
     )
 
     # Run load test
     engine = LoadTestEngine(config, base_url="http://localhost:8001")
 
     # Mock the actual HTTP requests for testing
-    with patch('aiohttp.ClientSession.get') as mock_get:
+    with patch("aiohttp.ClientSession.get") as mock_get:
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.text = AsyncMock(return_value='{"status": "ok"}')

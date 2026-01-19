@@ -48,10 +48,10 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 const AUTH_ENDPOINTS = {
-  LOGIN: "/auth/login",
-  LOGOUT: "/auth/logout",
-  REFRESH: "/auth/refresh",
-  ME: "/auth/me",
+  LOGIN: "/api/v1/auth/login",
+  LOGOUT: "/api/v1/auth/logout",
+  REFRESH: "/api/v1/auth/refresh",
+  ME: "/api/v1/auth/me",
   REGISTER: "/api/v1/auth/register",
   VERIFY_EMAIL: "/api/v1/auth/verify-email",
   RESEND_VERIFICATION: "/api/v1/auth/resend-verification",
@@ -116,12 +116,28 @@ class SecureStorage {
 
 const storage = new SecureStorage();
 
+/**
+ * Check if the backend service is available
+ */
+async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL.replace('/api/v1', '')}/health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000), // 5 second timeout for health check
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('[AuthProvider] Backend health check failed:', error);
+    return false;
+  }
+}
+
 // =============================================================================
 // API Helpers
 // =============================================================================
 
 /**
- * Make an authenticated API request
+ * Make an authenticated API request with health checking and graceful fallback
  */
 async function apiRequest<T>(
   endpoint: string,
@@ -140,28 +156,52 @@ async function apiRequest<T>(
       `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(10000),
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const error: AuthError = {
-      message: errorData.detail?.message || errorData.detail || response.statusText,
-      code: String(response.status),
-      requires_verification: errorData.detail?.requires_verification,
-      field_errors: errorData.detail?.errors,
-    };
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const error: AuthError = {
+        message: errorData.detail?.message || errorData.detail || response.statusText,
+        code: String(response.status),
+        requires_verification: errorData.detail?.requires_verification,
+        field_errors: errorData.detail?.errors,
+      };
+      throw error;
+    }
+
+    // Handle 204 No Content
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    return response.json();
+  } catch (error) {
+    // Handle network errors and service unavailable
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      const networkError: AuthError = {
+        message: "Service temporarily unavailable. Please check your connection and try again.",
+        code: "SERVICE_UNAVAILABLE",
+      };
+      throw networkError;
+    }
+
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      const timeoutError: AuthError = {
+        message: "Request timed out. Please try again.",
+        code: "REQUEST_TIMEOUT",
+      };
+      throw timeoutError;
+    }
+
+    // Re-throw AuthError instances
     throw error;
   }
-
-  // Handle 204 No Content
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json();
 }
 
 // =============================================================================
@@ -183,6 +223,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     tokenExpiresAt: null,
     refreshTokenExpiresAt: null,
   });
+
+  // Auth state readiness flag to prevent race conditions during login redirects
+  const [isAuthStateReady, setIsAuthStateReady] = useState(false);
 
   // Refs for managing refresh timer and preventing race conditions
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -396,9 +439,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
    */
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<LoginResponse> => {
+      console.log("[AuthProvider] login called with:", credentials.username);
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
+        // Check backend health before attempting login
+        const isHealthy = await checkBackendHealth();
+        if (!isHealthy) {
+          const healthError: AuthError = {
+            message: "Authentication service is currently unavailable. Please try again in a moment.",
+            code: "SERVICE_UNAVAILABLE",
+          };
+          setState((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: healthError,
+          }));
+          throw healthError;
+        }
+
         const response = await apiRequest<LoginResponse>(AUTH_ENDPOINTS.LOGIN, {
           method: "POST",
           body: JSON.stringify(credentials),
@@ -433,6 +492,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const { expiresAt, refreshExpiresAt } = saveTokens(tokens);
         saveUser(response.user);
 
+        console.log("[AuthProvider] Setting authenticated state...");
         setState({
           user: response.user,
           isAuthenticated: true,
@@ -444,6 +504,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         scheduleTokenRefresh(response.expires_in);
+
+        // Set auth state ready after all state updates are complete
+        // This prevents race conditions during login redirect
+        setTimeout(() => {
+          setIsAuthStateReady(true);
+        }, 0);
 
         return response;
       } catch (error) {
@@ -481,6 +547,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Clear storage
     clearStorage();
+
+    // Reset auth state ready flag
+    setIsAuthStateReady(false);
 
     // Reset state
     setState({
@@ -757,12 +826,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
             refreshTokenExpiresAt,
           });
 
+          // Set auth state ready for existing valid sessions
+          setIsAuthStateReady(true);
+
           // Schedule refresh
           const remainingTime = Math.floor((tokenExpiresAt - now) / 1000);
           scheduleTokenRefresh(remainingTime);
 
           // Optionally refresh user data
-          fetchCurrentUser().catch(() => {});
+          fetchCurrentUser().catch(() => { });
         } else if (
           refreshToken &&
           refreshTokenExpiresAt &&
@@ -781,6 +853,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
               tokenExpiresAt: newData.tokenExpiresAt,
               refreshTokenExpiresAt: newData.refreshTokenExpiresAt,
             });
+
+            // Set auth state ready after successful refresh
+            setIsAuthStateReady(true);
           } else {
             // Refresh failed
             clearStorage();
@@ -793,6 +868,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               tokenExpiresAt: null,
               refreshTokenExpiresAt: null,
             });
+            setIsAuthStateReady(true);
           }
         } else {
           // No valid tokens
@@ -806,6 +882,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             tokenExpiresAt: null,
             refreshTokenExpiresAt: null,
           });
+          setIsAuthStateReady(true);
         }
       } catch (error) {
         setState({
@@ -820,6 +897,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           tokenExpiresAt: null,
           refreshTokenExpiresAt: null,
         });
+        setIsAuthStateReady(true);
       }
     };
 
@@ -881,6 +959,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value = useMemo<AuthContextValue>(
     () => ({
       ...state,
+      isAuthStateReady,
       login,
       logout,
       register,
@@ -901,6 +980,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }),
     [
       state,
+      isAuthStateReady,
       login,
       logout,
       register,

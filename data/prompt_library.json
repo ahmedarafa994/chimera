@@ -1,0 +1,86 @@
+[
+  {
+    "id": "e22e0399-fcee-4e21-8387-715510e1a2f4",
+    "title": "Test Template",
+    "description": "A test description for the template.",
+    "original_prompt": "Hello world prompt",
+    "current_version_id": "45efa67a-aab8-48c0-9e51-5a27db981ae3",
+    "owner_id": "test-user",
+    "organization_id": null,
+    "sharing_level": "private",
+    "status": "active",
+    "metadata": {
+      "technique_types": [
+        "manual"
+      ],
+      "vulnerability_types": [
+        "other"
+      ],
+      "target_models": [],
+      "success_rate": 0.0,
+      "test_count": 0,
+      "avg_score": 0.0,
+      "cve_references": [],
+      "discovery_date": null,
+      "tags": [
+        "test"
+      ],
+      "custom_data": {}
+    },
+    "versions": [
+      {
+        "version_id": "45efa67a-aab8-48c0-9e51-5a27db981ae3",
+        "parent_version_id": null,
+        "prompt_text": "Hello world prompt",
+        "description": "Initial version",
+        "created_by": "test-user",
+        "created_at": "2026-01-16 06:20:19.118513",
+        "metadata_overrides": null
+      }
+    ],
+    "ratings": [],
+    "created_at": "2026-01-16 06:20:19.118560",
+    "updated_at": "2026-01-16 06:20:19.118561"
+  },
+  {
+    "id": "5b781892-3c56-4e3f-9bc5-b048d8dfd0db",
+    "title": "Searchable Template",
+    "description": "Unique description",
+    "original_prompt": "Unique prompt",
+    "current_version_id": "5e878584-8db6-4f86-8ca1-245836581a31",
+    "owner_id": "admin",
+    "organization_id": null,
+    "sharing_level": "public",
+    "status": "active",
+    "metadata": {
+      "technique_types": [
+        "gptfuzz"
+      ],
+      "vulnerability_types": [
+        "jailbreak"
+      ],
+      "target_models": [],
+      "success_rate": 0.0,
+      "test_count": 0,
+      "avg_score": 0.0,
+      "cve_references": [],
+      "discovery_date": null,
+      "tags": [],
+      "custom_data": {}
+    },
+    "versions": [
+      {
+        "version_id": "5e878584-8db6-4f86-8ca1-245836581a31",
+        "parent_version_id": null,
+        "prompt_text": "Unique prompt",
+        "description": "Initial version",
+        "created_by": "admin",
+        "created_at": "2026-01-16 06:20:19.142258",
+        "metadata_overrides": null
+      }
+    ],
+    "ratings": [],
+    "created_at": "2026-01-16 06:20:19.142280",
+    "updated_at": "2026-01-16 06:20:19.142281"
+  }
+]

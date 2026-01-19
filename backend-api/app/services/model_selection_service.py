@@ -18,9 +18,8 @@ class ModelSelection(BaseModel):
 def _invalidate_provider_resolution_cache():
     """Invalidate the ProviderResolutionService cache when selection changes."""
     try:
-        from app.services.provider_resolution_service import (
-            get_provider_resolution_service,
-        )
+        from app.services.provider_resolution_service import get_provider_resolution_service
+
         service = get_provider_resolution_service()
         count = service.invalidate_cache()
         logger.debug(f"Invalidated {count} provider resolution cache entries")

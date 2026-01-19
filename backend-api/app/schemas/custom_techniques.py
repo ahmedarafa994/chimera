@@ -11,7 +11,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ==============================================================================
 # Enums
 # ==============================================================================
@@ -67,9 +66,7 @@ class ParameterSchema(BaseModel):
     default: Any = Field(default=None, description="Default value for the parameter")
     min_value: float | None = Field(default=None, description="Minimum value for numeric types")
     max_value: float | None = Field(default=None, description="Maximum value for numeric types")
-    enum_values: list[str] | None = Field(
-        default=None, description="Allowed values for enum type"
-    )
+    enum_values: list[str] | None = Field(default=None, description="Allowed values for enum type")
 
 
 # ==============================================================================
@@ -93,16 +90,14 @@ class TransformerPrimitive(BaseModel):
     id: str = Field(..., description="Unique identifier for the transformer")
     name: str = Field(..., description="Display name of the transformer")
     description: str = Field(..., description="Description of what the transformer does")
-    category: TransformerCategory = Field(
-        ..., description="Category of the transformer"
-    )
+    category: TransformerCategory = Field(..., description="Category of the transformer")
     parameters: list[ParameterSchema] = Field(
         default_factory=list, description="Parameter schema for this transformer"
     )
-    examples: list[str] | None = Field(
-        default=None, description="Example transformations"
+    examples: list[str] | None = Field(default=None, description="Example transformations")
+    is_available: bool = Field(
+        default=True, description="Whether the transformer is currently available"
     )
-    is_available: bool = Field(default=True, description="Whether the transformer is currently available")
 
 
 class TransformerPrimitiveList(BaseModel):
@@ -112,9 +107,7 @@ class TransformerPrimitiveList(BaseModel):
         ..., description="List of available transformer primitives"
     )
     total: int = Field(..., description="Total number of primitives")
-    categories: list[str] = Field(
-        default_factory=list, description="List of available categories"
-    )
+    categories: list[str] = Field(default_factory=list, description="List of available categories")
 
 
 # ==============================================================================
@@ -139,9 +132,7 @@ class TechniqueStep(BaseModel):
     name: str | None = Field(
         default=None, description="Custom name for this step (defaults to transformer name)"
     )
-    description: str | None = Field(
-        default=None, description="Custom description for this step"
-    )
+    description: str | None = Field(default=None, description="Custom description for this step")
     parameters: dict[str, Any] = Field(
         default_factory=dict, description="Parameter values for this step"
     )
@@ -231,16 +222,14 @@ class CustomTechniqueDefinition(BaseModel):
     tags: list[str] = Field(
         default_factory=list, max_length=10, description="Tags for categorization"
     )
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation timestamp"
-    )
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(
         default_factory=datetime.utcnow, description="Last update timestamp"
     )
-    usage_count: int = Field(default=0, ge=0, description="Number of times the technique has been used")
-    metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata"
+    usage_count: int = Field(
+        default=0, ge=0, description="Number of times the technique has been used"
     )
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class CustomTechniqueCreate(BaseModel):
@@ -270,14 +259,10 @@ class CustomTechniqueUpdate(BaseModel):
     steps: list[TechniqueStepCreate] | None = Field(
         default=None, description="Updated steps (replaces all existing steps)"
     )
-    visibility: TechniqueVisibility | None = Field(
-        default=None, description="Updated visibility"
-    )
+    visibility: TechniqueVisibility | None = Field(default=None, description="Updated visibility")
     team_id: str | None = Field(default=None, description="Updated team ID")
     tags: list[str] | None = Field(default=None, max_length=10, description="Updated tags")
-    version_notes: str | None = Field(
-        default=None, description="Notes for this version update"
-    )
+    version_notes: str | None = Field(default=None, description="Notes for this version update")
 
 
 class CustomTechniqueSummary(BaseModel):
@@ -298,9 +283,7 @@ class CustomTechniqueSummary(BaseModel):
 class CustomTechniqueList(BaseModel):
     """Response model for listing custom techniques."""
 
-    techniques: list[CustomTechniqueSummary] = Field(
-        ..., description="List of technique summaries"
-    )
+    techniques: list[CustomTechniqueSummary] = Field(..., description="List of technique summaries")
     total: int = Field(..., description="Total number of techniques")
     page: int = Field(default=1, ge=1, description="Current page number")
     page_size: int = Field(default=20, ge=1, le=100, description="Page size")
@@ -386,9 +369,7 @@ class TechniqueValidationError(BaseModel):
 
     field: str = Field(..., description="Field that has the error")
     message: str = Field(..., description="Error message")
-    step_order: int | None = Field(
-        default=None, description="Step order if error is step-specific"
-    )
+    step_order: int | None = Field(default=None, description="Step order if error is step-specific")
 
 
 class TechniqueValidationResult(BaseModel):
@@ -398,6 +379,4 @@ class TechniqueValidationResult(BaseModel):
     errors: list[TechniqueValidationError] = Field(
         default_factory=list, description="List of validation errors"
     )
-    warnings: list[str] = Field(
-        default_factory=list, description="List of validation warnings"
-    )
+    warnings: list[str] = Field(default_factory=list, description="List of validation warnings")

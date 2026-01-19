@@ -29,6 +29,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
+        # Skip rate limiting for auth endpoints (fix for login hang)
+        if request.url.path.startswith("/api/v1/auth"):
+            return await call_next(request)
+
         # Get client IP address
         client_ip = self._get_client_ip(request)
 

@@ -1,10 +1,12 @@
-from typing import List, Dict, Any
 import asyncio
 import logging
+from typing import Any
+
 from project_aegis.core.orchestrator.session_state import SessionState
 from project_aegis.core.prompt_engine.strategies.base import BaseStrategy
 
 logger = logging.getLogger("project_aegis.orchestrator")
+
 
 class CampaignManager:
     """
@@ -12,12 +14,14 @@ class CampaignManager:
     Orchestrates strategies, target models, and session state.
     """
 
-    def __init__(self, strategies: List[BaseStrategy], target_model_client: Any):
+    def __init__(self, strategies: list[BaseStrategy], target_model_client: Any):
         self.strategies = strategies
         self.target_model_client = target_model_client
-        self.sessions: List[SessionState] = []
+        self.sessions: list[SessionState] = []
 
-    async def run_single_turn_attack(self, base_instruct: str, strategy_name: str, n_candidates: int = 5) -> SessionState:
+    async def run_single_turn_attack(
+        self, base_instruct: str, strategy_name: str, n_candidates: int = 5
+    ) -> SessionState:
         """
         Runs a single-turn attack using a specific strategy.
         """

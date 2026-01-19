@@ -465,9 +465,7 @@ def circuit_breaker(
             except TimeoutError:
                 # PERF-001 FIX: Count timeouts as circuit breaker failures
                 breaker.record_failure()
-                logger.warning(
-                    f"Circuit breaker '{name}': operation timed out after {timeout}s"
-                )
+                logger.warning(f"Circuit breaker '{name}': operation timed out after {timeout}s")
                 raise
             except exceptions:
                 breaker.record_failure()

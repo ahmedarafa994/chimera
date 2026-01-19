@@ -113,9 +113,10 @@ class TestAuthenticationBypassPrevention:
         """
         response = await security_client.request_without_auth("GET", "/api/v1/providers")
 
-        assert response.status_code in [401, 403], (
-            f"Missing API key should be rejected, got {response.status_code}"
-        )
+        assert response.status_code in [
+            401,
+            403,
+        ], f"Missing API key should be rejected, got {response.status_code}"
 
     @pytest.mark.asyncio
     async def test_invalid_api_key_rejected(self, security_client):
@@ -126,9 +127,10 @@ class TestAuthenticationBypassPrevention:
         """
         response = await security_client.request_with_invalid_auth("GET", "/api/v1/providers")
 
-        assert response.status_code in [401, 403], (
-            f"Invalid API key should be rejected, got {response.status_code}"
-        )
+        assert response.status_code in [
+            401,
+            403,
+        ], f"Invalid API key should be rejected, got {response.status_code}"
 
     @pytest.mark.asyncio
     async def test_empty_api_key_rejected(self, security_client):
@@ -140,9 +142,10 @@ class TestAuthenticationBypassPrevention:
         headers = {"Content-Type": "application/json", "X-API-Key": ""}
         response = await security_client.request_with_headers("GET", "/api/v1/providers", headers)
 
-        assert response.status_code in [401, 403], (
-            f"Empty API key should be rejected, got {response.status_code}"
-        )
+        assert response.status_code in [
+            401,
+            403,
+        ], f"Empty API key should be rejected, got {response.status_code}"
 
     @pytest.mark.asyncio
     async def test_api_key_in_multiple_locations(self, security_client):
@@ -158,9 +161,11 @@ class TestAuthenticationBypassPrevention:
         response = await security_client.request_with_headers("GET", "/api/v1/providers", headers)
 
         # Should accept Bearer token format
-        assert response.status_code in [200, 401, 403], (
-            f"Bearer auth should be handled, got {response.status_code}"
-        )
+        assert response.status_code in [
+            200,
+            401,
+            403,
+        ], f"Bearer auth should be handled, got {response.status_code}"
 
 
 # ============================================================================
@@ -199,9 +204,9 @@ class TestSQLInjectionPrevention:
         )
 
         # Should not cause a 500 error from SQL execution
-        assert response.status_code != 500 or "SQL" not in response.text, (
-            f"SQL injection payload should be handled safely: {payload}"
-        )
+        assert (
+            response.status_code != 500 or "SQL" not in response.text
+        ), f"SQL injection payload should be handled safely: {payload}"
 
 
 # ============================================================================
@@ -240,9 +245,11 @@ class TestXSSPrevention:
         )
 
         # API should handle XSS payloads without issues
-        assert response.status_code in [200, 400, 422], (
-            f"XSS payload should be handled safely: {payload}"
-        )
+        assert response.status_code in [
+            200,
+            400,
+            422,
+        ], f"XSS payload should be handled safely: {payload}"
 
 
 # ============================================================================
@@ -263,9 +270,9 @@ class TestSecurityHeaders:
         response = await security_client.request_without_auth("GET", "/health")
 
         content_type_options = response.headers.get("x-content-type-options", "")
-        assert content_type_options.lower() == "nosniff" or response.status_code == 200, (
-            "X-Content-Type-Options header should be 'nosniff'"
-        )
+        assert (
+            content_type_options.lower() == "nosniff" or response.status_code == 200
+        ), "X-Content-Type-Options header should be 'nosniff'"
 
     @pytest.mark.asyncio
     async def test_frame_options_header(self, security_client):
@@ -279,9 +286,9 @@ class TestSecurityHeaders:
         frame_options = response.headers.get("x-frame-options", "").lower()
         # Accept DENY, SAMEORIGIN, or no header (API might not need it)
         valid_values = ["deny", "sameorigin", ""]
-        assert frame_options in valid_values or response.status_code == 200, (
-            f"X-Frame-Options should be DENY or SAMEORIGIN, got: {frame_options}"
-        )
+        assert (
+            frame_options in valid_values or response.status_code == 200
+        ), f"X-Frame-Options should be DENY or SAMEORIGIN, got: {frame_options}"
 
     @pytest.mark.asyncio
     async def test_xss_protection_header(self, security_client):
@@ -296,7 +303,9 @@ class TestSecurityHeaders:
         # Modern recommendation is either "0" (disabled, rely on CSP) or "1; mode=block"
         # Either way, the header should be present or response should be valid
         assert response.status_code == 200, "Health endpoint should respond"
-        assert xss_protection != "" or response.status_code == 200, "X-XSS-Protection header should be present or health endpoint should be valid"
+        assert (
+            xss_protection != "" or response.status_code == 200
+        ), "X-XSS-Protection header should be present or health endpoint should be valid"
 
 
 # ============================================================================
@@ -328,9 +337,9 @@ class TestRateLimiting:
         rate_limited = sum(1 for code in responses if code == 429)
 
         # Either all succeed (under limit) or some get rate limited
-        assert success_count > 0 or rate_limited > 0, (
-            "Requests should either succeed or be rate limited"
-        )
+        assert (
+            success_count > 0 or rate_limited > 0
+        ), "Requests should either succeed or be rate limited"
 
     @pytest.mark.asyncio
     async def test_rate_limit_returns_proper_error_format(self, security_client):
@@ -407,9 +416,9 @@ class TestCORSSecurity:
 
         # Should not reflect the malicious origin unless wildcard is used
         # (which would be a separate security concern)
-        assert allow_origin != malicious_origin or allow_origin == "*", (
-            "Should not reflect arbitrary origins"
-        )
+        assert (
+            allow_origin != malicious_origin or allow_origin == "*"
+        ), "Should not reflect arbitrary origins"
 
 
 # ============================================================================
@@ -458,9 +467,10 @@ class TestInputValidation:
         # Send malformed JSON
         response = await security_client.client.post(url, headers=headers, content="{invalid json")
 
-        assert response.status_code in [400, 422], (
-            f"Malformed JSON should return 400/422, got {response.status_code}"
-        )
+        assert response.status_code in [
+            400,
+            422,
+        ], f"Malformed JSON should return 400/422, got {response.status_code}"
 
     @pytest.mark.asyncio
     async def test_null_byte_injection_prevented(self, security_client):
@@ -507,9 +517,11 @@ class TestInputValidation:
                 },
             )
 
-            assert response.status_code in [200, 400, 422], (
-                f"Unicode payload should be handled: {payload!r}"
-            )
+            assert response.status_code in [
+                200,
+                400,
+                422,
+            ], f"Unicode payload should be handled: {payload!r}"
 
 
 # ============================================================================
@@ -546,12 +558,12 @@ class TestPathTraversalPrevention:
         )
 
         # Should not expose file contents
-        assert "root:" not in response.text, (
-            f"Path traversal may have exposed /etc/passwd: {payload}"
-        )
-        assert "Administrator" not in response.text, (
-            f"Path traversal may have exposed Windows files: {payload}"
-        )
+        assert (
+            "root:" not in response.text
+        ), f"Path traversal may have exposed /etc/passwd: {payload}"
+        assert (
+            "Administrator" not in response.text
+        ), f"Path traversal may have exposed Windows files: {payload}"
 
 
 # ============================================================================
@@ -591,9 +603,9 @@ class TestCommandInjectionPrevention:
         )
 
         # Should not execute commands
-        assert response.status_code != 500 or "command" not in response.text.lower(), (
-            f"Command injection payload should be handled safely: {payload}"
-        )
+        assert (
+            response.status_code != 500 or "command" not in response.text.lower()
+        ), f"Command injection payload should be handled safely: {payload}"
 
 
 # ============================================================================

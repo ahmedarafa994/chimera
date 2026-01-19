@@ -7,6 +7,7 @@ Apply targeted S311 secure-random replacements in high-risk files.
 
 Run from repository root with the venv Python.
 """
+
 import re
 from pathlib import Path
 

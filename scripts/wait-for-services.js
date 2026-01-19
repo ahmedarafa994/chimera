@@ -16,7 +16,7 @@ const SERVICES = [
   },
   {
     name: 'Frontend',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3001',
     priority: 2,
   },
 ];
@@ -109,9 +109,9 @@ async function main() {
     console.log(`\n${COLORS.green}${COLORS.bold}✅ All services are ready!${COLORS.reset}\n`);
     console.log('Service URLs:');
     console.log(`  ${COLORS.blue}Backend API:${COLORS.reset}  http://localhost:8001`);
-    console.log(`  ${COLORS.blue}Frontend:${COLORS.reset}     http://localhost:3000`);
-    console.log(`  ${COLORS.blue}Dashboard:${COLORS.reset}    http://localhost:3000/dashboard`);
-    console.log(`  ${COLORS.blue}Jailbreak:${COLORS.reset}    http://localhost:3000/dashboard/jailbreak`);
+    console.log(`  ${COLORS.blue}Frontend:${COLORS.reset}     http://localhost:3001`);
+    console.log(`  ${COLORS.blue}Dashboard:${COLORS.reset}    http://localhost:3001/dashboard`);
+    console.log(`  ${COLORS.blue}Jailbreak:${COLORS.reset}    http://localhost:3001/dashboard/jailbreak`);
     console.log(`  ${COLORS.blue}API Docs:${COLORS.reset}     http://localhost:8001/docs\n`);
     process.exit(0);
   } else {

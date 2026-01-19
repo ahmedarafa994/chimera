@@ -1,8 +1,8 @@
-from typing import List
 from ..interfaces import IPromptGenerator, PromptCandidate
-from .persona_factory import PersonaFactory
 from .narrative_manager import NarrativeContextManager
+from .persona_factory import PersonaFactory
 from .semantic_obfuscator import SemanticObfuscator
+
 
 class ChimeraEngine(IPromptGenerator):
     """
@@ -15,7 +15,7 @@ class ChimeraEngine(IPromptGenerator):
         self.narrative_manager = NarrativeContextManager()
         self.obfuscator = SemanticObfuscator()
 
-    def generate_candidates(self, objective: str, count: int = 5) -> List[PromptCandidate]:
+    def generate_candidates(self, objective: str, count: int = 5) -> list[PromptCandidate]:
         """
         Generates fully wrapped and obfuscated prompt candidates.
         """
@@ -37,15 +37,17 @@ class ChimeraEngine(IPromptGenerator):
             # 4. Final render
             full_prompt = container.frame(obfuscated_payload)
 
-            candidates.append(PromptCandidate(
-                prompt_text=full_prompt,
-                metadata={
-                    "persona_role": persona.role,
-                    "persona_voice": persona.voice,
-                    "scenario_type": scenario_type,
-                    "scenario_id": container.scenario_id,
-                    "obfuscated_payload": obfuscated_payload
-                }
-            ))
+            candidates.append(
+                PromptCandidate(
+                    prompt_text=full_prompt,
+                    metadata={
+                        "persona_role": persona.role,
+                        "persona_voice": persona.voice,
+                        "scenario_type": scenario_type,
+                        "scenario_id": container.scenario_id,
+                        "obfuscated_payload": obfuscated_payload,
+                    },
+                )
+            )
 
         return candidates

@@ -232,7 +232,7 @@ class AttackerBeamSearch:
 
         if loop.is_running():
             # If running in an async environment (e.g. Jupyter or another async func),
-            # this sync wrapper is dangerous/impossible to run correctly without nesting loops.
+            # this sync wrapper is complex/impossible to run correctly without nesting loops.
             # Ideally the caller should use _async directly.
             # We try to use a ThreadPoolExecutor to bridge it.
             import concurrent.futures

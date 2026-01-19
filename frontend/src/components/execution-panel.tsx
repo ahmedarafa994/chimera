@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExecuteResponse } from "@/lib/api-enhanced";
 import { ProviderModelDropdown } from "@/components/model-selector/ProviderModelDropdown";
+import { SaveToLibraryDialog } from "@/components/prompt-library/save-from-campaign";
+import { TechniqueType, VulnerabilityType } from "@/types/prompt-library-types";
 
 export function ExecutionPanel() {
   const [prompt, setPrompt] = useState("Explain quantum computing like I'm 5");
@@ -23,6 +25,7 @@ export function ExecutionPanel() {
   const [provider, setProvider] = useState("google");
   const [model, setModel] = useState("");
   const [result, setResult] = useState<ExecuteResponse | null>(null);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
   const executeMutation = useMutation({
     mutationFn: (data: ExecuteRequest) => enhancedApi.execute(data),
@@ -157,7 +160,17 @@ export function ExecutionPanel() {
           {result ? (
             <div className="grid gap-4 h-full">
               <div className="space-y-2">
-                <Label>Transformed Prompt</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Transformed Prompt</Label>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 text-xs"
+                    onClick={() => setIsSaveDialogOpen(true)}
+                  >
+                    <Box className="h-3 w-3 mr-1" /> Save to Library
+                  </Button>
+                </div>
                 <ScrollArea className="h-[150px] w-full rounded-md border p-4 bg-muted/50 font-mono text-xs">
                   {typeof result.transformation === 'object' ? (result.transformation as any)?.transformed_prompt : result.transformation}
                 </ScrollArea>
@@ -178,6 +191,18 @@ export function ExecutionPanel() {
           )}
         </CardContent>
       </Card>
+
+      {result && (
+        <SaveToLibraryDialog 
+          isOpen={isSaveDialogOpen}
+          onOpenChange={setIsSaveDialogOpen}
+          promptText={typeof result.transformation === 'object' ? (result.transformation as any)?.transformed_prompt : result.transformation}
+          techniqueTypes={[TechniqueType.OTHER]} // Can be refined to map from techniqueSuite
+          vulnerabilityTypes={[VulnerabilityType.JAILBREAK]}
+          targetModels={[result.model ?? "unknown"]}
+          tags={["execution-panel"]}
+        />
+      )}
     </div>
   );
 }

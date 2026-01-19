@@ -14,7 +14,9 @@ sys.path.append(os.path.join(os.getcwd(), "backend-api"))
 
 # Mock config to avoid loading full app context
 class MockTransformationConfig:
-    technique_suites: ClassVar[dict] = {"gradient_injection": {"transformers": ["GradientOptimizerEngine"]}}
+    technique_suites: ClassVar[dict] = {
+        "gradient_injection": {"transformers": ["GradientOptimizerEngine"]}
+    }
     min_potency: ClassVar[int] = 1
     max_potency: ClassVar[int] = 10
     potency_prefixes: ClassVar[dict] = {}

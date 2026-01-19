@@ -19,7 +19,7 @@ def create_app(config_name="default"):
     # SECURE CORS: Use environment variables for allowed origins
     allowed_origins = os.getenv(
         "ALLOWED_ORIGINS",
-        "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080",
+        "http://localhost:3001,http://localhost:8080,http://127.0.0.1:3001,http://127.0.0.1:8080",
     ).split(",")
     cors.init_app(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
 
@@ -28,7 +28,6 @@ def create_app(config_name="default"):
     # before db.create_all()
     from app import models
     from app.routes.api import api_bp
-
     # Register Blueprints
     from app.routes.main import main_bp
 

@@ -232,11 +232,7 @@ def _setup_config_hot_reload(llm_service, ProviderFactory):
 
             if added or modified:
                 logger.info("Re-registering affected providers...")
-                _reregister_providers(
-                    llm_service,
-                    ProviderFactory,
-                    added + modified
-                )
+                _reregister_providers(llm_service, ProviderFactory, added + modified)
 
         _config_manager.register_reload_callback(on_config_reload)
         logger.info("Configuration hot-reload callback registered")
@@ -320,13 +316,10 @@ async def _setup_proxy_mode(llm_service, ProviderFactory):
         if health_status.is_healthy:
             logger.info("Proxy server is healthy and reachable")
         else:
-            logger.warning(
-                f"Proxy server initial health check failed: {health_status.error}"
-            )
+            logger.warning(f"Proxy server initial health check failed: {health_status.error}")
             if not settings.PROXY_MODE_FALLBACK_TO_DIRECT:
                 raise RuntimeError(
-                    "Proxy mode enabled but proxy server is unavailable "
-                    "and fallback is disabled"
+                    "Proxy mode enabled but proxy server is unavailable " "and fallback is disabled"
                 )
 
         # Start health monitoring
@@ -335,6 +328,7 @@ async def _setup_proxy_mode(llm_service, ProviderFactory):
 
         # Get the health monitor instance
         from app.infrastructure.proxy.proxy_health import get_health_monitor
+
         _proxy_health_monitor = get_health_monitor()
 
         # Register proxy service
@@ -394,7 +388,7 @@ async def trigger_config_reload() -> dict:
     if _config_manager is None:
         return {
             "status": "error",
-            "message": "Config manager not initialized or hot-reload disabled"
+            "message": "Config manager not initialized or hot-reload disabled",
         }
 
     try:
@@ -402,10 +396,7 @@ async def trigger_config_reload() -> dict:
         return result
     except Exception as e:
         logger.error(f"Error during config reload: {e}")
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+        return {"status": "error", "message": str(e)}
 
 
 async def _setup_integration_health_monitoring():
@@ -434,9 +425,7 @@ async def _setup_integration_health_monitoring():
         _integration_health_service = get_health_service()
 
         # Register health change callback for circuit breaker integration
-        def on_health_change(
-            provider_name: str, old_status, new_status
-        ):
+        def on_health_change(provider_name: str, old_status, new_status):
             """Callback when provider health status changes."""
             from app.services.integration_health_service import HealthStatus
 

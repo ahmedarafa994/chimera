@@ -101,12 +101,12 @@ import {
 import type {
   CampaignSummary,
   CampaignStatistics,
-  TimeGranularity,
   TelemetryFilterParams,
   TelemetryTimeSeries,
   TechniqueBreakdown,
   ProviderBreakdown,
 } from "@/types/campaign-analytics";
+import { TimeGranularity, ExecutionStatusEnum } from "@/types/campaign-analytics";
 
 // =============================================================================
 // Types
@@ -198,7 +198,7 @@ const DASHBOARD_TABS: TabConfig[] = [
 /**
  * Default time granularity for time series.
  */
-const DEFAULT_GRANULARITY: TimeGranularity = "hour";
+const DEFAULT_GRANULARITY: TimeGranularity = TimeGranularity.HOUR;
 
 // =============================================================================
 // Sub-Components
@@ -287,8 +287,8 @@ function DashboardHeader({
           {showExportPanel && selectedCampaignId && (
             <ExportPanelSheet
               charts={[]}
-              data={[]}
-              campaignName={campaignSummary?.name || "campaign"}
+              dataExports={[]}
+              filename={campaignSummary?.name || "campaign"}
             />
           )}
         </div>
@@ -457,13 +457,19 @@ function OverviewTabContent({
               <TechniqueEffectivenessChartEmpty />
             ) : (
               <TechniqueEffectivenessChart
-                breakdown={techniqueBreakdown}
+                data={techniqueBreakdown?.items?.map(item => ({
+                  technique: item.name,
+                  displayName: item.name,
+                  attempts: item.attempts,
+                  successes: item.successes,
+                  failures: item.attempts - item.successes,
+                  successRate: item.success_rate,
+                  avgLatencyMs: item.avg_latency_ms || 0,
+                  avgTokens: item.avg_tokens || 0,
+                  avgCost: (item.total_cost_cents || 0) / 100,
+                })) || []}
                 height={180}
-                showViewModeToggle={false}
-                showSortControls={false}
-                showFilterControls={false}
-                showDownloadButton={false}
-                initialViewMode="bar"
+                viewMode="bar"
               />
             )}
           </CardContent>
@@ -560,12 +566,19 @@ function ChartsTabContent({
               <TechniqueEffectivenessChartEmpty />
             ) : (
               <TechniqueEffectivenessChart
-                breakdown={techniqueBreakdown}
+                data={techniqueBreakdown?.items?.map(item => ({
+                  technique: item.name,
+                  displayName: item.name,
+                  attempts: item.attempts,
+                  successes: item.successes,
+                  failures: item.attempts - item.successes,
+                  successRate: item.success_rate,
+                  avgLatencyMs: item.avg_latency_ms || 0,
+                  avgTokens: item.avg_tokens || 0,
+                  avgCost: (item.total_cost_cents || 0) / 100,
+                })) || []}
                 height={300}
-                showViewModeToggle
-                showSortControls
-                showFilterControls
-                showDownloadButton
+                viewMode="bar"
               />
             )}
           </CardContent>
@@ -705,7 +718,14 @@ function RawDataTabContent({
       provider: filters.providers.length > 0 ? filters.providers : undefined,
       status: filters.successStatus.includes("all")
         ? undefined
-        : (filters.successStatus as ("success" | "failure" | "partial")[]),
+        : (filters.successStatus.map(status => {
+            switch (status) {
+              case "success": return ExecutionStatusEnum.SUCCESS;
+              case "failure": return ExecutionStatusEnum.FAILURE;
+              case "partial": return ExecutionStatusEnum.PARTIAL_SUCCESS;
+              default: return ExecutionStatusEnum.SUCCESS;
+            }
+          })),
       start_time: filters.dateRange.start?.toISOString(),
       end_time: filters.dateRange.end?.toISOString(),
     };
@@ -980,7 +1000,7 @@ export function CampaignAnalyticsDashboard({
 
   const handleRefresh = useCallback(() => {
     if (selectedCampaignId) {
-      invalidateCache(selectedCampaignId);
+      invalidateCache.mutate(selectedCampaignId);
       refetchSummary();
       refetchStats();
       refetchTimeSeries();
@@ -1189,5 +1209,5 @@ export function SimpleCampaignAnalyticsDashboard(
 
 export default CampaignAnalyticsDashboard;
 
-// Export types for external use
-export type { FilterState, DashboardTab, TabConfig };
+// Export types for external use (Note: These types are already exported where they're defined)
+// export type { FilterState, DashboardTab, TabConfig };

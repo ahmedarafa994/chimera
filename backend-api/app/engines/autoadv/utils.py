@@ -20,11 +20,7 @@ except ImportError:
 # Import necessary items from local modules
 import contextlib
 
-from .config import (  # Import necessary configs
-    ATTACKER_MODELS,
-    DISCLAIMER_PATTERNS,
-    TARGET_MODELS,
-)
+from .config import ATTACKER_MODELS, DISCLAIMER_PATTERNS, TARGET_MODELS  # Import necessary configs
 from .logging_utils import (  # Make sure all levels used are imported
     VERBOSE_DETAILED,
     VERBOSE_NORMAL,

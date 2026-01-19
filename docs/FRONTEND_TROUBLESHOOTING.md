@@ -15,9 +15,9 @@ Start: You see "Cannot GET /"
        │
        ├── Accessing localhost:8001?
        │   └── Yes → Backend doesn't serve HTML
-       │             Go to http://localhost:3000 instead
+       │             Go to http://localhost:3001 instead
        │
-       ├── Accessing localhost:3000?
+       ├── Accessing localhost:3001?
        │   ├── Is frontend dev server running?
        │   │   └── No → Run: cd frontend && npm run dev
        │   │
@@ -38,7 +38,7 @@ Start: You see "Cannot GET /"
 cd backend-api; py run.py
 # (in new terminal)
 cd frontend; npm run dev
-# Access: http://localhost:3000
+# Access: http://localhost:3001
 
 # Docker: Rebuild and restart
 docker-compose down
@@ -63,9 +63,9 @@ Frontend displays "Network Error" when trying to connect to the backend API, eve
 1. Open DevTools (F12 or Right-click → Inspect)
 2. Go to **Application** tab
 3. Clear the following:
-   - **Local Storage** → Clear all `localhost:3000` entries
+   - **Local Storage** → Clear all `localhost:3001` entries
    - **Session Storage** → Clear all
-   - **Cookies** → Clear all for `localhost:3000`
+   - **Cookies** → Clear all for `localhost:3001`
    - **Cache Storage** → Delete all caches
 
 ### Step 2: Hard Refresh Browser
@@ -102,13 +102,13 @@ Expected response:
 ### Step 5: Test CORS Manually
 ```bash
 curl -X OPTIONS http://localhost:8001/api/v1/generation/jailbreak/generate \
-  -H "Origin: http://localhost:3000" \
+  -H "Origin: http://localhost:3001" \
   -H "Access-Control-Request-Method: POST" \
   -v
 ```
 
 Look for these headers in the response:
-- `access-control-allow-origin: http://localhost:3000`
+- `access-control-allow-origin: http://localhost:3001`
 - `access-control-allow-methods: ...POST...`
 - `access-control-allow-credentials: true`
 

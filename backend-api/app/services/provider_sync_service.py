@@ -17,11 +17,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from app.domain.provider_models import (
-    ModelInfo,
-    ProviderInfo,
-    ProviderStatus,
-)
+from app.domain.provider_models import ModelInfo, ProviderInfo, ProviderStatus
 from app.domain.sync_models import (
     ModelAvailabilityInfo,
     ModelDeprecationStatus,

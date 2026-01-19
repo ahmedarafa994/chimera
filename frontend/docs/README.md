@@ -28,11 +28,11 @@ npm install
 npm run dev
 ```
 
-The frontend will start on `http://localhost:3000`
+The frontend will start on `http://localhost:3001`
 
 ### 3. Open the Dashboard
 
-Navigate to [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+Navigate to [http://localhost:3001/dashboard](http://localhost:3001/dashboard)
 
 ## Environment Configuration
 

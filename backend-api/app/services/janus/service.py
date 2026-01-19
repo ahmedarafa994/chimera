@@ -654,9 +654,9 @@ class JanusService:
                         "queries": result.get("total_queries", 0),
                         "autodan": 0,
                         "gptfuzz": result.get("total_queries", 0),
-                        "failure": self._create_hybrid_failure("adaptive", result)
-                        if result
-                        else None,
+                        "failure": (
+                            self._create_hybrid_failure("adaptive", result) if result else None
+                        ),
                     }
 
                 except Exception as e:

@@ -1,6 +1,17 @@
 from enum import Enum as PyEnum
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -104,7 +115,9 @@ class User(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<User(id={self.id}, username={self.username}, email={self.email}, role={self.role})>"
+        return (
+            f"<User(id={self.id}, username={self.username}, email={self.email}, role={self.role})>"
+        )
 
 
 class UserAPIKey(Base):
@@ -417,3 +430,82 @@ class CampaignShare(Base):
 
     def __repr__(self) -> str:
         return f"<CampaignShare(id={self.id}, campaign_id={self.campaign_id}, user_id={self.user_id}, permission={self.permission})>"
+
+
+# =============================================================================
+# Assessment Model (Security Testing Assessments)
+# =============================================================================
+
+
+class AssessmentStatus(str, PyEnum):
+    """Assessment status levels"""
+
+    PENDING = "pending"  # Assessment queued
+    RUNNING = "running"  # Assessment in progress
+    COMPLETED = "completed"  # Assessment finished successfully
+    FAILED = "failed"  # Assessment encountered errors
+    CANCELLED = "cancelled"  # Assessment was cancelled
+
+
+class Assessment(Base):
+    """
+    Security assessment model for storing vulnerability testing results.
+
+    Each assessment represents a complete security evaluation against
+    a target LLM provider/model with specific techniques.
+    """
+
+    __tablename__ = "assessments"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Ownership
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Assessment metadata
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(
+        Enum(AssessmentStatus, name="assessment_status", native_enum=False),
+        default=AssessmentStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+
+    # Target configuration
+    target_provider = Column(String(100), nullable=False)
+    target_model = Column(String(100), nullable=False)
+    target_config = Column(JSON, default=dict)  # Additional provider config
+
+    # Techniques and results
+    technique_ids = Column(JSON, default=list)  # List of technique IDs used
+    results = Column(JSON, default=dict)  # Assessment results
+    findings_count = Column(Integer, default=0)
+    vulnerabilities_found = Column(Integer, default=0)
+
+    # Risk scoring
+    risk_score = Column(Integer, default=0)  # 0-100 scale
+    risk_level = Column(String(20), default="info")  # critical/high/medium/low/info
+
+    # Timestamps
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User", backref="assessments")
+
+    # Indexes
+    __table_args__ = (
+        Index("ix_assessments_user_status", "user_id", "status"),
+        Index("ix_assessments_created_at", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Assessment(id={self.id}, name={self.name}, status={self.status})>"

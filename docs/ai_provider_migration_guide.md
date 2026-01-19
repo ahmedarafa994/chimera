@@ -583,10 +583,10 @@ systemctl restart chimera-api
 
 ```bash
 # Check health
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 
 # Test generation
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -d '{"prompt": "test"}'
 ```
 
@@ -621,7 +621,7 @@ rm -f app/config/providers.yaml
 systemctl restart chimera-api
 
 # Verify
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 ### Rollback Checklist

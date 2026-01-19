@@ -516,6 +516,7 @@ class SelectionModel(Base):
     - Session expiration support via expires_at
     - Source tracking for audit purposes
     """
+
     __tablename__ = "selections"
 
     # Composite primary key (both nullable to support different selection types)
@@ -532,7 +533,7 @@ class SelectionModel(Base):
     version = Column(Integer, default=1, nullable=False)
 
     # Flexible metadata storage (JSON/JSONB)
-    metadata = Column(JSON, default=dict, nullable=False)
+    selection_metadata = Column(JSON, default=dict, nullable=False)
 
     # Source of the selection (frontend, backend, migration, default)
     source = Column(String(50), default="unknown", nullable=False)
@@ -542,12 +543,7 @@ class SelectionModel(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-        nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Indexes for efficient lookups
     __table_args__ = (

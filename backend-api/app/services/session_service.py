@@ -18,16 +18,10 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from app.core.config import settings
 from app.core.logging import logger
-from app.core.session_backend import (
-    InMemorySessionBackend,
-    RedisSessionBackend,
-    SessionBackend,
-)
+from app.core.session_backend import InMemorySessionBackend, RedisSessionBackend, SessionBackend
 
 if TYPE_CHECKING:
-    from app.services.global_model_selection_state import (
-        GlobalModelSelectionState,
-    )
+    from app.services.global_model_selection_state import GlobalModelSelectionState
 
 
 @dataclass
@@ -96,7 +90,7 @@ class SessionService:
 
         self._backend: SessionBackend | None = None
         self._use_redis = False
-        self._global_selection_state: "GlobalModelSelectionState | None" = None
+        self._global_selection_state: GlobalModelSelectionState | None = None
         self._initialize_master_list()
         self._initialize_backend()
         self._initialize_global_selection_state()
@@ -113,13 +107,10 @@ class SessionService:
         selections and the global selection state.
         """
         try:
-            from app.services.global_model_selection_state import (
-                GlobalModelSelectionState,
-            )
+            from app.services.global_model_selection_state import GlobalModelSelectionState
+
             self._global_selection_state = GlobalModelSelectionState.get_instance()
-            logger.info(
-                "SessionService connected to GlobalModelSelectionState"
-            )
+            logger.info("SessionService connected to GlobalModelSelectionState")
         except Exception as e:
             logger.warning(
                 f"Failed to connect to GlobalModelSelectionState: {e}. "
@@ -330,6 +321,23 @@ class SessionService:
                 return (provider, default.id)
         return (self._default_provider, self._default_model)
 
+    def set_default_model(self, provider: str, model: str | None = None) -> tuple[str, str]:
+        """Update the global default provider/model."""
+        if not provider:
+            raise ValueError("Provider is required")
+
+        if model is None:
+            provider, model = self.get_default_model(provider)
+        else:
+            is_valid, message, fallback = self.validate_model(provider, model)
+            if not is_valid:
+                raise ValueError(message)
+
+        self._default_provider = provider
+        self._default_model = model
+        logger.info(f"Updated defaults: provider={provider}, model={model}")
+        return (provider, model)
+
     # Session Management Methods
 
     def _session_to_dict(self, session: UserSession) -> dict:
@@ -528,9 +536,7 @@ class SessionService:
         # UNIFIED-PROVIDER: Sync with GlobalModelSelectionState
         await self._sync_selection_to_global_state(session_id, provider, model)
 
-        logger.info(
-            f"Session {session_id} updated: provider={provider}, model={model}"
-        )
+        logger.info(f"Session {session_id} updated: provider={provider}, model={model}")
         return (True, "Model selection updated successfully", session)
 
     async def _sync_selection_to_global_state(
@@ -554,10 +560,7 @@ class SessionService:
             return
 
         try:
-            from app.services.global_model_selection_state import (
-                ModelSelection,
-                SelectionScope,
-            )
+            from app.services.global_model_selection_state import ModelSelection, SelectionScope
 
             selection = ModelSelection(
                 provider=provider,
@@ -572,13 +575,10 @@ class SessionService:
             )
 
             logger.debug(
-                f"Synced session {session_id} selection to global state: "
-                f"{provider}/{model}"
+                f"Synced session {session_id} selection to global state: " f"{provider}/{model}"
             )
         except Exception as e:
-            logger.warning(
-                f"Failed to sync session selection to global state: {e}"
-            )
+            logger.warning(f"Failed to sync session selection to global state: {e}")
 
     async def load_session_selection_to_context(
         self,
@@ -606,9 +606,7 @@ class SessionService:
         # Set as request context if global state is available
         if self._global_selection_state:
             try:
-                from app.services.global_model_selection_state import (
-                    SelectionContextData,
-                )
+                from app.services.global_model_selection_state import SelectionContextData
 
                 context = SelectionContextData(
                     provider=provider,
@@ -624,9 +622,7 @@ class SessionService:
                     f"context: {provider}/{model}"
                 )
             except Exception as e:
-                logger.warning(
-                    f"Failed to set request context from session: {e}"
-                )
+                logger.warning(f"Failed to set request context from session: {e}")
 
         return (provider, model)
 

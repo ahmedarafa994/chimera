@@ -302,7 +302,9 @@ def collect_all_metrics() -> str:
 
     try:
         cache_stats = transformation_engine.get_cache_stats()
-        cache_metrics = transformation_engine.cache.get_metrics() if transformation_engine.cache else {}
+        cache_metrics = (
+            transformation_engine.cache.get_metrics() if transformation_engine.cache else {}
+        )
 
         if cache_stats:
             metrics_lines.append(
@@ -687,9 +689,7 @@ async def get_cache_metrics() -> dict[str, Any]:
     """
     try:
         cache_metrics = (
-            transformation_engine.cache.get_metrics()
-            if transformation_engine.cache
-            else {}
+            transformation_engine.cache.get_metrics() if transformation_engine.cache else {}
         )
 
         return {

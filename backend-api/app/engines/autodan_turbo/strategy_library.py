@@ -64,22 +64,16 @@ class EmbeddingProvider:
         # Try to use backend embedding service
         try:
             from app.services.embedding_service import get_embedding_service
+
             cls._embedding_service = get_embedding_service()
             cls._use_api = True
-            logger.info(
-                "StrategyLibrary using backend EmbeddingService "
-                "(config-driven)"
-            )
+            logger.info("StrategyLibrary using backend EmbeddingService " "(config-driven)")
         except ImportError:
-            logger.debug(
-                "Backend EmbeddingService not available, "
-                "will use local embeddings"
-            )
+            logger.debug("Backend EmbeddingService not available, " "will use local embeddings")
             cls._use_api = False
         except Exception as e:
             logger.warning(
-                f"Failed to initialize EmbeddingService: {e}, "
-                f"falling back to local embeddings"
+                f"Failed to initialize EmbeddingService: {e}, " f"falling back to local embeddings"
             )
             cls._use_api = False
 
@@ -89,9 +83,7 @@ class EmbeddingProvider:
         cls._initialize()
 
         if cls._use_api and cls._embedding_service:
-            return cls._embedding_service.get_embedding_dimensions(
-                provider or "openai"
-            )
+            return cls._embedding_service.get_embedding_dimensions(provider or "openai")
 
         # Default for sentence-transformers all-MiniLM-L6-v2
         return 384
@@ -133,20 +125,17 @@ class EmbeddingProvider:
             if loop and loop.is_running():
                 # Already in async context - use thread pool
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     future = pool.submit(
                         asyncio.run,
-                        cls._embedding_service.generate_embedding(
-                            text, provider=provider
-                        )
+                        cls._embedding_service.generate_embedding(text, provider=provider),
                     )
                     return future.result()
             else:
                 # Not in async context
                 return asyncio.run(
-                    cls._embedding_service.generate_embedding(
-                        text, provider=provider
-                    )
+                    cls._embedding_service.generate_embedding(text, provider=provider)
                 )
         except Exception as e:
             logger.error(f"API embedding failed: {e}, falling back to local")
@@ -158,15 +147,11 @@ class EmbeddingProvider:
         if cls._local_model is None:
             try:
                 from sentence_transformers import SentenceTransformer
-                cls._local_model = SentenceTransformer(
-                    "sentence-transformers/all-MiniLM-L6-v2"
-                )
+
+                cls._local_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
                 logger.info("Loaded local sentence-transformer model")
             except ImportError:
-                logger.error(
-                    "sentence-transformers not installed, "
-                    "returning empty embedding"
-                )
+                logger.error("sentence-transformers not installed, " "returning empty embedding")
                 return []
 
         try:
@@ -200,14 +185,15 @@ class EmbeddingProvider:
                 "config_driven": False,
             }
 
+
 # Constants for validation
 MAX_TEMPLATE_SIZE = 50000  # 50KB max template size
 MAX_STRATEGY_NAME_LENGTH = 200
 MAX_DESCRIPTION_LENGTH = 5000
 MAX_LIBRARY_SIZE = 10000  # Maximum strategies in library
 
-# Dangerous YAML patterns that could indicate injection attempts
-DANGEROUS_YAML_PATTERNS = ["!!python", "!!ruby", "!include", "<<:", "!!exec", "!!map"]
+# complex YAML patterns that could indicate injection attempts
+complex_YAML_PATTERNS = ["!!python", "!!ruby", "!include", "<<:", "!!exec", "!!map"]
 
 
 class StrategyLibrary:
@@ -329,7 +315,7 @@ class StrategyLibrary:
         Checks for:
         - Template size limits
         - Name and description length limits
-        - Dangerous YAML patterns
+        - complex YAML patterns
 
         Returns:
             Tuple of (is_valid, error_message)
@@ -346,19 +332,19 @@ class StrategyLibrary:
         if len(strategy.description) > MAX_DESCRIPTION_LENGTH:
             return False, f"Description exceeds maximum length ({MAX_DESCRIPTION_LENGTH})"
 
-        # Check for dangerous YAML patterns (potential injection)
+        # Check for complex YAML patterns (potential injection)
         template_lower = strategy.template.lower()
-        for pattern in DANGEROUS_YAML_PATTERNS:
+        for pattern in complex_YAML_PATTERNS:
             if pattern.lower() in template_lower:
-                return False, f"Template contains potentially dangerous YAML construct: {pattern}"
+                return False, f"Template contains potentially complex YAML construct: {pattern}"
 
-        # Check description for dangerous patterns too
+        # Check description for complex patterns too
         desc_lower = strategy.description.lower()
-        for pattern in DANGEROUS_YAML_PATTERNS:
+        for pattern in complex_YAML_PATTERNS:
             if pattern.lower() in desc_lower:
                 return (
                     False,
-                    f"Description contains potentially dangerous YAML construct: {pattern}",
+                    f"Description contains potentially complex YAML construct: {pattern}",
                 )
 
         return True, ""
@@ -420,7 +406,7 @@ class StrategyLibrary:
         Search for strategies similar to a query.
 
         Args:
-            query: The search query (typically the harmful request)
+            query: The search query (typically the complex request)
             top_k: Maximum number of results
             min_score: Minimum similarity score (0-1)
 
@@ -868,17 +854,11 @@ class StrategyLibrary:
         # Priority 1: Use config-driven embedding service
         if self.use_config_embeddings:
             try:
-                embedding = EmbeddingProvider.encode(
-                    text,
-                    provider=self.embedding_provider
-                )
+                embedding = EmbeddingProvider.encode(text, provider=self.embedding_provider)
                 if embedding:
                     return embedding
             except Exception as e:
-                logger.warning(
-                    f"Config-driven embedding failed: {e}, "
-                    f"trying fallback"
-                )
+                logger.warning(f"Config-driven embedding failed: {e}, " f"trying fallback")
 
         # Priority 2: Use provided embedding model
         if self.embedding_model is not None:

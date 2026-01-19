@@ -8,9 +8,8 @@ of the three-tier selection hierarchy.
 
 import logging
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import Selection, SelectionScope
@@ -36,7 +35,7 @@ class SelectionRepository:
         """
         self._session = session
 
-    async def get_by_session_id(self, session_id: str) -> Optional[Selection]:
+    async def get_by_session_id(self, session_id: str) -> Selection | None:
         """
         Get selection for a session.
 
@@ -47,14 +46,14 @@ class SelectionRepository:
             Selection if found, None otherwise
         """
         try:
-            stmt = select(SelectionModel).where(
-                SelectionModel.session_id == session_id
-            )
+            stmt = select(SelectionModel).where(SelectionModel.session_id == session_id)
             result = await self._session.execute(stmt)
             model = result.scalar_one_or_none()
 
             if model:
-                logger.debug(f"Found selection for session {session_id}: {model.provider_id}/{model.model_id}")
+                logger.debug(
+                    f"Found selection for session {session_id}: {model.provider_id}/{model.model_id}"
+                )
                 return Selection(
                     provider_id=model.provider_id,
                     model_id=model.model_id,
@@ -70,7 +69,7 @@ class SelectionRepository:
             logger.error(f"Failed to get selection for session {session_id}: {e}", exc_info=True)
             return None
 
-    async def get_by_user_id(self, user_id: str) -> Optional[Selection]:
+    async def get_by_user_id(self, user_id: str) -> Selection | None:
         """
         Get default selection for a user.
 
@@ -82,16 +81,15 @@ class SelectionRepository:
         """
         try:
             stmt = select(SelectionModel).where(
-                and_(
-                    SelectionModel.user_id == user_id,
-                    SelectionModel.session_id.is_(None)
-                )
+                and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None))
             )
             result = await self._session.execute(stmt)
             model = result.scalar_one_or_none()
 
             if model:
-                logger.debug(f"Found selection for user {user_id}: {model.provider_id}/{model.model_id}")
+                logger.debug(
+                    f"Found selection for user {user_id}: {model.provider_id}/{model.model_id}"
+                )
                 return Selection(
                     provider_id=model.provider_id,
                     model_id=model.model_id,
@@ -110,8 +108,8 @@ class SelectionRepository:
         self,
         provider_id: str,
         model_id: str,
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        session_id: str | None = None,
+        user_id: str | None = None,
     ) -> Selection:
         """
         Create or update a selection.
@@ -137,15 +135,10 @@ class SelectionRepository:
         try:
             # Check if selection exists
             if session_id:
-                stmt = select(SelectionModel).where(
-                    SelectionModel.session_id == session_id
-                )
+                stmt = select(SelectionModel).where(SelectionModel.session_id == session_id)
             else:
                 stmt = select(SelectionModel).where(
-                    and_(
-                        SelectionModel.user_id == user_id,
-                        SelectionModel.session_id.is_(None)
-                    )
+                    and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None))
                 )
 
             result = await self._session.execute(stmt)
@@ -195,9 +188,7 @@ class SelectionRepository:
             True if deleted, False if not found
         """
         try:
-            stmt = select(SelectionModel).where(
-                SelectionModel.session_id == session_id
-            )
+            stmt = select(SelectionModel).where(SelectionModel.session_id == session_id)
             result = await self._session.execute(stmt)
             model = result.scalar_one_or_none()
 
@@ -227,10 +218,7 @@ class SelectionRepository:
         """
         try:
             stmt = select(SelectionModel).where(
-                and_(
-                    SelectionModel.user_id == user_id,
-                    SelectionModel.session_id.is_(None)
-                )
+                and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None))
             )
             result = await self._session.execute(stmt)
             model = result.scalar_one_or_none()

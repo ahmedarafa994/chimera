@@ -20,31 +20,20 @@ Markers:
 - @pytest.mark.asyncio: Async tests
 """
 
-import secrets
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import Role
 from app.db.models import User, UserRole
 from app.repositories.user_repository import (
     EmailAlreadyExistsError,
     InvalidTokenError,
-    UserNotFoundError,
     UsernameAlreadyExistsError,
 )
-from app.services.user_service import (
-    AuthenticationResult,
-    EmailVerificationResult,
-    PasswordChangeResult,
-    PasswordResetResult,
-    RegistrationResult,
-    UserService,
-    _db_role_to_auth_role,
-)
-from app.core.auth import Role
+from app.services.user_service import UserService, _db_role_to_auth_role
 
 # Test fixtures and configuration
 pytestmark = [pytest.mark.asyncio, pytest.mark.unit]
@@ -495,7 +484,7 @@ class TestEmailVerification:
         mock_repository.get_by_email.return_value = mock_user
         mock_repository.resend_verification.return_value = True
 
-        success, token, error = await user_service.resend_verification_email(
+        success, token, _error = await user_service.resend_verification_email(
             email="unverified@example.com"
         )
 
@@ -512,7 +501,7 @@ class TestEmailVerification:
         mock_user.is_verified = True
         mock_repository.get_by_email.return_value = mock_user
 
-        success, token, error = await user_service.resend_verification_email(
+        success, _token, error = await user_service.resend_verification_email(
             email="verified@example.com"
         )
 
@@ -527,7 +516,7 @@ class TestEmailVerification:
         """Test resend for non-existent email returns success (security)."""
         mock_repository.get_by_email.return_value = None
 
-        success, token, error = await user_service.resend_verification_email(
+        success, token, _error = await user_service.resend_verification_email(
             email="nonexistent@example.com"
         )
 
@@ -781,7 +770,7 @@ class TestProfileUpdate:
         mock_repository.get_by_id.return_value = mock_user
 
         # email is not an allowed field for update_profile
-        result = await user_service.update_profile(
+        await user_service.update_profile(
             user_id=1,
             email="newemail@example.com",  # Should be ignored
         )

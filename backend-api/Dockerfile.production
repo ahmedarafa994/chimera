@@ -1,0 +1,88 @@
+# =============================================================================
+# Chimera Backend - Production Dockerfile
+# =============================================================================
+# Multi-stage Docker build for optimized production deployment
+# Features: security hardening, minimal attack surface, health checks
+
+# Build stage - Install dependencies and prepare application
+FROM python:3.11-slim as builder
+
+# Install system dependencies for building
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Download spaCy model
+RUN python -m spacy download en_core_web_sm
+
+# Production stage - Minimal runtime environment
+FROM python:3.11-slim as production
+
+# Create non-root user for security
+RUN groupadd -r chimera && useradd -r -g chimera chimera
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Set working directory
+WORKDIR /app
+
+# Copy Python packages from builder stage
+COPY --from=builder /root/.local /home/chimera/.local
+
+# Copy application code
+COPY . .
+
+# Set proper ownership
+RUN chown -R chimera:chimera /app
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/tmp && \
+    chown chimera:chimera /app/logs /app/tmp
+
+# Security hardening
+RUN chmod -R 755 /app && \
+    chmod 644 /app/*.py /app/*.txt /app/*.md 2>/dev/null || true
+
+# Switch to non-root user
+USER chimera
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PATH=/home/chimera/.local/bin:$PATH
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Production configuration
+ENV ENVIRONMENT=production
+ENV DEBUG=false
+ENV LOG_LEVEL=INFO
+
+# Expose port
+EXPOSE 8001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8001/health || exit 1
+
+# Production command with optimizations
+CMD ["python", "-m", "uvicorn", "app.main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8001", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--access-log", \
+     "--no-server-header", \
+     "--date-header"]

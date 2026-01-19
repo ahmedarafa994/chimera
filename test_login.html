@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chimera Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #333;
+            border: 1px solid #666;
+            color: white;
+        }
+        button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        #response {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Chimera Login Test</h1>
+
+        <div class="form-group">
+            <label for="username">Username/Email:</label>
+            <input type="text" id="username" value="admin" placeholder="admin">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="Admin123!@#" placeholder="Admin123!@#">
+        </div>
+
+        <div class="form-group">
+            <button onclick="testLogin()">🔐 Test Login</button>
+            <button onclick="testBackendHealth()">💊 Test Backend Health</button>
+            <button onclick="testFrontendLogin()">🌐 Open Frontend Login</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+
+        <div id="results"></div>
+        <div id="response"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001';
+        const FRONTEND_BASE = 'http://localhost:3001';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function updateResponse(data) {
+            document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('response').innerHTML = '';
+        }
+
+        async function testBackendHealth() {
+            addResult('Testing backend health...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                updateResponse(data);
+
+                if (data.status === 'healthy' || data.status === 'unhealthy') {
+                    addResult(`✅ Backend is responding (${data.status})`, 'success');
+                } else {
+                    addResult('❌ Backend health check failed', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Backend connection failed: ${error.message}`, 'error');
+                updateResponse({ error: error.message });
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                addResult('❌ Please enter both username and password', 'error');
+                return;
+            }
+
+            addResult(`🔄 Testing login for user: ${username}`, 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+                updateResponse(data);
+
+                if (response.ok) {
+                    addResult(`✅ Login successful! Welcome ${username}`, 'success');
+                    addResult(`🎫 Access token: ${data.access_token.substring(0, 20)}...`, 'success');
+                    addResult(`👤 User role: ${data.user.role}`, 'success');
+                } else {
+                    addResult(`❌ Login failed: ${data.detail || data.message || 'Unknown error'}`, 'error');
+                    if (data.requires_verification) {
+                        addResult('📧 Email verification required', 'error');
+                    }
+                }
+            } catch (error) {
+                addResult(`❌ Login request failed: ${error.message}`, 'error');
+                updateResponse({ error: error.message, stack: error.stack });
+            }
+        }
+
+        function testFrontendLogin() {
+            addResult('🌐 Opening frontend login page...', 'info');
+            window.open(`${FRONTEND_BASE}/login`, '_blank');
+        }
+
+        // Test backend health on page load
+        window.onload = function() {
+            addResult('🚀 Page loaded - Ready to test login', 'info');
+        };
+    </script>
+</body>
+</html>

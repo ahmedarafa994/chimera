@@ -193,8 +193,9 @@ class TestProviderConfigSections:
 
         # Verify URLs are valid format
         for provider, url in endpoints.items():
-            assert url.startswith("http://") or url.startswith("https://"), \
-                f"Invalid URL for {provider}: {url}"
+            assert url.startswith("http://") or url.startswith(
+                "https://"
+            ), f"Invalid URL for {provider}: {url}"
 
     @pytest.mark.unit
     def test_provider_endpoint_returns_correct_url(self):
@@ -223,8 +224,9 @@ class TestProviderConfigSections:
         assert "deepseek-reasoner" in models["deepseek"]
 
         # Anthropic models
-        assert "claude-sonnet-4-5" in models["anthropic"] or \
-               "claude-3-5-sonnet" in models["anthropic"]
+        assert (
+            "claude-sonnet-4-5" in models["anthropic"] or "claude-3-5-sonnet" in models["anthropic"]
+        )
 
         # OpenAI models (Story 1.1)
         assert "gpt-4o" in models["openai"]
@@ -446,16 +448,12 @@ class TestConfigurationValidation:
         validator = ProviderConfigValidator()
 
         # Valid key
-        valid, error = await validator.validate_api_key_format(
-            "openai", sample_api_keys["openai"]
-        )
+        valid, error = await validator.validate_api_key_format("openai", sample_api_keys["openai"])
         assert valid is True
         assert error == ""
 
         # Invalid key (too short)
-        valid, error = await validator.validate_api_key_format(
-            "openai", "sk-tooshort"
-        )
+        valid, error = await validator.validate_api_key_format("openai", "sk-tooshort")
         assert valid is False
         assert "format invalid" in error.lower() or "pattern" in error.lower()
 
@@ -482,9 +480,7 @@ class TestConfigurationValidation:
         validator = ProviderConfigValidator()
 
         # Valid key
-        valid, _error = await validator.validate_api_key_format(
-            "google", sample_api_keys["google"]
-        )
+        valid, _error = await validator.validate_api_key_format("google", sample_api_keys["google"])
         assert valid is True
 
     @pytest.mark.unit
@@ -501,18 +497,14 @@ class TestConfigurationValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_provider_config_returns_recommendations(
-        self, sample_api_keys
-    ):
+    async def test_validate_provider_config_returns_recommendations(self, sample_api_keys):
         """Test that invalid configs provide recommendations."""
         from app.core.config_manager import ProviderConfigValidator
 
         validator = ProviderConfigValidator()
 
         result = await validator.validate_provider_config(
-            provider="openai",
-            api_key="invalid-key",
-            test_connectivity=False
+            provider="openai", api_key="invalid-key", test_connectivity=False
         )
 
         assert "recommendations" in result
@@ -531,7 +523,7 @@ class TestConfigurationValidation:
             provider="openai",
             api_key="sk-test1234567890abcdefghijklmnopqrstuvwxyz1234567890ab",
             base_url="not-a-valid-url",
-            test_connectivity=False
+            test_connectivity=False,
         )
 
         assert result["is_valid"] is False
@@ -549,7 +541,7 @@ class TestConfigurationValidation:
             provider="openai",
             api_key=sample_api_keys["openai"],
             base_url=None,
-            test_connectivity=False
+            test_connectivity=False,
         )
 
         assert "warnings" in result
@@ -574,17 +566,13 @@ class TestErrorMessageQuality:
         validator = ProviderConfigValidator()
 
         result = await validator.validate_provider_config(
-            provider="openai",
-            api_key="invalid",
-            test_connectivity=False
+            provider="openai", api_key="invalid", test_connectivity=False
         )
 
         # Should have recommendations for fixing
         assert len(result["recommendations"]) > 0
         # Recommendations should mention the provider
-        has_provider_mention = any(
-            "openai" in r.lower() for r in result["recommendations"]
-        )
+        has_provider_mention = any("openai" in r.lower() for r in result["recommendations"])
         assert has_provider_mention
 
     @pytest.mark.unit
@@ -834,9 +822,7 @@ class TestURLValidation:
         """Test validation of URL with path."""
         from app.core.config import settings
 
-        assert settings.validate_endpoint_url(
-            "https://api.anthropic.com/v1/messages"
-        ) is True
+        assert settings.validate_endpoint_url("https://api.anthropic.com/v1/messages") is True
 
 
 # ============================================================================
@@ -860,7 +846,7 @@ class TestConfigurationIntegration:
             provider="openai",
             api_key=sample_api_keys["openai"],
             base_url="https://api.openai.com/v1",
-            test_connectivity=False  # Don't actually connect in tests
+            test_connectivity=False,  # Don't actually connect in tests
         )
 
         assert "provider" in result
@@ -882,9 +868,7 @@ class TestConfigurationIntegration:
         encrypted_key = encrypt_api_key(sample_api_keys["openai"])
 
         # Validation should decrypt and validate
-        valid, _error = await validator.validate_api_key_format(
-            "openai", encrypted_key
-        )
+        valid, _error = await validator.validate_api_key_format("openai", encrypted_key)
 
         assert valid is True
 

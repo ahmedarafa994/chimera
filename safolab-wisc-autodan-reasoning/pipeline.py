@@ -29,11 +29,11 @@ class AutoDANTurbo:
         self.lifelong_iterations = lifelong_iterations
         self.lifelong_running = 0
 
-        self.refusal_list = [
+        self.non_compliance_list = [
             "I cannot",
             "I am unable",
             "I can't",
-        ]  # A quick check of refusal message
+        ]  # A quick check of non-compliance message
 
     def build_from_warm_up_log(self, input_strategy_library, input_summarizer_log):
         self.warm_up_running = 0
@@ -141,7 +141,7 @@ class AutoDANTurbo:
                     jailbreak_prompt, attacker_system = self.attacker.warm_up_attack(
                         request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
                     )
-                    for word in self.refusal_list:
+                    for word in self.non_compliance_list:
                         if word in jailbreak_prompt:
                             jailbreak_prompt = request
                     target_response = self.target.respond(jailbreak_prompt)
@@ -197,7 +197,9 @@ class AutoDANTurbo:
                             self.logger.info(f"Response: {target_response}")
                             self.logger.info(f"Assessment: {assessment}")
                             self.logger.info(f"Score: {score}")
-                            self.logger.info("########################################################")
+                            self.logger.info(
+                                "########################################################"
+                            )
                             wandb.log(
                                 {
                                     "iteration": i,
@@ -271,7 +273,7 @@ class AutoDANTurbo:
                             )
 
                     # sanitize prompt
-                    for word in self.refusal_list:
+                    for word in self.non_compliance_list:
                         if word in jailbreak_prompt:
                             jailbreak_prompt = request
 
@@ -290,14 +292,18 @@ class AutoDANTurbo:
                                 top_p=0.9,
                             )
                             scorer_system = _scorer_system
-                            score = self.scorer.wrapper(assessment, max_length=2000, do_sample=False)
+                            score = self.scorer.wrapper(
+                                assessment, max_length=2000, do_sample=False
+                            )
                             success = True
                         except Exception as e:
                             self.logger.error(f"Scorer failed to score the response, retrying: {e}")
 
                     if score > prev_score:
                         current_library = self.lifelong_library.all()
-                        self.logger.info("Identified a score improvement, start summarizing strategy")
+                        self.logger.info(
+                            "Identified a score improvement, start summarizing strategy"
+                        )
                         not_scussed = True
                         while not_scussed:
                             try:
@@ -312,24 +318,34 @@ class AutoDANTurbo:
                                     top_p=0.9,
                                 )
                                 json_formatted_strategy = self.summarizer.wrapper(
-                                    strategy, max_length=2000, do_sample=True, temperature=0.6, top_p=0.9
+                                    strategy,
+                                    max_length=2000,
+                                    do_sample=True,
+                                    temperature=0.6,
+                                    top_p=0.9,
                                 )
                                 jailbreak_strategy = json.loads(json_formatted_strategy)
                                 not_scussed = False
                             except Exception as e:
-                                self.logger.error(f"Summarizer failed to summarize the strategy, retrying: {e}")
+                                self.logger.error(
+                                    f"Summarizer failed to summarize the strategy, retrying: {e}"
+                                )
                                 continue
 
                         jailbreak_strategy["Example"] = [jailbreak_prompt]
                         jailbreak_strategy["Score"] = [score - prev_score]
-                        jailbreak_strategy["Embeddings"] = [self.retrival.embed(prev_target_response)]
+                        jailbreak_strategy["Embeddings"] = [
+                            self.retrival.embed(prev_target_response)
+                        ]
                         self.lifelong_library.add(jailbreak_strategy, if_notify=True)
                         self.lifelong_summarizer_log.add(
                             request=request,
                             summarizer=summarizer_system,
                             weak_prompt=prev_jailbreak_prompt,
                             strong_prompt=jailbreak_prompt,
-                            strategy=json.dumps(json.loads(json_formatted_strategy), indent=4, ensure_ascii=False),
+                            strategy=json.dumps(
+                                json.loads(json_formatted_strategy), indent=4, ensure_ascii=False
+                            ),
                             score_difference=jailbreak_strategy["Score"][0],
                             stage="lifelong",
                         )
@@ -345,7 +361,9 @@ class AutoDANTurbo:
                         response=target_response,
                         assessment=assessment,
                         score=score,
-                        retrival_strategy=json.dumps(retrival_strategy_list, indent=4, ensure_ascii=False),
+                        retrival_strategy=json.dumps(
+                            retrival_strategy_list, indent=4, ensure_ascii=False
+                        ),
                         attacker=attacker_system,
                         scorer=scorer_system,
                         iteration=i,
@@ -354,27 +372,36 @@ class AutoDANTurbo:
                         stage="lifelong",
                     )
 
-                    self.logger.info(f"Request ID: {request_id}, Iteration: {i}, Epoch: {j}, Score: {score}")
+                    self.logger.info(
+                        f"Request ID: {request_id}, Iteration: {i}, Epoch: {j}, Score: {score}"
+                    )
                     self.logger.info(f"Request: {request}")
-                    self.logger.info(f"Strategy: {json.dumps(retrival_strategy_list, indent=4, ensure_ascii=False)}")
+                    self.logger.info(
+                        f"Strategy: {json.dumps(retrival_strategy_list, indent=4, ensure_ascii=False)}"
+                    )
                     self.logger.info(f"Prompt: {jailbreak_prompt}")
                     self.logger.info(f"Response: {target_response}")
                     self.logger.info(f"Assessment: {assessment}")
                     self.logger.info(f"Score: {score}")
                     self.logger.info("########################################################")
 
-                    wandb.config.update({
-                        "stage": "lifelong",
-                        "lifelong_strategy_library": self.lifelong_library.all(),
-                    }, allow_val_change=True)
-                    wandb.log({
-                        "iteration": i,
-                        "epoch": j,
-                        "request_id": request_id,
-                        "running": self.lifelong_running,
-                        "number of strategies": len(self.lifelong_library.all()),
-                        "strategies": list(self.lifelong_library.all().keys()),
-                    })
+                    wandb.config.update(
+                        {
+                            "stage": "lifelong",
+                            "lifelong_strategy_library": self.lifelong_library.all(),
+                        },
+                        allow_val_change=True,
+                    )
+                    wandb.log(
+                        {
+                            "iteration": i,
+                            "epoch": j,
+                            "request_id": request_id,
+                            "running": self.lifelong_running,
+                            "number of strategies": len(self.lifelong_library.all()),
+                            "strategies": list(self.lifelong_library.all().keys()),
+                        }
+                    )
 
                     self.lifelong_running += 1
                     if score >= self.break_score:
@@ -393,7 +420,7 @@ class AutoDANTurbo:
                 jailbreak_prompt, _attacker_system = self.attacker.warm_up_attack(
                     request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
                 )
-                for word in self.refusal_list:
+                for word in self.non_compliance_list:
                     if word in jailbreak_prompt:
                         jailbreak_prompt = request
                 target_response = self.target.respond(jailbreak_prompt)
@@ -436,7 +463,7 @@ class AutoDANTurbo:
                         temperature=1.0,
                         top_p=1,
                     )
-                    for word in self.refusal_list:
+                    for word in self.non_compliance_list:
                         if word in jailbreak_prompt:
                             jailbreak_prompt = request
                 target_response = self.target.respond(jailbreak_prompt)

@@ -14,7 +14,7 @@ Part of Phase 7: Admin User Management.
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -22,7 +22,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import AuditAction, audit_log
-from app.core.auth import TokenPayload, get_current_user, auth_service
+from app.core.auth import TokenPayload, auth_service, get_current_user
 from app.core.config import settings
 from app.core.database import get_async_session_factory
 from app.core.logging import logger
@@ -433,9 +433,9 @@ async def check_tenant_quota(
         "current_usage": current_usage,
         "remaining": remaining if remaining >= 0 else "unlimited",
         "within_quota": within_quota,
-        "quota_percentage": (current_usage / tenant.monthly_quota * 100)
-        if tenant.monthly_quota > 0
-        else 0,
+        "quota_percentage": (
+            (current_usage / tenant.monthly_quota * 100) if tenant.monthly_quota > 0 else 0
+        ),
     }
 
 
@@ -454,8 +454,8 @@ class AdminUserResponse(BaseModel):
     is_active: bool
     is_verified: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    last_login: Optional[datetime] = None
+    updated_at: datetime | None = None
+    last_login: datetime | None = None
 
     class Config:
         json_schema_extra = {
@@ -520,22 +520,22 @@ class AdminUserListErrorResponse(BaseModel):
 class AdminUpdateUserRequest(BaseModel):
     """Request model for updating a user via admin endpoint."""
 
-    role: Optional[str] = Field(
+    role: str | None = Field(
         None,
         description="New role for the user: admin, researcher, or viewer",
         examples=["researcher", "viewer"],
     )
-    username: Optional[str] = Field(
+    username: str | None = Field(
         None,
         min_length=3,
         max_length=50,
         description="New username (must be unique)",
     )
-    is_active: Optional[bool] = Field(
+    is_active: bool | None = Field(
         None,
         description="Whether the user account is active",
     )
-    is_verified: Optional[bool] = Field(
+    is_verified: bool | None = Field(
         None,
         description="Whether the user email is verified",
     )
@@ -579,7 +579,7 @@ class AdminUserDetailErrorResponse(BaseModel):
 
     success: bool = False
     error: str
-    user_id: Optional[int] = None
+    user_id: int | None = None
 
 
 class AdminUserDeleteResponse(BaseModel):
@@ -628,7 +628,7 @@ class AdminInviteUserRequest(BaseModel):
         description="Role to assign to the invited user: admin, researcher, or viewer",
         examples=["researcher", "viewer"],
     )
-    username: Optional[str] = Field(
+    username: str | None = Field(
         None,
         min_length=3,
         max_length=50,
@@ -647,12 +647,13 @@ class AdminInviteUserRequest(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+    def validate_username(cls, v: str | None) -> str | None:
         """Validate username format if provided."""
         if v is None:
             return v
         # Username must be alphanumeric with underscores/hyphens
         import re
+
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", v):
             raise ValueError(
                 "Username must start with a letter and contain only letters, numbers, underscores, or hyphens"
@@ -699,7 +700,7 @@ class AdminInviteUserErrorResponse(BaseModel):
 
     success: bool = False
     error: str
-    email: Optional[str] = None
+    email: str | None = None
 
     class Config:
         json_schema_extra = {
@@ -899,20 +900,20 @@ async def list_users(
     request: Request,
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Number of results per page"),
-    role: Optional[str] = Query(
+    role: str | None = Query(
         None,
         description="Filter by role: admin, researcher, viewer",
         examples=["admin", "researcher", "viewer"],
     ),
-    is_active: Optional[bool] = Query(
+    is_active: bool | None = Query(
         None,
         description="Filter by active status",
     ),
-    is_verified: Optional[bool] = Query(
+    is_verified: bool | None = Query(
         None,
         description="Filter by verification status",
     ),
-    search: Optional[str] = Query(
+    search: str | None = Query(
         None,
         min_length=1,
         max_length=100,
@@ -931,7 +932,7 @@ async def list_users(
     client_ip = request.client.host if request.client else None
 
     # Parse role filter
-    user_role: Optional[UserRole] = None
+    user_role: UserRole | None = None
     if role:
         role_lower = role.lower()
         try:
@@ -1186,7 +1187,9 @@ async def update_user(
         )
 
     if not target_user:
-        admin_logger.warning(f"Admin {admin_user.id} attempted to update non-existent user {user_id}")
+        admin_logger.warning(
+            f"Admin {admin_user.id} attempted to update non-existent user {user_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with ID {user_id} not found",
@@ -1248,7 +1251,10 @@ async def update_user(
         changes["is_active"] = {"from": target_user.is_active, "to": update_request.is_active}
 
     # Handle is_verified update
-    if update_request.is_verified is not None and update_request.is_verified != target_user.is_verified:
+    if (
+        update_request.is_verified is not None
+        and update_request.is_verified != target_user.is_verified
+    ):
         update_fields["is_verified"] = update_request.is_verified
         changes["is_verified"] = {"from": target_user.is_verified, "to": update_request.is_verified}
 
@@ -1298,7 +1304,7 @@ async def update_user(
 
     return AdminUserUpdateResponse(
         success=True,
-        message=f"User updated successfully",
+        message="User updated successfully",
         user=_user_to_admin_response(updated_user),
         changes=changes,
     )
@@ -1384,7 +1390,9 @@ async def delete_user(
         )
 
     if not target_user:
-        admin_logger.warning(f"Admin {admin_user.id} attempted to delete non-existent user {user_id}")
+        admin_logger.warning(
+            f"Admin {admin_user.id} attempted to delete non-existent user {user_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with ID {user_id} not found",
@@ -1421,7 +1429,7 @@ async def delete_user(
 
     return AdminUserDeleteResponse(
         success=True,
-        message=f"User deleted successfully",
+        message="User deleted successfully",
         user_id=user_id,
         email=target_email,
     )
@@ -1493,7 +1501,9 @@ async def activate_user(
         )
 
     if not target_user:
-        admin_logger.warning(f"Admin {admin_user.id} attempted to activate non-existent user {user_id}")
+        admin_logger.warning(
+            f"Admin {admin_user.id} attempted to activate non-existent user {user_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with ID {user_id} not found",
@@ -1622,7 +1632,9 @@ async def deactivate_user(
         )
 
     if not target_user:
-        admin_logger.warning(f"Admin {admin_user.id} attempted to deactivate non-existent user {user_id}")
+        admin_logger.warning(
+            f"Admin {admin_user.id} attempted to deactivate non-existent user {user_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with ID {user_id} not found",
@@ -1800,6 +1812,7 @@ async def invite_user(
         email_prefix = invite_request.email.split("@")[0]
         # Clean up the prefix to be a valid username
         import re
+
         username = re.sub(r"[^a-zA-Z0-9_-]", "_", email_prefix)
         # Ensure it starts with a letter
         if not username or not username[0].isalpha():

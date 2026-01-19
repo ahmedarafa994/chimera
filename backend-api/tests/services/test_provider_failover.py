@@ -4,6 +4,8 @@ Provider Failover Tests
 This module tests LLM provider failover behavior when primary providers fail.
 P1 Test Coverage: Provider availability and automatic failover.
 """
+
+import contextlib
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -20,22 +22,14 @@ class TestProviderFailover:
         service = LLMService()
 
         # Mock primary provider to fail
-        with patch.object(
-            service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             # First call fails (primary), second succeeds (secondary)
             mock_call.side_effect = [
                 Exception("Primary provider unavailable"),
-                Mock(content="Success from secondary")
+                Mock(content="Success from secondary"),
             ]
 
-            result = await service.generate(
-                prompt="test",
-                provider="openai",
-                model="gpt-4"
-            )
+            await service.generate(prompt="test", provider="openai", model="gpt-4")
 
             # Should have attempted failover
             assert mock_call.call_count >= 1
@@ -48,23 +42,15 @@ class TestProviderFailover:
         service = LLMService()
 
         # All providers fail except last
-        with patch.object(
-            service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.side_effect = [
                 Exception("OpenAI failed"),
                 Exception("Google failed"),
-                Mock(content="Anthropic success")
+                Mock(content="Anthropic success"),
             ]
 
             try:
-                result = await service.generate(
-                    prompt="test",
-                    provider="openai",
-                    model="gpt-4"
-                )
+                await service.generate(prompt="test", provider="openai", model="gpt-4")
             except Exception:
                 pass  # May raise if all fail
 
@@ -78,19 +64,11 @@ class TestProviderFailover:
 
         service = LLMService()
 
-        with patch.object(
-            service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.side_effect = Exception("All providers failed")
 
             with pytest.raises(Exception):
-                await service.generate(
-                    prompt="test",
-                    provider="openai",
-                    model="gpt-4"
-                )
+                await service.generate(prompt="test", provider="openai", model="gpt-4")
 
     @pytest.mark.asyncio
     async def test_failover_preserves_request_parameters(self):
@@ -107,16 +85,9 @@ class TestProviderFailover:
                 raise Exception("First provider failed")
             return Mock(content="success")
 
-        with patch.object(
-            service,
-            '_call_provider',
-            side_effect=capture_call
-        ):
+        with patch.object(service, "_call_provider", side_effect=capture_call):
             await service.generate(
-                prompt="test prompt",
-                provider="openai",
-                temperature=0.7,
-                max_tokens=100
+                prompt="test prompt", provider="openai", temperature=0.7, max_tokens=100
             )
 
             # All calls should have same parameters
@@ -135,11 +106,7 @@ class TestProviderHealthCheck:
         from app.services.llm_service import llm_service
 
         # Mock successful API call
-        with patch.object(
-            llm_service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(llm_service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = Mock(content="OK")
 
             is_healthy = await llm_service.check_provider_health("openai")
@@ -150,11 +117,7 @@ class TestProviderHealthCheck:
         """Test health check for unhealthy provider."""
         from app.services.llm_service import llm_service
 
-        with patch.object(
-            llm_service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(llm_service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.side_effect = Exception("Provider unavailable")
 
             is_healthy = await llm_service.check_provider_health("openai")
@@ -182,9 +145,11 @@ class TestProviderPriority:
         service = LLMService()
 
         # Check priority configuration exists
-        assert hasattr(service, '_provider_priority') or \
-               hasattr(service, 'provider_priority') or \
-               hasattr(service, '_providers')
+        assert (
+            hasattr(service, "_provider_priority")
+            or hasattr(service, "provider_priority")
+            or hasattr(service, "_providers")
+        )
 
     @pytest.mark.asyncio
     async def test_explicit_provider_selection(self):
@@ -193,11 +158,7 @@ class TestProviderPriority:
 
         service = LLMService()
 
-        with patch.object(
-            service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.side_effect = Exception("Provider failed")
 
             # With explicit provider, may not failover
@@ -206,7 +167,7 @@ class TestProviderPriority:
                     prompt="test",
                     provider="openai",
                     model="gpt-4",
-                    allow_failover=False  # If supported
+                    allow_failover=False,  # If supported
                 )
 
     def test_provider_configuration(self):
@@ -214,14 +175,14 @@ class TestProviderPriority:
         from app.core.config import config
 
         # Check LLM configuration exists
-        assert hasattr(config, 'llm')
+        assert hasattr(config, "llm")
 
         # Check at least one provider is configured
         llm_config = config.llm
-        has_provider = (
-            getattr(llm_config, 'openai_api_key', None) or
-            getattr(llm_config, 'google_api_key', None) or
-            getattr(llm_config, 'anthropic_api_key', None)
+        (
+            getattr(llm_config, "openai_api_key", None)
+            or getattr(llm_config, "google_api_key", None)
+            or getattr(llm_config, "anthropic_api_key", None)
         )
         # Config may be empty in test environment
 
@@ -239,25 +200,15 @@ class TestProviderRateLimiting:
         class RateLimitError(Exception):
             pass
 
-        with patch.object(
-            service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             # Simulate rate limit then success
             mock_call.side_effect = [
                 RateLimitError("Rate limited"),
-                Mock(content="Success after rate limit")
+                Mock(content="Success after rate limit"),
             ]
 
-            try:
-                await service.generate(
-                    prompt="test",
-                    provider="openai",
-                    model="gpt-4"
-                )
-            except Exception:
-                pass
+            with contextlib.suppress(Exception):
+                await service.generate(prompt="test", provider="openai", model="gpt-4")
 
     @pytest.mark.asyncio
     async def test_retry_after_rate_limit(self):
@@ -275,19 +226,11 @@ class TestProviderRateLimiting:
                 raise Exception("Rate limited")
             return Mock(content="Success")
 
-        with patch.object(
-            service,
-            '_call_provider',
-            side_effect=rate_limit_then_succeed
+        with (
+            patch.object(service, "_call_provider", side_effect=rate_limit_then_succeed),
+            contextlib.suppress(Exception),
         ):
-            try:
-                await service.generate(
-                    prompt="test",
-                    provider="openai",
-                    model="gpt-4"
-                )
-            except Exception:
-                pass
+            await service.generate(prompt="test", provider="openai", model="gpt-4")
 
 
 class TestProviderMetrics:
@@ -300,21 +243,12 @@ class TestProviderMetrics:
 
         service = LLMService()
 
-        with patch.object(
-            service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = Mock(
-                content="Success",
-                usage={"prompt_tokens": 10, "completion_tokens": 20}
+                content="Success", usage={"prompt_tokens": 10, "completion_tokens": 20}
             )
 
-            await service.generate(
-                prompt="test",
-                provider="openai",
-                model="gpt-4"
-            )
+            await service.generate(prompt="test", provider="openai", model="gpt-4")
 
             # Check metrics were recorded (implementation-specific)
 
@@ -325,21 +259,11 @@ class TestProviderMetrics:
 
         service = LLMService()
 
-        with patch.object(
-            service,
-            '_call_provider',
-            new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.side_effect = Exception("Provider error")
 
-            try:
-                await service.generate(
-                    prompt="test",
-                    provider="openai",
-                    model="gpt-4"
-                )
-            except Exception:
-                pass
+            with contextlib.suppress(Exception):
+                await service.generate(prompt="test", provider="openai", model="gpt-4")
 
             # Check error metrics were recorded
 
@@ -348,7 +272,7 @@ class TestProviderMetrics:
         from app.services.llm_service import llm_service
 
         # Check stats method exists
-        if hasattr(llm_service, 'get_provider_stats'):
+        if hasattr(llm_service, "get_provider_stats"):
             stats = llm_service.get_provider_stats()
             assert isinstance(stats, dict)
 
@@ -363,7 +287,7 @@ class TestProviderTimeout:
 
         from app.services.llm_service import LLMService
 
-        service = LLMService()
+        LLMService()
 
         async def slow_provider(*args, **kwargs):
             await asyncio.sleep(60)  # Simulate slow response
@@ -377,7 +301,7 @@ class TestProviderTimeout:
         """Test timeout is configurable per request."""
         from app.services.llm_service import LLMService
 
-        service = LLMService()
+        LLMService()
 
         # Check timeout parameter is accepted
         # Implementation-specific
@@ -391,7 +315,7 @@ class TestProviderSpecificBehavior:
         """Test OpenAI-specific error handling."""
         from app.services.llm_service import LLMService
 
-        service = LLMService()
+        LLMService()
 
         # Test OpenAI-specific error codes
         openai_errors = [
@@ -400,7 +324,7 @@ class TestProviderSpecificBehavior:
             {"error": {"code": "invalid_api_key"}},
         ]
 
-        for error in openai_errors:
+        for _error in openai_errors:
             # Each error type should be handled appropriately
             pass
 
@@ -409,7 +333,7 @@ class TestProviderSpecificBehavior:
         """Test Google AI-specific error handling."""
         from app.services.llm_service import LLMService
 
-        service = LLMService()
+        LLMService()
 
         # Test Google-specific errors
         pass
@@ -419,7 +343,7 @@ class TestProviderSpecificBehavior:
         """Test Anthropic-specific error handling."""
         from app.services.llm_service import LLMService
 
-        service = LLMService()
+        LLMService()
 
         # Test Anthropic-specific errors
         pass
@@ -433,7 +357,7 @@ class TestStreamingFailover:
         """Test failover when streaming connection is lost."""
         from app.services.llm_service import LLMService
 
-        service = LLMService()
+        LLMService()
 
         # Test streaming-specific failover behavior
         pass
@@ -443,7 +367,7 @@ class TestStreamingFailover:
         """Test handling of partial responses before failover."""
         from app.services.llm_service import LLMService
 
-        service = LLMService()
+        LLMService()
 
         # Test partial response handling
         pass

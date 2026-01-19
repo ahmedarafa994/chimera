@@ -7,7 +7,7 @@
  * and provides controls for manual sync operations.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { RefreshCw, Wifi, WifiOff, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

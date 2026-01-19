@@ -1,10 +1,10 @@
 # CORS Issue Fix Summary
 
 ## Problem
-The frontend (running on `http://localhost:3000`) was unable to connect to the backend API (running on `http://localhost:8000`) due to CORS (Cross-Origin Resource Sharing) errors. The error messages showed:
+The frontend (running on `http://localhost:3001`) was unable to connect to the backend API (running on `http://localhost:8001`) due to CORS (Cross-Origin Resource Sharing) errors. The error messages showed:
 
 ```
-Access to XMLHttpRequest at 'http://localhost:8000/api/v1/health' from origin 'http://localhost:3000'
+Access to XMLHttpRequest at 'http://localhost:8001/api/v1/health' from origin 'http://localhost:3001'
 has been blocked by CORS policy: Response to preflight request doesn't pass access control check:
 It does not have HTTP ok status.
 ```
@@ -53,15 +53,15 @@ The CORS middleware is configured to allow:
 After the fix, CORS preflight requests now work correctly:
 
 ```bash
-curl -X OPTIONS http://localhost:8000/api/v1/health \
-  -H "Origin: http://localhost:3000" \
+curl -X OPTIONS http://localhost:8001/api/v1/health \
+  -H "Origin: http://localhost:3001" \
   -H "Access-Control-Request-Method: GET" -v
 ```
 
 Response headers confirm CORS is working:
 ```
 HTTP/1.1 200 OK
-access-control-allow-origin: http://localhost:3000
+access-control-allow-origin: http://localhost:3001
 access-control-allow-methods: DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
 access-control-allow-credentials: true
 access-control-max-age: 600
@@ -79,7 +79,7 @@ access-control-max-age: 600
    npm run dev
    ```
 
-3. Navigate to `http://localhost:3000/dashboard/settings`
+3. Navigate to `http://localhost:3001/dashboard/settings`
 
 The connection status should now show "Connected" and API calls should work without CORS errors.
 

@@ -66,14 +66,14 @@ class StreamEvent:
     provider: str
     model: str
     timestamp: datetime
-    session_id: Optional[str] = None
-    user_id: Optional[str] = None
-    chunk_index: Optional[int] = None
-    text_length: Optional[int] = None
-    token_count: Optional[int] = None
-    latency_ms: Optional[float] = None
-    error: Optional[str] = None
-    finish_reason: Optional[str] = None
+    session_id: str | None = None
+    user_id: str | None = None
+    chunk_index: int | None = None
+    text_length: int | None = None
+    token_count: int | None = None
+    latency_ms: float | None = None
+    error: str | None = None
+    finish_reason: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -84,7 +84,7 @@ class StreamSummary:
     stream_id: str
     provider: str
     model: str
-    session_id: Optional[str]
+    session_id: str | None
     started_at: datetime
     ended_at: datetime
     total_chunks: int
@@ -94,8 +94,8 @@ class StreamSummary:
     total_duration_ms: float
     tokens_per_second: float
     characters_per_second: float
-    finish_reason: Optional[str]
-    error: Optional[str]
+    finish_reason: str | None
+    error: str | None
     was_cancelled: bool
 
 
@@ -157,9 +157,7 @@ class TimeWindowMetrics:
             "tokens_generated": self.tokens_generated,
             "avg_latency_ms": self.avg_latency_ms,
             "error_count": self.error_count,
-            "by_provider": {
-                p: m.to_dict() for p, m in self.by_provider.items()
-            },
+            "by_provider": {p: m.to_dict() for p, m in self.by_provider.items()},
         }
 
 
@@ -253,7 +251,7 @@ class StreamMetricsService:
 
             # Trim if needed
             if len(self._events) > self._max_events:
-                self._events = self._events[-self._max_events:]
+                self._events = self._events[-self._max_events :]
 
             # Update provider metrics
             self._update_provider_metrics(event)
@@ -286,8 +284,7 @@ class StreamMetricsService:
             await self._check_alerts(event)
 
         logger.debug(
-            f"Recorded stream event: {event.event_type.value} "
-            f"for stream {event.stream_id}"
+            f"Recorded stream event: {event.event_type.value} " f"for stream {event.stream_id}"
         )
 
     def record_event_sync(self, event: StreamEvent) -> None:
@@ -297,7 +294,7 @@ class StreamMetricsService:
 
         # Trim if needed
         if len(self._events) > self._max_events:
-            self._events = self._events[-self._max_events:]
+            self._events = self._events[-self._max_events :]
 
         # Update provider metrics
         self._update_provider_metrics(event)
@@ -320,9 +317,7 @@ class StreamMetricsService:
         """Update aggregated provider metrics."""
         provider = event.provider
         if provider not in self._provider_metrics:
-            self._provider_metrics[provider] = ProviderMetrics(
-                provider=provider
-            )
+            self._provider_metrics[provider] = ProviderMetrics(provider=provider)
 
         metrics = self._provider_metrics[provider]
 
@@ -343,9 +338,7 @@ class StreamMetricsService:
             if event.error:
                 err_parts = event.error.split(":")
                 error_type = err_parts[0] if err_parts else "unknown"
-                metrics.errors_by_type[error_type] = (
-                    metrics.errors_by_type.get(error_type, 0) + 1
-                )
+                metrics.errors_by_type[error_type] = metrics.errors_by_type.get(error_type, 0) + 1
 
         elif event.event_type == StreamEventType.STREAM_CANCELLED:
             metrics.cancelled_streams += 1
@@ -388,8 +381,7 @@ class StreamMetricsService:
         # Cleanup old hourly metrics (keep last 48 hours)
         cutoff = datetime.utcnow() - timedelta(hours=48)
         self._hourly_metrics = {
-            k: v for k, v in self._hourly_metrics.items()
-            if v.window_start > cutoff
+            k: v for k, v in self._hourly_metrics.items() if v.window_start > cutoff
         }
 
     def _create_summary(
@@ -415,17 +407,13 @@ class StreamMetricsService:
             total_chunks=end_event.chunk_index or 0,
             total_tokens=tokens,
             total_characters=chars,
-            first_chunk_latency_ms=end_event.metadata.get(
-                "first_chunk_latency_ms", 0
-            ),
+            first_chunk_latency_ms=end_event.metadata.get("first_chunk_latency_ms", 0),
             total_duration_ms=duration_ms,
             tokens_per_second=tokens / duration_sec if tokens else 0,
             characters_per_second=chars / duration_sec if chars else 0,
             finish_reason=end_event.finish_reason,
             error=end_event.error,
-            was_cancelled=(
-                end_event.event_type == StreamEventType.STREAM_CANCELLED
-            ),
+            was_cancelled=(end_event.event_type == StreamEventType.STREAM_CANCELLED),
         )
 
     # -------------------------------------------------------------------------
@@ -440,25 +428,29 @@ class StreamMetricsService:
         provider = event.provider
         if provider in self._provider_metrics:
             metrics = self._provider_metrics[provider]
-            if (metrics.error_rate > self._error_rate_threshold and
-                    metrics.total_streams >= 10):  # Min sample size
-                alerts.append({
-                    "type": "high_error_rate",
-                    "provider": provider,
-                    "error_rate": metrics.error_rate,
-                    "threshold": self._error_rate_threshold,
-                })
+            if (
+                metrics.error_rate > self._error_rate_threshold and metrics.total_streams >= 10
+            ):  # Min sample size
+                alerts.append(
+                    {
+                        "type": "high_error_rate",
+                        "provider": provider,
+                        "error_rate": metrics.error_rate,
+                        "threshold": self._error_rate_threshold,
+                    }
+                )
 
         # Check latency
-        if (event.latency_ms and
-                event.latency_ms > self._latency_threshold_ms):
-            alerts.append({
-                "type": "high_latency",
-                "provider": provider,
-                "latency_ms": event.latency_ms,
-                "threshold": self._latency_threshold_ms,
-                "stream_id": event.stream_id,
-            })
+        if event.latency_ms and event.latency_ms > self._latency_threshold_ms:
+            alerts.append(
+                {
+                    "type": "high_latency",
+                    "provider": provider,
+                    "latency_ms": event.latency_ms,
+                    "threshold": self._latency_threshold_ms,
+                    "stream_id": event.stream_id,
+                }
+            )
 
         # Notify callbacks
         for alert in alerts:
@@ -489,7 +481,7 @@ class StreamMetricsService:
 
     def get_provider_metrics(
         self,
-        provider: Optional[str] = None,
+        provider: str | None = None,
     ) -> dict[str, ProviderMetrics]:
         """
         Get aggregated metrics by provider.
@@ -520,8 +512,8 @@ class StreamMetricsService:
     def get_recent_summaries(
         self,
         limit: int = 100,
-        provider: Optional[str] = None,
-        model: Optional[str] = None,
+        provider: str | None = None,
+        model: str | None = None,
     ) -> list[StreamSummary]:
         """
         Get recent stream summaries.
@@ -557,10 +549,7 @@ class StreamMetricsService:
             List of TimeWindowMetrics objects
         """
         cutoff = datetime.utcnow() - timedelta(hours=hours)
-        metrics = [
-            m for m in self._hourly_metrics.values()
-            if m.window_start > cutoff
-        ]
+        metrics = [m for m in self._hourly_metrics.values() if m.window_start > cutoff]
         return sorted(metrics, key=lambda m: m.window_start)
 
     def get_overall_summary(self) -> dict[str, Any]:
@@ -570,21 +559,11 @@ class StreamMetricsService:
         Returns:
             Dictionary with aggregate metrics
         """
-        total_streams = sum(
-            m.total_streams for m in self._provider_metrics.values()
-        )
-        successful = sum(
-            m.successful_streams for m in self._provider_metrics.values()
-        )
-        failed = sum(
-            m.failed_streams for m in self._provider_metrics.values()
-        )
-        cancelled = sum(
-            m.cancelled_streams for m in self._provider_metrics.values()
-        )
-        total_tokens = sum(
-            m.total_tokens for m in self._provider_metrics.values()
-        )
+        total_streams = sum(m.total_streams for m in self._provider_metrics.values())
+        successful = sum(m.successful_streams for m in self._provider_metrics.values())
+        failed = sum(m.failed_streams for m in self._provider_metrics.values())
+        cancelled = sum(m.cancelled_streams for m in self._provider_metrics.values())
+        total_tokens = sum(m.total_tokens for m in self._provider_metrics.values())
 
         return {
             "total_streams": total_streams,
@@ -596,15 +575,13 @@ class StreamMetricsService:
             "total_tokens_generated": total_tokens,
             "active_streams": len(self._active_streams),
             "providers_count": len(self._provider_metrics),
-            "by_provider": {
-                p: m.to_dict() for p, m in self._provider_metrics.items()
-            },
+            "by_provider": {p: m.to_dict() for p, m in self._provider_metrics.items()},
         }
 
     def get_recent_errors(
         self,
         limit: int = 50,
-        provider: Optional[str] = None,
+        provider: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Get recent error events.
@@ -616,10 +593,7 @@ class StreamMetricsService:
         Returns:
             List of error event dictionaries
         """
-        errors = [
-            e for e in self._events
-            if e.event_type == StreamEventType.STREAM_ERROR
-        ]
+        errors = [e for e in self._events if e.event_type == StreamEventType.STREAM_ERROR]
 
         if provider:
             errors = [e for e in errors if e.provider == provider]
@@ -655,7 +629,7 @@ class StreamMetricsService:
 # =============================================================================
 
 
-_metrics_service: Optional[StreamMetricsService] = None
+_metrics_service: StreamMetricsService | None = None
 
 
 def get_stream_metrics_service() -> StreamMetricsService:
@@ -689,16 +663,16 @@ async def get_stream_metrics_service_async() -> StreamMetricsService:
 
 
 __all__ = [
-    # Main service
-    "StreamMetricsService",
+    "MetricAggregation",
+    "ProviderMetrics",
     # Data classes
     "StreamEvent",
-    "StreamSummary",
-    "ProviderMetrics",
-    "TimeWindowMetrics",
     # Enums
     "StreamEventType",
-    "MetricAggregation",
+    # Main service
+    "StreamMetricsService",
+    "StreamSummary",
+    "TimeWindowMetrics",
     # Factory functions
     "get_stream_metrics_service",
     "get_stream_metrics_service_async",

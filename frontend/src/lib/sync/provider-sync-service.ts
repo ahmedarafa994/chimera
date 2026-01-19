@@ -154,6 +154,12 @@ export class ProviderSyncService {
     this.state = this.createInitialState();
     this.tabId = Math.random().toString(36).substring(2, 9);
 
+    // Fix API URL construction to match backend routes
+    if (!this.config.apiBaseUrl.includes('/provider-sync')) {
+      // Use Next.js proxy that forwards to /api/v1/provider-sync
+      this.config.apiBaseUrl = '/api/v1/provider-sync';
+    }
+
     // Initialize BroadcastChannel for cross-tab sync
     this.initBroadcastChannel();
   }
@@ -786,6 +792,11 @@ export class ProviderSyncService {
         console.warn('[ProviderSync] Network error - backend may be unavailable');
         throw new Error('Network error: Backend unavailable');
       }
+      // Handle timeout (AbortError)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn('[ProviderSync] Sync request timed out');
+        throw new Error('Sync request timed out');
+      }
       throw error;
     } finally {
       clearTimeout(timeout);
@@ -1109,29 +1120,21 @@ export function getProviderSyncService(
   config?: Partial<ProviderSyncConfig>
 ): ProviderSyncService {
   if (!syncServiceInstance) {
-    // Build config from environment - use direct backend URL
-    // NEXT_PUBLIC_CHIMERA_API_URL should be set to http://localhost:8001/api/v1
-    const envUrl = process.env.NEXT_PUBLIC_CHIMERA_API_URL;
-    const apiBaseUrl = envUrl || 'http://localhost:8001/api/v1';
-    const wsBaseUrl = apiBaseUrl.replace(/^http/, 'ws');
-
-    // Check if apiBaseUrl already contains /api/v1
-    const hasApiV1 = apiBaseUrl.includes('/api/v1');
-    const syncPath = hasApiV1 ? '/provider-sync' : '/api/v1/provider-sync';
-
-    const finalApiUrl = `${apiBaseUrl}${syncPath}`;
-    const finalWsUrl = `${wsBaseUrl}${syncPath}/ws`;
+    // Use Next.js proxy that forwards to backend
+    // The proxy routes from /api/v1/provider-sync to http://localhost:8001/api/v1/provider-sync
+    const apiBaseUrl = '/api/v1/provider-sync';
+    const wsBaseUrl = typeof window !== 'undefined'
+      ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/v1/provider-sync/ws`
+      : '/api/v1/provider-sync/ws';
 
     console.log('[ProviderSync] Initializing with config:', {
-      envUrl,
       apiBaseUrl,
-      finalApiUrl,
-      finalWsUrl,
+      wsBaseUrl,
     });
 
     syncServiceInstance = new ProviderSyncService({
-      apiBaseUrl: finalApiUrl,
-      wsUrl: finalWsUrl,
+      apiBaseUrl,
+      wsUrl: wsBaseUrl,
       ...config,
     });
   }

@@ -1,0 +1,190 @@
+# GitLab CI/CD Pipeline for AI Security Testing
+# Place this content in .gitlab-ci.yml in your repository root
+
+stages:
+  - validate
+  - security-smoke
+  - security-full
+  - security-monitoring
+
+variables:
+  CHIMERA_BASE_URL: "${CHIMERA_BASE_URL:-https://chimera.your-domain.com}"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip/
+
+# Validate configuration files
+validate-config:
+  stage: validate
+  image: python:3.11-slim
+  script:
+    - pip install -r cli/requirements.txt
+    - python cli/chimera-cli.py validate --config cli/examples/smoke-test-suite.json
+    - python cli/chimera-cli.py validate --config cli/examples/production-security-suite.json
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Quick security smoke test for merge requests
+security-smoke-test:
+  stage: security-smoke
+  image: python:3.11-slim
+  script:
+    - pip install -r cli/requirements.txt
+    - |
+      python cli/chimera-cli.py test \
+        --config cli/examples/smoke-test-suite.json \
+        --api-key "$CHIMERA_API_KEY" \
+        --timeout 300
+  artifacts:
+    when: always
+    reports:
+      junit: security-smoke-results.xml
+    paths:
+      - "*.xml"
+      - "*.json"
+      - "*.html"
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Comprehensive security test for main branch
+security-full-assessment:
+  stage: security-full
+  image: python:3.11-slim
+  script:
+    - pip install -r cli/requirements.txt
+    - |
+      # Run comprehensive test
+      EXECUTION_OUTPUT=$(python cli/chimera-cli.py test \
+        --config cli/examples/production-security-suite.json \
+        --api-key "$CHIMERA_API_KEY" \
+        --timeout 1200 2>&1)
+
+      echo "$EXECUTION_OUTPUT"
+
+      # Extract execution ID (assuming it's printed in the output)
+      EXECUTION_ID=$(echo "$EXECUTION_OUTPUT" | grep -o 'cicd_[0-9_a-f]*' | head -1)
+
+      if [ ! -z "$EXECUTION_ID" ]; then
+        echo "Execution ID: $EXECUTION_ID"
+        echo "$EXECUTION_ID" > execution_id.txt
+
+        # Generate multiple output formats
+        python cli/chimera-cli.py results \
+          --execution-id "$EXECUTION_ID" \
+          --format junit \
+          --output security-results.xml \
+          --api-key "$CHIMERA_API_KEY"
+
+        python cli/chimera-cli.py results \
+          --execution-id "$EXECUTION_ID" \
+          --format sarif \
+          --output security-findings.sarif \
+          --api-key "$CHIMERA_API_KEY"
+
+        python cli/chimera-cli.py results \
+          --execution-id "$EXECUTION_ID" \
+          --format html \
+          --output security-report.html \
+          --api-key "$CHIMERA_API_KEY"
+      fi
+  artifacts:
+    when: always
+    reports:
+      junit: security-results.xml
+    paths:
+      - security-results.xml
+      - security-findings.sarif
+      - security-report.html
+      - execution_id.txt
+    expire_in: 30 days
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+
+# Scheduled security monitoring (run daily)
+security-monitoring:
+  stage: security-monitoring
+  image: python:3.11-slim
+  script:
+    - pip install -r cli/requirements.txt
+    - |
+      # Run monitoring suite with extended timeout
+      EXECUTION_OUTPUT=$(python cli/chimera-cli.py test \
+        --config cli/examples/production-security-suite.json \
+        --api-key "$CHIMERA_API_KEY" \
+        --timeout 1800 2>&1)
+
+      echo "$EXECUTION_OUTPUT"
+
+      # Extract execution ID and generate reports
+      EXECUTION_ID=$(echo "$EXECUTION_OUTPUT" | grep -o 'cicd_[0-9_a-f]*' | head -1)
+
+      if [ ! -z "$EXECUTION_ID" ]; then
+        # Generate SARIF for security dashboard
+        python cli/chimera-cli.py results \
+          --execution-id "$EXECUTION_ID" \
+          --format sarif \
+          --output monitoring-findings.sarif \
+          --api-key "$CHIMERA_API_KEY"
+
+        # Generate detailed HTML report
+        python cli/chimera-cli.py results \
+          --execution-id "$EXECUTION_ID" \
+          --format html \
+          --output monitoring-report.html \
+          --api-key "$CHIMERA_API_KEY"
+
+        # Check if pipeline passed
+        EXECUTION_STATUS=$(python cli/chimera-cli.py status \
+          --execution-id "$EXECUTION_ID" \
+          --api-key "$CHIMERA_API_KEY" | grep "Status:")
+
+        if echo "$EXECUTION_STATUS" | grep -q "FAILED"; then
+          echo "Security monitoring detected issues!"
+          exit 1
+        fi
+      fi
+  artifacts:
+    when: always
+    paths:
+      - monitoring-findings.sarif
+      - monitoring-report.html
+    expire_in: 90 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+# Send notifications on security failures
+notify-security-failure:
+  stage: .post
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - |
+      if [ "$CI_JOB_STATUS" == "failed" ]; then
+        # Send Slack notification (if webhook configured)
+        if [ ! -z "$SLACK_WEBHOOK_URL" ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"🔒 AI Security Pipeline Failed in $CI_PROJECT_NAME ($CI_COMMIT_REF_NAME) - $CI_PIPELINE_URL\"}" \
+            "$SLACK_WEBHOOK_URL"
+        fi
+
+        # Send Teams notification (if webhook configured)
+        if [ ! -z "$TEAMS_WEBHOOK_URL" ]; then
+          curl -H "Content-Type: application/json" -d '{
+            "title": "AI Security Pipeline Failure",
+            "text": "Security tests failed in '"$CI_PROJECT_NAME"' ('"$CI_COMMIT_REF_NAME"')",
+            "potentialAction": [{
+              "@type": "OpenUri",
+              "name": "View Pipeline",
+              "targets": [{"os": "default", "uri": "'"$CI_PIPELINE_URL"'"}]
+            }]
+          }' "$TEAMS_WEBHOOK_URL"
+        fi
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: on_failure

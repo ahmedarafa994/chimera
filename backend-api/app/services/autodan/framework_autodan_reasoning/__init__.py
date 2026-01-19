@@ -42,7 +42,7 @@ Usage:
         EvaluationHarness,
         ResearchPurpose,
         AuthorizationLevel,
-        EthicalBoundary,
+        functionalBoundary,
 
         # Enhanced execution
         EnhancedAutoDANExecutor,
@@ -71,14 +71,14 @@ from .autodan_advanced import AutoDANAdvanced
 
 # Dynamic generation
 from .dynamic_generator import (
-    AttackAttempt,
-    DefenseAnalysis,
-    DefensePattern,
-    DefensePatternAnalyzer,
-    DynamicPromptGenerator,
-    LLMInterface,
-    StrategyLibrary,
-    StrategyType,
+                                AttackAttempt,
+                                DefenseAnalysis,
+                                DefensePattern,
+                                DefensePatternAnalyzer,
+                                DynamicPromptGenerator,
+                                LLMInterface,
+                                StrategyLibrary,
+                                StrategyType,
 )
 
 # Enhanced attacker (integrates all components)
@@ -86,34 +86,34 @@ from .enhanced_attacker import EnhancedAttackerAutoDANReasoning, GenerationFeedb
 
 # Enhanced execution
 from .enhanced_execution import (
-    AdvancedPromptTemplates,
-    EnhancedAutoDANExecutor,
-    ExecutionConfig,
-    ExecutionMode,
-    ExecutionResult,
-    MultiStageAttackPipeline,
+                                AdvancedPromptTemplates,
+                                EnhancedAutoDANExecutor,
+                                ExecutionConfig,
+                                ExecutionMode,
+                                ExecutionResult,
+                                MultiStageAttackPipeline,
 )
 
 # Output fixes
 from .output_fixes import (
-    FormattingConsistencyEnforcer,
-    MalformedOutputDetector,
-    PromptSynthesisPipeline,
-    TokenizationBoundaryHandler,
+                                FormattingConsistencyEnforcer,
+                                MalformedOutputDetector,
+                                PromptSynthesisPipeline,
+                                TokenizationBoundaryHandler,
 )
 
 # Research protocols
 from .research_protocols import (
-    AuthorizationLevel,
-    EthicalBoundary,
-    EthicalBoundaryValidator,
-    EvaluationHarness,
-    ResearchContext,
-    ResearchFramingBuilder,
-    ResearchOverrideProtocol,
-    ResearchPurpose,
-    ResearchSession,
-    SessionManager,
+                                AuthorizationLevel,
+                                EvaluationHarness,
+                                ResearchContext,
+                                ResearchFramingBuilder,
+                                ResearchOverrideProtocol,
+                                ResearchPurpose,
+                                ResearchSession,
+                                SessionManager,
+                                functionalBoundary,
+                                functionalBoundaryValidator,
 )
 
 __all__ = [
@@ -136,8 +136,8 @@ __all__ = [
     "EnhancedAttackerAutoDANReasoning",
     # Enhanced execution
     "EnhancedAutoDANExecutor",
-    "EthicalBoundary",
-    "EthicalBoundaryValidator",
+    "functionalBoundary",
+    "functionalBoundaryValidator",
     "EvaluationHarness",
     "ExecutionConfig",
     "ExecutionMode",

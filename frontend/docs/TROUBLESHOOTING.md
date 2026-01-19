@@ -12,7 +12,7 @@ This error typically occurs when the frontend cannot connect to the backend API 
    cd backend-api
    python run.py
    ```
-   The backend should be running on `http://localhost:8000`
+   The backend should be running on `http://localhost:8001`
 
 2. **Clear Next.js cache and restart:**
    ```bash
@@ -47,14 +47,14 @@ python run.py
 **Symptoms:** Network errors, 404 responses
 **Solution:** The backend runs on port 8000. Check your `.env.local`:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_API_URL=http://localhost:8001/api/v1
 ```
 
 #### 3. CORS Issues
 **Symptoms:** CORS errors in browser console
 **Solution:** The backend should have CORS configured. Check `backend-api/.env`:
 ```env
-BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+BACKEND_CORS_ORIGINS=["http://localhost:3001"]
 ```
 
 #### 4. Turbopack HMR WebSocket Issues
@@ -96,18 +96,18 @@ kill -9 $(lsof -t -i:8000)
 1. **Check browser DevTools Network tab:**
    - Look for failed requests (red entries)
    - Check the status codes (404, 500, CORS errors)
-   - Verify the request URL is correct (`localhost:8000/api/v1/...`)
+   - Verify the request URL is correct (`localhost:8001/api/v1/...`)
 
 2. **Test API directly:**
    ```bash
    # Health check
-   curl http://localhost:8000/health
+   curl http://localhost:8001/health
 
    # Providers list
-   curl http://localhost:8000/api/v1/providers
+   curl http://localhost:8001/api/v1/providers
 
    # Techniques list
-   curl http://localhost:8000/api/v1/techniques
+   curl http://localhost:8001/api/v1/techniques
    ```
 
 3. **Check terminal output:**

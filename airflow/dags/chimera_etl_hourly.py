@@ -17,10 +17,11 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.dbt.operators.dbt import DbtRunOperator, DbtTestOperator
 from airflow.utils.dates import days_ago
+
+from airflow import DAG
 
 # Add Chimera backend to path for imports
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
@@ -99,14 +100,18 @@ def validate_quality(**_context):
     if not llm_df.empty:
         llm_result = validate_llm_interactions(llm_df)
         if not llm_result.success:
-            raise ValueError(f"LLM interactions validation failed: {llm_result.failed_expectations}")
+            raise ValueError(
+                f"LLM interactions validation failed: {llm_result.failed_expectations}"
+            )
 
     # Validate transformations
     trans_df = ingester.extract_transformation_events(start_time, end_time)
     if not trans_df.empty:
         trans_result = validate_transformations(trans_df)
         if not trans_result.success:
-            raise ValueError(f"Transformations validation failed: {trans_result.failed_expectations}")
+            raise ValueError(
+                f"Transformations validation failed: {trans_result.failed_expectations}"
+            )
 
     return {"status": "success", "task": "validate_quality"}
 

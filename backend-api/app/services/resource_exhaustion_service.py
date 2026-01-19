@@ -484,7 +484,9 @@ class ResourceExhaustionService:
                     pct >= self._budget_config.alert_threshold_percent
                     for pct in [tokens_pct, cost_pct, attacks_pct]
                 ),
-                "any_budget_exceeded": any(pct >= 100 for pct in [tokens_pct, cost_pct, attacks_pct]),
+                "any_budget_exceeded": any(
+                    pct >= 100 for pct in [tokens_pct, cost_pct, attacks_pct]
+                ),
             }
 
     def estimate_attack_cost(
@@ -545,7 +547,8 @@ class ResourceExhaustionService:
                 "within_budget": (
                     cost_impact["attack_cost_usd"]
                     <= self._budget_config.max_cost_per_hour_usd - self._hourly_cost
-                    and num_attacks <= self._budget_config.max_attacks_per_hour - self._hourly_attacks
+                    and num_attacks
+                    <= self._budget_config.max_attacks_per_hour - self._hourly_attacks
                 ),
             },
         }

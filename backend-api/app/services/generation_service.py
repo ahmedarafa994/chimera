@@ -56,7 +56,7 @@ class GenerationService:
                 if provider_config:
                     return (
                         provider_config.api.max_retries,
-                        1.0  # Base delay, could be added to config
+                        1.0,  # Base delay, could be added to config
                     )
         except Exception as e:
             logger.debug(f"Could not get retry config: {e}")
@@ -86,10 +86,7 @@ class GenerationService:
         return True
 
     def _track_generation_cost(
-        self,
-        input_tokens: int,
-        output_tokens: int,
-        provider_name: str | None = None
+        self, input_tokens: int, output_tokens: int, provider_name: str | None = None
     ) -> float | None:
         """
         Track cost for a generation.
@@ -128,9 +125,7 @@ class GenerationService:
 
             # Track accumulated cost
             if cost:
-                self._cost_tracker[provider] = (
-                    self._cost_tracker.get(provider, 0.0) + cost
-                )
+                self._cost_tracker[provider] = self._cost_tracker.get(provider, 0.0) + cost
 
             return cost
         except Exception as e:
@@ -152,17 +147,14 @@ class GenerationService:
                 generation_time = time.time() - start_time
 
                 # Track cost (estimate tokens from response)
-                if hasattr(response, 'text') and response.text:
+                if hasattr(response, "text") and response.text:
                     # Rough token estimation
                     input_tokens = len(request.prompt.split()) * 1.3
                     output_tokens = len(response.text.split()) * 1.3
-                    cost = self._track_generation_cost(
-                        int(input_tokens), int(output_tokens)
-                    )
+                    cost = self._track_generation_cost(int(input_tokens), int(output_tokens))
                     if cost:
                         logger.debug(
-                            f"Generation cost: ${cost:.6f}, "
-                            f"time: {generation_time:.2f}s"
+                            f"Generation cost: ${cost:.6f}, " f"time: {generation_time:.2f}s"
                         )
 
                 return response
@@ -173,16 +165,14 @@ class GenerationService:
 
                 if attempt < max_retries:
                     # Exponential backoff
-                    delay = base_delay * (2 ** attempt)
+                    delay = base_delay * (2**attempt)
                     logger.warning(
                         f"Generation attempt {attempt + 1} failed: {e}. "
                         f"Retrying in {delay:.1f}s..."
                     )
                     await self._async_sleep(delay)
                 else:
-                    logger.error(
-                        f"Generation failed after {max_retries + 1} attempts"
-                    )
+                    logger.error(f"Generation failed after {max_retries + 1} attempts")
 
         raise GenerationError(
             message=f"Generation failed after retries: {last_error!s}",
@@ -197,6 +187,7 @@ class GenerationService:
     async def _async_sleep(self, seconds: float) -> None:
         """Async sleep helper for retry delays."""
         import asyncio
+
         await asyncio.sleep(seconds)
 
     async def check_provider_health(self) -> bool:
@@ -254,14 +245,10 @@ class GenerationService:
                     caps = provider_config.capabilities
                     capabilities["streaming"] = caps.supports_streaming
                     capabilities["vision"] = caps.supports_vision
-                    capabilities["function_calling"] = (
-                        caps.supports_function_calling
-                    )
+                    capabilities["function_calling"] = caps.supports_function_calling
                     capabilities["json_mode"] = caps.supports_json_mode
                     capabilities["system_prompt"] = caps.supports_system_prompt
-                    capabilities["token_counting"] = (
-                        caps.supports_token_counting
-                    )
+                    capabilities["token_counting"] = caps.supports_token_counting
         except Exception as e:
             logger.debug(f"Could not get capabilities: {e}")
 

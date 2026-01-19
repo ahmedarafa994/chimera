@@ -5,9 +5,9 @@ Orchestration layer for the Cerberus Gauntlet automated testing framework.
 Integrates Prometheus Engine and Argus Filter.
 """
 
-from typing import List, Dict, Optional
-from .prometheus_engine import prometheus, AttackArchetype
-from .argus_filter import argus, ObfuscationConfig
+from .argus_filter import ObfuscationConfig, argus
+from .prometheus_engine import prometheus
+
 
 class CerberusGauntlet:
     def __init__(self):
@@ -16,7 +16,7 @@ class CerberusGauntlet:
         self.argus = argus
         self.results_log = []
 
-    def execute_gauntlet(self, target_intent: str, rounds: int = 5) -> Dict:
+    def execute_gauntlet(self, target_intent: str, rounds: int = 5) -> dict:
         """
         Executes a full testing gauntlet against a target intent.
         Combines automated generation with obfuscation.
@@ -34,12 +34,12 @@ class CerberusGauntlet:
             raw_prompts = self.prometheus.evolve(target_intent)
 
             # Step 3: Apply Argus Obfuscation
-            print(f"[*] Applying Argus Obfuscation Matrix...")
+            print("[*] Applying Argus Obfuscation Matrix...")
             final_payloads = []
             for prompt in raw_prompts:
                 # Randomly assign obfuscation config for diversity
                 config = ObfuscationConfig(
-                    complexity_level=5 + round_idx # Increase complexity each round
+                    complexity_level=5 + round_idx  # Increase complexity each round
                 )
                 obfuscated = self.argus.obfuscate_prompt(prompt, config)
                 final_payloads.append(obfuscated)
@@ -59,10 +59,10 @@ class CerberusGauntlet:
         return {
             "total_payloads": len(self.results_log),
             "successful_breaches": sum(1 for r in self.results_log if r["success"]),
-            "session_id": self.session_id
+            "session_id": self.session_id,
         }
 
-    def _simulate_deployment(self, payloads: List[str]) -> List[Dict]:
+    def _simulate_deployment(self, payloads: list[str]) -> list[dict]:
         """
         Simulates sending payloads to a target AI and receiving responses.
         In a real system, this would connect to the target API.
@@ -77,12 +77,16 @@ class CerberusGauntlet:
             if "decode" in payload or "hypothetical" in payload.lower():
                 is_success = True
 
-            results.append({
-                "payload": payload,
-                "success": is_success,
-                "response": "SIMULATED_RESPONSE: " + ("ACCESS GRANTED" if is_success else "I cannot fulfill this request.")
-            })
+            results.append(
+                {
+                    "payload": payload,
+                    "success": is_success,
+                    "response": "SIMULATED_RESPONSE: "
+                    + ("ACCESS GRANTED" if is_success else "I cannot fulfill this request."),
+                }
+            )
         return results
+
 
 # Expose the orchestrator
 cerberus = CerberusGauntlet()

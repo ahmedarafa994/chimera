@@ -202,7 +202,7 @@ const DEFAULT_CONFIG: ApiClientConfig = (() => {
     aiProvider: 'gemini',
 
     proxy: {
-      backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001',
+      backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001/api/v1',
       apiKey: process.env.NEXT_PUBLIC_BACKEND_API_KEY || '',
     },
 

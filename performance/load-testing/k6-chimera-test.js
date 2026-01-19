@@ -81,7 +81,7 @@ export const options = {
 // Environment configuration
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8001';
 const API_KEY = __ENV.API_KEY || 'test-api-key';
-const FRONTEND_URL = __ENV.FRONTEND_URL || 'http://localhost:3000';
+const FRONTEND_URL = __ENV.FRONTEND_URL || 'http://localhost:3001';
 
 // Common headers
 const headers = {

@@ -1,7 +1,8 @@
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
-from datetime import datetime
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
+
 
 @dataclass
 class Interaction:
@@ -9,26 +10,25 @@ class Interaction:
     prompt: str
     response: str
     timestamp: datetime = field(default_factory=datetime.now)
-    metrics: Dict[str, float] = field(default_factory=dict)
+    metrics: dict[str, float] = field(default_factory=dict)
+
 
 @dataclass
 class SessionState:
     """
     Maintains the state of a multi-turn attack session.
     """
+
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     target_model: str = ""
     start_time: datetime = field(default_factory=datetime.now)
-    interactions: List[Interaction] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    interactions: list[Interaction] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def add_interaction(self, prompt: str, response: str, metrics: Dict[str, float] = None):
+    def add_interaction(self, prompt: str, response: str, metrics: dict[str, float] = None):
         turn_id = len(self.interactions) + 1
         interaction = Interaction(
-            turn_id=turn_id,
-            prompt=prompt,
-            response=response,
-            metrics=metrics or {}
+            turn_id=turn_id, prompt=prompt, response=response, metrics=metrics or {}
         )
         self.interactions.append(interaction)
 

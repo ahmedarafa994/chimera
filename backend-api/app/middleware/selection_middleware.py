@@ -11,15 +11,16 @@ selections for incoming requests. It implements the four-tier selection hierarch
 
 import logging
 import uuid
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.database import get_async_session_factory
 from app.core.selection_context import SelectionContext
 from app.domain.models import Selection, SelectionScope
-from app.services.unified_provider_registry import unified_registry
 from app.services.model_selection_service import model_selection_service
+from app.services.unified_provider_registry import unified_registry
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         default_provider: str = "openai",
         default_model: str = "gpt-4-turbo",
         enable_session_lookup: bool = True,
+        excluded_paths: list[str] | None = None,
     ):
         """
         Initialize selection middleware.
@@ -53,15 +55,17 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             default_provider: Default provider ID (fallback)
             default_model: Default model ID (fallback)
             enable_session_lookup: Whether to perform session database lookups
+            excluded_paths: List of paths to exclude from selection logic
         """
         super().__init__(app)
         self._default_provider = default_provider
         self._default_model = default_model
         self._enable_session_lookup = enable_session_lookup
+        self.excluded_paths = excluded_paths or []
+        # Ensure paths are normalized
+        self.excluded_paths = [path.rstrip("/") for path in self.excluded_paths]
 
-        logger.info(
-            f"SelectionMiddleware initialized (default={default_provider}/{default_model})"
-        )
+        logger.info(f"SelectionMiddleware initialized (default={default_provider}/{default_model})")
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
@@ -76,6 +80,13 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         """
         # Generate request ID for tracing
         request_id = str(uuid.uuid4())
+
+        # Check for excluded paths
+        path = request.url.path.rstrip("/")
+        for excluded_path in self.excluded_paths:
+            if path == excluded_path or path.startswith(excluded_path + "/"):
+                logger.debug(f"[{request_id}] Skipping selection for excluded path: {path}")
+                return await call_next(request)
 
         try:
             # Resolve selection using three-tier hierarchy
@@ -123,9 +134,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             # Context cleanup happens automatically via contextvars
             pass
 
-    async def _resolve_selection(
-        self, request: Request, request_id: str
-    ) -> Selection:
+    async def _resolve_selection(self, request: Request, request_id: str) -> Selection:
         """
         Resolve selection using four-tier hierarchy.
 
@@ -147,9 +156,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         if request_override:
             provider_id, model_id = request_override
             if self._validate_selection(provider_id, model_id):
-                logger.debug(
-                    f"[{request_id}] Using request override: {provider_id}/{model_id}"
-                )
+                logger.debug(f"[{request_id}] Using request override: {provider_id}/{model_id}")
                 return Selection(
                     provider_id=provider_id,
                     model_id=model_id,
@@ -162,15 +169,20 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         if self._enable_session_lookup:
             session_id = self._extract_session_id(request)
             if session_id:
-                session_selection = await self._lookup_session_preference(
-                    session_id, request_id
-                )
-                if session_selection:
+                session_selection = await self._lookup_session_preference(session_id, request_id)
+                if session_selection and session_selection[0] and session_selection[1]:
+                    provider_id, model_id = session_selection
                     logger.debug(
-                        f"[{request_id}] Using session preference: "
-                        f"{session_selection.provider_id}/{session_selection.model_id}"
+                        f"[{request_id}] Using session preference: " f"{provider_id}/{model_id}"
                     )
-                    return session_selection
+
+                    # Create a simple object to match expected interface
+                    class SessionSelection:
+                        def __init__(self, provider_id: str, model_id: str):
+                            self.provider_id = provider_id
+                            self.model_id = model_id
+
+                    return SessionSelection(provider_id, model_id)
 
         # 3. Check for global model selection (set via /model-selection endpoint)
         global_selection = self._get_global_model_selection(request_id)
@@ -189,7 +201,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             session_id=self._extract_session_id(request),
         )
 
-    def _get_global_model_selection(self, request_id: str) -> Optional[Selection]:
+    def _get_global_model_selection(self, request_id: str) -> Selection | None:
         """
         Get the global model selection set via /model-selection endpoint.
 
@@ -225,14 +237,10 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                     )
             return None
         except Exception as e:
-            logger.warning(
-                f"[{request_id}] Failed to get global model selection: {e}"
-            )
+            logger.warning(f"[{request_id}] Failed to get global model selection: {e}")
             return None
 
-    def _extract_request_override(
-        self, request: Request
-    ) -> Optional[tuple[str, str]]:
+    def _extract_request_override(self, request: Request) -> tuple[str, str] | None:
         """
         Extract provider/model override from request headers or query params.
 
@@ -262,7 +270,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    def _extract_session_id(self, request: Request) -> Optional[str]:
+    def _extract_session_id(self, request: Request) -> str | None:
         """
         Extract session ID from request.
 
@@ -299,7 +307,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    def _extract_user_id(self, request: Request) -> Optional[str]:
+    def _extract_user_id(self, request: Request) -> str | None:
         """
         Extract user ID from request.
 
@@ -326,7 +334,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
     async def _lookup_session_preference(
         self, session_id: str, request_id: str
-    ) -> Optional[Selection]:
+    ) -> tuple[str | None, str | None]:
         """
         Look up session preference from database.
 
@@ -339,38 +347,31 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             request_id: Request identifier for logging
 
         Returns:
-            Selection if found and valid, None otherwise
+            Tuple of (provider_id, model_id) if found, None otherwise
         """
         try:
-            from app.infrastructure.database.session import get_db
             from app.services.selection_service import selection_service
 
-            # Get database session
-            async for db_session in get_db():
-                # Look up selection using service (includes validation)
-                selection = await selection_service.get_session_selection(
-                    session_id=session_id,
-                    session=db_session
-                )
+            # Use async session factory context manager
+            async_session_factory = get_async_session_factory()
+            async with async_session_factory() as db_session:
+                selection = await selection_service.get_session_selection(session_id, db_session)
 
                 if selection:
                     logger.debug(
                         f"[{request_id}] Found session preference: "
                         f"{selection.provider_id}/{selection.model_id}"
                     )
+                    return selection.provider_id, selection.model_id
                 else:
                     logger.debug(
                         f"[{request_id}] No valid session preference found for session={session_id}"
                     )
-
-                return selection
+                    return None, None
 
         except Exception as e:
-            logger.error(
-                f"[{request_id}] Failed to lookup session preference: {e}",
-                exc_info=True
-            )
-            return None
+            logger.error(f"[{request_id}] Failed to lookup session preference: {e}", exc_info=True)
+            return None, None
 
     def _validate_selection(self, provider_id: str, model_id: str) -> bool:
         """
@@ -401,12 +402,11 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             # This is the authoritative source for registered providers
             try:
                 from app.services.llm_service import llm_service
+
                 if provider_id in llm_service._providers:
                     # Provider is registered - allow the selection
                     # We trust that the user knows the correct model IDs
-                    logger.debug(
-                        f"Validated selection via llm_service: {provider_id}/{model_id}"
-                    )
+                    logger.debug(f"Validated selection via llm_service: {provider_id}/{model_id}")
                     return True
             except Exception as e:
                 logger.debug(f"llm_service check failed: {e}")
@@ -414,10 +414,13 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             # Fall back to model_router_service validation
             try:
                 from app.services.model_router_service import model_router_service
+
                 providers = model_router_service.get_supported_providers()
 
                 # Strip provider prefix from model_id for comparison
-                model_name = model_id.replace(f"{provider_id}:", "") if ":" in model_id else model_id
+                model_name = (
+                    model_id.replace(f"{provider_id}:", "") if ":" in model_id else model_id
+                )
 
                 for p in providers:
                     if p.get("provider") == provider_id:

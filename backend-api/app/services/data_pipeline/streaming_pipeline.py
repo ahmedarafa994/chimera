@@ -30,11 +30,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from app.services.data_pipeline.realtime_metrics import (
-    AggregationType,
-    MetricType,
-    RealtimeMetrics,
-)
+from app.services.data_pipeline.realtime_metrics import AggregationType, MetricType, RealtimeMetrics
 from app.services.data_pipeline.streaming_consumer import (
     GROUP_ALERTS,
     GROUP_ANALYTICS,

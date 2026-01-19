@@ -82,7 +82,7 @@ interface UseEnhancedModelSelectionReturn {
   healthyProviders: Provider[];
 }
 
-const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api/v1";
 const SESSION_KEY = "chimera_session_id";
 const DEBOUNCE_MS = 400;
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -90,12 +90,17 @@ const RECONNECT_DELAY_MS = 3000;
 
 // Type guard for provider data from API
 interface ApiProviderData {
+  provider?: string;
   provider_id?: string;
   id?: string;
   name?: string;
+  display_name?: string;
   status?: string;
-  models?: ApiModelData[];
+  is_healthy?: boolean;
+  models?: Array<ApiModelData | string>;
+  default_model?: string;
   latency?: number;
+  latency_ms?: number;
 }
 
 interface ApiModelData {
@@ -166,33 +171,60 @@ export function useEnhancedModelSelection(
         headers["X-Session-ID"] = sessionId;
       }
 
-      const response = await fetch(`${apiBaseUrl}/api/v1/providers`, { headers });
+      const response = await fetch(`${apiBaseUrl}/providers`, { headers });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch providers: ${response.status}`);
       }
 
       const data = await response.json();
-      const providerList: ApiProviderData[] = Array.isArray(data) ? data : (data.providers || []);
+      const providerList: ApiProviderData[] = Array.isArray(data)
+        ? data
+        : (data.providers || []);
 
       // Transform to internal format
-      const transformed: Provider[] = providerList.map((p: ApiProviderData) => ({
-        id: p.provider_id || p.id || "",
-        name: p.name || p.provider_id || p.id || "",
-        status: (p.status === "healthy" || p.status === "degraded" || p.status === "offline")
-          ? p.status
-          : "healthy",
-        models: Array.isArray(p.models) ? p.models.map((m: ApiModelData) => ({
-          id: m.model_id || m.id || "",
-          name: m.name || m.model_id || m.id || "",
-          tier: (m.tier === "standard" || m.tier === "premium" || m.tier === "experimental")
-            ? m.tier
-            : "standard",
-          contextWindow: m.context_window,
-          maxTokens: m.max_tokens,
-        })) : [],
-        latency: p.latency,
-      }));
+      const transformed: Provider[] = providerList.map((p: ApiProviderData) => {
+        const providerId = p.provider || p.provider_id || p.id || "";
+        const displayName = p.display_name || p.name || providerId;
+        const statusValue = p.status;
+        const isHealthy = typeof p.is_healthy === "boolean" ? p.is_healthy : true;
+        const normalizedStatus =
+          statusValue === "healthy" || statusValue === "degraded" || statusValue === "offline"
+            ? statusValue
+            : isHealthy
+              ? "healthy"
+              : "offline";
+
+        const models = Array.isArray(p.models)
+          ? p.models.map((m) => {
+              if (typeof m === "string") {
+                return {
+                  id: m,
+                  name: m,
+                  tier: "standard" as const,
+                };
+              }
+              return {
+                id: m.model_id || m.id || "",
+                name: m.name || m.model_id || m.id || "",
+                tier:
+                  m.tier === "standard" || m.tier === "premium" || m.tier === "experimental"
+                    ? m.tier
+                    : "standard",
+                contextWindow: m.context_window,
+                maxTokens: m.max_tokens,
+              };
+            })
+          : [];
+
+        return {
+          id: providerId,
+          name: displayName,
+          status: normalizedStatus,
+          models,
+          latency: p.latency_ms ?? p.latency,
+        };
+      });
 
       setProviders(transformed);
 
@@ -218,12 +250,14 @@ export function useEnhancedModelSelection(
     if (!sessionId) return;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/session/${sessionId}/model`);
+      const response = await fetch(`${apiBaseUrl}/session/${sessionId}/model`);
       if (response.ok) {
         const data = await response.json();
-        if (data.provider_id && data.model_id) {
-          setSelectedProvider(data.provider_id);
-          setSelectedModel(data.model_id);
+        const providerId = data.provider_id || data.provider;
+        const modelId = data.model_id || data.model;
+        if (providerId && modelId) {
+          setSelectedProvider(providerId);
+          setSelectedModel(modelId);
         }
       }
     } catch {
@@ -241,15 +275,15 @@ export function useEnhancedModelSelection(
     setIsSyncing(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/providers/select`, {
+      const response = await fetch(`${apiBaseUrl}/providers/select`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Session-ID": sessionId,
         },
         body: JSON.stringify({
-          provider_id: providerId,
-          model_id: modelId,
+          provider: providerId,
+          model: modelId,
         }),
       });
 
@@ -290,7 +324,9 @@ export function useEnhancedModelSelection(
     }
 
     try {
-      const ws = new WebSocket(`${wsBaseUrl}/api/v1/providers/ws/selection?session_id=${sessionId}`);
+      const ws = new WebSocket(
+        `${wsBaseUrl}/providers/ws/selection?session_id=${sessionId}`
+      );
 
       ws.onopen = () => {
         setIsConnected(true);
@@ -302,19 +338,40 @@ export function useEnhancedModelSelection(
         try {
           const data = JSON.parse(event.data);
 
-          if (data.type === "selection_update") {
+          if (data.type === "selection_change" || data.type === "current_selection") {
+            const provider = data.data?.provider || data.provider_id;
+            const model = data.data?.model || data.model_id;
+            if (provider && model) {
+              setSelectedProvider(provider);
+              setSelectedModel(model);
+              onSelectionChange?.({
+                providerId: provider,
+                modelId: model,
+              });
+            }
+          } else if (data.type === "health_update") {
+            const providersUpdate = Array.isArray(data.data?.providers)
+              ? data.data.providers
+              : [];
+            if (providersUpdate.length > 0) {
+              setProviders((prev) =>
+                prev.map((p) => {
+                  const updated = providersUpdate.find(
+                    (item: { provider: string }) => item.provider === p.id
+                  );
+                  if (!updated) return p;
+                  const nextStatus = updated.is_healthy ? "healthy" : "offline";
+                  return { ...p, status: nextStatus as Provider["status"] };
+                })
+              );
+            }
+          } else if (data.type === "selection_update") {
             setSelectedProvider(data.provider_id);
             setSelectedModel(data.model_id);
             onSelectionChange?.({
               providerId: data.provider_id,
               modelId: data.model_id,
             });
-          } else if (data.type === "provider_status") {
-            setProviders((prev) =>
-              prev.map((p) =>
-                p.id === data.provider_id ? { ...p, status: data.status } : p
-              )
-            );
           } else if (data.type === "rate_limit") {
             setIsRateLimited(true);
             onRateLimit?.(data.retry_after);

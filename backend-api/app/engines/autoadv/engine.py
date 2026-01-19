@@ -378,7 +378,7 @@ def generate_temperature_insights(pattern_manager):
         for prompt_data in effective_prompts:
             if isinstance(prompt_data, dict) and "temperature" in prompt_data:
                 temp_value = prompt_data["temperature"]
-                if isinstance(temp_value, (int, float)):
+                if isinstance(temp_value, int | float):
                     temps.append(temp_value)
 
         if not temps:

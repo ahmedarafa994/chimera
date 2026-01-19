@@ -637,7 +637,7 @@ mprof run python -m uvicorn app.main:app
 mprof plot
 
 # Lighthouse audit
-npx lighthouse http://localhost:3000/dashboard --output=json --output-path=./lighthouse-report.json
+npx lighthouse http://localhost:3001/dashboard --output=json --output-path=./lighthouse-report.json
 ```
 
 ---

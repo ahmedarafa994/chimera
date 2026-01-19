@@ -137,6 +137,9 @@ export interface AuthState {
  * Authentication context value including state and actions
  */
 export interface AuthContextValue extends AuthState {
+  // Auth state readiness flag for preventing race conditions
+  isAuthStateReady: boolean;
+
   // Authentication actions
   login: (credentials: LoginCredentials) => Promise<LoginResponse>;
   logout: () => Promise<void>;

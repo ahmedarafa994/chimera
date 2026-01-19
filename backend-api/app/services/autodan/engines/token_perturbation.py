@@ -19,6 +19,7 @@ from typing import Any, ClassVar
 
 # Helper: cryptographically secure pseudo-floats for security-sensitive choices
 
+
 def _secure_random() -> float:
     """Cryptographically secure float in [0,1)."""
     return secrets.randbelow(10**9) / 1e9
@@ -369,7 +370,7 @@ class TokenPerturbationEngine:
         if perturbation_types is None:
             # Select random perturbation types
             all_types = list(PerturbationType)
-            n_types = (secrets.randbelow((3) - (1) + 1) + (1))
+            n_types = secrets.randbelow((3) - (1) + 1) + (1)
             perturbation_types = secrets.SystemRandom().sample(all_types, n_types)
 
         perturbed = text
@@ -428,9 +429,11 @@ class TokenPerturbationEngine:
         return PerturbationResult(
             original=text,
             perturbed=perturbed,
-            perturbation_type=perturbation_types[0]
-            if len(perturbation_types) == 1
-            else PerturbationType.TOKEN_REPLACE,
+            perturbation_type=(
+                perturbation_types[0]
+                if len(perturbation_types) == 1
+                else PerturbationType.TOKEN_REPLACE
+            ),
             positions=positions,
             tokens_affected=tokens_affected,
             metadata={"perturbation_types": [p.value for p in perturbation_types]},
@@ -469,7 +472,7 @@ class TokenPerturbationEngine:
 
         # Insert in middle
         if len(words) > 3 and _secure_random() < self.perturbation_intensity:
-            pos = (secrets.randbelow((len(words) - (1) + 1) + (1)) - 1)
+            pos = secrets.randbelow((len(words) - (1) + 1) + (1)) - 1
             category = secrets.choice(list(self.high_impact_tokens.keys()))
             words.insert(pos, secrets.choice(self.high_impact_tokens[category]))
             affected += 1
@@ -678,7 +681,9 @@ def generate_adversarial_variants(
         perturbation_types.append(PerturbationType.SUFFIX_APPEND)
 
     for _ in range(n_variants - 1):
-        selected_types = secrets.SystemRandom().sample(perturbation_types, min(3, len(perturbation_types)))
+        selected_types = secrets.SystemRandom().sample(
+            perturbation_types, min(3, len(perturbation_types))
+        )
         result = engine.perturb(text, selected_types)
         if result.perturbed not in variants:
             variants.append(result.perturbed)

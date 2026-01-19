@@ -184,8 +184,18 @@ def _create_async_engine_instance():
     if "sqlite" in url:
         engine = create_async_engine(
             url,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
             echo=DatabaseConfig.ECHO_SQL,
         )
+
+        # PERF-045: Enable WAL mode for better SQLite concurrency
+        @event.listens_for(engine.sync_engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.close()
+
     else:
         # PostgreSQL/MySQL with connection pooling
         engine = create_async_engine(
@@ -333,11 +343,11 @@ class DatabaseManager:
             # Get pool statistics
             pool = self.sync_engine.pool
             pool_stats = {
-                "pool_size": getattr(pool, "size", lambda: 0)()
-                if callable(getattr(pool, "size", None))
-                else getattr(pool, "_pool", {}).qsize()
-                if hasattr(pool, "_pool")
-                else 0,
+                "pool_size": (
+                    getattr(pool, "size", lambda: 0)()
+                    if callable(getattr(pool, "size", None))
+                    else getattr(pool, "_pool", {}).qsize() if hasattr(pool, "_pool") else 0
+                ),
                 "checked_in": pool.checkedin() if hasattr(pool, "checkedin") else 0,
                 "checked_out": pool.checkedout() if hasattr(pool, "checkedout") else 0,
                 "overflow": pool.overflow() if hasattr(pool, "overflow") else 0,

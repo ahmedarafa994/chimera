@@ -51,10 +51,7 @@ class BigModelPlugin(BaseProviderPlugin):
 
     @property
     def base_url(self) -> str:
-        return os.environ.get(
-            "ZHIPU_BASE_URL",
-            "https://open.bigmodel.cn/api/paas/v4"
-        )
+        return os.environ.get("ZHIPU_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
 
     @property
     def capabilities(self) -> list[ProviderCapability]:
@@ -257,14 +254,16 @@ class BigModelPlugin(BaseProviderPlugin):
             if model_id in static_models:
                 models.append(static_models[model_id])
             else:
-                models.append(ModelInfo(
-                    model_id=model_id,
-                    provider_id="bigmodel",
-                    display_name=model.get("id", model_id),
-                    context_window=128000,
-                    supports_streaming=True,
-                    capabilities=["chat"],
-                ))
+                models.append(
+                    ModelInfo(
+                        model_id=model_id,
+                        provider_id="bigmodel",
+                        display_name=model.get("id", model_id),
+                        context_window=128000,
+                        supports_streaming=True,
+                        capabilities=["chat"],
+                    )
+                )
 
         api_ids = {m.model_id for m in models}
         for static_model in static_models.values():
@@ -302,10 +301,7 @@ class BigModelPlugin(BaseProviderPlugin):
         # Build messages
         messages = []
         if request.system_instruction:
-            messages.append({
-                "role": "system",
-                "content": request.system_instruction
-            })
+            messages.append({"role": "system", "content": request.system_instruction})
 
         if request.messages:
             messages.extend(request.messages)
@@ -379,10 +375,7 @@ class BigModelPlugin(BaseProviderPlugin):
         # Build messages
         messages = []
         if request.system_instruction:
-            messages.append({
-                "role": "system",
-                "content": request.system_instruction
-            })
+            messages.append({"role": "system", "content": request.system_instruction})
 
         if request.messages:
             messages.extend(request.messages)
@@ -406,8 +399,9 @@ class BigModelPlugin(BaseProviderPlugin):
             payload["stop"] = request.stop_sequences
 
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                async with client.stream(
+            async with (
+                httpx.AsyncClient(timeout=120.0) as client,
+                client.stream(
                     "POST",
                     f"{self.base_url}/chat/completions",
                     headers={
@@ -415,35 +409,37 @@ class BigModelPlugin(BaseProviderPlugin):
                         "Content-Type": "application/json",
                     },
                     json=payload,
-                ) as response:
-                    response.raise_for_status()
+                ) as response,
+            ):
+                response.raise_for_status()
 
-                    async for line in response.aiter_lines():
-                        if not line:
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
+
+                    if line.startswith("data: "):
+                        data_str = line[6:]
+
+                        if data_str == "[DONE]":
+                            yield StreamChunk(text="", is_final=True)
+                            break
+
+                        try:
+                            import json
+
+                            data = json.loads(data_str)
+                            choice = data.get("choices", [{}])[0]
+                            delta = choice.get("delta", {})
+                            content = delta.get("content", "")
+
+                            if content:
+                                yield StreamChunk(
+                                    text=content,
+                                    is_final=False,
+                                )
+                        except Exception as e:
+                            logger.warning(f"Parse error: {e}")
                             continue
-
-                        if line.startswith("data: "):
-                            data_str = line[6:]
-
-                            if data_str == "[DONE]":
-                                yield StreamChunk(text="", is_final=True)
-                                break
-
-                            try:
-                                import json
-                                data = json.loads(data_str)
-                                choice = data.get("choices", [{}])[0]
-                                delta = choice.get("delta", {})
-                                content = delta.get("content", "")
-
-                                if content:
-                                    yield StreamChunk(
-                                        text=content,
-                                        is_final=False,
-                                    )
-                            except Exception as e:
-                                logger.warning(f"Parse error: {e}")
-                                continue
         except Exception as e:
             logger.error(f"BigModel streaming error: {e}")
             raise

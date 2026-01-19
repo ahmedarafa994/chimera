@@ -30,14 +30,9 @@ from datetime import datetime
 from typing import Any, Optional
 
 from app.services.global_model_selection_state import GlobalModelSelectionState
-from app.services.provider_resolution_service import (
-    get_provider_resolution_service,
-)
-from app.services.provider_plugins import (
-    GenerationRequest,
-    StreamChunk as PluginStreamChunk,
-    get_plugin,
-)
+from app.services.provider_plugins import GenerationRequest, get_plugin
+from app.services.provider_plugins import StreamChunk as PluginStreamChunk
+from app.services.provider_resolution_service import get_provider_resolution_service
 
 logger = logging.getLogger(__name__)
 
@@ -57,17 +52,17 @@ class StreamingRequest:
     """
 
     prompt: str
-    system_instruction: Optional[str] = None
-    messages: Optional[list[dict[str, str]]] = None
+    system_instruction: str | None = None
+    messages: list[dict[str, str]] | None = None
     temperature: float = 0.7
-    max_tokens: Optional[int] = None
-    top_p: Optional[float] = None
-    top_k: Optional[int] = None
-    stop_sequences: Optional[list[str]] = None
-    session_id: Optional[str] = None
-    user_id: Optional[str] = None
-    explicit_provider: Optional[str] = None
-    explicit_model: Optional[str] = None
+    max_tokens: int | None = None
+    top_p: float | None = None
+    top_k: int | None = None
+    stop_sequences: list[str] | None = None
+    session_id: str | None = None
+    user_id: str | None = None
+    explicit_provider: str | None = None
+    explicit_model: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -81,8 +76,8 @@ class StreamingContext:
     """
 
     stream_id: str
-    session_id: Optional[str]
-    user_id: Optional[str]
+    session_id: str | None
+    user_id: str | None
     provider: str
     model: str
     resolution_source: str
@@ -118,10 +113,10 @@ class UnifiedStreamChunk:
     provider: str
     model: str
     is_final: bool = False
-    finish_reason: Optional[str] = None
-    token_count: Optional[int] = None
+    finish_reason: str | None = None
+    token_count: int | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    usage: Optional[dict[str, int]] = None
+    usage: dict[str, int] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -152,16 +147,16 @@ class StreamMetrics:
     stream_id: str
     provider: str
     model: str
-    session_id: Optional[str]
+    session_id: str | None
     started_at: datetime
-    ended_at: Optional[datetime] = None
+    ended_at: datetime | None = None
     total_chunks: int = 0
     total_tokens: int = 0
     total_characters: int = 0
-    first_chunk_latency_ms: Optional[float] = None
-    total_duration_ms: Optional[float] = None
-    finish_reason: Optional[str] = None
-    error: Optional[str] = None
+    first_chunk_latency_ms: float | None = None
+    total_duration_ms: float | None = None
+    finish_reason: str | None = None
+    error: str | None = None
 
     def calculate_throughput(self) -> dict[str, float]:
         """Calculate streaming throughput metrics."""
@@ -257,14 +252,14 @@ class UnifiedStreamingService:
     async def stream_generate(
         self,
         prompt: str,
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        explicit_provider: Optional[str] = None,
-        explicit_model: Optional[str] = None,
-        system_instruction: Optional[str] = None,
+        session_id: str | None = None,
+        user_id: str | None = None,
+        explicit_provider: str | None = None,
+        explicit_model: str | None = None,
+        system_instruction: str | None = None,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        **kwargs
+        max_tokens: int | None = None,
+        **kwargs,
     ) -> AsyncIterator[UnifiedStreamChunk]:
         """
         Stream text generation using current provider/model selection.
@@ -324,14 +319,10 @@ class UnifiedStreamingService:
             # Get provider plugin
             plugin = get_plugin(context.provider)
             if not plugin:
-                raise ValueError(
-                    f"Provider plugin not found: {context.provider}"
-                )
+                raise ValueError(f"Provider plugin not found: {context.provider}")
 
             if not plugin.supports_streaming():
-                raise ValueError(
-                    f"Provider {context.provider} does not support streaming"
-                )
+                raise ValueError(f"Provider {context.provider} does not support streaming")
 
             # Create generation request
             gen_request = GenerationRequest(
@@ -354,7 +345,7 @@ class UnifiedStreamingService:
             # Stream from provider
             chunk_index = 0
             start_time = time.time()
-            first_chunk_time: Optional[float] = None
+            first_chunk_time: float | None = None
 
             async for plugin_chunk in plugin.generate_stream(gen_request):
                 # Record first chunk latency
@@ -412,10 +403,7 @@ class UnifiedStreamingService:
             # Handle errors
             metrics.error = str(e)
             metrics.ended_at = datetime.utcnow()
-            logger.error(
-                f"Stream error: stream_id={context.stream_id}, "
-                f"error={e}"
-            )
+            logger.error(f"Stream error: stream_id={context.stream_id}, " f"error={e}")
             await self._notify_listeners("error", context, e)
             raise
 
@@ -428,11 +416,11 @@ class UnifiedStreamingService:
     async def stream_chat(
         self,
         messages: list[dict[str, str]],
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        explicit_provider: Optional[str] = None,
-        explicit_model: Optional[str] = None,
-        **kwargs
+        session_id: str | None = None,
+        user_id: str | None = None,
+        explicit_provider: str | None = None,
+        explicit_model: str | None = None,
+        **kwargs,
     ) -> AsyncIterator[UnifiedStreamChunk]:
         """
         Stream chat completion using current provider/model selection.
@@ -491,7 +479,7 @@ class UnifiedStreamingService:
             explicit_provider=explicit_provider,
             explicit_model=explicit_model,
             system_instruction=system_instruction,
-            **kwargs
+            **kwargs,
         ):
             yield chunk
 
@@ -623,12 +611,8 @@ class UnifiedStreamingService:
                 total_first_latency += m.first_chunk_latency_ms
                 latency_count += 1
 
-        avg_dur = (
-            total_duration / duration_count if duration_count > 0 else 0
-        )
-        avg_lat = (
-            total_first_latency / latency_count if latency_count > 0 else 0
-        )
+        avg_dur = total_duration / duration_count if duration_count > 0 else 0
+        avg_lat = total_first_latency / latency_count if latency_count > 0 else 0
 
         return {
             "total_streams": total,
@@ -708,7 +692,7 @@ class UnifiedStreamingService:
 # =============================================================================
 
 
-_unified_streaming_service: Optional[UnifiedStreamingService] = None
+_unified_streaming_service: UnifiedStreamingService | None = None
 
 
 def get_unified_streaming_service() -> UnifiedStreamingService:
@@ -749,13 +733,13 @@ async def get_unified_streaming_service_async() -> UnifiedStreamingService:
 
 
 __all__ = [
-    # Main service
-    "UnifiedStreamingService",
+    "StreamMetrics",
+    "StreamingContext",
     # Data classes
     "StreamingRequest",
-    "StreamingContext",
     "UnifiedStreamChunk",
-    "StreamMetrics",
+    # Main service
+    "UnifiedStreamingService",
     # Factory functions
     "get_unified_streaming_service",
     "get_unified_streaming_service_async",

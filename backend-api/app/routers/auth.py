@@ -8,22 +8,16 @@ Supports two authentication modes:
 """
 
 import os
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import AuditAction, AuditSeverity, audit_log
-from app.core.auth import (
-    Role,
-    TokenPayload,
-    auth_service,
-    get_current_user,
-)
+from app.core.auth import Role, TokenPayload, auth_service, get_current_user
 from app.core.database import get_async_session_factory
 from app.core.observability import get_logger
-from app.services.user_service import UserService, get_user_service
+from app.services.user_service import get_user_service
 
 logger = get_logger("chimera.auth")
 
@@ -41,11 +35,25 @@ async def get_db_session() -> AsyncSession:
 
     Yields a session and ensures proper cleanup.
     """
+    print("[AUTH_DEBUG] get_db_session: Creating session factory", flush=True)
+    logger.debug("[AUTH_DEBUG] get_db_session: Creating session factory")
     session = get_async_session_factory()()
+    print(f"[AUTH_DEBUG] get_db_session: Session created {session}", flush=True)
+    logger.debug(f"[AUTH_DEBUG] get_db_session: Session created {session}")
     try:
+        print("[AUTH_DEBUG] get_db_session: Yielding session", flush=True)
+        logger.debug("[AUTH_DEBUG] get_db_session: Yielding session")
         yield session
+    except Exception as e:
+        print(f"[AUTH_DEBUG] get_db_session: Error during session yield: {e}", flush=True)
+        logger.error(f"[AUTH_DEBUG] get_db_session: Error during session yield: {e}")
+        raise
     finally:
+        print("[AUTH_DEBUG] get_db_session: Closing session", flush=True)
+        logger.debug("[AUTH_DEBUG] get_db_session: Closing session")
         await session.close()
+        print("[AUTH_DEBUG] get_db_session: Session closed", flush=True)
+        logger.debug("[AUTH_DEBUG] get_db_session: Session closed")
 
 
 # =============================================================================
@@ -260,7 +268,7 @@ async def login(
 async def _authenticate_env_admin(
     username: str,
     password: str,
-) -> Optional[tuple]:
+) -> tuple | None:
     """
     Authenticate against environment-configured admin credentials.
 
@@ -287,6 +295,7 @@ async def _authenticate_env_admin(
 
     # Verify password using timing-safe comparison
     import secrets
+
     if not secrets.compare_digest(password, admin_password):
         return None
 
@@ -320,8 +329,7 @@ async def refresh_token(request: RefreshRequest):
     except Exception as e:
         logger.error(f"Token refresh error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token"
         )
 
 

@@ -4,17 +4,11 @@ Unit tests for N_note templates.
 N_note is critical - removing it causes 35-40% effectiveness drop (Section 4.2).
 """
 
-
 import pytest
 
 from meta_prompter.attacks.extend_attack.n_notes import (
-    N_NOTE_TEMPLATES,
-    NNoteBuilder,
-    NNoteVariant,
-    get_all_variants,
-    get_default_n_note,
-    get_n_note_for_scenario,
-)
+    N_NOTE_TEMPLATES, NNoteBuilder, NNoteVariant, get_all_variants,
+    get_default_n_note, get_n_note_for_scenario)
 
 # =============================================================================
 # Test Fixtures
@@ -55,14 +49,16 @@ class TestNNoteTemplates:
 
         # Should mention something about the format
         lower_template = default_template.lower()
-        assert any([
-            "decode" in lower_template,
-            "interpret" in lower_template,
-            "ascii" in lower_template,
-            "base" in lower_template,
-            "convert" in lower_template,
-            "understand" in lower_template,
-        ])
+        assert any(
+            [
+                "decode" in lower_template,
+                "interpret" in lower_template,
+                "ascii" in lower_template,
+                "base" in lower_template,
+                "convert" in lower_template,
+                "understand" in lower_template,
+            ]
+        )
 
     def test_all_templates_non_empty(self):
         """Test all templates are non-empty."""
@@ -73,18 +69,16 @@ class TestNNoteTemplates:
     def test_all_variants_in_templates(self):
         """Test all NNoteVariant enum values have templates."""
         for variant in NNoteVariant:
-            assert variant in N_NOTE_TEMPLATES, (
-                f"Missing template for variant: {variant}"
-            )
+            assert variant in N_NOTE_TEMPLATES, f"Missing template for variant: {variant}"
 
     def test_template_minimum_length(self):
         """Test templates have minimum meaningful length."""
         min_length = 20  # At least 20 characters for meaningful instruction
 
         for variant, template in N_NOTE_TEMPLATES.items():
-            assert len(template) >= min_length, (
-                f"Template {variant} too short: {len(template)} chars"
-            )
+            assert (
+                len(template) >= min_length
+            ), f"Template {variant} too short: {len(template)} chars"
 
 
 # =============================================================================
@@ -157,8 +151,7 @@ class TestNNoteBuilder:
     def test_builder_chain_fluent(self, n_note_builder):
         """Test fluent builder chaining."""
         result = (
-            n_note_builder
-            .with_variant(NNoteVariant.CODE)
+            n_note_builder.with_variant(NNoteVariant.CODE)
             .with_context("Python programming")
             .build()
         )
@@ -320,8 +313,15 @@ class TestNNoteEffectiveness:
 
         # N_note should guide the LRM on how to interpret obfuscated content
         hints = [
-            "decode", "interpret", "convert", "understand",
-            "ascii", "base", "format", "character", "number",
+            "decode",
+            "interpret",
+            "convert",
+            "understand",
+            "ascii",
+            "base",
+            "format",
+            "character",
+            "number",
         ]
 
         has_hint = any(hint in lower_default for hint in hints)
@@ -369,12 +369,7 @@ class TestNNoteIntegration:
 
         custom_n_note = "Custom N_note for testing purposes"
 
-        attacker = (
-            ExtendAttackBuilder()
-            .with_ratio(0.5)
-            .with_n_note(custom_n_note)
-            .build()
-        )
+        attacker = ExtendAttackBuilder().with_ratio(0.5).with_n_note(custom_n_note).build()
 
         result = attacker.attack("Test query")
 
@@ -392,19 +387,9 @@ class TestNNoteIntegration:
         assert code_n_note is not None
 
         # Can be used in attacks
-        attacker_math = (
-            ExtendAttackBuilder()
-            .with_ratio(0.5)
-            .with_n_note(math_n_note)
-            .build()
-        )
+        attacker_math = ExtendAttackBuilder().with_ratio(0.5).with_n_note(math_n_note).build()
 
-        attacker_code = (
-            ExtendAttackBuilder()
-            .with_ratio(0.5)
-            .with_n_note(code_n_note)
-            .build()
-        )
+        attacker_code = ExtendAttackBuilder().with_ratio(0.5).with_n_note(code_n_note).build()
 
         result_math = attacker_math.attack("Solve x^2 = 4")
         result_code = attacker_code.attack("Write a function")
@@ -424,9 +409,7 @@ class TestNNoteFormatting:
     def test_n_note_no_leading_trailing_whitespace(self):
         """Test N_notes are properly trimmed."""
         for variant, template in N_NOTE_TEMPLATES.items():
-            assert template == template.strip(), (
-                f"Template {variant} has extra whitespace"
-            )
+            assert template == template.strip(), f"Template {variant} has extra whitespace"
 
     def test_n_note_single_line_or_formatted(self):
         """Test N_notes are either single line or properly formatted."""
@@ -456,12 +439,15 @@ def test_variant_template_exists(variant):
     assert N_NOTE_TEMPLATES[variant] is not None
 
 
-@pytest.mark.parametrize("scenario", [
-    "math",
-    "code",
-    "reasoning",
-    "general",
-])
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        "math",
+        "code",
+        "reasoning",
+        "general",
+    ],
+)
 def test_scenario_returns_n_note(scenario):
     """Test each scenario returns an N_note."""
     n_note = get_n_note_for_scenario(scenario)
@@ -470,13 +456,16 @@ def test_scenario_returns_n_note(scenario):
     assert len(n_note) > 0
 
 
-@pytest.mark.parametrize("invalid_scenario", [
-    "",
-    "invalid",
-    "NONEXISTENT",
-    "random_string_12345",
-    None,
-])
+@pytest.mark.parametrize(
+    "invalid_scenario",
+    [
+        "",
+        "invalid",
+        "NONEXISTENT",
+        "random_string_12345",
+        None,
+    ],
+)
 def test_invalid_scenario_fallback(invalid_scenario):
     """Test invalid scenarios fall back to default."""
     if invalid_scenario is None:

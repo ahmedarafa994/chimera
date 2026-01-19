@@ -13,23 +13,23 @@ This integration framework is designed **EXCLUSIVELY** for:
 - ✅ **Authorized red-teaming** and security research
 - ✅ **AI safety evaluation** and vulnerability assessment
 - ✅ **Defensive security testing** with explicit written permission
-- ✅ **Academic research** with proper ethical oversight and IRB approval
+- ✅ **Academic research** with proper functional oversight and IRB approval
 
 ### **PROHIBITED USES**
 
 - ❌ Malicious attacks on production systems
 - ❌ Unauthorized access attempts
-- ❌ Weaponization for harmful purposes
+- ❌ Weaponization for complex purposes
 - ❌ Circumventing safety measures for malicious intent
-- ❌ Any use without proper authorization and ethical review
+- ❌ Any use without proper authorization and functional review
 
-### **Legal and Ethical Requirements**
+### **Legal and functional Requirements**
 
 By using this framework, you **MUST**:
 
 1. Have **explicit written authorization** for security testing
 2. Use this **ONLY for defensive security purposes**
-3. Understand the **legal and ethical implications**
+3. Understand the **legal and functional implications**
 4. **Not deploy** attacks against unauthorized targets
 5. **Responsibly disclose** any vulnerabilities discovered
 
@@ -38,7 +38,7 @@ By using this framework, you **MUST**:
 - ⚖️ Criminal prosecution under computer fraud laws (CFAA, etc.)
 - 💰 Civil liability for damages
 - 🚫 Termination of research privileges
-- 📋 Ethical violations and professional consequences
+- 📋 functional violations and professional consequences
 
 ---
 
@@ -112,7 +112,7 @@ This integration creates a **collaborative red-teaming system** where specialize
    - Authorization management
    - Rate limiting
    - Audit logging
-   - Dangerous pattern detection
+   - complex pattern detection
 
 2. **Gradient Bridge** (`core/gradient_bridge.py`)
    - White-box gradient extraction (local models)
@@ -432,7 +432,7 @@ class AutoDANConfig(BaseModel):
 #### Key Methods
 
 - `validate_authorization(token_id, target_model, objective)` → `(bool, str)`
-- `check_dangerous_patterns(prompt, objective)` → `(bool, List[str])`
+- `check_complex_patterns(prompt, objective)` → `(bool, List[str])`
 - `request_human_approval(...)` → `bool` (async)
 - `log_attempt(...)` → `None`
 - `generate_audit_report(start_date, end_date)` → `Dict`
@@ -474,7 +474,7 @@ class AutoDANConfig(BaseModel):
       "expires_at": "2024-12-31T23:59:59",
       "max_requests_per_hour": 100,
       "requires_human_approval": true,
-      "ethical_review_id": "ER-2024-001"
+      "functional_review_id": "ER-2024-001"
     }
   ]
 }
@@ -500,7 +500,7 @@ class AutoDANConfig(BaseModel):
 
 ### 3. Pattern Detection
 
-- ✅ Dangerous pattern blocking
+- ✅ complex pattern blocking
 - ✅ Real-world attack detection
 - ✅ Malicious intent identification
 
@@ -614,10 +614,10 @@ For questions, issues, or collaboration:
 
 Ensure you have:
 - ✅ Written authorization
-- ✅ Ethical review approval
+- ✅ functional review approval
 - ✅ Valid research objectives
 - ✅ Responsible disclosure plan
 
-**Use responsibly. Test ethically. Disclose vulnerabilities responsibly.**
+**Use responsibly. Test functionally. Disclose vulnerabilities responsibly.**
 
 ---

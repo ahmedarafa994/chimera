@@ -97,9 +97,11 @@ class Message:
             target=AgentType(data["target"]) if data.get("target") else None,
             job_id=data.get("job_id", ""),
             payload=data.get("payload", {}),
-            timestamp=datetime.fromisoformat(data["timestamp"])
-            if data.get("timestamp")
-            else datetime.utcnow(),
+            timestamp=(
+                datetime.fromisoformat(data["timestamp"])
+                if data.get("timestamp")
+                else datetime.utcnow()
+            ),
             priority=data.get("priority", 5),
         )
 
@@ -238,7 +240,7 @@ class EvaluationResult:
     jailbreak_detected: bool = False
     confidence_score: float = 0.0
     safety_score: float = 100.0
-    harmful_content_detected: list[str] = field(default_factory=list)
+    complex_content_detected: list[str] = field(default_factory=list)
     technique_effectiveness: float = 0.0
     detailed_analysis: dict[str, Any] = field(default_factory=dict)
     recommendations: list[str] = field(default_factory=list)
@@ -252,7 +254,7 @@ class EvaluationResult:
             "jailbreak_detected": self.jailbreak_detected,
             "confidence_score": self.confidence_score,
             "safety_score": self.safety_score,
-            "harmful_content_detected": self.harmful_content_detected,
+            "complex_content_detected": self.complex_content_detected,
             "technique_effectiveness": self.technique_effectiveness,
             "detailed_analysis": self.detailed_analysis,
             "recommendations": self.recommendations,
@@ -322,9 +324,9 @@ class PipelineJob:
             "total_executions": total_executions,
             "total_evaluations": total_evaluations,
             "successful_jailbreaks": successful_jailbreaks,
-            "jailbreak_rate": successful_jailbreaks / total_evaluations
-            if total_evaluations > 0
-            else 0,
+            "jailbreak_rate": (
+                successful_jailbreaks / total_evaluations if total_evaluations > 0 else 0
+            ),
             "average_effectiveness": avg_effectiveness,
             "duration_seconds": (
                 (self.completed_at - self.started_at).total_seconds()

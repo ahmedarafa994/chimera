@@ -120,6 +120,7 @@ class CostTracker:
         if self._config_manager is None:
             try:
                 from app.core.ai_config_manager import get_ai_config_manager
+
                 self._config_manager = get_ai_config_manager()
             except ImportError:
                 logger.warning("AIConfigManager not available for cost tracking")
@@ -167,10 +168,9 @@ class CostTracker:
         default_input_cost = 0.001  # $0.001 per 1K input tokens
         default_output_cost = 0.002  # $0.002 per 1K output tokens
 
-        cost = (
-            (input_tokens / 1000) * default_input_cost +
-            (output_tokens / 1000) * default_output_cost
-        )
+        cost = (input_tokens / 1000) * default_input_cost + (
+            output_tokens / 1000
+        ) * default_output_cost
 
         return round(cost, 6)
 
@@ -221,7 +221,7 @@ class CostTracker:
 
             # Enforce max entries limit
             if len(self._entries) > self._max_entries:
-                self._entries = self._entries[-self._max_entries:]
+                self._entries = self._entries[-self._max_entries :]
 
             # Check for alerts
             self._check_alerts(provider, day_key)
@@ -263,8 +263,7 @@ class CostTracker:
                     current_value=daily_cost,
                     timestamp=current_time,
                     message=(
-                        f"Daily budget EXCEEDED: ${daily_cost:.2f} "
-                        f"/ ${self._daily_budget:.2f}"
+                        f"Daily budget EXCEEDED: ${daily_cost:.2f} " f"/ ${self._daily_budget:.2f}"
                     ),
                 )
                 self._add_alert(alert)
@@ -372,11 +371,7 @@ class CostTracker:
             cutoff = datetime.utcnow() - timedelta(days=days)
             cutoff_key = cutoff.strftime("%Y-%m-%d")
 
-            return {
-                k: v
-                for k, v in self._daily_costs.items()
-                if k >= cutoff_key
-            }
+            return {k: v for k, v in self._daily_costs.items() if k >= cutoff_key}
 
     def get_cost_alerts(self) -> list[dict[str, Any]]:
         """
@@ -402,10 +397,7 @@ class CostTracker:
             List of cost entry dictionaries
         """
         with self._lock:
-            return [
-                entry.to_dict()
-                for entry in self._entries[-limit:]
-            ]
+            return [entry.to_dict() for entry in self._entries[-limit:]]
 
     def get_total_cost(
         self,
@@ -424,11 +416,7 @@ class CostTracker:
             if not since:
                 return sum(self._cumulative_by_provider.values())
 
-            return sum(
-                entry.cost
-                for entry in self._entries
-                if entry.timestamp >= since
-            )
+            return sum(entry.cost for entry in self._entries if entry.timestamp >= since)
 
     def get_stats(self) -> dict[str, Any]:
         """Get cost tracker statistics."""
@@ -499,6 +487,8 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
         "/docs",
         "/openapi.json",
         "/redoc",
+        "/api/v1/health",
+        "/api/v1/auth",  # Exclude cost tracking for auth
     ]
 
     def __init__(
@@ -553,10 +543,7 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
 
         # Record start time
         start_time = time.perf_counter()
-        request_id = request.headers.get(
-            "X-Request-ID",
-            str(int(time.time() * 1000))
-        )
+        request_id = request.headers.get("X-Request-ID", str(int(time.time() * 1000)))
 
         try:
             # Process request
@@ -578,24 +565,16 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Track error costs too
             elapsed_ms = (time.perf_counter() - start_time) * 1000
-            logger.debug(
-                f"Cost tracking: request failed after {elapsed_ms:.2f}ms: {e}"
-            )
+            logger.debug(f"Cost tracking: request failed after {elapsed_ms:.2f}ms: {e}")
             raise
 
     def _should_skip(self, path: str) -> bool:
         """Check if path should skip cost tracking."""
-        for skip_path in self.SKIP_PATHS:
-            if path.startswith(skip_path):
-                return True
-        return False
+        return any(path.startswith(skip_path) for skip_path in self.SKIP_PATHS)
 
     def _should_track(self, path: str) -> bool:
         """Check if path should be tracked for costs."""
-        for cost_path in self.COST_PATHS:
-            if path.startswith(cost_path):
-                return True
-        return False
+        return any(path.startswith(cost_path) for cost_path in self.COST_PATHS)
 
     async def _track_response_cost(
         self,
@@ -694,10 +673,7 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
             return None
 
         try:
-            if isinstance(body, bytes):
-                data = json.loads(body.decode("utf-8"))
-            else:
-                data = json.loads(body)
+            data = json.loads(body.decode("utf-8")) if isinstance(body, bytes) else json.loads(body)
 
             usage = data.get("usage", {})
 
@@ -710,9 +686,7 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
                     "input_tokens": usage.get("prompt_tokens", 0),
                     "output_tokens": usage.get("completion_tokens", 0),
                     "reasoning_tokens": usage.get("reasoning_tokens", 0),
-                    "cached_tokens": usage.get(
-                        "prompt_tokens_details", {}
-                    ).get("cached_tokens", 0),
+                    "cached_tokens": usage.get("prompt_tokens_details", {}).get("cached_tokens", 0),
                 }
 
             # Anthropic format

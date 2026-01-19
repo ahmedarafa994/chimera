@@ -756,15 +756,9 @@ class ConfigValidator:
         """
         results = self.validate_all()
 
-        error_count = sum(
-            1 for r in results if r.severity == ValidationSeverity.ERROR
-        )
-        warning_count = sum(
-            1 for r in results if r.severity == ValidationSeverity.WARNING
-        )
-        info_count = sum(
-            1 for r in results if r.severity == ValidationSeverity.INFO
-        )
+        error_count = sum(1 for r in results if r.severity == ValidationSeverity.ERROR)
+        warning_count = sum(1 for r in results if r.severity == ValidationSeverity.WARNING)
+        info_count = sum(1 for r in results if r.severity == ValidationSeverity.INFO)
 
         overall_valid = error_count == 0
 

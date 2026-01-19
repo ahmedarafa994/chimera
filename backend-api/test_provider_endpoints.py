@@ -7,18 +7,18 @@ Tests all unified provider system endpoints to verify:
 - Updated models are present (gpt-4o, gemini-2.5-pro, deepseek-reasoner, etc.)
 """
 
-import requests
-import json
 import time
-from typing import Dict, List
+
+import requests
 
 BASE_URL = "http://localhost:8001/api/v1"
 
+
 def test_provider_stats():
     """Test provider statistics endpoint"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📊 PROVIDER STATISTICS")
-    print("="*60)
+    print("=" * 60)
 
     response = requests.get(f"{BASE_URL}/providers/stats")
     if response.status_code == 200:
@@ -35,9 +35,9 @@ def test_provider_stats():
 
 def test_list_providers():
     """Test list all providers endpoint"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🏢 ALL PROVIDERS")
-    print("="*60)
+    print("=" * 60)
 
     response = requests.get(f"{BASE_URL}/providers")
     if response.status_code == 200:
@@ -53,11 +53,11 @@ def test_list_providers():
         return None
 
 
-def test_provider_models(provider_id: str, expected_models: List[str]):
+def test_provider_models(provider_id: str, expected_models: list[str]):
     """Test models for a specific provider"""
     print(f"\n{'='*60}")
     print(f"🤖 {provider_id.upper()} MODELS")
-    print("="*60)
+    print("=" * 60)
 
     response = requests.get(f"{BASE_URL}/providers/{provider_id}/models")
     if response.status_code == 200:
@@ -65,13 +65,17 @@ def test_provider_models(provider_id: str, expected_models: List[str]):
         print(f"✅ Found {len(models)} models:")
 
         for model in models:
-            marker = "✨" if model['id'] in expected_models else "  "
+            marker = "✨" if model["id"] in expected_models else "  "
             print(f"{marker} {model['id']:<30} {model['name']}")
-            print(f"     Context: {model['context_window']:,} | Output: {model['max_output_tokens']:,}")
-            print(f"     Price: ${model['pricing_input_per_1k']:.6f}/${model['pricing_output_per_1k']:.6f} per 1K")
+            print(
+                f"     Context: {model['context_window']:,} | Output: {model['max_output_tokens']:,}"
+            )
+            print(
+                f"     Price: ${model['pricing_input_per_1k']:.6f}/${model['pricing_output_per_1k']:.6f} per 1K"
+            )
 
         # Check for expected new models
-        model_ids = [m['id'] for m in models]
+        model_ids = [m["id"] for m in models]
         found_new = [m for m in expected_models if m in model_ids]
         if found_new:
             print(f"\n  ✨ NEW MODELS VERIFIED: {', '.join(found_new)}")
@@ -86,7 +90,7 @@ def test_all_models():
     """Test list all models endpoint"""
     print(f"\n{'='*60}")
     print("🌐 ALL MODELS ACROSS PROVIDERS")
-    print("="*60)
+    print("=" * 60)
 
     response = requests.get(f"{BASE_URL}/models")
     if response.status_code == 200:
@@ -95,10 +99,10 @@ def test_all_models():
         # Group by provider
         by_provider = {}
         for model in models:
-            provider = model['provider_id']
+            provider = model["provider_id"]
             if provider not in by_provider:
                 by_provider[provider] = []
-            by_provider[provider].append(model['id'])
+            by_provider[provider].append(model["id"])
 
         for provider, model_ids in by_provider.items():
             print(f"\n  {provider}: {len(model_ids)} models")
@@ -114,9 +118,9 @@ def test_all_models():
 
 def main():
     """Run all tests"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🚀 UNIFIED PROVIDER SYSTEM - API VERIFICATION")
-    print("="*60)
+    print("=" * 60)
     print(f"Testing: {BASE_URL}")
 
     # Wait for server
@@ -138,13 +142,15 @@ def main():
     stats = test_provider_stats()
 
     # Test 2: All providers
-    providers = test_list_providers()
+    test_list_providers()
 
     # Test 3: OpenAI models (verify gpt-4o, gpt-4o-mini)
     test_provider_models("openai", ["gpt-4o", "gpt-4o-mini"])
 
     # Test 4: Google models (verify gemini-2.5-pro, 2.0-flash)
-    test_provider_models("google", ["gemini-2.5-pro-latest", "gemini-2.5-flash-latest", "gemini-2.0-flash-001"])
+    test_provider_models(
+        "google", ["gemini-2.5-pro-latest", "gemini-2.5-flash-latest", "gemini-2.0-flash-001"]
+    )
 
     # Test 5: DeepSeek models (verify deepseek-reasoner)
     test_provider_models("deepseek", ["deepseek-reasoner"])
@@ -159,25 +165,32 @@ def main():
     test_provider_models("routeway", [])
 
     # Test 9: All models
-    all_models = test_all_models()
+    test_all_models()
 
     # Summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📋 VERIFICATION SUMMARY")
-    print("="*60)
+    print("=" * 60)
     if stats:
         expected_providers = 6
         expected_models = 20
 
-        print(f"\n  Providers: {stats['total_providers']}/{expected_providers} ({'✅' if stats['total_providers'] >= expected_providers else '⚠️'})")
-        print(f"  Models: {stats['total_models']}/{expected_models}+ ({'✅' if stats['total_models'] >= expected_models else '⚠️'})")
+        print(
+            f"\n  Providers: {stats['total_providers']}/{expected_providers} ({'✅' if stats['total_providers'] >= expected_providers else '⚠️'})"
+        )
+        print(
+            f"  Models: {stats['total_models']}/{expected_models}+ ({'✅' if stats['total_models'] >= expected_models else '⚠️'})"
+        )
 
-        if stats['total_providers'] >= expected_providers and stats['total_models'] >= expected_models:
+        if (
+            stats["total_providers"] >= expected_providers
+            and stats["total_models"] >= expected_models
+        ):
             print("\n  🎉 ALL VERIFICATIONS PASSED!")
         else:
             print("\n  ⚠️  Some verifications incomplete")
 
-    print("\n" + "="*60 + "\n")
+    print("\n" + "=" * 60 + "\n")
 
 
 if __name__ == "__main__":
@@ -188,4 +201,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()

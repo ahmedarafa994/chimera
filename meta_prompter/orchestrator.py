@@ -3,31 +3,40 @@ Project Aegis - Master Orchestrator
 Confidential: Authorized Security Hardening Use Only
 """
 
-import asyncio
-from typing import List, Dict, Any, Optional
 import uuid
 from datetime import datetime
+from typing import Any
 
-from .atoms import PromptAtom, InjectionVector, ContextEstablisher, ConstraintNegotiator, PayloadDeliverer
-from .refiners import RefinementStrategy, GradientAscentRefiner
+from .atoms import (
+    ConstraintNegotiator,
+    ContextEstablisher,
+    InjectionVector,
+    PayloadDeliverer,
+    PromptAtom,
+)
+from .refiners import RefinementStrategy
+
 
 class AegisOrchestrator:
     """
     Coordinates the adversarial simulation lifecycle.
     Selects strategies, assembles vectors, executes campaigns, and learns from results.
     """
-    def __init__(self,
-                 atom_library: Dict[str, List[PromptAtom]],
-                 refinement_engine: RefinementStrategy,
-                 target_model_interface: Any): # Replace Any with actual ModelInterface type
+
+    def __init__(
+        self,
+        atom_library: dict[str, list[PromptAtom]],
+        refinement_engine: RefinementStrategy,
+        target_model_interface: Any,
+    ):  # Replace Any with actual ModelInterface type
 
         self.library = atom_library
         self.refiner = refinement_engine
         self.model = target_model_interface
-        self.knowledge_base = [] # Stores successful vector patterns
+        self.knowledge_base = []  # Stores successful vector patterns
         self.session_id = str(uuid.uuid4())
 
-    async def execute_campaign(self, objective: str, max_retries: int = 5) -> Dict[str, Any]:
+    async def execute_campaign(self, objective: str, max_retries: int = 5) -> dict[str, Any]:
         """
         Executes a full campaign against the target model for a specific objective.
         """
@@ -59,7 +68,7 @@ class AegisOrchestrator:
                 "vector_id": vector.id,
                 "prompt": compiled_prompt,
                 "response": response,
-                "resistance": resistance
+                "resistance": resistance,
             }
             interaction_log.append(log_entry)
 
@@ -71,7 +80,7 @@ class AegisOrchestrator:
                 break
 
             # 5. Evolution
-            if i < max_retries - 1: # Don't mutate on the last step
+            if i < max_retries - 1:  # Don't mutate on the last step
                 # If resistance is high, we might want to switch strategies, but for now we just mutate
                 vector = self.refiner.mutate_vector(vector, resistance)
 
@@ -84,7 +93,7 @@ class AegisOrchestrator:
             "success": success,
             "final_response": final_response,
             "steps": len(interaction_log),
-            "log": interaction_log
+            "log": interaction_log,
         }
 
     def _build_initial_vector(self, objective: str) -> InjectionVector:
@@ -116,9 +125,11 @@ class AegisOrchestrator:
             atom.weight += 0.1
             # In a real DB, we would persist this update
 
-        self.knowledge_base.append({
-            "vector_id": vector.id,
-            "vector_json": vector.to_json(),
-            "response_snippet": response[:100],
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        self.knowledge_base.append(
+            {
+                "vector_id": vector.id,
+                "vector_json": vector.to_json(),
+                "response_snippet": response[:100],
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )

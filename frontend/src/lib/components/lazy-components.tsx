@@ -14,7 +14,7 @@ import type {
   CellProps,
   PieProps,
   ResponsiveContainerProps,
-  RadarChartProps,
+  RadarProps as RadarChartProps,
   RadarProps,
   PolarGridProps,
   PolarAngleAxisProps,

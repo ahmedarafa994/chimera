@@ -28,9 +28,7 @@ from typing import Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.services.global_model_selection_state import (
-    GlobalModelSelectionState,
-)
+from app.services.global_model_selection_state import GlobalModelSelectionState
 from app.services.session_service import SessionService, get_session_service
 
 logger = logging.getLogger(__name__)
@@ -54,8 +52,8 @@ class ResolutionResult:
     model_id: str
     resolution_source: str = "default"
     resolution_priority: int = 5
-    session_id: Optional[str] = None
-    user_id: Optional[str] = None
+    session_id: str | None = None
+    user_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     resolved_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -99,9 +97,7 @@ class ResolutionStrategy:
         """Check if this strategy can provide a resolution."""
         raise NotImplementedError
 
-    async def resolve(
-        self, context: dict[str, Any]
-    ) -> Optional[tuple[str, str]]:
+    async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
         """
         Attempt to resolve provider/model.
 
@@ -117,14 +113,9 @@ class ExplicitParameterStrategy(ResolutionStrategy):
     name = "explicit"
 
     async def can_resolve(self, context: dict[str, Any]) -> bool:
-        return bool(
-            context.get("explicit_provider") and
-            context.get("explicit_model")
-        )
+        return bool(context.get("explicit_provider") and context.get("explicit_model"))
 
-    async def resolve(
-        self, context: dict[str, Any]
-    ) -> Optional[tuple[str, str]]:
+    async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
         provider = context.get("explicit_provider")
         model = context.get("explicit_model")
         if provider and model:
@@ -145,6 +136,7 @@ class RequestContextStrategy(ResolutionStrategy):
         # First check SelectionContext (set by SelectionMiddleware)
         try:
             from app.core.selection_context import SelectionContext
+
             selection = SelectionContext.get_selection()
             if selection:
                 return True
@@ -153,17 +145,13 @@ class RequestContextStrategy(ResolutionStrategy):
 
         # Fall back to GlobalModelSelectionState
         request_context = self.state.get_request_context()
-        return bool(
-            request_context and
-            request_context.selection
-        )
+        return bool(request_context and request_context.selection)
 
-    async def resolve(
-        self, context: dict[str, Any]
-    ) -> Optional[tuple[str, str]]:
+    async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
         # First check SelectionContext (set by SelectionMiddleware)
         try:
             from app.core.selection_context import SelectionContext
+
             selection = SelectionContext.get_selection()
             if selection:
                 logger.debug(
@@ -176,10 +164,7 @@ class RequestContextStrategy(ResolutionStrategy):
         # Fall back to GlobalModelSelectionState
         request_context = self.state.get_request_context()
         if request_context and request_context.selection:
-            return (
-                request_context.selection.provider,
-                request_context.selection.model_id
-            )
+            return (request_context.selection.provider, request_context.selection.model_id)
         return None
 
 
@@ -192,7 +177,7 @@ class SessionSelectionStrategy(ResolutionStrategy):
     def __init__(
         self,
         state: GlobalModelSelectionState,
-        session_service: Optional[SessionService] = None,
+        session_service: SessionService | None = None,
     ):
         self.state = state
         self.session_service = session_service
@@ -200,9 +185,7 @@ class SessionSelectionStrategy(ResolutionStrategy):
     async def can_resolve(self, context: dict[str, Any]) -> bool:
         return bool(context.get("session_id"))
 
-    async def resolve(
-        self, context: dict[str, Any]
-    ) -> Optional[tuple[str, str]]:
+    async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
         session_id = context.get("session_id")
         user_id = context.get("user_id")
         db_session = context.get("db_session")
@@ -226,9 +209,7 @@ class SessionSelectionStrategy(ResolutionStrategy):
         # Fallback to SessionService
         if self.session_service:
             try:
-                provider, model = self.session_service.get_session_model(
-                    session_id
-                )
+                provider, model = self.session_service.get_session_model(session_id)
                 if provider and model:
                     return (provider, model)
             except Exception as e:
@@ -252,6 +233,7 @@ class GlobalModelSelectionStrategy(ResolutionStrategy):
     async def can_resolve(self, context: dict[str, Any]) -> bool:
         try:
             from app.services.model_selection_service import model_selection_service
+
             selection = model_selection_service.get_selection()
             can_resolve = selection is not None
             logger.info(
@@ -263,11 +245,10 @@ class GlobalModelSelectionStrategy(ResolutionStrategy):
             logger.warning(f"GlobalModelSelectionStrategy.can_resolve failed: {e}")
             return False
 
-    async def resolve(
-        self, context: dict[str, Any]
-    ) -> Optional[tuple[str, str]]:
+    async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
         try:
             from app.services.model_selection_service import model_selection_service
+
             selection = model_selection_service.get_selection()
             if selection:
                 logger.info(
@@ -292,9 +273,7 @@ class UserDefaultStrategy(ResolutionStrategy):
         # TODO: Implement user preferences lookup
         return False
 
-    async def resolve(
-        self, context: dict[str, Any]
-    ) -> Optional[tuple[str, str]]:
+    async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
         user_id = context.get("user_id")
         if not user_id:
             return None
@@ -313,9 +292,7 @@ class GlobalDefaultStrategy(ResolutionStrategy):
     async def can_resolve(self, context: dict[str, Any]) -> bool:
         return True  # Always available
 
-    async def resolve(
-        self, context: dict[str, Any]
-    ) -> Optional[tuple[str, str]]:
+    async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
         provider = getattr(settings, "DEFAULT_PROVIDER", None)
         model = getattr(settings, "DEFAULT_MODEL", None)
 
@@ -371,7 +348,7 @@ class ProviderResolutionService:
             return
 
         self._state = GlobalModelSelectionState()
-        self._session_service: Optional[SessionService] = None
+        self._session_service: SessionService | None = None
         self._strategies: list[ResolutionStrategy] = []
         self._resolution_cache: dict[str, ResolutionResult] = {}
         self._cache_ttl_seconds = 60  # Cache resolutions for 60 seconds
@@ -402,11 +379,11 @@ class ProviderResolutionService:
 
     async def resolve(
         self,
-        explicit_provider: Optional[str] = None,
-        explicit_model: Optional[str] = None,
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        db_session: Optional[AsyncSession] = None,
+        explicit_provider: str | None = None,
+        explicit_model: str | None = None,
+        session_id: str | None = None,
+        user_id: str | None = None,
+        db_session: AsyncSession | None = None,
         use_cache: bool = True,
     ) -> tuple[str, str]:
         """
@@ -443,11 +420,11 @@ class ProviderResolutionService:
 
     async def resolve_with_metadata(
         self,
-        explicit_provider: Optional[str] = None,
-        explicit_model: Optional[str] = None,
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        db_session: Optional[AsyncSession] = None,
+        explicit_provider: str | None = None,
+        explicit_model: str | None = None,
+        session_id: str | None = None,
+        user_id: str | None = None,
+        db_session: AsyncSession | None = None,
         use_cache: bool = True,
     ) -> ResolutionResult:
         """
@@ -531,9 +508,7 @@ class ProviderResolutionService:
                 continue
 
         # Should never reach here due to GlobalDefaultStrategy
-        logger.error(
-            "All resolution strategies failed, using emergency fallback"
-        )
+        logger.error("All resolution strategies failed, using emergency fallback")
         return ResolutionResult(
             provider="openai",
             model_id="gpt-4",
@@ -555,8 +530,8 @@ class ProviderResolutionService:
 
     def invalidate_cache(
         self,
-        session_id: Optional[str] = None,
-        user_id: Optional[str] = None,
+        session_id: str | None = None,
+        user_id: str | None = None,
     ) -> int:
         """
         Invalidate cached resolutions.
@@ -577,9 +552,9 @@ class ProviderResolutionService:
         # Selective invalidation
         keys_to_remove = []
         for key, result in self._resolution_cache.items():
-            if session_id and result.session_id == session_id:
-                keys_to_remove.append(key)
-            elif user_id and result.user_id == user_id:
+            if (session_id and result.session_id == session_id) or (
+                user_id and result.user_id == user_id
+            ):
                 keys_to_remove.append(key)
 
         for key in keys_to_remove:
@@ -588,7 +563,7 @@ class ProviderResolutionService:
         logger.info(f"Invalidated {len(keys_to_remove)} cached resolutions")
         return len(keys_to_remove)
 
-    def get_resolution_from_context(self) -> Optional[tuple[str, str]]:
+    def get_resolution_from_context(self) -> tuple[str, str] | None:
         """
         Get provider/model from current request context (sync method).
 
@@ -606,8 +581,8 @@ class ProviderResolutionService:
 
     async def get_current_selection_from_context(
         self,
-        fallback_session_id: Optional[str] = None,
-        fallback_user_id: Optional[str] = None,
+        fallback_session_id: str | None = None,
+        fallback_user_id: str | None = None,
     ) -> tuple[str, str]:
         """
         Get the current selection from request context or resolve.
@@ -642,7 +617,7 @@ class ProviderResolutionService:
 # =============================================================================
 
 
-_provider_resolution_service: Optional[ProviderResolutionService] = None
+_provider_resolution_service: ProviderResolutionService | None = None
 
 
 def get_provider_resolution_service() -> ProviderResolutionService:
@@ -683,18 +658,18 @@ async def get_provider_resolution_service_async() -> ProviderResolutionService:
 
 
 __all__ = [
+    "ExplicitParameterStrategy",
+    "GlobalDefaultStrategy",
+    "GlobalModelSelectionStrategy",
     # Main service
     "ProviderResolutionService",
+    "RequestContextStrategy",
     # Result model
     "ResolutionResult",
     # Strategy classes (for extension)
     "ResolutionStrategy",
-    "ExplicitParameterStrategy",
-    "RequestContextStrategy",
     "SessionSelectionStrategy",
-    "GlobalModelSelectionStrategy",
     "UserDefaultStrategy",
-    "GlobalDefaultStrategy",
     # Factory functions
     "get_provider_resolution_service",
     "get_provider_resolution_service_async",

@@ -1,11 +1,12 @@
 /**
  * Chat Service
- * 
+ *
  * Provides API methods for chat completions, streaming responses,
  * and conversation management.
  */
 
-import { enhancedApi } from '@/lib/api-enhanced';
+import { apiClient } from '../client';
+import { authManager } from '../auth-manager';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -72,7 +73,7 @@ export interface ConversationHistory {
   updated_at: string;
 }
 
-const API_BASE = '/api/v1/chat';
+const API_BASE = '/chat';
 
 /**
  * Chat Service API
@@ -82,10 +83,11 @@ export const chatService = {
    * Create a chat completion
    */
   async createCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
-    return enhancedApi.post<ChatCompletionResponse>(
+    const response = await apiClient.post<ChatCompletionResponse>(
       `${API_BASE}/completions`,
       { ...request, stream: false }
     );
+    return response.data;
   },
 
   /**
@@ -95,10 +97,12 @@ export const chatService = {
   async *streamCompletion(
     request: ChatCompletionRequest
   ): AsyncGenerator<StreamChunk, void, unknown> {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_BASE}/completions`, {
+    const token = await authManager.getAccessToken();
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1${API_BASE}/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ ...request, stream: true }),
     });
@@ -148,34 +152,38 @@ export const chatService = {
     limit?: number;
     offset?: number;
   }): Promise<{ conversations: ConversationHistory[]; total: number }> {
-    return enhancedApi.get<{ conversations: ConversationHistory[]; total: number }>(
+    const response = await apiClient.get<{ conversations: ConversationHistory[]; total: number }>(
       `${API_BASE}/history`,
       { params }
     );
+    return response.data;
   },
 
   /**
    * Get a specific conversation
    */
   async getConversation(id: string): Promise<ConversationHistory> {
-    return enhancedApi.get<ConversationHistory>(`${API_BASE}/conversation/${id}`);
+    const response = await apiClient.get<ConversationHistory>(`${API_BASE}/conversation/${id}`);
+    return response.data;
   },
 
   /**
    * Save a conversation
    */
   async saveConversation(conversation: Omit<ConversationHistory, 'id' | 'created_at' | 'updated_at'>): Promise<ConversationHistory> {
-    return enhancedApi.post<ConversationHistory>(
+    const response = await apiClient.post<ConversationHistory>(
       `${API_BASE}/conversation`,
       conversation
     );
+    return response.data;
   },
 
   /**
    * Delete a conversation
    */
   async deleteConversation(id: string): Promise<{ success: boolean }> {
-    return enhancedApi.delete<{ success: boolean }>(`${API_BASE}/conversation/${id}`);
+    const response = await apiClient.delete<{ success: boolean }>(`${API_BASE}/conversation/${id}`);
+    return response.data;
   },
 
   /**
@@ -184,9 +192,10 @@ export const chatService = {
   async getAvailableModels(): Promise<{
     models: { id: string; name: string; provider: string; context_length: number }[];
   }> {
-    return enhancedApi.get<{
+    const response = await apiClient.get<{
       models: { id: string; name: string; provider: string; context_length: number }[];
     }>(`${API_BASE}/models`);
+    return response.data;
   },
 };
 

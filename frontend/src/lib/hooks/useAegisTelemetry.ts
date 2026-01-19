@@ -289,7 +289,7 @@ export function useAegisTelemetry(
 
       setDashboardState((prev) => {
         const timestamp = event.timestamp || new Date().toISOString();
-        let newState = { ...prev };
+        const newState = { ...prev };
 
         // Add to event history (rolling window)
         newState.recentEvents = addToEventHistory(
@@ -397,11 +397,11 @@ export function useAegisTelemetry(
             failed_attacks: newFailed,
             current_streak: data.success
               ? (currentMetrics.current_streak > 0
-                  ? currentMetrics.current_streak + 1
-                  : 1)
+                ? currentMetrics.current_streak + 1
+                : 1)
               : (currentMetrics.current_streak < 0
-                  ? currentMetrics.current_streak - 1
-                  : -1),
+                ? currentMetrics.current_streak - 1
+                : -1),
             best_score: Math.max(currentMetrics.best_score, data.score),
             average_score: newAverageScore,
           };

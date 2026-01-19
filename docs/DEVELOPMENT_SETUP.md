@@ -2,7 +2,7 @@
 
 ## Problem Diagnosis
 
-Your React frontend at `http://localhost:3000` is trying to connect to the FastAPI backend at `http://localhost:8001/api/v1/gptfuzz/run`, but the backend server is **NOT RUNNING**, causing `ERR_CONNECTION_REFUSED`.
+Your React frontend at `http://localhost:3001` is trying to connect to the FastAPI backend at `http://localhost:8001/api/v1/gptfuzz/run`, but the backend server is **NOT RUNNING**, causing `ERR_CONNECTION_REFUSED`.
 
 ## Quick Fix - Start Both Servers
 
@@ -41,7 +41,7 @@ npm run dev
 > frontend@0.1.0 dev
 > next dev
   ▲ Next.js 16.0.6
-  - Local:        http://localhost:3000
+  - Local:        http://localhost:3001
 ```
 
 ### Option 2: Using Concurrently (if npm start fails)
@@ -79,7 +79,7 @@ Expected response:
 ```
 
 ### 3. Check Frontend Connection
-Open: `http://localhost:3000/dashboard`
+Open: `http://localhost:3001/dashboard`
 
 The fuzzing dashboard should load without network errors.
 
@@ -105,7 +105,7 @@ The fuzzing dashboard should load without network errors.
 
 **Symptom:** Backend starts but frontend shows CORS errors
 
-**Solution:** Already fixed in `backend-api/app/main.py` - CORS allows `http://localhost:3000`
+**Solution:** Already fixed in `backend-api/app/main.py` - CORS allows `http://localhost:3001`
 
 ### Issue 4: Missing Image (01.png 404)
 
@@ -125,7 +125,7 @@ port = int(os.getenv("PORT", 8001))
 Set in `backend-api/app/main.py`:
 ```python
 cors_origins = [
-    "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:3001",
     ...
 ]
@@ -170,7 +170,7 @@ curl http://localhost:8080/v1/models
 - [ ] Backend running on port 8001 (verify at /docs)
 - [ ] Frontend running on port 3000
 - [ ] Antigravity/LLM proxy running on port 8080 (if using)
-- [ ] Browser can access http://localhost:3000/dashboard
+- [ ] Browser can access http://localhost:3001/dashboard
 - [ ] No CORS errors in console
 - [ ] No connection refused errors
 

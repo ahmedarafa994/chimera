@@ -32,6 +32,7 @@ def _secure_random() -> float:
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
 
+
 logger = logging.getLogger(__name__)
 
 

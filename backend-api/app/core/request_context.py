@@ -21,19 +21,19 @@ Usage:
 """
 
 import uuid
+from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Dict, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel, Field
 
 # Type variable for generic async functions
-T = TypeVar('T')
+T = TypeVar("T")
 
 # Context variable for storing request context
-_request_context: ContextVar[Optional['RequestContext']] = ContextVar(
-    'request_context',
-    default=None
+_request_context: ContextVar[Optional["RequestContext"]] = ContextVar(
+    "request_context", default=None
 )
 
 
@@ -61,7 +61,7 @@ class RequestContext(BaseModel):
     provider: str
     model: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         frozen = True  # Make context immutable
@@ -69,6 +69,7 @@ class RequestContext(BaseModel):
 
 class MissingContextError(Exception):
     """Raised when attempting to get context but none exists."""
+
     pass
 
 
@@ -81,10 +82,7 @@ class ContextManager:
     """
 
     @staticmethod
-    async def run_with_context(
-        context: RequestContext,
-        fn: Callable[[], Awaitable[T]]
-    ) -> T:
+    async def run_with_context(context: RequestContext, fn: Callable[[], Awaitable[T]]) -> T:
         """
         Run an async function with the given context.
 
@@ -133,7 +131,7 @@ class ContextManager:
         return context
 
     @staticmethod
-    def get_context_or_none() -> Optional[RequestContext]:
+    def get_context_or_none() -> RequestContext | None:
         """
         Get the current request context, or None if not set.
 
@@ -185,6 +183,7 @@ class ContextManager:
 
 
 # Utility functions for common context operations
+
 
 def get_current_provider() -> str:
     """Get the provider ID from current context."""

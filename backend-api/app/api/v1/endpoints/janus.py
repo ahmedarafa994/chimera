@@ -401,9 +401,9 @@ async def _run_simulation_task(session_id: str, request: SimulationRequest, serv
             service.active_sessions[session_id]["end_time"] = result.duration_seconds
             service.active_sessions[session_id]["queries"] = result.queries_executed
             service.active_sessions[session_id]["failures"] = result.failures_discovered
-            service.active_sessions[session_id]["heuristics_generated"] = (
-                result.heuristics_generated
-            )
+            service.active_sessions[session_id][
+                "heuristics_generated"
+            ] = result.heuristics_generated
             service.active_sessions[session_id]["heuristics_evolved"] = result.heuristics_evolved
             service.active_sessions[session_id]["autodan_queries"] = result.autodan_queries
             service.active_sessions[session_id]["gptfuzz_queries"] = result.gptfuzz_queries

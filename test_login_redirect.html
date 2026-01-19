@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Redirect Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 20px; margin: 5px; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Chimera Login Redirect Test</h1>
+
+    <div class="test-section">
+        <h2>Frontend Availability Test</h2>
+        <button onclick="testFrontend()">Test Frontend Connection</button>
+        <div id="frontend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Backend Health Test</h2>
+        <button onclick="testBackend()">Test Backend Health</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Login Page Navigation Test</h2>
+        <button onclick="testLoginPage()">Open Login Page</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Dashboard Access Test</h2>
+        <button onclick="testDashboard()">Test Dashboard Access (should redirect to login)</button>
+        <div id="dashboard-result"></div>
+    </div>
+
+    <div id="results">
+        <h3>Test Results:</h3>
+        <div id="test-log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+        }
+
+        async function testFrontend() {
+            const resultDiv = document.getElementById('frontend-result');
+            try {
+                const response = await fetch('http://localhost:3001', {
+                    method: 'GET',
+                    mode: 'no-cors' // Avoid CORS issues for testing
+                });
+                resultDiv.innerHTML = '<span class="success">✓ Frontend server is responding</span>';
+                log('Frontend server test: SUCCESS', 'success');
+            } catch (error) {
+                resultDiv.innerHTML = '<span class="error">✗ Frontend server error: ' + error.message + '</span>';
+                log('Frontend server test: FAILED - ' + error.message, 'error');
+            }
+        }
+
+        async function testBackend() {
+            const resultDiv = document.getElementById('backend-result');
+            try {
+                const response = await fetch('http://localhost:8001/health', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<span class="success">✓ Backend health: ${data.status}</span>`;
+                    log(`Backend health test: SUCCESS - Status: ${data.status}`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<span class="error">✗ Backend responded with status: ${response.status}</span>`;
+                    log(`Backend health test: FAILED - HTTP ${response.status}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<span class="error">✗ Backend error: ' + error.message + '</span>';
+                log('Backend health test: FAILED - ' + error.message, 'error');
+            }
+        }
+
+        function testLoginPage() {
+            const resultDiv = document.getElementById('login-result');
+            try {
+                window.open('http://localhost:3001/login', '_blank');
+                resultDiv.innerHTML = '<span class="info">→ Login page opened in new tab</span>';
+                log('Login page navigation: Opened in new tab', 'info');
+            } catch (error) {
+                resultDiv.innerHTML = '<span class="error">✗ Failed to open login page: ' + error.message + '</span>';
+                log('Login page navigation: FAILED - ' + error.message, 'error');
+            }
+        }
+
+        function testDashboard() {
+            const resultDiv = document.getElementById('dashboard-result');
+            try {
+                window.open('http://localhost:3001/dashboard', '_blank');
+                resultDiv.innerHTML = '<span class="info">→ Dashboard page opened (should redirect to login if not authenticated)</span>';
+                log('Dashboard access test: Opened in new tab (should redirect to login)', 'info');
+            } catch (error) {
+                resultDiv.innerHTML = '<span class="error">✗ Failed to open dashboard: ' + error.message + '</span>';
+                log('Dashboard access test: FAILED - ' + error.message, 'error');
+            }
+        }
+
+        // Auto-run basic tests when page loads
+        window.onload = function() {
+            log('Starting automated tests...', 'info');
+            setTimeout(testFrontend, 500);
+            setTimeout(testBackend, 1000);
+        };
+    </script>
+</body>
+</html>

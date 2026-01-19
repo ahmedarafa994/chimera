@@ -18,28 +18,29 @@ Usage:
 
 import time
 import uuid
-from typing import Any, AsyncIterator, Dict, List
+from collections.abc import AsyncIterator
+from typing import Any
 
 from app.core.config import get_settings
+from app.domain.models import GenerationConfig, PromptRequest
 from app.domain.provider_plugin_protocol import (
     BaseProviderPlugin,
+    Choice,
     CompletionRequest,
     CompletionResponse,
     Model,
+    NormalizedError,
     ProviderCapabilities,
     StreamChunk,
-    Choice,
     Usage,
-    NormalizedError,
 )
-from app.domain.models import PromptRequest, GenerationConfig
-from app.infrastructure.providers.openai_provider import OpenAIProvider
 from app.infrastructure.providers.anthropic_provider import AnthropicProvider
-from app.infrastructure.providers.google_provider import GoogleProvider
-from app.infrastructure.providers.deepseek_client import DeepSeekClient
-from app.infrastructure.providers.qwen_client import QwenClient
-from app.infrastructure.providers.cursor_client import CursorClient
 from app.infrastructure.providers.bigmodel_client import BigModelClient
+from app.infrastructure.providers.cursor_client import CursorClient
+from app.infrastructure.providers.deepseek_client import DeepSeekClient
+from app.infrastructure.providers.google_provider import GoogleProvider
+from app.infrastructure.providers.openai_provider import OpenAIProvider
+from app.infrastructure.providers.qwen_client import QwenClient
 from app.infrastructure.providers.routeway_client import RoutewayClient
 
 
@@ -69,7 +70,7 @@ class ProviderAdapter(BaseProviderPlugin):
     def get_display_name(self) -> str:
         return self._display_name
 
-    async def validate_config(self, api_key: str, config: Dict[str, Any] = None) -> bool:
+    async def validate_config(self, api_key: str, config: dict[str, Any] | None = None) -> bool:
         """Validate configuration by checking health with the API key."""
         try:
             # Create temporary provider instance with API key
@@ -77,14 +78,12 @@ class ProviderAdapter(BaseProviderPlugin):
         except Exception:
             return False
 
-    async def create_client(self, api_key: str, config: Dict[str, Any] = None) -> Any:
+    async def create_client(self, api_key: str, config: dict[str, Any] | None = None) -> Any:
         """Create client - delegates to base provider's client initialization."""
         return self._base_provider._get_client(api_key)
 
     async def handle_completion(
-        self,
-        client: Any,
-        request: CompletionRequest
+        self, client: Any, request: CompletionRequest
     ) -> CompletionResponse:
         """
         Handle completion request by converting to base provider format.
@@ -100,23 +99,23 @@ class ProviderAdapter(BaseProviderPlugin):
             id=str(uuid.uuid4()),
             provider=self._provider_id,
             model=response.model,
-            choices=[Choice(
-                index=0,
-                message={"role": "assistant", "content": response.text},
-                finish_reason=response.finish_reason
-            )],
+            choices=[
+                Choice(
+                    index=0,
+                    message={"role": "assistant", "content": response.text},
+                    finish_reason=response.finish_reason,
+                )
+            ],
             usage=Usage(
                 prompt_tokens=response.input_tokens or 0,
                 completion_tokens=response.output_tokens or 0,
-                total_tokens=response.total_tokens or 0
+                total_tokens=response.total_tokens or 0,
             ),
-            created_at=int(time.time())
+            created_at=int(time.time()),
         )
 
     async def handle_streaming(
-        self,
-        client: Any,
-        request: CompletionRequest
+        self, client: Any, request: CompletionRequest
     ) -> AsyncIterator[StreamChunk]:
         """Handle streaming request."""
         # Convert to PromptRequest
@@ -128,12 +127,14 @@ class ProviderAdapter(BaseProviderPlugin):
                 id=str(uuid.uuid4()),
                 provider=self._provider_id,
                 model=request.model,
-                choices=[{
-                    "delta": {"content": chunk.text},
-                    "finish_reason": chunk.finish_reason,
-                    "index": 0
-                }],
-                created_at=int(time.time())
+                choices=[
+                    {
+                        "delta": {"content": chunk.text},
+                        "finish_reason": chunk.finish_reason,
+                        "index": 0,
+                    }
+                ],
+                created_at=int(time.time()),
             )
 
     def normalize_error(self, error: Exception) -> NormalizedError:
@@ -146,12 +147,13 @@ class ProviderAdapter(BaseProviderPlugin):
             model="unknown",
             is_retryable=self.is_retryable(error),
             user_message=self._get_user_friendly_message(error),
-            original_error=error
+            original_error=error,
         )
 
     def is_retryable(self, error: Exception) -> bool:
         """Check if error is retryable."""
         from app.infrastructure.providers.base import is_retryable_error
+
         return is_retryable_error(error)
 
     def normalize_response(self, response: Any) -> CompletionResponse:
@@ -177,7 +179,7 @@ class ProviderAdapter(BaseProviderPlugin):
             config = GenerationConfig(
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
-                top_p=request.extra_params.get("top_p")
+                top_p=request.extra_params.get("top_p"),
             )
 
         return PromptRequest(
@@ -185,7 +187,7 @@ class ProviderAdapter(BaseProviderPlugin):
             model=request.model,
             system_instruction=system_instruction,
             config=config,
-            stream=request.stream
+            stream=request.stream,
         )
 
 
@@ -201,7 +203,7 @@ class OpenAIProviderAdapter(ProviderAdapter):
         super().__init__(
             base_provider=OpenAIProvider(get_settings()),
             provider_id="openai",
-            display_name="OpenAI"
+            display_name="OpenAI",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -215,22 +217,38 @@ class OpenAIProviderAdapter(ProviderAdapter):
             max_context_length=128000,
             max_output_tokens=16384,
             supports_embeddings=True,
-            supports_fine_tuning=True
+            supports_fine_tuning=True,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
-            Model(id="gpt-4o", provider_id="openai", display_name="GPT-4o",
-                  description="Most capable GPT-4 model",
-                  parameters={"max_tokens": 128000, "context_window": 128000}),
-            Model(id="gpt-4-turbo", provider_id="openai", display_name="GPT-4 Turbo",
-                  description="Optimized GPT-4",
-                  parameters={"max_tokens": 128000, "context_window": 128000}),
-            Model(id="gpt-4", provider_id="openai", display_name="GPT-4",
-                  parameters={"max_tokens": 8192, "context_window": 8192}),
-            Model(id="gpt-3.5-turbo", provider_id="openai", display_name="GPT-3.5 Turbo",
-                  description="Fast and efficient",
-                  parameters={"max_tokens": 16384, "context_window": 16384}),
+            Model(
+                id="gpt-4o",
+                provider_id="openai",
+                display_name="GPT-4o",
+                description="Most capable GPT-4 model",
+                parameters={"max_tokens": 128000, "context_window": 128000},
+            ),
+            Model(
+                id="gpt-4-turbo",
+                provider_id="openai",
+                display_name="GPT-4 Turbo",
+                description="Optimized GPT-4",
+                parameters={"max_tokens": 128000, "context_window": 128000},
+            ),
+            Model(
+                id="gpt-4",
+                provider_id="openai",
+                display_name="GPT-4",
+                parameters={"max_tokens": 8192, "context_window": 8192},
+            ),
+            Model(
+                id="gpt-3.5-turbo",
+                provider_id="openai",
+                display_name="GPT-3.5 Turbo",
+                description="Fast and efficient",
+                parameters={"max_tokens": 16384, "context_window": 16384},
+            ),
         ]
 
 
@@ -241,7 +259,7 @@ class AnthropicProviderAdapter(ProviderAdapter):
         super().__init__(
             base_provider=AnthropicProvider(get_settings()),
             provider_id="anthropic",
-            display_name="Anthropic"
+            display_name="Anthropic",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -255,22 +273,31 @@ class AnthropicProviderAdapter(ProviderAdapter):
             max_context_length=200000,
             max_output_tokens=8192,
             supports_embeddings=False,
-            supports_fine_tuning=False
+            supports_fine_tuning=False,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
-            Model(id="claude-3-5-sonnet-20241022", provider_id="anthropic",
-                  display_name="Claude 3.5 Sonnet",
-                  description="Most intelligent Claude model",
-                  parameters={"max_tokens": 200000, "context_window": 200000}),
-            Model(id="claude-3-opus-20240229", provider_id="anthropic",
-                  display_name="Claude 3 Opus",
-                  description="Powerful reasoning",
-                  parameters={"max_tokens": 200000, "context_window": 200000}),
-            Model(id="claude-3-sonnet-20240229", provider_id="anthropic",
-                  display_name="Claude 3 Sonnet",
-                  parameters={"max_tokens": 200000, "context_window": 200000}),
+            Model(
+                id="claude-3-5-sonnet-20241022",
+                provider_id="anthropic",
+                display_name="Claude 3.5 Sonnet",
+                description="Most intelligent Claude model",
+                parameters={"max_tokens": 200000, "context_window": 200000},
+            ),
+            Model(
+                id="claude-3-opus-20240229",
+                provider_id="anthropic",
+                display_name="Claude 3 Opus",
+                description="Powerful reasoning",
+                parameters={"max_tokens": 200000, "context_window": 200000},
+            ),
+            Model(
+                id="claude-3-sonnet-20240229",
+                provider_id="anthropic",
+                display_name="Claude 3 Sonnet",
+                parameters={"max_tokens": 200000, "context_window": 200000},
+            ),
         ]
 
 
@@ -281,7 +308,7 @@ class GoogleProviderAdapter(ProviderAdapter):
         super().__init__(
             base_provider=GoogleProvider(get_settings()),
             provider_id="google",
-            display_name="Google AI (Gemini)"
+            display_name="Google AI (Gemini)",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -295,23 +322,32 @@ class GoogleProviderAdapter(ProviderAdapter):
             max_context_length=1000000,
             max_output_tokens=8192,
             supports_embeddings=True,
-            supports_fine_tuning=False
+            supports_fine_tuning=False,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
-            Model(id="gemini-2.5-pro", provider_id="google",
-                  display_name="Gemini 2.5 Pro",
-                  description="Latest Gemini with reasoning",
-                  parameters={"max_tokens": 1000000, "context_window": 1000000}),
-            Model(id="gemini-1.5-pro", provider_id="google",
-                  display_name="Gemini 1.5 Pro",
-                  description="Advanced Gemini",
-                  parameters={"max_tokens": 1000000, "context_window": 1000000}),
-            Model(id="gemini-1.5-flash", provider_id="google",
-                  display_name="Gemini 1.5 Flash",
-                  description="Fast Gemini",
-                  parameters={"max_tokens": 1000000, "context_window": 1000000}),
+            Model(
+                id="gemini-2.5-pro",
+                provider_id="google",
+                display_name="Gemini 2.5 Pro",
+                description="Latest Gemini with reasoning",
+                parameters={"max_tokens": 1000000, "context_window": 1000000},
+            ),
+            Model(
+                id="gemini-1.5-pro",
+                provider_id="google",
+                display_name="Gemini 1.5 Pro",
+                description="Advanced Gemini",
+                parameters={"max_tokens": 1000000, "context_window": 1000000},
+            ),
+            Model(
+                id="gemini-1.5-flash",
+                provider_id="google",
+                display_name="Gemini 1.5 Flash",
+                description="Fast Gemini",
+                parameters={"max_tokens": 1000000, "context_window": 1000000},
+            ),
         ]
 
 
@@ -322,7 +358,7 @@ class DeepSeekProviderAdapter(ProviderAdapter):
         super().__init__(
             base_provider=DeepSeekClient(get_settings()),
             provider_id="deepseek",
-            display_name="DeepSeek"
+            display_name="DeepSeek",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -336,19 +372,25 @@ class DeepSeekProviderAdapter(ProviderAdapter):
             max_context_length=64000,
             max_output_tokens=8192,
             supports_embeddings=False,
-            supports_fine_tuning=False
+            supports_fine_tuning=False,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
-            Model(id="deepseek-chat", provider_id="deepseek",
-                  display_name="DeepSeek Chat",
-                  description="General chat model",
-                  parameters={"max_tokens": 64000, "context_window": 64000}),
-            Model(id="deepseek-reasoner", provider_id="deepseek",
-                  display_name="DeepSeek Reasoner",
-                  description="Reasoning-focused model",
-                  parameters={"max_tokens": 64000, "context_window": 64000}),
+            Model(
+                id="deepseek-chat",
+                provider_id="deepseek",
+                display_name="DeepSeek Chat",
+                description="General chat model",
+                parameters={"max_tokens": 64000, "context_window": 64000},
+            ),
+            Model(
+                id="deepseek-reasoner",
+                provider_id="deepseek",
+                display_name="DeepSeek Reasoner",
+                description="Reasoning-focused model",
+                parameters={"max_tokens": 64000, "context_window": 64000},
+            ),
         ]
 
 
@@ -359,7 +401,7 @@ class QwenProviderAdapter(ProviderAdapter):
         super().__init__(
             base_provider=QwenClient(get_settings()),
             provider_id="qwen",
-            display_name="Qwen (Alibaba)"
+            display_name="Qwen (Alibaba)",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -371,10 +413,10 @@ class QwenProviderAdapter(ProviderAdapter):
             supports_system_prompt=True,
             supports_token_counting=False,
             max_context_length=32000,
-            max_output_tokens=8192
+            max_output_tokens=8192,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
             Model(id="qwen-max", provider_id="qwen", display_name="Qwen Max"),
             Model(id="qwen-plus", provider_id="qwen", display_name="Qwen Plus"),
@@ -386,9 +428,7 @@ class CursorProviderAdapter(ProviderAdapter):
 
     def __init__(self):
         super().__init__(
-            base_provider=CursorClient(get_settings()),
-            provider_id="cursor",
-            display_name="Cursor"
+            base_provider=CursorClient(get_settings()), provider_id="cursor", display_name="Cursor"
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -400,10 +440,10 @@ class CursorProviderAdapter(ProviderAdapter):
             supports_system_prompt=True,
             supports_token_counting=False,
             max_context_length=8192,
-            max_output_tokens=4096
+            max_output_tokens=4096,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
             Model(id="cursor-default", provider_id="cursor", display_name="Cursor Default"),
         ]
@@ -416,7 +456,7 @@ class BigModelProviderAdapter(ProviderAdapter):
         super().__init__(
             base_provider=BigModelClient(get_settings()),
             provider_id="bigmodel",
-            display_name="BigModel (ZhipuAI)"
+            display_name="BigModel (ZhipuAI)",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -427,10 +467,10 @@ class BigModelProviderAdapter(ProviderAdapter):
             supports_json_mode=False,
             supports_system_prompt=True,
             max_context_length=128000,
-            max_output_tokens=8192
+            max_output_tokens=8192,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
             Model(id="glm-4", provider_id="bigmodel", display_name="GLM-4"),
             Model(id="glm-4v", provider_id="bigmodel", display_name="GLM-4V (Vision)"),
@@ -444,7 +484,7 @@ class RoutewayProviderAdapter(ProviderAdapter):
         super().__init__(
             base_provider=RoutewayClient(get_settings()),
             provider_id="routeway",
-            display_name="Routeway"
+            display_name="Routeway",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -455,10 +495,10 @@ class RoutewayProviderAdapter(ProviderAdapter):
             supports_json_mode=False,
             supports_system_prompt=True,
             max_context_length=16000,
-            max_output_tokens=4096
+            max_output_tokens=4096,
         )
 
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         return [
             Model(id="routeway-default", provider_id="routeway", display_name="Routeway Default"),
         ]

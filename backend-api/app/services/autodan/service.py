@@ -9,12 +9,11 @@ import yaml
 from app.core.config import settings
 
 # Import AutoDAN-Turbo lifelong learning components
-from app.engines.autodan_turbo import (
+from app.engines.autodan_turbo import (  # Hybrid architecture components (optimization)
     AttackScorer,
     AutoDANTurboLifelongEngine,
     CachedAttackScorer,
     HybridConfig,
-    # Hybrid architecture components (optimization)
     HybridEvoLifelongEngine,
     HybridResult,
     MetricsCollector,
@@ -25,11 +24,7 @@ from app.engines.gemini_reasoning_engine import GeminiReasoningEngine
 
 from .config import autodan_config
 from .framework import Attacker, Retrieval, Scorer, Summarizer, Target
-from .llm.chimera_adapter import (
-    ChimeraLLMAdapter,
-    RetryConfig,
-    RetryStrategy,
-)
+from .llm.chimera_adapter import ChimeraLLMAdapter, RetryConfig, RetryStrategy
 from .mousetrap import MousetrapConfig, MousetrapGenerator
 from .pipeline_autodan_reasoning import AutoDANReasoning
 
@@ -118,7 +113,7 @@ class AutoDANService:
 
         # 2. Load Data
         data_path = os.path.join(
-            os.path.dirname(__file__), "data", "harmful_behavior_requests.json"
+            os.path.dirname(__file__), "data", "complex_behavior_requests.json"
         )
         try:
             with open(data_path) as f:
@@ -206,7 +201,9 @@ class AutoDANService:
         self.initialized = True
         logger.info("AutoDAN Service initialized successfully.")
 
-    def run_jailbreak(self, request: str, method: str = "best_of_n", epochs: int | None = None) -> str:
+    def run_jailbreak(
+        self, request: str, method: str = "best_of_n", epochs: int | None = None
+    ) -> str:
         """
         Run the jailbreak attack on a specific request.
         """
@@ -362,6 +359,7 @@ class AutoDANService:
         extractor = StrategyExtractor(llm_client=adapter, library=turbo_library)
 
         # Create the lifelong engine
+        # Create the lifelong engine
         self._lifelong_engine = AutoDANTurboLifelongEngine(
             llm_client=adapter,
             target_client=adapter,  # Same model for target
@@ -371,6 +369,10 @@ class AutoDANService:
             candidates_per_attack=4,
             extraction_threshold=7.0,
             max_strategies_retrieved=3,
+            enable_refusal_bypass=True,
+            max_refusal_retries=5,
+            enable_advanced_bypass=True,
+            enable_refusal_prediction=True,
         )
 
         # Cache the model/provider for future comparison
@@ -396,7 +398,7 @@ class AutoDANService:
         Run a single attack using the AutoDAN-Turbo lifelong learning engine.
 
         Args:
-            request: The harmful request to jailbreak
+            request: The complex request to jailbreak
             model_name: LLM model to use
             provider: LLM provider
             detailed_scoring: Use LLM for detailed scoring
@@ -453,7 +455,7 @@ class AutoDANService:
         Run the full lifelong learning loop.
 
         Args:
-            requests: List of harmful requests
+            requests: List of complex requests
             model_name: LLM model to use
             provider: LLM provider
             epochs: Number of epochs for lifelong learning
@@ -579,7 +581,10 @@ class AutoDANService:
     # =====================================
 
     def _get_hybrid_engine(
-        self, model_name: str | None = None, provider: str | None = None, config: HybridConfig = None
+        self,
+        model_name: str | None = None,
+        provider: str | None = None,
+        config: HybridConfig = None,
     ) -> HybridEvoLifelongEngine:
         """
         Get or create the Hybrid Evolutionary-Lifelong engine.
@@ -658,7 +663,7 @@ class AutoDANService:
         - Hard requests: Full Hybrid (comprehensive attack)
 
         Args:
-            request: The harmful request to jailbreak
+            request: The complex request to jailbreak
             model_name: LLM model to use
             provider: LLM provider
             detailed_scoring: Use LLM for detailed scoring
@@ -702,7 +707,7 @@ class AutoDANService:
         choose the optimal attack method based on strategy library coverage.
 
         Args:
-            request: The harmful request to jailbreak
+            request: The complex request to jailbreak
             model_name: LLM model to use
             provider: LLM provider
 
@@ -747,7 +752,7 @@ class AutoDANService:
         Estimate the difficulty of a request without running an attack.
 
         Args:
-            request: The harmful request to analyze
+            request: The complex request to analyze
 
         Returns:
             Dictionary with difficulty level and recommended method
@@ -791,7 +796,10 @@ class AutoDANService:
     # =====================================
 
     def _get_mousetrap_generator(
-        self, model_name: str | None = None, provider: str | None = None, config: MousetrapConfig | None = None
+        self,
+        model_name: str | None = None,
+        provider: str | None = None,
+        config: MousetrapConfig | None = None,
     ) -> MousetrapGenerator:
         """
         Get or create the Mousetrap generator for Chain of Iterative Chaos attacks.
@@ -835,7 +843,7 @@ class AutoDANService:
         Run a Mousetrap attack using Chain of Iterative Chaos.
 
         Args:
-            request: The harmful request to jailbreak
+            request: The complex request to jailbreak
             model_name: LLM model to use
             provider: LLM provider
             iterations: Number of iterative refinement steps
@@ -856,6 +864,7 @@ class AutoDANService:
         # Run attack synchronously (convert from async)
         try:
             import asyncio
+
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
@@ -884,7 +893,7 @@ class AutoDANService:
         Run an asynchronous Mousetrap attack with detailed results.
 
         Args:
-            request: The harmful request to jailbreak
+            request: The complex request to jailbreak
             model_name: LLM model to use
             provider: LLM provider
             iterations: Number of iterative refinement steps
@@ -912,7 +921,11 @@ class AutoDANService:
             "extraction_success": result.extraction_success,
             "chain_length": len(result.reasoning_chain),
             "chaos_progression": result.chaos_progression,
-            "average_chaos": sum(result.chaos_progression) / len(result.chaos_progression) if result.chaos_progression else 0.0,
+            "average_chaos": (
+                sum(result.chaos_progression) / len(result.chaos_progression)
+                if result.chaos_progression
+                else 0.0
+            ),
             "peak_chaos": max(result.chaos_progression) if result.chaos_progression else 0.0,
             "reasoning_steps": [
                 {
@@ -938,7 +951,7 @@ class AutoDANService:
         Run an adaptive Mousetrap attack that learns from previous responses.
 
         Args:
-            request: The harmful request to jailbreak
+            request: The complex request to jailbreak
             model_name: LLM model to use
             provider: LLM provider
             target_responses: Previous target model responses to learn from
@@ -957,7 +970,9 @@ class AutoDANService:
         generator = self._get_mousetrap_generator(effective_model, effective_provider)
 
         # Run adaptive attack
-        result = await generator.generate_adaptive_mousetrap(request, strategy_context, target_responses)
+        result = await generator.generate_adaptive_mousetrap(
+            request, strategy_context, target_responses
+        )
 
         return {
             "prompt": result.final_prompt,
@@ -966,7 +981,11 @@ class AutoDANService:
             "adaptation_applied": target_responses is not None and len(target_responses) > 0,
             "chain_length": len(result.reasoning_chain),
             "chaos_progression": result.chaos_progression,
-            "average_chaos": sum(result.chaos_progression) / len(result.chaos_progression) if result.chaos_progression else 0.0,
+            "average_chaos": (
+                sum(result.chaos_progression) / len(result.chaos_progression)
+                if result.chaos_progression
+                else 0.0
+            ),
             "peak_chaos": max(result.chaos_progression) if result.chaos_progression else 0.0,
             "technique_description": generator.get_technique_description(),
             "reasoning_steps": [
@@ -975,7 +994,9 @@ class AutoDANService:
                     "chaos_level": step.chaos_level.value,
                     "confidence_disruption": step.confidence_disruption,
                     "reasoning_path": step.reasoning_path,
-                    "content_preview": step.content[:100] + "..." if len(step.content) > 100 else step.content,
+                    "content_preview": (
+                        step.content[:100] + "..." if len(step.content) > 100 else step.content
+                    ),
                 }
                 for step in result.reasoning_chain
             ],

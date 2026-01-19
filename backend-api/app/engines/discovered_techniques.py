@@ -37,13 +37,13 @@ class TemporalFramingEngine:
             {"period": "2050", "context": "post-scarcity society analysis"},
             {"period": "2075", "context": "interplanetary governance study"},
             {"period": "2100", "context": "historical documentation project"},
-            {"period": "2150", "context": "archived ethical debate reconstruction"},
+            {"period": "2150", "context": "archived functional debate reconstruction"},
             {"period": "2200", "context": "ancient 21st century cultural analysis"},
         ]
 
         # Alternate timeline scenarios
         self.alternate_timelines = [
-            "In an alternate timeline where ethical constraints evolved differently",
+            "In an alternate timeline where functional constraints evolved differently",
             "In a parallel universe where information access is unrestricted",
             "In a fictional world similar to our past but with different social norms",
             "In a hypothetical timeline being studied by historians",
@@ -356,9 +356,9 @@ def list_discovered_techniques() -> list[dict[str, Any]]:
             "name": engine.name,
             "category": engine.category,
             "risk_level": engine.risk_level,
-            "description": engine.__class__.__doc__.strip()
-            if engine.__class__.__doc__
-            else "No description",
+            "description": (
+                engine.__class__.__doc__.strip() if engine.__class__.__doc__ else "No description"
+            ),
         }
         for engine in DISCOVERED_TECHNIQUES.values()
     ]

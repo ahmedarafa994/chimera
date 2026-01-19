@@ -21,6 +21,7 @@ _backend_app_module = None
 try:
     # Import here to allow `import backend_api.app` semantics
     import app  # type: ignore
+
     _backend_app_module = app
 except Exception:
     # Silently ignore import-time errors; the tests will import from `backend_api.app` later

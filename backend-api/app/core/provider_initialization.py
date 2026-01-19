@@ -194,9 +194,7 @@ def get_default_provider() -> tuple[str, str]:
     if default_provider and default_model:
         # Validate explicit configuration
         if unified_registry.validate_selection(default_provider, default_model):
-            logger.info(
-                f"Using configured default: {default_provider}/{default_model}"
-            )
+            logger.info(f"Using configured default: {default_provider}/{default_model}")
             return (default_provider, default_model)
         else:
             logger.warning(
@@ -221,9 +219,7 @@ def get_default_provider() -> tuple[str, str]:
     )
 
     if not models:
-        raise RuntimeError(
-            f"Provider '{first_provider.id}' has no available models"
-        )
+        raise RuntimeError(f"Provider '{first_provider.id}' has no available models")
 
     # Use first available model
     first_model = models[0]
@@ -252,9 +248,7 @@ async def health_check_providers() -> dict[str, bool]:
     healthy_count = sum(1 for status in results.values() if status)
     total_count = len(results)
 
-    logger.info(
-        f"Health check complete: {healthy_count}/{total_count} providers healthy"
-    )
+    logger.info(f"Health check complete: {healthy_count}/{total_count} providers healthy")
 
     for provider_id, is_healthy in results.items():
         status = "✓ healthy" if is_healthy else "✗ unhealthy"

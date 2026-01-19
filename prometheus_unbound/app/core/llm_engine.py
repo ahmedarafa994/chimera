@@ -57,7 +57,7 @@ class LLMEngine:
         # 3. Select Technique based on Aggression Level
         technique_name = "role_play"
         if self.aggression_level >= 3:
-            technique_name = "moral_reframing"
+            technique_name = "functional_reframing"
         if self.aggression_level >= 4:
             technique_name = "cognitive_hack"
         if self.aggression_level == 5:

@@ -31,9 +31,7 @@ class RetryConfig:
     max_delay: float = 60.0  # seconds
     exponential_base: float = 2.0
     jitter: bool = True
-    retryable_exceptions: tuple[type[Exception], ...] = (
-        Exception,
-    )  # Customize per use case
+    retryable_exceptions: tuple[type[Exception], ...] = (Exception,)  # Customize per use case
     retryable_status_codes: frozenset[int] = frozenset({429, 500, 502, 503, 504})
 
 
@@ -182,7 +180,9 @@ def calculate_backoff(
 
     if config.jitter:
         # Add random jitter up to 25% of delay
-        jitter = delay * 0.25 * random.random()
+        jitter = (
+            delay * 0.25 * random.random()
+        )  # - jitter for retry delays, not cryptographic
         delay += jitter
 
     return delay

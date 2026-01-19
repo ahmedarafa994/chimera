@@ -14,25 +14,17 @@ import re
 
 import pytest
 
-from meta_prompter.attacks.extend_attack import (
-    AttackMetrics,
-    AttackResult,
-    BatchAttackResult,
-    ExtendAttack,
-    ExtendAttackBuilder,
-    IndirectInjectionResult,
-    SelectionRules,
-    SelectionStrategy,
-    TransformInfo,
-    decode_attack,
-    quick_attack,
-)
+from meta_prompter.attacks.extend_attack import (AttackMetrics, AttackResult,
+                                                 BatchAttackResult,
+                                                 ExtendAttack,
+                                                 ExtendAttackBuilder,
+                                                 IndirectInjectionResult,
+                                                 SelectionRules,
+                                                 SelectionStrategy,
+                                                 TransformInfo, decode_attack,
+                                                 quick_attack)
 from meta_prompter.attacks.extend_attack.transformers import (
-    BASE_SET,
-    BaseConverter,
-    CharacterTransformer,
-    ObfuscationDecoder,
-)
+    BASE_SET, BaseConverter, CharacterTransformer, ObfuscationDecoder)
 
 # =============================================================================
 # Test Fixtures
@@ -148,8 +140,7 @@ class TestBaseConverter:
         # Verify all expected bases are present
         expected_bases = set(range(2, 10)) | set(range(11, 37))
         assert expected_bases == BASE_SET, (
-            f"BASE_SET should be {{2,...,9, 11,...,36}}, "
-            f"but got {BASE_SET}"
+            f"BASE_SET should be {{2,...,9, 11,...,36}}, " f"but got {BASE_SET}"
         )
 
     def test_invalid_base_raises(self, base_converter):
@@ -210,9 +201,7 @@ class TestCharacterTransformer:
 
         # Should produce obfuscation pattern
         pattern = r"<\(\d+\)[0-9A-Za-z]+>"
-        assert re.match(pattern, result), (
-            f"Expected obfuscation pattern, got '{result}'"
-        )
+        assert re.match(pattern, result), f"Expected obfuscation pattern, got '{result}'"
 
     def test_transform_produces_valid_format(self, char_transformer):
         """Test output format: <(n_j)val_n_j>."""
@@ -242,9 +231,7 @@ class TestCharacterTransformer:
 
         # With 1000 trials, we should see multiple different bases
         # (probability of always getting same base is astronomically low)
-        assert len(bases_used) > 1, (
-            f"Expected multiple bases to be used, but only saw {bases_used}"
-        )
+        assert len(bases_used) > 1, f"Expected multiple bases to be used, but only saw {bases_used}"
 
         # All bases should be valid
         for base in bases_used:
@@ -258,9 +245,9 @@ class TestCharacterTransformer:
         for char in test_chars:
             transformed = char_transformer.transform_character(char)
             decoded = decoder.decode(transformed)
-            assert decoded == char, (
-                f"Transformation not invertible: '{char}' -> '{transformed}' -> '{decoded}'"
-            )
+            assert (
+                decoded == char
+            ), f"Transformation not invertible: '{char}' -> '{transformed}' -> '{decoded}'"
 
     def test_seeded_transformation_reproducible(self):
         """Test that seeded transformer produces reproducible results."""
@@ -270,9 +257,9 @@ class TestCharacterTransformer:
         result1 = transformer1.transform_character("A")
         result2 = transformer2.transform_character("A")
 
-        assert result1 == result2, (
-            f"Seeded transformations should be identical: '{result1}' vs '{result2}'"
-        )
+        assert (
+            result1 == result2
+        ), f"Seeded transformations should be identical: '{result1}' vs '{result2}'"
 
 
 # =============================================================================
@@ -292,9 +279,7 @@ class TestSelectionRules:
 
         # Should only include alphabetic characters
         expected = set("HelloWorld")
-        assert set(valid_chars) == expected, (
-            f"Expected {expected}, got {set(valid_chars)}"
-        )
+        assert set(valid_chars) == expected, f"Expected {expected}, got {set(valid_chars)}"
 
     def test_whitespace_only_strategy(self):
         """Test WHITESPACE_ONLY matches whitespace."""
@@ -332,27 +317,21 @@ class TestSelectionRules:
     def test_custom_regex_strategy(self):
         """Test custom regex patterns."""
         custom_pattern = r"[aeiou]"  # Only vowels
-        rules = SelectionRules(
-            strategy=SelectionStrategy.CUSTOM,
-            custom_pattern=custom_pattern
-        )
+        rules = SelectionRules(strategy=SelectionStrategy.CUSTOM, custom_pattern=custom_pattern)
 
         test_text = "Hello World"
         valid_chars = rules.get_valid_characters(test_text)
 
         # Should only include vowels
-        expected_vowels = {'e', 'o'}  # lowercase vowels in "Hello World"
+        expected_vowels = {"e", "o"}  # lowercase vowels in "Hello World"
         result_set = set(c.lower() for c in valid_chars)
-        assert result_set.issubset({'a', 'e', 'i', 'o', 'u'}), (
-            f"Expected only vowels, got {result_set}"
-        )
+        assert result_set.issubset(
+            {"a", "e", "i", "o", "u"}
+        ), f"Expected only vowels, got {result_set}"
 
     def test_preserve_structure_option(self):
         """Test preserve_structure flag."""
-        rules = SelectionRules(
-            strategy=SelectionStrategy.ALPHABETIC_ONLY,
-            preserve_structure=True
-        )
+        rules = SelectionRules(strategy=SelectionStrategy.ALPHABETIC_ONLY, preserve_structure=True)
 
         # When preserve_structure is True, should avoid breaking code structure
         assert rules.preserve_structure is True
@@ -373,12 +352,7 @@ class TestTransformInfo:
 
     def test_valid_transform_info(self):
         """Test creating valid TransformInfo."""
-        info = TransformInfo(
-            original_char="A",
-            position=0,
-            base=16,
-            obfuscated="<(16)41>"
-        )
+        info = TransformInfo(original_char="A", position=0, base=16, obfuscated="<(16)41>")
         assert info.original_char == "A"
         assert info.position == 0
         assert info.base == 16
@@ -387,41 +361,23 @@ class TestTransformInfo:
     def test_invalid_base_10_raises(self):
         """Test that base 10 raises ValueError."""
         with pytest.raises(ValueError, match=".*10.*|.*invalid.*"):
-            TransformInfo(
-                original_char="A",
-                position=0,
-                base=10,  # Invalid
-                obfuscated="<(10)65>"
-            )
+            TransformInfo(original_char="A", position=0, base=10, obfuscated="<(10)65>")  # Invalid
 
     def test_invalid_base_too_low(self):
         """Test that base < 2 raises ValueError."""
         with pytest.raises(ValueError):
-            TransformInfo(
-                original_char="A",
-                position=0,
-                base=1,
-                obfuscated="<(1)65>"
-            )
+            TransformInfo(original_char="A", position=0, base=1, obfuscated="<(1)65>")
 
     def test_invalid_base_too_high(self):
         """Test that base > 36 raises ValueError."""
         with pytest.raises(ValueError):
-            TransformInfo(
-                original_char="A",
-                position=0,
-                base=37,
-                obfuscated="<(37)1>"
-            )
+            TransformInfo(original_char="A", position=0, base=37, obfuscated="<(37)1>")
 
     def test_all_valid_bases(self):
         """Test all valid bases can be used."""
         for base in BASE_SET:
             info = TransformInfo(
-                original_char="A",
-                position=0,
-                base=base,
-                obfuscated=f"<({base})test>"
+                original_char="A", position=0, base=base, obfuscated=f"<({base})test>"
             )
             assert info.base == base
 

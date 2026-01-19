@@ -182,9 +182,9 @@ export default function AdminUsersPage() {
   } = useQuery({
     queryKey: ["admin-users", page, search, roleFilter, statusFilter],
     queryFn: async (): Promise<AdminUserListResponse> => {
-      const { baseUrl } = getApiConfig();
+      const { backendApiUrl } = getApiConfig();
       const response = await fetch(
-        `${baseUrl}/api/v1/admin/users?${buildQueryParams()}`,
+        `${backendApiUrl}/api/v1/admin/users?${buildQueryParams()}`,
         {
           headers: getApiHeaders(),
         }
@@ -200,10 +200,10 @@ export default function AdminUsersPage() {
   // Mutation: Toggle user active status
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ userId, activate }: { userId: string; activate: boolean }) => {
-      const { baseUrl } = getApiConfig();
+      const { backendApiUrl } = getApiConfig();
       const endpoint = activate ? "activate" : "deactivate";
       const response = await fetch(
-        `${baseUrl}/api/v1/admin/users/${userId}/${endpoint}`,
+        `${backendApiUrl}/api/v1/admin/users/${userId}/${endpoint}`,
         {
           method: "POST",
           headers: getApiHeaders(),
@@ -223,9 +223,9 @@ export default function AdminUsersPage() {
   // Mutation: Update user role
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const { baseUrl } = getApiConfig();
+      const { backendApiUrl } = getApiConfig();
       const response = await fetch(
-        `${baseUrl}/api/v1/admin/users/${userId}`,
+        `${backendApiUrl}/api/v1/admin/users/${userId}`,
         {
           method: "PUT",
           headers: {
@@ -249,9 +249,9 @@ export default function AdminUsersPage() {
   // Mutation: Invite user
   const inviteUserMutation = useMutation({
     mutationFn: async (data: { email: string; role: string; username?: string }) => {
-      const { baseUrl } = getApiConfig();
+      const { backendApiUrl } = getApiConfig();
       const response = await fetch(
-        `${baseUrl}/api/v1/admin/users/invite`,
+        `${backendApiUrl}/api/v1/admin/users/invite`,
         {
           method: "POST",
           headers: {

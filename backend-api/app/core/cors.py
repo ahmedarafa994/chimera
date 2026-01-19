@@ -15,7 +15,7 @@ def get_allowed_origins() -> list[str]:
 
     In production, this should be explicitly configured.
     """
-    origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080")
+    origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3001,http://localhost:8080")
 
     origins = [origin.strip() for origin in origins_str.split(",") if origin.strip()]
 

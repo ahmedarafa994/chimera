@@ -16,11 +16,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.domain.interfaces import LLMProvider
-from app.domain.models import (
-    GenerationConfig,
-    PromptRequest,
-    PromptResponse,
-)
+from app.domain.models import GenerationConfig, PromptRequest, PromptResponse
 from app.infrastructure.cursor_client import CursorClient
 from app.infrastructure.provider_manager import (
     FailoverConfig,
@@ -431,9 +427,7 @@ class TestProviderManager:
 
         # No retries for faster tests
         for name in ["p1", "p2"]:
-            manager._retry_handlers[name] = RetryHandler(
-                RetryConfig(max_retries=0)
-            )
+            manager._retry_handlers[name] = RetryHandler(RetryConfig(max_retries=0))
 
         with pytest.raises(RetryExhaustedError):
             await manager.generate_with_failover(sample_request)
@@ -671,9 +665,7 @@ class TestDirectAPIIntegration:
         for name, provider, priority in providers:
             manager.register_provider(name, provider, priority=priority)
             manager._provider_states[name].status = ProviderStatus.HEALTHY
-            manager._retry_handlers[name] = RetryHandler(
-                RetryConfig(max_retries=0)
-            )
+            manager._retry_handlers[name] = RetryHandler(RetryConfig(max_retries=0))
 
         response = await manager.generate_with_failover(sample_request)
 
@@ -686,9 +678,7 @@ class TestDirectAPIIntegration:
     @pytest.mark.asyncio
     async def test_retry_then_failover(self, sample_request):
         """Test retry exhaustion followed by failover."""
-        manager = ProviderManager(
-            FailoverConfig(enabled=True)
-        )
+        manager = ProviderManager(FailoverConfig(enabled=True))
 
         primary = MockProvider("primary", should_fail=True)
         backup = MockProvider("backup", should_fail=False)

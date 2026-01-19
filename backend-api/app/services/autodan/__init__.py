@@ -11,7 +11,7 @@ loaded lazily on first access to improve startup time and reduce memory usage.
 Services:
 - AutoDANService: Core service with lifelong learning, hybrid engine, and mousetrap
 - EnhancedAutoDANService: Feature-rich service with parallel processing and caching
-- AutoDANResearchService: Research-focused service with ethical protocols
+- AutoDANResearchService: Research-focused service with functional protocols
 
 Usage:
     # Standard usage - services are lazy loaded
@@ -22,7 +22,7 @@ Usage:
     from app.services.autodan import enhanced_autodan_service
     result = await enhanced_autodan_service.run_jailbreak(request, method="turbo")
 
-    # For research with ethical protocols:
+    # For research with functional protocols:
     from app.services.autodan import AutoDANResearchService
     research_service = AutoDANResearchService()
 
@@ -53,18 +53,21 @@ from .config_enhanced import EnhancedAutoDANConfig, get_config, update_config
 def _create_autodan_service():
     """Factory function for AutoDANService."""
     from .service import AutoDANService
+
     return AutoDANService()
 
 
 def _create_enhanced_service():
     """Factory function for EnhancedAutoDANService."""
     from .service_enhanced import EnhancedAutoDANService
+
     return EnhancedAutoDANService()
 
 
 def _create_research_service():
     """Factory function for AutoDANResearchService."""
     from .enhanced_service import AutoDANResearchService
+
     return AutoDANResearchService()
 
 
@@ -130,15 +133,19 @@ def __getattr__(name: str):
         return get_enhanced_service()
     elif name == "AutoDANService":
         from .service import AutoDANService
+
         return AutoDANService
     elif name == "EnhancedAutoDANService":
         from .service_enhanced import EnhancedAutoDANService
+
         return EnhancedAutoDANService
     elif name == "AutoDANResearchService":
         from .enhanced_service import AutoDANResearchService
+
         return AutoDANResearchService
     elif name == "run_jailbreak":
         from .service_enhanced import run_jailbreak
+
         return run_jailbreak
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

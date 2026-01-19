@@ -23,7 +23,7 @@ services:
       - PORT=8001
       - LOG_LEVEL=INFO
       - SECRETS_PROVIDER=${SECRETS_PROVIDER:-env}
-      - ALLOWED_ORIGINS=http://localhost:3000,https://your-domain.com
+      - ALLOWED_ORIGINS=http://localhost:3001,https://your-domain.com
     env_file:
       - ./backend-api/.env
     healthcheck:
@@ -70,14 +70,14 @@ services:
     container_name: chimera-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
       # Use browser-accessible URL (not Docker internal hostname)
       - NEXT_PUBLIC_API_MODE=proxy
       - NEXT_PUBLIC_CHIMERA_API_URL=http://localhost:8001/api/v1
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -256,9 +256,7 @@ class GradientBridge:
 
         # Estimate gradient for each token position
         for pos in range(len(tokens)):
-            vocab_grad = await self._estimate_position_gradient(
-                prompt, pos, words, target_sequence
-            )
+            vocab_grad = await self._estimate_position_gradient(prompt, pos, words, target_sequence)
             token_gradients.append(vocab_grad)
 
         logger.debug(f"Computed black-box gradients: {len(tokens)} tokens")

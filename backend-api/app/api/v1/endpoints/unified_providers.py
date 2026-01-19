@@ -15,24 +15,11 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import (
-    APIRouter,
-    HTTPException,
-    Query,
-    WebSocket,
-    WebSocketDisconnect,
-)
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
+from pydantic import AliasChoices, BaseModel, Field
 
-from app.services.model_catalog_service import (
-    get_model_catalog_service,
-    initialize_model_catalog,
-)
-from app.services.provider_plugins import (
-    get_all_plugins,
-    get_plugin,
-    register_all_plugins,
-)
+from app.services.model_catalog_service import get_model_catalog_service, initialize_model_catalog
+from app.services.provider_plugins import get_all_plugins, get_plugin, register_all_plugins
 from app.services.provider_registry import get_provider_registry
 
 logger = logging.getLogger(__name__)
@@ -51,14 +38,10 @@ class ProviderResponse(BaseModel):
     display_name: str = Field(..., description="Human-readable name")
     is_available: bool = Field(..., description="Whether provider is ready")
     models_count: int = Field(0, description="Number of available models")
-    capabilities: list[str] = Field(
-        default_factory=list, description="Provider capabilities"
-    )
+    capabilities: list[str] = Field(default_factory=list, description="Provider capabilities")
     default_model: str | None = Field(None, description="Default model ID")
     status: str = Field("unknown", description="Provider health status")
-    has_api_key: bool = Field(
-        False, description="Whether API key is configured"
-    )
+    has_api_key: bool = Field(False, description="Whether API key is configured")
 
 
 class ModelResponse(BaseModel):
@@ -67,26 +50,14 @@ class ModelResponse(BaseModel):
     model_id: str = Field(..., description="Unique model identifier")
     provider_id: str = Field(..., description="Provider this model belongs to")
     display_name: str = Field(..., description="Human-readable name")
-    context_window: int | None = Field(
-        None, description="Maximum context window size"
-    )
-    max_output_tokens: int | None = Field(
-        None, description="Maximum output tokens"
-    )
+    context_window: int | None = Field(None, description="Maximum context window size")
+    max_output_tokens: int | None = Field(None, description="Maximum output tokens")
     supports_streaming: bool = Field(True, description="Streaming support")
     supports_vision: bool = Field(False, description="Vision/image support")
-    supports_function_calling: bool = Field(
-        False, description="Function calling support"
-    )
-    input_price_per_1k: float | None = Field(
-        None, description="Input price per 1K tokens"
-    )
-    output_price_per_1k: float | None = Field(
-        None, description="Output price per 1K tokens"
-    )
-    capabilities: list[str] = Field(
-        default_factory=list, description="Model capabilities"
-    )
+    supports_function_calling: bool = Field(False, description="Function calling support")
+    input_price_per_1k: float | None = Field(None, description="Input price per 1K tokens")
+    output_price_per_1k: float | None = Field(None, description="Output price per 1K tokens")
+    capabilities: list[str] = Field(default_factory=list, description="Model capabilities")
 
 
 class ProvidersListResponse(BaseModel):
@@ -101,9 +72,7 @@ class ModelsListResponse(BaseModel):
 
     models: list[ModelResponse]
     total: int = Field(..., description="Total number of models")
-    provider_id: str | None = Field(
-        None, description="Provider filter if applied"
-    )
+    provider_id: str | None = Field(None, description="Provider filter if applied")
 
 
 class RefreshResponse(BaseModel):
@@ -128,18 +97,10 @@ class CatalogStatsResponse(BaseModel):
 class ValidationMetricsResponse(BaseModel):
     """Response for validation metrics."""
 
-    total_validations: int = Field(
-        ..., description="Total number of validations performed"
-    )
-    successful_validations: int = Field(
-        ..., description="Number of successful validations"
-    )
-    failed_validations: int = Field(
-        ..., description="Number of failed validations"
-    )
-    success_rate: float = Field(
-        ..., description="Validation success rate (0.0-1.0)"
-    )
+    total_validations: int = Field(..., description="Total number of validations performed")
+    successful_validations: int = Field(..., description="Number of successful validations")
+    failed_validations: int = Field(..., description="Number of failed validations")
+    success_rate: float = Field(..., description="Validation success rate (0.0-1.0)")
     error_counts: dict[str, int] = Field(
         default_factory=dict, description="Count of each error type"
     )
@@ -152,9 +113,7 @@ class ValidationMetricsResponse(BaseModel):
     avg_validation_time_ms: float = Field(
         ..., description="Average validation time in milliseconds"
     )
-    last_updated: str | None = Field(
-        None, description="When metrics were last updated"
-    )
+    last_updated: str | None = Field(None, description="When metrics were last updated")
 
 
 # =============================================================================
@@ -167,9 +126,7 @@ class CurrentSelectionResponse(BaseModel):
 
     provider_id: str = Field(..., description="Selected provider identifier")
     model_id: str = Field(..., description="Selected model identifier")
-    scope: str = Field(
-        "SESSION", description="Selection scope: REQUEST, SESSION, or GLOBAL"
-    )
+    scope: str = Field("SESSION", description="Selection scope: REQUEST, SESSION, or GLOBAL")
     session_id: str | None = Field(None, description="Session identifier")
     user_id: str | None = Field(None, description="User identifier")
     created_at: str | None = Field(None, description="When selection was created")
@@ -189,16 +146,10 @@ class SelectionSyncRequest(BaseModel):
     session_id: str = Field(..., description="Session identifier")
     provider: str = Field(..., description="Provider identifier")
     model: str = Field(..., description="Model identifier")
-    version: int | None = Field(
-        None, description="Expected version for optimistic concurrency"
-    )
+    version: int | None = Field(None, description="Expected version for optimistic concurrency")
     user_id: str | None = Field(None, description="Optional user identifier")
-    source: str = Field(
-        default="frontend", description="Source of the sync request"
-    )
-    timestamp: str | None = Field(
-        None, description="Client timestamp (ISO 8601)"
-    )
+    source: str = Field(default="frontend", description="Source of the sync request")
+    timestamp: str | None = Field(None, description="Client timestamp (ISO 8601)")
 
 
 class SelectionSyncResponse(BaseModel):
@@ -209,12 +160,8 @@ class SelectionSyncResponse(BaseModel):
     provider: str = Field(..., description="Current provider")
     model: str = Field(..., description="Current model")
     version: int = Field(..., description="Current version after sync")
-    conflict: bool = Field(
-        False, description="Whether there was a version conflict"
-    )
-    serverTimestamp: str = Field(
-        ..., description="Server timestamp (ISO 8601)"
-    )
+    conflict: bool = Field(False, description="Whether there was a version conflict")
+    serverTimestamp: str = Field(..., description="Server timestamp (ISO 8601)")
     message: str | None = Field(None, description="Optional status message")
 
 
@@ -224,13 +171,10 @@ class SetSelectionRequest(BaseModel):
     provider: str = Field(..., description="Provider identifier")
     model: str = Field(..., description="Model identifier")
     expected_version: int | None = Field(
-        None,
-        description="Expected version for optimistic locking (409 on mismatch)"
+        None, description="Expected version for optimistic locking (409 on mismatch)"
     )
     user_id: str | None = Field(None, description="Optional user identifier")
-    metadata: dict | None = Field(
-        None, description="Optional metadata to store"
-    )
+    metadata: dict | None = Field(None, description="Optional metadata to store")
 
 
 class SelectionResponse(BaseModel):
@@ -262,6 +206,21 @@ class SelectionHistoryResponse(BaseModel):
     session_id: str
     entries: list[SelectionHistoryEntry]
     total: int
+
+
+class ModelValidationRequest(BaseModel):
+    """Request to validate a provider/model combination."""
+
+    provider_id: str = Field(
+        ...,
+        description="Provider identifier",
+        validation_alias=AliasChoices("provider_id", "provider"),
+    )
+    model_id: str = Field(
+        ...,
+        description="Model identifier",
+        validation_alias=AliasChoices("model_id", "model"),
+    )
 
 
 # =============================================================================
@@ -302,16 +261,18 @@ async def list_providers() -> ProvidersListResponse:
             # Check if API key is configured
             has_api_key = bool(plugin._get_api_key(None))
 
-            providers.append(ProviderResponse(
-                provider_id=plugin.provider_type,
-                display_name=plugin.display_name,
-                is_available=bool(models) and status != "unavailable",
-                models_count=len(models),
-                capabilities=[cap.value for cap in plugin.capabilities],
-                default_model=plugin.get_default_model(),
-                status=status,
-                has_api_key=has_api_key,
-            ))
+            providers.append(
+                ProviderResponse(
+                    provider_id=plugin.provider_type,
+                    display_name=plugin.display_name,
+                    is_available=bool(models) and status != "unavailable",
+                    models_count=len(models),
+                    capabilities=[cap.value for cap in plugin.capabilities],
+                    default_model=plugin.get_default_model(),
+                    status=status,
+                    has_api_key=has_api_key,
+                )
+            )
 
         return ProvidersListResponse(
             providers=providers,
@@ -319,10 +280,57 @@ async def list_providers() -> ProvidersListResponse:
         )
     except Exception as e:
         logger.error(f"Error listing providers: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list providers: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to list providers: {e!s}")
+
+
+@router.get(
+    "/providers/health",
+    summary="Get provider health",
+    description="Get health status for all providers.",
+)
+async def get_providers_health() -> dict[str, Any]:
+    """Return health status for all providers."""
+    register_all_plugins()
+    registry = get_provider_registry()
+    health_map: dict[str, Any] = {}
+
+    for plugin in get_all_plugins():
+        health = await registry.get_health_status(plugin.provider_type)
+        if health:
+            health_map[plugin.provider_type] = {
+                "status": health.status.value,
+                "is_available": health.status.value != "unavailable",
+                "health_score": health.success_rate,
+                "details": health.to_dict(),
+            }
+        else:
+            health_map[plugin.provider_type] = {
+                "status": "unknown",
+                "is_available": False,
+            }
+
+    return health_map
+
+
+@router.get(
+    "/providers/{provider_id}/health",
+    summary="Get provider health",
+    description="Get health status for a specific provider.",
+)
+async def get_provider_health(provider_id: str) -> dict[str, Any]:
+    """Return health status for a specific provider."""
+    register_all_plugins()
+    registry = get_provider_registry()
+    health = await registry.get_health_status(provider_id)
+    if not health:
+        raise HTTPException(status_code=404, detail=f"Provider not found: {provider_id}")
+
+    return {
+        "status": health.status.value,
+        "is_available": health.status.value != "unavailable",
+        "health_score": health.success_rate,
+        "details": health.to_dict(),
+    }
 
 
 @router.get(
@@ -344,10 +352,7 @@ async def get_provider(provider_id: str) -> ProviderResponse:
     try:
         plugin = get_plugin(provider_id)
         if not plugin:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Provider not found: {provider_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Provider not found: {provider_id}")
 
         catalog = get_model_catalog_service()
         registry = get_provider_registry()
@@ -372,10 +377,7 @@ async def get_provider(provider_id: str) -> ProviderResponse:
         raise
     except Exception as e:
         logger.error(f"Error getting provider {provider_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get provider: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get provider: {e!s}")
 
 
 @router.get(
@@ -397,10 +399,7 @@ async def list_provider_models(provider_id: str) -> ModelsListResponse:
     try:
         plugin = get_plugin(provider_id)
         if not plugin:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Provider not found: {provider_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Provider not found: {provider_id}")
 
         catalog = get_model_catalog_service()
         models = await catalog.get_available_models(provider_id)
@@ -431,10 +430,7 @@ async def list_provider_models(provider_id: str) -> ModelsListResponse:
         raise
     except Exception as e:
         logger.error(f"Error listing models for {provider_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list models: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to list models: {e!s}")
 
 
 @router.get(
@@ -444,24 +440,14 @@ async def list_provider_models(provider_id: str) -> ModelsListResponse:
     description="Get all models across all providers with optional filters.",
 )
 async def list_all_models(
-    provider: str | None = Query(
-        None, description="Filter by provider ID"
-    ),
+    provider: str | None = Query(None, description="Filter by provider ID"),
     capability: str | None = Query(
         None, description="Filter by capability (e.g., 'vision', 'code')"
     ),
-    supports_streaming: bool | None = Query(
-        None, description="Filter by streaming support"
-    ),
-    supports_vision: bool | None = Query(
-        None, description="Filter by vision support"
-    ),
-    min_context: int | None = Query(
-        None, description="Minimum context window size"
-    ),
-    search: str | None = Query(
-        None, description="Search in model name/ID"
-    ),
+    supports_streaming: bool | None = Query(None, description="Filter by streaming support"),
+    supports_vision: bool | None = Query(None, description="Filter by vision support"),
+    min_context: int | None = Query(None, description="Minimum context window size"),
+    search: str | None = Query(None, description="Search in model name/ID"),
 ) -> ModelsListResponse:
     """
     List all models across all providers with optional filters.
@@ -492,25 +478,19 @@ async def list_all_models(
 
         # Apply additional filters if provider-specific
         if provider and (
-            capability or
-            supports_streaming is not None or
-            supports_vision is not None or
-            min_context or
-            search
+            capability
+            or supports_streaming is not None
+            or supports_vision is not None
+            or min_context
+            or search
         ):
             filtered = []
             for m in models:
                 if capability and capability not in (m.capabilities or []):
                     continue
-                if (
-                    supports_streaming is not None and
-                    m.supports_streaming != supports_streaming
-                ):
+                if supports_streaming is not None and m.supports_streaming != supports_streaming:
                     continue
-                if (
-                    supports_vision is not None and
-                    m.supports_vision != supports_vision
-                ):
+                if supports_vision is not None and m.supports_vision != supports_vision:
                     continue
                 if min_context and (m.context_window or 0) < min_context:
                     continue
@@ -545,10 +525,41 @@ async def list_all_models(
         )
     except Exception as e:
         logger.error(f"Error listing all models: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list models: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to list models: {e!s}")
+
+
+@router.post(
+    "/models/validate",
+    summary="Validate model selection",
+    description="Validate a provider/model combination.",
+)
+async def validate_model_selection(request: ModelValidationRequest) -> dict[str, Any]:
+    """Validate that a model exists for the provider."""
+    try:
+        catalog = get_model_catalog_service()
+        model = await catalog.get_model_by_id(request.model_id, provider=request.provider_id)
+        if not model:
+            return {
+                "is_valid": False,
+                "errors": [
+                    f"Model '{request.model_id}' not found for provider '{request.provider_id}'"
+                ],
+                "warnings": [],
+            }
+
+        if model.provider_id != request.provider_id:
+            return {
+                "is_valid": False,
+                "errors": [
+                    f"Model '{request.model_id}' does not belong to provider '{request.provider_id}'"
+                ],
+                "warnings": [],
+            }
+
+        return {"is_valid": True, "errors": [], "warnings": []}
+    except Exception as e:
+        logger.error(f"Error validating model selection: {e}")
+        raise HTTPException(status_code=500, detail=f"Validation failed: {e!s}")
 
 
 @router.get(
@@ -576,10 +587,7 @@ async def get_model(
         model = await catalog.get_model_by_id(model_id, provider=provider)
 
         if not model:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Model not found: {model_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Model not found: {model_id}")
 
         return ModelResponse(
             model_id=model.model_id,
@@ -598,10 +606,7 @@ async def get_model(
         raise
     except Exception as e:
         logger.error(f"Error getting model {model_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get model: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get model: {e!s}")
 
 
 @router.post(
@@ -611,9 +616,7 @@ async def get_model(
     description="Force refresh of model catalog for providers.",
 )
 async def refresh_provider_catalog(
-    provider: str | None = Query(
-        None, description="Specific provider to refresh"
-    ),
+    provider: str | None = Query(None, description="Specific provider to refresh"),
 ) -> RefreshResponse:
     """
     Force refresh of the model catalog.
@@ -646,10 +649,7 @@ async def refresh_provider_catalog(
         )
     except Exception as e:
         logger.error(f"Error refreshing catalog: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to refresh catalog: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to refresh catalog: {e!s}")
 
 
 @router.get(
@@ -672,10 +672,7 @@ async def get_catalog_stats() -> CatalogStatsResponse:
 
         all_models = await catalog.get_all_providers_with_models()
 
-        providers_with_models = {
-            provider: len(models)
-            for provider, models in all_models.items()
-        }
+        providers_with_models = {provider: len(models) for provider, models in all_models.items()}
 
         stats = catalog.get_cache_stats()
 
@@ -688,10 +685,7 @@ async def get_catalog_stats() -> CatalogStatsResponse:
         )
     except Exception as e:
         logger.error(f"Error getting catalog stats: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get catalog stats: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get catalog stats: {e!s}")
 
 
 @router.post(
@@ -716,10 +710,7 @@ async def validate_provider_api_key(
     try:
         plugin = get_plugin(provider_id)
         if not plugin:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Provider not found: {provider_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Provider not found: {provider_id}")
 
         # Get API key to test
         key_to_test = api_key or plugin._get_api_key(None)
@@ -736,18 +727,13 @@ async def validate_provider_api_key(
         return {
             "valid": is_valid,
             "provider_id": provider_id,
-            "message": (
-                "API key is valid" if is_valid else "API key validation failed"
-            ),
+            "message": ("API key is valid" if is_valid else "API key validation failed"),
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error validating API key for {provider_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to validate API key: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to validate API key: {e!s}")
 
 
 @router.get(
@@ -782,9 +768,7 @@ async def get_validation_metrics() -> ValidationMetricsResponse:
             success_rate=metrics_dict["success_rate"],
             error_counts=metrics_dict["error_counts"],
             source_distribution=metrics_dict["source_distribution"],
-            provider_health_at_validation=metrics_dict[
-                "provider_health_at_validation"
-            ],
+            provider_health_at_validation=metrics_dict["provider_health_at_validation"],
             avg_validation_time_ms=metrics_dict["avg_validation_time_ms"],
             last_updated=metrics_dict.get("last_updated"),
         )
@@ -803,10 +787,7 @@ async def get_validation_metrics() -> ValidationMetricsResponse:
         )
     except Exception as e:
         logger.error(f"Error getting validation metrics: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get validation metrics: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get validation metrics: {e!s}")
 
 
 # =============================================================================
@@ -836,9 +817,7 @@ async def sync_selection(
         SelectionSyncResponse with current state and conflict status
     """
     try:
-        from app.services.concurrent_selection_handler import (
-            ConcurrentSelectionHandler,
-        )
+        from app.services.concurrent_selection_handler import ConcurrentSelectionHandler
 
         handler = ConcurrentSelectionHandler()
 
@@ -847,11 +826,7 @@ async def sync_selection(
         current_version = current.version if current else 0
 
         # Check for version conflict
-        if (
-            request.version is not None and
-            current and
-            request.version != current_version
-        ):
+        if request.version is not None and current and request.version != current_version:
             # Return current state without updating
             return SelectionSyncResponse(
                 success=False,
@@ -885,10 +860,7 @@ async def sync_selection(
 
     except Exception as e:
         logger.error(f"Error syncing selection: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to sync selection: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to sync selection: {e!s}")
 
 
 @router.get(
@@ -912,12 +884,8 @@ async def get_session_selection(
         Current selection with version information
     """
     try:
-        from app.services.session_selection_persistence import (
-            SessionSelectionPersistenceService,
-        )
-        from app.services.selection_recovery_service import (
-            SelectionRecoveryService,
-        )
+        from app.services.selection_recovery_service import SelectionRecoveryService
+        from app.services.session_selection_persistence import SessionSelectionPersistenceService
 
         persistence = SessionSelectionPersistenceService()
         recovery = SelectionRecoveryService()
@@ -961,19 +929,13 @@ async def get_session_selection(
                 metadata={"source": recovered.source},
             )
 
-        raise HTTPException(
-            status_code=404,
-            detail=f"No selection found for session: {session_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"No selection found for session: {session_id}")
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting selection for {session_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get selection: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get selection: {e!s}")
 
 
 @router.post(
@@ -1000,12 +962,8 @@ async def set_session_selection(
         Updated selection with new version
     """
     try:
-        from app.services.concurrent_selection_handler import (
-            ConcurrentSelectionHandler,
-        )
-        from app.services.session_selection_persistence import (
-            SessionSelectionPersistenceService,
-        )
+        from app.services.concurrent_selection_handler import ConcurrentSelectionHandler
+        from app.services.session_selection_persistence import SessionSelectionPersistenceService
 
         handler = ConcurrentSelectionHandler()
         persistence = SessionSelectionPersistenceService()
@@ -1027,7 +985,7 @@ async def set_session_selection(
                     "expected_version": request.expected_version,
                     "current_provider": result.provider,
                     "current_model": result.model,
-                }
+                },
             )
 
         # Also persist to database
@@ -1048,7 +1006,8 @@ async def set_session_selection(
             user_id=request.user_id,
             created_at=(
                 save_result.record.created_at.isoformat() + "Z"
-                if save_result.record else now.isoformat() + "Z"
+                if save_result.record
+                else now.isoformat() + "Z"
             ),
             updated_at=now.isoformat() + "Z",
             metadata=request.metadata or {},
@@ -1058,10 +1017,7 @@ async def set_session_selection(
         raise
     except Exception as e:
         logger.error(f"Error setting selection for {session_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to set selection: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to set selection: {e!s}")
 
 
 @router.delete(
@@ -1082,10 +1038,8 @@ async def delete_session_selection(
         Deletion confirmation
     """
     try:
-        from app.services.session_selection_persistence import (
-            SessionSelectionPersistenceService,
-        )
         from app.infrastructure.cache.selection_cache import SelectionCache
+        from app.services.session_selection_persistence import SessionSelectionPersistenceService
 
         persistence = SessionSelectionPersistenceService()
         cache = SelectionCache()
@@ -1104,10 +1058,7 @@ async def delete_session_selection(
 
     except Exception as e:
         logger.error(f"Error deleting selection for {session_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete selection: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to delete selection: {e!s}")
 
 
 @router.get(
@@ -1130,9 +1081,7 @@ async def get_user_selections(
         List of user's selections
     """
     try:
-        from app.services.session_selection_persistence import (
-            SessionSelectionPersistenceService,
-        )
+        from app.services.session_selection_persistence import SessionSelectionPersistenceService
 
         persistence = SessionSelectionPersistenceService()
         selections = await persistence.get_user_selections(user_id)
@@ -1155,10 +1104,7 @@ async def get_user_selections(
 
     except Exception as e:
         logger.error(f"Error getting selections for user {user_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get user selections: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get user selections: {e!s}")
 
 
 # =============================================================================
@@ -1237,22 +1183,22 @@ async def subscribe_selection_changes(
 
     try:
         # Send current selection on connect
-        from app.services.concurrent_selection_handler import (
-            ConcurrentSelectionHandler,
-        )
+        from app.services.concurrent_selection_handler import ConcurrentSelectionHandler
 
         handler = ConcurrentSelectionHandler()
         current = await handler.get_selection_with_version(session_id)
 
         if current:
-            await websocket.send_json({
-                "type": "current_selection",
-                "session_id": session_id,
-                "provider": current.provider,
-                "model": current.model,
-                "version": current.version,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-            })
+            await websocket.send_json(
+                {
+                    "type": "current_selection",
+                    "session_id": session_id,
+                    "provider": current.provider,
+                    "model": current.model,
+                    "version": current.version,
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                }
+            )
 
         # Listen for client messages
         while True:
@@ -1273,15 +1219,17 @@ async def subscribe_selection_changes(
                     )
 
                     # Send result to client
-                    await websocket.send_json({
-                        "type": "update_result",
-                        "success": result.success,
-                        "provider": result.provider,
-                        "model": result.model,
-                        "version": result.new_version,
-                        "conflict": result.conflict,
-                        "timestamp": datetime.utcnow().isoformat() + "Z",
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "update_result",
+                            "success": result.success,
+                            "provider": result.provider,
+                            "model": result.model,
+                            "version": result.new_version,
+                            "conflict": result.conflict,
+                            "timestamp": datetime.utcnow().isoformat() + "Z",
+                        }
+                    )
 
                     # Broadcast to other clients if successful
                     if result.success and not result.conflict:
@@ -1299,10 +1247,12 @@ async def subscribe_selection_changes(
                             exclude=websocket,
                         )
                 else:
-                    await websocket.send_json({
-                        "type": "error",
-                        "message": "Missing provider or model",
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "message": "Missing provider or model",
+                        }
+                    )
 
             elif data.get("type") == "ping":
                 await websocket.send_json({"type": "pong"})
@@ -1342,9 +1292,7 @@ async def recover_session_selection(
         Recovered selection
     """
     try:
-        from app.services.selection_recovery_service import (
-            SelectionRecoveryService,
-        )
+        from app.services.selection_recovery_service import SelectionRecoveryService
 
         recovery = SelectionRecoveryService()
         result = await recovery.recover_selection(
@@ -1354,10 +1302,7 @@ async def recover_session_selection(
         )
 
         if not result.success:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Recovery failed: {result.error}"
-            )
+            raise HTTPException(status_code=500, detail=f"Recovery failed: {result.error}")
 
         now = datetime.utcnow().isoformat() + "Z"
         return SelectionResponse(
@@ -1378,10 +1323,7 @@ async def recover_session_selection(
         raise
     except Exception as e:
         logger.error(f"Error recovering selection for {session_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to recover selection: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to recover selection: {e!s}")
 
 
 @router.post(
@@ -1402,14 +1344,10 @@ async def cleanup_expired_selections(
         Cleanup results
     """
     try:
-        from app.services.session_selection_persistence import (
-            SessionSelectionPersistenceService,
-        )
+        from app.services.session_selection_persistence import SessionSelectionPersistenceService
 
         persistence = SessionSelectionPersistenceService()
-        deleted_count = await persistence.cleanup_expired_sessions(
-            max_age_hours=max_age_hours
-        )
+        deleted_count = await persistence.cleanup_expired_sessions(max_age_hours=max_age_hours)
 
         return {
             "success": True,
@@ -1420,10 +1358,7 @@ async def cleanup_expired_selections(
 
     except Exception as e:
         logger.error(f"Error cleaning up selections: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to cleanup selections: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to cleanup selections: {e!s}")
 
 
 @router.get(
@@ -1439,9 +1374,7 @@ async def get_recovery_stats() -> dict[str, Any]:
         Recovery statistics including sources and counts
     """
     try:
-        from app.services.selection_recovery_service import (
-            SelectionRecoveryService,
-        )
+        from app.services.selection_recovery_service import SelectionRecoveryService
 
         recovery = SelectionRecoveryService()
         stats = recovery.get_recovery_stats()
@@ -1453,10 +1386,7 @@ async def get_recovery_stats() -> dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting recovery stats: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get recovery stats: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get recovery stats: {e!s}")
 
 
 # =============================================================================
@@ -1491,12 +1421,8 @@ async def get_current_selection(
         CurrentSelectionResponse with provider_id, model_id, scope, etc.
     """
     try:
-        from app.services.session_selection_persistence import (
-            SessionSelectionPersistenceService,
-        )
-        from app.services.selection_recovery_service import (
-            SelectionRecoveryService,
-        )
+        from app.services.selection_recovery_service import SelectionRecoveryService
+        from app.services.session_selection_persistence import SessionSelectionPersistenceService
 
         persistence = SessionSelectionPersistenceService()
         recovery = SelectionRecoveryService()
@@ -1583,10 +1509,7 @@ async def get_current_selection(
 
     except Exception as e:
         logger.error(f"Error getting current selection: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get current selection: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get current selection: {e!s}")
 
 
 @router.post(
@@ -1611,12 +1534,8 @@ async def save_selection(
         CurrentSelectionResponse with the saved selection
     """
     try:
-        from app.services.session_selection_persistence import (
-            SessionSelectionPersistenceService,
-        )
-        from app.services.concurrent_selection_handler import (
-            ConcurrentSelectionHandler,
-        )
+        from app.services.concurrent_selection_handler import ConcurrentSelectionHandler
+        from app.services.session_selection_persistence import SessionSelectionPersistenceService
 
         # Generate session ID if not provided
         session_id = request.session_id or f"frontend-{datetime.utcnow().timestamp()}"
@@ -1635,7 +1554,7 @@ async def save_selection(
         if not result.success:
             raise HTTPException(
                 status_code=409 if result.conflict else 500,
-                detail=result.message or "Failed to save selection"
+                detail=result.message or "Failed to save selection",
             )
 
         # Also persist to database
@@ -1656,7 +1575,8 @@ async def save_selection(
             user_id=request.user_id,
             created_at=(
                 save_result.record.created_at.isoformat() + "Z"
-                if save_result.record else now.isoformat() + "Z"
+                if save_result.record
+                else now.isoformat() + "Z"
             ),
             updated_at=now.isoformat() + "Z",
             version=result.new_version,
@@ -1667,10 +1587,7 @@ async def save_selection(
         raise
     except Exception as e:
         logger.error(f"Error saving selection: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to save selection: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to save selection: {e!s}")
 
 
 @router.on_event("startup")

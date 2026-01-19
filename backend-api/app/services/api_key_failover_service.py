@@ -10,6 +10,7 @@
 # =============================================================================
 
 import asyncio
+import contextlib
 import logging
 import time
 import uuid
@@ -104,9 +105,15 @@ class FailoverEvent(BaseModel):
     from_key_id: str = Field(..., description="Key being failed over from")
     to_key_id: str | None = Field(default=None, description="Key being failed over to")
     reason: FailoverReason = Field(..., description="Reason for failover")
-    error_message: str | None = Field(default=None, description="Error message that triggered failover")
-    triggered_at: datetime = Field(default_factory=datetime.utcnow, description="When failover occurred")
-    cooldown_until: datetime | None = Field(default=None, description="When the from_key will be available again")
+    error_message: str | None = Field(
+        default=None, description="Error message that triggered failover"
+    )
+    triggered_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When failover occurred"
+    )
+    cooldown_until: datetime | None = Field(
+        default=None, description="When the from_key will be available again"
+    )
     success: bool = Field(default=False, description="Whether failover succeeded")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional event metadata")
 
@@ -147,7 +154,9 @@ class KeyCooldownInfo(BaseModel):
 
     key_id: str = Field(..., description="Key identifier")
     provider_id: str = Field(..., description="Provider identifier")
-    state: KeyCooldownState = Field(default=KeyCooldownState.AVAILABLE, description="Current cooldown state")
+    state: KeyCooldownState = Field(
+        default=KeyCooldownState.AVAILABLE, description="Current cooldown state"
+    )
     cooldown_until: datetime | None = Field(default=None, description="When cooldown ends")
     reason: FailoverReason | None = Field(default=None, description="Reason for cooldown")
     consecutive_failures: int = Field(default=0, description="Number of consecutive failures")
@@ -210,9 +219,13 @@ class ProviderFailoverState(BaseModel):
     current_key_id: str | None = Field(default=None, description="Currently active key ID")
     primary_key_id: str | None = Field(default=None, description="Primary key ID")
     is_using_backup: bool = Field(default=False, description="Whether currently using a backup key")
-    last_failover_at: datetime | None = Field(default=None, description="When last failover occurred")
+    last_failover_at: datetime | None = Field(
+        default=None, description="When last failover occurred"
+    )
     failover_count: int = Field(default=0, description="Total failovers for this provider")
-    strategy: FailoverStrategy = Field(default=FailoverStrategy.PRIORITY, description="Failover strategy")
+    strategy: FailoverStrategy = Field(
+        default=FailoverStrategy.PRIORITY, description="Failover strategy"
+    )
     round_robin_index: int = Field(default=0, description="Current index for round-robin strategy")
 
     model_config = ConfigDict(
@@ -236,7 +249,9 @@ class ProviderFailoverState(BaseModel):
             "current_key_id": self.current_key_id,
             "primary_key_id": self.primary_key_id,
             "is_using_backup": self.is_using_backup,
-            "last_failover_at": self.last_failover_at.isoformat() if self.last_failover_at else None,
+            "last_failover_at": (
+                self.last_failover_at.isoformat() if self.last_failover_at else None
+            ),
             "failover_count": self.failover_count,
             "strategy": self.strategy.value,
         }
@@ -247,7 +262,9 @@ class FailoverConfig(BaseModel):
 
     provider_id: str = Field(..., description="Provider identifier")
     enabled: bool = Field(default=True, description="Whether failover is enabled")
-    strategy: FailoverStrategy = Field(default=FailoverStrategy.PRIORITY, description="Failover strategy")
+    strategy: FailoverStrategy = Field(
+        default=FailoverStrategy.PRIORITY, description="Failover strategy"
+    )
     rate_limit_cooldown_seconds: int = Field(
         default=DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
         ge=5,
@@ -399,10 +416,8 @@ class ApiKeyFailoverService:
         self._running = False
         if self._recovery_task:
             self._recovery_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._recovery_task
-            except asyncio.CancelledError:
-                pass
 
         logger.info("ApiKeyFailoverService stopped")
 
@@ -713,6 +728,7 @@ class ApiKeyFailoverService:
 
         elif strategy == FailoverStrategy.RANDOM:
             import random
+
             return random.choice(available_keys)
 
         # Default to first available
@@ -775,7 +791,8 @@ class ApiKeyFailoverService:
             if config.use_exponential_backoff:
                 # Exponential backoff based on consecutive failures
                 cooldown_seconds = min(
-                    base_cooldown * (COOLDOWN_BACKOFF_MULTIPLIER ** (cooldown_info.consecutive_failures - 1)),
+                    base_cooldown
+                    * (COOLDOWN_BACKOFF_MULTIPLIER ** (cooldown_info.consecutive_failures - 1)),
                     config.max_cooldown_seconds,
                 )
             else:
@@ -795,6 +812,7 @@ class ApiKeyFailoverService:
             # Record in api_key_service
             try:
                 from app.services.api_key_service import api_key_service
+
                 await api_key_service.record_rate_limit_hit(key_id)
             except Exception as e:
                 logger.warning(f"Failed to record rate limit hit: {e}")
@@ -818,7 +836,7 @@ class ApiKeyFailoverService:
                 success=new_key_id is not None,
                 metadata={
                     "consecutive_failures": cooldown_info.consecutive_failures,
-                    "cooldown_seconds": cooldown_seconds if 'cooldown_seconds' in dir() else 0,
+                    "cooldown_seconds": cooldown_seconds if "cooldown_seconds" in dir() else 0,
                 },
             )
             await self._record_failover_event(event)
@@ -896,7 +914,8 @@ class ApiKeyFailoverService:
 
             # Clear cooldowns for all keys of this provider
             keys_to_clear = [
-                key_id for key_id, info in self._key_cooldowns.items()
+                key_id
+                for key_id, info in self._key_cooldowns.items()
                 if info.provider_id == provider_id
             ]
             for key_id in keys_to_clear:
@@ -908,6 +927,7 @@ class ApiKeyFailoverService:
                 # Clear rate limit in api_key_service
                 try:
                     from app.services.api_key_service import api_key_service
+
                     await api_key_service.clear_rate_limit(key_id)
                 except Exception as e:
                     logger.warning(f"Failed to clear rate limit: {e}")
@@ -942,6 +962,7 @@ class ApiKeyFailoverService:
             # Clear in api_key_service
             try:
                 from app.services.api_key_service import api_key_service
+
                 await api_key_service.clear_rate_limit(key_id)
             except Exception as e:
                 logger.warning(f"Failed to clear rate limit: {e}")

@@ -345,7 +345,9 @@ class BigModelProvider(BaseProvider):
                             # Also check for reasoning content in stream
                             reasoning_text = delta.get("reasoning_content", "")
                             if reasoning_text:
-                                logger.debug(f"[bigmodel] Stream reasoning chunk: {len(reasoning_text)} chars")
+                                logger.debug(
+                                    f"[bigmodel] Stream reasoning chunk: {len(reasoning_text)} chars"
+                                )
 
                             # Check finish reason
                             finish_reason = choice.get("finish_reason")

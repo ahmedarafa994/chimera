@@ -25,15 +25,11 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Set
 
 from fastapi import WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-from app.services.global_model_selection_state import (
-    get_global_model_selection_state,
-    Selection,
-)
+from app.services.global_model_selection_state import Selection, get_global_model_selection_state
 
 logger = logging.getLogger(__name__)
 
@@ -45,12 +41,14 @@ logger = logging.getLogger(__name__)
 
 class WebSocketMessage(BaseModel):
     """Base WebSocket message"""
+
     type: str
     data: dict
 
 
 class SelectionChangedData(BaseModel):
     """Data for SELECTION_CHANGED event"""
+
     user_id: str
     provider: str
     model: str
@@ -59,6 +57,7 @@ class SelectionChangedData(BaseModel):
 
 class ProviderStatusData(BaseModel):
     """Data for PROVIDER_STATUS event"""
+
     provider_id: str
     is_available: bool
     health_score: float
@@ -66,6 +65,7 @@ class ProviderStatusData(BaseModel):
 
 class ModelValidationData(BaseModel):
     """Data for MODEL_VALIDATION event"""
+
     provider: str
     model: str
     is_valid: bool
@@ -87,9 +87,9 @@ class ConnectionManager:
 
     def __init__(self):
         """Initialize the connection manager."""
-        self.active_connections: Dict[str, Set[WebSocket]] = {}
+        self.active_connections: dict[str, set[WebSocket]] = {}
         self._lock = asyncio.Lock()
-        self._subscription_ids: Dict[str, str] = {}  # WebSocket -> subscription_id
+        self._subscription_ids: dict[str, str] = {}  # WebSocket -> subscription_id
 
     async def connect(self, websocket: WebSocket, user_id: str):
         """
@@ -113,12 +113,14 @@ class ConnectionManager:
             user_id,
             lambda selection: asyncio.create_task(
                 self._broadcast_selection_change(user_id, selection)
-            )
+            ),
         )
 
         self._subscription_ids[id(websocket)] = subscription_id
 
-        logger.info(f"WebSocket connected for user {user_id}, total connections: {len(self.active_connections.get(user_id, []))}")
+        logger.info(
+            f"WebSocket connected for user {user_id}, total connections: {len(self.active_connections.get(user_id, []))}"
+        )
 
     async def disconnect(self, websocket: WebSocket, user_id: str):
         """
@@ -197,14 +199,16 @@ class ConnectionManager:
                 "user_id": selection.user_id,
                 "provider": selection.provider_id,
                 "model": selection.model_id,
-                "timestamp": selection.updated_at.isoformat()
-            }
+                "timestamp": selection.updated_at.isoformat(),
+            },
         }
 
         await self.broadcast_to_user(message, user_id)
         logger.debug(f"Broadcasted selection change to user {user_id}")
 
-    async def broadcast_provider_status(self, provider_id: str, is_available: bool, health_score: float):
+    async def broadcast_provider_status(
+        self, provider_id: str, is_available: bool, health_score: float
+    ):
         """
         Broadcast provider status update to all connected clients.
 
@@ -219,8 +223,8 @@ class ConnectionManager:
                 "provider_id": provider_id,
                 "is_available": is_available,
                 "health_score": health_score,
-                "timestamp": datetime.utcnow().isoformat()
-            }
+                "timestamp": datetime.utcnow().isoformat(),
+            },
         }
 
         # Broadcast to all users
@@ -233,7 +237,7 @@ class ConnectionManager:
         provider: str,
         model: str,
         is_valid: bool,
-        error_message: str | None = None
+        error_message: str | None = None,
     ):
         """
         Send validation result to a specific connection.
@@ -252,8 +256,8 @@ class ConnectionManager:
                 "model": model,
                 "is_valid": is_valid,
                 "error_message": error_message,
-                "timestamp": datetime.utcnow().isoformat()
-            }
+                "timestamp": datetime.utcnow().isoformat(),
+            },
         }
 
         await self.send_personal_message(message, websocket)
@@ -300,10 +304,10 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     "user_id": selection.user_id,
                     "provider": selection.provider_id,
                     "model": selection.model_id,
-                    "timestamp": selection.updated_at.isoformat()
-                }
+                    "timestamp": selection.updated_at.isoformat(),
+                },
             },
-            websocket
+            websocket,
         )
 
         # Listen for client messages
@@ -317,8 +321,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 if message_type == "PING":
                     # Respond to ping
                     await connection_manager.send_personal_message(
-                        {"type": "PONG", "data": {}},
-                        websocket
+                        {"type": "PONG", "data": {}}, websocket
                     )
 
                 elif message_type == "VALIDATE":
@@ -335,7 +338,11 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                             provider,
                             model,
                             is_valid,
-                            None if is_valid else f"Model '{model}' not valid for provider '{provider}'"
+                            (
+                                None
+                                if is_valid
+                                else f"Model '{model}' not valid for provider '{provider}'"
+                            ),
                         )
 
                 else:

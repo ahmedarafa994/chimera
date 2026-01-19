@@ -19,12 +19,14 @@ try:
     import pympler.muppy
     import pympler.summary
     import pympler.tracker
+
     PYMPLER_AVAILABLE = True
 except ImportError:
     PYMPLER_AVAILABLE = False
 
 try:
     import memory_profiler
+
     MEMORY_PROFILER_AVAILABLE = True
 except ImportError:
     MEMORY_PROFILER_AVAILABLE = False
@@ -35,6 +37,7 @@ from profiling_config import MetricType, config
 @dataclass
 class MemorySnapshot:
     """Memory snapshot data"""
+
     timestamp: datetime
     process_memory: dict[str, Any]
     gc_stats: dict[str, Any]
@@ -42,17 +45,21 @@ class MemorySnapshot:
     top_objects: list[dict[str, Any]]
     memory_growth: float | None
 
+
 @dataclass
 class MemoryLeakAnalysis:
     """Memory leak analysis results"""
+
     suspected_leaks: list[dict[str, Any]]
     growth_rate_mb_per_hour: float
     confidence_score: float
     recommendations: list[str]
 
+
 @dataclass
 class HeapDumpAnalysis:
     """Heap dump analysis results"""
+
     dump_id: str
     timestamp: datetime
     total_objects: int
@@ -60,6 +67,7 @@ class HeapDumpAnalysis:
     largest_objects: list[dict[str, Any]]
     object_type_distribution: dict[str, int]
     growth_since_last_dump: float | None
+
 
 class MemoryProfiler:
     """Comprehensive memory profiling for Chimera system"""
@@ -89,9 +97,7 @@ class MemoryProfiler:
 
         self.monitoring_active = True
         self.monitoring_thread = threading.Thread(
-            target=self._monitoring_loop,
-            args=(interval,),
-            daemon=True
+            target=self._monitoring_loop, args=(interval,), daemon=True
         )
         self.monitoring_thread.start()
         print(f"Started memory monitoring with {interval}s interval")
@@ -133,24 +139,21 @@ class MemoryProfiler:
             "vms": process.memory_info().vms,
             "percent": process.memory_percent(),
             "available": psutil.virtual_memory().available,
-            "total": psutil.virtual_memory().total
+            "total": psutil.virtual_memory().total,
         }
 
         # Get garbage collector stats
         gc_stats = {
             "collected": gc.get_stats(),
             "counts": gc.get_count(),
-            "threshold": gc.get_threshold()
+            "threshold": gc.get_threshold(),
         }
 
         # Get tracemalloc stats if available
         tracemalloc_stats = None
         if tracemalloc.is_tracing():
             current, peak = tracemalloc.get_traced_memory()
-            tracemalloc_stats = {
-                "current_mb": current / 1024 / 1024,
-                "peak_mb": peak / 1024 / 1024
-            }
+            tracemalloc_stats = {"current_mb": current / 1024 / 1024, "peak_mb": peak / 1024 / 1024}
 
         # Get top memory-consuming objects
         top_objects = self._get_top_objects()
@@ -159,7 +162,9 @@ class MemoryProfiler:
         memory_growth = None
         if len(self.memory_snapshots) > 0:
             last_snapshot = self.memory_snapshots[-1]
-            memory_growth = (process_memory["rss"] - last_snapshot.process_memory["rss"]) / 1024 / 1024
+            memory_growth = (
+                (process_memory["rss"] - last_snapshot.process_memory["rss"]) / 1024 / 1024
+            )
 
         return MemorySnapshot(
             timestamp=timestamp,
@@ -167,7 +172,7 @@ class MemoryProfiler:
             gc_stats=gc_stats,
             tracemalloc_stats=tracemalloc_stats,
             top_objects=top_objects,
-            memory_growth=memory_growth
+            memory_growth=memory_growth,
         )
 
     def _get_top_objects(self) -> list[dict[str, Any]]:
@@ -180,11 +185,9 @@ class MemoryProfiler:
                 summary = pympler.summary.summarize(all_objects)
 
                 for item in summary[:20]:  # Top 20 object types
-                    top_objects.append({
-                        "type": str(item[0]),
-                        "count": item[1],
-                        "total_size": item[2]
-                    })
+                    top_objects.append(
+                        {"type": str(item[0]), "count": item[1], "total_size": item[2]}
+                    )
             except Exception as e:
                 print(f"Error getting top objects with pympler: {e}")
 
@@ -198,9 +201,13 @@ class MemoryProfiler:
         thresholds = config.performance_thresholds["memory"]
 
         if memory_mb > thresholds["critical"]:
-            print(f"CRITICAL: Memory usage {memory_mb:.1f}MB exceeds critical threshold {thresholds['critical']}MB")
+            print(
+                f"CRITICAL: Memory usage {memory_mb:.1f}MB exceeds critical threshold {thresholds['critical']}MB"
+            )
         elif memory_mb > thresholds["warning"]:
-            print(f"WARNING: Memory usage {memory_mb:.1f}MB exceeds warning threshold {thresholds['warning']}MB")
+            print(
+                f"WARNING: Memory usage {memory_mb:.1f}MB exceeds warning threshold {thresholds['warning']}MB"
+            )
 
         # Check for rapid growth
         if snapshot.memory_growth and snapshot.memory_growth > 100:  # 100MB growth
@@ -237,7 +244,7 @@ class MemoryProfiler:
                         "type": str(item[0]),
                         "count": item[1],
                         "total_size_mb": item[2] / 1024 / 1024,
-                        "avg_size_bytes": item[2] / item[1] if item[1] > 0 else 0
+                        "avg_size_bytes": item[2] / item[1] if item[1] > 0 else 0,
                     }
                     largest_objects.append(obj_info)
 
@@ -259,7 +266,7 @@ class MemoryProfiler:
             total_memory_mb=total_memory_mb,
             largest_objects=largest_objects,
             object_type_distribution=dict(object_type_distribution),
-            growth_since_last_dump=growth_since_last_dump
+            growth_since_last_dump=growth_since_last_dump,
         )
 
         # Save heap dump to file
@@ -275,7 +282,7 @@ class MemoryProfiler:
         dump_data = asdict(analysis)
         dump_data["timestamp"] = analysis.timestamp.isoformat()
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(dump_data, f, indent=2)
 
         print(f"Heap dump saved: {output_path}")
@@ -287,14 +294,16 @@ class MemoryProfiler:
                 suspected_leaks=[],
                 growth_rate_mb_per_hour=0.0,
                 confidence_score=0.0,
-                recommendations=["Need more snapshots for leak analysis"]
+                recommendations=["Need more snapshots for leak analysis"],
             )
 
         # Calculate memory growth trend
         recent_snapshots = self.memory_snapshots[-min_snapshots:]
         memory_values = [s.process_memory["rss"] / 1024 / 1024 for s in recent_snapshots]
-        time_values = [(s.timestamp - recent_snapshots[0].timestamp).total_seconds() / 3600
-                      for s in recent_snapshots]
+        time_values = [
+            (s.timestamp - recent_snapshots[0].timestamp).total_seconds() / 3600
+            for s in recent_snapshots
+        ]
 
         # Simple linear regression for growth rate
         n = len(memory_values)
@@ -328,18 +337,22 @@ class MemoryProfiler:
                         if first_obj["type"] == last_obj["type"]:
                             growth = last_obj["count"] - first_obj["count"]
                             if growth > first_obj["count"] * 0.5:  # 50% growth
-                                suspected_leaks.append({
-                                    "object_type": first_obj["type"],
-                                    "initial_count": first_obj["count"],
-                                    "final_count": last_obj["count"],
-                                    "growth": growth,
-                                    "growth_percentage": (growth / first_obj["count"]) * 100
-                                })
+                                suspected_leaks.append(
+                                    {
+                                        "object_type": first_obj["type"],
+                                        "initial_count": first_obj["count"],
+                                        "final_count": last_obj["count"],
+                                        "growth": growth,
+                                        "growth_percentage": (growth / first_obj["count"]) * 100,
+                                    }
+                                )
 
         # Generate recommendations
         recommendations = []
         if growth_rate_mb_per_hour > 50:
-            recommendations.append("Critical memory leak detected - immediate investigation required")
+            recommendations.append(
+                "Critical memory leak detected - immediate investigation required"
+            )
         elif growth_rate_mb_per_hour > 10:
             recommendations.append("Potential memory leak - monitor and investigate object growth")
 
@@ -347,17 +360,19 @@ class MemoryProfiler:
             recommendations.append("Focus on objects with highest growth rates")
             recommendations.append("Review code that creates instances of growing object types")
 
-        recommendations.extend([
-            "Enable detailed memory tracking in production",
-            "Consider implementing memory pooling for frequently allocated objects",
-            "Review garbage collection settings and tuning"
-        ])
+        recommendations.extend(
+            [
+                "Enable detailed memory tracking in production",
+                "Consider implementing memory pooling for frequently allocated objects",
+                "Review garbage collection settings and tuning",
+            ]
+        )
 
         return MemoryLeakAnalysis(
             suspected_leaks=suspected_leaks,
             growth_rate_mb_per_hour=growth_rate_mb_per_hour,
             confidence_score=confidence_score,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     def get_memory_report(self) -> dict[str, Any]:
@@ -379,7 +394,7 @@ class MemoryProfiler:
             "snapshots_count": len(self.memory_snapshots),
             "gc_collections": latest_snapshot.gc_stats["collected"],
             "top_objects": latest_snapshot.top_objects[:10],
-            "memory_thresholds": config.performance_thresholds["memory"]
+            "memory_thresholds": config.performance_thresholds["memory"],
         }
 
         if latest_snapshot.tracemalloc_stats:
@@ -398,18 +413,21 @@ class MemoryProfiler:
         timestamp = int(time.time())
         output_path = config.get_output_path(MetricType.MEMORY, f"memory_report_{timestamp}.json")
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(report, f, indent=2)
 
         print(f"Memory report saved: {output_path}")
         return output_path
 
+
 # Global memory profiler instance
 memory_profiler = MemoryProfiler()
+
 
 # Decorator for monitoring memory usage of functions
 def monitor_memory(func_name: str | None = None):
     """Decorator to monitor memory usage of functions"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             name = func_name or f"{func.__module__}.{func.__name__}"
@@ -424,12 +442,17 @@ def monitor_memory(func_name: str | None = None):
                 snapshot_after = memory_profiler._take_memory_snapshot()
 
                 # Log memory usage
-                memory_diff = (snapshot_after.process_memory["rss"] -
-                             snapshot_before.process_memory["rss"]) / 1024 / 1024
+                memory_diff = (
+                    (snapshot_after.process_memory["rss"] - snapshot_before.process_memory["rss"])
+                    / 1024
+                    / 1024
+                )
 
                 if abs(memory_diff) > 10:  # Log if more than 10MB difference
                     print(f"Function {name} memory change: {memory_diff:+.1f}MB")
 
             return result
+
         return wrapper
+
     return decorator

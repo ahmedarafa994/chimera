@@ -24,28 +24,28 @@ from app.infrastructure.deepseek_client import DeepSeekClient
 from app.infrastructure.gemini_client import GeminiClient
 from app.infrastructure.openai_client import OpenAIClient
 from app.infrastructure.provider_manager import (
-    FailoverConfig,
-    ProviderManager,
-    ProviderState,
-    ProviderStatus,
-    get_provider_manager,
-    initialize_provider_manager,
+                                                 FailoverConfig,
+                                                 ProviderManager,
+                                                 ProviderState,
+                                                 ProviderStatus,
+                                                 get_provider_manager,
+                                                 initialize_provider_manager,
 )
 from app.infrastructure.qwen_client import QwenClient
 from app.infrastructure.redis_rate_limiter import (
-    RedisRateLimiter,
-    get_rate_limiter,
-    shutdown_rate_limiter,
+                                                 RedisRateLimiter,
+                                                 get_rate_limiter,
+                                                 shutdown_rate_limiter,
 )
 from app.infrastructure.retry_handler import (
-    BackoffStrategy,
-    RetryableError,
-    RetryConfig,
-    RetryExhaustedError,
-    RetryHandler,
-    get_provider_retry_config,
-    get_retry_handler,
-    with_retry,
+                                                 BackoffStrategy,
+                                                 RetryableError,
+                                                 RetryConfig,
+                                                 RetryExhaustedError,
+                                                 RetryHandler,
+                                                 get_provider_retry_config,
+                                                 get_retry_handler,
+                                                 with_retry,
 )
 
 __all__ = [

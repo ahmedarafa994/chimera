@@ -57,13 +57,10 @@ async def generate_content(
                 request.model = resolved_model
 
             logger.debug(
-                f"Resolved provider/model for generation: "
-                f"{request.provider}/{request.model}"
+                f"Resolved provider/model for generation: " f"{request.provider}/{request.model}"
             )
         except Exception as e:
-            logger.warning(
-                f"Provider resolution failed, using defaults: {e}"
-            )
+            logger.warning(f"Provider resolution failed, using defaults: {e}")
 
     return await service.generate_text(request)
 
@@ -92,10 +89,7 @@ async def generate_with_resolution(
     request.provider = request.provider or provider
     request.model = request.model or model
 
-    logger.info(
-        f"Generating with resolved selection: "
-        f"{request.provider}/{request.model}"
-    )
+    logger.info(f"Generating with resolved selection: " f"{request.provider}/{request.model}")
 
     return await service.generate_text(request)
 

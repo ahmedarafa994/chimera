@@ -46,9 +46,7 @@ class TestHealthIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.get = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -72,9 +70,7 @@ class TestHealthIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.get = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -109,9 +105,7 @@ class TestTransformationIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -151,9 +145,7 @@ class TestTransformationIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -193,9 +185,7 @@ class TestJailbreakGenerationIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -234,9 +224,7 @@ class TestJailbreakGenerationIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -278,18 +266,14 @@ class TestProviderIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.get = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
             import httpx
 
             async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    "http://localhost:8001/api/v1/providers"
-                )
+                response = await client.get("http://localhost:8001/api/v1/providers")
 
             assert response.status_code == 200
             data = response.json()
@@ -310,18 +294,14 @@ class TestBenchmarkDatasetsIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.get = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
             import httpx
 
             async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    "http://localhost:8001/api/v1/benchmark-datasets/"
-                )
+                response = await client.get("http://localhost:8001/api/v1/benchmark-datasets/")
 
             assert response.status_code == 200
             data = response.json()
@@ -344,9 +324,7 @@ class TestErrorHandlingIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -370,9 +348,7 @@ class TestErrorHandlingIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -407,9 +383,7 @@ class TestConcurrencyIntegration:
 
                 mock_client_instance = AsyncMock()
                 mock_client_instance.post = AsyncMock(return_value=mock_response)
-                mock_client_instance.__aenter__ = AsyncMock(
-                    return_value=mock_client_instance
-                )
+                mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
                 mock_client_instance.__aexit__ = AsyncMock(return_value=None)
                 mock_client.return_value = mock_client_instance
 
@@ -444,27 +418,19 @@ class TestConcurrencyIntegration:
                     mock_response = MagicMock()
                     mock_response.status_code = status
                     mock_response.json.return_value = (
-                        {"success": True}
-                        if status == 200
-                        else {"detail": "Rate limited"}
+                        {"success": True} if status == 200 else {"detail": "Rate limited"}
                     )
 
                     mock_client_instance = AsyncMock()
-                    mock_client_instance.get = AsyncMock(
-                        return_value=mock_response
-                    )
-                    mock_client_instance.__aenter__ = AsyncMock(
-                        return_value=mock_client_instance
-                    )
+                    mock_client_instance.get = AsyncMock(return_value=mock_response)
+                    mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
                     mock_client_instance.__aexit__ = AsyncMock(return_value=None)
                     mock_client.return_value = mock_client_instance
 
                     import httpx
 
                     async with httpx.AsyncClient() as client:
-                        r = await client.get(
-                            "http://localhost:8001/api/v1/health"
-                        )
+                        r = await client.get("http://localhost:8001/api/v1/health")
                         responses.append(r)
             return responses
 
@@ -494,9 +460,7 @@ class TestCachingIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 
@@ -521,9 +485,7 @@ class TestCachingIntegration:
 
             mock_client_instance = AsyncMock()
             mock_client_instance.post = AsyncMock(return_value=mock_response)
-            mock_client_instance.__aenter__ = AsyncMock(
-                return_value=mock_client_instance
-            )
+            mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
             mock_client_instance.__aexit__ = AsyncMock(return_value=None)
             mock_client.return_value = mock_client_instance
 

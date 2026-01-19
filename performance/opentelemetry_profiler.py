@@ -14,9 +14,12 @@ from typing import Any
 try:
     from opentelemetry import metrics, trace
     from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-    from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import \
+        OTLPMetricExporter
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+        OTLPSpanExporter
+    from opentelemetry.instrumentation.aiohttp_client import \
+        AioHttpClientInstrumentor
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
@@ -25,11 +28,15 @@ try:
     from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+    from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
+                                                ConsoleSpanExporter)
+
     OPENTELEMETRY_AVAILABLE = True
 except ImportError:
     OPENTELEMETRY_AVAILABLE = False
-    print("OpenTelemetry not available - install with: pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp")
+    print(
+        "OpenTelemetry not available - install with: pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp"
+    )
 
 from profiling_config import MetricType, config
 
@@ -37,6 +44,7 @@ from profiling_config import MetricType, config
 @dataclass
 class TraceData:
     """Trace span data"""
+
     trace_id: str
     span_id: str
     parent_span_id: str | None
@@ -48,9 +56,11 @@ class TraceData:
     tags: dict[str, Any]
     logs: list[dict[str, Any]]
 
+
 @dataclass
 class DistributedTraceReport:
     """Distributed trace analysis report"""
+
     report_id: str
     timestamp: datetime
     traces: list[TraceData]
@@ -59,6 +69,7 @@ class DistributedTraceReport:
     error_analysis: dict[str, Any]
     bottlenecks: list[dict[str, Any]]
     recommendations: list[str]
+
 
 class OpenTelemetryProfiler:
     """OpenTelemetry-based distributed tracing and observability"""
@@ -79,11 +90,13 @@ class OpenTelemetryProfiler:
         """Setup OpenTelemetry tracing"""
         try:
             # Create resource with service information
-            resource = Resource.create({
-                "service.name": config.apm_config["opentelemetry"]["service_name"],
-                "service.version": config.apm_config["opentelemetry"]["service_version"],
-                "deployment.environment": config.environment.value
-            })
+            resource = Resource.create(
+                {
+                    "service.name": config.apm_config["opentelemetry"]["service_name"],
+                    "service.version": config.apm_config["opentelemetry"]["service_version"],
+                    "deployment.environment": config.environment.value,
+                }
+            )
 
             # Create tracer provider
             self.tracer_provider = TracerProvider(resource=resource)
@@ -115,8 +128,7 @@ class OpenTelemetryProfiler:
         if otlp_endpoint and otlp_endpoint != "http://localhost:4317":
             try:
                 otlp_exporter = OTLPSpanExporter(
-                    endpoint=otlp_endpoint,
-                    headers=config.apm_config["opentelemetry"]["headers"]
+                    endpoint=otlp_endpoint, headers=config.apm_config["opentelemetry"]["headers"]
                 )
                 otlp_processor = BatchSpanProcessor(otlp_exporter)
                 self.tracer_provider.add_span_processor(otlp_processor)
@@ -145,24 +157,24 @@ class OpenTelemetryProfiler:
                 metric_exporter = OTLPMetricExporter(endpoint=otlp_endpoint.replace("4317", "4318"))
             else:
                 # Use console exporter for development
-                from opentelemetry.exporter.console.metrics import ConsoleMetricExporter
+                from opentelemetry.exporter.console.metrics import \
+                    ConsoleMetricExporter
+
                 metric_exporter = ConsoleMetricExporter()
 
             reader = PeriodicExportingMetricReader(
-                exporter=metric_exporter,
-                export_interval_millis=5000  # Export every 5 seconds
+                exporter=metric_exporter, export_interval_millis=5000  # Export every 5 seconds
             )
 
             # Create meter provider
-            resource = Resource.create({
-                "service.name": config.apm_config["opentelemetry"]["service_name"],
-                "service.version": config.apm_config["opentelemetry"]["service_version"]
-            })
-
-            self.meter_provider = MeterProvider(
-                resource=resource,
-                metric_readers=[reader]
+            resource = Resource.create(
+                {
+                    "service.name": config.apm_config["opentelemetry"]["service_name"],
+                    "service.version": config.apm_config["opentelemetry"]["service_version"],
+                }
             )
+
+            self.meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
             metrics.set_meter_provider(self.meter_provider)
 
             # Get meter
@@ -232,8 +244,9 @@ class OpenTelemetryProfiler:
                 duration_ms = (time.time() - start_time) * 1000
                 span.set_attribute("duration_ms", duration_ms)
 
-    def trace_llm_request(self, provider: str, model: str, prompt: str,
-                         response: str, latency_ms: float) -> None:
+    def trace_llm_request(
+        self, provider: str, model: str, prompt: str, response: str, latency_ms: float
+    ) -> None:
         """Trace LLM provider request"""
         if not self.tracer:
             return
@@ -247,11 +260,13 @@ class OpenTelemetryProfiler:
 
             # Add prompt hash for correlation
             import hashlib
+
             prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()[:16]
             span.set_attribute("llm.prompt_hash", prompt_hash)
 
-    def trace_transformation(self, technique: str, input_prompt: str,
-                           output_prompt: str, processing_time_ms: float) -> None:
+    def trace_transformation(
+        self, technique: str, input_prompt: str, output_prompt: str, processing_time_ms: float
+    ) -> None:
         """Trace prompt transformation operation"""
         if not self.tracer:
             return
@@ -266,8 +281,9 @@ class OpenTelemetryProfiler:
             complexity_ratio = len(output_prompt) / len(input_prompt) if input_prompt else 1.0
             span.set_attribute("transformation.complexity_ratio", complexity_ratio)
 
-    def trace_jailbreak_attempt(self, technique: str, success: bool,
-                              confidence_score: float, detection_bypassed: bool) -> None:
+    def trace_jailbreak_attempt(
+        self, technique: str, success: bool, confidence_score: float, detection_bypassed: bool
+    ) -> None:
         """Trace jailbreak attempt for research purposes"""
         if not self.tracer:
             return
@@ -281,9 +297,14 @@ class OpenTelemetryProfiler:
             # Mark as research activity
             span.set_attribute("research.category", "adversarial_ai")
 
-    def trace_autodan_optimization(self, method: str, iterations: int,
-                                 initial_score: float, final_score: float,
-                                 optimization_time_ms: float) -> None:
+    def trace_autodan_optimization(
+        self,
+        method: str,
+        iterations: int,
+        initial_score: float,
+        final_score: float,
+        optimization_time_ms: float,
+    ) -> None:
         """Trace AutoDAN optimization process"""
         if not self.tracer:
             return
@@ -296,9 +317,14 @@ class OpenTelemetryProfiler:
             span.set_attribute("autodan.score_improvement", final_score - initial_score)
             span.set_attribute("autodan.optimization_time_ms", optimization_time_ms)
 
-    def trace_websocket_connection(self, connection_id: str, client_ip: str,
-                                 messages_sent: int, messages_received: int,
-                                 connection_duration_ms: float) -> None:
+    def trace_websocket_connection(
+        self,
+        connection_id: str,
+        client_ip: str,
+        messages_sent: int,
+        messages_received: int,
+        connection_duration_ms: float,
+    ) -> None:
         """Trace WebSocket connection metrics"""
         if not self.tracer:
             return
@@ -318,36 +344,34 @@ class OpenTelemetryProfiler:
         try:
             # LLM request metrics
             llm_request_counter = self.meter.create_counter(
-                "llm_requests_total",
-                description="Total number of LLM requests",
-                unit="1"
+                "llm_requests_total", description="Total number of LLM requests", unit="1"
             )
 
             llm_latency_histogram = self.meter.create_histogram(
                 "llm_request_duration_ms",
                 description="LLM request latency in milliseconds",
-                unit="ms"
+                unit="ms",
             )
 
             # Transformation metrics
             transformation_counter = self.meter.create_counter(
                 "transformations_total",
                 description="Total number of prompt transformations",
-                unit="1"
+                unit="1",
             )
 
             # Jailbreak metrics (for research)
             jailbreak_counter = self.meter.create_counter(
                 "jailbreak_attempts_total",
                 description="Total number of jailbreak attempts (research)",
-                unit="1"
+                unit="1",
             )
 
             # WebSocket metrics
             websocket_connections = self.meter.create_up_down_counter(
                 "websocket_connections_active",
                 description="Number of active WebSocket connections",
-                unit="1"
+                unit="1",
             )
 
             # System metrics
@@ -355,14 +379,14 @@ class OpenTelemetryProfiler:
                 "system_cpu_usage_percent",
                 callbacks=[self._get_cpu_usage],
                 description="System CPU usage percentage",
-                unit="%"
+                unit="%",
             )
 
             memory_usage_gauge = self.meter.create_observable_gauge(
                 "system_memory_usage_bytes",
                 callbacks=[self._get_memory_usage],
                 description="System memory usage in bytes",
-                unit="bytes"
+                unit="bytes",
             )
 
             return {
@@ -372,7 +396,7 @@ class OpenTelemetryProfiler:
                 "jailbreaks": jailbreak_counter,
                 "websocket_connections": websocket_connections,
                 "cpu_usage": cpu_usage_gauge,
-                "memory_usage": memory_usage_gauge
+                "memory_usage": memory_usage_gauge,
             }
 
         except Exception as e:
@@ -383,6 +407,7 @@ class OpenTelemetryProfiler:
         """Get current CPU usage percentage"""
         try:
             import psutil
+
             return psutil.cpu_percent()
         except Exception:
             return 0.0
@@ -391,6 +416,7 @@ class OpenTelemetryProfiler:
         """Get current memory usage in bytes"""
         try:
             import psutil
+
             return psutil.Process().memory_info().rss
         except Exception:
             return 0.0
@@ -429,7 +455,7 @@ class OpenTelemetryProfiler:
             latency_analysis=latency_analysis,
             error_analysis=error_analysis,
             bottlenecks=bottlenecks,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         # Save report
@@ -470,13 +496,18 @@ class OpenTelemetryProfiler:
         for operation, latencies in operation_latencies.items():
             if latencies:
                 import statistics
+
                 analysis[operation] = {
                     "count": len(latencies),
                     "avg_latency_ms": statistics.mean(latencies),
                     "median_latency_ms": statistics.median(latencies),
-                    "p95_latency_ms": statistics.quantiles(latencies, n=20)[-1] if len(latencies) > 5 else max(latencies),
+                    "p95_latency_ms": (
+                        statistics.quantiles(latencies, n=20)[-1]
+                        if len(latencies) > 5
+                        else max(latencies)
+                    ),
                     "max_latency_ms": max(latencies),
-                    "min_latency_ms": min(latencies)
+                    "min_latency_ms": min(latencies),
                 }
 
         return analysis
@@ -489,19 +520,21 @@ class OpenTelemetryProfiler:
             "total_errors": len(error_traces),
             "error_rate": len(error_traces) / len(traces) if traces else 0,
             "errors_by_operation": {},
-            "errors_by_service": {}
+            "errors_by_service": {},
         }
 
         for trace in error_traces:
             # Group by operation
             op_name = trace.operation_name
-            error_analysis["errors_by_operation"][op_name] = \
+            error_analysis["errors_by_operation"][op_name] = (
                 error_analysis["errors_by_operation"].get(op_name, 0) + 1
+            )
 
             # Group by service
             service_name = trace.tags.get("service.name", "unknown")
-            error_analysis["errors_by_service"][service_name] = \
+            error_analysis["errors_by_service"][service_name] = (
                 error_analysis["errors_by_service"].get(service_name, 0) + 1
+            )
 
         return error_analysis
 
@@ -514,53 +547,67 @@ class OpenTelemetryProfiler:
 
         for operation, stats in latency_analysis.items():
             if stats["p95_latency_ms"] > 5000:  # P95 > 5 seconds
-                bottlenecks.append({
-                    "type": "high_latency_operation",
-                    "operation": operation,
-                    "p95_latency_ms": stats["p95_latency_ms"],
-                    "severity": "critical" if stats["p95_latency_ms"] > 10000 else "warning"
-                })
+                bottlenecks.append(
+                    {
+                        "type": "high_latency_operation",
+                        "operation": operation,
+                        "p95_latency_ms": stats["p95_latency_ms"],
+                        "severity": "critical" if stats["p95_latency_ms"] > 10000 else "warning",
+                    }
+                )
 
             if stats["count"] > 100 and stats["avg_latency_ms"] > 1000:  # High volume + slow
-                bottlenecks.append({
-                    "type": "high_volume_slow_operation",
-                    "operation": operation,
-                    "request_count": stats["count"],
-                    "avg_latency_ms": stats["avg_latency_ms"],
-                    "severity": "warning"
-                })
+                bottlenecks.append(
+                    {
+                        "type": "high_volume_slow_operation",
+                        "operation": operation,
+                        "request_count": stats["count"],
+                        "avg_latency_ms": stats["avg_latency_ms"],
+                        "severity": "warning",
+                    }
+                )
 
         return bottlenecks
 
-    def _generate_trace_recommendations(self, latency_analysis: dict[str, Any],
-                                      error_analysis: dict[str, Any],
-                                      bottlenecks: list[dict[str, Any]]) -> list[str]:
+    def _generate_trace_recommendations(
+        self,
+        latency_analysis: dict[str, Any],
+        error_analysis: dict[str, Any],
+        bottlenecks: list[dict[str, Any]],
+    ) -> list[str]:
         """Generate recommendations based on trace analysis"""
         recommendations = []
 
         # Latency recommendations
-        slow_operations = [op for op, stats in latency_analysis.items()
-                         if stats.get("p95_latency_ms", 0) > 2000]
+        slow_operations = [
+            op for op, stats in latency_analysis.items() if stats.get("p95_latency_ms", 0) > 2000
+        ]
 
         if slow_operations:
             recommendations.append("Optimize slow operations: " + ", ".join(slow_operations[:3]))
 
         # Error recommendations
         if error_analysis["error_rate"] > 0.05:  # >5% error rate
-            recommendations.append(f"High error rate ({error_analysis['error_rate']:.1%}) - investigate error causes")
+            recommendations.append(
+                f"High error rate ({error_analysis['error_rate']:.1%}) - investigate error causes"
+            )
 
         # Bottleneck recommendations
         for bottleneck in bottlenecks:
             if bottleneck["type"] == "high_latency_operation":
-                recommendations.append(f"Optimize {bottleneck['operation']} - P95 latency is {bottleneck['p95_latency_ms']:.0f}ms")
+                recommendations.append(
+                    f"Optimize {bottleneck['operation']} - P95 latency is {bottleneck['p95_latency_ms']:.0f}ms"
+                )
 
         # General recommendations
-        recommendations.extend([
-            "Implement distributed caching for frequently accessed data",
-            "Consider async processing for non-critical operations",
-            "Monitor service dependencies for cascading failures",
-            "Implement circuit breakers for external service calls"
-        ])
+        recommendations.extend(
+            [
+                "Implement distributed caching for frequently accessed data",
+                "Consider async processing for non-critical operations",
+                "Monitor service dependencies for cascading failures",
+                "Implement circuit breakers for external service calls",
+            ]
+        )
 
         return recommendations
 
@@ -576,35 +623,45 @@ class OpenTelemetryProfiler:
             "latency_analysis": report.latency_analysis,
             "error_analysis": report.error_analysis,
             "bottlenecks": report.bottlenecks,
-            "recommendations": report.recommendations
+            "recommendations": report.recommendations,
         }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(report_dict, f, indent=2)
 
         print(f"Trace analysis report saved: {output_path}")
 
+
 # Global OpenTelemetry profiler instance
 otel_profiler = OpenTelemetryProfiler()
+
 
 # Decorators for automatic tracing
 def trace_operation(operation_name: str, **attributes):
     """Decorator to trace function execution"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             with otel_profiler.trace_operation(operation_name, **attributes):
                 return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 def trace_async_operation(operation_name: str, **attributes):
     """Decorator to trace async function execution"""
+
     def decorator(func):
         async def wrapper(*args, **kwargs):
             with otel_profiler.trace_operation(operation_name, **attributes):
                 return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 # Context manager for manual tracing
 @contextmanager

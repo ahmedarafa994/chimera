@@ -8,7 +8,7 @@ interface that concrete providers must implement.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from app.domain.interfaces import BaseLLMClient, ProviderPlugin
 from app.domain.models import Capability, Model, Provider
@@ -37,7 +37,7 @@ class BaseProviderPlugin(ABC, ProviderPlugin):
         provider_id: str,
         provider_name: str,
         api_key_env_var: str,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         is_enabled: bool = True,
     ):
         """
@@ -55,7 +55,7 @@ class BaseProviderPlugin(ABC, ProviderPlugin):
         self._api_key_env_var = api_key_env_var
         self._base_url = base_url
         self._is_enabled = is_enabled
-        self._models_cache: Optional[list[Model]] = None
+        self._models_cache: list[Model] | None = None
 
         logger.debug(f"Initialized {provider_name} provider plugin")
 
@@ -96,7 +96,7 @@ class BaseProviderPlugin(ABC, ProviderPlugin):
         pass
 
     @abstractmethod
-    def _get_api_key(self) -> Optional[str]:
+    def _get_api_key(self) -> str | None:
         """
         Get the API key for this provider.
 
@@ -229,7 +229,7 @@ class BaseProviderPlugin(ABC, ProviderPlugin):
             logger.error(f"{self._provider_name} health check failed: {e}")
             return False
 
-    def get_model_by_id(self, model_id: str) -> Optional[Model]:
+    def get_model_by_id(self, model_id: str) -> Model | None:
         """
         Get a specific model by ID.
 
@@ -261,9 +261,7 @@ class BaseProviderPlugin(ABC, ProviderPlugin):
         """
         return self.get_model_by_id(model_id) is not None
 
-    def get_models_with_capabilities(
-        self, capabilities: set[Capability]
-    ) -> list[Model]:
+    def get_models_with_capabilities(self, capabilities: set[Capability]) -> list[Model]:
         """
         Get models that support specific capabilities.
 
@@ -275,10 +273,7 @@ class BaseProviderPlugin(ABC, ProviderPlugin):
         """
         models = self.get_available_models()
 
-        return [
-            model for model in models
-            if capabilities.issubset(model.capabilities)
-        ]
+        return [model for model in models if capabilities.issubset(model.capabilities)]
 
     def __repr__(self) -> str:
         """String representation of the plugin."""

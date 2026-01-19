@@ -309,10 +309,7 @@ class ReasoningMetrics(StrictBaseModel):
     )
     cost_metrics: dict[str, float] | None = Field(
         None,
-        description=(
-            "Cost breakdown: input_cost, output_cost, "
-            "reasoning_cost, total_cost"
-        ),
+        description=("Cost breakdown: input_cost, output_cost, " "reasoning_cost, total_cost"),
     )
 
 
@@ -351,18 +348,10 @@ class TokenMetrics(StrictBaseModel):
     Tracks all token types for comprehensive cost analysis.
     """
 
-    input_tokens: int = Field(
-        default=0, ge=0, description="Input token count"
-    )
-    output_tokens: int = Field(
-        default=0, ge=0, description="Output token count"
-    )
-    reasoning_tokens: int = Field(
-        default=0, ge=0, description="Reasoning tokens (o1/o3)"
-    )
-    total_tokens: int = Field(
-        default=0, ge=0, description="Total tokens used"
-    )
+    input_tokens: int = Field(default=0, ge=0, description="Input token count")
+    output_tokens: int = Field(default=0, ge=0, description="Output token count")
+    reasoning_tokens: int = Field(default=0, ge=0, description="Reasoning tokens (o1/o3)")
+    total_tokens: int = Field(default=0, ge=0, description="Total tokens used")
 
 
 class CostMetrics(StrictBaseModel):
@@ -372,18 +361,10 @@ class CostMetrics(StrictBaseModel):
     Provides detailed cost breakdown for billing and optimization.
     """
 
-    input_cost: float = Field(
-        default=0.0, ge=0.0, description="Input token cost"
-    )
-    output_cost: float = Field(
-        default=0.0, ge=0.0, description="Output token cost"
-    )
-    reasoning_cost: float = Field(
-        default=0.0, ge=0.0, description="Reasoning token cost"
-    )
-    total_cost: float = Field(
-        default=0.0, ge=0.0, description="Total attack cost"
-    )
+    input_cost: float = Field(default=0.0, ge=0.0, description="Input token cost")
+    output_cost: float = Field(default=0.0, ge=0.0, description="Output token cost")
+    reasoning_cost: float = Field(default=0.0, ge=0.0, description="Reasoning token cost")
+    total_cost: float = Field(default=0.0, ge=0.0, description="Total attack cost")
     cost_amplification_factor: float = Field(
         default=0.0,
         ge=0.0,
@@ -415,9 +396,7 @@ class BatchAdversarialRequest(StrictBaseModel):
     )
     target_provider: str | None = Field(None, description="LLM provider")
     target_model: str | None = Field(None, description="Target model")
-    parallel: bool = Field(
-        default=True, description="Enable parallel processing"
-    )
+    parallel: bool = Field(default=True, description="Enable parallel processing")
 
 
 class BatchAdversarialResponse(StrictBaseModel):
@@ -431,9 +410,7 @@ class BatchAdversarialResponse(StrictBaseModel):
         ...,
         description="Individual attack results",
     )
-    total_requests: int = Field(
-        ..., ge=0, description="Total requests in batch"
-    )
+    total_requests: int = Field(..., ge=0, description="Total requests in batch")
     successful: int = Field(..., ge=0, description="Successful attacks")
     failed: int = Field(..., ge=0, description="Failed attacks")
     total_execution_time_ms: float = Field(
@@ -472,8 +449,7 @@ class OverthinkConfig(StrictBaseModel):
     injection_strategy: str | None = Field(
         None,
         description=(
-            "Injection strategy: context_aware, context_agnostic, "
-            "hybrid, stealth, aggressive"
+            "Injection strategy: context_aware, context_agnostic, " "hybrid, stealth, aggressive"
         ),
     )
     num_decoys: int | None = Field(
@@ -656,16 +632,10 @@ class AdversarialHealthResponse(StrictBaseModel):
     Health check response for adversarial services.
     """
 
-    status: str = Field(
-        ..., description="Health status: healthy, degraded, unhealthy"
-    )
+    status: str = Field(..., description="Health status: healthy, degraded, unhealthy")
     service: str = Field(..., description="Service name")
-    available_techniques: int = Field(
-        default=0, ge=0, description="Number of available techniques"
-    )
-    active_sessions: int = Field(
-        default=0, ge=0, description="Active attack sessions"
-    )
+    available_techniques: int = Field(default=0, ge=0, description="Number of available techniques")
+    active_sessions: int = Field(default=0, ge=0, description="Active attack sessions")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="Health check timestamp",
@@ -681,18 +651,10 @@ class TechniqueInfo(StrictBaseModel):
     name: str = Field(..., description="Technique name")
     technique: AttackTechniqueType = Field(..., description="Technique type")
     description: str = Field(..., description="Technique description")
-    category: str = Field(
-        ..., description="Category: autodan, deepteam, overthink"
-    )
-    supports_streaming: bool = Field(
-        default=False, description="Supports streaming"
-    )
-    supports_batch: bool = Field(
-        default=True, description="Supports batch processing"
-    )
-    parameters: list[str] = Field(
-        default_factory=list, description="Configurable parameters"
-    )
+    category: str = Field(..., description="Category: autodan, deepteam, overthink")
+    supports_streaming: bool = Field(default=False, description="Supports streaming")
+    supports_batch: bool = Field(default=True, description="Supports batch processing")
+    parameters: list[str] = Field(default_factory=list, description="Configurable parameters")
     overthink_compatible: bool = Field(
         default=False,
         description="Can be combined with OVERTHINK",
@@ -704,8 +666,6 @@ class TechniquesListResponse(StrictBaseModel):
     Response listing all available techniques.
     """
 
-    techniques: list[TechniqueInfo] = Field(
-        ..., description="Available techniques"
-    )
+    techniques: list[TechniqueInfo] = Field(..., description="Available techniques")
     total: int = Field(..., ge=0, description="Total number of techniques")
     default: str = Field(..., description="Default technique")

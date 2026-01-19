@@ -175,10 +175,7 @@ class OptimizedWebSocketConnection:
             self.state = ConnectionState.ERROR
 
     async def send_json(
-        self,
-        data: dict[str, Any],
-        batch: bool = True,
-        priority: bool = False
+        self, data: dict[str, Any], batch: bool = True, priority: bool = False
     ) -> None:
         """Send JSON data with optional batching."""
         if self.state != ConnectionState.CONNECTED:
@@ -273,10 +270,7 @@ class OptimizedWebSocketConnection:
         try:
             # Receive message with timeout
             if timeout:
-                data = await asyncio.wait_for(
-                    self.websocket.receive_json(),
-                    timeout=timeout
-                )
+                data = await asyncio.wait_for(self.websocket.receive_json(), timeout=timeout)
             else:
                 data = await self.websocket.receive_json()
 
@@ -311,10 +305,7 @@ class OptimizedWebSocketConnection:
 
             # Wait for pong
             pong_timeout = timeout or self._ping_timeout
-            await asyncio.wait_for(
-                self._wait_for_pong(),
-                timeout=pong_timeout
-            )
+            await asyncio.wait_for(self._wait_for_pong(), timeout=pong_timeout)
 
             # Calculate latency
             latency_ms = (time.time() - ping_time) * 1000
@@ -324,8 +315,8 @@ class OptimizedWebSocketConnection:
             total_pings = self.metrics.heartbeat_count
             current_avg = self.metrics.avg_latency_ms
             self.metrics.avg_latency_ms = (
-                (current_avg * (total_pings - 1) + latency_ms) / total_pings
-            )
+                current_avg * (total_pings - 1) + latency_ms
+            ) / total_pings
 
             return latency_ms
 
@@ -346,7 +337,8 @@ class OptimizedWebSocketConnection:
             # Send batch if it's full or old
             should_send = (
                 len(self._message_batch.messages) >= self._message_batch.max_size
-                or (time.time() - self._message_batch.created_at) * 1000 >= self._message_batch.max_age_ms
+                or (time.time() - self._message_batch.created_at) * 1000
+                >= self._message_batch.max_age_ms
             )
 
             if should_send:
@@ -383,7 +375,7 @@ class OptimizedWebSocketConnection:
         await self.websocket.send_text(message_json)
 
         # Update bytes sent
-        self.metrics.bytes_sent += len(message_json.encode('utf-8'))
+        self.metrics.bytes_sent += len(message_json.encode("utf-8"))
 
     def _check_rate_limit(self) -> bool:
         """Check if message rate limit is exceeded."""
@@ -391,8 +383,7 @@ class OptimizedWebSocketConnection:
 
         # Remove old messages from rate limit window
         while (
-            self._message_queue
-            and current_time - self._message_queue[0] > self._rate_limit_window
+            self._message_queue and current_time - self._message_queue[0] > self._rate_limit_window
         ):
             self._message_queue.popleft()
 
@@ -441,7 +432,8 @@ class OptimizedWebSocketConnection:
                 async with self._batch_lock:
                     if (
                         self._message_batch.messages
-                        and (time.time() - self._message_batch.created_at) * 1000 >= self._message_batch.max_age_ms
+                        and (time.time() - self._message_batch.created_at) * 1000
+                        >= self._message_batch.max_age_ms
                     ):
                         await self._flush_message_batch()
 
@@ -563,17 +555,13 @@ class WebSocketConnectionManager:
         """Connect a new WebSocket client."""
         # Check connection limits
         if len(self._connections) >= self.max_connections:
-            await websocket.close(
-                code=status.WS_1013_TRY_AGAIN_LATER,
-                reason="Server at capacity"
-            )
+            await websocket.close(code=status.WS_1013_TRY_AGAIN_LATER, reason="Server at capacity")
             raise RuntimeError("Connection limit exceeded")
 
         # Check per-IP limits
         if len(self._connections_by_client_ip[client_ip]) >= 10:  # Max 10 per IP
             await websocket.close(
-                code=status.WS_1008_POLICY_VIOLATION,
-                reason="Too many connections from this IP"
+                code=status.WS_1008_POLICY_VIOLATION, reason="Too many connections from this IP"
             )
             raise RuntimeError("Per-IP connection limit exceeded")
 
@@ -747,11 +735,10 @@ class WebSocketConnectionManager:
                 # Calculate average connection duration
                 if self._connections:
                     total_duration = sum(
-                        time.time() - conn.connected_at
-                        for conn in self._connections.values()
+                        time.time() - conn.connected_at for conn in self._connections.values()
                     )
-                    self._global_metrics["avg_connection_duration"] = (
-                        total_duration / len(self._connections)
+                    self._global_metrics["avg_connection_duration"] = total_duration / len(
+                        self._connections
                     )
 
                 # Log metrics
@@ -820,12 +807,10 @@ class WebSocketConnectionManager:
             "total_errors": total_errors,
             "avg_latency_ms": total_latency / ping_count if ping_count > 0 else 0,
             "groups": {
-                group: len(connections)
-                for group, connections in self._connection_groups.items()
+                group: len(connections) for group, connections in self._connection_groups.items()
             },
             "connections_per_ip": {
-                ip: len(connections)
-                for ip, connections in self._connections_by_client_ip.items()
+                ip: len(connections) for ip, connections in self._connections_by_client_ip.items()
             },
         }
 

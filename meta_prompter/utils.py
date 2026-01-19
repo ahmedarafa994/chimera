@@ -1,6 +1,5 @@
-import json
 from abc import ABC, abstractmethod
-from typing import Optional, List, Tuple
+
 import numpy as np
 
 
@@ -8,12 +7,12 @@ class TokenEmbedding(ABC):
     """Abstract interface for token embeddings."""
 
     @abstractmethod
-    def encode(self, tokens: List[str]) -> np.ndarray:
+    def encode(self, tokens: list[str]) -> np.ndarray:
         """Encode tokens to embedding vectors."""
         pass
 
     @abstractmethod
-    def decode(self, embeddings: np.ndarray) -> List[str]:
+    def decode(self, embeddings: np.ndarray) -> list[str]:
         """Decode embedding vectors to tokens."""
         pass
 
@@ -23,7 +22,7 @@ class TokenEmbedding(ABC):
         pass
 
     @abstractmethod
-    def nearest_neighbors(self, token: str, k: int = 10) -> List[Tuple[str, float]]:
+    def nearest_neighbors(self, token: str, k: int = 10) -> list[tuple[str, float]]:
         """Find k nearest neighbors for a token."""
         pass
 
@@ -35,7 +34,7 @@ class BaseLLM(ABC):
     """
 
     @abstractmethod
-    def generate(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+    def generate(self, prompt: str, system_instruction: str | None = None) -> str:
         """
         Generate a response from the LLM based on the prompt and system instruction.
 

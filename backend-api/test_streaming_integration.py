@@ -6,8 +6,8 @@ Unified Provider/Model Selection System.
 """
 
 import asyncio
-import sys
 import os
+import sys
 
 # Add the app to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -23,14 +23,6 @@ def test_imports():
 
     # Test UnifiedStreamingService
     try:
-        from app.services.unified_streaming_service import (
-            UnifiedStreamingService,
-            StreamingRequest,
-            StreamingContext as UnifiedContext,
-            UnifiedStreamChunk,
-            StreamMetrics,
-            get_unified_streaming_service,
-        )
         print("✅ UnifiedStreamingService imports OK")
     except Exception as e:
         errors.append(f"UnifiedStreamingService: {e}")
@@ -38,14 +30,6 @@ def test_imports():
 
     # Test StreamingContext
     try:
-        from app.services.stream_context import (
-            StreamingContext,
-            StreamSession,
-            StreamLock,
-            get_streaming_context,
-            StreamLockError,
-            StreamCancelledError,
-        )
         print("✅ StreamContext imports OK")
     except Exception as e:
         errors.append(f"StreamContext: {e}")
@@ -53,14 +37,6 @@ def test_imports():
 
     # Test StreamFormatters
     try:
-        from app.services.stream_formatters import (
-            StreamResponseFormatter,
-            StreamingHeadersBuilder,
-            FormattedChunk,
-            StreamFormat,
-            SSEEventType,
-            get_stream_formatter,
-        )
         print("✅ StreamFormatters imports OK")
     except Exception as e:
         errors.append(f"StreamFormatters: {e}")
@@ -68,13 +44,6 @@ def test_imports():
 
     # Test StreamMetricsService
     try:
-        from app.services.stream_metrics_service import (
-            StreamMetricsService,
-            StreamEvent,
-            StreamSummary,
-            ProviderMetrics,
-            StreamEventType,
-        )
         print("✅ StreamMetricsService imports OK")
     except Exception as e:
         errors.append(f"StreamMetricsService: {e}")
@@ -82,10 +51,11 @@ def test_imports():
 
     # Test LLM Service streaming methods
     try:
-        from app.services.llm_service import LLMService, llm_service
-        assert hasattr(llm_service, 'generate_text_stream')
-        assert hasattr(llm_service, 'stream_generate')
-        assert hasattr(llm_service, 'supports_streaming')
+        from app.services.llm_service import llm_service
+
+        assert hasattr(llm_service, "generate_text_stream")
+        assert hasattr(llm_service, "stream_generate")
+        assert hasattr(llm_service, "supports_streaming")
         print("✅ LLMService streaming methods OK")
     except Exception as e:
         errors.append(f"LLMService: {e}")
@@ -93,11 +63,6 @@ def test_imports():
 
     # Test streaming endpoints
     try:
-        from app.api.v1.endpoints.streaming import (
-            router,
-            StreamGenerateRequest,
-            StreamChatRequest,
-        )
         print("✅ Streaming endpoints imports OK")
     except Exception as e:
         errors.append(f"Streaming endpoints: {e}")
@@ -112,11 +77,7 @@ def test_stream_formatter():
     print("TEST 2: StreamResponseFormatter")
     print("=" * 60)
 
-    from app.services.stream_formatters import (
-        StreamResponseFormatter,
-        StreamFormat,
-        SSEEventType,
-    )
+    from app.services.stream_formatters import StreamFormat, StreamResponseFormatter
 
     formatter = StreamResponseFormatter()
 
@@ -222,10 +183,7 @@ async def test_streaming_context():
     print("TEST 4: StreamingContext")
     print("=" * 60)
 
-    from app.services.stream_context import (
-        StreamingContext,
-        get_streaming_context,
-    )
+    from app.services.stream_context import get_streaming_context
 
     context = get_streaming_context()
 
@@ -270,10 +228,7 @@ async def test_unified_streaming_service():
     print("TEST 5: UnifiedStreamingService")
     print("=" * 60)
 
-    from app.services.unified_streaming_service import (
-        UnifiedStreamingService,
-        get_unified_streaming_service,
-    )
+    from app.services.unified_streaming_service import get_unified_streaming_service
 
     # Test singleton
     service1 = get_unified_streaming_service()
@@ -307,12 +262,13 @@ async def test_stream_metrics_service():
     print("TEST 6: StreamMetricsService")
     print("=" * 60)
 
+    from datetime import datetime
+
     from app.services.stream_metrics_service import (
-        StreamMetricsService,
         StreamEvent,
         StreamEventType,
+        StreamMetricsService,
     )
-    from datetime import datetime
 
     # Get or create service (singleton)
     service = StreamMetricsService()

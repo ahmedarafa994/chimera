@@ -173,9 +173,11 @@ class GeneticAlgorithmConfig:
         errors = []
 
         bounds = PARAMETER_BOUNDS
-        if not bounds["population_size"].min_val <= self.population_size <= bounds[
-            "population_size"
-        ].max_val:
+        if (
+            not bounds["population_size"].min_val
+            <= self.population_size
+            <= bounds["population_size"].max_val
+        ):
             errors.append(
                 f"population_size must be in "
                 f"[{bounds['population_size'].min_val}, {bounds['population_size'].max_val}]"

@@ -1,11 +1,11 @@
 /**
  * Chat Service (Refactored)
- * 
+ *
  * Provides API methods for chat completions, streaming responses,
  * and conversation management using the new API architecture.
- * 
+ *
  * This is a refactored version demonstrating migration to the new API client.
- * 
+ *
  * @module lib/api/services/chat-service
  */
 
@@ -60,7 +60,7 @@ export interface ConversationHistory {
 // Constants
 // ============================================================================
 
-const API_BASE = '/api/v1/chat';
+const API_BASE = '/chat';
 
 // ============================================================================
 // Chat Service
@@ -68,7 +68,7 @@ const API_BASE = '/api/v1/chat';
 
 /**
  * Chat Service API
- * 
+ *
  * Refactored to use the new unified API client with:
  * - Automatic retry logic
  * - Circuit breaker protection
@@ -79,7 +79,7 @@ const API_BASE = '/api/v1/chat';
 export const chatService = {
   /**
    * Create a chat completion
-   * 
+   *
    * @example
    * ```typescript
    * const response = await chatService.createCompletion({
@@ -96,8 +96,8 @@ export const chatService = {
         // Don't cache chat completions
         skipCache: true,
         // Use provider-specific circuit breaker
-        circuitBreakerKey: request.provider 
-          ? `provider:${request.provider}` 
+        circuitBreakerKey: request.provider
+          ? `provider:${request.provider}`
           : 'chat:completions',
         // Retry on transient failures
         retryConfig: {
@@ -112,7 +112,7 @@ export const chatService = {
   /**
    * Create a streaming chat completion
    * Returns an async generator for streaming responses
-   * 
+   *
    * @example
    * ```typescript
    * for await (const chunk of chatService.streamCompletion(request)) {
@@ -124,11 +124,11 @@ export const chatService = {
     request: ChatCompletionRequest
   ): AsyncGenerator<StreamChunk, void, unknown> {
     const baseUrl = configManager.getActiveBaseUrl() || process.env.NEXT_PUBLIC_API_URL || '';
-    
+
     // Get auth headers from configManager
     const apiHeaders = configManager.getApiHeaders();
     const headers: Record<string, string> = {};
-    
+
     // Copy headers, ensuring Content-Type is set
     Object.entries(apiHeaders).forEach(([key, value]) => {
       if (value) {
@@ -186,7 +186,7 @@ export const chatService = {
 
   /**
    * Get conversation history
-   * 
+   *
    * @example
    * ```typescript
    * const { conversations, total } = await chatService.getConversationHistory({
@@ -211,7 +211,7 @@ export const chatService = {
 
   /**
    * Get a specific conversation
-   * 
+   *
    * @example
    * ```typescript
    * const conversation = await chatService.getConversation('conv-123');
@@ -229,7 +229,7 @@ export const chatService = {
 
   /**
    * Save a conversation
-   * 
+   *
    * @example
    * ```typescript
    * const saved = await chatService.saveConversation({
@@ -247,16 +247,16 @@ export const chatService = {
       `${API_BASE}/conversation`,
       conversation
     );
-    
+
     // Invalidate conversation history cache
     apiClient.invalidateCache(/\/api\/v1\/chat\/history/);
-    
+
     return result;
   },
 
   /**
    * Update a conversation
-   * 
+   *
    * @example
    * ```typescript
    * const updated = await chatService.updateConversation('conv-123', {
@@ -272,17 +272,17 @@ export const chatService = {
       `${API_BASE}/conversation/${id}`,
       updates
     );
-    
+
     // Invalidate caches
     apiClient.invalidateCache(/\/api\/v1\/chat\/history/);
     apiClient.invalidateCache(new RegExp(`/api/v1/chat/conversation/${id}`));
-    
+
     return result;
   },
 
   /**
    * Delete a conversation
-   * 
+   *
    * @example
    * ```typescript
    * await chatService.deleteConversation('conv-123');
@@ -292,17 +292,17 @@ export const chatService = {
     const result = await apiClient.delete<{ success: boolean }>(
       `${API_BASE}/conversation/${id}`
     );
-    
+
     // Invalidate caches
     apiClient.invalidateCache(/\/api\/v1\/chat\/history/);
     apiClient.invalidateCache(new RegExp(`/api/v1/chat/conversation/${id}`));
-    
+
     return result;
   },
 
   /**
    * Get available models for chat
-   * 
+   *
    * @example
    * ```typescript
    * const { models } = await chatService.getAvailableModels();
@@ -324,7 +324,7 @@ export const chatService = {
 
   /**
    * Get available models for a specific provider
-   * 
+   *
    * @example
    * ```typescript
    * const { models } = await chatService.getProviderModels('openai');
@@ -346,7 +346,7 @@ export const chatService = {
 
   /**
    * Estimate token count for messages
-   * 
+   *
    * @example
    * ```typescript
    * const { tokens } = await chatService.estimateTokens(messages, 'gpt-4');

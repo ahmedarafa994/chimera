@@ -1993,10 +1993,10 @@ cp .env.template .env
 # Edit .env with your API keys
 
 # 5. Start development servers
-npm run dev  # Starts both backend (port 8001) and frontend (port 3000)
+npm run dev  # Starts both backend (port 8001) and frontend (port 3001)
 
 # 6. Access application
-# Frontend: http://localhost:3000
+# Frontend: http://localhost:3001
 # Backend API: http://localhost:8001
 # API Docs: http://localhost:8001/docs
 ```

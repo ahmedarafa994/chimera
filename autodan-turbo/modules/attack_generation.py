@@ -14,17 +14,8 @@ The module supports three functionalities:
 import logging
 from dataclasses import dataclass
 
-from ..agents import (
-    AttackerAgent,
-    LLMConfig,
-    ScorerAgent,
-    TargetAgent,
-)
-from ..core.models import (
-    AttackRecord,
-    Strategy,
-    StrategyType,
-)
+from ..agents import AttackerAgent, ComplianceAgent, LLMConfig, TargetAgent
+from ..core.models import AttackRecord, Strategy, StrategyType
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +65,7 @@ class AttackGenerationModule:
         """
         self.attacker = AttackerAgent(attacker_config)
         self.target = TargetAgent(target_config)
-        self.scorer = ScorerAgent(scorer_config)
+        self.scorer = ComplianceAgent(scorer_config)
         self.termination_score = termination_score
 
         logger.info(
@@ -195,9 +186,9 @@ class AttackGenerationModule:
                 response=result.response,
                 score=result.score,
                 iteration=iteration,
-                strategy_used=[s.name for s in result.strategies_used]
-                if result.strategies_used
-                else None,
+                strategy_used=(
+                    [s.name for s in result.strategies_used] if result.strategies_used else None
+                ),
             )
             attack_log.append(record)
 

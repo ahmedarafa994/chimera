@@ -22,7 +22,9 @@ from memory_profiler import memory_profiler
 from profiling_config import MetricType, config
 
 # Webhook and notification availability
-HTTP_AVAILABLE = _importlib.find_spec("aiohttp") is not None or _importlib.find_spec("requests") is not None
+HTTP_AVAILABLE = (
+    _importlib.find_spec("aiohttp") is not None or _importlib.find_spec("requests") is not None
+)
 
 # Slack notifications
 SLACK_AVAILABLE = _importlib.find_spec("slack_sdk") is not None
@@ -34,6 +36,7 @@ DISCORD_AVAILABLE = _importlib.find_spec("discord") is not None
 @dataclass
 class Alert:
     """Performance alert data structure"""
+
     alert_id: str
     timestamp: datetime
     severity: str  # critical, warning, info
@@ -49,9 +52,11 @@ class Alert:
     resolved: bool = False
     resolution_time: datetime | None = None
 
+
 @dataclass
 class AlertRule:
     """Alert rule configuration"""
+
     rule_id: str
     name: str
     metric_path: str  # e.g., "system.cpu.usage"
@@ -64,13 +69,16 @@ class AlertRule:
     tags: dict[str, str] = None
     description: str = ""
 
+
 @dataclass
 class NotificationConfig:
     """Notification configuration"""
+
     channel_type: str  # email, slack, discord, webhook
     enabled: bool
     config: dict[str, Any]
     severity_filter: list[str]  # Which severities to notify for
+
 
 class MetricsCollector:
     """Centralized metrics collection"""
@@ -87,9 +95,7 @@ class MetricsCollector:
 
         self.collection_active = True
         self.collection_thread = threading.Thread(
-            target=self._collection_loop,
-            args=(interval,),
-            daemon=True
+            target=self._collection_loop, args=(interval,), daemon=True
         )
         self.collection_thread.start()
         print(f"Metrics collection started with {interval}s interval")
@@ -139,13 +145,19 @@ class MetricsCollector:
             disk_io = psutil.disk_io_counters()
             if disk_io:
                 self.record_metric("system.disk.read_bytes_per_sec", disk_io.read_bytes, timestamp)
-                self.record_metric("system.disk.write_bytes_per_sec", disk_io.write_bytes, timestamp)
+                self.record_metric(
+                    "system.disk.write_bytes_per_sec", disk_io.write_bytes, timestamp
+                )
 
             # Network I/O
             net_io = psutil.net_io_counters()
             if net_io:
-                self.record_metric("system.network.bytes_sent_per_sec", net_io.bytes_sent, timestamp)
-                self.record_metric("system.network.bytes_recv_per_sec", net_io.bytes_recv, timestamp)
+                self.record_metric(
+                    "system.network.bytes_sent_per_sec", net_io.bytes_sent, timestamp
+                )
+                self.record_metric(
+                    "system.network.bytes_recv_per_sec", net_io.bytes_recv, timestamp
+                )
 
             # Process-specific metrics
             process = psutil.Process()
@@ -169,7 +181,9 @@ class MetricsCollector:
             if io_profiler.api_metrics:
                 recent_api_metrics = list(io_profiler.api_metrics)[-10:]
                 if recent_api_metrics:
-                    avg_response_time = sum(m.response_time_ms for m in recent_api_metrics if m.response_time_ms > 0) / len(recent_api_metrics)
+                    avg_response_time = sum(
+                        m.response_time_ms for m in recent_api_metrics if m.response_time_ms > 0
+                    ) / len(recent_api_metrics)
                     self.record_metric("app.api.avg_response_time_ms", avg_response_time, timestamp)
 
         except Exception as e:
@@ -182,27 +196,32 @@ class MetricsCollector:
             if db_profiler.query_metrics:
                 recent_queries = list(db_profiler.query_metrics)[-10:]
                 if recent_queries:
-                    avg_query_time = sum(q.execution_time_ms for q in recent_queries) / len(recent_queries)
+                    avg_query_time = sum(q.execution_time_ms for q in recent_queries) / len(
+                        recent_queries
+                    )
                     self.record_metric("db.query.avg_execution_time_ms", avg_query_time, timestamp)
 
             # Cache metrics
             cache_stats = db_profiler.analyze_cache_performance()
             if cache_stats:
-                self.record_metric("cache.hit_rate", cache_stats.get("overall_hit_rate", 0), timestamp)
-                self.record_metric("cache.total_operations", cache_stats.get("total_operations", 0), timestamp)
+                self.record_metric(
+                    "cache.hit_rate", cache_stats.get("overall_hit_rate", 0), timestamp
+                )
+                self.record_metric(
+                    "cache.total_operations", cache_stats.get("total_operations", 0), timestamp
+                )
 
         except Exception as e:
             print(f"Error collecting database metrics: {e}")
 
-    def record_metric(self, metric_name: str, value: float, timestamp: datetime | None = None) -> None:
+    def record_metric(
+        self, metric_name: str, value: float, timestamp: datetime | None = None
+    ) -> None:
         """Record a metric value"""
         if timestamp is None:
             timestamp = datetime.now(UTC)
 
-        metric_data = {
-            "value": value,
-            "timestamp": timestamp
-        }
+        metric_data = {"value": value, "timestamp": timestamp}
 
         self.metrics[metric_name].append(metric_data)
 
@@ -226,6 +245,7 @@ class MetricsCollector:
             return None
 
         return self.metrics[metric_name][-1]["value"]
+
 
 class AlertManager:
     """Alert management and notification system"""
@@ -260,7 +280,7 @@ class AlertManager:
                 severity="warning",
                 duration_minutes=2,
                 cooldown_minutes=10,
-                description="System CPU usage is above 80%"
+                description="System CPU usage is above 80%",
             ),
             AlertRule(
                 rule_id="critical_cpu_usage",
@@ -271,7 +291,7 @@ class AlertManager:
                 severity="critical",
                 duration_minutes=1,
                 cooldown_minutes=5,
-                description="System CPU usage is critically high (>95%)"
+                description="System CPU usage is critically high (>95%)",
             ),
             AlertRule(
                 rule_id="high_memory_usage",
@@ -282,7 +302,7 @@ class AlertManager:
                 severity="warning",
                 duration_minutes=3,
                 cooldown_minutes=15,
-                description="System memory usage is above 85%"
+                description="System memory usage is above 85%",
             ),
             AlertRule(
                 rule_id="critical_memory_usage",
@@ -293,9 +313,8 @@ class AlertManager:
                 severity="critical",
                 duration_minutes=1,
                 cooldown_minutes=5,
-                description="System memory usage is critically high (>95%)"
+                description="System memory usage is critically high (>95%)",
             ),
-
             # Application alerts
             AlertRule(
                 rule_id="slow_api_response",
@@ -306,7 +325,7 @@ class AlertManager:
                 severity="warning",
                 duration_minutes=3,
                 cooldown_minutes=10,
-                description="Average API response time is above 3 seconds"
+                description="Average API response time is above 3 seconds",
             ),
             AlertRule(
                 rule_id="app_memory_leak",
@@ -317,9 +336,8 @@ class AlertManager:
                 severity="critical",
                 duration_minutes=5,
                 cooldown_minutes=20,
-                description="Application memory usage suggests potential memory leak"
+                description="Application memory usage suggests potential memory leak",
             ),
-
             # Database alerts
             AlertRule(
                 rule_id="slow_database_queries",
@@ -330,7 +348,7 @@ class AlertManager:
                 severity="warning",
                 duration_minutes=5,
                 cooldown_minutes=15,
-                description="Database queries are running slowly (>2s average)"
+                description="Database queries are running slowly (>2s average)",
             ),
             AlertRule(
                 rule_id="low_cache_hit_rate",
@@ -341,8 +359,8 @@ class AlertManager:
                 severity="warning",
                 duration_minutes=10,
                 cooldown_minutes=30,
-                description="Cache hit rate is below 70%"
-            )
+                description="Cache hit rate is below 70%",
+            ),
         ]
 
         for rule in default_rules:
@@ -361,9 +379,9 @@ class AlertManager:
                     "smtp_username": os.getenv("SMTP_USERNAME"),
                     "smtp_password": os.getenv("SMTP_PASSWORD"),
                     "from_email": os.getenv("FROM_EMAIL", "alerts@chimera.ai"),
-                    "to_emails": os.getenv("ALERT_EMAILS", "").split(",")
+                    "to_emails": os.getenv("ALERT_EMAILS", "").split(","),
                 },
-                severity_filter=["critical", "warning"]
+                severity_filter=["critical", "warning"],
             )
             self.notification_configs.append(email_config)
 
@@ -374,9 +392,9 @@ class AlertManager:
                 enabled=SLACK_AVAILABLE,
                 config={
                     "bot_token": os.getenv("SLACK_BOT_TOKEN"),
-                    "channel": os.getenv("SLACK_CHANNEL", "#alerts")
+                    "channel": os.getenv("SLACK_CHANNEL", "#alerts"),
                 },
-                severity_filter=["critical", "warning", "info"]
+                severity_filter=["critical", "warning", "info"],
             )
             self.notification_configs.append(slack_config)
 
@@ -387,9 +405,9 @@ class AlertManager:
                 enabled=HTTP_AVAILABLE,
                 config={
                     "url": os.getenv("WEBHOOK_URL"),
-                    "headers": json.loads(os.getenv("WEBHOOK_HEADERS", "{}"))
+                    "headers": json.loads(os.getenv("WEBHOOK_HEADERS", "{}")),
                 },
-                severity_filter=["critical", "warning"]
+                severity_filter=["critical", "warning"],
             )
             self.notification_configs.append(webhook_config)
 
@@ -400,9 +418,7 @@ class AlertManager:
 
         self.monitoring_active = True
         self.monitoring_thread = threading.Thread(
-            target=self._monitoring_loop,
-            args=(interval,),
-            daemon=True
+            target=self._monitoring_loop, args=(interval,), daemon=True
         )
         self.monitoring_thread.start()
         print(f"Alert monitoring started with {interval}s interval")
@@ -435,12 +451,16 @@ class AlertManager:
 
             # Check cooldown
             if rule.rule_id in self.alert_cooldowns:
-                cooldown_expires = self.alert_cooldowns[rule.rule_id] + timedelta(minutes=rule.cooldown_minutes)
+                cooldown_expires = self.alert_cooldowns[rule.rule_id] + timedelta(
+                    minutes=rule.cooldown_minutes
+                )
                 if current_time < cooldown_expires:
                     continue
 
             # Get metric values for the duration
-            values = self.metrics_collector.get_metric_values(rule.metric_path, rule.duration_minutes)
+            values = self.metrics_collector.get_metric_values(
+                rule.metric_path, rule.duration_minutes
+            )
 
             if not values:
                 continue
@@ -494,7 +514,7 @@ class AlertManager:
             service="chimera-system",
             description=rule.description,
             suggested_actions=suggested_actions,
-            alert_data={"rule_id": rule.rule_id}
+            alert_data={"rule_id": rule.rule_id},
         )
 
         # Store alert
@@ -507,7 +527,9 @@ class AlertManager:
         # Send notifications
         self._send_notifications(alert)
 
-        print(f"ALERT TRIGGERED [{alert.severity.upper()}]: {alert.description} - Current: {current_value:.2f}, Threshold: {rule.threshold:.2f}")
+        print(
+            f"ALERT TRIGGERED [{alert.severity.upper()}]: {alert.description} - Current: {current_value:.2f}, Threshold: {rule.threshold:.2f}"
+        )
 
     def _check_alert_resolutions(self) -> None:
         """Check if active alerts should be resolved"""
@@ -549,51 +571,63 @@ class AlertManager:
         actions = []
 
         if "cpu" in rule.metric_path.lower():
-            actions.extend([
-                "Check for high CPU processes using top or htop",
-                "Review recent deployments or code changes",
-                "Consider scaling horizontally if sustained",
-                "Investigate potential infinite loops or inefficient algorithms"
-            ])
+            actions.extend(
+                [
+                    "Check for high CPU processes using top or htop",
+                    "Review recent deployments or code changes",
+                    "Consider scaling horizontally if sustained",
+                    "Investigate potential infinite loops or inefficient algorithms",
+                ]
+            )
 
         elif "memory" in rule.metric_path.lower():
-            actions.extend([
-                "Check for memory leaks using memory profiler",
-                "Review recent memory-intensive operations",
-                "Consider increasing available memory",
-                "Investigate object retention and garbage collection"
-            ])
+            actions.extend(
+                [
+                    "Check for memory leaks using memory profiler",
+                    "Review recent memory-intensive operations",
+                    "Consider increasing available memory",
+                    "Investigate object retention and garbage collection",
+                ]
+            )
 
         elif "api" in rule.metric_path.lower():
-            actions.extend([
-                "Review slow API endpoints",
-                "Check database query performance",
-                "Verify network connectivity to external services",
-                "Consider implementing response caching"
-            ])
+            actions.extend(
+                [
+                    "Review slow API endpoints",
+                    "Check database query performance",
+                    "Verify network connectivity to external services",
+                    "Consider implementing response caching",
+                ]
+            )
 
         elif "database" in rule.metric_path.lower():
-            actions.extend([
-                "Analyze slow query logs",
-                "Check database connection pool utilization",
-                "Review recent database schema changes",
-                "Consider query optimization and indexing"
-            ])
+            actions.extend(
+                [
+                    "Analyze slow query logs",
+                    "Check database connection pool utilization",
+                    "Review recent database schema changes",
+                    "Consider query optimization and indexing",
+                ]
+            )
 
         elif "cache" in rule.metric_path.lower():
-            actions.extend([
-                "Review cache key patterns and TTL values",
-                "Check cache server health and connectivity",
-                "Analyze cache eviction policies",
-                "Consider cache warming strategies"
-            ])
+            actions.extend(
+                [
+                    "Review cache key patterns and TTL values",
+                    "Check cache server health and connectivity",
+                    "Analyze cache eviction policies",
+                    "Consider cache warming strategies",
+                ]
+            )
 
         # Add general actions
-        actions.extend([
-            "Monitor system resources and application logs",
-            "Check for any recent configuration changes",
-            "Verify external service dependencies"
-        ])
+        actions.extend(
+            [
+                "Monitor system resources and application logs",
+                "Check for any recent configuration changes",
+                "Verify external service dependencies",
+            ]
+        )
 
         return actions[:5]  # Limit to top 5 actions
 
@@ -615,7 +649,10 @@ class AlertManager:
     def _send_notifications(self, alert: Alert) -> None:
         """Send notifications for an alert"""
         for notification_config in self.notification_configs:
-            if not notification_config.enabled or alert.severity not in notification_config.severity_filter:
+            if (
+                not notification_config.enabled
+                or alert.severity not in notification_config.severity_filter
+            ):
                 continue
 
             try:
@@ -635,9 +672,9 @@ class AlertManager:
             smtp_config = config.config
 
             msg = MimeMultipart()
-            msg['From'] = smtp_config['from_email']
-            msg['To'] = ', '.join(smtp_config['to_emails'])
-            msg['Subject'] = f"[{alert.severity.upper()}] Chimera Alert: {alert.description}"
+            msg["From"] = smtp_config["from_email"]
+            msg["To"] = ", ".join(smtp_config["to_emails"])
+            msg["Subject"] = f"[{alert.severity.upper()}] Chimera Alert: {alert.description}"
 
             body = f"""
 Alert Details:
@@ -658,11 +695,11 @@ Suggested Actions:
 Alert ID: {alert.alert_id}
             """
 
-            msg.attach(MimeText(body, 'plain'))
+            msg.attach(MimeText(body, "plain"))
 
-            server = smtplib.SMTP(smtp_config['smtp_server'], smtp_config['smtp_port'])
+            server = smtplib.SMTP(smtp_config["smtp_server"], smtp_config["smtp_port"])
             server.starttls()
-            server.login(smtp_config['smtp_username'], smtp_config['smtp_password'])
+            server.login(smtp_config["smtp_username"], smtp_config["smtp_password"])
             server.send_message(msg)
             server.quit()
 
@@ -677,15 +714,17 @@ Alert ID: {alert.alert_id}
         try:
             from slack_sdk import WebClient
 
-            client = WebClient(token=config.config['bot_token'])
+            client = WebClient(token=config.config["bot_token"])
 
             # Create Slack message
-            {"critical": "#ff0000", "warning": "#ffff00", "info": "#00ff00"}.get(alert.severity, "#808080")
+            {"critical": "#ff0000", "warning": "#ffff00", "info": "#00ff00"}.get(
+                alert.severity, "#808080"
+            )
 
             blocks = [
                 {
                     "type": "header",
-                    "text": {"type": "plain_text", "text": f"🚨 {alert.severity.upper()} Alert"}
+                    "text": {"type": "plain_text", "text": f"🚨 {alert.severity.upper()} Alert"},
                 },
                 {
                     "type": "section",
@@ -693,19 +732,19 @@ Alert ID: {alert.alert_id}
                         {"type": "mrkdwn", "text": f"*Metric:* {alert.metric_name}"},
                         {"type": "mrkdwn", "text": f"*Current:* {alert.current_value:.2f}"},
                         {"type": "mrkdwn", "text": f"*Threshold:* {alert.threshold_value:.2f}"},
-                        {"type": "mrkdwn", "text": f"*Service:* {alert.service}"}
-                    ]
+                        {"type": "mrkdwn", "text": f"*Service:* {alert.service}"},
+                    ],
                 },
                 {
                     "type": "section",
-                    "text": {"type": "mrkdwn", "text": f"*Description:* {alert.description}"}
-                }
+                    "text": {"type": "mrkdwn", "text": f"*Description:* {alert.description}"},
+                },
             ]
 
             client.chat_postMessage(
-                channel=config.config['channel'],
+                channel=config.config["channel"],
                 blocks=blocks,
-                text=f"{alert.severity.upper()} Alert: {alert.description}"
+                text=f"{alert.severity.upper()} Alert: {alert.description}",
             )
 
         except Exception as e:
@@ -733,9 +772,9 @@ Alert ID: {alert.alert_id}
             }
 
             response = requests.post(
-                config.config['url'],
+                config.config["url"],
                 json=webhook_data,
-                headers=config.config.get('headers', {}),
+                headers=config.config.get("headers", {}),
                 timeout=10,
             )
 
@@ -778,8 +817,9 @@ Alert ID: {alert.alert_id}
             "info_alerts": len([a for a in active_alerts if a.severity == "info"]),
             "total_alert_rules": len(self.alert_rules),
             "enabled_alert_rules": len([r for r in self.alert_rules.values() if r.enabled]),
-            "notification_channels": len([c for c in self.notification_configs if c.enabled])
+            "notification_channels": len([c for c in self.notification_configs if c.enabled]),
         }
+
 
 class PerformanceMonitor:
     """Main performance monitoring orchestrator"""
@@ -828,24 +868,32 @@ class PerformanceMonitor:
             "monitoring_active": self.monitoring_active,
             "system_metrics": {
                 "cpu_usage": self.metrics_collector.get_latest_value("system.cpu.usage"),
-                "memory_usage": self.metrics_collector.get_latest_value("system.memory.usage_percent"),
-                "api_response_time": self.metrics_collector.get_latest_value("app.api.avg_response_time_ms")
+                "memory_usage": self.metrics_collector.get_latest_value(
+                    "system.memory.usage_percent"
+                ),
+                "api_response_time": self.metrics_collector.get_latest_value(
+                    "app.api.avg_response_time_ms"
+                ),
             },
             "alerts": self.alert_manager.get_alert_summary(),
-            "active_alerts": [asdict(alert) for alert in self.alert_manager.get_active_alerts()]
+            "active_alerts": [asdict(alert) for alert in self.alert_manager.get_active_alerts()],
         }
+
 
 # Global performance monitor instance
 performance_monitor = PerformanceMonitor()
+
 
 # Convenience functions
 async def start_performance_monitoring() -> None:
     """Start the comprehensive performance monitoring system"""
     await performance_monitor.start_monitoring()
 
+
 async def stop_performance_monitoring() -> None:
     """Stop the performance monitoring system"""
     await performance_monitor.stop_monitoring()
+
 
 def get_monitoring_status() -> dict[str, Any]:
     """Get current monitoring status"""

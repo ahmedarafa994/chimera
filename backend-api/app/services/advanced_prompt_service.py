@@ -35,9 +35,7 @@ from app.infrastructure.bounded_cache_manager import BoundedCacheManager
 from app.services.llm_service import llm_service
 
 # Initialize specialized cache for advanced generation
-advanced_cache = BoundedCacheManager(
-    max_items=500  # Use correct parameter name
-)
+advanced_cache = BoundedCacheManager(max_items=500)  # Use correct parameter name
 
 
 # Module logger for config-related logging
@@ -245,7 +243,8 @@ class AdvancedPromptService:
             # Get model (default if not specified)
             model_name = model or (
                 provider_config.get_default_model().model_id
-                if provider_config.get_default_model() else None
+                if provider_config.get_default_model()
+                else None
             )
             if not model_name:
                 return None
@@ -288,9 +287,7 @@ class AdvancedPromptService:
             # Validate provider exists and is enabled
             provider = config_manager.get_provider(provider_name)
             if not provider or not provider.enabled:
-                _config_logger.warning(
-                    f"Provider '{provider_name}' not available, using default"
-                )
+                _config_logger.warning(f"Provider '{provider_name}' not available, using default")
                 provider_name = config.global_config.default_provider
                 provider = config_manager.get_provider(provider_name)
 
@@ -537,9 +534,7 @@ class AdvancedPromptService:
 
         try:
             # Get config-driven provider for red team
-            provider, model = self._get_config_driven_provider_model(
-                request.provider, None
-            )
+            provider, model = self._get_config_driven_provider_model(request.provider, None)
 
             # Validate provider capabilities
             is_valid, missing = self._validate_provider_capabilities(
@@ -740,7 +735,7 @@ class AdvancedPromptService:
                     config = config_manager.get_config()
                     models_available = []
                     for provider in config.get_enabled_providers():
-                        for model_id in provider.models.keys():
+                        for model_id in provider.models:
                             models_available.append(f"{provider.provider_id}/{model_id}")
                 except Exception as e:
                     _config_logger.warning(f"Could not get models from config: {e}")
@@ -1007,7 +1002,9 @@ Include appropriate error handling and comments."""
                 "input_tokens": estimation["token_count"],
                 "estimated_output_tokens": request.max_new_tokens,
                 "total_estimated_tokens": estimation["token_count"] + request.max_new_tokens,
-                "estimated_cost_usd": config_cost if config_cost else estimation.get("estimated_cost_usd", 0.0) * 2,
+                "estimated_cost_usd": (
+                    config_cost if config_cost else estimation.get("estimated_cost_usd", 0.0) * 2
+                ),
                 "context_usage_percent": estimation["context_usage_percent"],
                 "provider": provider,
                 "model": model,

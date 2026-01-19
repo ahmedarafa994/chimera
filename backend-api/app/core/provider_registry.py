@@ -26,6 +26,7 @@ def _get_config_manager():
     """
     try:
         from app.core.service_registry import get_ai_config_manager
+
         config_manager = get_ai_config_manager()
         if config_manager.is_loaded():
             return config_manager
@@ -37,6 +38,7 @@ def _get_config_manager():
 @dataclass
 class ProviderInfo:
     """Provider information with extended metadata."""
+
     name: str
     direct_url: str
     models: list[str]
@@ -49,6 +51,7 @@ class ProviderInfo:
 @dataclass
 class ProviderHealthStatus:
     """Health status for a provider."""
+
     provider_name: str
     is_healthy: bool = True
     last_check: datetime | None = None
@@ -67,6 +70,7 @@ class ProviderRegistry:
     - Health status tracking
     - Provider capability lookup
     """
+
     _instance: ClassVar[Optional["ProviderRegistry"]] = None
     _providers: ClassVar[dict[str, ProviderInfo]] = {}
     _health_status: ClassVar[dict[str, ProviderHealthStatus]] = {}
@@ -93,17 +97,13 @@ class ProviderRegistry:
             try:
                 config_manager.on_change(self._on_config_change)
                 ProviderRegistry._config_subscribed = True
-                logger.info(
-                    "ProviderRegistry subscribed to config changes"
-                )
+                logger.info("ProviderRegistry subscribed to config changes")
             except Exception as e:
                 logger.warning(f"Failed to subscribe to config changes: {e}")
 
     def _on_config_change(self, event):
         """Handle config change events for hot-reload."""
-        logger.info(
-            f"Config change detected: {event.event_type}, reloading providers"
-        )
+        logger.info(f"Config change detected: {event.event_type}, reloading providers")
         self.reload_configuration()
 
     def register_provider(
@@ -129,9 +129,7 @@ class ProviderRegistry:
 
         # Initialize health status if not exists
         if name.lower() not in self._health_status:
-            self._health_status[name.lower()] = ProviderHealthStatus(
-                provider_name=name
-            )
+            self._health_status[name.lower()] = ProviderHealthStatus(provider_name=name)
 
     def get_endpoint(self, provider: str) -> str:
         """Get the direct endpoint URL for a specific provider."""
@@ -172,10 +170,7 @@ class ProviderRegistry:
                 logger.debug(f"Failed to get providers from config: {e}")
 
         # Fallback to registered providers that are enabled
-        return [
-            name for name, info in self._providers.items()
-            if info.enabled
-        ]
+        return [name for name, info in self._providers.items() if info.enabled]
 
     def is_provider_enabled(self, provider: str) -> bool:
         """
@@ -196,9 +191,7 @@ class ProviderRegistry:
         provider_info = self._providers.get(provider.lower())
         return provider_info.enabled if provider_info else False
 
-    def get_provider_capabilities(
-        self, provider: str
-    ) -> dict[str, bool] | None:
+    def get_provider_capabilities(self, provider: str) -> dict[str, bool] | None:
         """
         Get capabilities for a provider from config.
 
@@ -213,14 +206,10 @@ class ProviderRegistry:
                     return {
                         "supports_streaming": caps.supports_streaming,
                         "supports_vision": caps.supports_vision,
-                        "supports_function_calling": (
-                            caps.supports_function_calling
-                        ),
+                        "supports_function_calling": (caps.supports_function_calling),
                         "supports_json_mode": caps.supports_json_mode,
                         "supports_system_prompt": caps.supports_system_prompt,
-                        "supports_token_counting": (
-                            caps.supports_token_counting
-                        ),
+                        "supports_token_counting": (caps.supports_token_counting),
                         "supports_embeddings": caps.supports_embeddings,
                     }
             except Exception as e:
@@ -230,9 +219,7 @@ class ProviderRegistry:
         provider_info = self._providers.get(provider.lower())
         return provider_info.capabilities if provider_info else None
 
-    def get_circuit_breaker_config(
-        self, provider: str
-    ) -> dict[str, Any]:
+    def get_circuit_breaker_config(self, provider: str) -> dict[str, Any]:
         """
         Get circuit breaker configuration for a provider.
 
@@ -247,9 +234,7 @@ class ProviderRegistry:
                     return {
                         "enabled": cb.enabled,
                         "failure_threshold": cb.failure_threshold,
-                        "recovery_timeout_seconds": (
-                            cb.recovery_timeout_seconds
-                        ),
+                        "recovery_timeout_seconds": (cb.recovery_timeout_seconds),
                         "half_open_max_requests": cb.half_open_max_requests,
                     }
             except Exception:
@@ -277,9 +262,7 @@ class ProviderRegistry:
         """Update health status for a provider."""
         name = provider.lower()
         if name not in self._health_status:
-            self._health_status[name] = ProviderHealthStatus(
-                provider_name=provider
-            )
+            self._health_status[name] = ProviderHealthStatus(provider_name=provider)
 
         status = self._health_status[name]
         status.last_check = datetime.utcnow()
@@ -297,13 +280,9 @@ class ProviderRegistry:
             cb_config = self.get_circuit_breaker_config(provider)
             if status.failure_count >= cb_config.get("failure_threshold", 5):
                 status.circuit_state = "open"
-                logger.warning(
-                    f"Circuit breaker opened for provider: {provider}"
-                )
+                logger.warning(f"Circuit breaker opened for provider: {provider}")
 
-    def get_health_status(
-        self, provider: str
-    ) -> ProviderHealthStatus | None:
+    def get_health_status(self, provider: str) -> ProviderHealthStatus | None:
         """Get health status for a provider."""
         return self._health_status.get(provider.lower())
 
@@ -345,8 +324,7 @@ class ProviderRegistry:
             try:
                 config = config_manager.get_config()
                 logger.info(
-                    f"Reloading providers from config: "
-                    f"{len(config.providers)} providers"
+                    f"Reloading providers from config: " f"{len(config.providers)} providers"
                 )
 
                 for provider_id, provider_config in config.providers.items():
@@ -357,36 +335,26 @@ class ProviderRegistry:
                         enabled=provider_config.enabled,
                         priority=provider_config.priority,
                         capabilities={
-                            "supports_streaming": (
-                                provider_config.capabilities.supports_streaming
-                            ),
-                            "supports_vision": (
-                                provider_config.capabilities.supports_vision
-                            ),
+                            "supports_streaming": (provider_config.capabilities.supports_streaming),
+                            "supports_vision": (provider_config.capabilities.supports_vision),
                             "supports_function_calling": (
-                                provider_config
-                                .capabilities.supports_function_calling
+                                provider_config.capabilities.supports_function_calling
                             ),
                         },
                         circuit_breaker_config={
-                            "enabled": (
-                                provider_config.circuit_breaker.enabled
-                            ),
+                            "enabled": (provider_config.circuit_breaker.enabled),
                             "failure_threshold": (
-                                provider_config
-                                .circuit_breaker.failure_threshold
+                                provider_config.circuit_breaker.failure_threshold
                             ),
                             "recovery_timeout_seconds": (
-                                provider_config
-                                .circuit_breaker.recovery_timeout_seconds
+                                provider_config.circuit_breaker.recovery_timeout_seconds
                             ),
                         },
                     )
                 return
             except Exception as e:
                 logger.warning(
-                    f"Failed to load from config manager, "
-                    f"falling back to settings: {e}"
+                    f"Failed to load from config manager, " f"falling back to settings: {e}"
                 )
 
         # Fallback to settings
@@ -401,9 +369,7 @@ class ProviderRegistry:
                 models=models_map.get(provider, []),
             )
 
-        logger.info(
-            f"Loaded {len(self._providers)} providers from settings"
-        )
+        logger.info(f"Loaded {len(self._providers)} providers from settings")
 
 
 # Global instance

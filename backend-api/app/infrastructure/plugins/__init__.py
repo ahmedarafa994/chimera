@@ -11,10 +11,10 @@ from app.infrastructure.plugins.openai_plugin import OpenAIPlugin
 from app.infrastructure.plugins.routeway_plugin import RoutewayPlugin
 
 __all__ = [
-    "OpenAIPlugin",
     "AnthropicPlugin",
-    "GooglePlugin",
-    "DeepSeekPlugin",
     "BigModelPlugin",
+    "DeepSeekPlugin",
+    "GooglePlugin",
+    "OpenAIPlugin",
     "RoutewayPlugin",
 ]

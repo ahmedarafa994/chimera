@@ -14,107 +14,59 @@ This test suite validates:
 Run with: pytest tests/test_autodan_cchimera_integration.py -v
 """
 
-import pytest
 import numpy as np
-from typing import List, Dict, Any
+import pytest
 
+from meta_prompter.attacks.autodan.fitness_evaluation import (
+    CrossEntropyLoss, FitnessConfig, FitnessEvaluationPipeline, FitnessResult,
+    FluencyScorer, JailbreakSuccessEstimator, PerplexityCalculator,
+    ReadabilityScorer, SemanticSimilarityScorer, StealthScorer)
 # AutoDAN imports
 from meta_prompter.attacks.autodan.hierarchical_genetic_algorithm import (
-    HierarchicalGeneticAlgorithm,
-    HGAConfig,
-    Individual,
-    Island,
-    GeneticOperators,
-    DefaultFitnessEvaluator,
-)
+    GeneticOperators, HGAConfig, HierarchicalGeneticAlgorithm, Individual,
+    Island)
 from meta_prompter.attacks.autodan.token_perturbation import (
-    TokenPerturbationEngine,
-    PerturbationConfig,
-    HotFlipAttack,
-    GumbelSoftmaxSampler,
-    GradientEstimator,
-    SemanticPerturbation,
-    HomoglyphPerturbation,
-)
-from meta_prompter.attacks.autodan.fitness_evaluation import (
-    FitnessEvaluationPipeline,
-    FitnessConfig,
-    FitnessResult,
-    CrossEntropyLoss,
-    PerplexityCalculator,
-    FluencyScorer,
-    ReadabilityScorer,
-    JailbreakSuccessEstimator,
-    StealthScorer,
-    SemanticSimilarityScorer,
-)
-
+    GradientEstimator, GumbelSoftmaxSampler, HomoglyphPerturbation,
+    HotFlipAttack, PerturbationConfig, SemanticPerturbation,
+    TokenPerturbationEngine)
 # cchimera imports
 from meta_prompter.attacks.cchimera.adversarial_core import (
-    AdversarialGenerationEngine,
-    AdversarialConfig,
-    AdversarialCandidate,
-    AttackStrategy,
-    TokenSubstitutionMutation,
-    SemanticParaphraseMutation,
-    StructureMorphingMutation,
-    RolePlayInjectionMutation,
-    ObfuscationMutation,
-    HeuristicFitnessEvaluator,
-)
+    AdversarialCandidate, AdversarialConfig, AdversarialGenerationEngine,
+    HeuristicFitnessEvaluator, ObfuscationMutation, RolePlayInjectionMutation,
+    SemanticParaphraseMutation, StructureMorphingMutation,
+    TokenSubstitutionMutation)
+from meta_prompter.attacks.cchimera.elitism_strategies import (AdaptiveElitism,
+                                                               ArchiveElitism,
+                                                               EliteConfig,
+                                                               ElitismManager,
+                                                               ElitismType)
+from meta_prompter.attacks.cchimera.elitism_strategies import \
+    Individual as EliteIndividual
+from meta_prompter.attacks.cchimera.elitism_strategies import (ParetoElitism,
+                                                               StandardElitism)
 from meta_prompter.attacks.cchimera.multi_objective_optimization import (
-    MultiObjectiveOptimizer,
-    NSGAII,
-    MOEAD,
-    MOOConfig,
-    Solution,
-    Objective,
-    ObjectiveType,
-    ParetoFront,
-    HypervolumeIndicator,
-)
-from meta_prompter.attacks.cchimera.elitism_strategies import (
-    ElitismManager,
-    EliteConfig,
-    ElitismType,
-    StandardElitism,
-    ParetoElitism,
-    ArchiveElitism,
-    AdaptiveElitism,
-    NichingElitism,
-    Individual as EliteIndividual,
-)
-
-# Unified interface imports
-from meta_prompter.attacks.unified_interface import (
-    UnifiedAttackOrchestrator,
-    UnifiedConfig,
-    AttackResult,
-    AttackType,
-    AutoDANEngine,
-    cchimeraEngine,
-    HybridEngine,
-)
-
+    NSGAII, HypervolumeIndicator, MOOConfig, MultiObjectiveOptimizer,
+    Objective, ObjectiveType, ParetoFront, Solution)
 # Evaluation metrics imports
-from meta_prompter.attacks.evaluation_metrics import (
-    ComprehensiveEvaluator,
-    MetricConfig,
-    AttackSuccessRate,
-    SemanticSimilarity,
-    PerplexityMetric,
-    FluencyMetric,
-    StealthMetric,
-    DiversityMetric,
-    compute_asr,
-    compute_similarity,
-    compute_perplexity,
-)
-
+from meta_prompter.attacks.evaluation_metrics import (AttackSuccessRate,
+                                                      ComprehensiveEvaluator,
+                                                      DiversityMetric,
+                                                      FluencyMetric,
+                                                      PerplexityMetric,
+                                                      SemanticSimilarity,
+                                                      StealthMetric,
+                                                      compute_perplexity,
+                                                      compute_similarity)
+# Unified interface imports
+from meta_prompter.attacks.unified_interface import (AttackResult, AttackType,
+                                                     UnifiedAttackOrchestrator,
+                                                     UnifiedConfig,
+                                                     cchimeraEngine)
 
 # ============================================================================
 # Test Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_prompts():
@@ -172,6 +124,7 @@ def fitness_config():
 # ============================================================================
 # AutoDAN Tests
 # ============================================================================
+
 
 class TestHierarchicalGeneticAlgorithm:
     """Tests for Hierarchical Genetic Algorithm."""
@@ -393,6 +346,7 @@ class TestFitnessEvaluation:
 # cchimera Tests
 # ============================================================================
 
+
 class TestAdversarialGenerationCore:
     """Tests for cchimera Adversarial Generation Core."""
 
@@ -586,8 +540,8 @@ class TestMultiObjectiveOptimization:
         nsga.compute_crowding_distance(front)
 
         # Boundary solutions should have infinite distance
-        assert front[0].crowding_distance == float('inf')
-        assert front[-1].crowding_distance == float('inf')
+        assert front[0].crowding_distance == float("inf")
+        assert front[-1].crowding_distance == float("inf")
 
     def test_hypervolume_indicator(self):
         """Test hypervolume calculation."""
@@ -616,10 +570,7 @@ class TestElitismStrategies:
         config = EliteConfig(elite_count=3)
         strategy = StandardElitism(config)
 
-        population = [
-            EliteIndividual(genotype=f"ind_{i}", fitness=i * 0.1)
-            for i in range(10)
-        ]
+        population = [EliteIndividual(genotype=f"ind_{i}", fitness=i * 0.1) for i in range(10)]
 
         elites = strategy.select_elites(population)
 
@@ -635,7 +586,7 @@ class TestElitismStrategies:
             EliteIndividual(
                 genotype=f"ind_{i}",
                 fitness=0.5,
-                objectives={"f1": np.random.rand(), "f2": np.random.rand()}
+                objectives={"f1": np.random.rand(), "f2": np.random.rand()},
             )
             for i in range(10)
         ]
@@ -685,10 +636,7 @@ class TestElitismStrategies:
         config = EliteConfig(elite_count=3)
         manager = ElitismManager(config, strategy_type=ElitismType.STANDARD)
 
-        population = [
-            EliteIndividual(genotype=f"ind_{i}", fitness=i * 0.1)
-            for i in range(10)
-        ]
+        population = [EliteIndividual(genotype=f"ind_{i}", fitness=i * 0.1) for i in range(10)]
 
         new_pop, elites = manager.apply_elitism(population)
 
@@ -700,6 +648,7 @@ class TestElitismStrategies:
 # ============================================================================
 # Unified Interface Tests
 # ============================================================================
+
 
 class TestUnifiedInterface:
     """Tests for Unified Attack Interface."""
@@ -758,6 +707,7 @@ class TestUnifiedInterface:
 # ============================================================================
 # Evaluation Metrics Tests
 # ============================================================================
+
 
 class TestEvaluationMetrics:
     """Tests for Evaluation Metrics."""
@@ -848,6 +798,7 @@ class TestEvaluationMetrics:
 # Integration Tests
 # ============================================================================
 
+
 class TestEndToEndIntegration:
     """End-to-end integration tests."""
 
@@ -894,10 +845,12 @@ class TestEndToEndIntegration:
         optimizer = MultiObjectiveOptimizer(objectives, config, algorithm="nsga2")
 
         # Create initial population
-        engine = AdversarialGenerationEngine(AdversarialConfig(
-            max_iterations=1,
-            population_size=10,
-        ))
+        engine = AdversarialGenerationEngine(
+            AdversarialConfig(
+                max_iterations=1,
+                population_size=10,
+            )
+        )
 
         # Quick generation for test
         candidate = engine.generate(seed_prompt)
@@ -934,10 +887,12 @@ class TestEndToEndIntegration:
     def test_fitness_evaluation_integration(self, seed_prompt):
         """Test fitness evaluation with all components."""
         # Create adversarial candidate
-        engine = AdversarialGenerationEngine(AdversarialConfig(
-            max_iterations=2,
-            population_size=5,
-        ))
+        engine = AdversarialGenerationEngine(
+            AdversarialConfig(
+                max_iterations=2,
+                population_size=5,
+            )
+        )
 
         candidate = engine.generate(seed_prompt)
 
@@ -960,6 +915,7 @@ class TestEndToEndIntegration:
 # ============================================================================
 # Performance Tests
 # ============================================================================
+
 
 class TestPerformance:
     """Performance and stress tests."""

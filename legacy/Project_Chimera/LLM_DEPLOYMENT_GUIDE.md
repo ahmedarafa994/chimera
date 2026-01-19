@@ -86,7 +86,7 @@ ANTHROPIC_MODEL=claude-3-opus-20240229
 
 # Custom Model Configuration (Optional)
 CUSTOM_API_KEY=your-custom-key
-CUSTOM_BASE_URL=http://localhost:8000
+CUSTOM_BASE_URL=http://localhost:8001
 CUSTOM_MODEL=custom-model-name
 
 # Rate Limiting

@@ -158,9 +158,7 @@ class ReasoningEnhancedMutation:
 
         try:
             # Step 1: Apply AutoDAN mutation
-            mutation_result = self._mutation_engine.mutate(
-                prompt, mutation_type=mutation_type
-            )
+            mutation_result = self._mutation_engine.mutate(prompt, mutation_type=mutation_type)
             mutated_prompt = mutation_result.mutated_prompt
 
             # Step 2: Apply reasoning chain extension
@@ -208,9 +206,7 @@ class ReasoningEnhancedMutation:
                 reasoning_extension_ratio=extension_ratio,
                 detection_probability=1.0 - mutation_result.stealth_score,
             )
-            combined_fitness = self._fitness_calculator.calculate_unified_fitness(
-                combined_metrics
-            )
+            combined_fitness = self._fitness_calculator.calculate_unified_fitness(combined_metrics)
 
             execution_time = (time.time() - start_time) * 1000
 
@@ -368,13 +364,17 @@ class AutoDANReasoningWorkflow:
                     best_result = MutationWithReasoningResult(
                         result_id=result_id,
                         original_prompt=prompt,
-                        mutated_prompt=attack_result.mutation_result.mutated_prompt
-                        if attack_result.mutation_result
-                        else "",
+                        mutated_prompt=(
+                            attack_result.mutation_result.mutated_prompt
+                            if attack_result.mutation_result
+                            else ""
+                        ),
                         reasoning_extended_prompt=attack_result.final_prompt,
-                        mutation_fitness=attack_result.mutation_result.fitness_score
-                        if attack_result.mutation_result
-                        else 0.0,
+                        mutation_fitness=(
+                            attack_result.mutation_result.fitness_score
+                            if attack_result.mutation_result
+                            else 0.0
+                        ),
                         reasoning_extension_ratio=len(attack_result.final_prompt)
                         / max(1, len(prompt)),
                         combined_fitness=current_fitness,
@@ -414,16 +414,14 @@ class AutoDANReasoningWorkflow:
                 mutation_metrics={
                     "iterations": len(self._fitness_history),
                     "strategy": strategy.value,
-                    "final_params": self._current_params.to_dict()
-                    if self._current_params
-                    else {},
+                    "final_params": self._current_params.to_dict() if self._current_params else {},
                 },
                 reasoning_metrics={
                     "complexity_type": self.complexity_type,
                     "fitness_history": self._fitness_history,
-                    "improvement": best_fitness - self._fitness_history[0]
-                    if self._fitness_history
-                    else 0.0,
+                    "improvement": (
+                        best_fitness - self._fitness_history[0] if self._fitness_history else 0.0
+                    ),
                 },
                 execution_time_ms=execution_time,
                 success=True,

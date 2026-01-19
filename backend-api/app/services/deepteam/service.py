@@ -225,9 +225,9 @@ class DeepTeamService:
                     test_cases.append(
                         TestCaseResult(
                             vulnerability=str(vuln_config.type),
-                            vulnerability_type=vuln_config.types[0]
-                            if vuln_config.types
-                            else "default",
+                            vulnerability_type=(
+                                vuln_config.types[0] if vuln_config.types else "default"
+                            ),
                             attack_method=str(attack_config.type),
                             input=mock_input,
                             target_output=response,

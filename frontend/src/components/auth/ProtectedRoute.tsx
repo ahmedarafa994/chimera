@@ -98,11 +98,11 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, isInitialized } = useAuth();
+  const { isAuthenticated, isLoading, isInitialized, isAuthStateReady } = useAuth();
 
   // Handle redirect for unauthenticated users
   useEffect(() => {
-    if (isInitialized && !isLoading && !isAuthenticated) {
+    if (isInitialized && isAuthStateReady && !isLoading && !isAuthenticated) {
       // Build redirect URL with return path
       const returnUrl = encodeURIComponent(pathname);
       const loginUrl = `${redirectTo}?redirect=${returnUrl}`;
@@ -114,10 +114,10 @@ export function ProtectedRoute({
 
       router.replace(loginUrl);
     }
-  }, [isInitialized, isLoading, isAuthenticated, pathname, redirectTo, router, onRedirect]);
+  }, [isInitialized, isAuthStateReady, isLoading, isAuthenticated, pathname, redirectTo, router, onRedirect]);
 
   // Show loading state while initializing or if not yet authenticated
-  if (!isInitialized || isLoading) {
+  if (!isInitialized || !isAuthStateReady || isLoading) {
     if (loadingComponent) {
       return <>{loadingComponent}</>;
     }

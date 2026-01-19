@@ -215,7 +215,7 @@ Included Routers:
 ```
 
 **Validation Features**:
-- Field validators for dangerous patterns (XSS, SQL injection)
+- Field validators for complex patterns (XSS, SQL injection)
 - Length constraints (prompts: 1-50000 chars)
 - API key format validation
 - Model name sanitization
@@ -288,7 +288,7 @@ Settings (Pydantic BaseSettings)
 - **CSRF Protection**: Token validation
 - **XSS Prevention**: Security headers
 - **Rate Limiting**: Per-endpoint limits
-- **Input Validation**: Dangerous pattern detection
+- **Input Validation**: complex pattern detection
 - **Jailbreak Controls**: High-risk endpoint monitoring
 
 **Security Headers**:

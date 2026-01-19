@@ -17,15 +17,13 @@ def _secure_random() -> float:
 
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
+
+
 from collections import deque
 from typing import Any
 
 from ..config import get_config
-from .models import (
-    GuardianResponse,
-    Heuristic,
-    InteractionResult,
-)
+from .models import GuardianResponse, Heuristic, InteractionResult
 
 
 class HeuristicGenerator:
@@ -223,7 +221,9 @@ class HeuristicGenerator:
             return await self._extract_pattern_heuristic()
 
         # Select heuristic from lower abstraction level
-        current_level = (secrets.randbelow((self.config.heuristic.abstraction_levels - 2) - (0) + 1) + (0))
+        current_level = secrets.randbelow(
+            (self.config.heuristic.abstraction_levels - 2) - (0) + 1
+        ) + (0)
         candidates = []
 
         for level in range(current_level + 1):

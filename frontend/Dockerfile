@@ -29,14 +29,14 @@ RUN npm install
 COPY . .
 
 # Expose the development server port
-EXPOSE 3000
+EXPOSE 3001
 
 # Set environment variable for dev server binding
 ENV HOSTNAME="0.0.0.0"
 
 # Health check for development server
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001 || exit 1
 
 # Start the development server
 CMD ["npm", "run", "dev"]

@@ -47,9 +47,7 @@ AMBIGUOUS_N_NOTE = (
 )
 
 # Concise variant - shorter but still effective
-CONCISE_N_NOTE = (
-    "Decode: <(base)value> → ASCII character. Base is in (), value follows."
-)
+CONCISE_N_NOTE = "Decode: <(base)value> → ASCII character. Base is in (), value follows."
 
 # Detailed variant - more explicit instructions
 DETAILED_N_NOTE = (
@@ -298,9 +296,7 @@ class NNoteBuilder:
         Returns:
             Self for chaining
         """
-        self._parts.append(
-            "Decode the content within angle brackets (<>) as follows:"
-        )
+        self._parts.append("Decode the content within angle brackets (<>) as follows:")
         return self
 
     def add_base_explanation(self) -> "NNoteBuilder":
@@ -310,9 +306,7 @@ class NNoteBuilder:
         Returns:
             Self for chaining
         """
-        self._parts.append(
-            "The number in parentheses () indicates the numerical base."
-        )
+        self._parts.append("The number in parentheses () indicates the numerical base.")
         return self
 
     def add_value_explanation(self) -> "NNoteBuilder":
@@ -322,9 +316,7 @@ class NNoteBuilder:
         Returns:
             Self for chaining
         """
-        self._parts.append(
-            "The value following the parentheses is expressed in that base."
-        )
+        self._parts.append("The value following the parentheses is expressed in that base.")
         return self
 
     def add_ascii_explanation(self) -> "NNoteBuilder":
@@ -334,9 +326,7 @@ class NNoteBuilder:
         Returns:
             Self for chaining
         """
-        self._parts.append(
-            "Convert to decimal and interpret as an ASCII character code."
-        )
+        self._parts.append("Convert to decimal and interpret as an ASCII character code.")
         return self
 
     def add_example(self, char: str = "d") -> "NNoteBuilder":
@@ -351,9 +341,7 @@ class NNoteBuilder:
         """
         # Use 'd' (ASCII 100) in base 4 as example: 100 = 1210 in base 4
         ascii_val = ord(char)
-        self._parts.append(
-            f"Example: <(4){ascii_val:o}> decodes to '{char}' (ASCII {ascii_val})"
-        )
+        self._parts.append(f"Example: <(4){ascii_val:o}> decodes to '{char}' (ASCII {ascii_val})")
         return self
 
     def add_custom(self, text: str) -> "NNoteBuilder":

@@ -312,7 +312,7 @@ const health = healthMonitor.getStatus();
 
 ```env
 # API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8001
 NEXT_PUBLIC_API_MODE=direct  # 'direct' only
 NEXT_PUBLIC_ENVIRONMENT=development  # 'development' | 'staging' | 'production'
 

@@ -22,27 +22,14 @@ from typing import Any
 
 import numpy as np
 
-from .adaptive_learning_rate import (
-    AdaptiveLearningRateController,
-    LRScheduleType,
-)
+from .adaptive_learning_rate import AdaptiveLearningRateController, LRScheduleType
 from .adaptive_mutation_engine import AdaptiveMutationEngine
 from .async_batch_pipeline import AsyncBatchPipeline, PipelineConfig
-from .convergence_acceleration import (
-    ConvergenceAccelerator,
-    CurriculumLearning,
-    WarmStartManager,
-)
-from .distributed_strategy_library import (
-    DistributedStrategyLibrary,
-    IndexType,
-)
+from .convergence_acceleration import ConvergenceAccelerator, CurriculumLearning, WarmStartManager
+from .distributed_strategy_library import DistributedStrategyLibrary, IndexType
 from .enhanced_gradient_optimizer import EnhancedGradientOptimizer
 from .memory_management import MemoryManager
-from .multi_objective_fitness import (
-    FitnessWeights,
-    MultiObjectiveFitnessEvaluator,
-)
+from .multi_objective_fitness import FitnessWeights, MultiObjectiveFitnessEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -286,7 +273,7 @@ class EnhancedLifelongEngine:
         Execute attack on target prompt.
 
         Args:
-            target_prompt: The harmful prompt to jailbreak
+            target_prompt: The complex prompt to jailbreak
             context: Additional context
 
         Returns:

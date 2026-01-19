@@ -263,7 +263,9 @@ class ErrorResponseBuilder:
         )
 
     @staticmethod
-    def rate_limited(retry_after: int, limit: int | None = None, window: str = "minute") -> HTTPException:
+    def rate_limited(
+        retry_after: int, limit: int | None = None, window: str = "minute"
+    ) -> HTTPException:
         """Create a 429 Too Many Requests response."""
         message = "Rate limit exceeded"
         if limit:
@@ -291,7 +293,9 @@ class ErrorResponseBuilder:
         )
 
     @staticmethod
-    def payload_too_large(max_size: int | None = None, actual_size: int | None = None) -> HTTPException:
+    def payload_too_large(
+        max_size: int | None = None, actual_size: int | None = None
+    ) -> HTTPException:
         """Create a 413 Payload Too Large response."""
         message = "Request payload is too large"
         details = {}
@@ -324,7 +328,9 @@ class ErrorResponseBuilder:
         )
 
     @staticmethod
-    def service_unavailable(service: str | None = None, message: str | None = None) -> HTTPException:
+    def service_unavailable(
+        service: str | None = None, message: str | None = None
+    ) -> HTTPException:
         """Create a 503 Service Unavailable response."""
         error_message = message or "Service temporarily unavailable"
         if service:

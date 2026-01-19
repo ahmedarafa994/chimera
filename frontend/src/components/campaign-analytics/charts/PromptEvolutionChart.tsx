@@ -1177,13 +1177,5 @@ export function DetailedPromptEvolutionChart({
 }
 
 // =============================================================================
-// Export Types
+// Export Types (Note: These types are already exported where they're defined)
 // =============================================================================
-
-export type {
-  PromptEvolutionDataPoint,
-  TrendLinePoint,
-  PromptEvolutionChartProps,
-  PromptEvolutionFilter,
-  CorrelationResult,
-};

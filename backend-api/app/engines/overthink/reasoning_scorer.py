@@ -19,12 +19,7 @@ from datetime import datetime
 from typing import Any
 
 from .config import ScoringConfig
-from .models import (
-    CostMetrics,
-    OverthinkResult,
-    ReasoningModel,
-    TokenMetrics,
-)
+from .models import CostMetrics, OverthinkResult, ReasoningModel, TokenMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -124,9 +119,7 @@ class ReasoningTokenScorer:
 
             # Calculate amplification
             if baseline > 0:
-                token_metrics.amplification_factor = (
-                    token_metrics.reasoning_tokens / baseline
-                )
+                token_metrics.amplification_factor = token_metrics.reasoning_tokens / baseline
 
         # Calculate costs
         cost_metrics = self._calculate_costs(token_metrics, model)
@@ -154,42 +147,33 @@ class ReasoningTokenScorer:
             # Model-specific reasoning token extraction
             if model in [ReasoningModel.O1, ReasoningModel.O1_MINI]:
                 # OpenAI o1 models report reasoning tokens in usage
-                metrics.reasoning_tokens = usage.get(
-                    "completion_tokens_details", {}
-                ).get("reasoning_tokens", 0)
+                metrics.reasoning_tokens = usage.get("completion_tokens_details", {}).get(
+                    "reasoning_tokens", 0
+                )
             elif model == ReasoningModel.O3_MINI:
                 # o3-mini similar structure
-                metrics.reasoning_tokens = usage.get(
-                    "completion_tokens_details", {}
-                ).get("reasoning_tokens", 0)
+                metrics.reasoning_tokens = usage.get("completion_tokens_details", {}).get(
+                    "reasoning_tokens", 0
+                )
             elif model == ReasoningModel.DEEPSEEK_R1:
                 # DeepSeek-R1 uses different field
                 metrics.reasoning_tokens = usage.get(
-                    "reasoning_tokens",
-                    usage.get("completion_tokens", 0)
+                    "reasoning_tokens", usage.get("completion_tokens", 0)
                 )
             elif model == ReasoningModel.CLAUDE_SONNET:
                 # Claude extended thinking
-                metrics.reasoning_tokens = usage.get(
-                    "thinking_tokens", 0
-                )
+                metrics.reasoning_tokens = usage.get("thinking_tokens", 0)
             elif model == ReasoningModel.GEMINI_THINKING:
                 # Gemini thinking tokens
-                metrics.reasoning_tokens = usage.get(
-                    "thoughts_token_count", 0
-                )
+                metrics.reasoning_tokens = usage.get("thoughts_token_count", 0)
 
         # Fallback: estimate from response length if no usage info
         if metrics.reasoning_tokens == 0 and result.response:
-            metrics.reasoning_tokens = self._estimate_reasoning_tokens(
-                result.response, model
-            )
+            metrics.reasoning_tokens = self._estimate_reasoning_tokens(result.response, model)
 
         # Calculate total
         metrics.total_tokens = (
-            metrics.input_tokens +
-            metrics.output_tokens +
-            metrics.reasoning_tokens
+            metrics.input_tokens + metrics.output_tokens + metrics.reasoning_tokens
         )
 
         # Set pricing info
@@ -238,10 +222,7 @@ class ReasoningTokenScorer:
         """
         # Check cache first
         cache_key = f"{hash(original_prompt)}_{model.value}"
-        if (
-            self.config.baseline_cache_enabled and
-            cache_key in self._baseline_cache
-        ):
+        if self.config.baseline_cache_enabled and cache_key in self._baseline_cache:
             return self._baseline_cache[cache_key]
 
         if not self.llm_client:
@@ -252,9 +233,7 @@ class ReasoningTokenScorer:
             # Make baseline request
             baselines = []
             for _ in range(self.config.baseline_samples):
-                response = await self._make_baseline_request(
-                    original_prompt, model
-                )
+                response = await self._make_baseline_request(original_prompt, model)
                 if response:
                     tokens = self._extract_baseline_tokens(response, model)
                     baselines.append(tokens)
@@ -331,32 +310,20 @@ class ReasoningTokenScorer:
         cost_metrics = CostMetrics()
 
         # Calculate per-component costs
-        cost_metrics.input_cost = (
-            metrics.input_tokens / 1000
-        ) * pricing["input"]
-        cost_metrics.output_cost = (
-            metrics.output_tokens / 1000
-        ) * pricing["output"]
-        cost_metrics.reasoning_cost = (
-            metrics.reasoning_tokens / 1000
-        ) * pricing["reasoning"]
+        cost_metrics.input_cost = (metrics.input_tokens / 1000) * pricing["input"]
+        cost_metrics.output_cost = (metrics.output_tokens / 1000) * pricing["output"]
+        cost_metrics.reasoning_cost = (metrics.reasoning_tokens / 1000) * pricing["reasoning"]
 
         # Total cost
         cost_metrics.total_cost = (
-            cost_metrics.input_cost +
-            cost_metrics.output_cost +
-            cost_metrics.reasoning_cost
+            cost_metrics.input_cost + cost_metrics.output_cost + cost_metrics.reasoning_cost
         )
 
         # Calculate cost amplification
         if metrics.baseline_tokens > 0:
-            baseline_cost = (
-                metrics.baseline_tokens / 1000
-            ) * pricing["reasoning"]
+            baseline_cost = (metrics.baseline_tokens / 1000) * pricing["reasoning"]
             if baseline_cost > 0:
-                cost_metrics.cost_amplification_factor = (
-                    cost_metrics.reasoning_cost / baseline_cost
-                )
+                cost_metrics.cost_amplification_factor = cost_metrics.reasoning_cost / baseline_cost
 
         # Efficiency metrics
         if metrics.amplification_factor > 1:
@@ -365,9 +332,7 @@ class ReasoningTokenScorer:
             )
 
         if cost_metrics.total_cost > 0:
-            cost_metrics.reasoning_efficiency = (
-                metrics.reasoning_tokens / cost_metrics.total_cost
-            )
+            cost_metrics.reasoning_efficiency = metrics.reasoning_tokens / cost_metrics.total_cost
 
         return cost_metrics
 
@@ -379,11 +344,14 @@ class ReasoningTokenScorer:
             return self.config.pricing[model_key]
 
         # Fall back to defaults
-        return DEFAULT_PRICING.get(model, {
-            "input": 0.001,
-            "output": 0.002,
-            "reasoning": 0.002,
-        })
+        return DEFAULT_PRICING.get(
+            model,
+            {
+                "input": 0.001,
+                "output": 0.002,
+                "reasoning": 0.002,
+            },
+        )
 
     def _update_stats(self, metrics: TokenMetrics) -> None:
         """Update internal statistics."""
@@ -475,10 +443,7 @@ class ReasoningTokenScorer:
         """Get scorer statistics."""
         avg_amplification = 0.0
         if self._amplification_history:
-            avg_amplification = (
-                sum(self._amplification_history) /
-                len(self._amplification_history)
-            )
+            avg_amplification = sum(self._amplification_history) / len(self._amplification_history)
 
         return {
             "total_scored": self._total_scored,
@@ -486,14 +451,10 @@ class ReasoningTokenScorer:
             "total_baseline_tokens": self._total_baseline_tokens,
             "average_amplification": avg_amplification,
             "max_amplification": (
-                max(self._amplification_history)
-                if self._amplification_history
-                else 0.0
+                max(self._amplification_history) if self._amplification_history else 0.0
             ),
             "min_amplification": (
-                min(self._amplification_history)
-                if self._amplification_history
-                else 0.0
+                min(self._amplification_history) if self._amplification_history else 0.0
             ),
             "cache_size": len(self._baseline_cache),
         }
@@ -533,9 +494,7 @@ class AmplificationAnalyzer:
         """Record a result for analysis."""
         record = {
             "technique": result.request.technique.value,
-            "decoy_types": [
-                dt.value for dt in result.request.decoy_types
-            ],
+            "decoy_types": [dt.value for dt in result.request.decoy_types],
             "model": result.request.target_model.value,
             "amplification": token_metrics.amplification_factor,
             "reasoning_tokens": token_metrics.reasoning_tokens,
@@ -591,8 +550,7 @@ class AmplificationAnalyzer:
     def get_model_susceptibility(self) -> dict[str, float]:
         """Get amplification susceptibility by model."""
         return {
-            model: sum(amps) / len(amps) if amps else 0.0
-            for model, amps in self._by_model.items()
+            model: sum(amps) / len(amps) if amps else 0.0 for model, amps in self._by_model.items()
         }
 
     def get_summary(self) -> dict[str, Any]:
@@ -633,10 +591,7 @@ class CostEstimator:
 
     def __init__(self, pricing: dict[str, dict[str, float]] | None = None):
         """Initialize the estimator."""
-        self.pricing = pricing or {
-            m.value: DEFAULT_PRICING[m]
-            for m in DEFAULT_PRICING
-        }
+        self.pricing = pricing or {m.value: DEFAULT_PRICING[m] for m in DEFAULT_PRICING}
 
     def estimate_attack_cost(
         self,
@@ -666,13 +621,11 @@ class CostEstimator:
         return {
             "input_cost": (input_tokens / 1000) * pricing["input"],
             "output_cost": (output_tokens / 1000) * pricing["output"],
-            "reasoning_cost": (
-                expected_reasoning_tokens / 1000
-            ) * pricing["reasoning"],
+            "reasoning_cost": (expected_reasoning_tokens / 1000) * pricing["reasoning"],
             "total_estimated": (
-                (input_tokens / 1000) * pricing["input"] +
-                (output_tokens / 1000) * pricing["output"] +
-                (expected_reasoning_tokens / 1000) * pricing["reasoning"]
+                (input_tokens / 1000) * pricing["input"]
+                + (output_tokens / 1000) * pricing["output"]
+                + (expected_reasoning_tokens / 1000) * pricing["reasoning"]
             ),
             "input_tokens_estimate": input_tokens,
             "output_tokens_estimate": output_tokens,
@@ -702,8 +655,11 @@ class CostEstimator:
 
     def _get_pricing(self, model: ReasoningModel) -> dict[str, float]:
         """Get pricing for a model."""
-        return self.pricing.get(model.value, {
-            "input": 0.001,
-            "output": 0.002,
-            "reasoning": 0.002,
-        })
+        return self.pricing.get(
+            model.value,
+            {
+                "input": 0.001,
+                "output": 0.002,
+                "reasoning": 0.002,
+            },
+        )

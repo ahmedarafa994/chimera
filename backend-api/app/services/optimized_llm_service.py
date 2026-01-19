@@ -24,11 +24,7 @@ from redis import asyncio as aioredis
 from app.core.config import settings
 from app.core.logging import logger
 from app.domain.interfaces import LLMProvider
-from app.domain.models import (
-    GenerationConfig,
-    PromptRequest,
-    PromptResponse,
-)
+from app.domain.models import GenerationConfig, PromptRequest, PromptResponse
 from app.services.llm_service import LLMService as BaseLLMService
 
 
@@ -162,8 +158,7 @@ class AdvancedCache:
                         if len(self._memory_cache) >= self.config.memory_cache_size:
                             # Remove oldest entry
                             oldest_key = min(
-                                self._memory_cache.keys(),
-                                key=lambda k: self._memory_cache[k][1]
+                                self._memory_cache.keys(), key=lambda k: self._memory_cache[k][1]
                             )
                             del self._memory_cache[oldest_key]
                             self._stats["evictions"] += 1
@@ -194,10 +189,7 @@ class AdvancedCache:
         async with self._lock:
             if len(self._memory_cache) >= self.config.memory_cache_size:
                 # LRU eviction
-                oldest_key = min(
-                    self._memory_cache.keys(),
-                    key=lambda k: self._memory_cache[k][1]
-                )
+                oldest_key = min(self._memory_cache.keys(), key=lambda k: self._memory_cache[k][1])
                 del self._memory_cache[oldest_key]
                 self._stats["evictions"] += 1
 
@@ -207,11 +199,7 @@ class AdvancedCache:
         if self._redis_client:
             try:
                 response_json = response.model_dump_json()
-                await self._redis_client.setex(
-                    key,
-                    self.config.redis_ttl,
-                    response_json
-                )
+                await self._redis_client.setex(key, self.config.redis_ttl, response_json)
             except Exception as e:
                 logger.warning(f"Redis cache write failed: {e}")
 
@@ -236,17 +224,13 @@ class AdvancedCache:
 
     def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
-        total_requests = sum([
-            self._stats["memory_hits"],
-            self._stats["memory_misses"]
-        ])
+        total_requests = sum([self._stats["memory_hits"], self._stats["memory_misses"]])
 
         return {
             **self._stats,
             "memory_size": len(self._memory_cache),
             "memory_hit_rate": (
-                self._stats["memory_hits"] / total_requests
-                if total_requests > 0 else 0
+                self._stats["memory_hits"] / total_requests if total_requests > 0 else 0
             ),
             "redis_enabled": self._redis_client is not None,
         }
@@ -331,20 +315,14 @@ class BatchProcessor:
         }
 
     async def submit_request(
-        self,
-        request: PromptRequest,
-        provider_func: Callable,
-        priority: int = 0
+        self, request: PromptRequest, provider_func: Callable, priority: int = 0
     ) -> PromptResponse:
         """Submit a request for batched processing."""
         self._stats["total_requests"] += 1
 
         batch_key = self._get_batch_key(request)
         batch_request = BatchRequest(
-            request_id=str(time.time()),
-            request=request,
-            future=asyncio.Future(),
-            priority=priority
+            request_id=str(time.time()), request=request, future=asyncio.Future(), priority=priority
         )
 
         async with self._lock:
@@ -352,10 +330,7 @@ class BatchProcessor:
 
             # Sort by priority if enabled
             if self.config.enable_priority_batching:
-                self._pending_batches[batch_key].sort(
-                    key=lambda x: x.priority,
-                    reverse=True
-                )
+                self._pending_batches[batch_key].sort(key=lambda x: x.priority, reverse=True)
 
             # Check if we should process this batch
             should_process = (
@@ -367,9 +342,7 @@ class BatchProcessor:
                 # Schedule batch processing
                 self._batch_timers[batch_key] = asyncio.get_event_loop().call_later(
                     self.config.batch_timeout_ms / 1000,
-                    lambda: asyncio.create_task(
-                        self._process_batch(batch_key, provider_func)
-                    )
+                    lambda: asyncio.create_task(self._process_batch(batch_key, provider_func)),
                 )
 
         return await batch_request.future
@@ -400,9 +373,7 @@ class BatchProcessor:
             # Process requests in parallel
             tasks = []
             for batch_req in batch_requests:
-                task = asyncio.create_task(
-                    self._process_single_request(batch_req, provider_func)
-                )
+                task = asyncio.create_task(self._process_single_request(batch_req, provider_func))
                 tasks.append(task)
 
             await asyncio.gather(*tasks, return_exceptions=True)
@@ -412,9 +383,7 @@ class BatchProcessor:
                 self._active_batches -= 1
 
     async def _process_single_request(
-        self,
-        batch_req: BatchRequest,
-        provider_func: Callable
+        self, batch_req: BatchRequest, provider_func: Callable
     ) -> None:
         """Process a single request within a batch."""
         try:
@@ -431,7 +400,8 @@ class BatchProcessor:
             "active_batches": self._active_batches,
             "batch_efficiency": (
                 self._stats["batched_requests"] / self._stats["total_requests"]
-                if self._stats["total_requests"] > 0 else 0
+                if self._stats["total_requests"] > 0
+                else 0
             ),
         }
 
@@ -511,9 +481,7 @@ class OptimizedLLMService(BaseLLMService):
 
         # Create connection pool for this provider
         normalized_name = self._normalize_provider_name(name) or name
-        self._connection_pools[normalized_name] = ConnectionPool(
-            provider, self.pool_config
-        )
+        self._connection_pools[normalized_name] = ConnectionPool(provider, self.pool_config)
 
         logger.info(f"Provider {normalized_name} registered with connection pool")
 
@@ -543,7 +511,7 @@ class OptimizedLLMService(BaseLLMService):
             response = await self._batch_processor.submit_request(
                 request,
                 lambda req: self._execute_with_pooling(circuit_name, provider, req),
-                priority=1 if request.config and request.config.temperature == 0 else 0
+                priority=1 if request.config and request.config.temperature == 0 else 0,
             )
 
             # Cache the response
@@ -560,10 +528,7 @@ class OptimizedLLMService(BaseLLMService):
             raise e
 
     async def _execute_with_pooling(
-        self,
-        circuit_name: str,
-        provider: LLMProvider,
-        request: PromptRequest
+        self, circuit_name: str, provider: LLMProvider, request: PromptRequest
     ) -> PromptResponse:
         """Execute request using connection pooling and circuit breaker."""
         # Get connection from pool
@@ -579,9 +544,7 @@ class OptimizedLLMService(BaseLLMService):
                 await pool.return_connection(connection)
         else:
             # Fallback to direct execution
-            return await self._call_with_circuit_breaker(
-                circuit_name, provider.generate, request
-            )
+            return await self._call_with_circuit_breaker(circuit_name, provider.generate, request)
 
     def _update_performance_stats(self, start_time: float, cached: bool = False) -> None:
         """Update performance statistics."""
@@ -594,7 +557,9 @@ class OptimizedLLMService(BaseLLMService):
             # Update average response time (excluding cached responses)
             non_cached_times = [t for t in self._request_times if t > 1]  # Cached are usually <1ms
             if non_cached_times:
-                self._performance_stats["avg_response_time_ms"] = sum(non_cached_times) / len(non_cached_times)
+                self._performance_stats["avg_response_time_ms"] = sum(non_cached_times) / len(
+                    non_cached_times
+                )
 
     def _track_token_usage(self, response: PromptResponse) -> None:
         """Track token usage for cost analysis."""
@@ -614,9 +579,8 @@ class OptimizedLLMService(BaseLLMService):
                 total_cache_requests = cache_stats["memory_hits"] + cache_stats["memory_misses"]
                 if total_cache_requests > 0:
                     self._performance_stats["cache_hit_rate"] = (
-                        (cache_stats["memory_hits"] + cache_stats["redis_hits"])
-                        / total_cache_requests
-                    )
+                        cache_stats["memory_hits"] + cache_stats["redis_hits"]
+                    ) / total_cache_requests
 
                 # Log performance metrics
                 logger.info(
@@ -699,7 +663,7 @@ class OptimizedLLMService(BaseLLMService):
         # Process in smaller batches to avoid overwhelming the service
         batch_size = 5
         for i in range(0, len(tasks), batch_size):
-            batch = tasks[i:i + batch_size]
+            batch = tasks[i : i + batch_size]
             try:
                 await asyncio.gather(*batch, return_exceptions=True)
             except Exception as e:

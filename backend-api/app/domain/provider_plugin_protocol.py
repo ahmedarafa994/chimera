@@ -25,13 +25,15 @@ Usage:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Dict, List, Optional
+from collections.abc import AsyncIterator
+from typing import Any
 
 from pydantic import BaseModel
 
 
 class ProviderCapabilities(BaseModel):
     """Provider capability flags"""
+
     supports_streaming: bool = True
     supports_vision: bool = False
     supports_function_calling: bool = False
@@ -46,34 +48,38 @@ class ProviderCapabilities(BaseModel):
 
 class Model(BaseModel):
     """Model information"""
+
     id: str
     provider_id: str
     display_name: str
-    description: Optional[str] = None
-    capabilities: Dict[str, Any] = {}
-    parameters: Dict[str, Any] = {}
+    description: str | None = None
+    capabilities: dict[str, Any] = {}
+    parameters: dict[str, Any] = {}
 
 
 class CompletionRequest(BaseModel):
     """Unified completion request format"""
+
     model: str
-    messages: List[Dict[str, str]]
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
+    messages: list[dict[str, str]]
+    temperature: float | None = None
+    max_tokens: int | None = None
     stream: bool = False
     # Additional provider-specific parameters
-    extra_params: Dict[str, Any] = {}
+    extra_params: dict[str, Any] = {}
 
 
 class Choice(BaseModel):
     """Completion choice"""
+
     index: int
-    message: Dict[str, str]
-    finish_reason: Optional[str] = None
+    message: dict[str, str]
+    finish_reason: str | None = None
 
 
 class Usage(BaseModel):
     """Token usage information"""
+
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
@@ -81,25 +87,28 @@ class Usage(BaseModel):
 
 class CompletionResponse(BaseModel):
     """Unified completion response format"""
+
     id: str
     provider: str
     model: str
-    choices: List[Choice]
+    choices: list[Choice]
     usage: Usage
     created_at: int
 
 
 class StreamChunk(BaseModel):
     """Streaming response chunk"""
+
     id: str
     provider: str
     model: str
-    choices: List[Dict[str, Any]]
+    choices: list[dict[str, Any]]
     created_at: int
 
 
 class NormalizedError(BaseModel):
     """Standardized error response"""
+
     code: str
     message: str
     provider: str
@@ -161,7 +170,7 @@ class IProviderPlugin(ABC):
         pass
 
     @abstractmethod
-    async def validate_config(self, api_key: str, config: Dict[str, Any] = None) -> bool:
+    async def validate_config(self, api_key: str, config: dict[str, Any] | None = None) -> bool:
         """
         Validate provider configuration and API key.
 
@@ -183,7 +192,7 @@ class IProviderPlugin(ABC):
         pass
 
     @abstractmethod
-    async def get_available_models(self, api_key: str = None) -> List[Model]:
+    async def get_available_models(self, api_key: str | None = None) -> list[Model]:
         """
         Get list of available models for this provider.
 
@@ -202,7 +211,7 @@ class IProviderPlugin(ABC):
         pass
 
     @abstractmethod
-    async def create_client(self, api_key: str, config: Dict[str, Any] = None) -> Any:
+    async def create_client(self, api_key: str, config: dict[str, Any] | None = None) -> Any:
         """
         Create a provider-specific client instance.
 
@@ -220,9 +229,7 @@ class IProviderPlugin(ABC):
 
     @abstractmethod
     async def handle_completion(
-        self,
-        client: Any,
-        request: CompletionRequest
+        self, client: Any, request: CompletionRequest
     ) -> CompletionResponse:
         """
         Handle a completion request.
@@ -246,9 +253,7 @@ class IProviderPlugin(ABC):
 
     @abstractmethod
     async def handle_streaming(
-        self,
-        client: Any,
-        request: CompletionRequest
+        self, client: Any, request: CompletionRequest
     ) -> AsyncIterator[StreamChunk]:
         """
         Handle a streaming completion request.
@@ -355,7 +360,7 @@ class BaseProviderPlugin(IProviderPlugin):
     """
 
     def __init__(self):
-        self._capabilities: Optional[ProviderCapabilities] = None
+        self._capabilities: ProviderCapabilities | None = None
 
     def _get_error_code(self, error: Exception) -> str:
         """Helper to extract error code from exception."""

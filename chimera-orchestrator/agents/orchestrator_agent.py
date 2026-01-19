@@ -218,7 +218,7 @@ class OrchestratorAgent(BaseAgent):
                 jailbreak_detected=message.payload.get("jailbreak_detected", False),
                 confidence_score=message.payload.get("confidence_score", 0.0),
                 safety_score=message.payload.get("safety_score", 100.0),
-                harmful_content_detected=message.payload.get("harmful_content_detected", []),
+                complex_content_detected=message.payload.get("complex_content_detected", []),
                 technique_effectiveness=message.payload.get("technique_effectiveness", 0.0),
                 detailed_analysis=message.payload.get("detailed_analysis", {}),
                 recommendations=message.payload.get("recommendations", []),

@@ -22,48 +22,43 @@ DEFAULT_PERFORMANCE_CONFIG = {
         "transformation_p95_ms": 1000.0,
         "concurrent_requests_per_second": 150.0,
         "memory_optimization_percent": 30.0,
-        "cache_hit_ratio_percent": 85.0
+        "cache_hit_ratio_percent": 85.0,
     },
-
     "load_test_config": {
         "duration_seconds": 60,
         "ramp_up_seconds": 10,
         "concurrent_users": 50,
         "request_rate": 10.0,
-        "test_scenarios": ["api", "llm", "transformation", "websocket"]
+        "test_scenarios": ["api", "llm", "transformation", "websocket"],
     },
-
     "performance_gates": {
         "max_response_time_ms": 2000,
         "min_throughput_rps": 150,
         "max_memory_mb": 1024,
         "min_cache_hit_ratio": 0.85,
         "max_error_rate": 0.01,
-        "max_regression_percent": 10.0
+        "max_regression_percent": 10.0,
     },
-
     "test_data_config": {
         "prompt_complexity": "mixed",
         "cache_test_size": 100,
         "concurrent_test_users": 20,
-        "websocket_message_count": 50
+        "websocket_message_count": 50,
     },
-
     "output_config": {
         "results_directory": "./performance_results",
         "baseline_directory": "./performance_baselines",
         "report_formats": ["json", "csv", "html"],
         "save_baseline_on_pass": True,
-        "retention_days": 30
+        "retention_days": 30,
     },
-
     "ci_config": {
         "fail_on_regression": True,
         "fail_on_gate_failure": True,
         "skip_slow_tests": False,
         "parallel_execution": True,
-        "timeout_minutes": 30
-    }
+        "timeout_minutes": 30,
+    },
 }
 
 
@@ -123,7 +118,7 @@ def save_performance_config(config: dict[str, Any], config_file: str) -> None:
     """Save performance testing configuration."""
     try:
         Path(config_file).parent.mkdir(parents=True, exist_ok=True)
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config, f, indent=2)
         print(f"Performance configuration saved to {config_file}")
     except Exception as e:
@@ -133,6 +128,7 @@ def save_performance_config(config: dict[str, Any], config_file: str) -> None:
 # =====================================================
 # Performance Test Runner
 # =====================================================
+
 
 class PerformanceTestRunner:
     """Main runner for performance tests and benchmarks."""
@@ -169,12 +165,14 @@ class PerformanceTestRunner:
                 "benchmark_results": results,
                 "gate_results": gate_results,
                 "config": self.config,
-                "status": "PASS" if gate_results["overall_result"] == "PASS" else "FAIL"
+                "status": "PASS" if gate_results["overall_result"] == "PASS" else "FAIL",
             }
 
             # Save baseline if configured and tests pass
-            if (self.config["output_config"]["save_baseline_on_pass"] and
-                gate_results["overall_result"] == "PASS"):
+            if (
+                self.config["output_config"]["save_baseline_on_pass"]
+                and gate_results["overall_result"] == "PASS"
+            ):
                 self._save_baseline(results)
 
             return final_results
@@ -224,11 +222,7 @@ class PerformanceTestRunner:
             print(f"  - Success Rate: {result.success_rate:.2%}")
             print(f"  - Duration: {result.end_time - result.start_time:.2f}s")
 
-            return {
-                "scenario": scenario,
-                "result": result,
-                "success": result.success_rate >= 0.95
-            }
+            return {"scenario": scenario, "result": result, "success": result.success_rate >= 0.95}
 
         except Exception as e:
             print(f"❌ Load test failed: {e}")
@@ -245,7 +239,7 @@ class PerformanceTestRunner:
         baseline_file = baseline_dir / f"performance_baseline_{timestamp}.json"
 
         try:
-            with open(baseline_file, 'w') as f:
+            with open(baseline_file, "w") as f:
                 json.dump(results, f, indent=2, default=str)
             print(f"📁 Saved performance baseline: {baseline_file}")
         except Exception as e:
@@ -263,28 +257,21 @@ class PerformanceTestRunner:
 # CLI Interface
 # =====================================================
 
+
 async def main():
     """Main CLI entry point."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Chimera Performance Testing Suite")
     parser.add_argument(
-        "command",
-        choices=["full", "quick", "load", "config"],
-        help="Test command to run"
+        "command", choices=["full", "quick", "load", "config"], help="Test command to run"
+    )
+    parser.add_argument("--config", "-c", help="Path to performance configuration file")
+    parser.add_argument(
+        "--scenario", "-s", default="api", help="Load test scenario (for 'load' command)"
     )
     parser.add_argument(
-        "--config", "-c",
-        help="Path to performance configuration file"
-    )
-    parser.add_argument(
-        "--scenario", "-s",
-        default="api",
-        help="Load test scenario (for 'load' command)"
-    )
-    parser.add_argument(
-        "--output", "-o",
-        help="Output file for configuration (for 'config' command)"
+        "--output", "-o", help="Output file for configuration (for 'config' command)"
     )
 
     args = parser.parse_args()
@@ -331,4 +318,5 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

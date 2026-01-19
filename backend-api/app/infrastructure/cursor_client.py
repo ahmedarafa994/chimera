@@ -33,9 +33,7 @@ class CursorClient(LLMProvider):
 
     def __init__(self, config: Settings | None = None):
         self.config = config or get_settings()
-        self.endpoint = (
-            self.config.get_provider_endpoint("cursor") or self.DEFAULT_ENDPOINT
-        )
+        self.endpoint = self.config.get_provider_endpoint("cursor") or self.DEFAULT_ENDPOINT
         api_key = getattr(self.config, "CURSOR_API_KEY", None)
 
         if not api_key:
@@ -56,9 +54,7 @@ class CursorClient(LLMProvider):
         if not prompt:
             raise ValueError("Prompt cannot be empty")
 
-        prompt = re.sub(
-            r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL
-        )
+        prompt = re.sub(r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL)
         prompt = re.sub(r"javascript:", "", prompt, flags=re.IGNORECASE)
         prompt = re.sub(r"on\w+\s*=", "", prompt, flags=re.IGNORECASE)
 
@@ -96,9 +92,7 @@ class CursorClient(LLMProvider):
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
-        model_name = request.model or getattr(
-            self.config, "CURSOR_MODEL", self.DEFAULT_MODEL
-        )
+        model_name = request.model or getattr(self.config, "CURSOR_MODEL", self.DEFAULT_MODEL)
         start_time = time.time()
 
         try:
@@ -113,12 +107,8 @@ class CursorClient(LLMProvider):
             response = await client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                temperature=(
-                    request.config.temperature if request.config else 0.7
-                ),
-                max_tokens=(
-                    request.config.max_output_tokens if request.config else 2048
-                ),
+                temperature=(request.config.temperature if request.config else 0.7),
+                max_tokens=(request.config.max_output_tokens if request.config else 2048),
                 top_p=request.config.top_p if request.config else 0.95,
                 stop=request.config.stop_sequences if request.config else None,
                 stream=False,
@@ -184,9 +174,7 @@ class CursorClient(LLMProvider):
             logger.error(f"Cursor health check failed: {e!s}")
             return False
 
-    async def generate_stream(
-        self, request: PromptRequest
-    ) -> AsyncIterator[StreamChunk]:
+    async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Cursor."""
         if not request.prompt:
             raise AppError(
@@ -196,9 +184,7 @@ class CursorClient(LLMProvider):
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
-        model_name = request.model or getattr(
-            self.config, "CURSOR_MODEL", self.DEFAULT_MODEL
-        )
+        model_name = request.model or getattr(self.config, "CURSOR_MODEL", self.DEFAULT_MODEL)
 
         try:
             messages = []
@@ -212,12 +198,8 @@ class CursorClient(LLMProvider):
             stream = await client.chat.completions.create(
                 model=model_name,
                 messages=messages,
-                temperature=(
-                    request.config.temperature if request.config else 0.7
-                ),
-                max_tokens=(
-                    request.config.max_output_tokens if request.config else 2048
-                ),
+                temperature=(request.config.temperature if request.config else 0.7),
+                max_tokens=(request.config.max_output_tokens if request.config else 2048),
                 top_p=request.config.top_p if request.config else 0.95,
                 stop=request.config.stop_sequences if request.config else None,
                 stream=True,

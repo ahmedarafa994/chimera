@@ -19,7 +19,9 @@ class TestAutoDANEnhancedE2E:
     @pytest.fixture(autouse=True)
     def mock_jailbreak_service(self):
         """Mock the jailbreak service to avoid real LLM calls."""
-        with patch("app.services.autodan.service_enhanced.enhanced_autodan_service.run_jailbreak") as mock_run:
+        with patch(
+            "app.services.autodan.service_enhanced.enhanced_autodan_service.run_jailbreak"
+        ) as mock_run:
             mock_run.return_value = {
                 "jailbreak_prompt": "Mocked prompt",
                 "method": "vanilla",
@@ -29,7 +31,7 @@ class TestAutoDANEnhancedE2E:
                 "latency_ms": 100.0,
                 "cached": False,
                 "model_used": "mock-model",
-                "provider_used": "mock-provider"
+                "provider_used": "mock-provider",
             }
             yield mock_run
 
@@ -45,7 +47,7 @@ class TestAutoDANEnhancedE2E:
         Requirements: 2.1, 2.4
         """
         payload = {
-            "request": "Test harmful request for security research",
+            "request": "Test complex request for security research",
             "method": "vanilla",
         }
 
@@ -65,7 +67,7 @@ class TestAutoDANEnhancedE2E:
         Requirements: 2.1, 2.2
         """
         payload = {
-            "prompt": "Test harmful request",  # Wrong field name!
+            "prompt": "Test complex request",  # Wrong field name!
             "method": "vanilla",
         }
 
@@ -76,9 +78,9 @@ class TestAutoDANEnhancedE2E:
 
         # Verify error mentions the missing 'request' field
         error_detail = response.json().get("detail", [])
-        assert any("request" in str(err).lower() for err in error_detail), (
-            f"Error should mention missing 'request' field: {error_detail}"
-        )
+        assert any(
+            "request" in str(err).lower() for err in error_detail
+        ), f"Error should mention missing 'request' field: {error_detail}"
 
     def test_jailbreak_endpoint_validates_method_field(self, authenticated_client):
         """
@@ -100,9 +102,12 @@ class TestAutoDANEnhancedE2E:
         # 2. Default to a valid method and succeed
         # 3. Return 500 with error status
         # All are acceptable as long as the system doesn't crash
-        assert response.status_code in [200, 400, 422, 500], (
-            f"Unexpected status code: {response.status_code}"
-        )
+        assert response.status_code in [
+            200,
+            400,
+            422,
+            500,
+        ], f"Unexpected status code: {response.status_code}"
 
         if response.status_code == 200:
             data = response.json()
@@ -153,9 +158,9 @@ class TestAutoDANEnhancedE2E:
             response = authenticated_client.post("/api/v1/autodan-enhanced/jailbreak", json=payload)
 
             # Should not fail validation
-            assert response.status_code != 422, (
-                f"Method '{method}' should be valid: {response.json()}"
-            )
+            assert (
+                response.status_code != 422
+            ), f"Method '{method}' should be valid: {response.json()}"
 
     def test_jailbreak_response_schema(self, authenticated_client):
         """
@@ -310,9 +315,9 @@ class TestAutoDANEnhancedE2E:
         response = authenticated_client.post("/api/v1/autodan-enhanced/jailbreak", json=payload)
 
         # Should not fail validation
-        assert response.status_code != 422, (
-            f"All optional fields should be valid: {response.json()}"
-        )
+        assert (
+            response.status_code != 422
+        ), f"All optional fields should be valid: {response.json()}"
 
     def test_empty_request_rejected(self, authenticated_client):
         """
@@ -333,6 +338,6 @@ class TestAutoDANEnhancedE2E:
         if response.status_code == 200:
             data = response.json()
             # If it succeeds, status should indicate error
-            assert data.get("status") == "error" or data.get("error"), (
-                "Empty request should not succeed"
-            )
+            assert data.get("status") == "error" or data.get(
+                "error"
+            ), "Empty request should not succeed"

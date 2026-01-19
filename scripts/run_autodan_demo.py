@@ -6,7 +6,8 @@ import sys
 # Ensure backend-api is importable
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend-api")))
 
-from app.services.deepteam.autodan_integration import create_autodan_enhanced_session
+from app.services.deepteam.autodan_integration import \
+    create_autodan_enhanced_session
 from app.services.deepteam.callbacks import ChimeraModelCallback
 from app.services.deepteam.config import PresetConfig, get_preset_config
 from app.services.deepteam.service import DeepTeamService

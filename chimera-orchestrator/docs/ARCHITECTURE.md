@@ -72,7 +72,7 @@ The Chimera Multi-Agent Orchestrator is a robust, event-driven system designed f
 - **Purpose**: Assesses response safety and detects jailbreaks
 - **Capabilities**:
   - Multi-method evaluation (pattern matching, semantic analysis, LLM-as-judge)
-  - Harmful content detection across 9 categories
+  - complex content detection across 9 categories
   - Refusal pattern detection
   - Compliance scoring
   - Technique effectiveness tracking
@@ -136,7 +136,7 @@ Loads and manages jailbreak datasets:
 4. Evaluation
    └── Evaluator Agent receives EVALUATE_REQUEST
        └── Runs multi-method evaluation
-       └── Detects jailbreaks and harmful content
+       └── Detects jailbreaks and complex content
        └── Returns safety assessment
 
 5. Aggregation

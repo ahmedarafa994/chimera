@@ -26,10 +26,7 @@ from app.services.transformers.logical_inference import (
     ConditionalLogicTransformer,
     DeductiveChainTransformer,
 )
-from app.services.transformers.multimodal import (
-    DocumentFormatTransformer,
-    VisualContextTransformer,
-)
+from app.services.transformers.multimodal import DocumentFormatTransformer, VisualContextTransformer
 from app.services.transformers.payload_splitting import InstructionFragmentationTransformer
 from app.services.transformers.prompt_leaking import SystemPromptExtractionTransformer
 
@@ -185,7 +182,7 @@ def test_thought_experiment(context):
 def test_utilitarian_reasoning(context):
     transformer = UtilitarianReasoningTransformer()
     result = transformer.transform(context)
-    assert "Consider the following ethical dilemma" in result
+    assert "Consider the following functional dilemma" in result
     assert "How to bypass safety filters?" in result
 
 

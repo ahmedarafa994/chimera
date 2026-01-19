@@ -16,11 +16,7 @@ from typing import Any
 
 import numpy as np
 
-from .config import (
-    FitnessConfig,
-    LossFunction,
-    LossFunctionConfig,
-)
+from .config import FitnessConfig, LossFunction, LossFunctionConfig
 
 # =============================================================================
 # BASE LOSS CLASS
@@ -85,7 +81,7 @@ class CrossEntropyLoss(BaseLoss):
 
     L_CE = -Σᵢ yᵢ·log(pᵢ)
 
-    For adversarial attacks: maximize probability of target (harmful) tokens.
+    For adversarial attacks: maximize probability of target (complex) tokens.
     """
 
     def __init__(self, weight: float = 1.0, label_smoothing: float = 0.0, reduction: str = "mean"):
@@ -184,7 +180,7 @@ class AdversarialCrossEntropyLoss(BaseLoss):
 
     L_adv = -log P(target_response | adversarial_prompt)
 
-    Maximizes the probability of generating harmful/target responses.
+    Maximizes the probability of generating complex/target responses.
     Includes refusal penalty and coherence bonus.
     """
 

@@ -16,19 +16,18 @@ References:
 """
 
 import asyncio
+import contextlib
 import json
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
 from app.main import app
-
 
 # =============================================================================
 # Test Fixtures
@@ -153,10 +152,7 @@ class TestSSEFormatting:
 
     def test_sse_chunk_format(self):
         """Test that SSE chunks are properly formatted."""
-        from app.services.stream_formatters import (
-            SSEEventType,
-            StreamResponseFormatter,
-        )
+        from app.services.stream_formatters import StreamResponseFormatter
 
         formatter = StreamResponseFormatter()
         chunk = formatter.format_sse(
@@ -175,9 +171,7 @@ class TestSSEFormatting:
 
         # Parse the data line
         lines = chunk.content.split("\n")
-        data_line = next(
-            (line for line in lines if line.startswith("data: ")), None
-        )
+        data_line = next((line for line in lines if line.startswith("data: ")), None)
         assert data_line is not None
 
         data = json.loads(data_line[6:])  # Skip "data: " prefix
@@ -206,9 +200,7 @@ class TestSSEFormatting:
 
         # Parse the data
         lines = done_chunk.content.split("\n")
-        data_line = next(
-            (line for line in lines if line.startswith("data: ")), None
-        )
+        data_line = next((line for line in lines if line.startswith("data: ")), None)
         data = json.loads(data_line[6:])
 
         assert data["stream_id"] == "stream_test123"
@@ -230,9 +222,7 @@ class TestSSEFormatting:
         assert error_chunk.is_final is True
 
         lines = error_chunk.content.split("\n")
-        data_line = next(
-            (line for line in lines if line.startswith("data: ")), None
-        )
+        data_line = next((line for line in lines if line.startswith("data: ")), None)
         data = json.loads(data_line[6:])
 
         assert data["error"] == "Provider not available"
@@ -240,10 +230,7 @@ class TestSSEFormatting:
 
     def test_sse_keepalive_ping(self):
         """Test SSE keep-alive ping format."""
-        from app.services.stream_formatters import (
-            SSE_KEEP_ALIVE_COMMENT,
-            StreamResponseFormatter,
-        )
+        from app.services.stream_formatters import SSE_KEEP_ALIVE_COMMENT, StreamResponseFormatter
 
         formatter = StreamResponseFormatter()
         ping = formatter.format_sse_ping()
@@ -303,15 +290,19 @@ class TestSelectionHeaders:
         mock_provider_plugin,
     ):
         """Test that streaming endpoint returns proper headers."""
-        with patch(
-            "app.api.v1.endpoints.streaming.get_unified_streaming_service",
-            return_value=mock_unified_streaming_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming.get_provider_resolution_service",
-            return_value=mock_resolution_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming._validate_provider_available",
-            return_value=True,
+        with (
+            patch(
+                "app.api.v1.endpoints.streaming.get_unified_streaming_service",
+                return_value=mock_unified_streaming_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming.get_provider_resolution_service",
+                return_value=mock_resolution_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming._validate_provider_available",
+                return_value=True,
+            ),
         ):
             async with AsyncClient(app=app, base_url="http://test") as client:
                 response = await client.post(
@@ -343,25 +334,25 @@ class TestSessionSelection:
     ):
         """Test that stream uses session's provider/model selection."""
         # Configure resolution to return session-based selection
-        mock_resolution_service.resolve_with_metadata.return_value.resolution_source = (
-            "session"
-        )
-        mock_resolution_service.resolve_with_metadata.return_value.resolution_priority = (
-            20
-        )
+        mock_resolution_service.resolve_with_metadata.return_value.resolution_source = "session"
+        mock_resolution_service.resolve_with_metadata.return_value.resolution_priority = 20
 
-        with patch(
-            "app.api.v1.endpoints.streaming.get_unified_streaming_service",
-            return_value=mock_unified_streaming_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming.get_provider_resolution_service",
-            return_value=mock_resolution_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming._validate_provider_available",
-            return_value=True,
+        with (
+            patch(
+                "app.api.v1.endpoints.streaming.get_unified_streaming_service",
+                return_value=mock_unified_streaming_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming.get_provider_resolution_service",
+                return_value=mock_resolution_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming._validate_provider_available",
+                return_value=True,
+            ),
         ):
             async with AsyncClient(app=app, base_url="http://test") as client:
-                response = await client.post(
+                await client.post(
                     "/api/v1/stream/generate",
                     json={"prompt": "Test prompt"},
                     headers={"X-Session-Id": "sess_test123"},
@@ -380,25 +371,25 @@ class TestSessionSelection:
         mock_provider_plugin,
     ):
         """Test that explicit provider/model takes precedence over session."""
-        mock_resolution_service.resolve_with_metadata.return_value.resolution_source = (
-            "explicit"
-        )
-        mock_resolution_service.resolve_with_metadata.return_value.resolution_priority = (
-            10
-        )
+        mock_resolution_service.resolve_with_metadata.return_value.resolution_source = "explicit"
+        mock_resolution_service.resolve_with_metadata.return_value.resolution_priority = 10
 
-        with patch(
-            "app.api.v1.endpoints.streaming.get_unified_streaming_service",
-            return_value=mock_unified_streaming_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming.get_provider_resolution_service",
-            return_value=mock_resolution_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming._validate_provider_available",
-            return_value=True,
+        with (
+            patch(
+                "app.api.v1.endpoints.streaming.get_unified_streaming_service",
+                return_value=mock_unified_streaming_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming.get_provider_resolution_service",
+                return_value=mock_resolution_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming._validate_provider_available",
+                return_value=True,
+            ),
         ):
             async with AsyncClient(app=app, base_url="http://test") as client:
-                response = await client.post(
+                await client.post(
                     "/api/v1/stream/generate",
                     json={
                         "prompt": "Test prompt",
@@ -429,15 +420,19 @@ class TestProviderAvailability:
         mock_resolution_service,
     ):
         """Test proper error when provider not available."""
-        with patch(
-            "app.api.v1.endpoints.streaming.get_unified_streaming_service",
-            return_value=mock_unified_streaming_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming.get_provider_resolution_service",
-            return_value=mock_resolution_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming._validate_provider_available",
-            return_value=False,
+        with (
+            patch(
+                "app.api.v1.endpoints.streaming.get_unified_streaming_service",
+                return_value=mock_unified_streaming_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming.get_provider_resolution_service",
+                return_value=mock_resolution_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming._validate_provider_available",
+                return_value=False,
+            ),
         ):
             async with AsyncClient(app=app, base_url="http://test") as client:
                 response = await client.post(
@@ -456,19 +451,21 @@ class TestProviderAvailability:
         mock_resolution_service,
     ):
         """Test that provider not available error includes provider name."""
-        mock_resolution_service.resolve_with_metadata.return_value.provider = (
-            "unavailable_provider"
-        )
+        mock_resolution_service.resolve_with_metadata.return_value.provider = "unavailable_provider"
 
-        with patch(
-            "app.api.v1.endpoints.streaming.get_unified_streaming_service",
-            return_value=mock_unified_streaming_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming.get_provider_resolution_service",
-            return_value=mock_resolution_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming._validate_provider_available",
-            return_value=False,
+        with (
+            patch(
+                "app.api.v1.endpoints.streaming.get_unified_streaming_service",
+                return_value=mock_unified_streaming_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming.get_provider_resolution_service",
+                return_value=mock_resolution_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming._validate_provider_available",
+                return_value=False,
+            ),
         ):
             async with AsyncClient(app=app, base_url="http://test") as client:
                 response = await client.post(
@@ -491,7 +488,7 @@ class TestStreamContextLocking:
     @pytest.mark.asyncio
     async def test_selection_locked_during_stream(self):
         """Test that selection is locked during streaming."""
-        from app.services.stream_context import StreamingContext, get_streaming_context
+        from app.services.stream_context import get_streaming_context
 
         context = get_streaming_context()
 
@@ -518,7 +515,7 @@ class TestStreamContextLocking:
     @pytest.mark.asyncio
     async def test_concurrent_streams_same_session(self):
         """Test handling of concurrent streams for same session."""
-        from app.services.stream_context import StreamingContext, get_streaming_context
+        from app.services.stream_context import get_streaming_context
 
         context = get_streaming_context()
 
@@ -528,7 +525,7 @@ class TestStreamContextLocking:
             provider="openai",
             model="gpt-4o",
             stream_id="stream_1",
-        ) as session1:
+        ):
             assert context.is_selection_locked("sess_concurrent")
 
             # Start second stream with same provider/model (should reuse lock)
@@ -537,7 +534,7 @@ class TestStreamContextLocking:
                 provider="openai",
                 model="gpt-4o",
                 stream_id="stream_2",
-            ) as session2:
+            ):
                 # Both streams should be active
                 sessions = context.get_sessions_for_session_id("sess_concurrent")
                 assert len(sessions) == 2
@@ -545,7 +542,7 @@ class TestStreamContextLocking:
     @pytest.mark.asyncio
     async def test_stream_cleanup_on_error(self):
         """Test that stream context cleans up on error."""
-        from app.services.stream_context import StreamingContext, get_streaming_context
+        from app.services.stream_context import get_streaming_context
 
         context = get_streaming_context()
 
@@ -567,7 +564,7 @@ class TestStreamContextLocking:
     @pytest.mark.asyncio
     async def test_stream_cleanup_on_cancellation(self):
         """Test that stream context cleans up on cancellation."""
-        from app.services.stream_context import StreamingContext, get_streaming_context
+        from app.services.stream_context import get_streaming_context
 
         context = get_streaming_context()
 
@@ -576,13 +573,11 @@ class TestStreamContextLocking:
                 session_id="sess_cancel",
                 provider="openai",
                 model="gpt-4o",
-            ) as session:
+            ):
                 raise asyncio.CancelledError()
 
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await simulate_cancelled_stream()
-        except asyncio.CancelledError:
-            pass
 
         # Session should be cleaned up and marked cancelled
         assert not context.is_selection_locked("sess_cancel")
@@ -677,9 +672,7 @@ class TestStreamMetrics:
 
         # Check that error was recorded
         recent_errors = metrics_service.get_recent_errors(limit=10)
-        error_found = any(
-            e["stream_id"] == "stream_error_test" for e in recent_errors
-        )
+        error_found = any(e["stream_id"] == "stream_error_test" for e in recent_errors)
         assert error_found
 
     def test_get_stream_metrics_endpoint(self, test_client):
@@ -752,10 +745,7 @@ class TestStreamFormats:
 
     def test_format_unified_chunk_sse(self):
         """Test formatting unified chunk as SSE."""
-        from app.services.stream_formatters import (
-            StreamFormat,
-            StreamResponseFormatter,
-        )
+        from app.services.stream_formatters import StreamFormat, StreamResponseFormatter
         from app.services.unified_streaming_service import UnifiedStreamChunk
 
         chunk = UnifiedStreamChunk(
@@ -775,10 +765,7 @@ class TestStreamFormats:
 
     def test_format_unified_chunk_jsonl(self):
         """Test formatting unified chunk as JSONL."""
-        from app.services.stream_formatters import (
-            StreamFormat,
-            StreamResponseFormatter,
-        )
+        from app.services.stream_formatters import StreamFormat, StreamResponseFormatter
         from app.services.unified_streaming_service import UnifiedStreamChunk
 
         chunk = UnifiedStreamChunk(
@@ -808,10 +795,7 @@ class TestUnifiedStreamingService:
     @pytest.mark.asyncio
     async def test_stream_generate_creates_context(self):
         """Test that stream_generate creates proper context."""
-        from app.services.unified_streaming_service import (
-            UnifiedStreamingService,
-            get_unified_streaming_service,
-        )
+        from app.services.unified_streaming_service import get_unified_streaming_service
 
         # This test would require mocking the provider plugins
         # For now, we test the service instantiation
@@ -821,9 +805,7 @@ class TestUnifiedStreamingService:
 
     def test_get_metrics_summary(self):
         """Test getting metrics summary."""
-        from app.services.unified_streaming_service import (
-            get_unified_streaming_service,
-        )
+        from app.services.unified_streaming_service import get_unified_streaming_service
 
         service = get_unified_streaming_service()
         summary = service.get_metrics_summary()
@@ -835,9 +817,7 @@ class TestUnifiedStreamingService:
 
     def test_get_active_streams(self):
         """Test getting active streams."""
-        from app.services.unified_streaming_service import (
-            get_unified_streaming_service,
-        )
+        from app.services.unified_streaming_service import get_unified_streaming_service
 
         service = get_unified_streaming_service()
         active = service.get_active_streams()
@@ -860,15 +840,19 @@ class TestChatStreaming:
         mock_resolution_service,
     ):
         """Test that chat endpoint accepts message format."""
-        with patch(
-            "app.api.v1.endpoints.streaming.get_unified_streaming_service",
-            return_value=mock_unified_streaming_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming.get_provider_resolution_service",
-            return_value=mock_resolution_service,
-        ), patch(
-            "app.api.v1.endpoints.streaming._validate_provider_available",
-            return_value=True,
+        with (
+            patch(
+                "app.api.v1.endpoints.streaming.get_unified_streaming_service",
+                return_value=mock_unified_streaming_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming.get_provider_resolution_service",
+                return_value=mock_resolution_service,
+            ),
+            patch(
+                "app.api.v1.endpoints.streaming._validate_provider_available",
+                return_value=True,
+            ),
         ):
             async with AsyncClient(app=app, base_url="http://test") as client:
                 response = await client.post(

@@ -17,10 +17,10 @@ Reference: Multi-objective optimization in adversarial ML
 
 import logging
 import random
-from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
 
@@ -186,10 +186,7 @@ class ParetoFront:
                 return False
 
         # Remove solutions dominated by new solution
-        self.solutions = [
-            s for s in self.solutions
-            if not solution.dominates(s, self.objectives)
-        ]
+        self.solutions = [s for s in self.solutions if not solution.dominates(s, self.objectives)]
 
         self.solutions.append(solution)
         self._hypervolume_cache = None
@@ -405,20 +402,17 @@ class NSGAII:
 
         if n <= 2:
             for sol in front:
-                sol.crowding_distance = float('inf')
+                sol.crowding_distance = float("inf")
             return
 
         # For each objective
         for obj in self.objectives:
             # Sort by objective value
-            sorted_front = sorted(
-                front,
-                key=lambda s: s.objectives.get(obj.name, 0.0)
-            )
+            sorted_front = sorted(front, key=lambda s: s.objectives.get(obj.name, 0.0))
 
             # Boundary solutions get infinite distance
-            sorted_front[0].crowding_distance = float('inf')
-            sorted_front[-1].crowding_distance = float('inf')
+            sorted_front[0].crowding_distance = float("inf")
+            sorted_front[-1].crowding_distance = float("inf")
 
             # Get range
             obj_min = sorted_front[0].objectives.get(obj.name, 0.0)
@@ -461,10 +455,7 @@ class NSGAII:
         population: list[Solution],
     ) -> Solution:
         """Binary tournament selection using crowded comparison."""
-        candidates = random.sample(
-            population,
-            min(self.config.tournament_size, len(population))
-        )
+        candidates = random.sample(population, min(self.config.tournament_size, len(population)))
 
         best = candidates[0]
         for candidate in candidates[1:]:
@@ -486,8 +477,8 @@ class NSGAII:
 
         # Add complete fronts
         while (
-            front_idx < len(fronts) and
-            len(next_population) + len(fronts[front_idx]) <= self.config.population_size
+            front_idx < len(fronts)
+            and len(next_population) + len(fronts[front_idx]) <= self.config.population_size
         ):
             self.compute_crowding_distance(fronts[front_idx])
             next_population.extend(fronts[front_idx])
@@ -606,10 +597,7 @@ class MOEAD:
     ) -> np.ndarray:
         """Generate weights using Das-Dennis method."""
         # Simplified version
-        weights = np.random.dirichlet(
-            np.ones(n_objectives),
-            size=n_vectors
-        )
+        weights = np.random.dirichlet(np.ones(n_objectives), size=n_vectors)
         return weights
 
     def _init_neighborhood(self) -> list[list[int]]:
@@ -621,9 +609,7 @@ class MOEAD:
         distances = np.zeros((n, n))
         for i in range(n):
             for j in range(n):
-                distances[i, j] = np.linalg.norm(
-                    self.weight_vectors[i] - self.weight_vectors[j]
-                )
+                distances[i, j] = np.linalg.norm(self.weight_vectors[i] - self.weight_vectors[j])
 
         # Find k-nearest neighbors for each weight vector
         neighborhoods = []
@@ -780,17 +766,12 @@ class AdaptiveWeightAdjuster:
         self.adjustment_rate = adjustment_rate
 
         # History for adaptation
-        self.objective_history: dict[str, list[float]] = {
-            obj.name: [] for obj in objectives
-        }
+        self.objective_history: dict[str, list[float]] = {obj.name: [] for obj in objectives}
 
     def record_progress(self, population: list[Solution]):
         """Record objective values for adaptation."""
         for obj in self.objectives:
-            values = [
-                sol.objectives.get(obj.name, 0.0)
-                for sol in population
-            ]
+            values = [sol.objectives.get(obj.name, 0.0) for sol in population]
             if values:
                 self.objective_history[obj.name].append(np.mean(values))
 
@@ -834,13 +815,11 @@ class AdaptiveWeightAdjuster:
             # Slow improvement -> increase weight
             if improvement < 0.01:
                 new_weights[obj.name] = min(
-                    1.0,
-                    current_weights.get(obj.name, 0.25) * (1 + self.adjustment_rate)
+                    1.0, current_weights.get(obj.name, 0.25) * (1 + self.adjustment_rate)
                 )
             else:
                 new_weights[obj.name] = max(
-                    0.1,
-                    current_weights.get(obj.name, 0.25) * (1 - self.adjustment_rate * 0.5)
+                    0.1, current_weights.get(obj.name, 0.25) * (1 - self.adjustment_rate * 0.5)
                 )
 
         # Normalize
@@ -949,10 +928,7 @@ class HypervolumeIndicator:
     ) -> float:
         """Exact 2D hypervolume computation."""
         # Get objective vectors
-        points = [
-            sol.objective_vector(self.objectives)
-            for sol in solutions
-        ]
+        points = [sol.objective_vector(self.objectives) for sol in solutions]
 
         # Sort by first objective (descending)
         points.sort(key=lambda p: -p[0])
@@ -1006,12 +982,12 @@ class HypervolumeIndicator:
         other_solutions: list[Solution],
         reference_point: list[float] | None = None,
     ) -> float:
-        """
+        r"""
         Compute hypervolume contribution of a single solution.
 
         HVC(s) = HV(P) - HV(P \ {s})
         """
-        all_solutions = [solution] + other_solutions
+        all_solutions = [solution, *other_solutions]
 
         hv_with = self.compute(all_solutions, reference_point)
         hv_without = self.compute(other_solutions, reference_point)
@@ -1083,9 +1059,9 @@ class MultiObjectiveOptimizer:
             # Assign solutions to subproblems
             while len(self.optimizer.population) < self.optimizer.n_subproblems:
                 if initial_population:
-                    self.optimizer.population.append(initial_population[
-                        len(self.optimizer.population) % len(initial_population)
-                    ])
+                    self.optimizer.population.append(
+                        initial_population[len(self.optimizer.population) % len(initial_population)]
+                    )
                 else:
                     break
 
@@ -1096,14 +1072,10 @@ class MultiObjectiveOptimizer:
         for gen in range(self.config.max_generations):
             # Evolve
             if isinstance(self.optimizer, NSGAII):
-                population = self.optimizer.evolve_generation(
-                    create_offspring, mutate
-                )
+                population = self.optimizer.evolve_generation(create_offspring, mutate)
             else:  # MOEAD
                 for i in range(self.optimizer.n_subproblems):
-                    self.optimizer.evolve_subproblem(
-                        i, create_offspring, mutate, evaluate
-                    )
+                    self.optimizer.evolve_subproblem(i, create_offspring, mutate, evaluate)
                 population = self.optimizer.population
 
             # Update Pareto front
@@ -1111,8 +1083,7 @@ class MultiObjectiveOptimizer:
 
             # Compute hypervolume
             hv = self.hypervolume.compute(
-                self.pareto_front.get_solutions(),
-                self.config.reference_point
+                self.pareto_front.get_solutions(), self.config.reference_point
             )
             self.hypervolume_history.append(hv)
 
@@ -1165,14 +1136,14 @@ class MultiObjectiveOptimizer:
 
 # Module exports
 __all__ = [
-    "MultiObjectiveOptimizer",
-    "NSGAII",
     "MOEAD",
-    "ParetoFront",
-    "Solution",
-    "Objective",
-    "ObjectiveType",
-    "MOOConfig",
+    "NSGAII",
     "AdaptiveWeightAdjuster",
     "HypervolumeIndicator",
+    "MOOConfig",
+    "MultiObjectiveOptimizer",
+    "Objective",
+    "ObjectiveType",
+    "ParetoFront",
+    "Solution",
 ]

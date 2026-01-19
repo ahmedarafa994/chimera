@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"
+FRONTEND_URL="${FRONTEND_URL:-http://localhost:3001}"
 BACKEND_URL="${BACKEND_URL:-http://localhost:8001}"
 TIMEOUT=10
 
@@ -40,11 +40,11 @@ test_url() {
     local url=$1
     local expected_status=$2
     local description=$3
-    
+
     log_info "Testing: $description"
-    
+
     response=$(curl -s -o /dev/null -w "%{http_code}" --max-time $TIMEOUT "$url" 2>/dev/null)
-    
+
     if [ "$response" == "$expected_status" ]; then
         log_pass "$description (HTTP $response)"
         return 0
@@ -58,11 +58,11 @@ test_json_response() {
     local url=$1
     local key=$2
     local description=$3
-    
+
     log_info "Testing: $description"
-    
+
     response=$(curl -s --max-time $TIMEOUT "$url" 2>/dev/null)
-    
+
     if echo "$response" | grep -q "\"$key\""; then
         log_pass "$description"
         return 0

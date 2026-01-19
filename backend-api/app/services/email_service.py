@@ -35,8 +35,6 @@ from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from enum import Enum
-from pathlib import Path
-from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +73,8 @@ class EmailConfig:
 
     host: str
     port: int
-    username: Optional[str]
-    password: Optional[str]
+    username: str | None
+    password: str | None
     security: SMTPSecurityMode
     from_email: str
     from_name: str
@@ -97,24 +95,22 @@ class EmailConfig:
             port=int(os.getenv("SMTP_PORT", "587")),
             username=os.getenv("SMTP_USERNAME"),
             password=os.getenv("SMTP_PASSWORD"),
-            security=SMTPSecurityMode(
-                os.getenv("SMTP_SECURITY", "starttls").lower()
-            ),
+            security=SMTPSecurityMode(os.getenv("SMTP_SECURITY", "starttls").lower()),
             from_email=os.getenv("SMTP_FROM_EMAIL", "noreply@chimera.local"),
             from_name=os.getenv("SMTP_FROM_NAME", "Chimera"),
             dev_mode=os.getenv("EMAIL_DEV_MODE", str(default_dev_mode)).lower()
             in ("true", "1", "yes"),
             verification_url=os.getenv(
                 "EMAIL_VERIFICATION_URL",
-                "http://localhost:3000/verify-email",
+                "http://localhost:3001/verify-email",
             ),
             password_reset_url=os.getenv(
                 "EMAIL_PASSWORD_RESET_URL",
-                "http://localhost:3000/reset-password",
+                "http://localhost:3001/reset-password",
             ),
             frontend_url=os.getenv(
                 "EMAIL_FRONTEND_URL",
-                "http://localhost:3000",
+                "http://localhost:3001",
             ),
             timeout=int(os.getenv("SMTP_TIMEOUT", "30")),
         )
@@ -498,8 +494,8 @@ class EmailResult:
     """Result of email send operation."""
 
     success: bool
-    message_id: Optional[str] = None
-    error: Optional[str] = None
+    message_id: str | None = None
+    error: str | None = None
     dev_mode: bool = False
 
 
@@ -520,7 +516,7 @@ class EmailService:
     - Graceful error handling
     """
 
-    def __init__(self, config: Optional[EmailConfig] = None):
+    def __init__(self, config: EmailConfig | None = None):
         """
         Initialize email service.
 
@@ -544,10 +540,10 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
-        text_content: Optional[str] = None,
-        from_email: Optional[str] = None,
-        from_name: Optional[str] = None,
-        reply_to: Optional[str] = None,
+        text_content: str | None = None,
+        from_email: str | None = None,
+        from_name: str | None = None,
+        reply_to: str | None = None,
     ) -> EmailResult:
         """
         Send an email asynchronously.
@@ -604,10 +600,10 @@ class EmailService:
         to_email: str,
         subject: str,
         html_content: str,
-        text_content: Optional[str],
+        text_content: str | None,
         sender_email: str,
         sender_name: str,
-        reply_to: Optional[str],
+        reply_to: str | None,
     ) -> MIMEMultipart:
         """Build MIME message for email."""
         message = MIMEMultipart("alternative")
@@ -887,7 +883,7 @@ class EmailService:
 
 
 # Global email service instance
-_email_service: Optional[EmailService] = None
+_email_service: EmailService | None = None
 
 
 def get_email_service() -> EmailService:
@@ -903,7 +899,7 @@ def get_email_service() -> EmailService:
     return _email_service
 
 
-def create_email_service(config: Optional[EmailConfig] = None) -> EmailService:
+def create_email_service(config: EmailConfig | None = None) -> EmailService:
     """
     Create a new email service instance with optional config.
 

@@ -23,7 +23,7 @@ vi.mock('@/lib/hooks/useAegisTelemetry', () => ({
 // Mock the api-config
 vi.mock('@/lib/api-config', () => ({
   getApiConfig: vi.fn(() => ({
-    backendApiUrl: 'http://localhost:8001/api/v1',
+    backendApiUrl: 'http://localhost:8005/api/v1',
   })),
 }));
 

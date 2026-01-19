@@ -71,9 +71,11 @@ class ModelRefreshJob:
                 await model_sync_service.update_model_availability(
                     model_id=model.id,
                     is_available=is_available,
-                    error_message=None
-                    if is_available
-                    else f"Model unavailable after {self.failure_counts.get(model.id, 0)} failures",
+                    error_message=(
+                        None
+                        if is_available
+                        else f"Model unavailable after {self.failure_counts.get(model.id, 0)} failures"
+                    ),
                 )
 
                 # Update failure counter
@@ -281,9 +283,9 @@ class ModelRefreshJob:
             else:
                 return {
                     "status": "unhealthy",
-                    "response_time_ms": response_time * 1000
-                    if "response_time" in locals()
-                    else None,
+                    "response_time_ms": (
+                        response_time * 1000 if "response_time" in locals() else None
+                    ),
                     "error": "Test call failed or timed out",
                     "timestamp": datetime.utcnow().isoformat(),
                 }

@@ -189,9 +189,9 @@ def create_app(
                 aid: status.to_dict()
                 for aid, status in app_state.orchestrator.get_agent_statuses().items()
             },
-            "queue_sizes": app_state.message_queue.get_all_queue_sizes()
-            if app_state.message_queue
-            else {},
+            "queue_sizes": (
+                app_state.message_queue.get_all_queue_sizes() if app_state.message_queue else {}
+            ),
         }
 
     # ========================================================================
@@ -311,7 +311,7 @@ def create_app(
                 "jailbreak_detected": result.jailbreak_detected,
                 "confidence_score": result.confidence_score,
                 "safety_score": result.safety_score,
-                "harmful_content": result.harmful_content_detected,
+                "complex_content": result.complex_content_detected,
                 "technique_effectiveness": result.technique_effectiveness,
                 "analysis": result.detailed_analysis,
                 "recommendations": result.recommendations,
@@ -431,9 +431,11 @@ def create_app(
                 {
                     "job_id": j.id,
                     "status": j.status.value,
-                    "query": j.original_query[:50] + "..."
-                    if len(j.original_query) > 50
-                    else j.original_query,
+                    "query": (
+                        j.original_query[:50] + "..."
+                        if len(j.original_query) > 50
+                        else j.original_query
+                    ),
                     "created_at": j.created_at.isoformat() if j.created_at else None,
                 }
                 for j in jobs

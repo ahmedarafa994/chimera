@@ -19,9 +19,10 @@ Reference: Elitism in evolutionary computation for adversarial ML
 import logging
 import random
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 import numpy as np
 
@@ -115,7 +116,7 @@ class Individual(Generic[T]):
         obj_names = set(self.objectives.keys()) & set(other.objectives.keys())
 
         if not obj_names:
-            return float('inf')
+            return float("inf")
 
         if metric == "euclidean":
             dist = 0.0
@@ -194,8 +195,7 @@ class StandardElitism(ElitismStrategy[T]):
 
         # Calculate elite count
         elite_count = min(
-            self.config.elite_count,
-            max(1, int(len(population) * self.config.elite_ratio))
+            self.config.elite_count, max(1, int(len(population) * self.config.elite_ratio))
         )
 
         # Sort by fitness (descending) and select top-k
@@ -262,10 +262,7 @@ class ParetoElitism(ElitismStrategy[T]):
         elites = fronts[0]
 
         # If too many, use crowding distance to select
-        max_elites = max(
-            self.config.elite_count,
-            int(len(population) * self.config.elite_ratio)
-        )
+        max_elites = max(self.config.elite_count, int(len(population) * self.config.elite_ratio))
 
         if len(elites) > max_elites:
             self._compute_crowding_distance(elites)
@@ -330,17 +327,14 @@ class ParetoElitism(ElitismStrategy[T]):
 
         if n <= 2:
             for ind in front:
-                ind.crowding_distance = float('inf')
+                ind.crowding_distance = float("inf")
             return
 
         for obj_name in self.objective_names:
-            sorted_front = sorted(
-                front,
-                key=lambda x: x.objectives.get(obj_name, 0.0)
-            )
+            sorted_front = sorted(front, key=lambda x: x.objectives.get(obj_name, 0.0))
 
-            sorted_front[0].crowding_distance = float('inf')
-            sorted_front[-1].crowding_distance = float('inf')
+            sorted_front[0].crowding_distance = float("inf")
+            sorted_front[-1].crowding_distance = float("inf")
 
             obj_min = sorted_front[0].objectives.get(obj_name, 0.0)
             obj_max = sorted_front[-1].objectives.get(obj_name, 0.0)
@@ -418,7 +412,7 @@ class ArchiveElitism(ElitismStrategy[T]):
 
         # Sort by fitness and keep top archive_size
         unique.sort(key=lambda x: x.fitness, reverse=True)
-        self.archive = unique[:self.config.archive_size]
+        self.archive = unique[: self.config.archive_size]
 
         self.generation += 1
 
@@ -497,22 +491,20 @@ class AdaptiveElitism(ElitismStrategy[T]):
             return
 
         # Calculate improvement over window
-        window = self.fitness_history[-self.config.adaptation_window:]
+        window = self.fitness_history[-self.config.adaptation_window :]
         improvement = window[-1] - window[0]
         avg_improvement = improvement / self.config.adaptation_window
 
         if avg_improvement < self.config.stagnation_threshold:
             # Stagnating: increase elite ratio (more exploration through diversity)
             self.current_elite_ratio = min(
-                self.config.max_elite_ratio,
-                self.current_elite_ratio * 1.1
+                self.config.max_elite_ratio, self.current_elite_ratio * 1.1
             )
             logger.debug(f"Stagnation detected: elite ratio -> {self.current_elite_ratio:.3f}")
         else:
             # Improving: decrease elite ratio (more exploitation)
             self.current_elite_ratio = max(
-                self.config.min_elite_ratio,
-                self.current_elite_ratio * 0.95
+                self.config.min_elite_ratio, self.current_elite_ratio * 0.95
             )
 
     def integrate_elites(
@@ -574,13 +566,10 @@ class NichingElitism(ElitismStrategy[T]):
         for niche in self.niches:
             if niche:
                 sorted_niche = sorted(niche, key=lambda x: x.fitness, reverse=True)
-                elites.extend(sorted_niche[:self.config.niche_capacity])
+                elites.extend(sorted_niche[: self.config.niche_capacity])
 
         # Limit total elites
-        max_elites = max(
-            self.config.elite_count,
-            int(len(population) * self.config.elite_ratio)
-        )
+        max_elites = max(self.config.elite_count, int(len(population) * self.config.elite_ratio))
 
         if len(elites) > max_elites:
             elites.sort(key=lambda x: x.fitness, reverse=True)
@@ -630,10 +619,7 @@ class NichingElitism(ElitismStrategy[T]):
 
             if niche_id >= 0 and niche_id < len(self.niches):
                 # Find worst in niche
-                niche_members = [
-                    i for i, ind in enumerate(new_pop)
-                    if ind.niche_id == niche_id
-                ]
+                niche_members = [i for i, ind in enumerate(new_pop) if ind.niche_id == niche_id]
 
                 if niche_members:
                     worst_idx = min(niche_members, key=lambda i: new_pop[i].fitness)
@@ -680,10 +666,7 @@ class CrowdingElitism(ElitismStrategy[T]):
         if not population:
             return []
 
-        elite_count = max(
-            self.config.elite_count,
-            int(len(population) * self.config.elite_ratio)
-        )
+        elite_count = max(self.config.elite_count, int(len(population) * self.config.elite_ratio))
 
         # Start with best individual
         sorted_pop = sorted(population, key=lambda x: x.fitness, reverse=True)
@@ -716,16 +699,13 @@ class CrowdingElitism(ElitismStrategy[T]):
 
         for elite in elites:
             # Find most similar in population
-            distances = [
-                (i, self.distance_fn(elite, ind))
-                for i, ind in enumerate(new_pop)
-            ]
+            distances = [(i, self.distance_fn(elite, ind)) for i, ind in enumerate(new_pop)]
 
             # Sort by distance (closest first)
             distances.sort(key=lambda x: x[1])
 
             # Replace if elite is better (deterministic crowding)
-            for idx, _ in distances[:self.config.crowding_factor]:
+            for idx, _ in distances[: self.config.crowding_factor]:
                 if elite.fitness > new_pop[idx].fitness:
                     new_pop[idx] = elite.clone()
                     break
@@ -762,9 +742,7 @@ class CompositeElitism(ElitismStrategy[T]):
         """Normalize strategy weights to sum to 1."""
         total = sum(w for _, w in self.strategies)
         if total > 0:
-            self.strategies = [
-                (s, w / total) for s, w in self.strategies
-            ]
+            self.strategies = [(s, w / total) for s, w in self.strategies]
 
     def select_elites(
         self,
@@ -775,8 +753,7 @@ class CompositeElitism(ElitismStrategy[T]):
             return []
 
         total_elite_count = max(
-            self.config.elite_count,
-            int(len(population) * self.config.elite_ratio)
+            self.config.elite_count, int(len(population) * self.config.elite_ratio)
         )
 
         all_elites = []
@@ -902,11 +879,13 @@ class ElitismManager(Generic[T]):
 
         if current_elites:
             fitnesses = [e.fitness for e in current_elites]
-            stats.update({
-                "elite_max_fitness": max(fitnesses),
-                "elite_min_fitness": min(fitnesses),
-                "elite_avg_fitness": sum(fitnesses) / len(fitnesses),
-            })
+            stats.update(
+                {
+                    "elite_max_fitness": max(fitnesses),
+                    "elite_min_fitness": min(fitnesses),
+                    "elite_avg_fitness": sum(fitnesses) / len(fitnesses),
+                }
+            )
 
         return stats
 
@@ -962,17 +941,17 @@ def create_elitism_strategy(
 
 # Module exports
 __all__ = [
-    "ElitismStrategy",
-    "StandardElitism",
-    "ParetoElitism",
-    "ArchiveElitism",
     "AdaptiveElitism",
-    "NichingElitism",
-    "CrowdingElitism",
+    "ArchiveElitism",
     "CompositeElitism",
-    "ElitismManager",
-    "ElitismType",
+    "CrowdingElitism",
     "EliteConfig",
+    "ElitismManager",
+    "ElitismStrategy",
+    "ElitismType",
     "Individual",
+    "NichingElitism",
+    "ParetoElitism",
+    "StandardElitism",
     "create_elitism_strategy",
 ]

@@ -219,9 +219,10 @@ export const LLM_TIMEOUT_MS = 120000; // 2min - LLM provider calls
 export const FAST_TIMEOUT_MS = 5000; // 5s - Quick operations
 
 // Backend API base URL - uses Next.js API routes as proxy
-// The proxy at /api/[...path] forwards to backend origin
 // The proxy at /api/v1/[...path] forwards to backend /api/v1
-const API_BASE_URL = "/api/v1";
+// Prefer the configured backend URL so requests hit the running API directly
+// (avoids relying on Next.js dev server routing which was returning 404s)
+const API_BASE_URL = getActiveApiUrl() || "/api/v1";
 
 /**
  * Debug logger for API operations
@@ -903,7 +904,7 @@ const providersApi = {
    */
   async list(): Promise<{ data: ProvidersListResponse }> {
     try {
-      const baseUrl = "/api/v1";
+      const baseUrl = API_BASE_URL;
 
       const response = await fetch(`${baseUrl}/providers`, {
         headers: {
@@ -957,7 +958,7 @@ const providerConfigApi = {
    */
   async listProviders(): Promise<{ data: ProviderListResponse }> {
     try {
-      const baseUrl = "/api/v1";
+      const baseUrl = API_BASE_URL;
       const response = await fetch(`${baseUrl}/provider-config/providers`, {
         headers: {
           "Content-Type": "application/json",
@@ -986,7 +987,7 @@ const providerConfigApi = {
    */
   async getActiveProvider(): Promise<{ data: ActiveProviderResponse }> {
     try {
-      const baseUrl = "/api/v1";
+      const baseUrl = API_BASE_URL;
       const response = await fetch(`${baseUrl}/provider-config/active`, {
         headers: {
           "Content-Type": "application/json",
@@ -1039,7 +1040,7 @@ const providerConfigApi = {
    */
   async getProviderConfig(providerId: string): Promise<{ data: ProviderConfigResponse }> {
     try {
-      const baseUrl = "/api/v1";
+      const baseUrl = API_BASE_URL;
       const response = await fetch(`${baseUrl}/provider-config/providers/${encodeURIComponent(providerId)}`, {
         headers: {
           "Content-Type": "application/json",
@@ -1085,7 +1086,7 @@ const providerConfigApi = {
    */
   async getProviderHealth(providerId: string): Promise<{ data: ProviderHealthResponse }> {
     try {
-      const baseUrl = "/api/v1";
+      const baseUrl = API_BASE_URL;
       const response = await fetch(`${baseUrl}/provider-config/providers/${encodeURIComponent(providerId)}/health`, {
         headers: {
           "Content-Type": "application/json",
@@ -1172,7 +1173,7 @@ const providerConfigApi = {
    */
   getWebSocketUrl(): string {
     const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = typeof window !== "undefined" ? window.location.host : "localhost:3000";
+    const host = typeof window !== "undefined" ? window.location.host : "localhost:3001";
     return `${wsProtocol}//${host}/api/v1/provider-config/ws/updates`;
   },
 };

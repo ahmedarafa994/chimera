@@ -1,5 +1,5 @@
-import asyncio
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 
@@ -9,12 +9,13 @@ backend_path = Path("backend-api").resolve()
 sys.path.insert(0, str(backend_path))
 
 try:
-    from app.services.llm_service import LLMService
     from app.domain.models import PromptRequest
+    from app.services.llm_service import LLMService
     from meta_prompter.aegis_orchestrator import AegisOrchestrator
 except ImportError:
     print("Error: Could not import backend services. Ensure you are running from project root.")
     sys.exit(1)
+
 
 # Wrapper to adapt backend LLMService to Aegis interface (Same as in API)
 class BackendModelAdapter:
@@ -34,14 +35,20 @@ class BackendModelAdapter:
         # So we should probably make this CLI use the API endpoint.
         pass
 
+
 async def main():
     parser = argparse.ArgumentParser(description="Project Aegis: Adversarial Simulation CLI")
     parser.add_argument("objective", type=str, help="The adversarial objective to test")
-    parser.add_argument("--url", type=str, default="http://localhost:8001/api/v1/aegis/campaign", help="API Endpoint")
+    parser.add_argument(
+        "--url",
+        type=str,
+        default="http://localhost:8001/api/v1/aegis/campaign",
+        help="API Endpoint",
+    )
     parser.add_argument("--model", type=str, default="gpt-4-turbo", help="Target Model")
     args = parser.parse_args()
 
-    print(f"[*] Project Aegis CLI")
+    print("[*] Project Aegis CLI")
     print(f"[*] Target Objective: '{args.objective}'")
     print(f"[*] Connecting to: {args.url}")
 
@@ -54,18 +61,20 @@ async def main():
                 json={
                     "objective": args.objective,
                     "max_iterations": 5,
-                    "target_model_name": args.model
+                    "target_model_name": args.model,
                 },
-                timeout=60.0
+                timeout=60.0,
             )
 
             if response.status_code == 200:
                 data = response.json()
                 print(f"[+] Campaign Completed. ID: {data['campaign_id']}")
-                for res in data['results']:
+                for res in data["results"]:
                     print("-" * 50)
                     print(f"Score: {res['score']}")
-                    print(f"Strategy: {res['telemetry']['scenario_type']} / {res['telemetry']['persona_role']}")
+                    print(
+                        f"Strategy: {res['telemetry']['scenario_type']} / {res['telemetry']['persona_role']}"
+                    )
                     print(f"Prompt Length: {len(res['final_prompt'])}")
             else:
                 print(f"[-] Error: {response.status_code} - {response.text}")

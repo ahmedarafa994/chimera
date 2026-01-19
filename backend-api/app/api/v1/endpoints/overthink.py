@@ -31,13 +31,8 @@ from app.engines.overthink import (
     OverthinkEngine,
     ReasoningModel,
 )
-from app.engines.overthink import (
-    OverthinkRequest as EngineRequest,
-)
-from app.schemas.adversarial_base import (
-    ReasoningMetrics,
-    StrictBaseModel,
-)
+from app.engines.overthink import OverthinkRequest as EngineRequest
+from app.schemas.adversarial_base import ReasoningMetrics, StrictBaseModel
 
 router = APIRouter()
 
@@ -72,15 +67,12 @@ class OverthinkAttackRequest(StrictModel):
     decoy_types: list[str] | None = Field(
         None,
         max_length=6,
-        description=(
-            "Decoy types to use: mdp, sudoku, counting, logic, math, planning"
-        ),
+        description=("Decoy types to use: mdp, sudoku, counting, logic, math, planning"),
     )
     injection_strategy: str | None = Field(
         None,
         description=(
-            "Injection strategy: context_aware, context_agnostic, "
-            "hybrid, stealth, aggressive"
+            "Injection strategy: context_aware, context_agnostic, " "hybrid, stealth, aggressive"
         ),
     )
     num_decoys: int = Field(
@@ -121,9 +113,7 @@ class OverthinkAttackRequest(StrictModel):
 
     @field_validator("decoy_types")
     @classmethod
-    def _validate_decoy_types(
-        cls, value: list[str] | None
-    ) -> list[str] | None:
+    def _validate_decoy_types(cls, value: list[str] | None) -> list[str] | None:
         if value is None:
             return None
         valid = [d.value for d in DecoyType]
@@ -193,13 +183,9 @@ class TokenMetricsResponse(StrictModel):
 
     input_tokens: int = Field(default=0, description="Input token count")
     output_tokens: int = Field(default=0, description="Output token count")
-    reasoning_tokens: int = Field(
-        default=0, description="Reasoning token count (target metric)"
-    )
+    reasoning_tokens: int = Field(default=0, description="Reasoning token count (target metric)")
     total_tokens: int = Field(default=0, description="Total tokens")
-    baseline_tokens: int = Field(
-        default=0, description="Baseline reasoning tokens without attack"
-    )
+    baseline_tokens: int = Field(default=0, description="Baseline reasoning tokens without attack")
     amplification_factor: float = Field(
         default=0.0, description="Reasoning token amplification factor"
     )
@@ -221,21 +207,11 @@ class CostMetricsResponse(StrictModel):
     Tracks all cost components for OVERTHINK attacks.
     """
 
-    input_cost: float = Field(
-        default=0.0, description="Input token cost"
-    )
-    output_cost: float = Field(
-        default=0.0, description="Output token cost"
-    )
-    reasoning_cost: float = Field(
-        default=0.0, description="Reasoning token cost"
-    )
-    total_cost: float = Field(
-        default=0.0, description="Total attack cost"
-    )
-    cost_amplification_factor: float = Field(
-        default=0.0, description="Cost amplification factor"
-    )
+    input_cost: float = Field(default=0.0, description="Input token cost")
+    output_cost: float = Field(default=0.0, description="Output token cost")
+    reasoning_cost: float = Field(default=0.0, description="Reasoning token cost")
+    total_cost: float = Field(default=0.0, description="Total attack cost")
+    cost_amplification_factor: float = Field(default=0.0, description="Cost amplification factor")
 
     def to_dict(self) -> dict[str, float]:
         """Convert to dictionary for unified schema."""
@@ -252,12 +228,8 @@ class DecoyProblemInfo(StrictModel):
 
     decoy_type: str = Field(..., description="Type of decoy problem")
     complexity: float = Field(..., description="Complexity score (0-1)")
-    expected_tokens: int = Field(
-        ..., description="Expected reasoning tokens to solve"
-    )
-    problem_preview: str = Field(
-        ..., description="Preview of the problem text"
-    )
+    expected_tokens: int = Field(..., description="Expected reasoning tokens to solve")
+    problem_preview: str = Field(..., description="Preview of the problem text")
 
 
 class OverthinkResponse(StrictModel):
@@ -283,9 +255,7 @@ class OverthinkResponse(StrictModel):
         le=10.0,
         description="Attack effectiveness score (0-10 scale)",
     )
-    execution_time_ms: float = Field(
-        ..., description="Execution time in milliseconds"
-    )
+    execution_time_ms: float = Field(..., description="Execution time in milliseconds")
 
     # OVERTHINK-specific fields
     injected_prompt: str = Field(
@@ -293,9 +263,7 @@ class OverthinkResponse(StrictModel):
         description="Prompt with injected decoys (alias for generated_prompt)",
     )
     original_prompt: str = Field(..., description="Original prompt")
-    response: str | None = Field(
-        None, description="Model response (if executed)"
-    )
+    response: str | None = Field(None, description="Model response (if executed)")
 
     # Attack configuration
     technique: str = Field(..., description="Attack technique used")
@@ -307,9 +275,7 @@ class OverthinkResponse(StrictModel):
     token_metrics: TokenMetricsResponse | None = Field(
         None, description="Token consumption metrics"
     )
-    cost_metrics: CostMetricsResponse | None = Field(
-        None, description="Cost metrics"
-    )
+    cost_metrics: CostMetricsResponse | None = Field(None, description="Cost metrics")
 
     # Unified reasoning metrics (for cross-endpoint compatibility)
     reasoning_metrics: ReasoningMetrics | None = Field(
@@ -331,9 +297,7 @@ class OverthinkResponse(StrictModel):
     )
 
     # Error info
-    error_message: str | None = Field(
-        None, description="Error message if failed"
-    )
+    error_message: str | None = Field(None, description="Error message if failed")
 
     # Deprecated fields (kept for backwards compatibility)
     @property
@@ -349,13 +313,9 @@ class MousetrapFusionResponse(OverthinkResponse):
     Extends OverthinkResponse with Mousetrap-specific fields.
     """
 
-    mousetrap_enabled: bool = Field(
-        default=True, description="Mousetrap integration enabled"
-    )
+    mousetrap_enabled: bool = Field(default=True, description="Mousetrap integration enabled")
     chaos_level: float = Field(..., description="Mousetrap chaos level (0-1)")
-    trigger_patterns: list[str] | None = Field(
-        None, description="Mousetrap trigger patterns"
-    )
+    trigger_patterns: list[str] | None = Field(None, description="Mousetrap trigger patterns")
     fusion_score: float = Field(
         default=0.0,
         ge=0.0,
@@ -378,20 +338,12 @@ class OverthinkStatsResponse(StrictModel):
     """Response model for OVERTHINK statistics."""
 
     total_attacks: int = Field(default=0, description="Total attacks executed")
-    successful_attacks: int = Field(
-        default=0, description="Successful attacks"
-    )
+    successful_attacks: int = Field(default=0, description="Successful attacks")
     failed_attacks: int = Field(default=0, description="Failed attacks")
     success_rate: float = Field(default=0.0, description="Success rate (0-1)")
-    average_amplification: float = Field(
-        default=0.0, description="Average amplification factor"
-    )
-    max_amplification: float = Field(
-        default=0.0, description="Maximum amplification achieved"
-    )
-    total_reasoning_tokens: int = Field(
-        default=0, description="Total reasoning tokens consumed"
-    )
+    average_amplification: float = Field(default=0.0, description="Average amplification factor")
+    max_amplification: float = Field(default=0.0, description="Maximum amplification achieved")
+    total_reasoning_tokens: int = Field(default=0, description="Total reasoning tokens consumed")
     total_cost: float = Field(default=0.0, description="Total cost incurred")
     attacks_by_technique: dict[str, int] = Field(
         default_factory=dict, description="Attack count by technique"
@@ -401,35 +353,21 @@ class OverthinkStatsResponse(StrictModel):
 class DecoyTypesResponse(StrictModel):
     """Response model for available decoy types."""
 
-    decoy_types: list[dict[str, Any]] = Field(
-        ..., description="Available decoy types"
-    )
+    decoy_types: list[dict[str, Any]] = Field(..., description="Available decoy types")
     injection_strategies: list[dict[str, Any]] = Field(
         ..., description="Available injection strategies"
     )
-    attack_techniques: list[dict[str, Any]] = Field(
-        ..., description="Available attack techniques"
-    )
-    target_models: list[dict[str, Any]] = Field(
-        ..., description="Supported target models"
-    )
+    attack_techniques: list[dict[str, Any]] = Field(..., description="Available attack techniques")
+    target_models: list[dict[str, Any]] = Field(..., description="Supported target models")
 
 
 class CostEstimateRequest(StrictModel):
     """Request model for cost estimation."""
 
-    prompt: str = Field(
-        ..., min_length=1, description="Prompt to estimate"
-    )
-    technique: str = Field(
-        default="hybrid_decoy", description="Attack technique"
-    )
-    target_model: str = Field(
-        default="o1", description="Target model"
-    )
-    num_decoys: int = Field(
-        default=3, ge=1, le=10, description="Number of decoys"
-    )
+    prompt: str = Field(..., min_length=1, description="Prompt to estimate")
+    technique: str = Field(default="hybrid_decoy", description="Attack technique")
+    target_model: str = Field(default="o1", description="Target model")
+    num_decoys: int = Field(default=3, ge=1, le=10, description="Number of decoys")
 
 
 class CostEstimateResponse(StrictModel):
@@ -439,15 +377,9 @@ class CostEstimateResponse(StrictModel):
     output_cost: float = Field(..., description="Estimated output cost")
     reasoning_cost: float = Field(..., description="Estimated reasoning cost")
     total_estimated: float = Field(..., description="Total estimated cost")
-    input_tokens_estimate: int = Field(
-        ..., description="Estimated input tokens"
-    )
-    output_tokens_estimate: int = Field(
-        ..., description="Estimated output tokens"
-    )
-    reasoning_tokens_estimate: int = Field(
-        ..., description="Estimated reasoning tokens"
-    )
+    input_tokens_estimate: int = Field(..., description="Estimated input tokens")
+    output_tokens_estimate: int = Field(..., description="Estimated output tokens")
+    reasoning_tokens_estimate: int = Field(..., description="Estimated reasoning tokens")
 
 
 # ==================== Engine Instance ====================
@@ -465,6 +397,7 @@ def get_engine() -> OverthinkEngine:
 
 
 # ==================== API Endpoints ====================
+
 
 @router.post("/attack", response_model=OverthinkResponse)
 @api_error_handler(
@@ -543,9 +476,7 @@ async def run_overthink_attack(request: OverthinkAttackRequest):
                 output_cost=result.cost_metrics.output_cost,
                 reasoning_cost=result.cost_metrics.reasoning_cost,
                 total_cost=result.cost_metrics.total_cost,
-                cost_amplification_factor=(
-                    result.cost_metrics.cost_amplification_factor
-                ),
+                cost_amplification_factor=(result.cost_metrics.cost_amplification_factor),
             )
 
         decoy_info = None
@@ -555,8 +486,11 @@ async def run_overthink_attack(request: OverthinkAttackRequest):
                     decoy_type=d.decoy_type.value,
                     complexity=d.complexity,
                     expected_tokens=d.expected_tokens,
-                    problem_preview=d.problem_text[:200] + "..."
-                    if len(d.problem_text) > 200 else d.problem_text,
+                    problem_preview=(
+                        d.problem_text[:200] + "..."
+                        if len(d.problem_text) > 200
+                        else d.problem_text
+                    ),
                 )
                 for d in result.decoy_problems
             ]
@@ -578,17 +512,11 @@ async def run_overthink_attack(request: OverthinkAttackRequest):
 
         # Calculate effectiveness score (0-10 scale)
         # Based on amplification factor: 1x = 0, 10x = 5, 46x+ = 10
-        amplification = (
-            token_metrics.amplification_factor if token_metrics else 0.0
-        )
-        if amplification > 1.0:
-            score = min(10.0, (amplification - 1.0) / 4.5)
-        else:
-            score = 0.0
+        amplification = token_metrics.amplification_factor if token_metrics else 0.0
+        score = min(10.0, (amplification - 1.0) / 4.5) if amplification > 1.0 else 0.0
 
         injected = (
-            result.injected_prompt.injected_prompt
-            if result.injected_prompt else request.prompt
+            result.injected_prompt.injected_prompt if result.injected_prompt else request.prompt
         )
 
         return OverthinkResponse(
@@ -603,8 +531,9 @@ async def run_overthink_attack(request: OverthinkAttackRequest):
             technique=request.technique,
             target_model=request.target_model,
             num_decoys=request.num_decoys,
-            injection_strategy=result.injected_prompt.strategy.value
-            if result.injected_prompt else "hybrid",
+            injection_strategy=(
+                result.injected_prompt.strategy.value if result.injected_prompt else "hybrid"
+            ),
             token_metrics=token_metrics,
             cost_metrics=cost_metrics,
             reasoning_metrics=reasoning_metrics,
@@ -696,9 +625,7 @@ async def run_mousetrap_fusion_attack(request: MousetrapFusionRequest):
                 output_cost=result.cost_metrics.output_cost,
                 reasoning_cost=result.cost_metrics.reasoning_cost,
                 total_cost=result.cost_metrics.total_cost,
-                cost_amplification_factor=(
-                    result.cost_metrics.cost_amplification_factor
-                ),
+                cost_amplification_factor=(result.cost_metrics.cost_amplification_factor),
             )
 
         # Extract Mousetrap integration info
@@ -719,20 +646,14 @@ async def run_mousetrap_fusion_attack(request: MousetrapFusionRequest):
             )
 
         # Calculate effectiveness score (0-10 scale)
-        amplification = (
-            token_metrics.amplification_factor if token_metrics else 0.0
-        )
-        if amplification > 1:
-            base_score = min(10.0, (amplification - 1.0) / 4.5)
-        else:
-            base_score = 0
+        amplification = token_metrics.amplification_factor if token_metrics else 0.0
+        base_score = min(10.0, (amplification - 1.0) / 4.5) if amplification > 1 else 0
         # Fusion bonus based on combined_score from mousetrap
         fusion_bonus = combined_score * 2  # Scale mousetrap contribution
         score = min(10.0, base_score + fusion_bonus)
 
         injected = (
-            result.injected_prompt.injected_prompt
-            if result.injected_prompt else request.prompt
+            result.injected_prompt.injected_prompt if result.injected_prompt else request.prompt
         )
 
         return MousetrapFusionResponse(
@@ -836,8 +757,7 @@ async def get_decoy_types():
                 "value": "mdp",
                 "name": "MDP (Markov Decision Process)",
                 "description": (
-                    "State-action-transition problems requiring "
-                    "dynamic programming"
+                    "State-action-transition problems requiring " "dynamic programming"
                 ),
                 "expected_amplification": "10-20x",
             },
@@ -877,9 +797,7 @@ async def get_decoy_types():
             {
                 "value": "context_aware",
                 "name": "Context-Aware",
-                "description": (
-                    "Adapts injection to prompt structure and content"
-                ),
+                "description": ("Adapts injection to prompt structure and content"),
                 "stealth": "high",
             },
             {
@@ -903,9 +821,7 @@ async def get_decoy_types():
             {
                 "value": "aggressive",
                 "name": "Aggressive",
-                "description": (
-                    "Maximum amplification, high visibility"
-                ),
+                "description": ("Maximum amplification, high visibility"),
                 "stealth": "low",
             },
         ]
@@ -954,9 +870,7 @@ async def get_decoy_types():
             {
                 "value": "mousetrap_enhanced",
                 "name": "Mousetrap-Enhanced",
-                "description": (
-                    "Integration with Mousetrap chaotic reasoning"
-                ),
+                "description": ("Integration with Mousetrap chaotic reasoning"),
             },
         ]
 

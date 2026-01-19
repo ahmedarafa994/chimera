@@ -30,7 +30,7 @@ import type { StreamChunk, StreamMetadata } from "./useStreamingGeneration";
  * Options for WebSocket streaming
  */
 export interface WebSocketStreamingOptions {
-  /** WebSocket URL (default: ws://localhost:8000/api/v1/ws/stream) */
+  /** WebSocket URL (default: ws://localhost:8001/api/v1/ws/stream) */
   wsUrl?: string;
   /** Session ID for session-scoped selection */
   sessionId?: string;

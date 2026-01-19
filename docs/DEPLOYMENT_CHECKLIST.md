@@ -108,8 +108,8 @@ curl http://localhost:8001/health
 ./tests/smoke-test.sh
 
 # Or manually verify:
-curl -I http://localhost:3000
-curl -I http://localhost:3000/dashboard
+curl -I http://localhost:3001
+curl -I http://localhost:3001/dashboard
 ```
 
 ---
@@ -119,7 +119,7 @@ curl -I http://localhost:3000/dashboard
 ### Functionality Verification
 
 - [ ] **Root URL loads correctly**
-  - `http://localhost:3000` returns 200
+  - `http://localhost:3001` returns 200
   - Redirects to `/dashboard`
   - No JavaScript errors in console
 

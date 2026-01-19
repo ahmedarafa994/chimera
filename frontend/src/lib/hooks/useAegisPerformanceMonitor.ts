@@ -148,7 +148,7 @@ export class AegisPerformanceMonitor {
       if (exceedsThreshold && this.config.logWarnings) {
         // Using performance warning format
         if (typeof window !== "undefined" && "console" in window) {
-          // eslint-disable-next-line no-console
+           
           console.warn(
             `[AegisPerformance] Event processing exceeded threshold: ${eventType} took ${duration.toFixed(2)}ms (threshold: ${this.config.thresholdMs}ms)`
           );

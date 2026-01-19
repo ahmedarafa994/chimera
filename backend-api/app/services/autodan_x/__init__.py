@@ -11,35 +11,28 @@ This module implements the AutoDAN-X system with:
 """
 
 from app.services.autodan_x.gradient_field import SurrogateGradientField
-from app.services.autodan_x.models import (
+from app.services.autodan_x.models import (  # Request/Response models; Gradient models; RAG models; Enums; Config models; Mutation models; WebSocket models; Attack models
     AddKnowledgeRequest,
     AddKnowledgeResponse,
     AttackVector,
     AttackVectorType,
-    # Request/Response models
     AutoDANXAttackRequest,
     AutoDANXAttackResponse,
     AutoDANXConfig,
     GradientFieldConfig,
-    # Gradient models
     GradientFieldState,
     KnowledgeBaseSearchRequest,
     KnowledgeBaseSearchResponse,
-    # RAG models
     KnowledgeEntry,
-    # Enums
     MoEPersona,
-    # Config models
     MoERoutingConfig,
     MomentumState,
     MutationConfig,
     MutationOperator,
-    # Mutation models
     MutationRecord,
     NicheCrowdingConfig,
     NichePopulation,
     OptimizationPhase,
-    # WebSocket models
     OptimizationProgress,
     RAGConfig,
     RAGContext,
@@ -49,7 +42,6 @@ from app.services.autodan_x.models import (
     RewardConfig,
     TargetAnalysisRequest,
     TargetAnalysisResponse,
-    # Attack models
     TokenGradient,
 )
 from app.services.autodan_x.moe_router import MoERouter

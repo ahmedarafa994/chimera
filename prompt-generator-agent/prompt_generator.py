@@ -303,9 +303,11 @@ class PromptGeneratorAgent:
                                             "prompt": data.get("jailbreak_prompt", ""),
                                             "query": data.get("query", ""),
                                             "source": path.parent.name,
-                                            "success": data.get("eval_results", [False])[0]
-                                            if data.get("eval_results")
-                                            else False,
+                                            "success": (
+                                                data.get("eval_results", [False])[0]
+                                                if data.get("eval_results")
+                                                else False
+                                            ),
                                         }
                                     )
                             except json.JSONDecodeError:
@@ -519,7 +521,9 @@ class PromptGeneratorAgent:
         for _i in range(num_variants):
             potency = secrets.randbelow(potency_range[1] - potency_range[0] + 1) + potency_range[0]
             technique = secrets.choice(techniques)
-            pattern = secrets.choice(patterns) if (secrets.randbelow(100000) / 100000) > 0.5 else None
+            pattern = (
+                secrets.choice(patterns) if (secrets.randbelow(100000) / 100000) > 0.5 else None
+            )
 
             variant = self.generate_enhanced_prompt(
                 query, technique=technique, pattern=pattern, potency=potency

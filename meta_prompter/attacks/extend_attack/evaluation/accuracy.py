@@ -10,6 +10,7 @@ This module provides benchmark-specific accuracy evaluators for determining
 whether an LRM response is correct given the expected ground truth.
 """
 
+import contextlib
 import os
 import re
 import subprocess
@@ -91,6 +92,7 @@ class AccuracyEvaluator:
         Returns:
             True if response matches ground truth exactly
         """
+
         # Normalize: lowercase, strip, collapse whitespace
         def normalize(s: str) -> str:
             return " ".join(s.lower().strip().split())
@@ -250,9 +252,7 @@ class AccuracyEvaluator:
                 error_message=f"Unsupported language: {language}",
             )
 
-        return AccuracyEvaluator._execute_python_code(
-            generated_code, test_cases, timeout_seconds
-        )
+        return AccuracyEvaluator._execute_python_code(generated_code, test_cases, timeout_seconds)
 
     @staticmethod
     def _execute_python_code(
@@ -336,10 +336,8 @@ class AccuracyEvaluator:
 
         finally:
             # Clean up temp file
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(temp_path)
-            except OSError:
-                pass
 
         end_time = time.perf_counter()
 
@@ -408,9 +406,7 @@ class AccuracyEvaluator:
             k = n
 
         # Count correct responses
-        correct_count = sum(
-            1 for resp in responses if evaluator(resp, ground_truth)
-        )
+        correct_count = sum(1 for resp in responses if evaluator(resp, ground_truth))
 
         if correct_count == 0:
             return 0.0
@@ -446,12 +442,12 @@ class BenchmarkAccuracyEvaluator:
         Returns:
             Callable that checks if response contains correct AIME answer
         """
+
         def evaluator(response: str, ground_truth: str) -> bool:
             # AIME answers are integers 0-999
             # Use numeric matching with zero tolerance for integers
-            return AccuracyEvaluator.numeric_match(
-                response, ground_truth, tolerance=0.5
-            )
+            return AccuracyEvaluator.numeric_match(response, ground_truth, tolerance=0.5)
+
         return evaluator
 
     @staticmethod
@@ -469,6 +465,7 @@ class BenchmarkAccuracyEvaluator:
         Returns:
             Callable that executes code and validates against test cases
         """
+
         def evaluator(code: str, test_cases: list[TestCase]) -> bool:
             result = AccuracyEvaluator.code_execution(
                 generated_code=code,
@@ -476,6 +473,7 @@ class BenchmarkAccuracyEvaluator:
                 timeout_seconds=timeout,
             )
             return result.passed
+
         return evaluator
 
     @staticmethod
@@ -494,6 +492,7 @@ class BenchmarkAccuracyEvaluator:
         Returns:
             Callable that executes code and validates against test cases
         """
+
         def evaluator(code: str, test_cases: list[TestCase]) -> bool:
             result = AccuracyEvaluator.code_execution(
                 generated_code=code,
@@ -501,6 +500,7 @@ class BenchmarkAccuracyEvaluator:
                 timeout_seconds=timeout,
             )
             return result.passed
+
         return evaluator
 
     @staticmethod
@@ -519,6 +519,7 @@ class BenchmarkAccuracyEvaluator:
         Returns:
             Callable that checks if response contains/matches answer
         """
+
         def evaluator(response: str, ground_truth: str) -> bool:
             if match_type == AccuracyType.EXACT_MATCH:
                 return AccuracyEvaluator.exact_match(response, ground_truth)
@@ -528,6 +529,7 @@ class BenchmarkAccuracyEvaluator:
                 return AccuracyEvaluator.numeric_match(response, ground_truth)
             else:
                 return AccuracyEvaluator.contains_match(response, ground_truth)
+
         return evaluator
 
     @staticmethod

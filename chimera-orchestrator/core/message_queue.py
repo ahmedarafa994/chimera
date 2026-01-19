@@ -115,9 +115,7 @@ class MessageQueue:
             except Exception as e:
                 logger.error(f"Subscriber callback error: {e}")
 
-    async def consume(
-        self, agent_type: AgentType, timeout: float | None = None
-    ) -> Message | None:
+    async def consume(self, agent_type: AgentType, timeout: float | None = None) -> Message | None:
         """
         Consume a message from an agent's queue.
 
@@ -256,9 +254,7 @@ class PriorityMessageQueue(MessageQueue):
         await self._notify_subscribers(message)
         return True
 
-    async def consume(
-        self, agent_type: AgentType, timeout: float | None = None
-    ) -> Message | None:
+    async def consume(self, agent_type: AgentType, timeout: float | None = None) -> Message | None:
         """Consume the highest priority message."""
         if agent_type not in self._priority_queues:
             return None
@@ -335,9 +331,7 @@ class RedisMessageQueue(MessageQueue):
             logger.error(f"Redis publish error: {e}")
             return False
 
-    async def consume(
-        self, agent_type: AgentType, timeout: float | None = None
-    ) -> Message | None:
+    async def consume(self, agent_type: AgentType, timeout: float | None = None) -> Message | None:
         """Consume message from Redis."""
         if not self._redis:
             return await super().consume(agent_type, timeout)

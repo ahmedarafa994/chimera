@@ -75,14 +75,16 @@ class BackgroundJob:
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "progress": self.progress,
             "metadata": self.metadata,
-            "result": {
-                "success": self.result.success,
-                "data": self.result.data,
-                "error": self.result.error,
-                "execution_time_seconds": self.result.execution_time_seconds,
-            }
-            if self.result
-            else None,
+            "result": (
+                {
+                    "success": self.result.success,
+                    "data": self.result.data,
+                    "error": self.result.error,
+                    "execution_time_seconds": self.result.execution_time_seconds,
+                }
+                if self.result
+                else None
+            ),
         }
 
 

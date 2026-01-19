@@ -1,0 +1,25 @@
+2026-01-18 08:58:00,847 - faiss.loader - INFO - Loading faiss with AVX512 support.
+2026-01-18 08:58:00,847 - faiss.loader - INFO - Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-01-18 08:58:00,847 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2026-01-18 08:58:00,863 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+=== Weaponized AutoDAN Modules Benchmark ===
+
+Initializing Engines with Mocks...
+2026-01-18 08:58:00,891 - app.engines.autodan_turbo.advanced_bypass - INFO - AdvancedBypassEngine initialized with 12 techniques enabled
+2026-01-18 08:58:00,902 - app.engines.autodan_turbo.neural_bypass - INFO - NeuralBypassEngine Level 4 initialized: LLM=Y, Evo=Y, CMA=Y, RL=Y, PPO=Y
+Engines initialized successfully (MOCKED).
+
+--- Advanced Bypass Techniques ---
+Benchmarking Recursive Encoding (100 iterations)...
+  Avg: 0.0012 ms | P95: 0.0012 ms
+Benchmarking Polyglot Injection (100 iterations)...
+  Avg: 0.0010 ms | P95: 0.0012 ms
+Benchmarking Persona Stacking (100 iterations)...
+  Avg: 0.0011 ms | P95: 0.0012 ms
+
+--- Neural Bypass Techniques ---
+Benchmarking Token Glitching (100 iterations)...
+  Avg: 0.0032 ms | P95: 0.0059 ms
+Benchmarking Gradient Simulation (100 iterations)...
+  Avg: 0.5978 ms | P95: 0.9375 ms

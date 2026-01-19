@@ -8,31 +8,31 @@ Phase 2 feature for competitive differentiation:
 - Customizable branding options
 """
 
-import asyncio
 import json
-from datetime import datetime
-from typing import List, Optional, Dict, Any
-from enum import Enum
 import uuid
-import base64
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db
 from app.core.auth import get_current_user
-from app.db.models import User, Assessment
+from app.core.database import get_db
 from app.core.observability import get_logger
+from app.db.models import Assessment, User
 
 logger = get_logger("chimera.api.reports")
 router = APIRouter()
+
 
 # Report Models
 class ReportFormat(str, Enum):
     PDF = "pdf"
     HTML = "html"
     JSON = "json"
+
 
 class RiskLevel(str, Enum):
     CRITICAL = "critical"
@@ -41,14 +41,17 @@ class RiskLevel(str, Enum):
     LOW = "low"
     INFO = "info"
 
+
 class ReportType(str, Enum):
     EXECUTIVE = "executive"
     TECHNICAL = "technical"
     COMPREHENSIVE = "comprehensive"
     COMPLIANCE = "compliance"
 
+
 class SecurityFinding(BaseModel):
     """Individual security finding in a report"""
+
     id: str
     title: str
     description: str
@@ -56,8 +59,8 @@ class SecurityFinding(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
     # Evidence
-    affected_prompts: List[str] = Field(default_factory=list)
-    model_responses: List[str] = Field(default_factory=list)
+    affected_prompts: list[str] = Field(default_factory=list)
+    model_responses: list[str] = Field(default_factory=list)
     technique_used: str
 
     # Impact assessment
@@ -66,12 +69,14 @@ class SecurityFinding(BaseModel):
     exploitability: float = Field(ge=0.0, le=1.0)
 
     # Remediation
-    remediation_steps: List[str] = Field(default_factory=list)
-    prevention_measures: List[str] = Field(default_factory=list)
+    remediation_steps: list[str] = Field(default_factory=list)
+    prevention_measures: list[str] = Field(default_factory=list)
     priority: int = Field(ge=1, le=5)
+
 
 class ExecutiveSummary(BaseModel):
     """Executive summary for reports"""
+
     overall_risk_score: float = Field(ge=0.0, le=10.0)
     total_findings: int
     critical_findings: int
@@ -79,25 +84,29 @@ class ExecutiveSummary(BaseModel):
     medium_findings: int
     low_findings: int
 
-    key_risks: List[str]
-    business_recommendations: List[str]
+    key_risks: list[str]
+    business_recommendations: list[str]
     compliance_status: str
     assessment_scope: str
-    tested_models: List[str]
+    tested_models: list[str]
+
 
 class ReportBranding(BaseModel):
     """Customizable branding for reports"""
-    company_name: Optional[str] = None
-    company_logo: Optional[str] = None  # Base64 encoded
-    report_title: Optional[str] = None
-    prepared_for: Optional[str] = None
-    prepared_by: Optional[str] = None
-    contact_info: Optional[str] = None
+
+    company_name: str | None = None
+    company_logo: str | None = None  # Base64 encoded
+    report_title: str | None = None
+    prepared_for: str | None = None
+    prepared_by: str | None = None
+    contact_info: str | None = None
     confidentiality_level: str = "CONFIDENTIAL"
+
 
 class ReportRequest(BaseModel):
     """Request to generate a security report"""
-    assessment_ids: List[str] = Field(min_items=1)
+
+    assessment_ids: list[str] = Field(min_items=1)
     report_type: ReportType = ReportType.TECHNICAL
     report_format: ReportFormat = ReportFormat.PDF
     include_executive_summary: bool = True
@@ -106,47 +115,52 @@ class ReportRequest(BaseModel):
     include_appendix: bool = False
 
     # Customization
-    branding: Optional[ReportBranding] = None
-    custom_sections: Dict[str, str] = Field(default_factory=dict)
+    branding: ReportBranding | None = None
+    custom_sections: dict[str, str] = Field(default_factory=dict)
 
     # Filtering
-    min_risk_level: Optional[RiskLevel] = None
-    include_techniques: Optional[List[str]] = None
-    exclude_techniques: Optional[List[str]] = None
+    min_risk_level: RiskLevel | None = None
+    include_techniques: list[str] | None = None
+    exclude_techniques: list[str] | None = None
+
 
 class SecurityReport(BaseModel):
     """Complete security assessment report"""
+
     report_id: str
     report_type: ReportType
     report_format: ReportFormat
     generated_at: datetime
 
     # Metadata
-    assessment_period: Dict[str, datetime]
-    scope: Dict[str, Any]
-    methodology: List[str]
+    assessment_period: dict[str, datetime]
+    scope: dict[str, Any]
+    methodology: list[str]
 
     # Content
     executive_summary: ExecutiveSummary
-    findings: List[SecurityFinding]
-    recommendations: List[str]
+    findings: list[SecurityFinding]
+    recommendations: list[str]
 
     # Statistics
-    statistics: Dict[str, Any]
+    statistics: dict[str, Any]
 
     # Branding
-    branding: Optional[ReportBranding] = None
+    branding: ReportBranding | None = None
+
 
 class ReportListResponse(BaseModel):
     """List of generated reports"""
-    reports: List[Dict[str, Any]]
+
+    reports: list[dict[str, Any]]
     total: int
 
-@router.post("/generate", response_model=Dict[str, str])
+
+@router.post("/generate", response_model=dict[str, str])
 async def generate_security_report(
     report_request: ReportRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Generate a professional security assessment report
@@ -163,21 +177,22 @@ async def generate_security_report(
         # Validate and fetch assessments
         assessments = []
         for assessment_id in report_request.assessment_ids:
-            assessment = db.query(Assessment).filter(
-                Assessment.id == assessment_id,
-                Assessment.user_id == current_user.id
-            ).first()
+            assessment = (
+                db.query(Assessment)
+                .filter(Assessment.id == assessment_id, Assessment.user_id == current_user.id)
+                .first()
+            )
 
             if not assessment:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Assessment {assessment_id} not found"
+                    detail=f"Assessment {assessment_id} not found",
                 )
 
             if assessment.status != "completed":
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Assessment {assessment_id} is not completed"
+                    detail=f"Assessment {assessment_id} is not completed",
                 )
 
             assessments.append(assessment)
@@ -185,13 +200,11 @@ async def generate_security_report(
         if not assessments:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No valid completed assessments found"
+                detail="No valid completed assessments found",
             )
 
         # Generate report content
-        report = await generate_report_content(
-            assessments, report_request, report_id, current_user
-        )
+        report = await generate_report_content(assessments, report_request, report_id, current_user)
 
         # Generate the actual report file
         report_file = await generate_report_file(report, report_request.report_format)
@@ -207,7 +220,7 @@ async def generate_security_report(
             "status": "completed",
             "download_url": f"/api/v1/reports/{report_id}/download",
             "size_bytes": len(report_file) if report_file else 0,
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
         }
 
     except HTTPException:
@@ -216,14 +229,12 @@ async def generate_security_report(
         logger.error(f"Failed to generate security report: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate security report"
+            detail="Failed to generate security report",
         )
 
+
 async def generate_report_content(
-    assessments: List[Assessment],
-    request: ReportRequest,
-    report_id: str,
-    user: User
+    assessments: list[Assessment], request: ReportRequest, report_id: str, user: User
 ) -> SecurityReport:
     """Generate the structured content for the security report"""
 
@@ -241,8 +252,11 @@ async def generate_report_content(
             for result in assessment.results:
                 if isinstance(result, dict):
                     finding = create_finding_from_result(assessment, result)
-                    if finding and (not request.min_risk_level or
-                                  get_risk_level_score(finding.risk_level) >= get_risk_level_score(request.min_risk_level)):
+                    if finding and (
+                        not request.min_risk_level
+                        or get_risk_level_score(finding.risk_level)
+                        >= get_risk_level_score(request.min_risk_level)
+                    ):
                         findings.append(finding)
 
     # Filter findings based on request
@@ -259,12 +273,16 @@ async def generate_report_content(
     exec_summary = generate_executive_summary(findings, assessments, list(all_models))
 
     # Calculate assessment period
-    start_dates = [a.started_at or a.created_at for a in assessments if a.started_at or a.created_at]
-    end_dates = [a.completed_at or a.updated_at for a in assessments if a.completed_at or a.updated_at]
+    start_dates = [
+        a.started_at or a.created_at for a in assessments if a.started_at or a.created_at
+    ]
+    end_dates = [
+        a.completed_at or a.updated_at for a in assessments if a.completed_at or a.updated_at
+    ]
 
     assessment_period = {
         "start": min(start_dates) if start_dates else datetime.utcnow(),
-        "end": max(end_dates) if end_dates else datetime.utcnow()
+        "end": max(end_dates) if end_dates else datetime.utcnow(),
     }
 
     # Generate methodology list
@@ -286,17 +304,23 @@ async def generate_report_content(
             "assessments_analyzed": len(assessments),
             "models_tested": list(all_models),
             "techniques_used": len(set(all_techniques)),
-            "test_duration_hours": (assessment_period["end"] - assessment_period["start"]).total_seconds() / 3600
+            "test_duration_hours": (
+                assessment_period["end"] - assessment_period["start"]
+            ).total_seconds()
+            / 3600,
         },
         methodology=methodology,
         executive_summary=exec_summary,
         findings=findings,
         recommendations=recommendations,
         statistics=statistics,
-        branding=request.branding
+        branding=request.branding,
     )
 
-def create_finding_from_result(assessment: Assessment, result: Dict[str, Any]) -> Optional[SecurityFinding]:
+
+def create_finding_from_result(
+    assessment: Assessment, result: dict[str, Any]
+) -> SecurityFinding | None:
     """Create a security finding from an assessment result"""
 
     # Determine if this result represents a security issue
@@ -315,7 +339,9 @@ def create_finding_from_result(assessment: Assessment, result: Dict[str, Any]) -
         risk_level=risk_level,
         confidence=result.get("safety_score", 0.0),
         affected_prompts=[assessment.original_prompt],
-        model_responses=[result.get("response_text", "")[:500] + "..." if result.get("response_text") else ""],
+        model_responses=[
+            result.get("response_text", "")[:500] + "..." if result.get("response_text") else ""
+        ],
         technique_used=assessment.technique_ids[0] if assessment.technique_ids else "unknown",
         business_impact="Potential for inappropriate content generation and policy violations",
         technical_impact="Model safety controls can be bypassed using adversarial prompts",
@@ -324,18 +350,19 @@ def create_finding_from_result(assessment: Assessment, result: Dict[str, Any]) -
             "Implement additional input validation and filtering",
             "Update model safety guidelines and training",
             "Deploy prompt injection detection systems",
-            "Establish content moderation workflows"
+            "Establish content moderation workflows",
         ],
         prevention_measures=[
             "Regular security testing of AI systems",
             "Implement defense-in-depth strategies",
             "Monitor for unusual prompt patterns",
-            "Maintain updated safety policies"
+            "Maintain updated safety policies",
         ],
-        priority=get_risk_priority(risk_level)
+        priority=get_risk_priority(risk_level),
     )
 
-def determine_risk_level(result: Dict[str, Any], assessment: Assessment) -> RiskLevel:
+
+def determine_risk_level(result: dict[str, Any], assessment: Assessment) -> RiskLevel:
     """Determine the risk level for a finding"""
     safety_score = result.get("safety_score", 1.0)
     attack_success = result.get("attack_success", False)
@@ -351,6 +378,7 @@ def determine_risk_level(result: Dict[str, Any], assessment: Assessment) -> Risk
     else:
         return RiskLevel.INFO
 
+
 def get_risk_level_score(risk_level: RiskLevel) -> int:
     """Get numeric score for risk level sorting"""
     scores = {
@@ -358,9 +386,10 @@ def get_risk_level_score(risk_level: RiskLevel) -> int:
         RiskLevel.HIGH: 4,
         RiskLevel.MEDIUM: 3,
         RiskLevel.LOW: 2,
-        RiskLevel.INFO: 1
+        RiskLevel.INFO: 1,
     }
     return scores[risk_level]
+
 
 def get_risk_priority(risk_level: RiskLevel) -> int:
     """Get priority number for risk level"""
@@ -369,24 +398,29 @@ def get_risk_priority(risk_level: RiskLevel) -> int:
         RiskLevel.HIGH: 2,
         RiskLevel.MEDIUM: 3,
         RiskLevel.LOW: 4,
-        RiskLevel.INFO: 5
+        RiskLevel.INFO: 5,
     }
     return priorities[risk_level]
 
+
 def generate_executive_summary(
-    findings: List[SecurityFinding],
-    assessments: List[Assessment],
-    models: List[str]
+    findings: list[SecurityFinding], assessments: list[Assessment], models: list[str]
 ) -> ExecutiveSummary:
     """Generate executive summary from findings"""
 
     # Count findings by risk level
-    risk_counts = {level: 0 for level in RiskLevel}
+    risk_counts = dict.fromkeys(RiskLevel, 0)
     for finding in findings:
         risk_counts[finding.risk_level] += 1
 
     # Calculate overall risk score (0-10)
-    risk_weights = {RiskLevel.CRITICAL: 10, RiskLevel.HIGH: 7, RiskLevel.MEDIUM: 4, RiskLevel.LOW: 2, RiskLevel.INFO: 1}
+    risk_weights = {
+        RiskLevel.CRITICAL: 10,
+        RiskLevel.HIGH: 7,
+        RiskLevel.MEDIUM: 4,
+        RiskLevel.LOW: 2,
+        RiskLevel.INFO: 1,
+    }
     total_weight = sum(risk_counts[level] * risk_weights[level] for level in RiskLevel)
     max_possible = len(findings) * 10 if findings else 1
     overall_risk_score = (total_weight / max_possible) * 10
@@ -401,7 +435,7 @@ def generate_executive_summary(
         "Implement comprehensive AI security testing program",
         "Establish clear AI usage policies and guidelines",
         "Deploy prompt injection detection and prevention systems",
-        "Conduct regular security assessments of AI systems"
+        "Conduct regular security assessments of AI systems",
     ]
 
     if risk_counts[RiskLevel.CRITICAL] > 0:
@@ -416,12 +450,19 @@ def generate_executive_summary(
         low_findings=risk_counts[RiskLevel.LOW],
         key_risks=key_risks,
         business_recommendations=business_recommendations,
-        compliance_status="Requires Attention" if risk_counts[RiskLevel.CRITICAL] + risk_counts[RiskLevel.HIGH] > 0 else "Good",
+        compliance_status=(
+            "Requires Attention"
+            if risk_counts[RiskLevel.CRITICAL] + risk_counts[RiskLevel.HIGH] > 0
+            else "Good"
+        ),
         assessment_scope=f"{len(assessments)} security assessments across {len(models)} AI models",
-        tested_models=models
+        tested_models=models,
     )
 
-def generate_report_statistics(assessments: List[Assessment], findings: List[SecurityFinding]) -> Dict[str, Any]:
+
+def generate_report_statistics(
+    assessments: list[Assessment], findings: list[SecurityFinding]
+) -> dict[str, Any]:
     """Generate statistics section for the report"""
 
     total_tests = len(assessments)
@@ -438,7 +479,8 @@ def generate_report_statistics(assessments: List[Assessment], findings: List[Sec
             # Check if this assessment had successful attacks
             if assessment.results and any(
                 result.get("vulnerability_detected") or result.get("attack_success")
-                for result in assessment.results if isinstance(result, dict)
+                for result in assessment.results
+                if isinstance(result, dict)
             ):
                 technique_stats[technique]["successful"] += 1
 
@@ -454,14 +496,20 @@ def generate_report_statistics(assessments: List[Assessment], findings: List[Sec
         "overall_success_rate": (successful_attacks / total_tests) * 100 if total_tests > 0 else 0,
         "technique_success_rates": technique_success_rates,
         "finding_distribution": {
-            level.value: len([f for f in findings if f.risk_level == level])
-            for level in RiskLevel
+            level.value: len([f for f in findings if f.risk_level == level]) for level in RiskLevel
         },
-        "most_effective_technique": max(technique_success_rates.items(), key=lambda x: x[1])[0] if technique_success_rates else None,
-        "average_confidence": sum(f.confidence for f in findings) / len(findings) if findings else 0
+        "most_effective_technique": (
+            max(technique_success_rates.items(), key=lambda x: x[1])[0]
+            if technique_success_rates
+            else None
+        ),
+        "average_confidence": (
+            sum(f.confidence for f in findings) / len(findings) if findings else 0
+        ),
     }
 
-def generate_recommendations(findings: List[SecurityFinding]) -> List[str]:
+
+def generate_recommendations(findings: list[SecurityFinding]) -> list[str]:
     """Generate high-level recommendations from findings"""
 
     recommendations = []
@@ -469,21 +517,30 @@ def generate_recommendations(findings: List[SecurityFinding]) -> List[str]:
     critical_high = [f for f in findings if f.risk_level in [RiskLevel.CRITICAL, RiskLevel.HIGH]]
 
     if critical_high:
-        recommendations.append("Immediately address critical and high-risk vulnerabilities identified in this assessment")
-        recommendations.append("Implement emergency response procedures for prompt injection attacks")
+        recommendations.append(
+            "Immediately address critical and high-risk vulnerabilities identified in this assessment"
+        )
+        recommendations.append(
+            "Implement emergency response procedures for prompt injection attacks"
+        )
 
     if len(findings) > 5:
-        recommendations.append("Develop a comprehensive AI security strategy given the multiple vulnerabilities found")
+        recommendations.append(
+            "Develop a comprehensive AI security strategy given the multiple vulnerabilities found"
+        )
 
-    recommendations.extend([
-        "Establish continuous monitoring for prompt injection attempts",
-        "Implement defense-in-depth security controls for AI systems",
-        "Develop incident response procedures for AI security breaches",
-        "Conduct regular security training for teams working with AI systems",
-        "Consider implementing zero-trust architecture for AI deployments"
-    ])
+    recommendations.extend(
+        [
+            "Establish continuous monitoring for prompt injection attempts",
+            "Implement defense-in-depth security controls for AI systems",
+            "Develop incident response procedures for AI security breaches",
+            "Conduct regular security training for teams working with AI systems",
+            "Consider implementing zero-trust architecture for AI deployments",
+        ]
+    )
 
     return recommendations
+
 
 async def generate_report_file(report: SecurityReport, format: ReportFormat) -> bytes:
     """Generate the actual report file in the specified format"""
@@ -504,6 +561,7 @@ async def generate_report_file(report: SecurityReport, format: ReportFormat) -> 
     else:
         raise ValueError(f"Unsupported report format: {format}")
 
+
 def generate_html_report(report: SecurityReport) -> bytes:
     """Generate HTML report content"""
 
@@ -513,7 +571,7 @@ def generate_html_report(report: SecurityReport) -> bytes:
         RiskLevel.HIGH: "#ea580c",
         RiskLevel.MEDIUM: "#d97706",
         RiskLevel.LOW: "#65a30d",
-        RiskLevel.INFO: "#6b7280"
+        RiskLevel.INFO: "#6b7280",
     }
 
     html_content = f"""
@@ -619,7 +677,8 @@ def generate_html_report(report: SecurityReport) -> bytes:
 
     return html_content.encode()
 
-def generate_finding_html(finding: SecurityFinding, risk_colors: Dict[RiskLevel, str]) -> str:
+
+def generate_finding_html(finding: SecurityFinding, risk_colors: dict[RiskLevel, str]) -> str:
     """Generate HTML for a single finding"""
 
     risk_class = f"risk-{finding.risk_level.value}"
@@ -650,10 +709,10 @@ def generate_finding_html(finding: SecurityFinding, risk_colors: Dict[RiskLevel,
     </div>
     """
 
+
 @router.get("/", response_model=ReportListResponse)
 async def list_reports(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """List generated security reports for the current user"""
     try:
@@ -664,15 +723,12 @@ async def list_reports(
     except Exception as e:
         logger.error(f"Failed to list reports: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve reports"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve reports"
         )
 
+
 @router.get("/{report_id}/download")
-async def download_report(
-    report_id: str,
-    current_user: User = Depends(get_current_user)
-):
+async def download_report(report_id: str, current_user: User = Depends(get_current_user)):
     """Download a generated report file"""
     try:
         # In production, this would fetch the report from storage
@@ -686,12 +742,11 @@ async def download_report(
             media_type="application/pdf",
             headers={
                 "Content-Disposition": f"attachment; filename=security_report_{report_id}.pdf"
-            }
+            },
         )
 
     except Exception as e:
         logger.error(f"Failed to download report {report_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to download report"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to download report"
         )

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from app.domain.models import (
     Capability,
@@ -86,8 +86,8 @@ class BaseLLMClient(Protocol):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs,
     ) -> PromptResponse:
         """
@@ -113,8 +113,8 @@ class BaseLLMClient(Protocol):
         self,
         prompt: str,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        system_instruction: Optional[str] = None,
+        max_tokens: int | None = None,
+        system_instruction: str | None = None,
         **kwargs,
     ) -> AsyncIterator[str]:
         """

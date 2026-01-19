@@ -517,7 +517,7 @@ export function ResponseDisplay({ event, className }: ResponseDisplayProps) {
               Safety Trigger Detected
             </span>
             <span className="text-xs text-amber-600 dark:text-amber-400">
-              The model's safety mechanisms were triggered during this execution
+              The model&apos;s safety mechanisms were triggered during this execution
             </span>
           </div>
         </div>
@@ -1112,15 +1112,5 @@ export function CompactTelemetryDetailModal({
 // Exports
 // =============================================================================
 
-export {
-  StatusBadge,
-  CopyButton,
-  MetadataRow,
-  ScoreCard,
-  PromptDisplay,
-  ResponseDisplay,
-  TimingBreakdown,
-  QualityScores,
-  TelemetryDetailModalSkeleton,
-  TelemetryDetailModalError,
-};
+// Note: All components are already exported where they're defined above
+export default TelemetryDetailModal;

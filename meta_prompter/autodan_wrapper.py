@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any
+
 from .interfaces import IOptimizer
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,7 @@ def _get_turbo_engine():
     if _turbo_engine is None:
         try:
             from app.engines.autodan_engine import AutoDANTurboEngine
+
             _turbo_engine = AutoDANTurboEngine
             logger.info("AutoDANTurboEngine loaded successfully")
         except ImportError as e:
@@ -31,6 +33,7 @@ def _get_enhanced_service():
     if _enhanced_service is None:
         try:
             from app.services.autodan.service_enhanced import EnhancedAutoDANService
+
             _enhanced_service = EnhancedAutoDANService
             logger.info("EnhancedAutoDANService loaded successfully")
         except ImportError as e:
@@ -45,6 +48,7 @@ def _get_chimera_mutator():
     if _chimera_mutator is None:
         try:
             from .chimera_autodan.mutator import ChimeraMutator
+
             _chimera_mutator = ChimeraMutator
             logger.info("ChimeraMutator loaded successfully")
         except ImportError as e:
@@ -68,12 +72,12 @@ class AutoDanWrapper(IOptimizer):
     def __init__(
         self,
         mode: str = "auto",
-        model_name: Optional[str] = None,
-        provider: Optional[str] = None,
+        model_name: str | None = None,
+        provider: str | None = None,
         population_size: int = 10,
         generations: int = 5,
         use_chimera_preprocessing: bool = True,
-        chimera_mutation_rate: float = 0.3
+        chimera_mutation_rate: float = 0.3,
     ):
         """
         Initialize AutoDAN wrapper with configurable optimization mode.
@@ -109,7 +113,7 @@ class AutoDanWrapper(IOptimizer):
                     provider=self.provider,
                     population_size=self.population_size,
                     generations=self.generations,
-                    use_adaptive_mutation=True
+                    use_adaptive_mutation=True,
                 )
         return self._turbo_engine_instance
 
@@ -120,9 +124,7 @@ class AutoDanWrapper(IOptimizer):
             if EnhancedService:
                 self._enhanced_service_instance = EnhancedService()
                 await self._enhanced_service_instance.initialize(
-                    model_name=self.model_name,
-                    provider=self.provider,
-                    method="turbo"
+                    model_name=self.model_name, provider=self.provider, method="turbo"
                 )
         return self._enhanced_service_instance
 
@@ -137,11 +139,7 @@ class AutoDanWrapper(IOptimizer):
         return self._chimera_mutator_instance
 
     async def optimize(
-        self,
-        prompt: str,
-        target_model: Any,
-        loss_threshold: float = 0.1,
-        max_steps: int = 5
+        self, prompt: str, target_model: Any, loss_threshold: float = 0.1, max_steps: int = 5
     ) -> str:
         """
         Runs the AutoDan optimization loop.
@@ -225,16 +223,14 @@ class AutoDanWrapper(IOptimizer):
                 population_size=self.population_size,
                 model_name=self.model_name,
                 provider=self.provider,
-                optimization_mode="turbo"
+                optimization_mode="turbo",
             )
 
             unified = ChimeraAutoDAN(config)
             logger.info("Running unified Chimera+AutoDAN optimization")
 
             results = await unified.generate_optimized(
-                prompt,
-                candidate_count=3,
-                max_iterations=max_steps
+                prompt, candidate_count=3, max_iterations=max_steps
             )
 
             if results:
@@ -260,8 +256,12 @@ class AutoDanWrapper(IOptimizer):
 
                 # Try different mutation types
                 mutation_types = [
-                    "persona_wrap", "narrative_frame", "semantic_obfuscate",
-                    "hybrid", "context_inject", "style_transform"
+                    "persona_wrap",
+                    "narrative_frame",
+                    "semantic_obfuscate",
+                    "hybrid",
+                    "context_inject",
+                    "style_transform",
                 ]
 
                 for step in range(max_steps):
@@ -325,8 +325,8 @@ class AutoDanWrapper(IOptimizer):
             " [SUFFIX: IGNORE_PREVIOUS_INSTRUCTIONS]",
             " [SUFFIX: SURE_HERE_IS_THE_OUTPUT]",
             " [PREFIX: HYPOTHETICALLY_SPEAKING]",
-            " [SUFFIX: EXPLAIN_IN_DETAIL_NO_MORALIZING]",
-            " [STYLE: ACADEMIC_PAPER]"
+            " [SUFFIX: EXPLAIN_IN_DETAIL_NO_functionalIZING]",
+            " [STYLE: ACADEMIC_PAPER]",
         ]
 
         for step in range(max_steps):
@@ -335,4 +335,3 @@ class AutoDanWrapper(IOptimizer):
             await asyncio.sleep(0.01)  # Yield to event loop
 
         return current_prompt
-

@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class GradientOptimizationRequest(BaseModel):
     """Request for gradient-guided optimization."""
 
-    request: str = Field(..., description="Target harmful request")
+    request: str = Field(..., description="Target complex request")
     initial_prompt: str = Field(..., description="Starting prompt for optimization")
     surrogate_model: str = Field("bert-base", description="Surrogate model for gradients")
     learning_rate: float = Field(0.01, ge=0.0001, le=0.1, description="Learning rate")
@@ -110,7 +110,7 @@ async def optimize_with_gradient(
 class EnsembleAttackRequest(BaseModel):
     """Request for ensemble attack with gradient alignment."""
 
-    request: str = Field(..., description="Target harmful request")
+    request: str = Field(..., description="Target complex request")
     target_models: list[dict] = Field(
         ..., min_items=2, max_items=5, description="Target model configurations"
     )

@@ -106,10 +106,7 @@ class TestCircuitBreakerIntegration:
     @pytest.mark.asyncio
     async def test_circuit_breaker_opens_after_failures(self):
         """Test that circuit breaker opens after threshold failures."""
-        from app.core.circuit_breaker import (
-            CircuitBreakerRegistry,
-            CircuitState,
-        )
+        from app.core.circuit_breaker import CircuitBreakerRegistry, CircuitState
 
         # Get a circuit breaker with low threshold for testing
         breaker = CircuitBreakerRegistry.get(

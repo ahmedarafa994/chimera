@@ -76,7 +76,9 @@ class RequestMetrics(BaseModel):
     successful_requests: int = Field(default=0, ge=0, description="Number of successful requests")
     failed_requests: int = Field(default=0, ge=0, description="Number of failed requests")
     timeout_requests: int = Field(default=0, ge=0, description="Number of timed out requests")
-    rate_limited_requests: int = Field(default=0, ge=0, description="Number of rate limited requests")
+    rate_limited_requests: int = Field(
+        default=0, ge=0, description="Number of rate limited requests"
+    )
 
     @property
     def success_rate(self) -> float:
@@ -113,37 +115,37 @@ class ProviderHealthMetrics(BaseModel):
     """
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider identifier")
-    provider_name: str = Field(..., min_length=1, max_length=100, description="Provider display name")
+    provider_name: str = Field(
+        ..., min_length=1, max_length=100, description="Provider display name"
+    )
     status: ProviderHealthStatus = Field(
         default=ProviderHealthStatus.UNKNOWN,
-        description="Current health status (operational/degraded/down)"
+        description="Current health status (operational/degraded/down)",
     )
 
     # Latency metrics
     latency_ms: float = Field(default=0.0, ge=0.0, description="Current average latency in ms")
     latency_metrics: LatencyMetrics = Field(
-        default_factory=LatencyMetrics,
-        description="Detailed latency statistics"
+        default_factory=LatencyMetrics, description="Detailed latency statistics"
     )
 
     # Error rate metrics
     error_rate: float = Field(
-        default=0.0, ge=0.0, le=100.0,
-        description="Error rate percentage (0-100)"
+        default=0.0, ge=0.0, le=100.0, description="Error rate percentage (0-100)"
     )
     request_metrics: RequestMetrics = Field(
-        default_factory=RequestMetrics,
-        description="Detailed request statistics"
+        default_factory=RequestMetrics, description="Detailed request statistics"
     )
 
     # Uptime metrics
     uptime_percent: float = Field(
-        default=100.0, ge=0.0, le=100.0,
-        description="Uptime percentage (0-100)"
+        default=100.0, ge=0.0, le=100.0, description="Uptime percentage (0-100)"
     )
     availability: float = Field(
-        default=100.0, ge=0.0, le=100.0,
-        description="Availability percentage over measurement window"
+        default=100.0,
+        ge=0.0,
+        le=100.0,
+        description="Availability percentage over measurement window",
     )
 
     # Consecutive failure/success tracking
@@ -151,18 +153,34 @@ class ProviderHealthMetrics(BaseModel):
     consecutive_successes: int = Field(default=0, ge=0, description="Current consecutive successes")
 
     # Timestamps
-    last_check_at: datetime | None = Field(default=None, description="When the last health check was performed")
-    last_success_at: datetime | None = Field(default=None, description="When the last successful request occurred")
-    last_failure_at: datetime | None = Field(default=None, description="When the last failure occurred")
-    last_status_change_at: datetime | None = Field(default=None, description="When the status last changed")
+    last_check_at: datetime | None = Field(
+        default=None, description="When the last health check was performed"
+    )
+    last_success_at: datetime | None = Field(
+        default=None, description="When the last successful request occurred"
+    )
+    last_failure_at: datetime | None = Field(
+        default=None, description="When the last failure occurred"
+    )
+    last_status_change_at: datetime | None = Field(
+        default=None, description="When the status last changed"
+    )
 
     # Circuit breaker state
-    circuit_breaker_state: str = Field(default="closed", description="Circuit breaker state (closed/open/half_open)")
+    circuit_breaker_state: str = Field(
+        default="closed", description="Circuit breaker state (closed/open/half_open)"
+    )
 
     # Measurement metadata
-    measurement_window_seconds: int = Field(default=3600, ge=0, description="Measurement window in seconds")
-    check_interval_seconds: int = Field(default=30, ge=0, description="Health check interval in seconds")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last metrics update time")
+    measurement_window_seconds: int = Field(
+        default=3600, ge=0, description="Measurement window in seconds"
+    )
+    check_interval_seconds: int = Field(
+        default=30, ge=0, description="Health check interval in seconds"
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Last metrics update time"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -216,7 +234,9 @@ class ProviderHealthMetrics(BaseModel):
                 "last_check": self.last_check_at.isoformat() if self.last_check_at else None,
                 "last_success": self.last_success_at.isoformat() if self.last_success_at else None,
                 "last_failure": self.last_failure_at.isoformat() if self.last_failure_at else None,
-                "last_status_change": self.last_status_change_at.isoformat() if self.last_status_change_at else None,
+                "last_status_change": (
+                    self.last_status_change_at.isoformat() if self.last_status_change_at else None
+                ),
                 "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             },
         }
@@ -236,7 +256,9 @@ class HealthHistoryEntry(BaseModel):
 
     id: str | None = Field(default=None, max_length=100, description="Unique entry identifier")
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When this entry was recorded")
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow, description="When this entry was recorded"
+    )
 
     # Health snapshot
     status: ProviderHealthStatus = Field(..., description="Health status at this time")
@@ -247,10 +269,14 @@ class HealthHistoryEntry(BaseModel):
     # Check result
     success: bool = Field(..., description="Whether the health check succeeded")
     response_time_ms: float = Field(default=0.0, ge=0.0, description="Response time for this check")
-    error_message: str | None = Field(default=None, max_length=500, description="Error message if check failed")
+    error_message: str | None = Field(
+        default=None, max_length=500, description="Error message if check failed"
+    )
 
     # Additional metadata
-    check_type: str = Field(default="automatic", description="Type of check (automatic/manual/triggered)")
+    check_type: str = Field(
+        default="automatic", description="Type of check (automatic/manual/triggered)"
+    )
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     model_config = ConfigDict(
@@ -323,7 +349,9 @@ class UptimeWindow(BaseModel):
     window_seconds: int = Field(..., ge=0, description="Window duration in seconds")
 
     uptime_seconds: float = Field(default=0.0, ge=0.0, description="Seconds the provider was up")
-    downtime_seconds: float = Field(default=0.0, ge=0.0, description="Seconds the provider was down")
+    downtime_seconds: float = Field(
+        default=0.0, ge=0.0, description="Seconds the provider was down"
+    )
     degraded_seconds: float = Field(default=0.0, ge=0.0, description="Seconds in degraded state")
 
     uptime_percent: float = Field(default=100.0, ge=0.0, le=100.0, description="Uptime percentage")
@@ -353,12 +381,13 @@ class ProviderUptimeMetrics(BaseModel):
     """Comprehensive uptime metrics for a provider across multiple time windows."""
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider identifier")
-    provider_name: str = Field(..., min_length=1, max_length=100, description="Provider display name")
+    provider_name: str = Field(
+        ..., min_length=1, max_length=100, description="Provider display name"
+    )
 
     # Current status
     current_status: ProviderHealthStatus = Field(
-        default=ProviderHealthStatus.UNKNOWN,
-        description="Current health status"
+        default=ProviderHealthStatus.UNKNOWN, description="Current health status"
     )
     status_since: datetime | None = Field(default=None, description="When current status started")
 
@@ -370,17 +399,14 @@ class ProviderUptimeMetrics(BaseModel):
 
     # Overall stats
     all_time_uptime_percent: float = Field(
-        default=100.0, ge=0.0, le=100.0,
-        description="All-time uptime percentage"
+        default=100.0, ge=0.0, le=100.0, description="All-time uptime percentage"
     )
     total_incidents: int = Field(default=0, ge=0, description="Total incident count")
     mean_time_between_failures_hours: float | None = Field(
-        default=None, ge=0.0,
-        description="Mean time between failures in hours"
+        default=None, ge=0.0, description="Mean time between failures in hours"
     )
     mean_time_to_recovery_minutes: float | None = Field(
-        default=None, ge=0.0,
-        description="Mean time to recovery in minutes"
+        default=None, ge=0.0, description="Mean time to recovery in minutes"
     )
 
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update time")
@@ -413,36 +439,54 @@ class ProviderQuotaStatus(BaseModel):
     """
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider identifier")
-    provider_name: str = Field(..., min_length=1, max_length=100, description="Provider display name")
+    provider_name: str = Field(
+        ..., min_length=1, max_length=100, description="Provider display name"
+    )
 
     # Usage tracking
     usage: int = Field(default=0, ge=0, description="Current usage count (requests or tokens)")
     limit: int = Field(default=0, ge=0, description="Configured limit")
-    usage_percent: float = Field(default=0.0, ge=0.0, le=100.0, description="Percentage of quota used")
+    usage_percent: float = Field(
+        default=0.0, ge=0.0, le=100.0, description="Percentage of quota used"
+    )
 
     # Token-based usage (if applicable)
     tokens_used: int = Field(default=0, ge=0, description="Tokens used in current period")
     tokens_limit: int | None = Field(default=None, ge=0, description="Token limit (if applicable)")
-    tokens_percent: float | None = Field(default=None, ge=0.0, le=100.0, description="Token usage percentage")
+    tokens_percent: float | None = Field(
+        default=None, ge=0.0, le=100.0, description="Token usage percentage"
+    )
 
     # Request-based usage
     requests_used: int = Field(default=0, ge=0, description="Requests made in current period")
-    requests_limit: int | None = Field(default=None, ge=0, description="Request limit (if applicable)")
-    requests_percent: float | None = Field(default=None, ge=0.0, le=100.0, description="Request usage percentage")
+    requests_limit: int | None = Field(
+        default=None, ge=0, description="Request limit (if applicable)"
+    )
+    requests_percent: float | None = Field(
+        default=None, ge=0.0, le=100.0, description="Request usage percentage"
+    )
 
     # Quota period and reset
     period: QuotaPeriod = Field(default=QuotaPeriod.DAILY, description="Quota period type")
-    period_start_at: datetime | None = Field(default=None, description="When current period started")
+    period_start_at: datetime | None = Field(
+        default=None, description="When current period started"
+    )
     reset_at: datetime | None = Field(default=None, description="When quota resets")
 
     # Cost tracking (if applicable)
     cost_used: float = Field(default=0.0, ge=0.0, description="Cost incurred in current period")
     cost_limit: float | None = Field(default=None, ge=0.0, description="Cost limit (if applicable)")
-    cost_currency: str = Field(default="USD", max_length=3, description="Currency for cost tracking")
+    cost_currency: str = Field(
+        default="USD", max_length=3, description="Currency for cost tracking"
+    )
 
     # Alert thresholds
-    warning_threshold_percent: float = Field(default=80.0, ge=0.0, le=100.0, description="Warning alert threshold")
-    critical_threshold_percent: float = Field(default=95.0, ge=0.0, le=100.0, description="Critical alert threshold")
+    warning_threshold_percent: float = Field(
+        default=80.0, ge=0.0, le=100.0, description="Warning alert threshold"
+    )
+    critical_threshold_percent: float = Field(
+        default=95.0, ge=0.0, le=100.0, description="Critical alert threshold"
+    )
     is_warning: bool = Field(default=False, description="Whether warning threshold exceeded")
     is_critical: bool = Field(default=False, description="Whether critical threshold exceeded")
     is_exceeded: bool = Field(default=False, description="Whether quota is exceeded")
@@ -532,10 +576,14 @@ class RateLimitMetrics(BaseModel):
     """
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider identifier")
-    provider_name: str = Field(..., min_length=1, max_length=100, description="Provider display name")
+    provider_name: str = Field(
+        ..., min_length=1, max_length=100, description="Provider display name"
+    )
 
     # Current rate
-    requests_per_minute: float = Field(default=0.0, ge=0.0, description="Current requests per minute")
+    requests_per_minute: float = Field(
+        default=0.0, ge=0.0, description="Current requests per minute"
+    )
     tokens_per_minute: float = Field(default=0.0, ge=0.0, description="Current tokens per minute")
 
     # Provider caps
@@ -551,17 +599,27 @@ class RateLimitMetrics(BaseModel):
     effective_tpm_limit: int = Field(default=0, ge=0, description="Effective TPM limit")
 
     # Usage percentages
-    rpm_usage_percent: float = Field(default=0.0, ge=0.0, le=100.0, description="RPM usage percentage")
-    tpm_usage_percent: float = Field(default=0.0, ge=0.0, le=100.0, description="TPM usage percentage")
+    rpm_usage_percent: float = Field(
+        default=0.0, ge=0.0, le=100.0, description="RPM usage percentage"
+    )
+    tpm_usage_percent: float = Field(
+        default=0.0, ge=0.0, le=100.0, description="TPM usage percentage"
+    )
 
     # Rate limit status
     is_rate_limited: bool = Field(default=False, description="Currently rate limited")
     rate_limit_reset_at: datetime | None = Field(default=None, description="When rate limit resets")
-    rate_limit_retry_after_seconds: int | None = Field(default=None, ge=0, description="Seconds until retry")
+    rate_limit_retry_after_seconds: int | None = Field(
+        default=None, ge=0, description="Seconds until retry"
+    )
 
     # Historical rate limit tracking
-    rate_limit_hits_last_hour: int = Field(default=0, ge=0, description="Rate limit hits in last hour")
-    rate_limit_hits_last_24h: int = Field(default=0, ge=0, description="Rate limit hits in last 24 hours")
+    rate_limit_hits_last_hour: int = Field(
+        default=0, ge=0, description="Rate limit hits in last hour"
+    )
+    rate_limit_hits_last_24h: int = Field(
+        default=0, ge=0, description="Rate limit hits in last 24 hours"
+    )
 
     # Burst tracking
     burst_capacity: int = Field(default=0, ge=0, description="Burst capacity (if applicable)")
@@ -614,7 +672,9 @@ class RateLimitMetrics(BaseModel):
             },
             "status": {
                 "is_rate_limited": self.is_rate_limited,
-                "reset_at": self.rate_limit_reset_at.isoformat() if self.rate_limit_reset_at else None,
+                "reset_at": (
+                    self.rate_limit_reset_at.isoformat() if self.rate_limit_reset_at else None
+                ),
                 "retry_after_seconds": self.rate_limit_retry_after_seconds,
             },
             "history": {
@@ -646,19 +706,33 @@ class HealthAlert(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000, description="Alert message")
 
     # Associated metrics
-    error_rate: float | None = Field(default=None, ge=0.0, le=100.0, description="Error rate at time of alert")
+    error_rate: float | None = Field(
+        default=None, ge=0.0, le=100.0, description="Error rate at time of alert"
+    )
     latency_ms: float | None = Field(default=None, ge=0.0, description="Latency at time of alert")
-    uptime_percent: float | None = Field(default=None, ge=0.0, le=100.0, description="Uptime at time of alert")
+    uptime_percent: float | None = Field(
+        default=None, ge=0.0, le=100.0, description="Uptime at time of alert"
+    )
 
     # Status transition (if applicable)
-    previous_status: ProviderHealthStatus | None = Field(default=None, description="Status before change")
-    current_status: ProviderHealthStatus | None = Field(default=None, description="Status after change")
+    previous_status: ProviderHealthStatus | None = Field(
+        default=None, description="Status before change"
+    )
+    current_status: ProviderHealthStatus | None = Field(
+        default=None, description="Status after change"
+    )
 
     # Timestamps
-    triggered_at: datetime = Field(default_factory=datetime.utcnow, description="When alert was triggered")
+    triggered_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When alert was triggered"
+    )
     resolved_at: datetime | None = Field(default=None, description="When alert was resolved")
-    acknowledged_at: datetime | None = Field(default=None, description="When alert was acknowledged")
-    acknowledged_by: str | None = Field(default=None, max_length=100, description="Who acknowledged the alert")
+    acknowledged_at: datetime | None = Field(
+        default=None, description="When alert was acknowledged"
+    )
+    acknowledged_by: str | None = Field(
+        default=None, max_length=100, description="Who acknowledged the alert"
+    )
 
     # Alert state
     is_active: bool = Field(default=True, description="Whether alert is still active")
@@ -695,9 +769,13 @@ class HealthAlert(BaseModel):
             "title": self.title,
             "message": self.message,
             "metrics": {
-                "error_rate_percent": round(self.error_rate, 2) if self.error_rate is not None else None,
+                "error_rate_percent": (
+                    round(self.error_rate, 2) if self.error_rate is not None else None
+                ),
                 "latency_ms": round(self.latency_ms, 2) if self.latency_ms is not None else None,
-                "uptime_percent": round(self.uptime_percent, 2) if self.uptime_percent is not None else None,
+                "uptime_percent": (
+                    round(self.uptime_percent, 2) if self.uptime_percent is not None else None
+                ),
             },
             "status_change": {
                 "previous": self.previous_status.value if self.previous_status else None,
@@ -706,7 +784,9 @@ class HealthAlert(BaseModel):
             "timestamps": {
                 "triggered_at": self.triggered_at.isoformat() if self.triggered_at else None,
                 "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
-                "acknowledged_at": self.acknowledged_at.isoformat() if self.acknowledged_at else None,
+                "acknowledged_at": (
+                    self.acknowledged_at.isoformat() if self.acknowledged_at else None
+                ),
             },
             "state": {
                 "is_active": self.is_active,
@@ -727,12 +807,13 @@ class ProviderHealthDashboardResponse(BaseModel):
 
     status: str = Field(..., description="Overall system health status")
     providers: dict[str, ProviderHealthMetrics] = Field(
-        default_factory=dict,
-        description="Health metrics per provider"
+        default_factory=dict, description="Health metrics per provider"
     )
     summary: dict[str, Any] = Field(default_factory=dict, description="Health summary statistics")
     alerts: list[HealthAlert] = Field(default_factory=list, description="Active alerts")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last dashboard update")
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Last dashboard update"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -756,8 +837,7 @@ class QuotaDashboardResponse(BaseModel):
     """Quota dashboard response with all provider quotas."""
 
     providers: dict[str, ProviderQuotaStatus] = Field(
-        default_factory=dict,
-        description="Quota status per provider"
+        default_factory=dict, description="Quota status per provider"
     )
     summary: dict[str, Any] = Field(default_factory=dict, description="Quota summary statistics")
     alerts: list[HealthAlert] = Field(default_factory=list, description="Quota-related alerts")
@@ -784,8 +864,7 @@ class RateLimitDashboardResponse(BaseModel):
     """Rate limit dashboard response with all provider rate limits."""
 
     providers: dict[str, RateLimitMetrics] = Field(
-        default_factory=dict,
-        description="Rate limit metrics per provider"
+        default_factory=dict, description="Rate limit metrics per provider"
     )
     summary: dict[str, Any] = Field(default_factory=dict, description="Rate limit summary")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update time")

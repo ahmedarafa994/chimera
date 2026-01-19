@@ -110,13 +110,13 @@ class RoutewayProvider(BaseProvider):
 
     def _get_default_model(self) -> str:
         """Get default model from config or fallback."""
-        if hasattr(self.config, 'routeway_model') and self.config.routeway_model:
+        if hasattr(self.config, "routeway_model") and self.config.routeway_model:
             return self.config.routeway_model
         return self._DEFAULT_MODEL
 
     def _get_api_key(self) -> str | None:
         """Get API key from config."""
-        if hasattr(self.config, 'ROUTEWAY_API_KEY'):
+        if hasattr(self.config, "ROUTEWAY_API_KEY"):
             return self.config.ROUTEWAY_API_KEY
         return None
 

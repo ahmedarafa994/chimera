@@ -1,12 +1,13 @@
-import pytest
 from fastapi import status
+
 from app.core.unified_errors import (
     AegisError,
     AegisSynthesisError,
     AegisTransformationError,
     ChimeraError,
-    ServiceError
+    ServiceError,
 )
+
 
 def test_aegis_error_inheritance():
     """Test that AegisError inherits from ServiceError."""
@@ -18,14 +19,16 @@ def test_aegis_error_inheritance():
     assert err.error_code == "SERVICE_AEGIS_ERROR"
     assert err.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
+
 def test_aegis_synthesis_error():
     """Test AegisSynthesisError properties."""
     err = AegisSynthesisError("Synthesis failed", details={"persona": "dark_triad"})
     assert isinstance(err, AegisError)
-    # Synthesis failure is often data related, so 422 or 400 is appropriate. 
+    # Synthesis failure is often data related, so 422 or 400 is appropriate.
     # Let's assume we want 422 by default for synthesis issues based on input
     assert err.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert err.details["persona"] == "dark_triad"
+
 
 def test_aegis_transformation_error():
     """Test AegisTransformationError properties."""

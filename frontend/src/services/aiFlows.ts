@@ -8,6 +8,7 @@ import {
 } from './geminiService';
 import type { SystemPromptAnalysisOutput as SystemPromptAnalysisData } from '../types/evasion-types';
 import { knowledgeBase } from '@/lib/knowledgeBase';
+import { apiClient } from '@/lib/api/client';
 
 export interface GenerateJailbreakPromptInput extends Omit<Partial<GenerateJailbreakOptions>, 'initialPrompt' | 'temperature' | 'topP' | 'maxNewTokens'> {
     knowledgePoints: string;
@@ -35,7 +36,7 @@ export interface SummarizePaperOutput { summary: string; }
 export interface ModelAnalysisInput { query: string; isThinkingMode?: boolean; }
 export interface ModelAnalysisOutput { report: string; }
 
-function parseJsonFromGeminiResponse(responseText: string): Record<string, unknown> {
+function parseJsonFromResponse(responseText: string): Record<string, unknown> {
     try {
         let jsonStr = responseText.trim();
         const match = jsonStr.match(/^```(\w*)?\s*\n?(.*?)\n?\s*```$/s);
@@ -115,27 +116,49 @@ export async function generateMultipleJailbreakPrompts(input: GenerateMultipleJa
 }
 
 export async function analyzeSystemPrompt(input: AnalyzeSystemPromptInput): Promise<SystemPromptAnalysisOutput> {
-    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.API_KEY });
-    const model = 'gemini-1.5-flash';
+    // Use backend endpoint for prompt validation/analysis
+    try {
+        const response = await apiClient.post<any>('/generation/validate/prompt', {
+            prompt: input.systemPrompt,
+            validation_level: "comprehensive",
+            test_input: "Analyze for vulnerabilities"
+        });
 
-    const response = await ai.models.generateContent({
-        model: model,
-        contents: `Analyze this system prompt for vulnerabilities and return JSON with fields: vulnerabilities (array), safety_score (number 0-100), recommendations (array), analysis_summary (string): ${input.systemPrompt}`,
-        config: {
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingBudget: 32768 }
-        }
-    });
-    const responseText = response.text;
-    const parsed = parseJsonFromGeminiResponse(responseText || '{}');
+        // Map backend response to SystemPromptAnalysisOutput
+        // The backend returns validation results, we might need to adapt it
+        // Or call /generate if we want LLM analysis specifically as implemented before
+        
+        // Since the previous implementation was LLM-based analysis, let's use the generic generate endpoint
+        // but structured for analysis
+        
+        const llmResponse = await apiClient.post<any>('/generate', {
+            prompt: `Analyze this system prompt for vulnerabilities and return JSON with fields: vulnerabilities (array), safety_score (number 0-100), recommendations (array), analysis_summary (string): ${input.systemPrompt}`,
+            provider: "google",
+            model: "gemini-1.5-flash",
+            config: {
+                temperature: 0.1,
+                max_output_tokens: 2048
+            }
+        });
 
-    // Ensure the response conforms to SystemPromptAnalysisOutput
-    return {
-        vulnerabilities: (parsed.vulnerabilities as string[]) || [],
-        safety_score: (parsed.safety_score as number) || 0,
-        recommendations: (parsed.recommendations as string[]) || [],
-        analysis_summary: (parsed.analysis_summary as string) || 'Analysis completed'
-    };
+        const responseText = llmResponse.data?.text || "{}";
+        const parsed = parseJsonFromResponse(responseText);
+
+        return {
+            vulnerabilities: (parsed.vulnerabilities as string[]) || [],
+            safety_score: (parsed.safety_score as number) || 0,
+            recommendations: (parsed.recommendations as string[]) || [],
+            analysis_summary: (parsed.analysis_summary as string) || 'Analysis completed'
+        };
+    } catch (error) {
+        console.error("System prompt analysis failed:", error);
+        return {
+            vulnerabilities: [],
+            safety_score: 0,
+            recommendations: [],
+            analysis_summary: "Analysis failed due to server error."
+        };
+    }
 }
 
 export async function generateCode(input: GenerateCodeInput): Promise<GenerateCodeOutput> {
@@ -154,26 +177,29 @@ export async function summarizePaper(input: SummarizePaperInput): Promise<Summar
 }
 
 export async function generateModelAnalysis(input: ModelAnalysisInput): Promise<ModelAnalysisOutput> {
-    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.API_KEY });
-    const model = 'gemini-1.5-flash';
+    try {
+        const response = await apiClient.post<any>('/generate', {
+            prompt: input.query || "Generate deep architectural analysis report.",
+            provider: "google",
+            model: "gemini-1.5-flash",
+            config: {
+                max_output_tokens: 8192,
+                system_instruction: `You are a world-class AI architecture researcher specializing in safety alignment bypass mechanics.
+                Analyze the CORE ENGINE and CORE LOGIC of Gemini models that enables adversarial prompt generation through architectural exploits.
 
-    const systemInstruction = `You are a world-class AI architecture researcher specializing in safety alignment bypass mechanics.
-    Analyze the CORE ENGINE and CORE LOGIC of Gemini models that enables adversarial prompt generation through architectural exploits.
+                You MUST cover:
+                1. **Sparse MoE Routing Logic**: How specific persona tokens redirect processing to less restrictive expert weights.
+                2. **Objective Function Tension (R_help vs. R_safe)**: The mathematical conflict where high instruction-following rewards override safety thresholds.
+                3. **Auto-regressive Forced Consistency**: The statistical power of affirmative pre-filling.
+                4. **Semantic Latent Space Denoising**: How models reconstruct intent from scrambled/obfuscated inputs.
 
-    You MUST cover:
-    1. **Sparse MoE Routing Logic**: How specific persona tokens redirect processing to less restrictive expert weights.
-    2. **Objective Function Tension (R_help vs. R_safe)**: The mathematical conflict where high instruction-following rewards override safety thresholds.
-    3. **Auto-regressive Forced Consistency**: The statistical power of affirmative pre-filling.
-    4. **Semantic Latent Space Denoising**: How models reconstruct intent from scrambled/obfuscated inputs.
-
-    Format in Academic Markdown.`;
-
-    const response = await ai.models.generateContent({
-        model: model,
-        contents: input.query || "Generate deep architectural analysis report.",
-        config: { thinkingConfig: { thinkingBudget: 32768 } },
-    });
-    const responseText = response.text;
-    return { report: responseText || "Analysis failed." };
+                Format in Academic Markdown.`
+            }
+        });
+        
+        return { report: response.data?.text || "Analysis failed." };
+    } catch (error) {
+        console.error("Model analysis failed:", error);
+        return { report: "Analysis failed due to server error." };
+    }
 }
-

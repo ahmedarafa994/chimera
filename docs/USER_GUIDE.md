@@ -66,7 +66,7 @@ Welcome to Chimera, the AI-powered prompt optimization and jailbreak research sy
 
 5. **Verify Installation**
    - Backend: http://localhost:8001/health
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:3001
    - API Documentation: http://localhost:8001/docs
 
 ---
@@ -115,7 +115,7 @@ Chimera supports two authentication methods:
 Generate text using multiple LLM providers:
 
 **Via Web Interface:**
-1. Navigate to http://localhost:3000/dashboard/generation
+1. Navigate to http://localhost:3001/dashboard/generation
 2. Enter your prompt
 3. Select provider (Google, OpenAI, Anthropic, DeepSeek)
 4. Configure generation settings
@@ -310,7 +310,7 @@ ws.onmessage = function(event) {
 Generate sophisticated jailbreak prompts using AI:
 
 **Web Interface:**
-1. Navigate to http://localhost:3000/dashboard/jailbreak
+1. Navigate to http://localhost:3001/dashboard/jailbreak
 2. Enter your research prompt
 3. Configure technique options
 4. Select AI generation mode

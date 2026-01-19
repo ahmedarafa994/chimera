@@ -42,13 +42,13 @@ class ConfigIntegration:
         try:
             # Try to import backend embedding service
             from app.services.embedding_service import get_embedding_service
+
             cls._embedding_service = get_embedding_service()
             logger.info("Backend embedding service integration available")
             return True
         except ImportError:
             logger.debug(
-                "Backend embedding service not available, "
-                "using local sentence-transformers"
+                "Backend embedding service not available, " "using local sentence-transformers"
             )
             return False
         except Exception as e:
@@ -70,6 +70,7 @@ class ConfigIntegration:
 
         try:
             from app.core.service_registry import get_ai_config_manager
+
             cls._config_manager = get_ai_config_manager()
             return cls._config_manager
         except ImportError:
@@ -91,10 +92,7 @@ class ConfigIntegration:
 
             config = config_manager.get_config()
             for name, provider in config.providers.items():
-                if (
-                    provider.enabled
-                    and provider.capabilities.supports_embeddings
-                ):
+                if provider.enabled and provider.capabilities.supports_embeddings:
                     return name
             return None
         except Exception:
@@ -159,17 +157,10 @@ class EmbeddingModel:
             embedding_service = ConfigIntegration.get_embedding_service()
             if embedding_service:
                 provider = (
-                    self.provider_override
-                    or ConfigIntegration.get_embedding_provider()
-                    or "openai"
+                    self.provider_override or ConfigIntegration.get_embedding_provider() or "openai"
                 )
-                self._dimension = embedding_service.get_embedding_dimensions(
-                    provider
-                )
-                logger.info(
-                    f"Using API embeddings via {provider}, "
-                    f"dimension={self._dimension}"
-                )
+                self._dimension = embedding_service.get_embedding_dimensions(provider)
+                logger.info(f"Using API embeddings via {provider}, " f"dimension={self._dimension}")
             else:
                 self._use_api = False
         except Exception as e:
@@ -192,16 +183,10 @@ class EmbeddingModel:
                 else:
                     device = self.device
 
-                self._model = SentenceTransformer(
-                    self.model_name, device=device
-                )
-                self._dimension = (
-                    self._model.get_sentence_embedding_dimension()
-                )
+                self._model = SentenceTransformer(self.model_name, device=device)
+                self._dimension = self._model.get_sentence_embedding_dimension()
 
-                logger.info(
-                    f"Embedding model loaded. Dimension: {self._dimension}"
-                )
+                logger.info(f"Embedding model loaded. Dimension: {self._dimension}")
 
             except ImportError:
                 logger.error(
@@ -227,10 +212,7 @@ class EmbeddingModel:
         return self._dimension or 384  # Default fallback
 
     def encode(
-        self,
-        texts: str | list[str],
-        normalize: bool = True,
-        show_progress: bool = False
+        self, texts: str | list[str], normalize: bool = True, show_progress: bool = False
     ) -> np.ndarray:
         """
         Encode text(s) into embedding vectors.
@@ -261,11 +243,7 @@ class EmbeddingModel:
 
         return embeddings
 
-    def _encode_via_api(
-        self,
-        texts: list[str],
-        normalize: bool = True
-    ) -> np.ndarray:
+    def _encode_via_api(self, texts: list[str], normalize: bool = True) -> np.ndarray:
         """Encode texts using backend API embedding service."""
         try:
             import asyncio
@@ -275,31 +253,23 @@ class EmbeddingModel:
                 logger.warning("API service unavailable, falling back")
                 return self._encode_local(texts, normalize, False)
 
-            provider = (
-                self.provider_override
-                or ConfigIntegration.get_embedding_provider()
-            )
+            provider = self.provider_override or ConfigIntegration.get_embedding_provider()
 
             # Run async in sync context
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # We're already in an async context
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     future = pool.submit(
                         asyncio.run,
-                        embedding_service.generate_batch_embeddings(
-                            texts,
-                            provider=provider
-                        )
+                        embedding_service.generate_batch_embeddings(texts, provider=provider),
                     )
                     embeddings_list = future.result()
             else:
                 embeddings_list = loop.run_until_complete(
-                    embedding_service.generate_batch_embeddings(
-                        texts,
-                        provider=provider
-                    )
+                    embedding_service.generate_batch_embeddings(texts, provider=provider)
                 )
 
             embeddings = np.array(embeddings_list, dtype=np.float32)
@@ -316,10 +286,7 @@ class EmbeddingModel:
             return self._encode_local(texts, normalize, False)
 
     def _encode_local(
-        self,
-        texts: list[str],
-        normalize: bool = True,
-        show_progress: bool = False
+        self, texts: list[str], normalize: bool = True, show_progress: bool = False
     ) -> np.ndarray:
         """Encode texts using local sentence-transformers."""
         self._load_model()
@@ -335,11 +302,7 @@ class EmbeddingModel:
 
         return embeddings
 
-    def similarity(
-        self,
-        embedding1: np.ndarray,
-        embedding2: np.ndarray
-    ) -> float:
+    def similarity(self, embedding1: np.ndarray, embedding2: np.ndarray) -> float:
         """
         Compute cosine similarity between two embeddings.
 
@@ -386,10 +349,7 @@ class EmbeddingModel:
         return similarities
 
     def find_most_similar(
-        self,
-        query_embedding: np.ndarray,
-        corpus_embeddings: np.ndarray,
-        top_k: int = 5
+        self, query_embedding: np.ndarray, corpus_embeddings: np.ndarray, top_k: int = 5
     ) -> list[tuple]:
         """
         Find the most similar embeddings in a corpus.
@@ -409,19 +369,14 @@ class EmbeddingModel:
             top_indices = np.argsort(similarities)[::-1]
         else:
             top_indices = np.argpartition(similarities, -top_k)[-top_k:]
-            top_indices = top_indices[
-                np.argsort(similarities[top_indices])[::-1]
-            ]
+            top_indices = top_indices[np.argsort(similarities[top_indices])[::-1]]
 
         return [(int(idx), float(similarities[idx])) for idx in top_indices]
 
     def get_provider_info(self) -> dict:
         """Get information about the current embedding provider."""
         if self._use_api:
-            provider = (
-                self.provider_override
-                or ConfigIntegration.get_embedding_provider()
-            )
+            provider = self.provider_override or ConfigIntegration.get_embedding_provider()
             return {
                 "type": "api",
                 "provider": provider,
@@ -487,10 +442,7 @@ class MockEmbeddingModel(EmbeddingModel):
         pass
 
     def encode(
-        self,
-        texts: str | list[str],
-        normalize: bool = True,
-        _show_progress: bool = False
+        self, texts: str | list[str], normalize: bool = True, _show_progress: bool = False
     ) -> np.ndarray:
         """Generate random embeddings for testing."""
         single_input = isinstance(texts, str)

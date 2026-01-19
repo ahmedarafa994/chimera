@@ -26,13 +26,10 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from app.core.logging import logger
-from app.services.model_rate_limiter import (
-    ModelRateLimiter,
-    get_model_rate_limiter,
-)
+from app.services.model_rate_limiter import ModelRateLimiter, get_model_rate_limiter
 from app.services.model_router_service import (
     ModelRouterService,
     ModelSelectionEvent,
@@ -93,8 +90,16 @@ class ProviderModelsResponse(BaseModel):
 class SelectProviderRequest(BaseModel):
     """Request to select a provider and model"""
 
-    provider: str = Field(..., description="Provider identifier (gemini or deepseek)")
-    model: str = Field(..., description="Model identifier")
+    provider: str = Field(
+        ...,
+        description="Provider identifier (gemini or deepseek)",
+        validation_alias=AliasChoices("provider", "provider_id"),
+    )
+    model: str = Field(
+        ...,
+        description="Model identifier",
+        validation_alias=AliasChoices("model", "model_id"),
+    )
 
 
 class SelectProviderResponse(BaseModel):
@@ -171,12 +176,21 @@ def get_or_create_session_id(
     return session_id
 
 
+def _select_query_value(primary: str | None, fallback: str | None, label: str) -> str:
+    """Resolve query value from multiple aliases."""
+    value = primary or fallback
+    if not value:
+        raise HTTPException(status_code=400, detail=f"Missing required query: {label}")
+    return value
+
+
 # ============================================================================
 # Endpoints
 # ============================================================================
 
 
 @router.get("/", response_model=ProvidersListResponse)
+@router.get("/available", response_model=ProvidersListResponse)
 async def get_available_providers(
     router_service: ModelRouterService = Depends(get_model_router_service),
 ):
@@ -287,6 +301,34 @@ async def get_provider_models(
     )
 
 
+@router.get("/{provider}", response_model=ProviderInfo)
+async def get_provider_detail(
+    provider: str, router_service: ModelRouterService = Depends(get_model_router_service)
+):
+    """Get information about a single provider."""
+    await router_service.initialize()
+
+    normalized = router_service._normalize_provider(provider)
+    providers_data = router_service.get_supported_providers()
+    provider_data = next((p for p in providers_data if p["provider"] == normalized), None)
+    if not provider_data:
+        raise HTTPException(status_code=404, detail=f"Provider '{provider}' not found")
+
+    health_data = router_service.get_provider_health()
+    health_map = {h["provider"]: h for h in health_data}
+    health = health_map.get(normalized, {})
+
+    return ProviderInfo(
+        provider=provider_data["provider"],
+        display_name=provider_data["display_name"],
+        status=provider_data["status"],
+        is_healthy=provider_data["is_healthy"],
+        models=provider_data["models"],
+        default_model=provider_data["default_model"],
+        latency_ms=health.get("latency_ms"),
+    )
+
+
 @router.post("/select", response_model=SelectProviderResponse)
 async def select_provider(
     request: SelectProviderRequest,
@@ -374,8 +416,10 @@ async def select_provider(
 
 @router.get("/rate-limit", response_model=RateLimitInfoResponse)
 async def check_rate_limit(
-    provider: str,
-    model: str,
+    provider: str | None = None,
+    model: str | None = None,
+    provider_id: str | None = None,
+    model_id: str | None = None,
     session_id: str | None = Depends(get_session_id),
     rate_limiter: ModelRateLimiter = Depends(get_model_rate_limiter),
 ):
@@ -391,17 +435,20 @@ async def check_rate_limit(
     user_id = session_id or "anonymous"
     tier = "free"
 
+    provider_value = _select_query_value(provider, provider_id, "provider")
+    model_value = _select_query_value(model, model_id, "model")
+
     rate_result = await rate_limiter.check_rate_limit(
         user_id=user_id,
-        provider=provider,
-        model=model,
+        provider=provider_value,
+        model=model_value,
         tier=tier,
     )
 
     fallback = None
     if not rate_result.allowed:
         fallback = rate_limiter.suggest_fallback_provider(
-            current_provider=provider,
+            current_provider=provider_value,
             user_id=user_id,
             tier=tier,
         )
@@ -473,6 +520,82 @@ async def get_provider_health(
         providers=health_data,
         timestamp=datetime.utcnow().isoformat(),
     )
+
+
+@router.get("/{provider}/health")
+async def get_provider_health_detail(
+    provider: str, router_service: ModelRouterService = Depends(get_model_router_service)
+):
+    """Get health status for a specific provider."""
+    await router_service.initialize()
+    normalized = router_service._normalize_provider(provider)
+    health_data = router_service.get_provider_health()
+    provider_health = next((h for h in health_data if h["provider"] == normalized), None)
+    if not provider_health:
+        raise HTTPException(status_code=404, detail=f"Provider '{provider}' not found")
+    return provider_health
+
+
+@router.post("/{provider}/test")
+async def test_provider_connection(
+    provider: str, router_service: ModelRouterService = Depends(get_model_router_service)
+):
+    """Lightweight provider test using cached health data."""
+    await router_service.initialize()
+    normalized = router_service._normalize_provider(provider)
+    health_data = router_service.get_provider_health()
+    provider_health = next((h for h in health_data if h["provider"] == normalized), None)
+    if not provider_health:
+        raise HTTPException(status_code=404, detail=f"Provider '{provider}' not found")
+    return {
+        "status": provider_health.get("status", "unknown"),
+        "latency_ms": provider_health.get("latency_ms"),
+    }
+
+
+class SetDefaultProviderRequest(BaseModel):
+    """Request to set default provider/model."""
+
+    provider_id: str = Field(..., description="Default provider identifier")
+    model_id: str | None = Field(None, description="Default model identifier")
+
+
+@router.post("/default")
+async def set_default_provider(request: SetDefaultProviderRequest):
+    """Set default provider and model for new sessions."""
+    try:
+        provider, model = session_service.set_default_model(request.provider_id, request.model_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "success": True,
+        "message": "Default provider updated",
+        "provider": provider,
+        "model": model,
+    }
+
+
+@router.delete("/current")
+async def clear_current_selection(
+    response: Response,
+    session_id: str | None = Depends(get_session_id),
+):
+    """Clear the current session selection and revert to defaults."""
+    if not session_id:
+        return {"success": True, "message": "No active session"}
+
+    session_service.delete_session(session_id)
+    if response:
+        response.delete_cookie("chimera_session_id")
+
+    default_provider, default_model = session_service.get_default_model()
+    return {
+        "success": True,
+        "message": "Selection cleared",
+        "provider": default_provider,
+        "model": default_model,
+    }
 
 
 # ============================================================================

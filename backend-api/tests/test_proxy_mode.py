@@ -68,9 +68,7 @@ class TestProxyClient:
         with patch.object(
             proxy_client,
             "_get_client",
-            return_value=AsyncMock(
-                post=AsyncMock(return_value=mock_response)
-            ),
+            return_value=AsyncMock(post=AsyncMock(return_value=mock_response)),
         ):
             result = await proxy_client.send_request(
                 provider="openai",
@@ -87,15 +85,16 @@ class TestProxyClient:
         from app.infrastructure.proxy.proxy_client import ProxyConnectionError
 
         mock_client = AsyncMock()
-        mock_client.post = AsyncMock(
-            side_effect=httpx.ConnectError("Connection refused")
-        )
+        mock_client.post = AsyncMock(side_effect=httpx.ConnectError("Connection refused"))
 
-        with patch.object(
-            proxy_client,
-            "_get_client",
-            return_value=mock_client,
-        ), pytest.raises(ProxyConnectionError):
+        with (
+            patch.object(
+                proxy_client,
+                "_get_client",
+                return_value=mock_client,
+            ),
+            pytest.raises(ProxyConnectionError),
+        ):
             await proxy_client.send_request(
                 provider="openai",
                 model="gpt-4",
@@ -108,15 +107,16 @@ class TestProxyClient:
         from app.infrastructure.proxy.proxy_client import ProxyTimeoutError
 
         mock_client = AsyncMock()
-        mock_client.post = AsyncMock(
-            side_effect=httpx.TimeoutException("Request timed out")
-        )
+        mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("Request timed out"))
 
-        with patch.object(
-            proxy_client,
-            "_get_client",
-            return_value=mock_client,
-        ), pytest.raises(ProxyTimeoutError):
+        with (
+            patch.object(
+                proxy_client,
+                "_get_client",
+                return_value=mock_client,
+            ),
+            pytest.raises(ProxyTimeoutError),
+        ):
             await proxy_client.send_request(
                 provider="openai",
                 model="gpt-4",
@@ -148,9 +148,7 @@ class TestProxyClient:
     async def test_health_check_failure(self, proxy_client):
         """Test failed health check."""
         mock_client = AsyncMock()
-        mock_client.get = AsyncMock(
-            side_effect=httpx.ConnectError("Connection refused")
-        )
+        mock_client.get = AsyncMock(side_effect=httpx.ConnectError("Connection refused"))
         mock_client.is_closed = False
 
         with patch.object(
@@ -177,15 +175,16 @@ class TestProxyClient:
         success_response.json.return_value = {"text": "Success"}
 
         mock_client = AsyncMock()
-        mock_client.post = AsyncMock(
-            side_effect=[error_response, error_response, success_response]
-        )
+        mock_client.post = AsyncMock(side_effect=[error_response, error_response, success_response])
 
-        with patch.object(
-            proxy_client,
-            "_get_client",
-            return_value=mock_client,
-        ), patch("asyncio.sleep", new_callable=AsyncMock):
+        with (
+            patch.object(
+                proxy_client,
+                "_get_client",
+                return_value=mock_client,
+            ),
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await proxy_client.send_request(
                 provider="openai",
                 model="gpt-4",
@@ -221,9 +220,7 @@ class TestProxyProviderAdapter:
         """Create a mock ProxyClient."""
         client = MagicMock()
         client.is_healthy = True
-        client.check_health = AsyncMock(
-            return_value=MagicMock(is_healthy=True)
-        )
+        client.check_health = AsyncMock(return_value=MagicMock(is_healthy=True))
         client.send_request = AsyncMock(
             return_value={
                 "text": "Generated text",
@@ -252,9 +249,7 @@ class TestProxyProviderAdapter:
     @pytest.fixture
     def adapter(self, mock_proxy_client, mock_fallback_provider):
         """Create a ProxyProviderAdapter with mocked dependencies."""
-        from app.infrastructure.proxy.proxy_provider_adapter import (
-            ProxyProviderAdapter,
-        )
+        from app.infrastructure.proxy.proxy_provider_adapter import ProxyProviderAdapter
 
         return ProxyProviderAdapter(
             provider_name="openai",
@@ -290,9 +285,7 @@ class TestProxyProviderAdapter:
 
         request = PromptRequest(prompt="Test prompt")
 
-        with patch.object(
-            adapter, "_should_fallback", return_value=True
-        ):
+        with patch.object(adapter, "_should_fallback", return_value=True):
             response = await adapter.generate(request)
 
             assert response.text == "Fallback response"
@@ -308,9 +301,7 @@ class TestProxyProviderAdapter:
         mock_proxy_client.check_health.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_count_tokens_with_fallback(
-        self, adapter, mock_fallback_provider
-    ):
+    async def test_count_tokens_with_fallback(self, adapter, mock_fallback_provider):
         """Test token counting using fallback provider."""
         count = await adapter.count_tokens("Test text", "gpt-4")
 
@@ -320,9 +311,7 @@ class TestProxyProviderAdapter:
     @pytest.mark.asyncio
     async def test_count_tokens_without_fallback(self, mock_proxy_client):
         """Test token counting estimation without fallback."""
-        from app.infrastructure.proxy.proxy_provider_adapter import (
-            ProxyProviderAdapter,
-        )
+        from app.infrastructure.proxy.proxy_provider_adapter import ProxyProviderAdapter
 
         adapter = ProxyProviderAdapter(
             provider_name="openai",
@@ -356,10 +345,7 @@ class TestProxyHealthMonitor:
     @pytest.fixture
     def mock_proxy_client(self):
         """Create a mock ProxyClient."""
-        from app.infrastructure.proxy.proxy_client import (
-            ProxyConnectionState,
-            ProxyHealthStatus,
-        )
+        from app.infrastructure.proxy.proxy_client import ProxyConnectionState, ProxyHealthStatus
 
         client = MagicMock()
         client.is_healthy = True
@@ -485,9 +471,7 @@ class TestProxyHealthEndpoints:
         """Test health endpoint when proxy mode is disabled."""
         from app.api.v1.endpoints.proxy_health import get_proxy_health
 
-        with patch(
-            "app.api.v1.endpoints.proxy_health.settings"
-        ) as mock_settings:
+        with patch("app.api.v1.endpoints.proxy_health.settings") as mock_settings:
             mock_settings.PROXY_MODE_ENABLED = False
             mock_settings.PROXY_MODE_ENDPOINT = "http://localhost:8080"
             mock_settings.PROXY_MODE_FALLBACK_TO_DIRECT = True
@@ -502,10 +486,7 @@ class TestProxyHealthEndpoints:
     async def test_get_proxy_health_enabled(self):
         """Test health endpoint when proxy mode is enabled."""
         from app.api.v1.endpoints.proxy_health import get_proxy_health
-        from app.infrastructure.proxy.proxy_client import (
-            ProxyConnectionState,
-            ProxyHealthStatus,
-        )
+        from app.infrastructure.proxy.proxy_client import ProxyConnectionState, ProxyHealthStatus
 
         mock_client = MagicMock()
         mock_client.endpoint = "http://localhost:8080"
@@ -518,9 +499,7 @@ class TestProxyHealthEndpoints:
             )
         )
 
-        with patch(
-            "app.api.v1.endpoints.proxy_health.settings"
-        ) as mock_settings:
+        with patch("app.api.v1.endpoints.proxy_health.settings") as mock_settings:
             mock_settings.PROXY_MODE_ENABLED = True
             mock_settings.PROXY_MODE_FALLBACK_TO_DIRECT = True
 
@@ -546,10 +525,7 @@ class TestProxyModeIntegration:
     @pytest.mark.asyncio
     async def test_proxy_client_global_instance(self):
         """Test global proxy client instance management."""
-        from app.infrastructure.proxy.proxy_client import (
-            close_proxy_client,
-            get_proxy_client,
-        )
+        from app.infrastructure.proxy.proxy_client import close_proxy_client, get_proxy_client
 
         # Get instance
         client1 = get_proxy_client()
@@ -592,9 +568,7 @@ class TestProxyModeIntegration:
     @pytest.mark.asyncio
     async def test_create_proxy_adapter_factory(self):
         """Test proxy adapter factory function."""
-        from app.infrastructure.proxy.proxy_provider_adapter import (
-            create_proxy_adapter,
-        )
+        from app.infrastructure.proxy.proxy_provider_adapter import create_proxy_adapter
 
         adapter = create_proxy_adapter(
             provider_name="anthropic",
@@ -617,10 +591,7 @@ class TestProxyErrorHandling:
     @pytest.mark.asyncio
     async def test_proxy_response_error_400(self):
         """Test handling of 4xx errors from proxy."""
-        from app.infrastructure.proxy.proxy_client import (
-            ProxyClient,
-            ProxyResponseError,
-        )
+        from app.infrastructure.proxy.proxy_client import ProxyClient, ProxyResponseError
 
         client = ProxyClient(endpoint="http://localhost:8080")
 
@@ -632,9 +603,7 @@ class TestProxyErrorHandling:
         mock_http_client = AsyncMock()
         mock_http_client.post = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            client, "_get_client", return_value=mock_http_client
-        ):
+        with patch.object(client, "_get_client", return_value=mock_http_client):
             with pytest.raises(ProxyResponseError) as exc_info:
                 await client.send_request(
                     provider="openai",
@@ -649,10 +618,7 @@ class TestProxyErrorHandling:
     @pytest.mark.asyncio
     async def test_proxy_rate_limit_error(self):
         """Test handling of rate limit errors (429)."""
-        from app.infrastructure.proxy.proxy_client import (
-            ProxyClient,
-            ProxyResponseError,
-        )
+        from app.infrastructure.proxy.proxy_client import ProxyClient, ProxyResponseError
 
         client = ProxyClient(endpoint="http://localhost:8080")
 
@@ -665,9 +631,7 @@ class TestProxyErrorHandling:
         mock_http_client = AsyncMock()
         mock_http_client.post = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            client, "_get_client", return_value=mock_http_client
-        ):
+        with patch.object(client, "_get_client", return_value=mock_http_client):
             with pytest.raises(ProxyResponseError) as exc_info:
                 await client.send_request(
                     provider="openai",
@@ -683,10 +647,7 @@ class TestProxyErrorHandling:
     @pytest.mark.asyncio
     async def test_consecutive_failures_tracking(self):
         """Test tracking of consecutive health check failures."""
-        from app.infrastructure.proxy.proxy_client import (
-            ProxyConnectionState,
-            ProxyHealthStatus,
-        )
+        from app.infrastructure.proxy.proxy_client import ProxyConnectionState, ProxyHealthStatus
         from app.infrastructure.proxy.proxy_health import ProxyHealthMonitor
 
         mock_client = MagicMock()

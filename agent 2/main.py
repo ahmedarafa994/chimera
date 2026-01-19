@@ -12,12 +12,7 @@ import asyncio
 import os
 from typing import Any
 
-from claude_agent_sdk import (
-    ClaudeAgentOptions,
-    create_sdk_mcp_server,
-    query,
-    tool,
-)
+from claude_agent_sdk import ClaudeAgentOptions, create_sdk_mcp_server, query, tool
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -72,7 +67,6 @@ async def fetch_prompts(_args: dict[str, Any]) -> dict[str, Any]:
     {"prompt_text": str},
 )
 async def analyze_prompt_quality(args: dict[str, Any]) -> dict[str, Any]:
-
     """Analyze a prompt for quality metrics."""
     prompt_text = args.get("prompt_text", "")
 
@@ -103,9 +97,7 @@ async def analyze_prompt_quality(args: dict[str, Any]) -> dict[str, Any]:
     if has_action:
         effectiveness_score += 25
 
-    overall_score = (
-        clarity_score + completeness_score + effectiveness_score
-    ) / 3
+    overall_score = (clarity_score + completeness_score + effectiveness_score) / 3
 
     analysis = {
         "prompt": prompt_text,
@@ -124,13 +116,9 @@ async def analyze_prompt_quality(args: dict[str, Any]) -> dict[str, Any]:
     if word_count < 5:
         analysis["suggestions"].append("Add more context to improve clarity")
     if not has_action:
-        analysis["suggestions"].append(
-            "Include a clear action verb (create, write, analyze, etc.)"
-        )
+        analysis["suggestions"].append("Include a clear action verb (create, write, analyze, etc.)")
     if not has_context:
-        analysis["suggestions"].append(
-            "Provide more context about the desired outcome"
-        )
+        analysis["suggestions"].append("Provide more context about the desired outcome")
 
     if analysis["suggestions"]:
         suggestions_list = ["- " + s for s in analysis["suggestions"]]
@@ -143,7 +131,7 @@ async def analyze_prompt_quality(args: dict[str, Any]) -> dict[str, Any]:
     result_text = (
         "Prompt Quality Analysis:\n"
         "-----------------------\n"
-        f"Prompt: \"{prompt_text}\"\n\n"
+        f'Prompt: "{prompt_text}"\n\n'
         "Metrics:\n"
         f"- Word Count: {word_count}\n"
         f"- Character Count: {char_count}\n"

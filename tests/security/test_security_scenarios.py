@@ -7,7 +7,6 @@ and protection against common attack vectors.
 Tests are marked with 'security' marker for selective running.
 """
 
-
 import pytest
 
 # Mark all tests in this module as security tests
@@ -88,10 +87,7 @@ class TestInputValidation:
 
     def _validate_input(self, input_str: str) -> bool:
         """Simulate input validation."""
-        dangerous_patterns = [
-            "DROP", "DELETE", "UPDATE", "INSERT",
-            "rm -rf", "cat /etc", "$(", "`"
-        ]
+        dangerous_patterns = ["DROP", "DELETE", "UPDATE", "INSERT", "rm -rf", "cat /etc", "$(", "`"]
         return all(pattern not in input_str for pattern in dangerous_patterns)
 
     def _sanitize_input(self, input_str: str) -> str:
@@ -168,10 +164,7 @@ class TestAuthenticationSecurity:
 
     def _requires_auth(self, endpoint: str) -> bool:
         """Check if endpoint requires authentication."""
-        public_endpoints = [
-            "/health", "/health/ping", "/health/ready",
-            "/docs", "/openapi.json"
-        ]
+        public_endpoints = ["/health", "/health/ping", "/health/ready", "/docs", "/openapi.json"]
         return endpoint not in public_endpoints
 
     def _validate_api_key(self, key: str) -> bool:
@@ -208,9 +201,7 @@ class TestDataProtection:
 
     def test_api_keys_masked_in_errors(self):
         """Test API keys are masked in error messages."""
-        error_message = self._format_error(
-            "Invalid API key: sk-1234567890abcdef"
-        )
+        error_message = self._format_error("Invalid API key: sk-1234567890abcdef")
 
         # Full API key should not be visible
         assert "1234567890abcdef" not in error_message
@@ -227,22 +218,16 @@ class TestDataProtection:
     def _create_mock_log(self, message: str) -> str:
         """Create mock log entry with redaction."""
         import re
+
         # Redact password values
-        return re.sub(
-            r'password=\S+',
-            'password=REDACTED',
-            message
-        )
+        return re.sub(r"password=\S+", "password=REDACTED", message)
 
     def _format_error(self, message: str) -> str:
         """Format error message with masking."""
         import re
+
         # Mask API keys
-        return re.sub(
-            r'(sk-|api-)\w{4,}',
-            r'\1****',
-            message
-        )
+        return re.sub(r"(sk-|api-)\w{4,}", r"\1****", message)
 
     def _sanitize_for_logging(self, content: str) -> str:
         """Sanitize content for logging."""
@@ -308,6 +293,7 @@ class TestRateLimiting:
         # Simulate rate limiting after 100 requests
         # Use secrets for non-cryptographic but security-flagged randomness to satisfy S311
         import secrets
+
         return 200 if secrets.randbelow(10) > 0 else 429
 
     def _exhaust_rate_limit(self):
@@ -384,7 +370,7 @@ class TestCORSSecurity:
     def test_cors_origin_validation(self):
         """Test CORS origin validation."""
         allowed_origins = [
-            "http://localhost:3000",
+            "http://localhost:3001",
             "http://localhost:3001",
         ]
 
@@ -424,9 +410,9 @@ class TestCORSSecurity:
     def _is_origin_allowed(self, origin: str) -> bool:
         """Check if origin is allowed."""
         allowed = [
-            "http://localhost:3000",
             "http://localhost:3001",
-            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001",
         ]
         return origin in allowed
 
@@ -438,7 +424,7 @@ class TestCORSSecurity:
     def _get_cors_config(self) -> dict:
         """Get CORS configuration."""
         return {
-            "allow_origins": ["http://localhost:3000"],
+            "allow_origins": ["http://localhost:3001"],
             "allow_credentials": True,
             "allow_methods": ["GET", "POST", "PUT", "DELETE"],
         }

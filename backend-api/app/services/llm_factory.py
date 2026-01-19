@@ -61,9 +61,7 @@ class LLMFactory:
             ValueError: If provider is not supported
         """
         if model_id not in cls._adapters:
-            adapter = cls._create_adapter(
-                provider, model_name, api_key, config
-            )
+            adapter = cls._create_adapter(provider, model_name, api_key, config)
             cls._adapters[model_id] = adapter
         return cls._adapters[model_id]
 
@@ -89,27 +87,16 @@ class LLMFactory:
         """
         # Try legacy adapters first for backward compatibility
         if provider == LLMProvider.OPENAI:
-            return OpenAIAdapter(
-                model_name=model_name,
-                api_key=api_key,
-                config=config
-            )
+            return OpenAIAdapter(model_name=model_name, api_key=api_key, config=config)
         elif provider == LLMProvider.GEMINI:
-            return GeminiAdapter(
-                model_name=model_name,
-                api_key=api_key,
-                config=config
-            )
+            return GeminiAdapter(model_name=model_name, api_key=api_key, config=config)
 
         # Try plugin-based approach for other providers
         plugin = cls.get_plugin_for_provider(provider.value)
         if plugin:
             # Create a plugin-based adapter wrapper
             return PluginAdapterWrapper(
-                plugin=plugin,
-                model_name=model_name,
-                api_key=api_key,
-                config=config
+                plugin=plugin, model_name=model_name, api_key=api_key, config=config
             )
 
         raise ValueError(f"Unsupported LLM provider: {provider}")
@@ -136,6 +123,7 @@ class LLMFactory:
         # Try to get from plugin registry
         try:
             from app.services.provider_plugins import get_plugin
+
             plugin = get_plugin(provider_type)
             if plugin:
                 cls._plugins[provider_type] = plugin
@@ -150,6 +138,7 @@ class LLMFactory:
         """Initialize all available plugins."""
         try:
             from app.services.provider_plugins import register_all_plugins
+
             register_all_plugins()
             cls._plugins_initialized = True
             logger.info("LLM Factory plugins initialized")
@@ -185,7 +174,7 @@ class LLMFactory:
         except ImportError:
             pass
 
-        return sorted(list(providers))
+        return sorted(providers)
 
     @classmethod
     def clear_cache(cls) -> None:
@@ -261,9 +250,7 @@ class PluginAdapterWrapper(BaseLLMAdapter):
             prompt=prompt,
             model=kwargs.get("model", self.model_name),
             temperature=kwargs.get("temperature", self.config.get("temp")),
-            max_tokens=kwargs.get(
-                "max_tokens", self.config.get("max_tokens")
-            ),
+            max_tokens=kwargs.get("max_tokens", self.config.get("max_tokens")),
             top_p=kwargs.get("top_p"),
             stop_sequences=kwargs.get("stop"),
             system_instruction=kwargs.get("system_prompt"),
@@ -293,17 +280,13 @@ class PluginAdapterWrapper(BaseLLMAdapter):
             prompt=prompt,
             model=kwargs.get("model", self.model_name),
             temperature=kwargs.get("temperature", self.config.get("temp")),
-            max_tokens=kwargs.get(
-                "max_tokens", self.config.get("max_tokens")
-            ),
+            max_tokens=kwargs.get("max_tokens", self.config.get("max_tokens")),
             top_p=kwargs.get("top_p"),
             stop_sequences=kwargs.get("stop"),
             system_instruction=kwargs.get("system_prompt"),
         )
 
-        async for chunk in self.plugin.generate_stream(
-            request, api_key=self.api_key
-        ):
+        async for chunk in self.plugin.generate_stream(request, api_key=self.api_key):
             if chunk.text:
                 yield chunk.text
 
@@ -374,10 +357,7 @@ def get_llm_adapter(
             plugin = LLMFactory.get_plugin_for_provider(provider)
             if plugin:
                 return PluginAdapterWrapper(
-                    plugin=plugin,
-                    model_name=model_name,
-                    api_key=api_key,
-                    config=config or {}
+                    plugin=plugin, model_name=model_name, api_key=api_key, config=config or {}
                 )
             raise ValueError(f"Unknown provider: {provider}")
 

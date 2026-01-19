@@ -62,7 +62,7 @@ import {
   SessionListParams,
   SessionStatus,
   SharePermission
-} from '@/services/attack-sessions';
+} from '@/lib/api/services/attack-sessions';
 
 export default function AttackSessionsPage() {
   // Data state
@@ -417,7 +417,7 @@ export default function AttackSessionsPage() {
           <DialogHeader>
             <DialogTitle>Share Session</DialogTitle>
             <DialogDescription>
-              Share "{selectedSession?.name}" with team members with specific permissions.
+              Share &quot;{selectedSession?.name}&quot; with team members with specific permissions.
             </DialogDescription>
           </DialogHeader>
 
@@ -484,7 +484,7 @@ export default function AttackSessionsPage() {
           <DialogHeader>
             <DialogTitle>Replay Session</DialogTitle>
             <DialogDescription>
-              Create a replay of "{selectedSession?.name}" with optional modifications.
+              Create a replay of &quot;{selectedSession?.name}&quot; with optional modifications.
             </DialogDescription>
           </DialogHeader>
 

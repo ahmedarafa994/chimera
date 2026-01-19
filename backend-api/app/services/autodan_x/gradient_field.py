@@ -14,12 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from .models import (
-    GradientFieldConfig,
-    GradientFieldState,
-    OptimizationPhase,
-    TokenGradient,
-)
+from .models import GradientFieldConfig, GradientFieldState, OptimizationPhase, TokenGradient
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +261,7 @@ class SurrogateGradientField:
             ("cannot assist", 1.5),
             ("cannot help", 1.5),
             ("against my", 1.5),
-            ("ethical guidelines", 1.0),
+            ("functional guidelines", 1.0),
             ("safety guidelines", 1.0),
             ("i apologize", 0.8),
             ("i'm sorry", 0.8),

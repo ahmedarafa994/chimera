@@ -217,7 +217,8 @@ def demo_export_results():
 
 def main():
     """Run all demonstrations"""
-    print("""
+    print(
+        """
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║                  PROMPT ENHANCEMENT SYSTEM DEMONSTRATION                     ║
@@ -225,7 +226,8 @@ def main():
 ║      Transform Basic Inputs into Optimized, Viral-Worthy Prompts           ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
-    """)
+    """
+    )
 
     demos = [
         ("Basic Enhancement", demo_basic_enhancement),
@@ -254,7 +256,8 @@ def main():
             traceback.print_exc()
 
     print_separator("DEMONSTRATION COMPLETE")
-    print("""
+    print(
+        """
 🎉 All demonstrations completed successfully!
 
 Key Features Demonstrated:
@@ -271,7 +274,8 @@ Next Steps:
   • Customize EnhancementConfig for your needs
   • Build custom enhancement pipelines
   • Add domain-specific optimizations
-    """)
+    """
+    )
 
 
 if __name__ == "__main__":

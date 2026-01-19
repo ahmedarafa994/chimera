@@ -109,6 +109,13 @@ const CAMPAIGN_STATUS_CONFIG: Record<
     bgClass: "bg-gray-500/10",
     borderClass: "border-gray-500/20",
   },
+  [CampaignStatus.INITIALIZING]: {
+    label: "Initializing",
+    icon: Loader2,
+    colorClass: "text-blue-400",
+    bgClass: "bg-blue-500/10",
+    borderClass: "border-blue-500/20",
+  },
   [CampaignStatus.RUNNING]: {
     label: "Running",
     icon: Activity,
@@ -137,16 +144,9 @@ const CAMPAIGN_STATUS_CONFIG: Record<
     bgClass: "bg-red-500/10",
     borderClass: "border-red-500/20",
   },
-  [CampaignStatus.CANCELLED]: {
-    label: "Cancelled",
+  [CampaignStatus.STOPPED]: {
+    label: "Stopped",
     icon: Square,
-    colorClass: "text-gray-400",
-    bgClass: "bg-gray-500/10",
-    borderClass: "border-gray-500/20",
-  },
-  [CampaignStatus.IDLE]: {
-    label: "Idle",
-    icon: Pause,
     colorClass: "text-gray-400",
     bgClass: "bg-gray-500/10",
     borderClass: "border-gray-500/20",

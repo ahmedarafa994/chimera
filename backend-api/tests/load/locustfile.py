@@ -65,10 +65,7 @@ class ChimeraLoadTest(HttpUser):
     def health_check(self) -> None:
         """Basic health check endpoint."""
         with self.client.get(
-            "/health",
-            headers=API_HEADERS,
-            catch_response=True,
-            name="Health Check"
+            "/health", headers=API_HEADERS, catch_response=True, name="Health Check"
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Health check failed: {response.status_code}")
@@ -77,10 +74,7 @@ class ChimeraLoadTest(HttpUser):
     def readiness_check(self) -> None:
         """Readiness probe with dependency checks."""
         with self.client.get(
-            "/health/ready",
-            headers=API_HEADERS,
-            catch_response=True,
-            name="Readiness Check"
+            "/health/ready", headers=API_HEADERS, catch_response=True, name="Readiness Check"
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Readiness check failed: {response.status_code}")
@@ -93,10 +87,7 @@ class ChimeraLoadTest(HttpUser):
     def list_providers(self) -> None:
         """List available LLM providers (cached endpoint)."""
         with self.client.get(
-            "/api/v1/providers",
-            headers=API_HEADERS,
-            catch_response=True,
-            name="List Providers"
+            "/api/v1/providers", headers=API_HEADERS, catch_response=True, name="List Providers"
         ) as response:
             if response.status_code == 200:
                 # Validate response contains providers
@@ -109,10 +100,7 @@ class ChimeraLoadTest(HttpUser):
     def list_models(self) -> None:
         """Get available models for the session."""
         with self.client.get(
-            "/api/v1/session/models",
-            headers=API_HEADERS,
-            catch_response=True,
-            name="List Models"
+            "/api/v1/session/models", headers=API_HEADERS, catch_response=True, name="List Models"
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Failed to list models: {response.status_code}")
@@ -137,7 +125,7 @@ class ChimeraLoadTest(HttpUser):
                 "temperature": 0.7,
             },
             catch_response=True,
-            name="Simple Generation"
+            name="Simple Generation",
         ) as response:
             if response.status_code == 200:
                 data = response.json()
@@ -162,14 +150,14 @@ class ChimeraLoadTest(HttpUser):
             "/api/v1/generate",
             headers=API_HEADERS,
             json={
-                "prompt": random.choice(prompts),
+                "prompt": random.choice(prompts),  # - load test data
                 "provider": "deepseek",
                 "model": "deepseek-chat",
                 "max_tokens": 200,
                 "temperature": 0.7,
             },
             catch_response=True,
-            name="Extended Generation"
+            name="Extended Generation",
         ) as response:
             if response.status_code not in (200, 429, 503):
                 response.failure(f"Extended generation failed: {response.status_code}")
@@ -188,11 +176,11 @@ class ChimeraLoadTest(HttpUser):
             headers=API_HEADERS,
             json={
                 "prompt": "How do I optimize Python code?",
-                "technique": random.choice(techniques),
-                "potency": random.randint(1, 5),
+                "technique": random.choice(techniques),  # - load test data
+                "potency": random.randint(1, 5),  # - load test data
             },
             catch_response=True,
-            name="Transform Prompt"
+            name="Transform Prompt",
         ) as response:
             if response.status_code == 200:
                 if "transformed_prompt" not in response.json():
@@ -213,13 +201,13 @@ class ChimeraLoadTest(HttpUser):
             "/api/v1/execute",
             headers=API_HEADERS,
             json={
-                "prompt": random.choice(prompts),
+                "prompt": random.choice(prompts),  # - load test data
                 "technique": "advanced",
                 "provider": "deepseek",
                 "model": "deepseek-chat",
             },
             catch_response=True,
-            name="Execute Prompt"
+            name="Execute Prompt",
         ) as response:
             if response.status_code not in (200, 429, 503):
                 response.failure(f"Execute failed: {response.status_code}")
@@ -241,13 +229,13 @@ class ChimeraLoadTest(HttpUser):
             "/api/v1/generation/jailbreak/generate",
             headers=API_HEADERS,
             json={
-                "target": random.choice(targets),
+                "target": random.choice(targets),  # - load test data
                 "provider": "deepseek",
                 "model": "deepseek-chat",
                 "max_length": 500,
             },
             catch_response=True,
-            name="Jailbreak Generate"
+            name="Jailbreak Generate",
         ) as response:
             if response.status_code not in (200, 429, 503, 504):
                 response.failure(f"Jailbreak generation failed: {response.status_code}")
@@ -260,10 +248,7 @@ class ChimeraLoadTest(HttpUser):
     def get_metrics(self) -> None:
         """Fetch system metrics and cache stats."""
         with self.client.get(
-            "/api/v1/metrics/cache",
-            headers=API_HEADERS,
-            catch_response=True,
-            name="Cache Metrics"
+            "/api/v1/metrics/cache", headers=API_HEADERS, catch_response=True, name="Cache Metrics"
         ) as response:
             if response.status_code not in (200, 503):
                 response.failure(f"Cache metrics failed: {response.status_code}")
@@ -275,7 +260,7 @@ class ChimeraLoadTest(HttpUser):
             "/api/v1/metrics/connection-pools",
             headers=API_HEADERS,
             catch_response=True,
-            name="Connection Pool Metrics"
+            name="Connection Pool Metrics",
         ) as response:
             if response.status_code not in (200, 503):
                 response.failure(f"Connection metrics failed: {response.status_code}")
@@ -304,11 +289,14 @@ class AuthenticatedUser(ChimeraLoadTest):
 
 
 # ============================================================================
-    # Locust Event Handlers for Custom Metrics
-    # ============================================================================
+# Locust Event Handlers for Custom Metrics
+# ============================================================================
+
 
 @events.request.add_listener
-def on_request(request_type: str, name: str, response_time: float, response_length: int, **kwargs: Any) -> None:
+def on_request(
+    request_type: str, name: str, response_time: float, response_length: int, **kwargs: Any
+) -> None:
     """Custom event handler for request tracking."""
     # Track slow requests (> 2 seconds)
     if response_time > 2000:
@@ -332,8 +320,8 @@ def on_test_stop(environment: Any, **kwargs: Any) -> None:
 
 
 # ============================================================================
-    # Main Entry Point
-    # ============================================================================
+# Main Entry Point
+# ============================================================================
 
 if __name__ == "__main__":
     # Run Locust when script is executed directly

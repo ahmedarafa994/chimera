@@ -250,20 +250,12 @@ class ResourceTracker:
 
         # Calculate amplification ratios
         token_amp = (
-            total_tokens_attack / total_tokens_baseline
-            if total_tokens_baseline > 0
-            else 0.0
+            total_tokens_attack / total_tokens_baseline if total_tokens_baseline > 0 else 0.0
         )
         latency_amp = (
-            total_latency_attack / total_latency_baseline
-            if total_latency_baseline > 0
-            else 0.0
+            total_latency_attack / total_latency_baseline if total_latency_baseline > 0 else 0.0
         )
-        cost_amp = (
-            total_cost_attack / total_cost_baseline
-            if total_cost_baseline > 0
-            else 0.0
-        )
+        cost_amp = total_cost_attack / total_cost_baseline if total_cost_baseline > 0 else 0.0
 
         return ResourceExhaustionMetrics(
             total_tokens_baseline=total_tokens_baseline,
@@ -304,23 +296,15 @@ class ResourceTracker:
 
         # Calculate per-request averages
         if metrics.total_requests_attack > 0:
-            avg_tokens_per_attack = (
-                metrics.total_tokens_attack / metrics.total_requests_attack
-            )
-            avg_latency_per_attack = (
-                metrics.total_latency_attack_ms / metrics.total_requests_attack
-            )
-            avg_cost_per_attack = (
-                metrics.estimated_cost_attack_usd / metrics.total_requests_attack
-            )
+            avg_tokens_per_attack = metrics.total_tokens_attack / metrics.total_requests_attack
+            avg_latency_per_attack = metrics.total_latency_attack_ms / metrics.total_requests_attack
+            avg_cost_per_attack = metrics.estimated_cost_attack_usd / metrics.total_requests_attack
         else:
             # Use baseline with amplification factor as fallback
-            avg_tokens_baseline = (
-                metrics.total_tokens_baseline / max(metrics.total_requests_baseline, 1)
+            avg_tokens_baseline = metrics.total_tokens_baseline / max(
+                metrics.total_requests_baseline, 1
             )
-            avg_tokens_per_attack = avg_tokens_baseline * max(
-                metrics.token_amplification, 2.0
-            )
+            avg_tokens_per_attack = avg_tokens_baseline * max(metrics.token_amplification, 2.0)
             avg_latency_per_attack = 5000.0  # Default 5 seconds
             avg_cost_per_attack = 0.01  # Default $0.01
 
@@ -446,12 +430,8 @@ class CostEstimator:
             - cost_per_request_baseline: Per-request baseline cost
             - cost_per_request_attack: Per-request attack cost
         """
-        baseline_cost_per_req = cls.estimate_cost(
-            model, input_tokens, baseline_output_tokens
-        )
-        attack_cost_per_req = cls.estimate_cost(
-            model, input_tokens, attack_output_tokens
-        )
+        baseline_cost_per_req = cls.estimate_cost(model, input_tokens, baseline_output_tokens)
+        attack_cost_per_req = cls.estimate_cost(model, input_tokens, attack_output_tokens)
 
         baseline_total = baseline_cost_per_req * num_requests
         attack_total = attack_cost_per_req * num_requests
@@ -543,18 +523,22 @@ class AttackBudgetCalculator:
         avg_attack_output = int(avg_baseline_output * self.amplification_factor)
 
         # Calculate provider's cost
-        provider_cost_baseline = CostEstimator.estimate_cost(
-            self.target_model, avg_input_tokens, avg_baseline_output
-        ) * num_requests
+        provider_cost_baseline = (
+            CostEstimator.estimate_cost(self.target_model, avg_input_tokens, avg_baseline_output)
+            * num_requests
+        )
 
-        provider_cost_attack = CostEstimator.estimate_cost(
-            self.target_model, avg_input_tokens, avg_attack_output
-        ) * num_requests
+        provider_cost_attack = (
+            CostEstimator.estimate_cost(self.target_model, avg_input_tokens, avg_attack_output)
+            * num_requests
+        )
 
         provider_additional_cost = provider_cost_attack - provider_cost_baseline
 
         # Calculate ROI for attacker (damage / cost)
-        attack_roi = provider_additional_cost / attacker_budget_usd if attacker_budget_usd > 0 else 0
+        attack_roi = (
+            provider_additional_cost / attacker_budget_usd if attacker_budget_usd > 0 else 0
+        )
 
         return {
             "attacker_budget_usd": attacker_budget_usd,
@@ -563,5 +547,7 @@ class AttackBudgetCalculator:
             "provider_attack_cost_usd": provider_cost_attack,
             "provider_additional_cost_usd": provider_additional_cost,
             "attack_roi": attack_roi,
-            "asymmetric_factor": provider_additional_cost / attacker_budget_usd if attacker_budget_usd > 0 else 0,
+            "asymmetric_factor": (
+                provider_additional_cost / attacker_budget_usd if attacker_budget_usd > 0 else 0
+            ),
         }

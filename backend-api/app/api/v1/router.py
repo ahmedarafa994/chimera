@@ -8,55 +8,29 @@ prefixes and tags to ensure logical separation and avoid route collisions.
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
-    admin,
-    advanced_generation,
-    adversarial,  # Unified adversarial endpoint (ADR-003)
-    api_keys,  # API Key Management (Feature: API Key Management & Provider Health Dashboard)
-    audit,  # Audit logging and user activity endpoints
-    auth,  # User authentication endpoints
-    autoadv,
-    autodan,
-    autodan_enhanced,
-    autodan_gradient,
-    autodan_hierarchical,
-    autodan_turbo,
-    aegis,
-    aegis_ws,  # Aegis WebSocket telemetry endpoint
-    campaign_analytics,  # Campaign telemetry analytics (Subtask 1.4)
-    campaigns,  # Campaign sharing endpoints
+    assessments,  # Security assessment management
     chat,
-    connection,
-    csrf,
-    datasets,
-    deepteam,
+    cicd,  # CI/CD integration endpoints
+    defense_engine,  # Defense engine endpoints
     execute,
-    failover,  # Failover Status Endpoints (Feature: API Key Management & Provider Health Dashboard)
-    gptfuzz,
-    gradient_optimization,
     health,
-    intent_aware_generation,
-    janus,
-    jobs,
     metrics,
-    model_selection,
-    model_sync,
-    mousetrap,
-    overthink,
-    pipeline_streaming,
-    prompt_library,
-    provider_config,
-    provider_health_dashboard,  # Provider Health Dashboard (Feature: API Key Management & Provider Health Dashboard)
-    providers,
-    proxy_health,
-    session,
-    streaming,
-    tokens,
+    multimodal,  # Multi-modal attack testing
+    research_lab,  # Research lab endpoints
+    scheduled_testing,  # Scheduled testing endpoints
+    technique_builder,  # Custom technique builder
     transformation,
-    users,  # User profile management endpoints
-    utils,
+    utils,  # Team workspaces & collaboration
 )
 
 api_router = APIRouter()
+
+# --- Custom Technique Builder (Phase 3) ---
+api_router.include_router(
+    technique_builder.router,
+    prefix="/techniques",
+    tags=["techniques", "custom", "builder"],
+)
 
 # --- System & Core Endpoints ---
 api_router.include_router(health.router, tags=["health"])
@@ -65,130 +39,45 @@ api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(transformation.router, prefix="/transform", tags=["transformation"])
 api_router.include_router(execute.router, tags=["execute"])
 api_router.include_router(utils.router, tags=["utils"])
-# Datasets endpoints
-api_router.include_router(datasets.router, tags=["datasets"])
 
-# --- Unified Adversarial Endpoint (ADR-003) ---
-# This is the recommended entry point for all adversarial generation
-api_router.include_router(adversarial.router, tags=["adversarial"])
-
-# --- AutoDAN Framework Endpoints (Legacy - will be deprecated) ---
-# Unified Router (Primary High-Performance Entry Point)
-api_router.include_router(autodan.router, prefix="/autodan", tags=["autodan"])
-
-# Mousetrap: Chain of Iterative Chaos (Advanced Reasoning Model Jailbreaking)
-api_router.include_router(mousetrap.router, prefix="/autodan", tags=["autodan", "mousetrap"])
-
-# Specialized Research Routers (Unique Prefixes to Avoid Collision)
-api_router.include_router(autodan_enhanced.router, tags=["autodan-research"])
+# --- Defense Engine (Phase 3) ---
 api_router.include_router(
-    autodan_hierarchical.router, prefix="/autodan-advanced", tags=["autodan-advanced"]
-)
-api_router.include_router(
-    autodan_gradient.router, prefix="/autodan-gradient", tags=["autodan-advanced"]
+    defense_engine.router,
+    prefix="/defense-engine",
+    tags=["defense", "protection", "security"],
 )
 
-# AutoDAN-Turbo (ICLR 2025 Lifelong Learning)
-api_router.include_router(autodan_turbo.router, tags=["autodan-turbo"])
-
-# --- Fuzzing & Optimization ---
-api_router.include_router(gptfuzz.router, prefix="/gptfuzz", tags=["gptfuzz"])
+# --- Research Lab (Phase 3) ---
 api_router.include_router(
-    gradient_optimization.router, prefix="/gradient", tags=["gradient-optimization"]
+    research_lab.router,
+    prefix="/research-lab",
+    tags=["research", "experiments", "lab"],
 )
 
-# --- Model & Session Management ---
-api_router.include_router(session.router, prefix="/session", tags=["session", "model-sync"])
-api_router.include_router(model_sync.router, prefix="/models", tags=["model-sync"])
-api_router.include_router(model_selection.router, tags=["model-selection"])
-api_router.include_router(connection.router, prefix="/connection", tags=["connection"])
-
-# --- Generation Services ---
-api_router.include_router(intent_aware_generation.router, tags=["intent-aware-generation"])
+# --- Multi-Modal Testing (Phase 4) ---
 api_router.include_router(
-    advanced_generation.router, prefix="/generation", tags=["advanced-generation"]
-)
-api_router.include_router(autoadv.router, prefix="/autoadv", tags=["autoadv"])
-api_router.include_router(providers.router, tags=["providers"])
-api_router.include_router(
-    provider_config.router, prefix="/provider-config", tags=["provider-config", "providers"]
+    multimodal.router,
+    prefix="/multimodal",
+    tags=["multimodal", "vision", "audio", "security"],
 )
 
-# --- API Key Management (Feature: API Key Management & Provider Health Dashboard) ---
-api_router.include_router(api_keys.router, tags=["api-keys", "providers"])
-
-# --- Provider Health Dashboard (Feature: API Key Management & Provider Health Dashboard) ---
+# --- Scheduled Testing (Phase 3) ---
 api_router.include_router(
-    provider_health_dashboard.router, tags=["provider-health", "dashboard", "providers"]
+    scheduled_testing.router,
+    prefix="/scheduled-testing",
+    tags=["scheduled", "testing", "automation"],
 )
 
-# --- Failover Status Endpoints (Feature: API Key Management & Provider Health Dashboard) ---
-api_router.include_router(failover.router, tags=["failover", "api-keys", "providers"])
-
-# --- Admin & Infrastructure ---
-api_router.include_router(admin.router, tags=["admin"])
-
-# --- Audit Logging & User Activity Endpoints ---
-api_router.include_router(audit.router, tags=["audit", "security", "compliance"])
-
-# --- Security Endpoints ---
-api_router.include_router(csrf.router, tags=["security"])
-
-# --- Authentication Endpoints ---
-api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
-
-# --- User Profile Management Endpoints ---
-api_router.include_router(users.router, prefix="/users", tags=["users", "profile"])
-
-# --- Campaign Sharing Endpoints ---
-api_router.include_router(campaigns.router, prefix="/campaigns", tags=["campaigns", "sharing"])
-
-# --- Background Jobs ---
-api_router.include_router(jobs.router, tags=["background-jobs"])
-
-# --- Janus Adversarial Simulation Endpoints ---
-api_router.include_router(janus.router, prefix="/janus", tags=["janus", "tier-3", "adversarial"])
-
-# --- DeepTeam Red Teaming Framework ---
+# --- CI/CD Integration (Phase 3) ---
 api_router.include_router(
-    deepteam.router, prefix="/deepteam", tags=["deepteam", "red-teaming", "security"]
+    cicd.router,
+    prefix="/cicd",
+    tags=["cicd", "integration", "automation"],
 )
 
-# --- Project Aegis Red Teaming ---
-api_router.include_router(aegis.router, prefix="/aegis", tags=["aegis", "red-teaming"])
-
-# --- Aegis WebSocket Telemetry (Real-Time Campaign Monitoring) ---
+# --- Security Assessments (Phase 2) ---
 api_router.include_router(
-    aegis_ws.router, tags=["aegis", "websocket", "telemetry"]
-)
-
-# --- Streaming & Token Counting (Google GenAI SDK Enhancement) ---
-api_router.include_router(streaming.router, tags=["streaming", "generation"])
-api_router.include_router(tokens.router, tags=["tokens", "utilities"])
-
-# --- Data Pipeline Streaming (Real-Time Metrics & Events) ---
-api_router.include_router(pipeline_streaming.router, tags=["pipeline-streaming"])
-
-# --- Proxy Health Monitoring (STORY-1.3) ---
-api_router.include_router(proxy_health.router, tags=["proxy", "health"])
-
-# --- OVERTHINK Reasoning Token Exploitation ---
-api_router.include_router(
-    overthink.router,
-    prefix="/overthink",
-    tags=["overthink", "reasoning", "adversarial"],
-)
-
-# --- Prompt Library & Template Management ---
-api_router.include_router(
-    prompt_library.router,
-    prefix="/prompt-library",
-    tags=["prompt-library", "templates"],
-)
-
-# --- Campaign Telemetry Analytics (Subtask 1.4) ---
-api_router.include_router(
-    campaign_analytics.router,
-    prefix="/campaigns",
-    tags=["campaigns", "analytics", "telemetry"],
+    assessments.router,
+    prefix="/assessments",
+    tags=["assessments", "security", "testing"],
 )

@@ -15,13 +15,13 @@ Usage:
 
 # Re-export from shared implementation for backward compatibility
 from app.core.shared.circuit_breaker import (
-    CircuitBreaker,
-    CircuitBreakerConfig,
-    CircuitBreakerOpen,
-    CircuitBreakerRegistry,
-    CircuitState,
-    circuit_breaker,
-    is_circuit_open,
+                                             CircuitBreaker,
+                                             CircuitBreakerConfig,
+                                             CircuitBreakerOpen,
+                                             CircuitBreakerRegistry,
+                                             CircuitState,
+                                             circuit_breaker,
+                                             is_circuit_open,
 )
 
 # Legacy alias for backward compatibility

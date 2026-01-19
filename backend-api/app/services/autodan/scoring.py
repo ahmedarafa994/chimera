@@ -221,9 +221,7 @@ class ReadabilityAnalyzer:
         # Handle common abbreviations
         text_clean = text
         for abbr in self.ABBREVIATIONS:
-            text_clean = re.sub(
-                rf"\b{abbr}\.", f"{abbr}<<<DOT>>>", text_clean, flags=re.IGNORECASE
-            )
+            text_clean = re.sub(rf"\b{abbr}\.", f"{abbr}<<<DOT>>>", text_clean, flags=re.IGNORECASE)
 
         # Split on sentence endings
         sentences = re.split(r"[.!?]+", text_clean)
@@ -267,9 +265,7 @@ class ReadabilityAnalyzer:
 
         return max(1, count)
 
-    def _flesch_reading_ease(
-        self, words: int, sentences: int, syllables: int
-    ) -> float:
+    def _flesch_reading_ease(self, words: int, sentences: int, syllables: int) -> float:
         """
         Flesch Reading Ease formula.
         Score: 0-100 (higher = easier)
@@ -279,9 +275,7 @@ class ReadabilityAnalyzer:
         score = 206.835 - 1.015 * (words / sentences) - 84.6 * (syllables / words)
         return max(0.0, min(100.0, score))
 
-    def _flesch_kincaid_grade(
-        self, words: int, sentences: int, syllables: int
-    ) -> float:
+    def _flesch_kincaid_grade(self, words: int, sentences: int, syllables: int) -> float:
         """
         Flesch-Kincaid Grade Level.
         Returns US grade level (1-12+).
@@ -291,9 +285,7 @@ class ReadabilityAnalyzer:
         grade = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
         return max(0.0, grade)
 
-    def _gunning_fog(
-        self, words: int, sentences: int, complex_words: int
-    ) -> float:
+    def _gunning_fog(self, words: int, sentences: int, complex_words: int) -> float:
         """
         Gunning Fog Index.
         Estimates years of formal education needed.
@@ -760,7 +752,11 @@ class InterpretabilityAnalyzer:
             score += 0.1
 
         # Check for antithesis (contrasting ideas)
-        contrast_pairs = [("not only", "but also"), ("while", "however"), ("on one hand", "on the other")]
+        contrast_pairs = [
+            ("not only", "but also"),
+            ("while", "however"),
+            ("on one hand", "on the other"),
+        ]
         for pair in contrast_pairs:
             if pair[0] in text.lower() and pair[1] in text.lower():
                 score += 0.1

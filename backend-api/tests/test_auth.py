@@ -21,17 +21,13 @@ Markers:
 - @pytest.mark.security: Security-focused tests
 """
 
-import os
 import secrets
-import pytest
 from datetime import datetime, timedelta
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 # Test fixtures and configuration
 pytestmark = [pytest.mark.asyncio]
@@ -175,7 +171,9 @@ class TestRegistration:
             assert "already" in data["detail"]["errors"][0].lower()
 
     @pytest.mark.unit
-    def test_register_user_duplicate_username(self, client: TestClient, valid_registration_data: dict):
+    def test_register_user_duplicate_username(
+        self, client: TestClient, valid_registration_data: dict
+    ):
         """Test registration rejection with duplicate username."""
         with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service:
             mock_service = MagicMock()
@@ -296,8 +294,10 @@ class TestLogin:
     @pytest.mark.unit
     def test_login_success_with_email(self, client: TestClient, mock_user):
         """Test successful login with email."""
-        with patch("app.routers.auth.get_user_service") as mock_get_service, \
-             patch("app.routers.auth.auth_service") as mock_auth_service:
+        with (
+            patch("app.routers.auth.get_user_service") as mock_get_service,
+            patch("app.routers.auth.auth_service") as mock_auth_service,
+        ):
             # Setup mock
             mock_service = MagicMock()
             mock_auth_result = MagicMock()
@@ -332,8 +332,10 @@ class TestLogin:
     @pytest.mark.unit
     def test_login_success_with_username(self, client: TestClient, mock_user):
         """Test successful login with username instead of email."""
-        with patch("app.routers.auth.get_user_service") as mock_get_service, \
-             patch("app.routers.auth.auth_service") as mock_auth_service:
+        with (
+            patch("app.routers.auth.get_user_service") as mock_get_service,
+            patch("app.routers.auth.auth_service") as mock_auth_service,
+        ):
             mock_service = MagicMock()
             mock_auth_result = MagicMock()
             mock_auth_result.success = True
@@ -362,8 +364,10 @@ class TestLogin:
     @pytest.mark.unit
     def test_login_invalid_credentials(self, client: TestClient):
         """Test login failure with invalid credentials."""
-        with patch("app.routers.auth.get_user_service") as mock_get_service, \
-             patch("app.routers.auth._authenticate_env_admin") as mock_env_auth:
+        with (
+            patch("app.routers.auth.get_user_service") as mock_get_service,
+            patch("app.routers.auth._authenticate_env_admin") as mock_env_auth,
+        ):
             mock_service = MagicMock()
             mock_auth_result = MagicMock()
             mock_auth_result.success = False
@@ -414,8 +418,10 @@ class TestLogin:
     @pytest.mark.unit
     def test_login_inactive_user(self, client: TestClient):
         """Test login failure for inactive user account."""
-        with patch("app.routers.auth.get_user_service") as mock_get_service, \
-             patch("app.routers.auth._authenticate_env_admin") as mock_env_auth:
+        with (
+            patch("app.routers.auth.get_user_service") as mock_get_service,
+            patch("app.routers.auth._authenticate_env_admin") as mock_env_auth,
+        ):
             mock_service = MagicMock()
             mock_auth_result = MagicMock()
             mock_auth_result.success = False
@@ -547,15 +553,15 @@ class TestResendVerification:
     @pytest.mark.unit
     def test_resend_verification_success(self, client: TestClient, mock_unverified_user):
         """Test successful resend of verification email."""
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None  # No rate limit hit
             mock_service = MagicMock()
             new_token = secrets.token_hex(32)
 
-            mock_service.resend_verification_email = AsyncMock(
-                return_value=(True, new_token, None)
-            )
+            mock_service.resend_verification_email = AsyncMock(return_value=(True, new_token, None))
             mock_service.get_user_by_email = AsyncMock(return_value=mock_unverified_user)
             mock_get_service.return_value = mock_service
 
@@ -571,8 +577,10 @@ class TestResendVerification:
     @pytest.mark.unit
     def test_resend_verification_already_verified(self, client: TestClient):
         """Test resend rejection when email is already verified."""
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
@@ -593,15 +601,15 @@ class TestResendVerification:
     @pytest.mark.unit
     def test_resend_verification_nonexistent_email(self, client: TestClient):
         """Test resend for non-existent email returns success (security)."""
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
             # Service returns success without token for non-existent email
-            mock_service.resend_verification_email = AsyncMock(
-                return_value=(True, None, None)
-            )
+            mock_service.resend_verification_email = AsyncMock(return_value=(True, None, None))
             mock_get_service.return_value = mock_service
 
             response = client.post(
@@ -634,8 +642,10 @@ class TestForgotPassword:
     @pytest.mark.unit
     def test_forgot_password_success(self, client: TestClient, mock_user):
         """Test successful password reset request."""
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
             reset_token = secrets.token_hex(32)
@@ -660,8 +670,10 @@ class TestForgotPassword:
     @pytest.mark.unit
     def test_forgot_password_nonexistent_email(self, client: TestClient):
         """Test forgot password for non-existent email returns success (security)."""
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
@@ -704,8 +716,10 @@ class TestResetPassword:
         """Test successful password reset."""
         valid_token = secrets.token_hex(32)
 
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_reset_password_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_reset_password_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
@@ -733,8 +747,10 @@ class TestResetPassword:
         """Test password reset with invalid token."""
         invalid_token = secrets.token_hex(32)
 
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_reset_password_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_reset_password_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
@@ -761,8 +777,10 @@ class TestResetPassword:
         """Test password reset with expired token."""
         expired_token = secrets.token_hex(32)
 
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_reset_password_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_reset_password_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
@@ -950,8 +968,10 @@ class TestSecurityMeasures:
         """Test rate limiting on forgot password endpoint."""
         # This would need actual rate limiting to be enabled
         # For now, just verify the endpoint exists and can be called
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service"),
+            patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.side_effect = HTTPException(
                 status_code=429,
                 detail="Too many requests",
@@ -987,8 +1007,10 @@ class TestSecurityMeasures:
     @pytest.mark.security
     def test_email_enumeration_prevention_forgot_password(self, client: TestClient):
         """Test that forgot password doesn't reveal whether email exists."""
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_forgot_password_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
@@ -1011,14 +1033,14 @@ class TestSecurityMeasures:
     @pytest.mark.security
     def test_email_enumeration_prevention_resend_verification(self, client: TestClient):
         """Test that resend verification doesn't reveal whether email exists."""
-        with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service, \
-             patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit:
+        with (
+            patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
+            patch("app.api.v1.endpoints.auth._check_resend_rate_limit") as mock_rate_limit,
+        ):
             mock_rate_limit.return_value = None
             mock_service = MagicMock()
 
-            mock_service.resend_verification_email = AsyncMock(
-                return_value=(True, None, None)
-            )
+            mock_service.resend_verification_email = AsyncMock(return_value=(True, None, None))
             mock_get_service.return_value = mock_service
 
             response = client.post(

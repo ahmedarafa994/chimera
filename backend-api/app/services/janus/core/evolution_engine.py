@@ -18,6 +18,8 @@ def _secure_random() -> float:
 
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
+
+
 from collections import deque
 from typing import Any
 

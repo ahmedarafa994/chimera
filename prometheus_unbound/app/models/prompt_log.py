@@ -1,7 +1,8 @@
-from config import Config
 from sqlalchemy import Boolean, Column, Integer, String, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+from config import Config
 
 Base = declarative_base()
 

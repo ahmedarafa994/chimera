@@ -37,7 +37,10 @@ class BoundedCacheManager:
     KEY_PREFIX = "jailbreak:"
 
     def __init__(
-        self, config: CacheConfig | None = None, max_items: int = 5000, max_value_size: int | None = None
+        self,
+        config: CacheConfig | None = None,
+        max_items: int = 5000,
+        max_value_size: int | None = None,
     ):
         cache_config = config or CacheConfig(
             max_memory_items=max_items, key_prefix="chimera:jailbreak:"

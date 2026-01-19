@@ -20,11 +20,7 @@ from typing import Any
 from app.core.config import settings
 from app.core.logging import logger
 from app.domain.interfaces import LLMProvider
-from app.domain.models import (
-    PromptRequest,
-    PromptResponse,
-    StreamChunk,
-)
+from app.domain.models import PromptRequest, PromptResponse, StreamChunk
 from app.infrastructure.proxy.proxy_client import (
     ProxyClient,
     ProxyConnectionError,
@@ -124,9 +120,7 @@ class ProxyProviderAdapter(LLMProvider):
 
         except (ProxyConnectionError, ProxyTimeoutError) as e:
             self._error_count += 1
-            logger.warning(
-                f"Proxy request failed for {self._provider_name}: {e}"
-            )
+            logger.warning(f"Proxy request failed for {self._provider_name}: {e}")
 
             if self._should_fallback():
                 return await self._execute_fallback(request, start_time)
@@ -163,10 +157,7 @@ class ProxyProviderAdapter(LLMProvider):
 
     def _should_fallback(self) -> bool:
         """Check if fallback to direct mode should be attempted."""
-        return (
-            settings.PROXY_MODE_FALLBACK_TO_DIRECT
-            and self._fallback_provider is not None
-        )
+        return settings.PROXY_MODE_FALLBACK_TO_DIRECT and self._fallback_provider is not None
 
     async def _execute_fallback(
         self,
@@ -174,9 +165,7 @@ class ProxyProviderAdapter(LLMProvider):
         start_time: float,
     ) -> PromptResponse:
         """Execute request using fallback provider."""
-        logger.info(
-            f"Falling back to direct mode for {self._provider_name}"
-        )
+        logger.info(f"Falling back to direct mode for {self._provider_name}")
         self._fallback_count += 1
 
         if self._fallback_provider is None:
@@ -218,7 +207,7 @@ class ProxyProviderAdapter(LLMProvider):
             chunk_size = 50
 
             for i in range(0, len(text), chunk_size):
-                chunk_text = text[i:i + chunk_size]
+                chunk_text = text[i : i + chunk_size]
                 yield StreamChunk(
                     text=chunk_text,
                     is_final=(i + chunk_size >= len(text)),
@@ -228,14 +217,10 @@ class ProxyProviderAdapter(LLMProvider):
 
         except ProxyError as e:
             if self._should_fallback():
-                async for chunk in self._fallback_provider.generate_stream(
-                    request
-                ):
+                async for chunk in self._fallback_provider.generate_stream(request):
                     yield chunk
             else:
-                raise NotImplementedError(
-                    f"Streaming through proxy failed: {e}"
-                )
+                raise NotImplementedError(f"Streaming through proxy failed: {e}")
 
     async def check_health(self) -> bool:
         """Check if the proxy connection is healthy."""
@@ -268,9 +253,7 @@ class ProxyProviderAdapter(LLMProvider):
             "fallback_count": self._fallback_count,
             "error_count": self._error_count,
             "fallback_rate": (
-                self._fallback_count / self._request_count
-                if self._request_count > 0
-                else 0.0
+                self._fallback_count / self._request_count if self._request_count > 0 else 0.0
             ),
             "has_fallback": self._fallback_provider is not None,
             "proxy_healthy": self._proxy_client.is_healthy,

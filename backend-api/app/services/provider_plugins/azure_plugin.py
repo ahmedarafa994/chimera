@@ -55,18 +55,12 @@ class AzurePlugin(BaseProviderPlugin):
         Azure OpenAI requires a resource endpoint.
         Format: https://{resource-name}.openai.azure.com
         """
-        return os.environ.get(
-            "AZURE_OPENAI_ENDPOINT",
-            ""
-        )
+        return os.environ.get("AZURE_OPENAI_ENDPOINT", "")
 
     @property
     def api_version(self) -> str:
         """Azure OpenAI API version."""
-        return os.environ.get(
-            "AZURE_OPENAI_API_VERSION",
-            "2024-08-01-preview"
-        )
+        return os.environ.get("AZURE_OPENAI_API_VERSION", "2024-08-01-preview")
 
     @property
     def capabilities(self) -> list[ProviderCapability]:
@@ -116,9 +110,7 @@ class AzurePlugin(BaseProviderPlugin):
                 supports_vision=True,
                 input_price_per_1k=0.0025,
                 output_price_per_1k=0.01,
-                capabilities=[
-                    "chat", "vision", "function_calling"
-                ],
+                capabilities=["chat", "vision", "function_calling"],
             ),
             ModelInfo(
                 model_id="gpt-4o-mini",
@@ -131,9 +123,7 @@ class AzurePlugin(BaseProviderPlugin):
                 supports_vision=True,
                 input_price_per_1k=0.00015,
                 output_price_per_1k=0.0006,
-                capabilities=[
-                    "chat", "vision", "function_calling"
-                ],
+                capabilities=["chat", "vision", "function_calling"],
             ),
             # GPT-4 Turbo
             ModelInfo(
@@ -147,9 +137,7 @@ class AzurePlugin(BaseProviderPlugin):
                 supports_vision=True,
                 input_price_per_1k=0.01,
                 output_price_per_1k=0.03,
-                capabilities=[
-                    "chat", "vision", "function_calling"
-                ],
+                capabilities=["chat", "vision", "function_calling"],
             ),
             # GPT-4 (Standard)
             ModelInfo(
@@ -278,30 +266,32 @@ class AzurePlugin(BaseProviderPlugin):
             # Azure uses slightly different naming (e.g., gpt-35-turbo)
             if model_name in static_models:
                 base_model = static_models[model_name]
-                models.append(ModelInfo(
-                    model_id=deployment_id,
-                    provider_id="azure",
-                    display_name=f"{base_model.display_name}",
-                    context_window=base_model.context_window,
-                    max_output_tokens=base_model.max_output_tokens,
-                    supports_streaming=base_model.supports_streaming,
-                    supports_function_calling=(
-                        base_model.supports_function_calling
-                    ),
-                    supports_vision=base_model.supports_vision,
-                    input_price_per_1k=base_model.input_price_per_1k,
-                    output_price_per_1k=base_model.output_price_per_1k,
-                    capabilities=base_model.capabilities,
-                ))
+                models.append(
+                    ModelInfo(
+                        model_id=deployment_id,
+                        provider_id="azure",
+                        display_name=f"{base_model.display_name}",
+                        context_window=base_model.context_window,
+                        max_output_tokens=base_model.max_output_tokens,
+                        supports_streaming=base_model.supports_streaming,
+                        supports_function_calling=(base_model.supports_function_calling),
+                        supports_vision=base_model.supports_vision,
+                        input_price_per_1k=base_model.input_price_per_1k,
+                        output_price_per_1k=base_model.output_price_per_1k,
+                        capabilities=base_model.capabilities,
+                    )
+                )
             else:
-                models.append(ModelInfo(
-                    model_id=deployment_id,
-                    provider_id="azure",
-                    display_name=f"{deployment_id} ({model_name})",
-                    context_window=8192,
-                    supports_streaming=True,
-                    capabilities=["chat"],
-                ))
+                models.append(
+                    ModelInfo(
+                        model_id=deployment_id,
+                        provider_id="azure",
+                        display_name=f"{deployment_id} ({model_name})",
+                        context_window=8192,
+                        supports_streaming=True,
+                        capabilities=["chat"],
+                    )
+                )
 
         return models if models else self._get_static_models()
 
@@ -342,10 +332,7 @@ class AzurePlugin(BaseProviderPlugin):
         # Build messages
         messages = []
         if request.system_instruction:
-            messages.append({
-                "role": "system",
-                "content": request.system_instruction
-            })
+            messages.append({"role": "system", "content": request.system_instruction})
 
         if request.messages:
             messages.extend(request.messages)
@@ -369,10 +356,7 @@ class AzurePlugin(BaseProviderPlugin):
         if request.response_format:
             payload["response_format"] = request.response_format
 
-        url = (
-            f"{self.base_url}/openai/deployments/{deployment}"
-            f"/chat/completions"
-        )
+        url = f"{self.base_url}/openai/deployments/{deployment}" f"/chat/completions"
         params = {"api-version": self.api_version}
 
         try:
@@ -429,10 +413,7 @@ class AzurePlugin(BaseProviderPlugin):
         # Build messages
         messages = []
         if request.system_instruction:
-            messages.append({
-                "role": "system",
-                "content": request.system_instruction
-            })
+            messages.append({"role": "system", "content": request.system_instruction})
 
         if request.messages:
             messages.extend(request.messages)
@@ -454,15 +435,13 @@ class AzurePlugin(BaseProviderPlugin):
         if request.stop_sequences:
             payload["stop"] = request.stop_sequences
 
-        url = (
-            f"{self.base_url}/openai/deployments/{deployment}"
-            f"/chat/completions"
-        )
+        url = f"{self.base_url}/openai/deployments/{deployment}" f"/chat/completions"
         params = {"api-version": self.api_version}
 
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                async with client.stream(
+            async with (
+                httpx.AsyncClient(timeout=120.0) as client,
+                client.stream(
                     "POST",
                     url,
                     params=params,
@@ -471,35 +450,37 @@ class AzurePlugin(BaseProviderPlugin):
                         "Content-Type": "application/json",
                     },
                     json=payload,
-                ) as response:
-                    response.raise_for_status()
+                ) as response,
+            ):
+                response.raise_for_status()
 
-                    async for line in response.aiter_lines():
-                        if not line:
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
+
+                    if line.startswith("data: "):
+                        data_str = line[6:]
+
+                        if data_str == "[DONE]":
+                            yield StreamChunk(text="", is_final=True)
+                            break
+
+                        try:
+                            import json
+
+                            data = json.loads(data_str)
+                            choice = data.get("choices", [{}])[0]
+                            delta = choice.get("delta", {})
+                            content = delta.get("content", "")
+
+                            if content:
+                                yield StreamChunk(
+                                    text=content,
+                                    is_final=False,
+                                )
+                        except Exception as e:
+                            logger.warning(f"Parse error: {e}")
                             continue
-
-                        if line.startswith("data: "):
-                            data_str = line[6:]
-
-                            if data_str == "[DONE]":
-                                yield StreamChunk(text="", is_final=True)
-                                break
-
-                            try:
-                                import json
-                                data = json.loads(data_str)
-                                choice = data.get("choices", [{}])[0]
-                                delta = choice.get("delta", {})
-                                content = delta.get("content", "")
-
-                                if content:
-                                    yield StreamChunk(
-                                        text=content,
-                                        is_final=False,
-                                    )
-                            except Exception as e:
-                                logger.warning(f"Parse error: {e}")
-                                continue
         except Exception as e:
             logger.error(f"Azure OpenAI streaming error: {e}")
             raise

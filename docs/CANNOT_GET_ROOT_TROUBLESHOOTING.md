@@ -8,8 +8,8 @@ This comprehensive guide helps you diagnose and fix the "Cannot GET /" error whe
 
 | Symptom | Likely Cause | Quick Fix |
 |---------|--------------|-----------|
-| "Cannot GET /" on `localhost:8001` | Accessing backend directly | Go to `http://localhost:3000` instead |
-| "Cannot GET /" on `localhost:3000` | Frontend not running | Start frontend: `cd frontend && npm run dev` |
+| "Cannot GET /" on `localhost:8001` | Accessing backend directly | Go to `http://localhost:3001` instead |
+| "Cannot GET /" on `localhost:3001` | Frontend not running | Start frontend: `cd frontend && npm run dev` |
 | Browser shows blank page | JavaScript error | Check browser console (F12) |
 | "Network Error" in browser | Backend not accessible | Verify backend: `curl http://localhost:8001/health` |
 | "CORS Error" in console | Cross-origin blocked | Check backend CORS settings |
@@ -26,7 +26,7 @@ netstat -ano | findstr :8001
 curl http://localhost:8001/health
 
 # Test frontend
-curl http://localhost:3000
+curl http://localhost:3001
 
 # Check running processes
 tasklist | findstr "node python"
@@ -76,12 +76,12 @@ npm run dev
 Wait for:
 ```
 ✓ Ready in X.Xs
-➜ Local: http://localhost:3000
+➜ Local: http://localhost:3001
 ```
 
 ### Step 4: Access the Application
 
-Open your browser to: **http://localhost:3000**
+Open your browser to: **http://localhost:3001**
 
 You should be automatically redirected to `/dashboard`.
 
@@ -89,7 +89,7 @@ You should be automatically redirected to `/dashboard`.
 
 ## Section 2: Common Development Errors
 
-### Error: "Cannot GET /" on localhost:3000
+### Error: "Cannot GET /" on localhost:3001
 
 **Causes:**
 1. Frontend dev server not running
@@ -117,7 +117,7 @@ npm run dev
 
 **This is expected behavior!**
 
-The backend API (FastAPI) doesn't serve HTML pages. Access the frontend at `http://localhost:3000` instead.
+The backend API (FastAPI) doesn't serve HTML pages. Access the frontend at `http://localhost:3001` instead.
 
 The backend provides:
 - `http://localhost:8001/health` - Health check endpoint
@@ -257,7 +257,7 @@ ENVIRONMENT=development
 PORT=8001
 HOST=0.0.0.0
 LOG_LEVEL=INFO
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
+ALLOWED_ORIGINS=http://localhost:3001,http://localhost:8080
 ```
 
 ---
@@ -272,7 +272,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 - [ ] Frontend dependencies installed (`npm install`)
 - [ ] Backend running on port 8001 (`curl localhost:8001/health`)
 - [ ] Frontend running on port 3000
-- [ ] Browser accessing `http://localhost:3000` (not 8001)
+- [ ] Browser accessing `http://localhost:3001` (not 8001)
 - [ ] No CORS errors in browser console
 - [ ] `.env.local` configured correctly
 
@@ -283,7 +283,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 - [ ] Environment variables use localhost URLs (not Docker hostnames)
 - [ ] All containers show "healthy" status
 - [ ] No build errors in container logs
-- [ ] Frontend accessible at `http://localhost:3000`
+- [ ] Frontend accessible at `http://localhost:3001`
 - [ ] Backend health check passes
 
 ---
@@ -294,7 +294,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 ┌─────────────────────┐     ┌─────────────────────┐
 │                     │     │                     │
 │   Browser           │────▶│   Frontend          │
-│   (localhost:3000)  │     │   (Next.js :3000)   │
+│   (localhost:3001)  │     │   (Next.js :3000)   │
 │                     │     │                     │
 └─────────────────────┘     └──────────┬──────────┘
                                        │
@@ -308,7 +308,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
                             └─────────────────────┘
 ```
 
-**Important:** Always access the application through the frontend (`localhost:3000`), not the backend (`localhost:8001`).
+**Important:** Always access the application through the frontend (`localhost:3001`), not the backend (`localhost:8001`).
 
 ---
 

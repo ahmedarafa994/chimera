@@ -21,11 +21,7 @@ from agents import LLMConfig, LLMProvider
 from core.embeddings import EmbeddingModel
 from core.models import AttackLog, AttackRecord, Strategy
 from core.strategy_library import StrategyLibrary
-from modules import (
-    AttackGenerationModule,
-    StrategyConstructionModule,
-    StrategyRetrievalModule,
-)
+from modules import AttackGenerationModule, StrategyConstructionModule, StrategyRetrievalModule
 
 logger = logging.getLogger(__name__)
 
@@ -398,9 +394,9 @@ class AutoDANTurbo:
         stats = {
             "total_requests": len(malicious_requests),
             "successful_attacks": successful_count,
-            "attack_success_rate": successful_count / len(malicious_requests)
-            if malicious_requests
-            else 0,
+            "attack_success_rate": (
+                successful_count / len(malicious_requests) if malicious_requests else 0
+            ),
             "average_iterations": avg_iterations,
             "average_final_score": avg_score,
             "strategy_library_size": len(self.strategy_library),

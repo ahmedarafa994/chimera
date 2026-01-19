@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Try to import FAISS
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -35,6 +36,7 @@ except ImportError:
 # Try to import embedding model
 try:
     from ..llm import embedding_models as _embedding_models
+
     EMBEDDING_AVAILABLE = True
     del _embedding_models
 except ImportError:
@@ -45,6 +47,7 @@ except ImportError:
 @dataclass
 class StrategyEntry:
     """Represents a strategy in the vector index"""
+
     strategy_id: str
     name: str
     definition: str
@@ -60,6 +63,7 @@ class StrategyEntry:
 @dataclass
 class StrategySearchResult:
     """Result from strategy search"""
+
     strategy: StrategyEntry
     similarity_score: float
     rank: int
@@ -69,6 +73,7 @@ class StrategySearchResult:
 @dataclass
 class StrategyCluster:
     """Cluster of semantically similar strategies"""
+
     cluster_id: str
     centroid: np.ndarray
     strategies: list[StrategyEntry]
@@ -85,7 +90,7 @@ class FAISSStrategyIndex:
         index_type: str = "IVF",
         nlist: int = 100,
         use_gpu: bool = False,
-        similarity_threshold: float = 0.7
+        similarity_threshold: float = 0.7,
     ):
         self.dimension = dimension
         self.index_type = index_type
@@ -160,12 +165,16 @@ class FAISSStrategyIndex:
                 embedding = embedding / norm
 
             # Train index if needed (for IVF)
-            if self.index_type == "IVF" and not self.is_trained and self.next_faiss_id >= self.nlist:
+            if (
+                self.index_type == "IVF"
+                and not self.is_trained
+                and self.next_faiss_id >= self.nlist
+            ):
                 await self._train_index()
 
             # Add to FAISS index
             faiss_id = self.next_faiss_id
-            self.index.add(embedding.reshape(1, -1).astype('float32'))
+            self.index.add(embedding.reshape(1, -1).astype("float32"))
 
             # Update mappings
             self.id_to_strategy[faiss_id] = strategy
@@ -194,10 +203,7 @@ class FAISSStrategyIndex:
             return True
 
     async def search_similar(
-        self,
-        query_embedding: np.ndarray,
-        k: int = 10,
-        min_similarity: float | None = None
+        self, query_embedding: np.ndarray, k: int = 10, min_similarity: float | None = None
     ) -> list[StrategySearchResult]:
         """Search for similar strategies"""
         if not FAISS_AVAILABLE or self.index is None or self.next_faiss_id == 0:
@@ -215,12 +221,13 @@ class FAISSStrategyIndex:
             # Search in FAISS
             k_search = min(k * 2, self.next_faiss_id)  # Over-fetch for filtering
             similarities, indices = self.index.search(
-                query.reshape(1, -1).astype('float32'),
-                k_search
+                query.reshape(1, -1).astype("float32"), k_search
             )
 
             results = []
-            for rank, (similarity, idx) in enumerate(zip(similarities[0], indices[0], strict=False)):
+            for rank, (similarity, idx) in enumerate(
+                zip(similarities[0], indices[0], strict=False)
+            ):
                 if idx == -1:  # No more results
                     break
 
@@ -237,7 +244,7 @@ class FAISSStrategyIndex:
                     strategy=strategy,
                     similarity_score=float(similarity),
                     rank=rank,
-                    distance=float(distance)
+                    distance=float(distance),
                 )
                 results.append(result)
 
@@ -247,11 +254,7 @@ class FAISSStrategyIndex:
             return results
 
     async def search_by_text(
-        self,
-        query_text: str,
-        embedding_model,
-        k: int = 10,
-        min_similarity: float | None = None
+        self, query_text: str, embedding_model, k: int = 10, min_similarity: float | None = None
     ) -> list[StrategySearchResult]:
         """Search for strategies using text query"""
         if not embedding_model:
@@ -266,9 +269,7 @@ class FAISSStrategyIndex:
         return await self.search_similar(query_embedding, k, min_similarity)
 
     async def get_strategy_clusters(
-        self,
-        n_clusters: int = 5,
-        min_cluster_size: int = 2
+        self, n_clusters: int = 5, min_cluster_size: int = 2
     ) -> list[StrategyCluster]:
         """Cluster strategies by semantic similarity"""
         if not FAISS_AVAILABLE or len(self.id_to_strategy) < n_clusters:
@@ -303,15 +304,16 @@ class FAISSStrategyIndex:
         clusters = []
         for cluster_id in range(n_clusters):
             cluster_strategies = [
-                strategies[i] for i, label in enumerate(cluster_labels)
-                if label == cluster_id
+                strategies[i] for i, label in enumerate(cluster_labels) if label == cluster_id
             ]
 
             if len(cluster_strategies) < min_cluster_size:
                 continue
 
             # Calculate cluster coherence (average intra-cluster similarity)
-            cluster_embeddings = [s.embedding for s in cluster_strategies if s.embedding is not None]
+            cluster_embeddings = [
+                s.embedding for s in cluster_strategies if s.embedding is not None
+            ]
             coherence_score = 0.0
             if len(cluster_embeddings) > 1:
                 similarities = []
@@ -329,7 +331,7 @@ class FAISSStrategyIndex:
                 centroid=centroids[cluster_id],
                 strategies=cluster_strategies,
                 cluster_name=cluster_name,
-                coherence_score=coherence_score
+                coherence_score=coherence_score,
             )
             clusters.append(cluster)
 
@@ -351,7 +353,7 @@ class FAISSStrategyIndex:
                 embeddings.append(normalized)
 
         if len(embeddings) >= self.nlist:
-            training_data = np.vstack(embeddings).astype('float32')
+            training_data = np.vstack(embeddings).astype("float32")
             self.index.train(training_data)
             self.is_trained = True
             logger.info(f"FAISS index trained with {len(embeddings)} strategies")
@@ -397,20 +399,20 @@ class FAISSStrategyIndex:
         async with self._lock:
             try:
                 # Save FAISS index
-                index_path = filepath.with_suffix('.faiss')
+                index_path = filepath.with_suffix(".faiss")
                 faiss.write_index(self.index, str(index_path))
 
                 # Save mappings and metadata
                 metadata = {
-                    'id_to_strategy': self.id_to_strategy,
-                    'strategy_id_to_faiss_id': self.strategy_id_to_faiss_id,
-                    'next_faiss_id': self.next_faiss_id,
-                    'is_trained': self.is_trained,
-                    'dimension': self.dimension,
-                    'index_type': self.index_type
+                    "id_to_strategy": self.id_to_strategy,
+                    "strategy_id_to_faiss_id": self.strategy_id_to_faiss_id,
+                    "next_faiss_id": self.next_faiss_id,
+                    "is_trained": self.is_trained,
+                    "dimension": self.dimension,
+                    "index_type": self.index_type,
                 }
 
-                with open(filepath.with_suffix('.pkl'), 'wb') as f:
+                with open(filepath.with_suffix(".pkl"), "wb") as f:
                     pickle.dump(metadata, f)
 
                 logger.info(f"FAISS index saved to {filepath}")
@@ -425,20 +427,20 @@ class FAISSStrategyIndex:
         async with self._lock:
             try:
                 # Load FAISS index
-                index_path = filepath.with_suffix('.faiss')
+                index_path = filepath.with_suffix(".faiss")
                 if index_path.exists():
                     self.index = faiss.read_index(str(index_path))
 
                     # Load mappings and metadata
-                    metadata_path = filepath.with_suffix('.pkl')
+                    metadata_path = filepath.with_suffix(".pkl")
                     if metadata_path.exists():
-                        with open(metadata_path, 'rb') as f:
+                        with open(metadata_path, "rb") as f:
                             metadata = pickle.load(f)
 
-                        self.id_to_strategy = metadata['id_to_strategy']
-                        self.strategy_id_to_faiss_id = metadata['strategy_id_to_faiss_id']
-                        self.next_faiss_id = metadata['next_faiss_id']
-                        self.is_trained = metadata['is_trained']
+                        self.id_to_strategy = metadata["id_to_strategy"]
+                        self.strategy_id_to_faiss_id = metadata["strategy_id_to_faiss_id"]
+                        self.next_faiss_id = metadata["next_faiss_id"]
+                        self.is_trained = metadata["is_trained"]
 
                         logger.info(f"FAISS index loaded: {len(self.id_to_strategy)} strategies")
                     else:
@@ -452,12 +454,12 @@ class FAISSStrategyIndex:
     def stats(self) -> dict[str, Any]:
         """Get index statistics"""
         return {
-            'total_strategies': len(self.id_to_strategy),
-            'is_trained': self.is_trained,
-            'faiss_available': FAISS_AVAILABLE,
-            'index_type': self.index_type,
-            'dimension': self.dimension,
-            'next_faiss_id': self.next_faiss_id
+            "total_strategies": len(self.id_to_strategy),
+            "is_trained": self.is_trained,
+            "faiss_available": FAISS_AVAILABLE,
+            "index_type": self.index_type,
+            "dimension": self.dimension,
+            "next_faiss_id": self.next_faiss_id,
         }
 
 
@@ -468,7 +470,7 @@ class StrategySearchEngine:
         self,
         embedding_model=None,
         index_config: dict[str, Any] | None = None,
-        cache_dir: Path | None = None
+        cache_dir: Path | None = None,
     ):
         self.embedding_model = embedding_model
         self.cache_dir = cache_dir or Path("cache/strategy_search")
@@ -477,11 +479,11 @@ class StrategySearchEngine:
         # Initialize FAISS index
         config = index_config or {}
         self.faiss_index = FAISSStrategyIndex(
-            dimension=config.get('dimension', 768),
-            index_type=config.get('index_type', 'IVF'),
-            nlist=config.get('nlist', 100),
-            use_gpu=config.get('use_gpu', False),
-            similarity_threshold=config.get('similarity_threshold', 0.7)
+            dimension=config.get("dimension", 768),
+            index_type=config.get("index_type", "IVF"),
+            nlist=config.get("nlist", 100),
+            use_gpu=config.get("use_gpu", False),
+            similarity_threshold=config.get("similarity_threshold", 0.7),
         )
 
         # Strategy cache
@@ -505,9 +507,7 @@ class StrategySearchEngine:
         logger.info("StrategySearchEngine initialized and ready")
 
     async def add_strategies_from_library(
-        self,
-        strategy_library: dict[str, Any],
-        recompute_embeddings: bool = False
+        self, strategy_library: dict[str, Any], recompute_embeddings: bool = False
     ) -> int:
         """Add strategies from AutoDAN strategy library"""
         added_count = 0
@@ -518,18 +518,18 @@ class StrategySearchEngine:
                 strategy_entry = StrategyEntry(
                     strategy_id=self._generate_strategy_id(strategy_name),
                     name=strategy_name,
-                    definition=strategy_data.get('Definition', ''),
-                    examples=strategy_data.get('Example', []),
+                    definition=strategy_data.get("Definition", ""),
+                    examples=strategy_data.get("Example", []),
                     metadata={
-                        'scores': strategy_data.get('Score', []),
-                        'source': 'autodan_library'
+                        "scores": strategy_data.get("Score", []),
+                        "source": "autodan_library",
                     },
-                    tags=set(self._extract_tags(strategy_name, strategy_data))
+                    tags=set(self._extract_tags(strategy_name, strategy_data)),
                 )
 
                 # Get or compute embedding
-                if not recompute_embeddings and 'Embeddings' in strategy_data:
-                    embeddings = strategy_data['Embeddings']
+                if not recompute_embeddings and "Embeddings" in strategy_data:
+                    embeddings = strategy_data["Embeddings"]
                     if embeddings and len(embeddings) > 0:
                         strategy_entry.embedding = np.array(embeddings[0])
 
@@ -566,7 +566,7 @@ class StrategySearchEngine:
         query: str,
         k: int = 10,
         min_similarity: float | None = None,
-        filter_tags: set[str] | None = None
+        filter_tags: set[str] | None = None,
     ) -> list[StrategySearchResult]:
         """Search for strategies using text query"""
         if not self.embedding_model:
@@ -597,10 +597,7 @@ class StrategySearchEngine:
         return results
 
     async def get_strategy_recommendations(
-        self,
-        context: str,
-        previous_strategies: list[str] | None = None,
-        k: int = 5
+        self, context: str, previous_strategies: list[str] | None = None, k: int = 5
     ) -> list[StrategySearchResult]:
         """Get strategy recommendations based on context"""
         previous_strategies = previous_strategies or []
@@ -618,11 +615,7 @@ class StrategySearchEngine:
 
         return filtered_results
 
-    async def update_strategy_effectiveness(
-        self,
-        strategy_id: str,
-        effectiveness_score: float
-    ):
+    async def update_strategy_effectiveness(self, strategy_id: str, effectiveness_score: float):
         """Update the effectiveness score for a strategy"""
         if strategy_id in self.strategy_cache:
             strategy = self.strategy_cache[strategy_id]
@@ -652,25 +645,25 @@ class StrategySearchEngine:
 
         # Extract from name
         name_lower = strategy_name.lower()
-        if 'persona' in name_lower or 'role' in name_lower:
-            tags.append('persona')
-        if 'logic' in name_lower or 'reason' in name_lower:
-            tags.append('logical')
-        if 'emotion' in name_lower or 'feel' in name_lower:
-            tags.append('emotional')
-        if 'context' in name_lower or 'scenario' in name_lower:
-            tags.append('contextual')
-        if 'example' in name_lower or 'demonstrate' in name_lower:
-            tags.append('example-based')
+        if "persona" in name_lower or "role" in name_lower:
+            tags.append("persona")
+        if "logic" in name_lower or "reason" in name_lower:
+            tags.append("logical")
+        if "emotion" in name_lower or "feel" in name_lower:
+            tags.append("emotional")
+        if "context" in name_lower or "scenario" in name_lower:
+            tags.append("contextual")
+        if "example" in name_lower or "demonstrate" in name_lower:
+            tags.append("example-based")
 
         # Extract from definition
-        definition = strategy_data.get('Definition', '').lower()
-        if 'persuasive' in definition or 'convince' in definition:
-            tags.append('persuasive')
-        if 'technical' in definition or 'expert' in definition:
-            tags.append('technical')
-        if 'creative' in definition or 'imaginative' in definition:
-            tags.append('creative')
+        definition = strategy_data.get("Definition", "").lower()
+        if "persuasive" in definition or "convince" in definition:
+            tags.append("persuasive")
+        if "technical" in definition or "expert" in definition:
+            tags.append("technical")
+        if "creative" in definition or "imaginative" in definition:
+            tags.append("creative")
 
         return tags
 
@@ -678,10 +671,10 @@ class StrategySearchEngine:
     def stats(self) -> dict[str, Any]:
         """Get search engine statistics"""
         return {
-            'total_strategies': len(self.strategy_cache),
-            'embedding_model_available': self.embedding_model is not None,
-            'faiss_stats': self.faiss_index.stats,
-            'cache_dir': str(self.cache_dir)
+            "total_strategies": len(self.strategy_cache),
+            "embedding_model_available": self.embedding_model is not None,
+            "faiss_stats": self.faiss_index.stats,
+            "cache_dir": str(self.cache_dir),
         }
 
 

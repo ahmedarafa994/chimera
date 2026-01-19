@@ -17,12 +17,8 @@ class TestGenerationService:
     def mock_llm_service(self):
         """Create mock LLM service."""
         service = MagicMock()
-        service.generate = AsyncMock(
-            return_value="Generated jailbreak prompt content"
-        )
-        service.generate_with_cache = AsyncMock(
-            return_value="Cached generation result"
-        )
+        service.generate = AsyncMock(return_value="Generated jailbreak prompt content")
+        service.generate_with_cache = AsyncMock(return_value="Cached generation result")
         return service
 
     @pytest.fixture
@@ -98,9 +94,7 @@ class TestGenerationService:
     async def test_generation_error_handling(self, mock_llm_service):
         """Test error handling in generation."""
         # Arrange
-        mock_llm_service.generate = AsyncMock(
-            side_effect=RuntimeError("Generation failed")
-        )
+        mock_llm_service.generate = AsyncMock(side_effect=RuntimeError("Generation failed"))
 
         # Act & Assert
         with pytest.raises(RuntimeError, match="Generation failed"):
@@ -164,9 +158,7 @@ class TestGenerationMetrics:
             "total_tokens": 150,
         }
 
-        assert usage["total_tokens"] == (
-            usage["prompt_tokens"] + usage["completion_tokens"]
-        )
+        assert usage["total_tokens"] == (usage["prompt_tokens"] + usage["completion_tokens"])
 
     def test_track_success_rate(self):
         """Test tracking of success rate."""

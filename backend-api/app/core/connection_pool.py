@@ -48,9 +48,7 @@ class PoolStats:
             "successful_requests": self.successful_requests,
             "failed_requests": self.failed_requests,
             "success_rate": (
-                self.successful_requests / self.total_requests
-                if self.total_requests > 0
-                else 0.0
+                self.successful_requests / self.total_requests if self.total_requests > 0 else 0.0
             ),
             "total_response_time_ms": self.total_response_time_ms,
             "avg_response_time_ms": self.avg_response_time_ms,
@@ -132,12 +130,8 @@ class PooledHTTPAdapter(HTTPAdapter):
 
             # Update connection counts from poolmanager
             if hasattr(self, "poolmanager"):
-                self.stats.active_connections = getattr(
-                    self.poolmanager, "num_connections", 0
-                )
-                self.stats.idle_connections = getattr(
-                    self.poolmanager, "num_idle_connections", 0
-                )
+                self.stats.active_connections = getattr(self.poolmanager, "num_connections", 0)
+                self.stats.idle_connections = getattr(self.poolmanager, "num_idle_connections", 0)
 
             logger.debug(
                 f"{self.stats_name}: {request.method} {response.status_code} "
@@ -227,9 +221,7 @@ class ConnectionPoolManager:
             with threading.Lock():
                 # Double-check after acquiring lock
                 if provider_key not in self._pools:
-                    config = self._config.get(
-                        provider_key, self._config["default"]
-                    )
+                    config = self._config.get(provider_key, self._config["default"])
                     adapter = PooledHTTPAdapter(
                         stats_name=provider_key,
                         **config,
@@ -242,9 +234,7 @@ class ConnectionPoolManager:
 
         return self._pools[provider_key]
 
-    def create_session(
-        self, provider: str, timeout: float | None = None
-    ) -> requests.Session:
+    def create_session(self, provider: str, timeout: float | None = None) -> requests.Session:
         """
         Create a requests session with connection pooling.
 
@@ -302,10 +292,7 @@ class ConnectionPoolManager:
             return {}
 
         # Return all pool stats
-        return {
-            name: adapter.stats.to_dict()
-            for name, adapter in self._pools.items()
-        }
+        return {name: adapter.stats.to_dict() for name, adapter in self._pools.items()}
 
     def reset_stats(self, provider: str | None = None) -> None:
         """Reset statistics for a provider or all providers."""

@@ -24,7 +24,7 @@ Complete API reference documentation for the AI provider integration layer, incl
 ### Base URL
 
 ```
-http://localhost:8000/api/v1
+http://localhost:8001/api/v1
 ```
 
 ### API Versioning
@@ -154,7 +154,7 @@ GET /config
 **Example:**
 
 ```bash
-curl -X GET http://localhost:8000/api/v1/config \
+curl -X GET http://localhost:8001/api/v1/config \
   -H "X-API-Key: your-api-key"
 ```
 
@@ -221,7 +221,7 @@ POST /config/reload
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/config/reload \
+curl -X POST http://localhost:8001/api/v1/config/reload \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"validate_only": false}'
@@ -320,7 +320,7 @@ GET /providers
 **Example:**
 
 ```bash
-curl -X GET "http://localhost:8000/api/v1/providers?enabled_only=true&include_models=true" \
+curl -X GET "http://localhost:8001/api/v1/providers?enabled_only=true&include_models=true" \
   -H "X-API-Key: your-api-key"
 ```
 
@@ -685,7 +685,7 @@ POST /generate
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -d '{
@@ -700,7 +700,7 @@ curl -X POST http://localhost:8000/api/v1/generate \
 ### Generate with Specific Provider
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -H "X-Provider: openai" \
@@ -716,7 +716,7 @@ curl -X POST http://localhost:8000/api/v1/generate \
 ### Generate with Failover Chain
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -H "X-Failover-Chain: premium" \
@@ -763,7 +763,7 @@ data: [DONE]
 **Example:**
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate/stream \
+curl -X POST http://localhost:8001/api/v1/generate/stream \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -N \
@@ -1156,7 +1156,7 @@ WS /ws/providers
 **Connection:**
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/providers');
+const ws = new WebSocket('ws://localhost:8001/ws/providers');
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
@@ -1374,7 +1374,7 @@ class ChimeraClient:
 # Usage
 async def main():
     client = ChimeraClient(
-        "http://localhost:8000",
+        "http://localhost:8001",
         "your-api-key"
     )
     
@@ -1504,7 +1504,7 @@ class ChimeraClient {
 }
 
 // Usage
-const client = new ChimeraClient('http://localhost:8000', 'your-api-key');
+const client = new ChimeraClient('http://localhost:8001', 'your-api-key');
 
 // Simple generation
 const result = await client.generate({
@@ -1526,7 +1526,7 @@ for await (const chunk of client.streamGenerate({ prompt: 'Write a story' })) {
 **Basic Generation:**
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -d '{"prompt": "Hello, world!", "max_tokens": 100}'
@@ -1535,7 +1535,7 @@ curl -X POST http://localhost:8000/api/v1/generate \
 **With Provider Override:**
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate \
+curl -X POST http://localhost:8001/api/v1/generate \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -H "X-Provider: openai" \
@@ -1546,7 +1546,7 @@ curl -X POST http://localhost:8000/api/v1/generate \
 **Streaming:**
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/generate/stream \
+curl -X POST http://localhost:8001/api/v1/generate/stream \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -N \
@@ -1556,14 +1556,14 @@ curl -X POST http://localhost:8000/api/v1/generate/stream \
 **Get Provider Health:**
 
 ```bash
-curl http://localhost:8000/api/v1/health/providers \
+curl http://localhost:8001/api/v1/health/providers \
   -H "X-API-Key: your-api-key"
 ```
 
 **Get Cost Summary:**
 
 ```bash
-curl "http://localhost:8000/api/v1/costs/summary?since=2024-01-01T00:00:00Z" \
+curl "http://localhost:8001/api/v1/costs/summary?since=2024-01-01T00:00:00Z" \
   -H "X-API-Key: your-api-key"
 ```
 

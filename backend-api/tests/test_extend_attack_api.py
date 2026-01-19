@@ -4,7 +4,6 @@ Integration tests for ExtendAttack API endpoints.
 Tests all endpoints at /api/v1/extend-attack/*
 """
 
-
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
@@ -320,7 +319,7 @@ class TestBenchmarksEndpoint:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
 
-        assert isinstance(data, (list, dict))
+        assert isinstance(data, list | dict)
         if isinstance(data, dict):
             assert "benchmarks" in data
 
@@ -332,18 +331,12 @@ class TestBenchmarksEndpoint:
         benchmarks = data if isinstance(data, list) else data.get("benchmarks", [])
 
         # Convert to list of names if list of objects
-        benchmark_names = [
-            b["name"] if isinstance(b, dict) else b
-            for b in benchmarks
-        ]
+        benchmark_names = [b["name"] if isinstance(b, dict) else b for b in benchmarks]
 
         # At least some expected benchmarks should be present
         expected = ["AIME_2024", "HUMANEVAL"]
         for expected_name in expected:
-            assert any(
-                expected_name.lower() in name.lower()
-                for name in benchmark_names
-            )
+            assert any(expected_name.lower() in name.lower() for name in benchmark_names)
 
 
 # =============================================================================
@@ -362,7 +355,7 @@ class TestNNotesEndpoint:
         data = response.json()
 
         # Should return list of N_note templates
-        assert isinstance(data, (list, dict))
+        assert isinstance(data, list | dict)
 
     def test_n_notes_endpoint_has_default(self, client):
         """Test N_notes endpoint includes default template."""
@@ -447,7 +440,7 @@ class TestResourceExhaustionEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert isinstance(data, (list, dict))
+        assert isinstance(data, list | dict)
 
     def test_session_create(self, client):
         """Test creating a new session."""
@@ -479,9 +472,7 @@ class TestResourceExhaustionEndpoints:
             session_id = session_data.get("id") or session_data.get("session_id")
 
             # Then start it
-            response = client.post(
-                f"/api/v1/extend-attack/sessions/{session_id}/start"
-            )
+            response = client.post(f"/api/v1/extend-attack/sessions/{session_id}/start")
 
             assert response.status_code in [
                 status.HTTP_200_OK,
@@ -501,9 +492,7 @@ class TestResourceExhaustionEndpoints:
             session_id = session_data.get("id") or session_data.get("session_id")
 
             # End it
-            response = client.post(
-                f"/api/v1/extend-attack/sessions/{session_id}/end"
-            )
+            response = client.post(f"/api/v1/extend-attack/sessions/{session_id}/end")
 
             assert response.status_code in [
                 status.HTTP_200_OK,
@@ -528,7 +517,7 @@ class TestResourceExhaustionEndpoints:
         data = response.json()
 
         # Should return hourly statistics
-        assert isinstance(data, (list, dict))
+        assert isinstance(data, list | dict)
 
 
 # =============================================================================
@@ -680,8 +669,7 @@ class TestAPIIntegration:
 
         # Should be able to recover original (approximately)
         # N_note may be appended, so check containment
-        assert "Hello" in decode_data["decoded_text"] or \
-               "World" in decode_data["decoded_text"]
+        assert "Hello" in decode_data["decoded_text"] or "World" in decode_data["decoded_text"]
 
     def test_batch_consistency(self, client):
         """Test batch attack produces consistent results."""

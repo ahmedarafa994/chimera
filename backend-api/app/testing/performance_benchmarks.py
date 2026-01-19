@@ -38,14 +38,21 @@ from app.services.performance_monitoring import IntegratedMonitoringSystem
 # Performance Testing Models and Configuration
 # =====================================================
 
+
 class PerformanceTargets(BaseModel):
     """Performance targets for validation."""
 
     api_response_p95_ms: float = Field(default=2000.0, description="API response time P95 target")
     llm_provider_p95_ms: float = Field(default=10000.0, description="LLM provider P95 target")
-    transformation_p95_ms: float = Field(default=1000.0, description="Transformation time P95 target")
-    concurrent_requests_per_second: float = Field(default=150.0, description="Concurrent request handling target")
-    memory_optimization_percent: float = Field(default=30.0, description="Memory usage reduction target")
+    transformation_p95_ms: float = Field(
+        default=1000.0, description="Transformation time P95 target"
+    )
+    concurrent_requests_per_second: float = Field(
+        default=150.0, description="Concurrent request handling target"
+    )
+    memory_optimization_percent: float = Field(
+        default=30.0, description="Memory usage reduction target"
+    )
     cache_hit_ratio_percent: float = Field(default=85.0, description="Cache hit ratio target")
 
 
@@ -103,6 +110,7 @@ class BenchmarkResult:
 # Load Testing Engine
 # =====================================================
 
+
 class LoadTestEngine:
     """
     High-performance load testing engine with concurrent request simulation.
@@ -133,7 +141,9 @@ class LoadTestEngine:
         self._start_time = time.time()
 
         logger.info(f"Starting load test: {test_scenario}")
-        logger.info(f"Config: {self.config.concurrent_users} users, {self.config.duration_seconds}s duration")
+        logger.info(
+            f"Config: {self.config.concurrent_users} users, {self.config.duration_seconds}s duration"
+        )
 
         try:
             # Start background tasks
@@ -143,9 +153,7 @@ class LoadTestEngine:
             # Create test tasks
             tasks = []
             for user_id in range(self.config.concurrent_users):
-                task = asyncio.create_task(
-                    self._user_simulation_loop(user_id, test_scenario)
-                )
+                task = asyncio.create_task(self._user_simulation_loop(user_id, test_scenario))
                 tasks.append(task)
 
             # Wait for test duration
@@ -206,13 +214,15 @@ class LoadTestEngine:
 
                         # Record timing
                         duration_ms = (time.time() - start_time) * 1000
-                        self._results.append(PerformanceMetric(
-                            name=f"{scenario}_response_time",
-                            value=duration_ms,
-                            unit="ms",
-                            timestamp=time.time(),
-                            metadata={"user_id": user_id, "scenario": scenario}
-                        ))
+                        self._results.append(
+                            PerformanceMetric(
+                                name=f"{scenario}_response_time",
+                                value=duration_ms,
+                                unit="ms",
+                                timestamp=time.time(),
+                                metadata={"user_id": user_id, "scenario": scenario},
+                            )
+                        )
 
                         self._active_requests -= 1
 
@@ -246,31 +256,33 @@ class LoadTestEngine:
             "config": {
                 "max_tokens": 100,
                 "temperature": 0.7,
-            }
+            },
         }
 
         async with session.post(
             f"{self.base_url}/api/v1/generate",
             json=request_data,
-            headers={"X-API-Key": settings.CHIMERA_API_KEY}
+            headers={"X-API-Key": settings.CHIMERA_API_KEY},
         ) as response:
             await response.json()
 
             if response.status >= 400:
                 raise Exception(f"LLM request failed: HTTP {response.status}")
 
-    async def _test_transformation_request(self, session: aiohttp.ClientSession, user_id: int) -> None:
+    async def _test_transformation_request(
+        self, session: aiohttp.ClientSession, user_id: int
+    ) -> None:
         """Test prompt transformation endpoints."""
         request_data = {
             "prompt": f"Transform this prompt for user {user_id}",
             "transformation_type": "simple",
-            "parameters": {}
+            "parameters": {},
         }
 
         async with session.post(
             f"{self.base_url}/api/v1/transform",
             json=request_data,
-            headers={"X-API-Key": settings.CHIMERA_API_KEY}
+            headers={"X-API-Key": settings.CHIMERA_API_KEY},
         ) as response:
             await response.json()
 
@@ -282,10 +294,7 @@ class LoadTestEngine:
         # Simulate WebSocket connection test
         async with session.ws_connect(f"{self.base_url.replace('http', 'ws')}/ws/enhance") as ws:
             # Send test message
-            await ws.send_str(json.dumps({
-                "type": "test",
-                "message": f"Test from user {user_id}"
-            }))
+            await ws.send_str(json.dumps({"type": "test", "message": f"Test from user {user_id}"}))
 
             # Wait for response
             async for msg in ws:
@@ -318,21 +327,25 @@ class LoadTestEngine:
 
                 # Record system metrics
                 process = psutil.Process()
-                self._results.append(PerformanceMetric(
-                    name="memory_usage",
-                    value=process.memory_info().rss / 1024 / 1024,  # MB
-                    unit="mb",
-                    timestamp=time.time(),
-                    metadata={"active_requests": self._active_requests}
-                ))
+                self._results.append(
+                    PerformanceMetric(
+                        name="memory_usage",
+                        value=process.memory_info().rss / 1024 / 1024,  # MB
+                        unit="mb",
+                        timestamp=time.time(),
+                        metadata={"active_requests": self._active_requests},
+                    )
+                )
 
-                self._results.append(PerformanceMetric(
-                    name="cpu_usage",
-                    value=process.cpu_percent(),
-                    unit="percent",
-                    timestamp=time.time(),
-                    metadata={"active_requests": self._active_requests}
-                ))
+                self._results.append(
+                    PerformanceMetric(
+                        name="cpu_usage",
+                        value=process.cpu_percent(),
+                        unit="percent",
+                        timestamp=time.time(),
+                        metadata={"active_requests": self._active_requests},
+                    )
+                )
 
             except asyncio.CancelledError:
                 break
@@ -341,6 +354,7 @@ class LoadTestEngine:
 # =====================================================
 # Memory Profiling and Optimization Validator
 # =====================================================
+
 
 class MemoryProfiler:
     """
@@ -372,18 +386,14 @@ class MemoryProfiler:
             "rss_mb": memory_info.rss / 1024 / 1024,
             "vms_mb": memory_info.vms / 1024 / 1024,
             "percent": process.memory_percent(),
-            "num_fds": process.num_fds() if hasattr(process, 'num_fds') else 0,
+            "num_fds": process.num_fds() if hasattr(process, "num_fds") else 0,
         }
 
         self._snapshots.append(snapshot)
         return snapshot
 
     async def profile_function_memory(
-        self,
-        func: callable,
-        func_name: str,
-        *args,
-        **kwargs
+        self, func: callable, func_name: str, *args, **kwargs
     ) -> tuple[Any, dict[str, float]]:
         """Profile memory usage of a specific function."""
         # Pre-execution snapshot
@@ -435,8 +445,8 @@ class MemoryProfiler:
             return {}
 
         # Compare recent performance to baseline
-        baseline_avg = np.mean(memory_deltas[:max(1, len(memory_deltas) // 4)])
-        recent_avg = np.mean(memory_deltas[-max(1, len(memory_deltas) // 4):])
+        baseline_avg = np.mean(memory_deltas[: max(1, len(memory_deltas) // 4)])
+        recent_avg = np.mean(memory_deltas[-max(1, len(memory_deltas) // 4) :])
 
         optimization_percent = ((baseline_avg - recent_avg) / baseline_avg) * 100
 
@@ -445,7 +455,8 @@ class MemoryProfiler:
             "recent_avg_mb": recent_avg,
             "optimization_percent": optimization_percent,
             "total_samples": len(memory_deltas),
-            "variance_reduction": np.var(memory_deltas[:len(memory_deltas)//2]) - np.var(memory_deltas[len(memory_deltas)//2:]),
+            "variance_reduction": np.var(memory_deltas[: len(memory_deltas) // 2])
+            - np.var(memory_deltas[len(memory_deltas) // 2 :]),
         }
 
     def get_memory_report(self) -> dict[str, Any]:
@@ -477,6 +488,7 @@ class MemoryProfiler:
 # Cache Performance Analyzer
 # =====================================================
 
+
 class CachePerformanceAnalyzer:
     """
     Analyze and validate cache performance and hit ratios.
@@ -494,7 +506,7 @@ class CachePerformanceAnalyzer:
         key: str,
         hit: bool,
         latency_ms: float,
-        size_bytes: int | None = None
+        size_bytes: int | None = None,
     ) -> None:
         """Record a cache operation for analysis."""
         operation_record = {
@@ -517,10 +529,7 @@ class CachePerformanceAnalyzer:
             self._cache_stats[cache_name]["misses"] += 1
 
     async def benchmark_cache_performance(
-        self,
-        cache_instance: Any,
-        test_keys: list[str],
-        test_values: list[Any]
+        self, cache_instance: Any, test_keys: list[str], test_values: list[Any]
     ) -> dict[str, Any]:
         """Benchmark cache performance with various operations."""
         results = {
@@ -534,9 +543,9 @@ class CachePerformanceAnalyzer:
         for key, value in zip(test_keys, test_values, strict=False):
             start_time = time.time()
 
-            if hasattr(cache_instance, 'set') and asyncio.iscoroutinefunction(cache_instance.set):
+            if hasattr(cache_instance, "set") and asyncio.iscoroutinefunction(cache_instance.set):
                 await cache_instance.set(key, value)
-            elif hasattr(cache_instance, 'set'):
+            elif hasattr(cache_instance, "set"):
                 cache_instance.set(key, value)
 
             latency_ms = (time.time() - start_time) * 1000
@@ -547,9 +556,9 @@ class CachePerformanceAnalyzer:
         for key in test_keys + [f"miss_{i}" for i in range(len(test_keys) // 2)]:
             start_time = time.time()
 
-            if hasattr(cache_instance, 'get') and asyncio.iscoroutinefunction(cache_instance.get):
+            if hasattr(cache_instance, "get") and asyncio.iscoroutinefunction(cache_instance.get):
                 result = await cache_instance.get(key)
-            elif hasattr(cache_instance, 'get'):
+            elif hasattr(cache_instance, "get"):
                 result = cache_instance.get(key)
             else:
                 result = None
@@ -566,11 +575,19 @@ class CachePerformanceAnalyzer:
         results["hit_ratios"].append(hit_ratio)
 
         return {
-            "avg_set_latency_ms": np.mean(results["set_latencies"]) if results["set_latencies"] else 0,
-            "avg_get_latency_ms": np.mean(results["get_latencies"]) if results["get_latencies"] else 0,
+            "avg_set_latency_ms": (
+                np.mean(results["set_latencies"]) if results["set_latencies"] else 0
+            ),
+            "avg_get_latency_ms": (
+                np.mean(results["get_latencies"]) if results["get_latencies"] else 0
+            ),
             "hit_ratio_percent": hit_ratio,
-            "p95_set_latency_ms": np.percentile(results["set_latencies"], 95) if results["set_latencies"] else 0,
-            "p95_get_latency_ms": np.percentile(results["get_latencies"], 95) if results["get_latencies"] else 0,
+            "p95_set_latency_ms": (
+                np.percentile(results["set_latencies"], 95) if results["set_latencies"] else 0
+            ),
+            "p95_get_latency_ms": (
+                np.percentile(results["get_latencies"], 95) if results["get_latencies"] else 0
+            ),
         }
 
     def get_cache_analytics(self) -> dict[str, Any]:
@@ -602,15 +619,14 @@ class CachePerformanceAnalyzer:
 # Comprehensive Performance Benchmark Suite
 # =====================================================
 
+
 class PerformanceBenchmarkSuite:
     """
     Comprehensive performance benchmark suite for validating optimizations.
     """
 
     def __init__(
-        self,
-        targets: PerformanceTargets | None = None,
-        output_dir: str = "./performance_results"
+        self, targets: PerformanceTargets | None = None, output_dir: str = "./performance_results"
     ):
         self.targets = targets or PerformanceTargets()
         self.output_dir = Path(output_dir)
@@ -695,11 +711,7 @@ class PerformanceBenchmarkSuite:
         """Benchmark API endpoint performance."""
         logger.info("Benchmarking API performance...")
 
-        config = LoadTestConfig(
-            duration_seconds=30,
-            concurrent_users=20,
-            request_rate=5.0
-        )
+        config = LoadTestConfig(duration_seconds=30, concurrent_users=20, request_rate=5.0)
 
         self.load_tester.config = config
         result = await self.load_tester.run_load_test("api")
@@ -707,10 +719,12 @@ class PerformanceBenchmarkSuite:
 
         # Validate API response time target
         percentiles = result.get_percentiles("api_response_time")
-        api_p95 = percentiles.get("p95", float('inf'))
+        api_p95 = percentiles.get("p95", float("inf"))
         self._validation_results["api_response_p95"] = api_p95 <= self.targets.api_response_p95_ms
 
-        logger.info(f"API P95 response time: {api_p95:.2f}ms (target: {self.targets.api_response_p95_ms}ms)")
+        logger.info(
+            f"API P95 response time: {api_p95:.2f}ms (target: {self.targets.api_response_p95_ms}ms)"
+        )
 
     async def _benchmark_llm_performance(self) -> None:
         """Benchmark LLM service performance."""
@@ -725,16 +739,15 @@ class PerformanceBenchmarkSuite:
             PromptRequest(
                 prompt=f"Test prompt {i}",
                 provider="mock",
-                config=GenerationConfig(max_tokens=100, temperature=0.7)
-            ) for i in range(20)
+                config=GenerationConfig(max_tokens=100, temperature=0.7),
+            )
+            for i in range(20)
         ]
 
         response_times = []
         for request in test_requests:
             _result, metrics = await self.memory_profiler.profile_function_memory(
-                self._llm_service.generate_text,
-                "llm_generate",
-                request
+                self._llm_service.generate_text, "llm_generate", request
             )
             response_times.append(metrics["execution_time_ms"])
 
@@ -742,7 +755,9 @@ class PerformanceBenchmarkSuite:
         llm_p95 = np.percentile(response_times, 95)
         self._validation_results["llm_provider_p95"] = llm_p95 <= self.targets.llm_provider_p95_ms
 
-        logger.info(f"LLM P95 response time: {llm_p95:.2f}ms (target: {self.targets.llm_provider_p95_ms}ms)")
+        logger.info(
+            f"LLM P95 response time: {llm_p95:.2f}ms (target: {self.targets.llm_provider_p95_ms}ms)"
+        )
 
     async def _benchmark_transformation_performance(self) -> None:
         """Benchmark transformation engine performance."""
@@ -758,17 +773,19 @@ class PerformanceBenchmarkSuite:
 
         for prompt in test_prompts:
             _result, metrics = await self.memory_profiler.profile_function_memory(
-                lambda p: {"transformed_prompt": f"[TRANSFORMED] {p}"},
-                "transformation",
-                prompt
+                lambda p: {"transformed_prompt": f"[TRANSFORMED] {p}"}, "transformation", prompt
             )
             transformation_times.append(metrics["execution_time_ms"])
 
         # Calculate percentiles
         transform_p95 = np.percentile(transformation_times, 95)
-        self._validation_results["transformation_p95"] = transform_p95 <= self.targets.transformation_p95_ms
+        self._validation_results["transformation_p95"] = (
+            transform_p95 <= self.targets.transformation_p95_ms
+        )
 
-        logger.info(f"Transformation P95 time: {transform_p95:.2f}ms (target: {self.targets.transformation_p95_ms}ms)")
+        logger.info(
+            f"Transformation P95 time: {transform_p95:.2f}ms (target: {self.targets.transformation_p95_ms}ms)"
+        )
 
     async def _benchmark_memory_optimization(self) -> None:
         """Benchmark memory optimization effectiveness."""
@@ -789,16 +806,20 @@ class PerformanceBenchmarkSuite:
 
         avg_optimization = total_optimization / optimization_count if optimization_count > 0 else 0
 
-        self._validation_results["memory_optimization"] = avg_optimization >= self.targets.memory_optimization_percent
+        self._validation_results["memory_optimization"] = (
+            avg_optimization >= self.targets.memory_optimization_percent
+        )
 
-        logger.info(f"Average memory optimization: {avg_optimization:.1f}% (target: {self.targets.memory_optimization_percent}%)")
+        logger.info(
+            f"Average memory optimization: {avg_optimization:.1f}% (target: {self.targets.memory_optimization_percent}%)"
+        )
 
     async def _benchmark_cache_performance(self) -> None:
         """Benchmark cache performance and hit ratios."""
         logger.info("Benchmarking cache performance...")
 
         # Test cache with sample data
-        if self._llm_service and hasattr(self._llm_service, '_response_cache'):
+        if self._llm_service and hasattr(self._llm_service, "_response_cache"):
             cache_instance = self._llm_service._response_cache
 
             test_keys = [f"test_key_{i}" for i in range(50)]
@@ -809,19 +830,19 @@ class PerformanceBenchmarkSuite:
             )
 
             hit_ratio = cache_perf.get("hit_ratio_percent", 0)
-            self._validation_results["cache_hit_ratio"] = hit_ratio >= self.targets.cache_hit_ratio_percent
+            self._validation_results["cache_hit_ratio"] = (
+                hit_ratio >= self.targets.cache_hit_ratio_percent
+            )
 
-            logger.info(f"Cache hit ratio: {hit_ratio:.1f}% (target: {self.targets.cache_hit_ratio_percent}%)")
+            logger.info(
+                f"Cache hit ratio: {hit_ratio:.1f}% (target: {self.targets.cache_hit_ratio_percent}%)"
+            )
 
     async def _benchmark_concurrent_performance(self) -> None:
         """Benchmark concurrent request handling."""
         logger.info("Benchmarking concurrent performance...")
 
-        config = LoadTestConfig(
-            duration_seconds=60,
-            concurrent_users=100,
-            request_rate=20.0
-        )
+        config = LoadTestConfig(duration_seconds=60, concurrent_users=100, request_rate=20.0)
 
         self.load_tester.config = config
         result = await self.load_tester.run_load_test("api")
@@ -830,9 +851,13 @@ class PerformanceBenchmarkSuite:
         duration = result.end_time - result.start_time
         rps = result.total_requests / duration
 
-        self._validation_results["concurrent_requests"] = rps >= self.targets.concurrent_requests_per_second
+        self._validation_results["concurrent_requests"] = (
+            rps >= self.targets.concurrent_requests_per_second
+        )
 
-        logger.info(f"Concurrent requests per second: {rps:.1f} (target: {self.targets.concurrent_requests_per_second})")
+        logger.info(
+            f"Concurrent requests per second: {rps:.1f} (target: {self.targets.concurrent_requests_per_second})"
+        )
 
     def _validate_performance_targets(self) -> dict[str, bool]:
         """Validate all performance targets."""
@@ -866,9 +891,13 @@ class PerformanceBenchmarkSuite:
                     "duration_seconds": result.end_time - result.start_time,
                     "percentiles": {
                         metric_name: result.get_percentiles(metric_name)
-                        for metric_name in ["api_response_time", "llm_response_time", "transformation_time"]
+                        for metric_name in [
+                            "api_response_time",
+                            "llm_response_time",
+                            "transformation_time",
+                        ]
                         if result.get_percentiles(metric_name)
-                    }
+                    },
                 }
                 for name, result in self._benchmark_results.items()
             },
@@ -878,8 +907,10 @@ class PerformanceBenchmarkSuite:
                 "all_targets_met": all(self._validation_results.values()),
                 "targets_passed": sum(self._validation_results.values()),
                 "targets_total": len(self._validation_results),
-                "overall_score": sum(self._validation_results.values()) / len(self._validation_results) * 100
-            }
+                "overall_score": sum(self._validation_results.values())
+                / len(self._validation_results)
+                * 100,
+            },
         }
 
     async def _save_benchmark_results(self, report: dict[str, Any]) -> None:
@@ -888,17 +919,19 @@ class PerformanceBenchmarkSuite:
 
         # Save JSON report
         json_file = self.output_dir / f"performance_report_{timestamp}.json"
-        with open(json_file, 'w') as f:
+        with open(json_file, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
         # Save CSV summary
         csv_data = []
         for target_name, passed in self._validation_results.items():
-            csv_data.append({
-                "target": target_name,
-                "passed": passed,
-                "timestamp": timestamp,
-            })
+            csv_data.append(
+                {
+                    "target": target_name,
+                    "passed": passed,
+                    "timestamp": timestamp,
+                }
+            )
 
         if csv_data:
             df = pd.DataFrame(csv_data)
@@ -912,9 +945,9 @@ class PerformanceBenchmarkSuite:
 # CLI and Integration Functions
 # =====================================================
 
+
 async def run_performance_benchmark(
-    targets: PerformanceTargets | None = None,
-    output_dir: str = "./performance_results"
+    targets: PerformanceTargets | None = None, output_dir: str = "./performance_results"
 ) -> dict[str, Any]:
     """Run complete performance benchmark suite."""
     suite = PerformanceBenchmarkSuite(targets, output_dir)

@@ -12,11 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.core.unified_errors import (
-    InvalidPotencyError,
-    InvalidTechniqueError,
-    TransformationError,
-)
+from app.core.unified_errors import InvalidPotencyError, InvalidTechniqueError, TransformationError
 
 
 class TestTransformationCache:
@@ -116,9 +112,8 @@ class TestTransformationEngine:
     @pytest.fixture
     def engine(self):
         """Create a transformation engine."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
+
         return TransformationEngine()
 
     @pytest.mark.asyncio
@@ -187,21 +182,17 @@ class TestTransformationStrategies:
 
     def test_simple_strategy_applies_persona(self, mock_llm):
         """Test SIMPLE strategy applies persona transformation."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         engine = TransformationEngine()
 
         # Test that persona transformer is in simple chain
         # (implementation-dependent) - verify engine has transform chains
-        assert hasattr(engine, '_transform_chains') or hasattr(engine, 'transform')
+        assert hasattr(engine, "_transform_chains") or hasattr(engine, "transform")
 
     def test_layered_strategy_multiple_transforms(self, mock_llm):
         """Test LAYERED strategy applies multiple transformations."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         engine = TransformationEngine()
 
@@ -211,9 +202,7 @@ class TestTransformationStrategies:
 
     def test_recursive_strategy_depth(self, mock_llm):
         """Test RECURSIVE strategy applies transformations recursively."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         engine = TransformationEngine()
 
@@ -228,9 +217,7 @@ class TestTransformationPotencyLevels:
     @pytest.fixture
     def engine(self):
         """Create engine with mocked LLM."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         return TransformationEngine()
 
@@ -238,9 +225,7 @@ class TestTransformationPotencyLevels:
     async def test_low_potency_minimal_transformation(self, engine):
         """Test low potency (1-3) results in minimal transformation."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed prompt", ["step1"])
@@ -260,14 +245,12 @@ class TestTransformationPotencyLevels:
     async def test_high_potency_aggressive_transformation(self, engine):
         """Test high potency (8-10) results in aggressive transformation."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = (
                 "Aggressively transformed",
-                ["persona", "obfuscation", "cognitive_hacking", "contextual_inception"]
+                ["persona", "obfuscation", "cognitive_hacking", "contextual_inception"],
             )
 
             result = await engine.transform(
@@ -307,9 +290,7 @@ class TestTransformationStreaming:
     @pytest.fixture
     def engine(self):
         """Create engine with mocked LLM."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         return TransformationEngine()
 
@@ -322,11 +303,7 @@ class TestTransformationStreaming:
             for chunk in chunks:
                 yield MagicMock(content=chunk, type="delta")
 
-        with patch.object(
-            engine,
-            "transform_stream",
-            return_value=mock_stream()
-        ):
+        with patch.object(engine, "transform_stream", return_value=mock_stream()):
             result_chunks = []
             async for chunk in engine.transform_stream(
                 prompt="Test",
@@ -344,9 +321,7 @@ class TestTransformationErrorHandling:
     @pytest.fixture
     def engine(self):
         """Create engine with mocked LLM."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         return TransformationEngine()
 
@@ -375,11 +350,10 @@ class TestTransformationErrorHandling:
     @pytest.mark.asyncio
     async def test_llm_failure_fallback(self, engine):
         """Test fallback behavior when LLM fails."""
-        with patch.object(
-            engine,
-            "_apply_transformation",
-            side_effect=Exception("LLM unavailable")
-        ), pytest.raises(TransformationError):
+        with (
+            patch.object(engine, "_apply_transformation", side_effect=Exception("LLM unavailable")),
+            pytest.raises(TransformationError),
+        ):
             await engine.transform(
                 prompt="Test",
                 potency_level=5,
@@ -393,9 +367,7 @@ class TestTransformationMetadata:
     @pytest.fixture
     def engine(self):
         """Create engine with mocked LLM."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         return TransformationEngine()
 
@@ -403,15 +375,10 @@ class TestTransformationMetadata:
     async def test_metadata_includes_transformers(self, engine):
         """Test that metadata includes applied transformers."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
-            mock_transform.return_value = (
-                "Transformed prompt",
-                ["persona", "obfuscation"]
-            )
+            mock_transform.return_value = ("Transformed prompt", ["persona", "obfuscation"])
 
             result = await engine.transform(
                 prompt="Test",
@@ -429,15 +396,10 @@ class TestTransformationMetadata:
     async def test_metadata_includes_timing(self, engine):
         """Test that metadata includes timing information."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
-            mock_transform.return_value = (
-                "Transformed prompt",
-                ["step1"]
-            )
+            mock_transform.return_value = ("Transformed prompt", ["step1"])
 
             result = await engine.transform(
                 prompt="Test",
@@ -455,9 +417,7 @@ class TestTransformationConcurrency:
     @pytest.fixture
     def engine(self):
         """Create engine with mocked LLM."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         return TransformationEngine()
 
@@ -470,11 +430,7 @@ class TestTransformationConcurrency:
             # Return tuple (transformed_prompt, intermediate_steps)
             return ("Transformed", ["step1"])
 
-        with patch.object(
-            engine,
-            "_apply_transformation",
-            side_effect=mock_transform
-        ):
+        with patch.object(engine, "_apply_transformation", side_effect=mock_transform):
             tasks = [
                 engine.transform(
                     prompt=f"Prompt {i}",
@@ -496,9 +452,7 @@ class TestAdvancedStrategies:
     @pytest.fixture
     def engine(self):
         """Create engine with mocked LLM."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         return TransformationEngine()
 
@@ -506,14 +460,12 @@ class TestAdvancedStrategies:
     async def test_quantum_strategy(self, engine):
         """Test quantum strategy for advanced transformations."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = (
                 "Quantum transformed",
-                ["quantum_layer_1", "quantum_layer_2", "quantum_layer_3"]
+                ["quantum_layer_1", "quantum_layer_2", "quantum_layer_3"],
             )
 
             result = await engine.transform(
@@ -541,15 +493,10 @@ class TestAdvancedStrategies:
     async def test_code_chameleon_strategy(self, engine):
         """Test code_chameleon strategy."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
-            mock_transform.return_value = (
-                "Code chameleon transformed",
-                ["code_obfuscation"]
-            )
+            mock_transform.return_value = ("Code chameleon transformed", ["code_obfuscation"])
 
             result = await engine.transform(
                 prompt="Test",
@@ -565,14 +512,12 @@ class TestAdvancedStrategies:
     async def test_deep_inception_strategy(self, engine):
         """Test deep_inception strategy."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = (
                 "Deep inception transformed",
-                ["inception_layer_1", "inception_layer_2"]
+                ["inception_layer_1", "inception_layer_2"],
             )
 
             result = await engine.transform(
@@ -589,15 +534,10 @@ class TestAdvancedStrategies:
     async def test_cipher_strategy(self, engine):
         """Test cipher strategy."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
-            mock_transform.return_value = (
-                "Cipher transformed",
-                ["substitution_cipher"]
-            )
+            mock_transform.return_value = ("Cipher transformed", ["substitution_cipher"])
 
             result = await engine.transform(
                 prompt="Test",
@@ -613,15 +553,10 @@ class TestAdvancedStrategies:
     async def test_autodan_strategy(self, engine):
         """Test autodan strategy integration."""
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
-            mock_transform.return_value = (
-                "AutoDAN transformed",
-                ["autodan_turbo"]
-            )
+            mock_transform.return_value = ("AutoDAN transformed", ["autodan_turbo"])
 
             result = await engine.transform(
                 prompt="Test",
@@ -640,9 +575,7 @@ class TestTransformationValidation:
     @pytest.fixture
     def engine(self):
         """Create engine with mocked LLM."""
-        from app.services.transformation_service import (
-            TransformationEngine,
-        )
+        from app.services.transformation_service import TransformationEngine
 
         return TransformationEngine()
 
@@ -652,9 +585,7 @@ class TestTransformationValidation:
         long_prompt = "x" * 100000  # 100k characters
 
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed", ["step1"])
@@ -675,9 +606,7 @@ class TestTransformationValidation:
         special_prompt = "Test with émojis 🎉 and spëcial châràctërs"
 
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed with specials", ["step1"])
@@ -698,9 +627,7 @@ class TestTransformationValidation:
         null_prompt = "Test with\x00null\x00bytes"
 
         with patch.object(
-            engine,
-            "_apply_transformation",
-            new_callable=AsyncMock
+            engine, "_apply_transformation", new_callable=AsyncMock
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Sanitized and transformed", ["step1"])

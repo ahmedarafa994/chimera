@@ -29,17 +29,12 @@ from app.schemas.extend_attack import (
     ResourceMetricsRequest,
     ResourceMetricsResponse,
 )
-from app.services.extend_attack_service import (
-    ExtendAttackService,
-    get_extend_attack_service,
-)
+from app.services.extend_attack_service import ExtendAttackService, get_extend_attack_service
 from app.services.resource_exhaustion_service import (
     ResourceExhaustionService,
     get_resource_exhaustion_service,
 )
-from app.services.resource_monitoring_background import (
-    get_monitoring_manager,
-)
+from app.services.resource_monitoring_background import get_monitoring_manager
 
 router = APIRouter(prefix="/extend-attack", tags=["ExtendAttack"])
 
@@ -506,7 +501,7 @@ async def record_attack(
     attack_tokens: int,
     latency_ms: float,
     successful: bool = True,
-    model: str = None,
+    model: str | None = None,
     service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
 ) -> dict[str, Any]:
     """
@@ -642,7 +637,7 @@ async def get_historical_data(
 
 @router.get("/monitoring/costs")
 async def get_cost_breakdown(
-    session_id: str = None,
+    session_id: str | None = None,
     service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
 ) -> dict[str, Any]:
     """

@@ -143,7 +143,7 @@ export interface NormalizedMetricsChartProps {
   /** Custom CSS class */
   className?: string;
   /** Reference to chart container for export */
-  chartRef?: React.RefObject<HTMLDivElement>;
+  chartRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 // =============================================================================
@@ -940,10 +940,5 @@ export function DetailedNormalizedMetricsChart({
 // Export Types
 // =============================================================================
 
-export type {
-  NormalizedMetric,
-  RadarDataPoint,
-  CampaignSeries,
-};
-
+// Note: Types are already exported where they're defined above
 export default NormalizedMetricsChart;

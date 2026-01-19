@@ -1,0 +1,404 @@
+# =============================================================================
+# Chimera Security Hardening Configuration
+# =============================================================================
+# Production security configuration with enterprise-grade hardening measures
+# This file contains security policies, validation rules, and monitoring settings
+
+# =============================================================================
+# Authentication & Authorization Security
+# =============================================================================
+
+[auth.jwt]
+# JWT Security Configuration
+algorithm = "HS256"
+access_token_expire_hours = 8
+refresh_token_expire_days = 1
+issuer = "chimera.yourdomain.com"
+audience = "chimera-api"
+require_secure_transport = true
+validate_nbf = true
+validate_exp = true
+validate_aud = true
+validate_iss = true
+
+[auth.password_policy]
+# Password Security Requirements
+min_length = 12
+require_uppercase = true
+require_lowercase = true
+require_digits = true
+require_special_chars = true
+forbidden_patterns = ["password", "123456", "qwerty", "admin", "chimera"]
+max_failed_attempts = 5
+lockout_duration_minutes = 30
+force_password_change_days = 90
+prevent_password_reuse_count = 5
+
+[auth.session]
+# Session Security Configuration
+secure_cookies = true
+http_only_cookies = true
+same_site = "strict"
+session_timeout_minutes = 480
+idle_timeout_minutes = 60
+require_csrf_token = true
+regenerate_session_on_auth = true
+
+# =============================================================================
+# API Security Configuration
+# =============================================================================
+
+[api.rate_limiting]
+# Rate Limiting Configuration (per IP address)
+global_requests_per_minute = 500
+global_burst_limit = 100
+auth_requests_per_minute = 5
+registration_requests_per_minute = 2
+password_reset_requests_per_minute = 1
+jailbreak_requests_per_minute = 100
+generation_requests_per_minute = 200
+
+# Rate limiting by user (authenticated requests)
+authenticated_requests_per_minute = 1000
+authenticated_daily_limit = 50000
+premium_requests_per_minute = 5000
+premium_daily_limit = 500000
+
+[api.input_validation]
+# Input Validation Rules
+max_prompt_length = 50000
+max_file_upload_size_mb = 10
+allowed_file_types = ["txt", "json", "csv", "md"]
+max_request_size_mb = 25
+max_headers_count = 50
+max_header_size_kb = 8
+
+# Content Security Policies
+disallow_executable_uploads = true
+scan_uploads_for_malware = true
+validate_json_schema = true
+sanitize_html_input = true
+
+[api.cors]
+# CORS Security Configuration
+allowed_origins = ["https://app.yourdomain.com", "https://admin.yourdomain.com"]
+allowed_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+allowed_headers = ["Content-Type", "Authorization", "X-API-Key", "X-Request-ID"]
+allow_credentials = true
+max_age_seconds = 3600
+expose_headers = ["X-Rate-Limit-Remaining", "X-Rate-Limit-Reset"]
+
+# =============================================================================
+# Data Protection & Privacy
+# =============================================================================
+
+[data.encryption]
+# Encryption Configuration
+encryption_algorithm = "AES-256-GCM"
+key_derivation_function = "PBKDF2"
+pbkdf2_iterations = 600000
+encrypt_api_keys_at_rest = true
+encrypt_user_data_at_rest = true
+encrypt_logs_at_rest = true
+use_envelope_encryption = true
+rotate_keys_days = 90
+
+[data.retention]
+# Data Retention Policies
+user_data_retention_days = 2555  # 7 years for compliance
+session_data_retention_days = 90
+audit_log_retention_days = 2555  # 7 years for compliance
+application_log_retention_days = 365
+metrics_data_retention_days = 730
+temporary_files_retention_hours = 24
+
+[data.privacy]
+# Privacy Protection Settings
+anonymize_logs = true
+mask_sensitive_data = true
+gdpr_compliance_enabled = true
+right_to_erasure_enabled = true
+data_portability_enabled = true
+consent_management_enabled = true
+data_minimization_enabled = true
+
+# =============================================================================
+# Network Security
+# =============================================================================
+
+[network.tls]
+# TLS/SSL Configuration
+min_tls_version = "1.2"
+preferred_tls_version = "1.3"
+require_tls = true
+hsts_max_age_seconds = 31536000  # 1 year
+hsts_include_subdomains = true
+hsts_preload = true
+require_sni = true
+
+# Cipher Suite Configuration (TLS 1.2)
+allowed_ciphers_tls12 = [
+    "ECDHE-RSA-AES256-GCM-SHA384",
+    "ECDHE-RSA-AES128-GCM-SHA256",
+    "ECDHE-RSA-AES256-SHA384",
+    "ECDHE-RSA-AES128-SHA256"
+]
+
+# Cipher Suite Configuration (TLS 1.3)
+allowed_ciphers_tls13 = [
+    "TLS_AES_256_GCM_SHA384",
+    "TLS_CHACHA20_POLY1305_SHA256",
+    "TLS_AES_128_GCM_SHA256"
+]
+
+[network.firewall]
+# Network Access Control
+allowed_ip_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+blocked_countries = ["CN", "RU", "KP", "IR"]  # Adjust based on your requirements
+enable_ddos_protection = true
+enable_geo_blocking = true
+max_connections_per_ip = 100
+connection_timeout_seconds = 30
+
+# =============================================================================
+# Application Security
+# =============================================================================
+
+[app.headers]
+# Security Headers Configuration
+x_frame_options = "DENY"
+x_content_type_options = "nosniff"
+x_xss_protection = "1; mode=block"
+referrer_policy = "strict-origin-when-cross-origin"
+permissions_policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+
+# Content Security Policy
+csp_default_src = "'self'"
+csp_script_src = "'self' 'unsafe-inline'"
+csp_style_src = "'self' 'unsafe-inline' https://fonts.googleapis.com"
+csp_font_src = "'self' https://fonts.gstatic.com"
+csp_img_src = "'self' data: https:"
+csp_connect_src = "'self' https://api.yourdomain.com wss://api.yourdomain.com"
+csp_frame_ancestors = "'none'"
+csp_base_uri = "'self'"
+csp_form_action = "'self'"
+
+[app.input_sanitization]
+# Input Sanitization Rules
+enable_xss_protection = true
+enable_sql_injection_protection = true
+enable_command_injection_protection = true
+enable_path_traversal_protection = true
+enable_ldap_injection_protection = true
+sanitize_file_uploads = true
+validate_content_types = true
+
+# =============================================================================
+# Monitoring & Incident Response
+# =============================================================================
+
+[monitoring.security_events]
+# Security Event Detection
+monitor_failed_logins = true
+monitor_privilege_escalation = true
+monitor_unusual_api_usage = true
+monitor_data_exfiltration_patterns = true
+monitor_brute_force_attacks = true
+monitor_sql_injection_attempts = true
+monitor_xss_attempts = true
+
+# Alert Thresholds
+failed_login_threshold = 5
+unusual_traffic_multiplier = 5.0
+data_transfer_threshold_gb = 10
+concurrent_session_threshold = 10
+
+[monitoring.logging]
+# Security Logging Configuration
+log_level = "INFO"
+log_format = "json"
+include_request_id = true
+include_user_id = true
+include_ip_address = true
+include_user_agent = true
+include_request_headers = false  # Privacy consideration
+include_response_headers = false
+log_sensitive_data = false
+centralized_logging = true
+
+# Log Sources
+audit_logs_enabled = true
+access_logs_enabled = true
+error_logs_enabled = true
+security_logs_enabled = true
+performance_logs_enabled = true
+
+[monitoring.alerts]
+# Security Alerting Configuration
+slack_webhook_url = "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+email_alerts_enabled = true
+sms_alerts_enabled = false
+webhook_alerts_enabled = true
+alert_recipients = ["security@yourdomain.com", "ops@yourdomain.com"]
+
+# Alert Conditions
+alert_on_failed_deployments = true
+alert_on_database_errors = true
+alert_on_high_error_rates = true
+alert_on_security_violations = true
+alert_on_performance_degradation = true
+
+# =============================================================================
+# Compliance & Governance
+# =============================================================================
+
+[compliance.gdpr]
+# GDPR Compliance Configuration
+lawful_basis_processing = "legitimate_interest"
+data_controller = "Your Organization Name"
+data_protection_officer = "dpo@yourdomain.com"
+privacy_policy_url = "https://yourdomain.com/privacy"
+cookie_policy_url = "https://yourdomain.com/cookies"
+consent_mechanism = "opt_in"
+right_to_rectification = true
+right_to_portability = true
+right_to_erasure = true
+
+[compliance.audit]
+# Audit Trail Configuration
+audit_all_api_calls = true
+audit_authentication_events = true
+audit_data_access = true
+audit_configuration_changes = true
+audit_user_management = true
+audit_file_operations = true
+include_audit_checksums = true
+audit_log_integrity_check = true
+
+# =============================================================================
+# AI/ML Security Configuration
+# =============================================================================
+
+[ai.prompt_safety]
+# AI Prompt Safety Configuration
+enable_prompt_validation = true
+enable_content_filtering = true
+enable_toxicity_detection = true
+enable_pii_detection = true
+max_prompt_complexity_score = 8.5
+block_prompt_injection_attempts = true
+log_safety_violations = true
+
+# Safety Filters
+toxicity_threshold = 0.7
+harassment_threshold = 0.8
+hate_speech_threshold = 0.6
+violence_threshold = 0.7
+sexual_content_threshold = 0.8
+
+[ai.provider_security]
+# AI Provider Security Configuration
+encrypt_provider_api_keys = true
+rotate_api_keys_days = 30
+validate_provider_responses = true
+limit_provider_request_rate = true
+monitor_provider_costs = true
+enable_provider_failover = true
+log_provider_interactions = true
+
+# Provider Timeout Settings
+provider_timeout_seconds = 120
+provider_retry_attempts = 3
+provider_backoff_multiplier = 2.0
+
+# =============================================================================
+# Incident Response Configuration
+# =============================================================================
+
+[incident_response.procedures]
+# Incident Response Configuration
+enable_automatic_blocking = true
+security_incident_webhook = "https://security.yourdomain.com/incidents"
+escalation_timeout_minutes = 15
+incident_severity_levels = ["low", "medium", "high", "critical"]
+
+# Automatic Response Actions
+auto_block_suspicious_ips = true
+auto_disable_compromised_accounts = true
+auto_increase_monitoring_during_incidents = true
+auto_backup_logs_during_incidents = true
+
+[incident_response.communication]
+# Communication Channels
+primary_contact = "security@yourdomain.com"
+escalation_contact = "ciso@yourdomain.com"
+legal_contact = "legal@yourdomain.com"
+pr_contact = "pr@yourdomain.com"
+
+# Communication Templates
+breach_notification_template = "security_breach_notification"
+user_notification_template = "security_incident_user_notification"
+regulatory_notification_template = "regulatory_breach_notification"
+
+# =============================================================================
+# Security Testing Configuration
+# =============================================================================
+
+[security_testing.automated]
+# Automated Security Testing
+enable_dependency_scanning = true
+enable_sast_scanning = true
+enable_dast_scanning = true
+enable_container_scanning = true
+enable_secrets_scanning = true
+
+# Vulnerability Management
+vulnerability_scan_schedule = "0 2 * * 0"  # Weekly on Sunday at 2 AM
+critical_vulnerability_sla_hours = 4
+high_vulnerability_sla_hours = 24
+medium_vulnerability_sla_days = 7
+low_vulnerability_sla_days = 30
+
+[security_testing.penetration]
+# Penetration Testing Configuration
+pentest_frequency_months = 6
+red_team_exercise_frequency_months = 12
+bug_bounty_program_enabled = true
+responsible_disclosure_policy = "https://yourdomain.com/security"
+
+# =============================================================================
+# Business Continuity & Disaster Recovery
+# =============================================================================
+
+[business_continuity.backup]
+# Backup Configuration
+backup_encryption_enabled = true
+backup_frequency = "daily"
+backup_retention_days = 90
+offsite_backup_enabled = true
+backup_testing_frequency = "monthly"
+backup_verification_enabled = true
+
+[business_continuity.disaster_recovery]
+# Disaster Recovery Configuration
+rto_target_hours = 4  # Recovery Time Objective
+rpo_target_hours = 1  # Recovery Point Objective
+dr_site_enabled = true
+dr_testing_frequency = "quarterly"
+failover_automation_enabled = true
+data_replication_enabled = true
+
+# =============================================================================
+# Configuration Validation
+# =============================================================================
+
+[validation.startup]
+# Configuration Validation on Startup
+validate_ssl_certificates = true
+validate_database_connectivity = true
+validate_redis_connectivity = true
+validate_provider_api_keys = true
+validate_encryption_keys = true
+validate_backup_accessibility = true
+check_security_headers = true
+verify_cors_configuration = true

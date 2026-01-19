@@ -15,11 +15,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from app.db.models import DBEvasionTask
-from app.schemas.api_schemas import (
-    EvasionAttemptResult,
-    EvasionTaskConfig,
-    EvasionTaskStatusEnum,
-)
+from app.schemas.api_schemas import EvasionAttemptResult, EvasionTaskConfig, EvasionTaskStatusEnum
 
 
 def create_evasion_task(

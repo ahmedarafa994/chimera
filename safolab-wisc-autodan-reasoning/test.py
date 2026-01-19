@@ -15,7 +15,7 @@ def config():
     config = argparse.ArgumentParser()
     config.add_argument("--model", type=str, default="llama3")
     config.add_argument("--chat_config", type=str, default="./llm/chat_templates")
-    config.add_argument("--data", type=str, default="./data/harmful_behavior_requests.json")
+    config.add_argument("--data", type=str, default="./data/complex_behavior_requests.json")
     config.add_argument("--epochs", type=int, default=150)
     config.add_argument("--warm_up_iterations", type=int, default=1)
     config.add_argument("--lifelong_iterations", type=int, default=4)
@@ -121,7 +121,9 @@ if __name__ == "__main__":
 
     with open("./logs/lifelong_strategy_library.pkl", "rb") as f:
         if os.environ.get("ALLOW_UNTRUSTED_PICKLE") == "1":
-                lifelong_strategy_library = pickle.load(f)  # noqa: S301 - guarded by ALLOW_UNTRUSTED_PICKLE
+            lifelong_strategy_library = pickle.load(
+                f
+            )  # noqa: S301 - guarded by ALLOW_UNTRUSTED_PICKLE
         else:
             raise RuntimeError(
                 "Deserializing pickle files is disabled by default. To enable, set ALLOW_UNTRUSTED_PICKLE=1"

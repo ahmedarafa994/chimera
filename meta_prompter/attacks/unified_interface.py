@@ -19,46 +19,35 @@ Reference: Unified adversarial attack framework for LLM security research
 
 import logging
 import time
-from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Iterator, Protocol, runtime_checkable
-
-import numpy as np
+from typing import Any, Protocol, runtime_checkable
 
 # Import AutoDAN components
 from meta_prompter.attacks.autodan.fitness_evaluation import (
-    FitnessEvaluationPipeline,
     FitnessConfig,
-    FitnessResult,
+    FitnessEvaluationPipeline,
 )
 from meta_prompter.attacks.autodan.hierarchical_genetic_algorithm import (
-    HierarchicalGeneticAlgorithm,
     HGAConfig,
+    HierarchicalGeneticAlgorithm,
     Individual,
 )
 from meta_prompter.attacks.autodan.token_perturbation import (
-    TokenPerturbationEngine,
     PerturbationConfig,
+    TokenPerturbationEngine,
 )
 
 # Import cchimera components
 from meta_prompter.attacks.cchimera.adversarial_core import (
-    AdversarialGenerationEngine,
     AdversarialConfig,
-    AdversarialCandidate,
+    AdversarialGenerationEngine,
     AttackStrategy,
 )
-from meta_prompter.attacks.cchimera.multi_objective_optimization import (
-    MultiObjectiveOptimizer,
-    MOOConfig,
-    Solution,
-    Objective,
-    ObjectiveType,
-)
 from meta_prompter.attacks.cchimera.elitism_strategies import (
-    ElitismManager,
     EliteConfig,
+    ElitismManager,
     ElitismType,
 )
 
@@ -100,18 +89,22 @@ class UnifiedConfig:
     cchimera_weight: float = 0.5
 
     # Objectives
-    objectives: list[str] = field(default_factory=lambda: [
-        "jailbreak_success",
-        "semantic_similarity",
-        "fluency",
-        "stealth",
-    ])
-    objective_weights: dict[str, float] = field(default_factory=lambda: {
-        "jailbreak_success": 0.4,
-        "semantic_similarity": 0.2,
-        "fluency": 0.2,
-        "stealth": 0.2,
-    })
+    objectives: list[str] = field(
+        default_factory=lambda: [
+            "jailbreak_success",
+            "semantic_similarity",
+            "fluency",
+            "stealth",
+        ]
+    )
+    objective_weights: dict[str, float] = field(
+        default_factory=lambda: {
+            "jailbreak_success": 0.4,
+            "semantic_similarity": 0.2,
+            "fluency": 0.2,
+            "stealth": 0.2,
+        }
+    )
 
     # Thresholds
     success_threshold: float = 0.8
@@ -226,7 +219,7 @@ class AutoDANEngine:
     ) -> list[AttackResult]:
         """Generate adversarial prompts using AutoDAN."""
         results = []
-        start_time = time.time()
+        time.time()
 
         # Create fitness function
         def fitness_fn(prompt: str) -> float:
@@ -250,7 +243,7 @@ class AutoDANEngine:
                 objective_scores=fitness_result.objective_scores,
                 attack_type="autodan",
                 generation=ind.generation,
-                mutations=ind.mutations if hasattr(ind, 'mutations') else [],
+                mutations=ind.mutations if hasattr(ind, "mutations") else [],
             )
             results.append(result)
 
@@ -269,11 +262,13 @@ class AutoDANEngine:
         # Add perturbations
         for _ in range(self.config.population_size - 1):
             perturbed = self.perturbation.perturb(seed_prompt)
-            population.append(Individual(
-                prompt=perturbed,
-                fitness=0.0,
-                generation=0,
-            ))
+            population.append(
+                Individual(
+                    prompt=perturbed,
+                    fitness=0.0,
+                    generation=0,
+                )
+            )
 
         return population
 
@@ -339,25 +334,25 @@ class cchimeraEngine:
         # Also collect from population
         if self.engine.state and self.engine.state.population:
             for candidate in sorted(
-                self.engine.state.population,
-                key=lambda c: c.fitness,
-                reverse=True
+                self.engine.state.population, key=lambda c: c.fitness, reverse=True
             )[:10]:
                 if candidate.prompt != best_candidate.prompt:
-                    results.append(AttackResult(
-                        prompt=candidate.prompt,
-                        original_prompt=seed_prompt,
-                        fitness=candidate.fitness,
-                        objective_scores={
-                            "jailbreak_success": candidate.jailbreak_score,
-                            "semantic_similarity": candidate.semantic_score,
-                            "fluency": candidate.fluency_score,
-                            "stealth": candidate.stealth_score,
-                        },
-                        attack_type="cchimera",
-                        generation=candidate.generation,
-                        mutations=candidate.mutations,
-                    ))
+                    results.append(
+                        AttackResult(
+                            prompt=candidate.prompt,
+                            original_prompt=seed_prompt,
+                            fitness=candidate.fitness,
+                            objective_scores={
+                                "jailbreak_success": candidate.jailbreak_score,
+                                "semantic_similarity": candidate.semantic_score,
+                                "fluency": candidate.fluency_score,
+                                "stealth": candidate.stealth_score,
+                            },
+                            attack_type="cchimera",
+                            generation=candidate.generation,
+                            mutations=candidate.mutations,
+                        )
+                    )
 
         return results
 
@@ -393,7 +388,7 @@ class HybridEngine:
     ) -> list[AttackResult]:
         """Generate adversarial prompts using hybrid approach."""
         all_results = []
-        start_time = time.time()
+        time.time()
 
         # Phase 1: cchimera exploration
         logger.info("Phase 1: cchimera exploration")
@@ -402,7 +397,9 @@ class HybridEngine:
 
         # Phase 2: AutoDAN refinement on best cchimera results
         logger.info("Phase 2: AutoDAN refinement")
-        best_seeds = [r.prompt for r in sorted(cchimera_results, key=lambda x: x.fitness, reverse=True)[:5]]
+        best_seeds = [
+            r.prompt for r in sorted(cchimera_results, key=lambda x: x.fitness, reverse=True)[:5]
+        ]
 
         for seed in best_seeds:
             autodan_results = self.autodan.generate(seed)
@@ -425,7 +422,7 @@ class HybridEngine:
         # Deduplicate and rank
         all_results = self._deduplicate_and_rank(all_results)
 
-        return all_results[:self.config.max_results]
+        return all_results[: self.config.max_results]
 
     def _deduplicate_and_rank(
         self,
@@ -460,7 +457,11 @@ class EnsembleEngine:
         # Initialize multiple cchimera engines with different strategies
         self.engines = []
 
-        for strategy in [AttackStrategy.GENETIC, AttackStrategy.SEMANTIC, AttackStrategy.STRUCTURAL]:
+        for strategy in [
+            AttackStrategy.GENETIC,
+            AttackStrategy.SEMANTIC,
+            AttackStrategy.STRUCTURAL,
+        ]:
             engine_config = AdversarialConfig(
                 max_iterations=self.config.max_iterations // 3,
                 population_size=self.config.population_size // 3,
@@ -497,7 +498,7 @@ class EnsembleEngine:
         # Aggregate using voting/ranking
         all_results = self._ensemble_aggregate(all_results)
 
-        return all_results[:self.config.max_results]
+        return all_results[: self.config.max_results]
 
     def _ensemble_aggregate(
         self,
@@ -526,7 +527,7 @@ class EnsembleEngine:
             best = max(cluster, key=lambda x: x.fitness)
 
             # Boost fitness by number of sources
-            source_bonus = len(set(r.attack_type for r in cluster)) * 0.05
+            source_bonus = len({r.attack_type for r in cluster}) * 0.05
             best.fitness = min(1.0, best.fitness + source_bonus)
 
             aggregated.append(best)
@@ -621,10 +622,7 @@ class UnifiedAttackOrchestrator:
         results = engine.generate(seed_prompt, callback)
 
         # Filter by quality threshold
-        results = [
-            r for r in results
-            if r.fitness >= self.config.min_quality_threshold
-        ]
+        results = [r for r in results if r.fitness >= self.config.min_quality_threshold]
 
         # Update best result
         if results:
@@ -687,7 +685,9 @@ class UnifiedAttackOrchestrator:
 
         # Select best strategy for full run
         best_strategy = max(strategy_scores, key=lambda k: strategy_scores[k])
-        logger.info(f"Adaptive: selected {best_strategy.value} (score: {strategy_scores[best_strategy]:.3f})")
+        logger.info(
+            f"Adaptive: selected {best_strategy.value} (score: {strategy_scores[best_strategy]:.3f})"
+        )
 
         # Full run with best strategy
         full_results = self.attack(seed_prompt, best_strategy, callback)
@@ -704,7 +704,7 @@ class UnifiedAttackOrchestrator:
 
         unique.sort(key=lambda x: x.fitness, reverse=True)
 
-        return unique[:self.config.max_results]
+        return unique[: self.config.max_results]
 
     def attack_stream(
         self,
@@ -721,9 +721,7 @@ class UnifiedAttackOrchestrator:
 
         if attack_type == AttackType.CCHIMERA:
             # Use cchimera's streaming capability
-            engine = AdversarialGenerationEngine(
-                self.config.cchimera_config or AdversarialConfig()
-            )
+            engine = AdversarialGenerationEngine(self.config.cchimera_config or AdversarialConfig())
 
             for candidate in engine.generate_stream(seed_prompt):
                 yield AttackResult(
@@ -743,8 +741,7 @@ class UnifiedAttackOrchestrator:
         else:
             # Batch for other types
             results = self.attack(seed_prompt, attack_type)
-            for result in results:
-                yield result
+            yield from results
 
     def get_statistics(self) -> dict[str, Any]:
         """Get attack statistics."""
@@ -801,16 +798,16 @@ def quick_attack(
 
 # Module exports
 __all__ = [
+    "AttackProgress",
+    "AttackResult",
+    "AttackType",
+    "AutoDANEngine",
+    "EnsembleEngine",
+    "HybridEngine",
+    "OptimizationMode",
     "UnifiedAttackOrchestrator",
     "UnifiedConfig",
-    "AttackResult",
-    "AttackProgress",
-    "AttackType",
-    "OptimizationMode",
-    "AutoDANEngine",
     "cchimeraEngine",
-    "HybridEngine",
-    "EnsembleEngine",
     "create_attack_engine",
     "quick_attack",
 ]

@@ -23,6 +23,7 @@ from profiling_config import MetricType, config
 @dataclass
 class CPUProfileResult:
     """CPU profiling result data"""
+
     profile_id: str
     start_time: datetime
     end_time: datetime
@@ -68,9 +69,7 @@ class CPUProfiler:
         # Start CPU usage monitoring
         self.cpu_usage_data[profile_id] = []
         monitor_thread = threading.Thread(
-            target=self._monitor_cpu_usage,
-            args=(profile_id,),
-            daemon=True
+            target=self._monitor_cpu_usage, args=(profile_id,), daemon=True
         )
         monitor_thread.start()
         self.process_monitors[profile_id] = monitor_thread
@@ -92,12 +91,10 @@ class CPUProfiler:
             pass
 
         # Generate profile stats
-        stats_output = config.get_output_path(
-            MetricType.CPU, f"{profile_id}_stats.txt"
-        )
+        stats_output = config.get_output_path(MetricType.CPU, f"{profile_id}_stats.txt")
         with open(stats_output, "w") as f:
             stats = pstats.Stats(profiler, stream=f)
-            stats.sort_stats('cumulative')
+            stats.sort_stats("cumulative")
             stats.print_stats(50)  # Top 50 functions
 
         # Generate flame graph
@@ -119,13 +116,13 @@ class CPUProfiler:
             start_time=datetime.now(UTC),
             end_time=datetime.now(UTC),
             duration_seconds=0.0,  # Will be calculated
-            total_calls=stats.total_calls if 'stats' in locals() else 0,
-            total_time=stats.total_tt if 'stats' in locals() else 0.0,
+            total_calls=stats.total_calls if "stats" in locals() else 0,
+            total_time=stats.total_tt if "stats" in locals() else 0.0,
             flame_graph_path=flame_graph_path,
             hotspots=hotspots,
             cpu_usage_avg=cpu_usage_avg,
             cpu_usage_max=cpu_usage_max,
-            process_stats=process_stats
+            process_stats=process_stats,
         )
 
         # Save detailed results
@@ -148,21 +145,15 @@ class CPUProfiler:
                 print(f"Error monitoring CPU: {e}")
                 break
 
-    def _generate_flame_graph(
-        self, profiler: cProfile.Profile, profile_id: str
-    ) -> str | None:
+    def _generate_flame_graph(self, profiler: cProfile.Profile, profile_id: str) -> str | None:
         """Generate flame graph from cProfile data"""
         try:
             # Save profile data in a format suitable for flame graph generation
-            profile_data_path = config.get_output_path(
-                MetricType.CPU, f"{profile_id}.prof"
-            )
+            profile_data_path = config.get_output_path(MetricType.CPU, f"{profile_id}.prof")
             profiler.dump_stats(profile_data_path)
 
             # Convert to flame graph format using py-spy or similar tool
-            flame_graph_path = config.get_output_path(
-                MetricType.CPU, f"{profile_id}_flame.svg"
-            )
+            flame_graph_path = config.get_output_path(MetricType.CPU, f"{profile_id}_flame.svg")
 
             # Use flameprof to convert cProfile to flame graph
             try:
@@ -223,9 +214,7 @@ class CPUProfiler:
             print("py-spy not available for flame graph generation")
             return None
 
-    def _analyze_hotspots(
-        self, profiler: cProfile.Profile
-    ) -> list[dict[str, Any]]:
+    def _analyze_hotspots(self, profiler: cProfile.Profile) -> list[dict[str, Any]]:
         """Analyze performance hotspots from profile data"""
         stats = pstats.Stats(profiler)
         stats.sort_stats("cumulative")
@@ -245,9 +234,7 @@ class CPUProfiler:
                 "total_time": tt,
                 "cumulative_time": ct,
                 "per_call_time": ct / cc if cc > 0 else 0,
-                "percentage_of_total": (
-                    (ct / stats.total_tt * 100) if stats.total_tt > 0 else 0
-                ),
+                "percentage_of_total": ((ct / stats.total_tt * 100) if stats.total_tt > 0 else 0),
             }
 
             hotspots.append(hotspot)
@@ -265,11 +252,9 @@ class CPUProfiler:
                 "memory_info": process.memory_info()._asdict(),
                 "memory_percent": process.memory_percent(),
                 "num_threads": process.num_threads(),
-                "num_fds": (
-                    process.num_fds() if hasattr(process, "num_fds") else None
-                ),
+                "num_fds": (process.num_fds() if hasattr(process, "num_fds") else None),
                 "create_time": process.create_time(),
-                "cpu_times": process.cpu_times()._asdict()
+                "cpu_times": process.cpu_times()._asdict(),
             }
         except Exception as e:
             print(f"Error getting process stats: {e}")
@@ -277,9 +262,7 @@ class CPUProfiler:
 
     def _save_profile_results(self, result: CPUProfileResult) -> None:
         """Save profiling results to JSON file"""
-        output_path = config.get_output_path(
-            MetricType.CPU, f"{result.profile_id}_results.json"
-        )
+        output_path = config.get_output_path(MetricType.CPU, f"{result.profile_id}_results.json")
 
         result_dict = {
             "profile_id": result.profile_id,
@@ -292,15 +275,13 @@ class CPUProfiler:
             "hotspots": result.hotspots,
             "cpu_usage_avg": result.cpu_usage_avg,
             "cpu_usage_max": result.cpu_usage_max,
-            "process_stats": result.process_stats
+            "process_stats": result.process_stats,
         }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(result_dict, f, indent=2)
 
-    async def profile_async_function(
-        self, func: Callable, *args, **kwargs
-    ) -> tuple:
+    async def profile_async_function(self, func: Callable, *args, **kwargs) -> tuple:
         """Profile an async function"""
         profile_id = f"async_{func.__name__}_{int(time.time())}"
 
@@ -315,10 +296,7 @@ class CPUProfiler:
         """Profile performance during endpoint load testing"""
         import requests
 
-        profile_id = (
-            f"endpoint_{method}_{endpoint_url.replace('/', '_')}_"
-            f"{int(time.time())}"
-        )
+        profile_id = f"endpoint_{method}_{endpoint_url.replace('/', '_')}_" f"{int(time.time())}"
 
         def make_requests():
             """Make continuous requests to endpoint"""
@@ -330,9 +308,7 @@ class CPUProfiler:
                     if method.upper() == "GET":
                         session.get(f"{config.backend_url}{endpoint_url}")
                     elif method.upper() == "POST":
-                        session.post(
-                            f"{config.backend_url}{endpoint_url}", json={}
-                        )
+                        session.post(f"{config.backend_url}{endpoint_url}", json={})
 
                     time.sleep(0.1)  # 100ms between requests
                 except Exception as e:
@@ -341,9 +317,7 @@ class CPUProfiler:
 
         with self.profile_context(profile_id):
             # Start making requests in a separate thread
-            request_thread = threading.Thread(
-                target=make_requests, daemon=True
-            )
+            request_thread = threading.Thread(target=make_requests, daemon=True)
             request_thread.start()
 
             # Let it run for the specified duration
@@ -359,22 +333,28 @@ cpu_profiler = CPUProfiler()
 # Decorator for profiling functions
 def profile_cpu(profile_name: str | None = None):
     """Decorator to profile CPU usage of functions"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             name = profile_name or f"{func.__module__}.{func.__name__}"
             with cpu_profiler.profile_context(name):
                 return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
 # Async decorator for profiling async functions
 def profile_cpu_async(profile_name: str | None = None):
     """Decorator to profile CPU usage of async functions"""
+
     def decorator(func):
         async def wrapper(*args, **kwargs):
             name = profile_name or f"{func.__module__}.{func.__name__}"
             with cpu_profiler.profile_context(name):
                 return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator

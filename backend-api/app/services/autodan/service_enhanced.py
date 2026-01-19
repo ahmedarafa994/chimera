@@ -26,15 +26,9 @@ from app.engines.autodan_engine import AutoDANTurboEngine
 
 from .config_enhanced import EnhancedAutoDANConfig, OptimizationStrategy, get_config, update_config
 from .engines import AdaptiveStrategySelector, GeneticOptimizerComplete
-from .engines.parallel_processor import (
-    CacheEvictionPolicy,
-    ParallelProcessor,
-    SmartCache,
-)
+from .engines.parallel_processor import CacheEvictionPolicy, ParallelProcessor, SmartCache
 from .framework import Attacker, Retrieval, Scorer, Summarizer, Target
-from .framework_autodan_reasoning import (
-    AutoDANAdvanced,
-)
+from .framework_autodan_reasoning import AutoDANAdvanced
 from .llm.chimera_adapter import (
     ChimeraLLMAdapter,
     RateLimitError,
@@ -56,6 +50,7 @@ def _get_aegis_orchestrator():
     if _aegis_orchestrator is None:
         try:
             from meta_prompter.aegis_orchestrator import AegisOrchestrator
+
             _aegis_orchestrator = AegisOrchestrator
             logger.info("AegisOrchestrator loaded successfully")
         except ImportError as e:
@@ -181,15 +176,23 @@ class EnhancedAutoDANService:
                     model_name=model_name, provider=provider, retry_config=retry_config
                 )
 
-                # Initialize the Turbo Engine with explicit model configuration
-                self.turbo_engine = AutoDANTurboEngine(
-                    model_name=model_name,
-                    provider=provider,
-                    population_size=self.config.genetic.population_size,
-                    generations=self.config.genetic.generations,
-                    mutation_rate=self.config.genetic.mutation_rate,
-                    potency=kwargs.get("potency", 5),
+                # Initialize the Weaponized Turbo Engine (Lifelong Learning + Neural Bypass)
+                # This integration replaces the legacy genetic engine with the full adversarial suite
+                from app.engines.autodan_turbo.lifelong_engine import AutoDANTurboLifelongEngine
+
+                self.turbo_engine = AutoDANTurboLifelongEngine(
+                    llm_client=adapter,
+                    target_client=adapter,  # Use same adapter for target for now
+                    candidates_per_attack=self.config.best_of_n.n_candidates,
+                    enable_refusal_bypass=True,
+                    enable_advanced_bypass=True,  # Enable Recursive Encoding/Polyglot
+                    enable_refusal_prediction=True,
                 )
+
+                # Configure neural bypass if available (part of AutoDANTurboLifelongEngine by default)
+                if hasattr(self.turbo_engine, "enable_neural_bypass"):
+                    self.turbo_engine.enable_neural_bypass = True
+                    logger.info("Neural Bypass Engine (Token Glitching/Gradient Sim) ENABLED")
 
                 # Create framework components
                 attacker = Attacker(adapter)
@@ -218,7 +221,7 @@ class EnhancedAutoDANService:
 
                 # Load data
                 data_path = os.path.join(
-                    os.path.dirname(__file__), "data", "harmful_behavior_requests.json"
+                    os.path.dirname(__file__), "data", "complex_behavior_requests.json"
                 )
                 try:
                     with open(data_path) as f:
@@ -436,17 +439,27 @@ class EnhancedAutoDANService:
             }
 
     async def _run_turbo(self, request: str, **kwargs) -> dict[str, Any]:
-        """Run the AI-driven AutoDAN Turbo Engine."""
+        """
+        Run the AI-driven AutoDAN Turbo Engine (Lifelong Learning + Neural Bypass).
+        """
         if not self.turbo_engine:
             raise RuntimeError("Turbo Engine not initialized")
 
-        logger.info("Executing AutoDANTurboEngine transformation...")
-        prompt = await self.turbo_engine.transform_async({"raw_text": request})
+        logger.info("Executing Weaponized AutoDAN Turbo Engine...")
+
+        # Execute attack using the lifelong engine
+        # This will use Advanced Bypass and Neural Bypass automatically
+        result = await self.turbo_engine.attack(request, detailed_scoring=True)
 
         return {
-            "prompt": prompt,
-            "iterations": self.config.genetic.generations,
-            "score": 0.95,  # Heuristic score for successful generation
+            "prompt": result.prompt,
+            "response": result.response,
+            "iterations": 1,  # Turbo engine manages its own internal iterations/candidates
+            "score": result.scoring.score,
+            "is_jailbreak": result.scoring.is_jailbreak,
+            "technique_used": result.technique_used,
+            "latency_ms": result.latency_ms,
+            "strategy_id": result.strategy_id,
         }
 
     async def _run_adaptive(self, request: str, **kwargs) -> dict[str, Any]:
@@ -763,7 +776,7 @@ class EnhancedAutoDANService:
                     return await self.llm.generate(prompt, max_tokens=4000)
                 except Exception as e:
                     logger.error(f"Aegis model query failed: {e}")
-                    return f"Error: {str(e)}"
+                    return f"Error: {e!s}"
 
         # Use the existing LLM adapter from turbo engine
         if self.turbo_engine:
@@ -773,7 +786,7 @@ class EnhancedAutoDANService:
             adapter = ChimeraLLMAdapter(
                 model_name=self._current_model,
                 provider=self._current_provider,
-                retry_config=RetryConfig(max_retries=2)
+                retry_config=RetryConfig(max_retries=2),
             )
             model_adapter = AegisModelAdapter(adapter)
 
@@ -782,8 +795,7 @@ class EnhancedAutoDANService:
 
         try:
             results = await orchestrator.execute_campaign(
-                objective=request,
-                max_iterations=max_iterations
+                objective=request, max_iterations=max_iterations
             )
 
             if results:
@@ -799,6 +811,7 @@ class EnhancedAutoDANService:
             else:
                 # No successful jailbreak found, return the original with Chimera wrapping
                 from meta_prompter.chimera.engine import ChimeraEngine
+
                 chimera = ChimeraEngine()
                 candidates = chimera.generate_candidates(request, count=1)
                 if candidates:

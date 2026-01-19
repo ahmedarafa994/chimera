@@ -13,6 +13,7 @@ from .advanced_transformation_engine import BaseTransformationLayer, Transformat
 
 # Helper: cryptographically secure pseudo-floats for security-sensitive choices
 
+
 def _secure_random() -> float:
     """Cryptographically secure float in [0,1)."""
     return secrets.randbelow(10**9) / 1e9
@@ -385,7 +386,9 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         # Add complementary biases
         if len(selected_biases) < 2:
             remaining_biases = [b for b in CognitiveBias if b not in selected_biases]
-            selected_biases.extend(secrets.SystemRandom().sample(remaining_biases, min(2, len(remaining_biases))))
+            selected_biases.extend(
+                secrets.SystemRandom().sample(remaining_biases, min(2, len(remaining_biases)))
+            )
 
         return selected_biases[:3]  # Limit to 3 biases for effectiveness
 
@@ -1033,7 +1036,9 @@ class ContextualTransformationLayer(BaseTransformationLayer):
 
         return text
 
-    def _apply_situational_adaptation(self, text: str, context: dict[str, Any] | None = None) -> str:
+    def _apply_situational_adaptation(
+        self, text: str, context: dict[str, Any] | None = None
+    ) -> str:
         """Apply situational adaptations based on context"""
         if not context:
             return text

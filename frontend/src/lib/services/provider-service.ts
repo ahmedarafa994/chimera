@@ -72,7 +72,8 @@ class ProviderService {
    */
   async refresh(): Promise<Provider[]> {
     try {
-      const data = await apiClient.get<any[]>(ENDPOINTS.PROVIDERS_AVAILABLE);
+      const response = await apiClient.get<any>(ENDPOINTS.PROVIDERS_AVAILABLE);
+      const data = Array.isArray(response) ? response : response?.providers || [];
 
       // Clear current providers and rebuild from backend data
       const newProviders = new Map<string, Provider>();
@@ -85,12 +86,12 @@ class ProviderService {
           enabled: p.enabled ?? true,
           configured: p.is_configured ?? true,
           models: (p.models || []).map((m: any) => ({
-            id: typeof m === 'string' ? m : m.id,
-            name: typeof m === 'string' ? m : m.name,
+            id: typeof m === 'string' ? m : m.id || m.model_id,
+            name: typeof m === 'string' ? m : m.name || m.model_id || m.id,
             provider: p.provider as ProviderName,
-            displayName: typeof m === 'string' ? m : m.display_name || m.name,
-            contextWindow: m.context_window || 4096,
-            maxOutputTokens: m.max_output_tokens || 2048,
+            displayName: typeof m === 'string' ? m : m.display_name || m.name || m.model_id,
+            contextWindow: m.context_window || m.max_tokens || 4096,
+            maxOutputTokens: m.max_output_tokens || m.max_tokens || 2048,
             inputPricePerToken: 0,
             outputPricePerToken: 0,
             capabilities: {

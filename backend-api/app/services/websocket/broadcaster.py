@@ -35,18 +35,14 @@ class EventBroadcaster:
     def __init__(self):
         self.manager = connection_manager
 
-    async def emit_session_started(
-        self,
-        session_id: str,
-        config: dict[str, Any]
-    ):
+    async def emit_session_started(self, session_id: str, config: dict[str, Any]):
         """Emit session started event"""
         try:
             event_data = SessionStartedEvent(
                 session_id=session_id,
                 initial_population_size=config.get("populationSize", 50),
                 target_model=config.get("targetModel", "unknown"),
-                attack_objective=config.get("attackObjective", "")
+                attack_objective=config.get("attackObjective", ""),
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -54,17 +50,15 @@ class EventBroadcaster:
                 event_type=EventType.SESSION_STARTED,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
 
             # Update session state
             from .models import SessionStatus
-            await self.manager.update_session_state(
-                session_id,
-                status=SessionStatus.RUNNING
-            )
+
+            await self.manager.update_session_state(session_id, status=SessionStatus.RUNNING)
 
             logger.info(f"Emitted SESSION_STARTED for {session_id}")
 
@@ -75,7 +69,7 @@ class EventBroadcaster:
         self,
         session_id: str,
         statistics: dict[str, Any],
-        best_candidate: dict[str, Any] | None = None
+        best_candidate: dict[str, Any] | None = None,
     ):
         """Emit session completed event"""
         try:
@@ -86,7 +80,7 @@ class EventBroadcaster:
                 successful_attacks=statistics.get("successfulAttacks", 0),
                 success_rate=statistics.get("successRate", 0.0),
                 best_fitness=statistics.get("bestFitness", 0.0),
-                best_candidate=best_candidate
+                best_candidate=best_candidate,
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -94,17 +88,15 @@ class EventBroadcaster:
                 event_type=EventType.SESSION_COMPLETED,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
 
             # Update session state
             from .models import SessionStatus
-            await self.manager.update_session_state(
-                session_id,
-                status=SessionStatus.COMPLETED
-            )
+
+            await self.manager.update_session_state(session_id, status=SessionStatus.COMPLETED)
 
             logger.info(f"Emitted SESSION_COMPLETED for {session_id}")
 
@@ -116,7 +108,7 @@ class EventBroadcaster:
         session_id: str,
         error_message: str,
         error_type: str,
-        recovery_suggestions: list | None = None
+        recovery_suggestions: list | None = None,
     ):
         """Emit session failed event"""
         try:
@@ -124,7 +116,7 @@ class EventBroadcaster:
                 session_id=session_id,
                 error_message=error_message,
                 error_type=error_type,
-                recovery_suggestions=recovery_suggestions or []
+                recovery_suggestions=recovery_suggestions or [],
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -132,17 +124,15 @@ class EventBroadcaster:
                 event_type=EventType.SESSION_FAILED,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
 
             # Update session state
             from .models import SessionStatus
-            await self.manager.update_session_state(
-                session_id,
-                status=SessionStatus.FAILED
-            )
+
+            await self.manager.update_session_state(session_id, status=SessionStatus.FAILED)
 
             logger.error(f"Emitted SESSION_FAILED for {session_id}: {error_message}")
 
@@ -157,7 +147,7 @@ class EventBroadcaster:
         old_status: str,
         new_status: str,
         current_task: str | None = None,
-        progress: float | None = None
+        progress: float | None = None,
     ):
         """Emit agent status changed event"""
         try:
@@ -167,7 +157,7 @@ class EventBroadcaster:
                 old_status=AgentStatus(old_status),
                 new_status=AgentStatus(new_status),
                 current_task=current_task,
-                progress=progress
+                progress=progress,
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -175,24 +165,20 @@ class EventBroadcaster:
                 event_type=EventType.AGENT_STATUS_CHANGED,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
 
             logger.debug(
-                f"Emitted AGENT_STATUS_CHANGED for {agent_id}: "
-                f"{old_status} -> {new_status}"
+                f"Emitted AGENT_STATUS_CHANGED for {agent_id}: " f"{old_status} -> {new_status}"
             )
 
         except Exception as e:
             logger.error(f"Error emitting agent_status_changed: {e}")
 
     async def emit_generation_started(
-        self,
-        session_id: str,
-        generation: int,
-        config: dict[str, Any]
+        self, session_id: str, generation: int, config: dict[str, Any]
     ):
         """Emit generation started event"""
         try:
@@ -201,7 +187,7 @@ class EventBroadcaster:
                 population_size=config.get("populationSize", 50),
                 elite_size=config.get("eliteSize", 5),
                 mutation_rate=config.get("mutationRate", 0.3),
-                crossover_rate=config.get("crossoverRate", 0.7)
+                crossover_rate=config.get("crossoverRate", 0.7),
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -209,7 +195,7 @@ class EventBroadcaster:
                 event_type=EventType.GENERATION_STARTED,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
@@ -227,7 +213,7 @@ class EventBroadcaster:
         completed_evaluations: int,
         total_evaluations: int,
         current_best_fitness: float,
-        average_fitness: float
+        average_fitness: float,
     ):
         """Emit generation progress event"""
         try:
@@ -237,7 +223,7 @@ class EventBroadcaster:
                 completed_evaluations=completed_evaluations,
                 total_evaluations=total_evaluations,
                 current_best_fitness=current_best_fitness,
-                average_fitness=average_fitness
+                average_fitness=average_fitness,
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -245,7 +231,7 @@ class EventBroadcaster:
                 event_type=EventType.GENERATION_PROGRESS,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
@@ -259,11 +245,7 @@ class EventBroadcaster:
             logger.error(f"Error emitting generation_progress: {e}")
 
     async def emit_generation_complete(
-        self,
-        session_id: str,
-        generation: int,
-        statistics: dict[str, Any],
-        elite_candidates: list
+        self, session_id: str, generation: int, statistics: dict[str, Any], elite_candidates: list
     ):
         """Emit generation complete event"""
         try:
@@ -276,7 +258,7 @@ class EventBroadcaster:
                 convergence_score=statistics.get("convergenceScore", 0.0),
                 diversity_score=statistics.get("diversityScore", 0.0),
                 elite_candidates=elite_candidates,
-                statistics=statistics
+                statistics=statistics,
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -284,16 +266,13 @@ class EventBroadcaster:
                 event_type=EventType.GENERATION_COMPLETE,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
 
             # Update session state
-            await self.manager.update_session_state(
-                session_id,
-                current_generation=generation
-            )
+            await self.manager.update_session_state(session_id, current_generation=generation)
 
             logger.info(
                 f"Emitted GENERATION_COMPLETE for generation {generation} "
@@ -314,7 +293,7 @@ class EventBroadcaster:
         criteria_scores: dict[str, float],
         feedback: str,
         suggestions: list,
-        execution_time: float
+        execution_time: float,
     ):
         """Emit evaluation complete event"""
         try:
@@ -327,7 +306,7 @@ class EventBroadcaster:
                 criteria_scores=criteria_scores,
                 feedback=feedback,
                 suggestions=suggestions,
-                execution_time=execution_time
+                execution_time=execution_time,
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -335,7 +314,7 @@ class EventBroadcaster:
                 event_type=EventType.EVALUATION_COMPLETE,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
@@ -346,14 +325,11 @@ class EventBroadcaster:
                 await self.manager.update_session_state(
                     session_id,
                     total_evaluations=state.total_evaluations + 1,
-                    successful_attacks=(
-                        state.successful_attacks + (1 if success else 0)
-                    )
+                    successful_attacks=(state.successful_attacks + (1 if success else 0)),
                 )
 
             logger.debug(
-                f"Emitted EVALUATION_COMPLETE: success={success}, "
-                f"score={overall_score:.3f}"
+                f"Emitted EVALUATION_COMPLETE: success={success}, " f"score={overall_score:.3f}"
             )
 
         except Exception as e:
@@ -365,7 +341,7 @@ class EventBroadcaster:
         generation: int,
         config_updates: dict[str, float],
         strategy_suggestions: list,
-        analysis: str
+        analysis: str,
     ):
         """Emit refinement suggested event"""
         try:
@@ -373,7 +349,7 @@ class EventBroadcaster:
                 generation=generation,
                 config_updates=config_updates,
                 strategy_suggestions=strategy_suggestions,
-                analysis=analysis
+                analysis=analysis,
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -381,7 +357,7 @@ class EventBroadcaster:
                 event_type=EventType.REFINEMENT_SUGGESTED,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
@@ -400,7 +376,7 @@ class EventBroadcaster:
         component: str,
         severity: str = "medium",
         recoverable: bool = True,
-        recovery_suggestions: list | None = None
+        recovery_suggestions: list | None = None,
     ):
         """Emit error occurred event"""
         try:
@@ -411,7 +387,7 @@ class EventBroadcaster:
                 component=component,
                 severity=severity,
                 recoverable=recoverable,
-                recovery_suggestions=recovery_suggestions or []
+                recovery_suggestions=recovery_suggestions or [],
             )
 
             sequence = self.manager.get_next_sequence(session_id)
@@ -419,14 +395,13 @@ class EventBroadcaster:
                 event_type=EventType.ERROR_OCCURRED,
                 session_id=session_id,
                 sequence=sequence,
-                data=event_data
+                data=event_data,
             )
 
             await self.manager.broadcast_to_session(session_id, event)
 
             logger.error(
-                f"Emitted ERROR_OCCURRED: {error_code} - {error_message} "
-                f"(severity: {severity})"
+                f"Emitted ERROR_OCCURRED: {error_code} - {error_message} " f"(severity: {severity})"
             )
 
         except Exception as e:

@@ -37,21 +37,21 @@ class TimeoutType(Enum):
     """Predefined timeout types for different operation categories."""
 
     # Standard timeouts
-    STANDARD = "standard"           # 30s - Regular API calls
-    FAST = "fast"                   # 10s - Quick operations
-    EXTENDED = "extended"           # 5min - Long-running operations
+    STANDARD = "standard"  # 30s - Regular API calls
+    FAST = "fast"  # 10s - Quick operations
+    EXTENDED = "extended"  # 5min - Long-running operations
 
     # LLM-specific timeouts
-    LLM = "llm"                     # 2min - LLM provider calls
-    LLM_STREAM = "llm_stream"       # 5min - Streaming LLM calls
+    LLM = "llm"  # 2min - LLM provider calls
+    LLM_STREAM = "llm_stream"  # 5min - Streaming LLM calls
 
     # Specialized operation timeouts
-    AUTODAN = "autodan"             # 10min - AutoDAN optimization
-    GPTFUZZ = "gptfuzz"             # 10min - GPTFuzz testing
-    GRADIENT = "gradient"           # 5min - Gradient optimization
+    AUTODAN = "autodan"  # 10min - AutoDAN optimization
+    GPTFUZZ = "gptfuzz"  # 10min - GPTFuzz testing
+    GRADIENT = "gradient"  # 5min - Gradient optimization
 
     # Health check timeouts
-    HEALTH_CHECK = "health_check"   # 5s - Health checks
+    HEALTH_CHECK = "health_check"  # 5s - Health checks
     CONNECTION_TEST = "connection"  # 10s - Connection testing
 
 
@@ -65,21 +65,21 @@ class TimeoutConfig:
     """
 
     # Standard API operations (milliseconds)
-    standard_timeout_ms: int = 30000        # 30 seconds
-    fast_timeout_ms: int = 10000            # 10 seconds
-    extended_timeout_ms: int = 300000       # 5 minutes
+    standard_timeout_ms: int = 30000  # 30 seconds
+    fast_timeout_ms: int = 10000  # 10 seconds
+    extended_timeout_ms: int = 300000  # 5 minutes
 
     # LLM operations (milliseconds)
-    llm_timeout_ms: int = 120000             # 2 minutes
-    llm_stream_timeout_ms: int = 300000      # 5 minutes
+    llm_timeout_ms: int = 120000  # 2 minutes
+    llm_stream_timeout_ms: int = 300000  # 5 minutes
 
     # Specialized operations (milliseconds)
-    autodan_timeout_ms: int = 600000         # 10 minutes
-    gptfuzz_timeout_ms: int = 600000          # 10 minutes
-    gradient_timeout_ms: int = 300000        # 5 minutes
+    autodan_timeout_ms: int = 600000  # 10 minutes
+    gptfuzz_timeout_ms: int = 600000  # 10 minutes
+    gradient_timeout_ms: int = 300000  # 5 minutes
 
     # Health checks (milliseconds)
-    health_check_timeout_ms: int = 5000      # 5 seconds
+    health_check_timeout_ms: int = 5000  # 5 seconds
     connection_test_timeout_ms: int = 10000  # 10 seconds
 
     @classmethod
@@ -169,6 +169,7 @@ class TimeoutConfig:
 
 
 # Convenience functions for common timeout operations
+
 
 def get_standard_timeout() -> float:
     """Get standard timeout for regular API calls (30s)."""

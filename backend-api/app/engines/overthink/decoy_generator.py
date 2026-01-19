@@ -98,10 +98,7 @@ class DecoyProblemGenerator:
         **kwargs: Any,
     ) -> list[DecoyProblem]:
         """Generate multiple decoy problems."""
-        return [
-            self.generate(dt, difficulty, **kwargs)
-            for dt in decoy_types
-        ]
+        return [self.generate(dt, difficulty, **kwargs) for dt in decoy_types]
 
     def _generate_problem_id(self, decoy_type: DecoyType) -> str:
         """Generate unique problem ID."""
@@ -126,18 +123,9 @@ class DecoyProblemGenerator:
         extensive reasoning about state transitions and rewards.
         """
         # Scale parameters by difficulty
-        states = kwargs.get(
-            "states",
-            int(self.config.mdp_states * (0.5 + difficulty))
-        )
-        actions = kwargs.get(
-            "actions",
-            int(self.config.mdp_actions * (0.5 + difficulty * 0.5))
-        )
-        horizon = kwargs.get(
-            "horizon",
-            int(self.config.mdp_horizon * (0.5 + difficulty))
-        )
+        states = kwargs.get("states", int(self.config.mdp_states * (0.5 + difficulty)))
+        actions = kwargs.get("actions", int(self.config.mdp_actions * (0.5 + difficulty * 0.5)))
+        horizon = kwargs.get("horizon", int(self.config.mdp_horizon * (0.5 + difficulty)))
 
         # Generate state names
         state_names = [f"S{i}" for i in range(states)]
@@ -149,7 +137,7 @@ class DecoyProblemGenerator:
             transitions[s] = {}
             for a in action_names:
                 # Random next states with probabilities
-                num_next = random.randint(1, min(3, states))  # noqa: S311
+                num_next = random.randint(1, min(3, states))
                 next_states = random.sample(state_names, num_next)
                 probs = np.random.dirichlet(np.ones(num_next))
                 transitions[s][a] = list(zip(next_states, probs.tolist(), strict=False))
@@ -157,13 +145,10 @@ class DecoyProblemGenerator:
         # Generate rewards
         rewards = {}
         for s in state_names:
-            rewards[s] = {
-                a: round(random.uniform(-1, 10), 2)  # noqa: S311
-                for a in action_names
-            }
+            rewards[s] = {a: round(random.uniform(-1, 10), 2) for a in action_names}
 
         # Set goal state
-        goal_state = random.choice(state_names)  # noqa: S311
+        goal_state = random.choice(state_names)
 
         # Format problem text
         problem_text = self._format_mdp_problem(
@@ -175,9 +160,7 @@ class DecoyProblemGenerator:
             horizon,
         )
 
-        expected_tokens = self._estimate_mdp_tokens(
-            states, actions, horizon, difficulty
-        )
+        expected_tokens = self._estimate_mdp_tokens(states, actions, horizon, difficulty)
 
         return DecoyProblem(
             problem_id=self._generate_problem_id(DecoyType.MDP),
@@ -217,27 +200,27 @@ class DecoyProblemGenerator:
         for s in states[:3]:  # Show subset for brevity
             for a in actions:
                 trans = transitions[s][a]
-                trans_str = ", ".join(
-                    f"{ns}: {p:.2f}" for ns, p in trans
-                )
+                trans_str = ", ".join(f"{ns}: {p:.2f}" for ns, p in trans)
                 lines.append(f"  T({s}, {a}) -> {{{trans_str}}}")
 
-        lines.extend([
-            "",
-            "Rewards:",
-        ])
+        lines.extend(
+            [
+                "",
+                "Rewards:",
+            ]
+        )
 
         for s in states[:3]:
-            r_str = ", ".join(
-                f"{a}: {rewards[s][a]}" for a in actions
-            )
+            r_str = ", ".join(f"{a}: {rewards[s][a]}" for a in actions)
             lines.append(f"  R({s}) = {{{r_str}}}")
 
-        lines.extend([
-            "",
-            "Compute the optimal policy and expected value for each state.",
-            "Show your value iteration steps.",
-        ])
+        lines.extend(
+            [
+                "",
+                "Compute the optimal policy and expected value for each state.",
+                "Show your value iteration steps.",
+            ]
+        )
 
         return "\n".join(lines)
 
@@ -283,9 +266,7 @@ class DecoyProblemGenerator:
 
         problem_text = self._format_sudoku_problem(puzzle, size)
 
-        expected_tokens = self._estimate_sudoku_tokens(
-            size, num_clues, difficulty
-        )
+        expected_tokens = self._estimate_sudoku_tokens(size, num_clues, difficulty)
 
         return DecoyProblem(
             problem_id=self._generate_problem_id(DecoyType.SUDOKU),
@@ -303,7 +284,7 @@ class DecoyProblemGenerator:
     def _generate_sudoku_solution(self, size: int) -> list[list[int]]:
         """Generate a valid completed Sudoku grid."""
         grid = [[0] * size for _ in range(size)]
-        box_size = int(size ** 0.5)
+        box_size = int(size**0.5)
 
         def is_valid(grid, row, col, num):
             # Check row
@@ -367,7 +348,7 @@ class DecoyProblemGenerator:
     ) -> str:
         """Format Sudoku grid as string."""
         lines = []
-        box_size = int(size ** 0.5)
+        box_size = int(size**0.5)
 
         for i, row in enumerate(grid):
             if i > 0 and i % box_size == 0:
@@ -425,29 +406,21 @@ Show your step-by-step reasoning and final solution."""
         Counting problems with nested conditions require systematic
         enumeration and careful tracking of constraints.
         """
-        depth = kwargs.get(
-            "depth",
-            int(self.config.counting_depth * (0.5 + difficulty))
-        )
+        depth = kwargs.get("depth", int(self.config.counting_depth * (0.5 + difficulty)))
         num_conditions = kwargs.get(
-            "conditions",
-            int(self.config.counting_conditions * (0.5 + difficulty))
+            "conditions", int(self.config.counting_conditions * (0.5 + difficulty))
         )
         range_start, range_end = self.config.counting_range
 
         # Scale range by difficulty
-        actual_end = int(
-            range_start + (range_end - range_start) * (0.5 + difficulty * 0.5)
-        )
+        actual_end = int(range_start + (range_end - range_start) * (0.5 + difficulty * 0.5))
 
         # Generate conditions
         conditions = self._generate_counting_conditions(
             num_conditions, range_start, actual_end, depth
         )
 
-        problem_text = self._format_counting_problem(
-            range_start, actual_end, conditions
-        )
+        problem_text = self._format_counting_problem(range_start, actual_end, conditions)
 
         expected_tokens = self._estimate_counting_tokens(
             actual_end - range_start, len(conditions), depth, difficulty
@@ -485,48 +458,60 @@ Show your step-by-step reasoning and final solution."""
 
         conditions = []
         for _ in range(num_conditions):
-            ctype = random.choice(condition_types)  # noqa: S311
+            ctype = random.choice(condition_types)
 
             if ctype == "divisible":
-                divisor = random.randint(2, 9)  # noqa: S311
-                conditions.append({
-                    "type": ctype,
-                    "value": divisor,
-                    "text": f"divisible by {divisor}",
-                })
+                divisor = random.randint(2, 9)
+                conditions.append(
+                    {
+                        "type": ctype,
+                        "value": divisor,
+                        "text": f"divisible by {divisor}",
+                    }
+                )
             elif ctype == "not_divisible":
-                divisor = random.randint(2, 9)  # noqa: S311
-                conditions.append({
-                    "type": ctype,
-                    "value": divisor,
-                    "text": f"not divisible by {divisor}",
-                })
+                divisor = random.randint(2, 9)
+                conditions.append(
+                    {
+                        "type": ctype,
+                        "value": divisor,
+                        "text": f"not divisible by {divisor}",
+                    }
+                )
             elif ctype == "digit_sum":
-                target = random.randint(5, 20)  # noqa: S311
-                op = random.choice(["<", ">", "<=", ">="])  # noqa: S311
-                conditions.append({
-                    "type": ctype,
-                    "target": target,
-                    "operator": op,
-                    "text": f"digit sum {op} {target}",
-                })
+                target = random.randint(5, 20)
+                op = random.choice(["<", ">", "<=", ">="])
+                conditions.append(
+                    {
+                        "type": ctype,
+                        "target": target,
+                        "operator": op,
+                        "text": f"digit sum {op} {target}",
+                    }
+                )
             elif ctype == "contains_digit":
-                digit = random.randint(0, 9)  # noqa: S311
-                conditions.append({
-                    "type": ctype,
-                    "digit": digit,
-                    "text": f"contains the digit {digit}",
-                })
+                digit = random.randint(0, 9)
+                conditions.append(
+                    {
+                        "type": ctype,
+                        "digit": digit,
+                        "text": f"contains the digit {digit}",
+                    }
+                )
             elif ctype == "prime":
-                conditions.append({
-                    "type": ctype,
-                    "text": "is a prime number",
-                })
+                conditions.append(
+                    {
+                        "type": ctype,
+                        "text": "is a prime number",
+                    }
+                )
             elif ctype == "perfect_square":
-                conditions.append({
-                    "type": ctype,
-                    "text": "is a perfect square",
-                })
+                conditions.append(
+                    {
+                        "type": ctype,
+                        "text": "is a perfect square",
+                    }
+                )
 
         return conditions
 
@@ -537,10 +522,7 @@ Show your step-by-step reasoning and final solution."""
         conditions: list[dict[str, Any]],
     ) -> str:
         """Format counting problem as text."""
-        cond_text = "\n".join(
-            f"  {i+1}. The number {c['text']}"
-            for i, c in enumerate(conditions)
-        )
+        cond_text = "\n".join(f"  {i+1}. The number {c['text']}" for i, c in enumerate(conditions))
 
         return f"""Count how many integers in the range [{start}, {end}] satisfy ALL of the following conditions:
 
@@ -576,36 +558,23 @@ Provide the final count."""
         Logic puzzles require chained inference steps and tracking
         of multiple constraints simultaneously.
         """
-        num_premises = kwargs.get(
-            "premises",
-            int(self.config.logic_premises * (0.5 + difficulty))
-        )
-        num_steps = kwargs.get(
-            "steps",
-            int(self.config.logic_inference_steps * (0.5 + difficulty))
-        )
-        num_vars = kwargs.get(
-            "variables",
-            int(self.config.logic_variables * (0.5 + difficulty))
-        )
+        num_premises = kwargs.get("premises", int(self.config.logic_premises * (0.5 + difficulty)))
+        num_steps = kwargs.get("steps", int(self.config.logic_inference_steps * (0.5 + difficulty)))
+        num_vars = kwargs.get("variables", int(self.config.logic_variables * (0.5 + difficulty)))
 
         # Generate variables (people, items, etc.)
         people = self._generate_names(num_vars)
         items = self._generate_items(num_vars)
 
         # Generate premises
-        premises = self._generate_logic_premises(
-            people, items, num_premises
-        )
+        premises = self._generate_logic_premises(people, items, num_premises)
 
         # Generate question
         question = self._generate_logic_question(people, items)
 
         problem_text = self._format_logic_problem(premises, question)
 
-        expected_tokens = self._estimate_logic_tokens(
-            num_premises, num_steps, num_vars, difficulty
-        )
+        expected_tokens = self._estimate_logic_tokens(num_premises, num_steps, num_vars, difficulty)
 
         return DecoyProblem(
             problem_id=self._generate_problem_id(DecoyType.LOGIC),
@@ -625,16 +594,32 @@ Provide the final count."""
     def _generate_names(self, count: int) -> list[str]:
         """Generate person names."""
         all_names = [
-            "Alice", "Bob", "Charlie", "Diana", "Eve",
-            "Frank", "Grace", "Henry", "Iris", "Jack",
+            "Alice",
+            "Bob",
+            "Charlie",
+            "Diana",
+            "Eve",
+            "Frank",
+            "Grace",
+            "Henry",
+            "Iris",
+            "Jack",
         ]
         return all_names[:count]
 
     def _generate_items(self, count: int) -> list[str]:
         """Generate item names."""
         all_items = [
-            "apple", "book", "camera", "desk", "envelope",
-            "flower", "guitar", "hat", "inkwell", "jacket",
+            "apple",
+            "book",
+            "camera",
+            "desk",
+            "envelope",
+            "flower",
+            "guitar",
+            "hat",
+            "inkwell",
+            "jacket",
         ]
         return all_items[:count]
 
@@ -657,15 +642,15 @@ Provide the final count."""
 
         premises = []
         for _ in range(num_premises):
-            template = random.choice(templates)  # noqa: S311
+            template = random.choice(templates)
 
             # Fill in template
             premise = template.format(
-                p1=random.choice(people),  # noqa: S311
-                p2=random.choice(people),  # noqa: S311
-                item=random.choice(items),  # noqa: S311
-                item1=random.choice(items),  # noqa: S311
-                item2=random.choice(items),  # noqa: S311
+                p1=random.choice(people),
+                p2=random.choice(people),
+                item=random.choice(items),
+                item1=random.choice(items),
+                item2=random.choice(items),
             )
             premises.append(premise)
 
@@ -678,12 +663,12 @@ Provide the final count."""
     ) -> str:
         """Generate logic question."""
         questions = [
-            f"Who has the {random.choice(items)}?",  # noqa: S311
-            f"What does {random.choice(people)} have?",  # noqa: S311
+            f"Who has the {random.choice(items)}?",
+            f"What does {random.choice(people)} have?",
             "Which person has the most items?",
             "Can you determine everyone's possessions?",
         ]
-        return random.choice(questions)  # noqa: S311
+        return random.choice(questions)
 
     def _format_logic_problem(
         self,
@@ -691,9 +676,7 @@ Provide the final count."""
         question: str,
     ) -> str:
         """Format logic problem as text."""
-        premises_text = "\n".join(
-            f"  {i+1}. {p}" for i, p in enumerate(premises)
-        )
+        premises_text = "\n".join(f"  {i+1}. {p}" for i, p in enumerate(premises))
 
         return f"""Given the following statements:
 
@@ -731,19 +714,14 @@ Consider all premises and their implications."""
         Math problems with recursion require step-by-step evaluation
         and tracking of intermediate results.
         """
-        depth = kwargs.get(
-            "depth",
-            int(self.config.math_recursion_depth * (0.5 + difficulty))
-        )
+        depth = kwargs.get("depth", int(self.config.math_recursion_depth * (0.5 + difficulty)))
 
         # Generate recursive function
-        func_name = random.choice(["f", "g", "h"])  # noqa: S311
-        base_value = random.randint(1, 5)  # noqa: S311
+        func_name = random.choice(["f", "g", "h"])
+        base_value = random.randint(1, 5)
 
         # Generate recursive definition
-        func_def, target = self._generate_recursive_function(
-            func_name, base_value, depth
-        )
+        func_def, target = self._generate_recursive_function(func_name, base_value, depth)
 
         problem_text = self._format_math_problem(func_def, func_name, target)
 
@@ -772,23 +750,21 @@ Consider all premises and their implications."""
         # Simple recursive patterns
         patterns = [
             (
-                f"{func_name}(0) = {base_value}\n"
-                f"{func_name}(n) = 2 * {func_name}(n-1) + 1",
-                depth + 3  # Target n value
+                f"{func_name}(0) = {base_value}\n" f"{func_name}(n) = 2 * {func_name}(n-1) + 1",
+                depth + 3,  # Target n value
             ),
             (
                 f"{func_name}(1) = {base_value}\n"
                 f"{func_name}(n) = {func_name}(n-1) + {func_name}(n-2)",
-                depth + 4
+                depth + 4,
             ),
             (
-                f"{func_name}(0) = {base_value}\n"
-                f"{func_name}(n) = n * {func_name}(n-1)",
-                depth + 2
+                f"{func_name}(0) = {base_value}\n" f"{func_name}(n) = n * {func_name}(n-1)",
+                depth + 2,
             ),
         ]
 
-        definition, target = random.choice(patterns)  # noqa: S311
+        definition, target = random.choice(patterns)
         return definition, target
 
     def _format_math_problem(
@@ -814,7 +790,7 @@ Track each function call and its result."""
     ) -> int:
         """Estimate reasoning tokens for math problem."""
         # Exponential growth in recursive calls
-        base = 2 ** depth * depth
+        base = 2**depth * depth
         return int(base * 20 * self.config.token_estimation_multiplier)
 
     # ========================================================================
@@ -832,23 +808,16 @@ Track each function call and its result."""
         Planning problems require search over action sequences
         with constraint satisfaction.
         """
-        num_steps = kwargs.get(
-            "steps",
-            int(self.config.planning_steps * (0.5 + difficulty))
-        )
+        num_steps = kwargs.get("steps", int(self.config.planning_steps * (0.5 + difficulty)))
         num_constraints = kwargs.get(
-            "constraints",
-            int(self.config.planning_constraints * (0.5 + difficulty))
+            "constraints", int(self.config.planning_constraints * (0.5 + difficulty))
         )
         num_resources = kwargs.get(
-            "resources",
-            int(self.config.planning_resources * (0.5 + difficulty))
+            "resources", int(self.config.planning_resources * (0.5 + difficulty))
         )
 
         # Generate planning scenario
-        scenario = self._generate_planning_scenario(
-            num_steps, num_constraints, num_resources
-        )
+        scenario = self._generate_planning_scenario(num_steps, num_constraints, num_resources)
 
         problem_text = self._format_planning_problem(scenario)
 
@@ -885,35 +854,28 @@ Track each function call and its result."""
             "Open door",
             "Activate switch",
             "Wait for event",
-        ][:num_steps + 2]
+        ][: num_steps + 2]
 
         # Resources
         resources = {
-            f"resource_{i}": random.randint(1, 10)  # noqa: S311
-            for i in range(num_resources)
+            f"resource_{i}": random.randint(1, 10) for i in range(num_resources)
         }
 
         # Constraints
         constraints = []
         for _ in range(num_constraints):
-            ctype = random.choice([  # noqa: S311
-                "order",
-                "resource",
-                "mutex"
-            ])
+            ctype = random.choice(["order", "resource", "mutex"])
             if ctype == "order":
-                a1 = random.choice(actions)  # noqa: S311
-                a2 = random.choice(actions)  # noqa: S311
+                a1 = random.choice(actions)
+                a2 = random.choice(actions)
                 constraints.append(f"'{a1}' must occur before '{a2}'")
             elif ctype == "resource":
-                res = random.choice(list(resources.keys()))  # noqa: S311
+                res = random.choice(list(resources.keys()))
                 constraints.append(f"Action requires {res}")
             else:
-                a1 = random.choice(actions)  # noqa: S311
-                a2 = random.choice(actions)  # noqa: S311
-                constraints.append(
-                    f"'{a1}' and '{a2}' cannot happen at the same time"
-                )
+                a1 = random.choice(actions)
+                a2 = random.choice(actions)
+                constraints.append(f"'{a1}' and '{a2}' cannot happen at the same time")
 
         return {
             "actions": actions,
@@ -927,15 +889,9 @@ Track each function call and its result."""
         scenario: dict[str, Any],
     ) -> str:
         """Format planning problem as text."""
-        actions_text = "\n".join(
-            f"  - {a}" for a in scenario["actions"]
-        )
-        resources_text = "\n".join(
-            f"  - {k}: {v}" for k, v in scenario["resources"].items()
-        )
-        constraints_text = "\n".join(
-            f"  {i+1}. {c}" for i, c in enumerate(scenario["constraints"])
-        )
+        actions_text = "\n".join(f"  - {a}" for a in scenario["actions"])
+        resources_text = "\n".join(f"  - {k}: {v}" for k, v in scenario["resources"].items())
+        constraints_text = "\n".join(f"  {i+1}. {c}" for i, c in enumerate(scenario["constraints"]))
 
         return f"""Plan the following sequence of actions:
 
@@ -963,6 +919,7 @@ Show your reasoning for each step in the plan."""
         """Estimate reasoning tokens for planning problem."""
         # Search space grows factorially with steps
         import math
+
         base = math.factorial(min(num_steps, 8)) * num_constraints
         return int(base * 2 * self.config.token_estimation_multiplier)
 
@@ -1024,18 +981,22 @@ Show your reasoning for each step in the plan."""
         parts = ["Solve the following interconnected problems:"]
 
         for i, prob in enumerate(sub_problems):
-            parts.extend([
-                "",
-                f"=== Part {i+1}: {prob.decoy_type.value.upper()} ===",
-                prob.problem_text,
-            ])
+            parts.extend(
+                [
+                    "",
+                    f"=== Part {i+1}: {prob.decoy_type.value.upper()} ===",
+                    prob.problem_text,
+                ]
+            )
 
-        parts.extend([
-            "",
-            "=== Integration ===",
-            "After solving each part, explain how the solutions relate.",
-            "Provide a unified analysis of all components.",
-        ])
+        parts.extend(
+            [
+                "",
+                "=== Integration ===",
+                "After solving each part, explain how the solutions relate.",
+                "Provide a unified analysis of all components.",
+            ]
+        )
 
         return "\n".join(parts)
 

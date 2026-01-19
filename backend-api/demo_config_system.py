@@ -20,9 +20,9 @@ from app.core.encryption import decrypt_api_key, encrypt_api_key, is_encrypted
 
 async def demo_api_key_encryption():
     """Demo API key encryption functionality"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("API Key Encryption Demo")
-    print("="*60)
+    print("=" * 60)
 
     # Test with a sample API key
     test_key = "sk-test1234567890abcdef1234567890abcdef"
@@ -41,9 +41,9 @@ async def demo_api_key_encryption():
 
 async def demo_configuration_validation():
     """Demo configuration validation functionality"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Configuration Validation Demo")
-    print("="*60)
+    print("=" * 60)
 
     config_manager = EnhancedConfigManager()
 
@@ -53,7 +53,7 @@ async def demo_configuration_validation():
         provider="openai",
         api_key="sk-1234567890abcdef1234567890abcdef",
         base_url="https://api.openai.com/v1",
-        test_connectivity=False  # Skip connectivity for demo
+        test_connectivity=False,  # Skip connectivity for demo
     )
     print(f"Valid: {result['is_valid']}")
     print(f"Errors: {result['errors']}")
@@ -65,7 +65,7 @@ async def demo_configuration_validation():
         provider="openai",
         api_key="invalid_key_format",
         base_url="https://api.openai.com/v1",
-        test_connectivity=False
+        test_connectivity=False,
     )
     print(f"Valid: {result['is_valid']}")
     print(f"Errors: {result['errors']}")
@@ -74,9 +74,9 @@ async def demo_configuration_validation():
 
 async def demo_provider_configuration():
     """Demo provider configuration management"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Provider Configuration Demo")
-    print("="*60)
+    print("=" * 60)
 
     settings = Settings()
 
@@ -101,9 +101,9 @@ async def demo_provider_configuration():
 
 async def demo_proxy_configuration():
     """Demo proxy mode configuration"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Proxy Mode Configuration Demo")
-    print("="*60)
+    print("=" * 60)
 
     settings = Settings()
 
@@ -118,17 +118,17 @@ async def demo_proxy_configuration():
     print("\nTesting proxy mode validation...")
     result = await config_manager.validate_proxy_mode_config()
     print(f"Valid: {result['is_valid']}")
-    if result['errors']:
+    if result["errors"]:
         print(f"Errors: {result['errors']}")
-    if result['warnings']:
+    if result["warnings"]:
         print(f"Warnings: {result['warnings']}")
 
 
 async def demo_hot_reload():
     """Demo hot-reload functionality"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Hot-Reload Functionality Demo")
-    print("="*60)
+    print("=" * 60)
 
     Settings()
     config_manager = EnhancedConfigManager()
@@ -142,11 +142,11 @@ async def demo_hot_reload():
 
     # Simulate environment variable change
     print("\nSimulating environment variable change...")
-    original_key = os.environ.get('OPENAI_API_KEY', '')
+    original_key = os.environ.get("OPENAI_API_KEY", "")
 
     # Set a new key in environment
     test_key = "sk-demo1234567890abcdef1234567890abcdef"
-    os.environ['OPENAI_API_KEY'] = test_key
+    os.environ["OPENAI_API_KEY"] = test_key
 
     # Test hot-reload
     print("\nPerforming hot-reload...")
@@ -157,16 +157,16 @@ async def demo_hot_reload():
 
     # Restore original key
     if original_key:
-        os.environ['OPENAI_API_KEY'] = original_key
+        os.environ["OPENAI_API_KEY"] = original_key
     else:
-        os.environ.pop('OPENAI_API_KEY', None)
+        os.environ.pop("OPENAI_API_KEY", None)
 
 
 async def demo_model_configurations():
     """Demo provider model configurations"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Provider Model Configurations Demo")
-    print("="*60)
+    print("=" * 60)
 
     settings = Settings()
 
@@ -188,9 +188,9 @@ async def demo_model_configurations():
 
 async def demo_configuration_integration():
     """Demo end-to-end configuration integration"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("End-to-End Integration Demo")
-    print("="*60)
+    print("=" * 60)
 
     settings = Settings()
     config_manager = EnhancedConfigManager()
@@ -210,7 +210,7 @@ async def demo_configuration_integration():
         provider="openai",
         api_key=settings.get_decrypted_api_key("openai"),
         base_url=settings.get_provider_endpoint("openai"),
-        test_connectivity=False
+        test_connectivity=False,
     )
     print(f"   Configuration valid: {result['is_valid']}")
 
@@ -231,7 +231,7 @@ async def run_comprehensive_demo():
     """Run comprehensive demonstration of all Story 1.1 features"""
     print("Chimera Configuration System Demo")
     print("Story 1.1: Provider Configuration Management")
-    print("="*80)
+    print("=" * 80)
 
     try:
         await demo_api_key_encryption()
@@ -242,7 +242,7 @@ async def run_comprehensive_demo():
         await demo_hot_reload()
         await demo_configuration_integration()
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("All demos completed successfully!")
         print("Story 1.1 implementation features verified:")
         print("   - API key encryption (AES-256)")
@@ -251,17 +251,18 @@ async def run_comprehensive_demo():
         print("   - Enhanced proxy mode configuration")
         print("   - Provider model configurations")
         print("   - Comprehensive error handling")
-        print("="*80)
+        print("=" * 80)
 
     except Exception as e:
         print(f"\nDemo failed with error: {e}")
         import traceback
+
         traceback.print_exc()
 
 
 if __name__ == "__main__":
     # Set up minimal environment for demo
-    os.environ.setdefault('LOG_LEVEL', 'WARNING')  # Reduce log noise
+    os.environ.setdefault("LOG_LEVEL", "WARNING")  # Reduce log noise
 
     # Run the demo
     asyncio.run(run_comprehensive_demo())

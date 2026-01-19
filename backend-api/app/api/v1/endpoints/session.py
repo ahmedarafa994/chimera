@@ -10,7 +10,7 @@ Provides endpoints for:
 from typing import Any
 
 from fastapi import APIRouter, Cookie, Header, HTTPException, Response
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from app.services.session_service import session_service
 
@@ -40,8 +40,16 @@ class CreateSessionResponse(BaseModel):
 class UpdateModelRequest(BaseModel):
     """Request to update model selection"""
 
-    provider: str = Field(..., description="Provider identifier")
-    model: str = Field(..., description="Model canonical identifier")
+    provider: str = Field(
+        ...,
+        description="Provider identifier",
+        validation_alias=AliasChoices("provider", "provider_id"),
+    )
+    model: str = Field(
+        ...,
+        description="Model canonical identifier",
+        validation_alias=AliasChoices("model", "model_id"),
+    )
 
 
 class UpdateModelResponse(BaseModel):
@@ -241,6 +249,47 @@ async def update_session_model(
             status_code=400, detail="Session ID required. Provide via header/cookie."
         )
 
+    success, message, session = session_service.update_session_model(
+        session_id=session_id, provider=request.provider, model=request.model
+    )
+
+    if session is None:
+        raise HTTPException(
+            status_code=404, detail="Session not found or expired. Please create a new session."
+        )
+
+    return UpdateModelResponse(
+        success=success,
+        message=message,
+        provider=session.selected_provider,
+        model=session.selected_model,
+        reverted_to_default=not success,
+    )
+
+
+@router.get("/{session_id}/model", tags=["Session"])
+async def get_session_model(session_id: str):
+    """
+    Get current model selection for a specific session.
+    """
+    provider, model = session_service.get_session_model(session_id)
+    return {
+        "session_id": session_id,
+        "provider": provider,
+        "model": model,
+        "provider_id": provider,
+        "model_id": model,
+    }
+
+
+@router.put("/{session_id}/model", response_model=UpdateModelResponse, tags=["Session"])
+async def update_session_model_by_id(
+    session_id: str,
+    request: UpdateModelRequest,
+):
+    """
+    Update model selection for a specific session.
+    """
     success, message, session = session_service.update_session_model(
         session_id=session_id, provider=request.provider, model=request.model
     )

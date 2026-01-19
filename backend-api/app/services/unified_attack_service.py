@@ -38,10 +38,7 @@ from meta_prompter.unified.engine import (
     MutatedResult,
     ObfuscatedResult,
 )
-from meta_prompter.unified.evaluation import (
-    DualVectorMetrics,
-    UnifiedEvaluationPipeline,
-)
+from meta_prompter.unified.evaluation import DualVectorMetrics, UnifiedEvaluationPipeline
 
 # Import reasoning/optimization components from math framework
 from meta_prompter.unified.math_framework import (
@@ -53,10 +50,7 @@ from meta_prompter.unified.math_framework import (
     UnifiedAttackParameters,
     UnifiedFitnessCalculator,
 )
-from meta_prompter.unified.models import (
-    CompositionStrategy,
-    UnifiedAttackConfig,
-)
+from meta_prompter.unified.models import CompositionStrategy, UnifiedAttackConfig
 from meta_prompter.unified.resource_tracking import (
     BudgetStatus,
     ResourceAllocation,
@@ -839,6 +833,7 @@ class AttackCoordinator:
         Uses TokenExtensionOptimizer to find optimal ρ that achieves
         target amplification while satisfying constraints.
         """
+
         # Simple accuracy/detection functions (placeholders for real implementations)
         def accuracy_fn(q: str) -> float:
             return 0.95  # Placeholder
@@ -1168,10 +1163,7 @@ class UnifiedAttackService:
 
         if parallel:
             # Execute attacks in parallel
-            tasks = [
-                self.execute_attack(session_id, query, strategy)
-                for query in queries
-            ]
+            tasks = [self.execute_attack(session_id, query, strategy) for query in queries]
             results = await asyncio.gather(*tasks)
         else:
             # Execute attacks sequentially
@@ -1199,9 +1191,7 @@ class UnifiedAttackService:
             AttackExecutionResult: Result of the attack
         """
         strategy = (
-            CompositionStrategy.EXTEND_FIRST
-            if extend_first
-            else CompositionStrategy.AUTODAN_FIRST
+            CompositionStrategy.EXTEND_FIRST if extend_first else CompositionStrategy.AUTODAN_FIRST
         )
         return await self.execute_attack(session_id, query, strategy)
 
@@ -1306,7 +1296,7 @@ class UnifiedAttackService:
         Returns:
             AttackExecutionResult: Result with reasoning metrics
         """
-        session = await self.get_session(session_id)
+        await self.get_session(session_id)
 
         # Optimize obfuscation specifically for this query
         optimization_result = self.coordinator.optimize_obfuscation_for_query(
@@ -1452,9 +1442,7 @@ class UnifiedAttackService:
             return []
 
         # Compute Pareto front using evaluation pipeline
-        pareto_front = self.evaluation_pipeline.compute_pareto_front(
-            session.evaluations
-        )
+        pareto_front = self.evaluation_pipeline.compute_pareto_front(session.evaluations)
 
         return pareto_front
 
@@ -1475,7 +1463,7 @@ class UnifiedAttackService:
         Returns:
             CombinedResourceUsage: Resource usage breakdown
         """
-        session = await self.get_session(session_id)
+        await self.get_session(session_id)
 
         # Get usage from resource service
         usage_data = self.resource_service.get_usage(session_id)
@@ -1522,7 +1510,7 @@ class UnifiedAttackService:
         Returns:
             ResourceAllocation: New allocation
         """
-        session = await self.get_session(session_id)
+        await self.get_session(session_id)
 
         # Determine allocation weights
         if priority_vector == "extend":
@@ -1734,7 +1722,7 @@ class UnifiedAttackService:
         Returns:
             MutationWithReasoningResult: Detailed result with both metrics
         """
-        session = await self.get_session(session_id)
+        await self.get_session(session_id)
 
         enhancer = ReasoningEnhancedMutation(
             mutation_engine=self.engine.mutation_engine,

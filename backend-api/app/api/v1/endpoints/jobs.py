@@ -113,14 +113,16 @@ async def list_jobs(
                 completed_at=job.completed_at.isoformat() if job.completed_at else None,
                 progress=job.progress,
                 metadata=job.metadata,
-                result={
-                    "success": job.result.success,
-                    "data": job.result.data,
-                    "error": job.result.error,
-                    "execution_time_seconds": job.result.execution_time_seconds,
-                }
-                if job.result
-                else None,
+                result=(
+                    {
+                        "success": job.result.success,
+                        "data": job.result.data,
+                        "error": job.result.error,
+                        "execution_time_seconds": job.result.execution_time_seconds,
+                    }
+                    if job.result
+                    else None
+                ),
             )
             for job in jobs
         ],
@@ -162,14 +164,16 @@ async def get_job(
         completed_at=job.completed_at.isoformat() if job.completed_at else None,
         progress=job.progress,
         metadata=job.metadata,
-        result={
-            "success": job.result.success,
-            "data": job.result.data,
-            "error": job.result.error,
-            "execution_time_seconds": job.result.execution_time_seconds,
-        }
-        if job.result
-        else None,
+        result=(
+            {
+                "success": job.result.success,
+                "data": job.result.data,
+                "error": job.result.error,
+                "execution_time_seconds": job.result.execution_time_seconds,
+            }
+            if job.result
+            else None
+        ),
     )
 
 

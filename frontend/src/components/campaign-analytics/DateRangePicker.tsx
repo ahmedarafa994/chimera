@@ -535,7 +535,7 @@ function MiniCalendar({
                 isStart && isEnd && "rounded-md"
               )}
               aria-label={format(date, "MMMM d, yyyy")}
-              aria-selected={isSelected}
+              aria-selected={isSelected || undefined}
               aria-disabled={isDisabled}
             >
               {date.getDate()}
@@ -1067,6 +1067,5 @@ export function DateRangePickerEmpty({
 // Export Type-Only Exports
 // =============================================================================
 
-export type { PresetConfig };
-
+// Note: PresetConfig is already exported where it's defined above
 export default DateRangePicker;

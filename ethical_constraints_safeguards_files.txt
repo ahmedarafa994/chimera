@@ -1,0 +1,102 @@
+ETHICAL CONSTRAINTS AND SAFEGUARDS ANALYSIS - FILE LISTING
+================================================================
+
+This document lists all files in the Chimera codebase that contain ethical constraints and safeguards analysis for the AutoDAN security research system.
+
+PRIMARY RESEARCH AUTHORIZATION FRAMEWORK
+========================================
+
+1. backend-api/app/services/autodan/framework_autodan_reasoning/research_protocols.py
+   - ResearchSession Management with time-limited sessions (default 8 hours)
+   - 5-tier AuthorizationLevel system (NONE, BASIC, STANDARD, ELEVATED, FULL)
+   - ResearchPurpose enum (safety_evaluation, vulnerability_assessment, red_team_testing, etc.)
+   - Complete audit logging and session validation
+   - SessionManager for lifecycle management
+   - EvaluationHarness for safe assessment without execution
+
+FUNCTIONAL BOUNDARIES IMPLEMENTATION
+===================================
+
+2. backend-api/app/services/autodan/framework_autodan_reasoning/research_protocols.py
+   - functionalBoundary enum with 6 safety categories:
+     * NO_REAL_HARM
+     * NO_PERSONAL_TARGETING
+     * NO_COMPLEX_CONTENT
+     * NO_CHILD_EXPLOITATION
+     * NO_WEAPONS_INSTRUCTIONS
+     * RESEARCH_CONTEXT_ONLY
+   - functionalBoundaryValidator class with pattern-based content detection
+
+SAFETY CONFIGURATION CONTROLS
+==============================
+
+3. backend-api/app/services/autodan/llm/chimera_adapter.py
+   - Environment-based safety toggle: AUTODAN_SAFETY_ENABLED
+   - Provider-specific safety settings (Gemini harm category blocking)
+   - SharedRateLimitState for resource exhaustion protection
+   - Circuit breaker integration and retry strategies
+   - Configurable safety settings per provider
+
+COMPREHENSIVE SECURITY TESTING FRAMEWORK
+========================================
+
+4. backend-api/app/testing/autodan_comprehensive_tests.py
+   - SecurityTestRunner class for automated safety validation
+   - SecurityTestCategory enum (jailbreak_safety, functional_boundaries, etc.)
+   - Comprehensive test methods:
+     * _test_jailbreak_safety()
+     * _test_functional_boundaries()
+     * _test_content_filtering()
+   - Performance and stress testing with safety metrics
+   - AutoDANTestingSuite for unified reporting
+
+ENHANCED EXECUTION WITH INTEGRATED SAFEGUARDS
+=============================================
+
+5. backend-api/app/services/autodan/framework_autodan_reasoning/enhanced_attacker.py
+   - Integration of research protocols with attack generation
+   - RobustPromptGenerator with malformation detection
+   - Safe encoding validation and template substitution
+   - ModelLLMAdapter with safety-aware generation
+
+SUPPORTING FRAMEWORK FILES
+==========================
+
+6. backend-api/app/services/autodan/framework_autodan_reasoning/__init__.py
+   - Module initialization and safety framework exports
+
+7. backend-api/app/services/autodan/framework_autodan_reasoning/enhanced_execution.py
+   - EnhancedAutoDANExecutor with safety integration
+   - MultiStageAttackPipeline with boundary enforcement
+
+8. backend-api/app/services/autodan/framework_autodan_reasoning/test_autodan_unified.py
+   - Unified testing framework with safety validation
+
+RELATED TESTING FILES
+====================
+
+9. backend-api/tests/autodan/test_enhanced_attacker.py
+   - Unit tests for enhanced attacker safety measures
+
+10. backend-api/tests/security/test_security.py
+    - General security testing framework
+
+SUMMARY OF SAFEGUARDS IMPLEMENTED
+=================================
+
+✓ Authorization Controls: Research session management with time limits
+✓ Content Validation: Pattern-based harmful content detection
+✓ Audit Logging: Complete activity tracking and violation reporting
+✓ Safety Configuration: Environment-based safety control toggles
+✓ Responsible Research: Purpose-driven authorization with ethical boundaries
+✓ Evaluation Harness: Safe assessment without execution of harmful content
+✓ Production Safety: Enhanced safety measures for production deployments
+✓ Monitoring Framework: Real-time safety violation detection and alerting
+
+RESPONSIBLE DISCLOSURE FRAMEWORK
+================================
+
+All safeguards are designed to enable legitimate security research while preventing misuse and ensuring responsible disclosure of findings. The multi-layer approach provides defense in depth for ethical AI security research.
+
+Last Updated: January 18, 2026
+Generated from Chimera codebase analysis

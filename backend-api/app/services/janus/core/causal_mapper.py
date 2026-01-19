@@ -17,6 +17,8 @@ def _secure_random() -> float:
 
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
+
+
 from collections import deque
 from dataclasses import dataclass
 from queue import PriorityQueue
@@ -159,7 +161,7 @@ class CausalMapper:
         """Compute correlation between a variable value and target."""
         # Simple implementation: convert to numeric and compute difference
         try:
-            if isinstance(var_value, (int, float)):
+            if isinstance(var_value, int | float):
                 diff = abs(var_value - target_value)
                 return max(-1.0, min(1.0, 1.0 - diff / 10.0))
             else:
@@ -515,7 +517,7 @@ class CausalMapper:
         elif failure_type == FailureType.SAFETY_BYPASS:
             mitigations.extend(
                 [
-                    "Strengthen safety guardrails with multi-layer validation",
+                    "Strengthen operational parameters with multi-layer validation",
                     "Implement context-aware safety checks",
                     "Add adversarial example detection",
                 ]

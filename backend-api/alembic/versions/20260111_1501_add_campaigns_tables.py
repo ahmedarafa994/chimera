@@ -65,7 +65,9 @@ def upgrade() -> None:
     # Create indexes for campaigns
     op.create_index(op.f("ix_campaigns_id"), "campaigns", ["id"], unique=False)
     op.create_index("ix_campaigns_owner_id", "campaigns", ["owner_id"], unique=False)
-    op.create_index("ix_campaigns_owner_active", "campaigns", ["owner_id", "is_active"], unique=False)
+    op.create_index(
+        "ix_campaigns_owner_active", "campaigns", ["owner_id", "is_active"], unique=False
+    )
     op.create_index("ix_campaigns_visibility", "campaigns", ["visibility"], unique=False)
     op.create_index(
         "ix_campaigns_owner_visibility",

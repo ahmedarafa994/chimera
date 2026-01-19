@@ -16,7 +16,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +122,10 @@ class StreamResponseFormatter:
         provider: str = "",
         model: str = "",
         is_final: bool = False,
-        finish_reason: Optional[str] = None,
-        usage: Optional[dict[str, int]] = None,
+        finish_reason: str | None = None,
+        usage: dict[str, int] | None = None,
         event_type: SSEEventType = SSEEventType.CHUNK,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> FormattedChunk:
         """
         Format a stream chunk as Server-Sent Events (SSE).
@@ -192,7 +192,7 @@ class StreamResponseFormatter:
     def format_sse_error(
         self,
         error: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         stream_id: str = "",
     ) -> FormattedChunk:
         """
@@ -233,7 +233,7 @@ class StreamResponseFormatter:
         self,
         stream_id: str = "",
         total_chunks: int = 0,
-        total_tokens: Optional[int] = None,
+        total_tokens: int | None = None,
         finish_reason: str = "stop",
     ) -> FormattedChunk:
         """
@@ -297,10 +297,10 @@ class StreamResponseFormatter:
         provider: str = "",
         model: str = "",
         is_final: bool = False,
-        finish_reason: Optional[str] = None,
-        usage: Optional[dict[str, int]] = None,
+        finish_reason: str | None = None,
+        usage: dict[str, int] | None = None,
         message_type: str = "chunk",
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Format a stream chunk for WebSocket delivery.
@@ -350,7 +350,7 @@ class StreamResponseFormatter:
     def format_ws_error(
         self,
         error: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         stream_id: str = "",
     ) -> dict[str, Any]:
         """
@@ -381,7 +381,7 @@ class StreamResponseFormatter:
         self,
         stream_id: str = "",
         total_chunks: int = 0,
-        total_tokens: Optional[int] = None,
+        total_tokens: int | None = None,
         finish_reason: str = "stop",
     ) -> dict[str, Any]:
         """
@@ -422,9 +422,9 @@ class StreamResponseFormatter:
         provider: str = "",
         model: str = "",
         is_final: bool = False,
-        finish_reason: Optional[str] = None,
-        usage: Optional[dict[str, int]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        finish_reason: str | None = None,
+        usage: dict[str, int] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> FormattedChunk:
         """
         Format a stream chunk as JSON Lines.
@@ -475,7 +475,7 @@ class StreamResponseFormatter:
     def format_jsonl_error(
         self,
         error: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         stream_id: str = "",
     ) -> FormattedChunk:
         """
@@ -603,8 +603,8 @@ class StreamingHeadersBuilder:
     def build_sse_headers(
         provider: str,
         model: str,
-        session_id: Optional[str] = None,
-        stream_id: Optional[str] = None,
+        session_id: str | None = None,
+        stream_id: str | None = None,
     ) -> dict[str, str]:
         """
         Build headers for SSE streaming response.
@@ -639,8 +639,8 @@ class StreamingHeadersBuilder:
     def build_jsonl_headers(
         provider: str,
         model: str,
-        session_id: Optional[str] = None,
-        stream_id: Optional[str] = None,
+        session_id: str | None = None,
+        stream_id: str | None = None,
     ) -> dict[str, str]:
         """
         Build headers for JSON Lines streaming response.
@@ -677,7 +677,7 @@ class StreamingHeadersBuilder:
 # =============================================================================
 
 
-_default_formatter: Optional[StreamResponseFormatter] = None
+_default_formatter: StreamResponseFormatter | None = None
 
 
 def get_stream_formatter(
@@ -715,18 +715,18 @@ def get_stream_formatter(
 
 
 __all__ = [
+    "SSE_KEEP_ALIVE_COMMENT",
+    # Constants
+    "SSE_RETRY_MS",
+    # Data classes
+    "FormattedChunk",
+    "SSEEventType",
+    # Enums
+    "StreamFormat",
     # Main class
     "StreamResponseFormatter",
     # Header builder
     "StreamingHeadersBuilder",
-    # Data classes
-    "FormattedChunk",
-    # Enums
-    "StreamFormat",
-    "SSEEventType",
-    # Constants
-    "SSE_RETRY_MS",
-    "SSE_KEEP_ALIVE_COMMENT",
     # Factory functions
     "get_stream_formatter",
 ]

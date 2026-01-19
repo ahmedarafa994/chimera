@@ -94,15 +94,12 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
 
     async def get_by_id(self, entity_id: str) -> ProviderConfigEntity | None:
         """Get configuration by ID."""
-        row = await self._db.fetchone(
-            f"SELECT * FROM {self.table_name} WHERE id = ?",
-            (entity_id,)
-        )
+        row = await self._db.fetchone("SELECT * FROM provider_configs WHERE id = ?", (entity_id,))
         return ProviderConfigEntity.from_dict(row) if row else None
 
     async def get_all(self) -> list[ProviderConfigEntity]:
         """Get all configurations."""
-        rows = await self._db.fetchall(f"SELECT * FROM {self.table_name}")
+        rows = await self._db.fetchall("SELECT * FROM provider_configs")
         return [ProviderConfigEntity.from_dict(row) for row in rows]
 
     async def create(self, entity: ProviderConfigEntity) -> ProviderConfigEntity:
@@ -116,8 +113,8 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
 
         data = entity.to_dict()
         await self._db.execute(
-            f"""
-            INSERT INTO {self.table_name}
+            """
+            INSERT INTO provider_configs
             (id, provider_type, name, is_default, settings, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
@@ -129,7 +126,7 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
                 data["settings"],
                 data["created_at"],
                 data["updated_at"],
-            )
+            ),
         )
 
         logger.info(f"Created provider config: {entity.name} ({entity.provider_type})")
@@ -148,8 +145,8 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
         data = entity.to_dict()
 
         await self._db.execute(
-            f"""
-            UPDATE {self.table_name}
+            """
+            UPDATE provider_configs
             SET provider_type = ?, name = ?, is_default = ?,
                 settings = ?, updated_at = ?
             WHERE id = ?
@@ -161,7 +158,7 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
                 data["settings"],
                 data["updated_at"],
                 data["id"],
-            )
+            ),
         )
 
         logger.info(f"Updated provider config: {entity.name}")
@@ -172,16 +169,11 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
         if not await self.exists(entity_id):
             return False
 
-        await self._db.execute(
-            f"DELETE FROM {self.table_name} WHERE id = ?",
-            (entity_id,)
-        )
+        await self._db.execute("DELETE FROM provider_configs WHERE id = ?", (entity_id,))
         logger.info(f"Deleted provider config: {entity_id}")
         return True
 
-    async def get_by_provider_type(
-        self, provider_type: str
-    ) -> list[ProviderConfigEntity]:
+    async def get_by_provider_type(self, provider_type: str) -> list[ProviderConfigEntity]:
         """
         Get all configurations for a provider type.
 
@@ -192,14 +184,11 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
             List of configurations for the provider type.
         """
         rows = await self._db.fetchall(
-            f"SELECT * FROM {self.table_name} WHERE provider_type = ?",
-            (provider_type,)
+            "SELECT * FROM provider_configs WHERE provider_type = ?", (provider_type,)
         )
         return [ProviderConfigEntity.from_dict(row) for row in rows]
 
-    async def get_default(
-        self, provider_type: str | None = None
-    ) -> ProviderConfigEntity | None:
+    async def get_default(self, provider_type: str | None = None) -> ProviderConfigEntity | None:
         """
         Get default configuration.
 
@@ -211,16 +200,14 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
         """
         if provider_type:
             row = await self._db.fetchone(
-                f"""
-                SELECT * FROM {self.table_name}
+                """
+                SELECT * FROM provider_configs
                 WHERE provider_type = ? AND is_default = 1
                 """,
-                (provider_type,)
+                (provider_type,),
             )
         else:
-            row = await self._db.fetchone(
-                f"SELECT * FROM {self.table_name} WHERE is_default = 1"
-            )
+            row = await self._db.fetchone("SELECT * FROM provider_configs WHERE is_default = 1")
 
         return ProviderConfigEntity.from_dict(row) if row else None
 
@@ -261,16 +248,15 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
         """
         if provider_type:
             row = await self._db.fetchone(
-                f"""
-                SELECT * FROM {self.table_name}
+                """
+                SELECT * FROM provider_configs
                 WHERE name = ? AND provider_type = ?
                 """,
-                (name, provider_type)
+                (name, provider_type),
             )
         else:
             row = await self._db.fetchone(
-                f"SELECT * FROM {self.table_name} WHERE name = ?",
-                (name,)
+                "SELECT * FROM provider_configs WHERE name = ?", (name,)
             )
 
         return ProviderConfigEntity.from_dict(row) if row else None
@@ -278,10 +264,10 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
     async def _clear_default_for_type(self, provider_type: str) -> None:
         """Clear default flag for all configs of a provider type."""
         await self._db.execute(
-            f"""
-            UPDATE {self.table_name}
+            """
+            UPDATE provider_configs
             SET is_default = 0, updated_at = ?
             WHERE provider_type = ? AND is_default = 1
             """,
-            (datetime.now(UTC).isoformat(), provider_type)
+            (datetime.now(UTC).isoformat(), provider_type),
         )

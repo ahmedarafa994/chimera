@@ -30,10 +30,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 if TYPE_CHECKING:
-    from app.services.provider_plugins import (
-        ProviderPlugin,
-        ModelInfo as PluginModelInfo,
-    )
+    from app.services.provider_plugins import ProviderPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -249,13 +246,15 @@ class ModelInfo:
             "supports_streaming": self.supports_streaming,
             "supports_function_calling": self.supports_function_calling,
             "supports_vision": self.supports_vision,
-            "pricing": {
-                "input_per_1k_tokens": self.input_price_per_1k,
-                "output_per_1k_tokens": self.output_price_per_1k,
-                "currency": self.currency,
-            }
-            if self.input_price_per_1k
-            else None,
+            "pricing": (
+                {
+                    "input_per_1k_tokens": self.input_price_per_1k,
+                    "output_per_1k_tokens": self.output_price_per_1k,
+                    "currency": self.currency,
+                }
+                if self.input_price_per_1k
+                else None
+            ),
             "capabilities": self.capabilities,
             "metadata": self.metadata,
         }
@@ -1192,14 +1191,10 @@ class ProviderRegistry:
                 )
                 await self.register_model(model_info)
 
-            logger.info(
-                f"Discovered {len(models)} models for {plugin.provider_type}"
-            )
+            logger.info(f"Discovered {len(models)} models for {plugin.provider_type}")
 
         except Exception as e:
-            logger.error(
-                f"Failed to discover models for {plugin.provider_type}: {e}"
-            )
+            logger.error(f"Failed to discover models for {plugin.provider_type}: {e}")
 
     async def get_models_for_provider(
         self,
@@ -1259,9 +1254,7 @@ class ProviderRegistry:
                 "capabilities": config.capabilities,
                 "default_model": config.default_model,
                 "models_count": len(self._models.get(config.provider_id, {})),
-                "has_api_key": bool(
-                    config.api_key or config.api_key_encrypted
-                ),
+                "has_api_key": bool(config.api_key or config.api_key_encrypted),
             }
             providers.append(provider_info)
 
@@ -1274,18 +1267,20 @@ class ProviderRegistry:
 
             for plugin in plugins.values():
                 if plugin.provider_type not in registered_types:
-                    providers.append({
-                        "provider_id": plugin.provider_type,
-                        "provider_type": plugin.provider_type,
-                        "display_name": plugin.display_name,
-                        "is_enabled": False,
-                        "is_default": False,
-                        "status": "not_registered",
-                        "capabilities": [c.value for c in plugin.capabilities],
-                        "default_model": plugin.get_default_model(),
-                        "models_count": 0,
-                        "has_api_key": False,
-                    })
+                    providers.append(
+                        {
+                            "provider_id": plugin.provider_type,
+                            "provider_type": plugin.provider_type,
+                            "display_name": plugin.display_name,
+                            "is_enabled": False,
+                            "is_default": False,
+                            "status": "not_registered",
+                            "capabilities": [c.value for c in plugin.capabilities],
+                            "default_model": plugin.get_default_model(),
+                            "models_count": 0,
+                            "has_api_key": False,
+                        }
+                    )
         except ImportError:
             pass
 
@@ -1299,10 +1294,7 @@ class ProviderRegistry:
         all available provider plugins.
         """
         try:
-            from app.services.provider_plugins import (
-                get_all_plugins,
-                register_all_plugins,
-            )
+            from app.services.provider_plugins import get_all_plugins, register_all_plugins
 
             # Register all available plugins
             register_all_plugins()

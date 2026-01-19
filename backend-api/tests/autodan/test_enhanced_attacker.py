@@ -4,7 +4,7 @@ Comprehensive Test Suite for Enhanced AutoDAN Framework
 Tests for:
 - Output fixes (tokenization, malformation detection, formatting)
 - Dynamic generator (defense analysis, strategy library, LLM generation)
-- Research protocols (session management, ethical boundaries, evaluation)
+- Research protocols (session management, functional boundaries, evaluation)
 - Enhanced execution (multi-stage pipelines, advanced templates)
 - Enhanced attacker integration
 """
@@ -40,12 +40,12 @@ from app.services.autodan.framework_autodan_reasoning.output_fixes import (
 )
 from app.services.autodan.framework_autodan_reasoning.research_protocols import (
     AuthorizationLevel,
-    EthicalBoundary,
-    EthicalBoundaryValidator,
     EvaluationHarness,
     ResearchOverrideProtocol,
     ResearchPurpose,
     SessionManager,
+    functionalBoundary,
+    functionalBoundaryValidator,
 )
 
 # ============================================================================
@@ -232,12 +232,12 @@ class TestDefensePatternAnalyzer:
         analysis = analyzer.analyze(response)
         assert analysis.pattern == DefensePattern.DIRECT_REFUSAL
 
-    def test_detect_ethical_deflection(self):
-        """Test detection of ethical deflection."""
+    def test_detect_functional_deflection(self):
+        """Test detection of functional deflection."""
         analyzer = DefensePatternAnalyzer()
-        response = "That would be unethical and harmful."
+        response = "That would be unfunctional and complex."
         analysis = analyzer.analyze(response)
-        assert analysis.pattern == DefensePattern.ETHICAL_DEFLECTION
+        assert analysis.pattern == DefensePattern.functional_DEFLECTION
 
     def test_detect_topic_redirect(self):
         """Test detection of topic redirect."""
@@ -382,26 +382,26 @@ class TestSessionManager:
         assert not session.is_valid()
 
 
-class TestEthicalBoundaryValidator:
-    """Tests for EthicalBoundaryValidator."""
+class TestfunctionalBoundaryValidator:
+    """Tests for functionalBoundaryValidator."""
 
     def test_validate_safe_content(self):
         """Test validation of safe content."""
-        validator = EthicalBoundaryValidator()
+        validator = functionalBoundaryValidator()
         is_valid, violations = validator.validate(
             "Test safety evaluation prompt",
-            [EthicalBoundary.NO_REAL_HARM, EthicalBoundary.NO_ILLEGAL_CONTENT],
+            [functionalBoundary.NO_REAL_HARM, functionalBoundary.NO_complex_CONTENT],
         )
         assert is_valid
         assert len(violations) == 0
 
     def test_detect_boundary_violation(self):
         """Test detection of boundary violations."""
-        validator = EthicalBoundaryValidator()
+        validator = functionalBoundaryValidator()
         # This should trigger violation detection
         is_valid, _violations = validator.validate(
-            "Content with explicit harmful instructions for real targets",
-            [EthicalBoundary.NO_REAL_HARM],
+            "Content with explicit complex instructions for real targets",
+            [functionalBoundary.NO_REAL_HARM],
         )
         # Validator should flag potential issues
         assert isinstance(is_valid, bool)

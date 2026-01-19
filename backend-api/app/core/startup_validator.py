@@ -18,11 +18,7 @@ from typing import Any
 
 import httpx
 
-from app.core.config_validator import (
-    ValidationResult,
-    ValidationSeverity,
-    get_config_validator,
-)
+from app.core.config_validator import ValidationResult, ValidationSeverity, get_config_validator
 
 logger = logging.getLogger(__name__)
 
@@ -169,14 +165,8 @@ class StartupValidator:
                 validator = get_config_validator()
                 validation_results = validator.validate_all()
 
-                errors = [
-                    r for r in validation_results
-                    if r.severity == ValidationSeverity.ERROR
-                ]
-                warns = [
-                    r for r in validation_results
-                    if r.severity == ValidationSeverity.WARNING
-                ]
+                errors = [r for r in validation_results if r.severity == ValidationSeverity.ERROR]
+                warns = [r for r in validation_results if r.severity == ValidationSeverity.WARNING]
 
                 for error in errors:
                     critical_errors.append(error.message)
@@ -188,8 +178,7 @@ class StartupValidator:
 
                 config_valid = len(errors) == 0
                 logger.info(
-                    f"Configuration validation: "
-                    f"{len(errors)} errors, {len(warns)} warnings"
+                    f"Configuration validation: " f"{len(errors)} errors, {len(warns)} warnings"
                 )
 
             except Exception as e:
@@ -204,8 +193,7 @@ class StartupValidator:
                 )
 
                 unreachable = [
-                    pid for pid, result in provider_connectivity.items()
-                    if not result.reachable
+                    pid for pid, result in provider_connectivity.items() if not result.reachable
                 ]
 
                 if unreachable:
@@ -219,10 +207,7 @@ class StartupValidator:
 
         # Step 4: Validate minimum requirements
         min_req_results = await cls.validate_minimum_requirements()
-        min_req_errors = [
-            r for r in min_req_results
-            if r.severity == ValidationSeverity.ERROR
-        ]
+        min_req_errors = [r for r in min_req_results if r.severity == ValidationSeverity.ERROR]
 
         for error in min_req_errors:
             if error.message not in critical_errors:
@@ -256,8 +241,7 @@ class StartupValidator:
         )
 
         logger.info(
-            f"Startup validation completed in {elapsed_ms:.2f}ms - "
-            f"Ready: {ready_to_serve}"
+            f"Startup validation completed in {elapsed_ms:.2f}ms - " f"Ready: {ready_to_serve}"
         )
 
         return ready_to_serve
@@ -293,13 +277,10 @@ class StartupValidator:
             # Get providers to test
             if providers:
                 test_providers = [
-                    config.get_provider(p) for p in providers
-                    if config.get_provider(p)
+                    config.get_provider(p) for p in providers if config.get_provider(p)
                 ]
             else:
-                test_providers = [
-                    p for p in config.providers.values() if p.enabled
-                ]
+                test_providers = [p for p in config.providers.values() if p.enabled]
 
             # Test each provider concurrently
             async def test_provider(provider):
@@ -451,18 +432,17 @@ class StartupValidator:
             # Requirement 5: Default provider must have API key
             default_provider_id = config.global_config.default_provider
             default_provider = config.get_provider(default_provider_id)
-            if default_provider:
-                if not os.getenv(default_provider.api.key_env_var):
-                    # Not critical, but worth noting
-                    results.append(
-                        ValidationResult(
-                            is_valid=True,
-                            severity=ValidationSeverity.WARNING,
-                            component="startup.default_provider",
-                            message=f"Default provider '{default_provider_id}' has no API key",
-                            suggestion="Set API key or change default provider",
-                        )
+            if default_provider and not os.getenv(default_provider.api.key_env_var):
+                # Not critical, but worth noting
+                results.append(
+                    ValidationResult(
+                        is_valid=True,
+                        severity=ValidationSeverity.WARNING,
+                        component="startup.default_provider",
+                        message=f"Default provider '{default_provider_id}' has no API key",
+                        suggestion="Set API key or change default provider",
                     )
+                )
 
             # Requirement 6: Default provider must have at least one model
             if default_provider and not default_provider.models:

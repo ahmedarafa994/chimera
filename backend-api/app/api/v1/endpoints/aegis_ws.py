@@ -10,7 +10,6 @@ import asyncio
 import contextlib
 import json
 import logging
-import time
 import uuid
 from datetime import datetime
 from typing import Any
@@ -20,8 +19,8 @@ from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from app.schemas.aegis_telemetry import (
     AegisTelemetryEventType,
     CampaignStatus,
-    create_telemetry_event,
     HeartbeatData,
+    create_telemetry_event,
 )
 from app.services.websocket.aegis_broadcaster import aegis_telemetry_broadcaster
 
@@ -184,11 +183,13 @@ class AegisTelemetryConnection:
 
         elif message_type == "ping":
             # Client is checking if server is alive
-            await self.websocket.send_json({
-                "type": "pong",
-                "timestamp": datetime.utcnow().isoformat(),
-                "campaign_id": self.campaign_id,
-            })
+            await self.websocket.send_json(
+                {
+                    "type": "pong",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "campaign_id": self.campaign_id,
+                }
+            )
 
         elif message_type == "get_summary":
             # Client requests current campaign summary
@@ -212,18 +213,22 @@ class AegisTelemetryConnection:
 
             if state:
                 summary = state.get_summary()
-                await self.websocket.send_json({
-                    "type": "campaign_summary",
-                    "data": summary.model_dump(mode="json"),
-                    "timestamp": datetime.utcnow().isoformat(),
-                })
+                await self.websocket.send_json(
+                    {
+                        "type": "campaign_summary",
+                        "data": summary.model_dump(mode="json"),
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
             else:
-                await self.websocket.send_json({
-                    "type": "campaign_summary",
-                    "data": None,
-                    "error": "Campaign not found or not started",
-                    "timestamp": datetime.utcnow().isoformat(),
-                })
+                await self.websocket.send_json(
+                    {
+                        "type": "campaign_summary",
+                        "data": None,
+                        "error": "Campaign not found or not started",
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
 
         except Exception as e:
             logger.error(f"Error sending campaign summary: {e}")
@@ -327,11 +332,13 @@ async def aegis_telemetry_websocket(
 
             except json.JSONDecodeError as e:
                 logger.warning(f"Invalid JSON from client {connection.client_id}: {e}")
-                await websocket.send_json({
-                    "type": "error",
-                    "error_code": "INVALID_JSON",
-                    "error_message": "Invalid JSON message",
-                })
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "error_code": "INVALID_JSON",
+                        "error_message": "Invalid JSON message",
+                    }
+                )
 
     except WebSocketDisconnect:
         logger.info(
@@ -350,6 +357,7 @@ async def aegis_telemetry_websocket(
 
 
 # Additional utility endpoints for WebSocket management
+
 
 @router.get("/ws/aegis/telemetry/{campaign_id}/info")
 async def get_campaign_telemetry_info(campaign_id: str):

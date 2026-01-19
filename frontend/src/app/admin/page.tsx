@@ -164,7 +164,7 @@ function FeatureFlagsTab() {
   const handleCreateFlag = async () => {
     if (!newFlagName.trim()) return;
     
-    // Note: The current API doesn't support creating new techniques
+    // Note: The current API doesn&apos;t support creating new techniques
     // This would need a backend endpoint to be implemented
     console.warn("Creating new techniques is not yet supported by the API");
     setNewFlagName("");

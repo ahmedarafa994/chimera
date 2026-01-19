@@ -9,6 +9,7 @@
 # =============================================================================
 
 import asyncio
+import contextlib
 import logging
 import time
 import uuid
@@ -17,7 +18,6 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-from app.core.config import settings
 from app.domain.health_models import (
     AlertSeverity,
     HealthAlert,
@@ -154,7 +154,9 @@ class ProviderHealthState:
         self.circuit_breaker_state = "closed"
 
         # Uptime tracking
-        self._uptime_samples: deque[tuple[float, bool]] = deque(maxlen=3600)  # 1 hour at 1s resolution
+        self._uptime_samples: deque[tuple[float, bool]] = deque(
+            maxlen=3600
+        )  # 1 hour at 1s resolution
 
         # Last calculated metrics
         self._last_calculated_at: float = 0
@@ -265,7 +267,9 @@ class ProviderHealthState:
             return self._latency_samples[-1]
         return 0.0
 
-    def to_metrics(self, check_interval_seconds: int = DEFAULT_CHECK_INTERVAL_SECONDS) -> ProviderHealthMetrics:
+    def to_metrics(
+        self, check_interval_seconds: int = DEFAULT_CHECK_INTERVAL_SECONDS
+    ) -> ProviderHealthMetrics:
         """
         Convert current state to ProviderHealthMetrics model.
 
@@ -496,10 +500,8 @@ class ProviderHealthService:
         # Cancel health check task
         if self._health_check_task:
             self._health_check_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_check_task
-            except asyncio.CancelledError:
-                pass
 
         logger.info("ProviderHealthService stopped")
 
@@ -601,7 +603,9 @@ class ProviderHealthService:
                             latency_ms=latency_ms,
                             error_message="Circuit breaker open",
                         )
-                        await self._process_health_result(provider_id, False, latency_ms, "Circuit breaker open")
+                        await self._process_health_result(
+                            provider_id, False, latency_ms, "Circuit breaker open"
+                        )
                         return {
                             "provider": provider_id,
                             "success": False,
@@ -617,8 +621,8 @@ class ProviderHealthService:
                 pass  # Circuit breaker not available
 
             # Perform lightweight health check
-            from app.services.llm_service import llm_service
             from app.domain.models import GenerationConfig, LLMProviderType, PromptRequest
+            from app.services.llm_service import llm_service
 
             provider = llm_service.get_provider(provider_id)
             if not provider:
@@ -722,9 +726,7 @@ class ProviderHealthService:
                     logger.error(f"Error in status change callback: {e}")
 
             # Generate status transition alert
-            await self._generate_status_transition_alert(
-                provider_id, old_status, new_status, state
-            )
+            await self._generate_status_transition_alert(provider_id, old_status, new_status, state)
         else:
             state.status = new_status
 
@@ -754,7 +756,7 @@ class ProviderHealthService:
         - OPERATIONAL: Otherwise
         """
         error_rate = state.calculate_error_rate()
-        latency = state.get_current_latency()
+        state.get_current_latency()
         latency_metrics = state.calculate_latency_metrics()
 
         # Check for DOWN status
@@ -960,7 +962,9 @@ class ProviderHealthService:
         # Calculate summary
         total = len(self._provider_states)
         operational = sum(
-            1 for s in self._provider_states.values() if s.status == ProviderHealthStatus.OPERATIONAL
+            1
+            for s in self._provider_states.values()
+            if s.status == ProviderHealthStatus.OPERATIONAL
         )
         degraded = sum(
             1 for s in self._provider_states.values() if s.status == ProviderHealthStatus.DEGRADED
@@ -1143,7 +1147,9 @@ class ProviderHealthService:
             last_30_days=_create_uptime_window(2592000),
             all_time_uptime_percent=state.calculate_uptime_percent(2592000),  # 30 days
             total_incidents=sum(
-                1 for a in self._alerts if a.provider_id == provider_id and a.severity == AlertSeverity.CRITICAL
+                1
+                for a in self._alerts
+                if a.provider_id == provider_id and a.severity == AlertSeverity.CRITICAL
             ),
         )
 
@@ -1172,7 +1178,7 @@ class ProviderHealthService:
             ]
             check_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for pid, result in zip(self._provider_configs.keys(), check_results):
+            for pid, result in zip(self._provider_configs.keys(), check_results, strict=False):
                 if isinstance(result, Exception):
                     results[pid] = {"success": False, "error": str(result)}
                 else:

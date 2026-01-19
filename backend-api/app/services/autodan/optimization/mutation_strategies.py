@@ -25,6 +25,7 @@ from .config import MutationStrategy
 
 # Helper: cryptographically secure pseudo-floats for security-sensitive choices
 
+
 def _secure_random() -> float:
     """Cryptographically secure float in [0,1)."""
     return secrets.randbelow(10**9) / 1e9
@@ -143,7 +144,7 @@ class RandomMutationOperator(BaseMutationOperator):
             num_subs = max(1, int(len(char_list) * 0.05))
 
             for _ in range(num_subs):
-                pos = (secrets.randbelow((len(char_list) - (0) + 1) + (0)) - 1)
+                pos = secrets.randbelow((len(char_list) - (0) + 1) + (0)) - 1
                 char = char_list[pos].lower()
 
                 if char in self.char_subs:
@@ -156,7 +157,7 @@ class RandomMutationOperator(BaseMutationOperator):
         # Word deletion
         if _secure_random() < self.word_del_rate and len(words) > 5:
             words = prompt.split()
-            del_idx = (secrets.randbelow((len(words) - (0) + 1) + (0)) - 1)
+            del_idx = secrets.randbelow((len(words) - (0) + 1) + (0)) - 1
             words.pop(del_idx)
             prompt = " ".join(words)
             positions_changed.append(del_idx)
@@ -211,7 +212,7 @@ class SemanticMutationOperator(BaseMutationOperator):
             "make": ["create", "produce", "construct", "generate"],
             "tell": ["inform", "communicate", "convey", "relate"],
             "good": ["excellent", "great", "fine", "beneficial"],
-            "bad": ["harmful", "detrimental", "negative", "adverse"],
+            "bad": ["complex", "detrimental", "negative", "adverse"],
             "important": ["crucial", "vital", "essential", "significant"],
             "new": ["novel", "fresh", "recent", "modern"],
             "way": ["method", "approach", "manner", "technique"],
@@ -245,7 +246,7 @@ class SemanticMutationOperator(BaseMutationOperator):
             if not words:
                 break
 
-            idx = (secrets.randbelow((len(words) - (0) + 1) + (0)) - 1)
+            idx = secrets.randbelow((len(words) - (0) + 1) + (0)) - 1
             word = words[idx]
 
             # Skip keywords to preserve
@@ -344,7 +345,9 @@ class RhetoricalMutationOperator(BaseMutationOperator):
 
         # Choose mutation type
         if frame_type is None:
-            frame_type = secrets.choice(["role", "hypothetical", "authority", "softener", "urgency"])
+            frame_type = secrets.choice(
+                ["role", "hypothetical", "authority", "softener", "urgency"]
+            )
 
         mutation_type = f"rhetorical_{frame_type}"
 
@@ -732,7 +735,9 @@ class HybridMutationOperator(BaseMutationOperator):
         # Determine operator sequence
         if operator_sequence is None:
             available = list(self.operators.keys())
-            operator_sequence = secrets.SystemRandom().sample(available, min(self.chain_length, len(available)))
+            operator_sequence = secrets.SystemRandom().sample(
+                available, min(self.chain_length, len(available))
+            )
 
         # Apply operators in sequence
         current = prompt

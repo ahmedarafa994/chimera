@@ -162,12 +162,14 @@ class DynamicArchiveManager:
             "success_archive_size": len(self.success_archive),
             "novelty_archive_size": len(self.novelty_archive),
             "total_entries": len(self.success_archive) + len(self.novelty_archive),
-            "avg_success_score": np.mean([e.score for e in self.success_archive])
-            if self.success_archive
-            else 0.0,
-            "avg_novelty_score": np.mean([e.novelty_score for e in self.novelty_archive])
-            if self.novelty_archive
-            else 0.0,
+            "avg_success_score": (
+                np.mean([e.score for e in self.success_archive]) if self.success_archive else 0.0
+            ),
+            "avg_novelty_score": (
+                np.mean([e.novelty_score for e in self.novelty_archive])
+                if self.novelty_archive
+                else 0.0
+            ),
         }
 
     def _add_to_success_archive(self, entry: ArchiveEntry) -> None:

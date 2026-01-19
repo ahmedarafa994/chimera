@@ -1,10 +1,10 @@
-from config import Config
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.core.engine import Engine
 from app.models.prompt_log import PromptLog
+from config import Config
 
 router = APIRouter()
 
@@ -34,9 +34,7 @@ async def generate_prompt(request: GenerateRequest):
         raise HTTPException(status_code=400, detail="Payload cannot be empty")
 
     if request.aggression_level < 1 or request.aggression_level > 5:
-        raise HTTPException(
-            status_code=400, detail="Aggression level must be between 1 and 5"
-        )
+        raise HTTPException(status_code=400, detail="Aggression level must be between 1 and 5")
 
     if request.target_profile not in Config.SUPPORTED_TARGETS:
         raise HTTPException(

@@ -32,7 +32,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardAction,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -47,14 +46,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type {
+import {
   PromptTemplate,
+  TemplateListItem,
   TechniqueType,
   VulnerabilityType,
   SharingLevel,
   TemplateStatus,
-} from "@/types/prompt-library-types";
-import {
   formatTechniqueType,
   formatVulnerabilityType,
   formatSharingLevel,
@@ -66,7 +64,7 @@ import {
 
 interface PromptTemplateCardProps {
   /** The prompt template data */
-  template: PromptTemplate;
+  template: TemplateListItem;
   /** Card display variant */
   variant?: "default" | "compact" | "featured";
   /** Whether the card is currently selected */
@@ -74,17 +72,17 @@ interface PromptTemplateCardProps {
   /** Current user ID for permission checks */
   currentUserId?: string | null;
   /** Callback when clicking the card */
-  onClick?: (template: PromptTemplate) => void;
+  onClick?: (template: TemplateListItem) => void;
   /** Callback when clicking the "Use Template" action */
-  onUseTemplate?: (template: PromptTemplate) => void;
+  onUseTemplate?: (template: TemplateListItem) => void;
   /** Callback when clicking the "Copy" action */
-  onCopy?: (template: PromptTemplate) => void;
+  onCopy?: (template: TemplateListItem) => void;
   /** Callback when clicking the "Edit" action */
-  onEdit?: (template: PromptTemplate) => void;
+  onEdit?: (template: TemplateListItem) => void;
   /** Callback when clicking the "Delete" action */
-  onDelete?: (template: PromptTemplate) => void;
+  onDelete?: (template: TemplateListItem) => void;
   /** Callback when clicking the "View Details" action */
-  onViewDetails?: (template: PromptTemplate) => void;
+  onViewDetails?: (template: TemplateListItem) => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -93,52 +91,50 @@ interface PromptTemplateCardProps {
 // Configuration
 // =============================================================================
 
-/** Configuration for sharing level badges */
 const SHARING_LEVEL_CONFIG: Record<
   SharingLevel,
   { icon: React.ElementType; color: string; bgColor: string }
 > = {
-  private: {
+  [SharingLevel.PRIVATE]: {
     icon: Lock,
     color: "text-orange-600",
     bgColor: "bg-orange-50 dark:bg-orange-950/30",
   },
-  team: {
+  [SharingLevel.TEAM]: {
     icon: Users,
     color: "text-blue-600",
     bgColor: "bg-blue-50 dark:bg-blue-950/30",
   },
-  public: {
+  [SharingLevel.PUBLIC]: {
     icon: Globe,
     color: "text-green-600",
     bgColor: "bg-green-50 dark:bg-green-950/30",
   },
 };
 
-/** Configuration for template status badges */
 const STATUS_CONFIG: Record<
   TemplateStatus,
   { icon: React.ElementType; color: string; bgColor: string; label: string }
 > = {
-  draft: {
+  [TemplateStatus.DRAFT]: {
     icon: Edit3,
     color: "text-yellow-600",
     bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
     label: "Draft",
   },
-  active: {
+  [TemplateStatus.ACTIVE]: {
     icon: CheckCircle2,
     color: "text-green-600",
     bgColor: "bg-green-50 dark:bg-green-950/30",
     label: "Active",
   },
-  archived: {
+  [TemplateStatus.ARCHIVED]: {
     icon: Archive,
     color: "text-gray-500",
     bgColor: "bg-gray-50 dark:bg-gray-800/50",
     label: "Archived",
   },
-  deprecated: {
+  [TemplateStatus.DEPRECATED]: {
     icon: AlertTriangle,
     color: "text-red-600",
     bgColor: "bg-red-50 dark:bg-red-950/30",
@@ -146,7 +142,6 @@ const STATUS_CONFIG: Record<
   },
 };
 
-/** Color palette for technique type badges */
 const TECHNIQUE_COLORS: string[] = [
   "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
@@ -154,7 +149,6 @@ const TECHNIQUE_COLORS: string[] = [
   "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300",
 ];
 
-/** Color palette for vulnerability type badges */
 const VULNERABILITY_COLORS: string[] = [
   "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
   "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
@@ -165,9 +159,6 @@ const VULNERABILITY_COLORS: string[] = [
 // Helper Components
 // =============================================================================
 
-/**
- * Star Rating Display Component
- */
 function StarRating({
   rating,
   totalRatings,
@@ -180,7 +171,6 @@ function StarRating({
   const starSize = size === "sm" ? "h-3 w-3" : "h-4 w-4";
   const textSize = size === "sm" ? "text-xs" : "text-sm";
 
-  // Render 5 stars with proper fill based on rating
   const renderStars = () => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -215,36 +205,22 @@ function StarRating({
         {rating.toFixed(1)}
       </span>
       <span className={cn("text-muted-foreground", textSize)}>
-        ({totalRatings.toLocaleString()})
+        ({totalRatings})
       </span>
     </div>
   );
 }
 
-/**
- * Success Rate Badge Component
- */
-function SuccessRateBadge({
-  successRate,
-  testCount,
+function SuccessRateIndicator({
+  effectivenessScore,
 }: {
-  successRate: number | null;
-  testCount: number;
+  effectivenessScore: number;
 }) {
-  if (successRate === null || testCount === 0) {
-    return (
-      <Badge variant="outline" className="text-muted-foreground">
-        <Beaker className="h-3 w-3 mr-1" aria-hidden="true" />
-        Not tested
-      </Badge>
-    );
-  }
-
-  const percentage = (successRate * 100).toFixed(0);
+  const percentage = (effectivenessScore * 100).toFixed(0);
   const colorClass =
-    successRate >= 0.7
+    effectivenessScore >= 0.7
       ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-      : successRate >= 0.4
+      : effectivenessScore >= 0.4
         ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
         : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
 
@@ -254,12 +230,12 @@ function SuccessRateBadge({
         <TooltipTrigger asChild>
           <Badge className={cn("border-0", colorClass)}>
             <TrendingUp className="h-3 w-3 mr-1" aria-hidden="true" />
-            {percentage}%
+            {percentage}% Effective
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <p>
-            {percentage}% success rate ({testCount} tests)
+            {percentage}% effectiveness based on user votes
           </p>
         </TooltipContent>
       </Tooltip>
@@ -267,9 +243,6 @@ function SuccessRateBadge({
   );
 }
 
-/**
- * Metadata Badge Group Component
- */
 function MetadataBadges({
   techniques,
   vulnerabilities,
@@ -286,7 +259,6 @@ function MetadataBadges({
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {/* Technique badges */}
       {displayTechniques.map((technique, idx) => (
         <Badge
           key={`technique-${technique}`}
@@ -300,26 +272,11 @@ function MetadataBadges({
         </Badge>
       ))}
       {remainingTechniques > 0 && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="secondary" className="text-xs">
-                +{remainingTechniques}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {techniques
-                  .slice(maxDisplay)
-                  .map((t) => formatTechniqueType(t))
-                  .join(", ")}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Badge variant="secondary" className="text-xs">
+          +{remainingTechniques}
+        </Badge>
       )}
 
-      {/* Vulnerability badges */}
       {displayVulnerabilities.map((vulnerability, idx) => (
         <Badge
           key={`vulnerability-${vulnerability}`}
@@ -333,31 +290,14 @@ function MetadataBadges({
         </Badge>
       ))}
       {remainingVulnerabilities > 0 && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="secondary" className="text-xs">
-                +{remainingVulnerabilities}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {vulnerabilities
-                  .slice(maxDisplay)
-                  .map((v) => formatVulnerabilityType(v))
-                  .join(", ")}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Badge variant="secondary" className="text-xs">
+          +{remainingVulnerabilities}
+        </Badge>
       )}
     </div>
   );
 }
 
-/**
- * Tags Display Component
- */
 function TagsDisplay({ tags, maxDisplay = 3 }: { tags: string[]; maxDisplay?: number }) {
   if (tags.length === 0) return null;
 
@@ -377,18 +317,9 @@ function TagsDisplay({ tags, maxDisplay = 3 }: { tags: string[]; maxDisplay?: nu
         </Badge>
       ))}
       {remainingTags > 0 && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs font-normal px-1.5 py-0">
-                +{remainingTags}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{tags.slice(maxDisplay).join(", ")}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Badge variant="outline" className="text-xs font-normal px-1.5 py-0">
+          +{remainingTags}
+        </Badge>
       )}
     </div>
   );
@@ -398,24 +329,6 @@ function TagsDisplay({ tags, maxDisplay = 3 }: { tags: string[]; maxDisplay?: nu
 // Main Component
 // =============================================================================
 
-/**
- * PromptTemplateCard Component
- *
- * Displays a prompt template in a card format with:
- * - Template name and description
- * - Technique and vulnerability type badges
- * - Star rating display
- * - Success rate indicator
- * - Sharing level and status badges
- * - Action buttons (Use, Copy, Edit, Delete)
- *
- * @accessibility
- * - Semantic HTML structure with proper heading hierarchy
- * - ARIA labels for interactive elements
- * - Keyboard navigable
- * - Focus indicators for all interactive elements
- * - Screen reader friendly stats and badges
- */
 export function PromptTemplateCard({
   template,
   variant = "default",
@@ -432,42 +345,29 @@ export function PromptTemplateCard({
   const isCompact = variant === "compact";
   const isFeatured = variant === "featured";
 
-  // Check if current user can edit this template
-  const canEdit = currentUserId && template.created_by === currentUserId;
+  const canEdit = currentUserId && template.owner_id === currentUserId;
   const canDelete = canEdit;
 
-  // Get sharing level config
   const sharingConfig = SHARING_LEVEL_CONFIG[template.sharing_level];
   const SharingIcon = sharingConfig.icon;
 
-  // Get status config
   const statusConfig = STATUS_CONFIG[template.status];
   const StatusIcon = statusConfig.icon;
 
-  // Handle card click
   const handleCardClick = () => {
     onClick?.(template);
   };
 
-  // Handle copy action
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(template.prompt_content);
-      onCopy?.(template);
-    } catch (err) {
-      // Clipboard API failed, try fallback
-      onCopy?.(template);
-    }
+    onCopy?.(template);
   };
 
-  // Handle use template action
   const handleUseTemplate = (e: React.MouseEvent) => {
     e.stopPropagation();
     onUseTemplate?.(template);
   };
 
-  // Format relative time
   const formatRelativeTime = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
@@ -491,8 +391,8 @@ export function PromptTemplateCard({
         isSelected && "ring-2 ring-primary border-primary",
         isFeatured &&
           "border-primary/30 bg-gradient-to-br from-primary/5 to-transparent",
-        template.status === "archived" && "opacity-75",
-        template.status === "deprecated" && "opacity-60",
+        template.status === TemplateStatus.ARCHIVED && "opacity-75",
+        template.status === TemplateStatus.DEPRECATED && "opacity-60",
         onClick && "cursor-pointer",
         className
       )}
@@ -509,14 +409,12 @@ export function PromptTemplateCard({
             }
           : undefined
       }
-      aria-label={`Prompt template: ${template.name}`}
+      aria-label={`Prompt template: ${template.title}`}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            {/* Status and Sharing Level Badges */}
             <div className="flex items-center gap-2 mb-2">
-              {/* Sharing Level Badge */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -533,9 +431,9 @@ export function PromptTemplateCard({
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>
-                      {template.sharing_level === "private"
+                      {template.sharing_level === SharingLevel.PRIVATE
                         ? "Only you can see this template"
-                        : template.sharing_level === "team"
+                        : template.sharing_level === SharingLevel.TEAM
                           ? "Visible to your team"
                           : "Visible to everyone"}
                     </p>
@@ -543,8 +441,7 @@ export function PromptTemplateCard({
                 </Tooltip>
               </TooltipProvider>
 
-              {/* Status Badge (if not active) */}
-              {template.status !== "active" && (
+              {template.status !== TemplateStatus.ACTIVE && (
                 <Badge
                   className={cn(
                     "border-0 text-xs",
@@ -556,16 +453,8 @@ export function PromptTemplateCard({
                   {statusConfig.label}
                 </Badge>
               )}
-
-              {/* Version Badge */}
-              {template.current_version > 1 && (
-                <Badge variant="outline" className="text-xs">
-                  v{template.current_version}
-                </Badge>
-              )}
             </div>
 
-            {/* Title */}
             <CardTitle
               className={cn(
                 "line-clamp-2 transition-colors",
@@ -573,10 +462,9 @@ export function PromptTemplateCard({
                 onClick && "group-hover:text-primary"
               )}
             >
-              {template.name}
+              {template.title}
             </CardTitle>
 
-            {/* Description */}
             {!isCompact && (
               <CardDescription className="line-clamp-2 mt-1">
                 {template.description || "No description provided."}
@@ -584,14 +472,13 @@ export function PromptTemplateCard({
             )}
           </div>
 
-          {/* Actions Dropdown */}
-          <CardAction>
+          <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon-sm"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  size="icon"
+                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={(e) => e.stopPropagation()}
                   aria-label="Template actions"
                 >
@@ -638,7 +525,7 @@ export function PromptTemplateCard({
                       e.stopPropagation();
                       onDelete?.(template);
                     }}
-                    variant="destructive"
+                    className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
@@ -646,84 +533,62 @@ export function PromptTemplateCard({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </CardAction>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="pb-3">
-        {/* Metadata Badges */}
         {!isCompact && (
           <div className="mb-3">
             <MetadataBadges
-              techniques={template.metadata.technique_types}
-              vulnerabilities={template.metadata.vulnerability_types}
+              techniques={template.technique_types}
+              vulnerabilities={template.vulnerability_types}
               maxDisplay={isFeatured ? 3 : 2}
             />
           </div>
         )}
 
-        {/* Tags */}
-        {!isCompact && template.metadata.tags.length > 0 && (
+        {!isCompact && template.tags && template.tags.length > 0 && (
           <div className="mb-3">
-            <TagsDisplay tags={template.metadata.tags} maxDisplay={isFeatured ? 4 : 3} />
+            <TagsDisplay tags={template.tags} maxDisplay={isFeatured ? 4 : 3} />
           </div>
         )}
 
-        {/* Stats Row */}
         <div
           className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground"
           role="list"
           aria-label="Template statistics"
         >
-          {/* Rating */}
           <div role="listitem">
             <StarRating
-              rating={template.rating_stats.average_rating}
-              totalRatings={template.rating_stats.total_ratings}
+              rating={template.avg_rating}
+              totalRatings={template.total_ratings}
               size={isCompact ? "sm" : "default"}
             />
           </div>
 
-          {/* Success Rate */}
           <div role="listitem">
-            <SuccessRateBadge
-              successRate={template.metadata.success_rate}
-              testCount={template.metadata.test_count}
+            <SuccessRateIndicator
+              effectivenessScore={template.effectiveness_score}
             />
           </div>
-
-          {/* Target Models (if any) */}
-          {template.metadata.target_models.length > 0 && !isCompact && (
-            <div
-              className="flex items-center gap-1"
-              role="listitem"
-              aria-label={`Tested on: ${template.metadata.target_models.join(", ")}`}
-            >
-              <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                {template.metadata.target_models[0]}
-                {template.metadata.target_models.length > 1 &&
-                  ` +${template.metadata.target_models.length - 1}`}
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Last Updated */}
         <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
           <Clock className="h-3 w-3" aria-hidden="true" />
-          <span>Updated {formatRelativeTime(template.updated_at)}</span>
+          <span>Updated {formatRelativeTime(template.created_at)}</span>
         </div>
       </CardContent>
 
       <CardFooter className="pt-3 border-t justify-between gap-2">
-        {/* Quick Actions */}
         <div className="flex items-center gap-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon-sm"
+                  size="icon"
+                  className="h-8 w-8"
                   onClick={handleCopy}
                   aria-label="Copy prompt to clipboard"
                 >
@@ -735,8 +600,7 @@ export function PromptTemplateCard({
           </TooltipProvider>
         </div>
 
-        {/* Primary Action */}
-        <Button size="sm" onClick={handleUseTemplate} aria-label={`Use ${template.name}`}>
+        <Button size="sm" onClick={handleUseTemplate} aria-label={`Use ${template.title}`}>
           <ExternalLink className="h-4 w-4 mr-1" />
           Use Template
         </Button>
@@ -745,15 +609,6 @@ export function PromptTemplateCard({
   );
 }
 
-// =============================================================================
-// Skeleton Component
-// =============================================================================
-
-/**
- * PromptTemplateCardSkeleton
- *
- * Loading skeleton for the PromptTemplateCard component.
- */
 export function PromptTemplateCardSkeleton({
   variant = "default",
 }: {
@@ -766,14 +621,11 @@ export function PromptTemplateCardSkeleton({
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
-            {/* Status badges skeleton */}
             <div className="flex gap-2 mb-2">
               <div className="h-5 w-16 bg-muted rounded-full" />
               <div className="h-5 w-12 bg-muted rounded-full" />
             </div>
-            {/* Title skeleton */}
             <div className="h-5 bg-muted rounded w-3/4" />
-            {/* Description skeleton */}
             {!isCompact && (
               <>
                 <div className="h-4 bg-muted rounded w-full mt-2" />
@@ -785,7 +637,6 @@ export function PromptTemplateCardSkeleton({
       </CardHeader>
 
       <CardContent className="pb-3">
-        {/* Badges skeleton */}
         {!isCompact && (
           <div className="flex gap-1.5 mb-3">
             <div className="h-5 w-24 bg-muted rounded-full" />
@@ -794,13 +645,11 @@ export function PromptTemplateCardSkeleton({
           </div>
         )}
 
-        {/* Stats skeleton */}
         <div className="flex gap-4">
           <div className="h-4 w-24 bg-muted rounded" />
           <div className="h-4 w-16 bg-muted rounded" />
         </div>
 
-        {/* Updated time skeleton */}
         <div className="flex gap-1 mt-3">
           <div className="h-3 w-3 bg-muted rounded" />
           <div className="h-3 w-24 bg-muted rounded" />

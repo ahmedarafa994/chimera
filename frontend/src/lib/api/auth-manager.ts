@@ -10,9 +10,16 @@ import { logger } from './logger';
 // Configuration
 // ============================================================================
 
-const TOKEN_STORAGE_KEY = 'chimera_auth_tokens';
-const USER_STORAGE_KEY = 'chimera_user';
-const TENANT_STORAGE_KEY = 'chimera_tenant_id';
+// Keys must match AuthContext.tsx AUTH_STORAGE_KEYS
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'chimera_access_token',
+  REFRESH_TOKEN: 'chimera_refresh_token',
+  USER: 'chimera_auth_user',
+  TOKEN_EXPIRY: 'chimera_token_expiry',
+  REFRESH_EXPIRY: 'chimera_refresh_expiry',
+  TENANT_ID: 'chimera_tenant_id',
+};
+
 const TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 minutes before expiry
 
 // ============================================================================
@@ -37,19 +44,47 @@ class AuthManager {
     if (typeof window === 'undefined') return;
 
     try {
-      const tokensJson = localStorage.getItem(TOKEN_STORAGE_KEY);
-      const userJson = localStorage.getItem(USER_STORAGE_KEY);
-      const tenantId = localStorage.getItem(TENANT_STORAGE_KEY);
+      const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      const userJson = localStorage.getItem(STORAGE_KEYS.USER);
+      const tenantId = localStorage.getItem(STORAGE_KEYS.TENANT_ID);
+      const expiryStr = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
+      const refreshExpiryStr = localStorage.getItem(STORAGE_KEYS.REFRESH_EXPIRY);
 
-      if (tokensJson) {
-        this.tokens = JSON.parse(tokensJson);
-        if (this.tokens) {
-          this.tokenExpiryTime = Date.now() + (this.tokens.expires_in * 1000);
+      if (accessToken && refreshToken) {
+        this.tokens = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          token_type: 'Bearer',
+          expires_in: expiryStr ? (parseInt(expiryStr, 10) - Date.now()) / 1000 : 3600,
+          refresh_expires_in: refreshExpiryStr ? (parseInt(refreshExpiryStr, 10) - Date.now()) / 1000 : 86400,
+        };
+
+        if (expiryStr) {
+          this.tokenExpiryTime = parseInt(expiryStr, 10);
+        } else {
+          // Fallback if expiry not stored
+          this.tokenExpiryTime = Date.now() + 3600 * 1000;
         }
       }
 
       if (userJson) {
-        this.user = JSON.parse(userJson);
+        try {
+          // Check if userJson is double encoded or simple json
+          // secureStorage in AuthProvider might encode it
+          // implementation in AuthProvider uses btoa/encodeURIComponent?
+          // "const encoded = btoa(encodeURIComponent(value));"
+          // Wait, AuthProvider's SecureStorage DOES encode. Use decode logic.
+          const decoded = decodeURIComponent(atob(userJson));
+          this.user = JSON.parse(decoded);
+        } catch {
+          // Try standard JSON parse if decode fails
+          try {
+            this.user = JSON.parse(userJson);
+          } catch (e) {
+            logger.logError('Failed to parse user from storage', e);
+          }
+        }
       }
 
       if (tenantId) {
@@ -75,21 +110,41 @@ class AuthManager {
 
     try {
       if (this.tokens) {
-        localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(this.tokens));
+        // We do NOT use SecureStorage encoding here to keep it simple,
+        // relying on AuthProvider to handle the "secure" part if it wants to overwrite.
+        // BUT, if AuthProvider expects encoded values, we must match or it will break.
+        // AuthProvider's loadFromStorage:
+        // "const encoded = localStorage.getItem(key); if (!encoded) return null; return decodeURIComponent(atob(encoded));"
+        // So we MUST encode if we write to the same keys.
+
+        const encode = (val: string) => btoa(encodeURIComponent(val));
+
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, encode(this.tokens.access_token));
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, encode(this.tokens.refresh_token));
+
+        const expiresAt = Date.now() + this.tokens.expires_in * 1000;
+        const refreshExpiresAt = Date.now() + this.tokens.refresh_expires_in * 1000;
+
+        localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRY, encode(String(expiresAt)));
+        localStorage.setItem(STORAGE_KEYS.REFRESH_EXPIRY, encode(String(refreshExpiresAt)));
       } else {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_EXPIRY);
       }
 
       if (this.user) {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
+        const encode = (val: string) => btoa(encodeURIComponent(val));
+        localStorage.setItem(STORAGE_KEYS.USER, encode(JSON.stringify(this.user)));
       } else {
-        localStorage.removeItem(USER_STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEYS.USER);
       }
 
       if (this.tenantId) {
-        localStorage.setItem(TENANT_STORAGE_KEY, this.tenantId);
+        localStorage.setItem(STORAGE_KEYS.TENANT_ID, this.tenantId);
       } else {
-        localStorage.removeItem(TENANT_STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEYS.TENANT_ID);
       }
     } catch (error) {
       logger.logError('Failed to save auth state to storage', error);
@@ -102,9 +157,7 @@ class AuthManager {
   private clearStorage(): void {
     if (typeof window === 'undefined') return;
 
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem(TENANT_STORAGE_KEY);
+    Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
   }
 
   /**
@@ -131,6 +184,9 @@ class AuthManager {
    * Get access token with automatic refresh if needed
    */
   async getAccessToken(): Promise<string | null> {
+    // Reload from storage to ensure we have latest from AuthProvider
+    this.loadFromStorage();
+
     if (!this.tokens) {
       return null;
     }
@@ -154,6 +210,9 @@ class AuthManager {
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
+
+    // Reload to ensure we have refresh token
+    this.loadFromStorage();
 
     if (!this.tokens?.refresh_token) {
       logger.logWarning('No refresh token available');
@@ -206,6 +265,7 @@ class AuthManager {
    * Get current user
    */
   getUser(): User | null {
+    this.loadFromStorage();
     return this.user;
   }
 
@@ -220,6 +280,7 @@ class AuthManager {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
+    this.loadFromStorage();
     return !!this.tokens && Date.now() < this.tokenExpiryTime;
   }
 
@@ -284,7 +345,8 @@ class AuthManager {
    */
   onAuthStateChange(callback: (isAuthenticated: boolean) => void): () => void {
     const handler = (event: StorageEvent) => {
-      if (event.key === TOKEN_STORAGE_KEY) {
+      // Check for any relevant key change
+      if (Object.values(STORAGE_KEYS).includes(event.key as any)) {
         this.loadFromStorage();
         callback(this.isAuthenticated());
       }

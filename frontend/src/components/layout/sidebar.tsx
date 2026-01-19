@@ -38,7 +38,8 @@ import {
   Clock,
   BarChart3,
   FileText,
-  Play
+  Play,
+  FlaskRound
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -87,12 +88,18 @@ const AI_TOOLS_ROUTES: RouteConfig[] = [
 const RESOURCE_ROUTES: RouteConfig[] = [
   { label: "Models", icon: Cpu, href: "/dashboard/models", description: "Model & Session Mgmt" },
   { label: "AI Providers", icon: Server, href: "/dashboard/providers", description: "Configure & Switch Providers" },
+  { label: "Prompt Library", icon: BookOpen, href: "/dashboard/prompt-library", description: "Verified Attack Templates" },
   { label: "Attack Sessions", icon: Play, href: "/dashboard/sessions", description: "Record, Replay & Share Sessions" },
   { label: "Technique Library", icon: FileText, href: "/dashboard/technique-library", description: "Attack Techniques Catalog" },
   { label: "Security Reports", icon: BarChart3, href: "/dashboard/reports", description: "Professional PDF/HTML Reports" },
   { label: "Documentation Hub", icon: BookOpen, href: "/dashboard/help", description: "Interactive Help & Guides" },
   { label: "Campaign Analytics", icon: BarChart3, href: "/dashboard/analytics", description: "Telemetry & Reporting" },
   { label: "Team Workspaces", icon: Users, href: "/dashboard/workspaces", description: "Team Collaboration & RBAC" },
+  { label: "Technique Builder", icon: Code, href: "/dashboard/technique-builder", description: "Custom Technique Creation" },
+  { label: "Scheduled Testing", icon: Clock, href: "/dashboard/scheduled-testing", description: "Automated Monitoring & Alerts" },
+  { label: "Multi-Modal Testing", icon: Layers, href: "/dashboard/multimodal-testing", description: "Vision+Audio+Text Security Testing" },
+  { label: "Research Lab", icon: FlaskRound, href: "/dashboard/research-lab", description: "A/B Testing & Academic Research" },
+  { label: "Defense Engine", icon: Shield, href: "/dashboard/defense-engine", description: "Automated Defense Recommendations" },
   { label: "Metrics", icon: Activity, href: "/dashboard/metrics" },
 ];
 

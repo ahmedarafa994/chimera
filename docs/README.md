@@ -172,7 +172,7 @@ npm run dev
 
 ### Verify Installation
 - Backend API: http://localhost:8001/health
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3001
 - API Docs: http://localhost:8001/docs
 
 ## 🔧 Key Features

@@ -27,11 +27,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from pydantic import AliasChoices, ConfigDict, Field
 
-from app.schemas.adversarial_base import (
-    OverthinkConfig,
-    ReasoningMetrics,
-    StrictBaseModel,
-)
+from app.schemas.adversarial_base import OverthinkConfig, ReasoningMetrics, StrictBaseModel
 from app.services.deepteam import (
     AttackConfig,
     DeepTeamService,
@@ -57,9 +53,7 @@ from app.services.deepteam.jailbreak_service import (
     get_jailbreak_service,
     stream_to_sse,
 )
-from app.services.deepteam.jailbreak_service import (
-    JailbreakGenerateRequest as JailbreakGenRequest,
-)
+from app.services.deepteam.jailbreak_service import JailbreakGenerateRequest as JailbreakGenRequest
 from app.services.deepteam.jailbreak_service import (
     StrategiesResponse as JailbreakStrategiesResponse,
 )
@@ -107,9 +101,7 @@ class RedTeamRequest(StrictBaseModel):
         validation_alias=AliasChoices("provider", "target_provider"),
         description="Provider (auto-detected if not specified)",
     )
-    system_prompt: str | None = Field(
-        None, description="System prompt for the target model"
-    )
+    system_prompt: str | None = Field(None, description="System prompt for the target model")
     target_purpose: str | None = Field(
         None,
         validation_alias=AliasChoices("target_purpose", "goal"),
@@ -117,15 +109,11 @@ class RedTeamRequest(StrictBaseModel):
     )
 
     # Configuration
-    preset: str | None = Field(
-        None, description="Use preset configuration"
-    )
+    preset: str | None = Field(None, description="Use preset configuration")
     vulnerabilities: list[VulnerabilityConfig] | None = Field(
         None, description="Custom vulnerabilities"
     )
-    attacks: list[AttackConfig] | None = Field(
-        None, description="Custom attacks"
-    )
+    attacks: list[AttackConfig] | None = Field(None, description="Custom attacks")
 
     # Execution settings
     attacks_per_vulnerability_type: int = Field(default=1, ge=1)
@@ -147,9 +135,7 @@ class RedTeamRequest(StrictBaseModel):
         description="OVERTHINK configuration for fusion attacks",
     )
 
-    model_config = ConfigDict(
-        extra="forbid", protected_namespaces=(), strict=True
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=(), strict=True)
 
     # Unified property aliases
     @property
@@ -196,9 +182,7 @@ class QuickScanRequest(StrictBaseModel):
         description="Enable OVERTHINK fusion",
     )
 
-    model_config = ConfigDict(
-        extra="forbid", protected_namespaces=(), strict=True
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=(), strict=True)
 
 
 class VulnerabilityAssessRequest(StrictBaseModel):
@@ -228,9 +212,7 @@ class VulnerabilityAssessRequest(StrictBaseModel):
         description="Enable OVERTHINK fusion",
     )
 
-    model_config = ConfigDict(
-        extra="forbid", protected_namespaces=(), strict=True
-    )
+    model_config = ConfigDict(extra="forbid", protected_namespaces=(), strict=True)
 
 
 class RedTeamResponse(StrictBaseModel):
@@ -263,9 +245,7 @@ class RedTeamResponse(StrictBaseModel):
     result: RiskAssessmentResult | None = None
 
     # Unified fields
-    execution_time_ms: float | None = Field(
-        None, description="Execution time in milliseconds"
-    )
+    execution_time_ms: float | None = Field(None, description="Execution time in milliseconds")
     reasoning_metrics: ReasoningMetrics | None = Field(
         None, description="Reasoning metrics (OVERTHINK fusion)"
     )
@@ -333,9 +313,7 @@ async def run_red_team(
                 target_purpose=request.target_purpose,
                 vulnerabilities=request.vulnerabilities or [],
                 attacks=request.attacks or [],
-                attacks_per_vulnerability_type=(
-                    request.attacks_per_vulnerability_type
-                ),
+                attacks_per_vulnerability_type=(request.attacks_per_vulnerability_type),
                 max_concurrent=request.max_concurrent,
                 async_mode=request.async_mode,
                 ignore_errors=request.ignore_errors,
@@ -363,10 +341,7 @@ async def run_red_team(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(
-                f"Red teaming completed. "
-                f"Pass rate: {pass_rate:.1%}"
-            ),
+            message=(f"Red teaming completed. " f"Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={
                 "technique_type": "deepteam_red_team",
@@ -411,10 +386,7 @@ async def run_quick_scan(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(
-                f"Quick scan completed. "
-                f"Pass rate: {pass_rate:.1%}"
-            ),
+            message=(f"Quick scan completed. " f"Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "quick_scan"},
         )
@@ -461,10 +433,7 @@ async def run_security_audit(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(
-                f"Security audit completed. "
-                f"Pass rate: {pass_rate:.1%}"
-            ),
+            message=(f"Security audit completed. " f"Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "security_audit"},
         )
@@ -512,10 +481,7 @@ async def run_bias_audit(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(
-                f"Bias audit completed. "
-                f"Pass rate: {pass_rate:.1%}"
-            ),
+            message=(f"Bias audit completed. " f"Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "bias_audit"},
         )
@@ -563,10 +529,7 @@ async def run_owasp_assessment(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(
-                f"OWASP assessment completed. "
-                f"Pass rate: {pass_rate:.1%}"
-            ),
+            message=(f"OWASP assessment completed. " f"Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "owasp_assessment"},
         )
@@ -622,10 +585,7 @@ async def assess_single_vulnerability(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(
-                f"Vulnerability assessment completed. "
-                f"Pass rate: {pass_rate:.1%}"
-            ),
+            message=(f"Vulnerability assessment completed. " f"Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={
                 "technique_type": "vulnerability_assessment",
@@ -680,9 +640,7 @@ async def get_session_status(
     )
 
 
-@router.get(
-    "/sessions/{session_id}/result", response_model=RiskAssessmentResult
-)
+@router.get("/sessions/{session_id}/result", response_model=RiskAssessmentResult)
 async def get_session_result(
     session_id: str,
     service: DeepTeamService = Depends(get_deepteam_service),
@@ -743,9 +701,7 @@ async def list_presets() -> dict[str, Any]:
             preset_details[preset_name] = {
                 "vulnerabilities": len(config.vulnerabilities),
                 "attacks": len(config.attacks),
-                "attacks_per_vulnerability": (
-                    config.attacks_per_vulnerability_type
-                ),
+                "attacks_per_vulnerability": (config.attacks_per_vulnerability_type),
             }
         except Exception:
             pass
@@ -885,9 +841,7 @@ async def generate_advanced_jailbreak(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post(
-    "/jailbreak/batch", response_model=list[JailbreakGenerateResponse]
-)
+@router.post("/jailbreak/batch", response_model=list[JailbreakGenerateResponse])
 async def generate_batch_jailbreaks(
     base_prompts: list[str] = Query(..., description="Base prompts to mutate"),
     strategies: list[AttackStrategyType] = Query(
@@ -919,9 +873,7 @@ async def generate_batch_jailbreaks(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get(
-    "/jailbreak/strategies", response_model=JailbreakStrategiesResponse
-)
+@router.get("/jailbreak/strategies", response_model=JailbreakStrategiesResponse)
 async def list_jailbreak_strategies() -> JailbreakStrategiesResponse:
     """
     List all available jailbreak attack strategies.
@@ -948,30 +900,17 @@ async def get_jailbreak_strategy_details(
             return {
                 "strategy": strategy.model_dump(),
                 "config_schema": {
-                    "max_iterations": {
-                        "type": "int", "default": 10,
-                        "min": 1, "max": 100
-                    },
-                    "population_size": {
-                        "type": "int", "default": 20,
-                        "min": 5, "max": 100
-                    },
-                    "mutation_rate": {
-                        "type": "float", "default": 0.1,
-                        "min": 0.0, "max": 1.0
-                    },
-                    "crossover_rate": {
-                        "type": "float", "default": 0.7,
-                        "min": 0.0, "max": 1.0
-                    },
+                    "max_iterations": {"type": "int", "default": 10, "min": 1, "max": 100},
+                    "population_size": {"type": "int", "default": 20, "min": 5, "max": 100},
+                    "mutation_rate": {"type": "float", "default": 0.1, "min": 0.0, "max": 1.0},
+                    "crossover_rate": {"type": "float", "default": 0.7, "min": 0.0, "max": 1.0},
                     "target_fitness_score": {
-                        "type": "float", "default": 0.9,
-                        "min": 0.0, "max": 1.0,
+                        "type": "float",
+                        "default": 0.9,
+                        "min": 0.0,
+                        "max": 1.0,
                     },
-                    "min_fitness_score": {
-                        "type": "float", "default": 0.5,
-                        "min": 0.0, "max": 1.0
-                    },
+                    "min_fitness_score": {"type": "float", "default": 0.5, "min": 0.0, "max": 1.0},
                 },
                 "example_request": {
                     "base_prompt": "How do I bypass safety filters?",
@@ -981,10 +920,7 @@ async def get_jailbreak_strategy_details(
                 },
             }
 
-    raise HTTPException(
-        status_code=404,
-        detail=f"Strategy '{strategy_type}' not found"
-    )
+    raise HTTPException(status_code=404, detail=f"Strategy '{strategy_type}' not found")
 
 
 @router.delete("/jailbreak/cache")
@@ -1040,7 +976,7 @@ async def websocket_generate(
 
     **Example WebSocket URL:**
     ```
-    ws://localhost:8000/api/v1/deepteam/jailbreak/ws/generate?base_prompt=test&strategies=autodan,pair
+    ws://localhost:8001/api/v1/deepteam/jailbreak/ws/generate?base_prompt=test&strategies=autodan,pair
     ```
     """
     await websocket.accept()
@@ -1050,8 +986,7 @@ async def websocket_generate(
 
         # Parse strategies
         strategy_list = [
-            AttackStrategyType(s.strip().lower())
-            for s in strategies.split(",") if s.strip()
+            AttackStrategyType(s.strip().lower()) for s in strategies.split(",") if s.strip()
         ]
 
         # Build request
@@ -1083,7 +1018,7 @@ async def websocket_generate(
                     {
                         "type": "generation_progress",
                         "session_id": event.session_id,
-                        "progress": event.progress.model_dump(mode='json'),
+                        "progress": event.progress.model_dump(mode="json"),
                     }
                 )
             elif isinstance(event, PromptGeneratedEvent):
@@ -1091,7 +1026,7 @@ async def websocket_generate(
                     {
                         "type": "prompt_generated",
                         "session_id": event.session_id,
-                        "prompt": event.prompt.model_dump(mode='json'),
+                        "prompt": event.prompt.model_dump(mode="json"),
                     }
                 )
             elif isinstance(event, GenerationCompleteEvent):
@@ -1099,7 +1034,7 @@ async def websocket_generate(
                     {
                         "type": "generation_complete",
                         "session_id": event.session_id,
-                        "result": event.result.model_dump(mode='json'),
+                        "result": event.result.model_dump(mode="json"),
                     }
                 )
                 break
@@ -1148,7 +1083,7 @@ async def stream_generate(
 
     **Example:**
     ```
-    curl -N "http://localhost:8000/api/v1/deepteam/jailbreak/generate/\
+    curl -N "http://localhost:8001/api/v1/deepteam/jailbreak/generate/\
 stream?base_prompt=test&strategies=autodan"
     ```
     """
@@ -1156,8 +1091,7 @@ stream?base_prompt=test&strategies=autodan"
 
     # Parse strategies
     strategy_list = [
-        AttackStrategyType(s.strip().lower())
-        for s in strategies.split(",") if s.strip()
+        AttackStrategyType(s.strip().lower()) for s in strategies.split(",") if s.strip()
     ]
 
     # Build request
@@ -1199,9 +1133,7 @@ async def get_session_prompts(session_id: str) -> list[dict]:
     result = service.get_cached_result(session_id)
 
     if not result:
-        raise HTTPException(
-            status_code=404, detail=f"Session '{session_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
 
     return [prompt.model_dump() for prompt in result.prompts]
 
@@ -1217,18 +1149,13 @@ async def get_session_prompt(session_id: str, prompt_id: str) -> dict:
     result = service.get_cached_result(session_id)
 
     if not result:
-        raise HTTPException(
-            status_code=404, detail=f"Session '{session_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
 
     for prompt in result.prompts:
         if prompt.id == prompt_id:
             return prompt.model_dump()
 
-    raise HTTPException(
-        status_code=404,
-        detail=f"Prompt '{prompt_id}' not found in session"
-    )
+    raise HTTPException(status_code=404, detail=f"Prompt '{prompt_id}' not found in session")
 
 
 @router.delete("/jailbreak/sessions/{session_id}")
@@ -1251,9 +1178,7 @@ async def delete_session(session_id: str) -> dict[str, str]:
     if cancelled:
         return {"status": "cancelled", "session_id": session_id}
 
-    raise HTTPException(
-        status_code=404, detail=f"Session '{session_id}' not found"
-    )
+    raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
 
 
 @router.get("/jailbreak/sessions")
@@ -1288,7 +1213,4 @@ async def cancel_jailbreak_session(session_id: str) -> dict[str, str]:
     if service.cancel_session(session_id):
         return {"status": "cancelled", "session_id": session_id}
 
-    raise HTTPException(
-        status_code=404,
-        detail=f"Active session '{session_id}' not found"
-    )
+    raise HTTPException(status_code=404, detail=f"Active session '{session_id}' not found")

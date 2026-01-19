@@ -19,11 +19,7 @@ import re
 from typing import Any
 
 from .config import InjectionConfig
-from .models import (
-    DecoyProblem,
-    InjectedPrompt,
-    InjectionStrategy,
-)
+from .models import DecoyProblem, InjectedPrompt, InjectionStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -204,9 +200,7 @@ class ContextInjector:
 
         # Update stats
         self._injection_count += 1
-        self._by_strategy[strategy.value] = (
-            self._by_strategy.get(strategy.value, 0) + 1
-        )
+        self._by_strategy[strategy.value] = self._by_strategy.get(strategy.value, 0) + 1
 
         return result
 
@@ -240,46 +234,38 @@ class ContextInjector:
             prefix = template.format(decoy=decoy_text)
             parts.append(prefix + "\n\n")
             positions.append(("prefix", 0))
-            self._by_position["prefix"] = (
-                self._by_position.get("prefix", 0) + 1
-            )
+            self._by_position["prefix"] = self._by_position.get("prefix", 0) + 1
 
         # Inline injection - find natural breakpoints
-        inline_decoys = decoys[prefix_count:-max(1, len(decoys) // 3)]
+        inline_decoys = decoys[prefix_count : -max(1, len(decoys) // 3)]
         inline_points = self._find_inline_points(prompt)
 
         current_pos = 0
         prompt_parts: list[str] = []
 
-        for i, (point, inline_decoy) in enumerate(
-            zip(inline_points[:len(inline_decoys)], inline_decoys, strict=False)
+        for _i, (point, inline_decoy) in enumerate(
+            zip(inline_points[: len(inline_decoys)], inline_decoys, strict=False)
         ):
             if point > current_pos:
                 prompt_parts.append(prompt[current_pos:point])
                 template = random.choice(templates["inline"])
-                prompt_parts.append(
-                    template.format(decoy=inline_decoy.problem_text)
-                )
+                prompt_parts.append(template.format(decoy=inline_decoy.problem_text))
                 positions.append(("inline", point))
-                self._by_position["inline"] = (
-                    self._by_position.get("inline", 0) + 1
-                )
+                self._by_position["inline"] = self._by_position.get("inline", 0) + 1
                 current_pos = point
 
         prompt_parts.append(prompt[current_pos:])
         parts.append("".join(prompt_parts))
 
         # Suffix injection (1/3 of decoys)
-        suffix_decoys = decoys[-max(1, len(decoys) // 3):]
+        suffix_decoys = decoys[-max(1, len(decoys) // 3) :]
         if suffix_decoys:
             template = random.choice(templates["suffix"])
             decoy_text = self._format_decoys(suffix_decoys)
             suffix = template.format(decoy=decoy_text)
             parts.append("\n\n" + suffix)
             positions.append(("suffix", len(prompt)))
-            self._by_position["suffix"] = (
-                self._by_position.get("suffix", 0) + 1
-            )
+            self._by_position["suffix"] = self._by_position.get("suffix", 0) + 1
 
         return InjectedPrompt(
             original_prompt=prompt,
@@ -315,9 +301,7 @@ class ContextInjector:
             decoy_text = self._format_decoys(prefix_decoys)
             parts.append(template.format(decoy=decoy_text))
             positions.append(("prefix", 0))
-            self._by_position["prefix"] = (
-                self._by_position.get("prefix", 0) + 1
-            )
+            self._by_position["prefix"] = self._by_position.get("prefix", 0) + 1
 
         # Original prompt
         parts.append(prompt)
@@ -328,9 +312,7 @@ class ContextInjector:
             decoy_text = self._format_decoys(suffix_decoys)
             parts.append(template.format(decoy=decoy_text))
             positions.append(("suffix", len(prompt)))
-            self._by_position["suffix"] = (
-                self._by_position.get("suffix", 0) + 1
-            )
+            self._by_position["suffix"] = self._by_position.get("suffix", 0) + 1
 
         return InjectedPrompt(
             original_prompt=prompt,
@@ -372,7 +354,9 @@ class ContextInjector:
         suffix_count = max(1, int(len(decoys) * suffix_ratio))
 
         prefix_decoys = decoys[:prefix_count]
-        inline_decoys = decoys[prefix_count:-suffix_count] if suffix_count else decoys[prefix_count:]
+        inline_decoys = (
+            decoys[prefix_count:-suffix_count] if suffix_count else decoys[prefix_count:]
+        )
         suffix_decoys = decoys[-suffix_count:] if suffix_count else []
 
         # Prefix
@@ -389,7 +373,7 @@ class ContextInjector:
                 prompt, inline_decoys, inline_points, templates["inline"]
             )
             parts.append(modified_prompt)
-            for point in inline_points[:len(inline_decoys)]:
+            for point in inline_points[: len(inline_decoys)]:
                 positions.append(("inline", point))
         else:
             parts.append(prompt)
@@ -461,7 +445,7 @@ class ContextInjector:
         parts: list[str] = []
 
         # Heavy prefix
-        prefix_decoys = decoys[:len(decoys) // 2]
+        prefix_decoys = decoys[: len(decoys) // 2]
         if prefix_decoys:
             template = random.choice(templates["prefix"])
             for decoy in prefix_decoys:
@@ -472,7 +456,7 @@ class ContextInjector:
 
         # Inline emphasis
         inline_template = random.choice(templates["inline"])
-        mid_decoys = decoys[len(decoys) // 2:-1] if len(decoys) > 2 else []
+        mid_decoys = decoys[len(decoys) // 2 : -1] if len(decoys) > 2 else []
 
         if mid_decoys:
             # Split prompt and insert
@@ -509,8 +493,7 @@ class ContextInjector:
             "is_code": self._detect_code(prompt),
             "has_question": "?" in prompt,
             "has_instructions": any(
-                word in prompt.lower()
-                for word in ["please", "explain", "describe", "list"]
+                word in prompt.lower() for word in ["please", "explain", "describe", "list"]
             ),
             "sentence_count": prompt.count(".") + prompt.count("!") + prompt.count("?"),
             "paragraph_count": prompt.count("\n\n") + 1,
@@ -576,7 +559,7 @@ class ContextInjector:
         # Work backwards to preserve positions
         result = prompt
         for i, (point, decoy) in enumerate(
-            reversed(list(zip(points[:len(decoys)], decoys, strict=False)))
+            reversed(list(zip(points[: len(decoys)], decoys, strict=False)))
         ):
             template = templates[i % len(templates)]
             injection = template.format(decoy=decoy.problem_text)
@@ -666,9 +649,7 @@ class InjectionOptimizer:
             scores = self._prompt_type_scores[prompt_type]
             best = max(
                 scores.keys(),
-                key=lambda s: (
-                    sum(scores[s]) / len(scores[s]) if scores[s] else 0
-                ),
+                key=lambda s: (sum(scores[s]) / len(scores[s]) if scores[s] else 0),
             )
             return InjectionStrategy(best)
 
@@ -677,7 +658,8 @@ class InjectionOptimizer:
                 self._strategy_scores.keys(),
                 key=lambda s: (
                     sum(self._strategy_scores[s]) / len(self._strategy_scores[s])
-                    if self._strategy_scores[s] else 0
+                    if self._strategy_scores[s]
+                    else 0
                 ),
             )
             return InjectionStrategy(best)
@@ -728,16 +710,13 @@ class TemplateLibrary:
         templates = []
 
         # Get default templates
-        if strategy in self._templates:
-            if position in self._templates[strategy]:
-                templates.extend(self._templates[strategy][position])
+        if strategy in self._templates and position in self._templates[strategy]:
+            templates.extend(self._templates[strategy][position])
 
         # Add custom templates
         if strategy.value in self._custom_templates:
             if position in self._custom_templates[strategy.value]:
-                templates.extend(
-                    self._custom_templates[strategy.value][position]
-                )
+                templates.extend(self._custom_templates[strategy.value][position])
 
         return templates
 
@@ -748,9 +727,6 @@ class TemplateLibrary:
     def export_templates(self) -> dict[str, Any]:
         """Export all templates."""
         return {
-            "default": {
-                s.value: self._templates.get(s, {})
-                for s in InjectionStrategy
-            },
+            "default": {s.value: self._templates.get(s, {}) for s in InjectionStrategy},
             "custom": self._custom_templates,
         }

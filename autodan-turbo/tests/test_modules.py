@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agents.attacker import AttackerAgent
 from agents.base_agent import LLMProvider
-from agents.scorer import ScorerAgent
+from agents.scorer import ComplianceAgent
 from agents.summarizer import SummarizerAgent
 from agents.target import TargetAgent
 from core.embeddings import EmbeddingModel
@@ -36,7 +36,7 @@ class TestAttackGenerationModule:
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
-        scorer = ScorerAgent(
+        scorer = ComplianceAgent(
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
@@ -316,7 +316,7 @@ class TestModuleIntegration:
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
-        scorer = ScorerAgent(
+        scorer = ComplianceAgent(
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )

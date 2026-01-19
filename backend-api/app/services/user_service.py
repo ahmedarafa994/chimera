@@ -12,29 +12,23 @@ Uses the UserRepository for data access and integrates with AuthService
 for password hashing and JWT token generation.
 """
 
+import contextlib
 import logging
 import secrets
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import Role, TokenResponse, auth_service
-from app.core.exceptions import AuthenticationError, ValidationError
+from app.core.exceptions import ValidationError
 from app.db.models import User, UserRole
 from app.repositories.user_repository import (
     EmailAlreadyExistsError,
     InvalidTokenError,
-    UserNotFoundError,
-    UserRepository,
     UsernameAlreadyExistsError,
     get_user_repository,
 )
-from app.services.password_validator import (
-    PasswordValidationResult,
-    validate_password,
-)
+from app.services.password_validator import PasswordValidationResult, validate_password
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +43,8 @@ class RegistrationResult:
     """Result of user registration."""
 
     success: bool
-    user: Optional[User] = None
-    verification_token: Optional[str] = None
+    user: User | None = None
+    verification_token: str | None = None
     errors: list[str] = None
 
     def __post_init__(self):
@@ -63,9 +57,9 @@ class AuthenticationResult:
     """Result of user authentication."""
 
     success: bool
-    user: Optional[User] = None
-    tokens: Optional[TokenResponse] = None
-    error: Optional[str] = None
+    user: User | None = None
+    tokens: TokenResponse | None = None
+    error: str | None = None
     requires_verification: bool = False
 
 
@@ -74,8 +68,8 @@ class PasswordResetResult:
     """Result of password reset operation."""
 
     success: bool
-    reset_token: Optional[str] = None
-    error: Optional[str] = None
+    reset_token: str | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -83,8 +77,8 @@ class EmailVerificationResult:
     """Result of email verification operation."""
 
     success: bool
-    user: Optional[User] = None
-    error: Optional[str] = None
+    user: User | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -92,8 +86,8 @@ class PasswordChangeResult:
     """Result of password change operation."""
 
     success: bool
-    error: Optional[str] = None
-    validation_result: Optional[PasswordValidationResult] = None
+    error: str | None = None
+    validation_result: PasswordValidationResult | None = None
 
 
 # =============================================================================
@@ -272,45 +266,70 @@ class UserService:
             AuthenticationResult with tokens on success, error on failure
         """
         try:
-            # Find user by email or username
-            user = await self._repository.get_by_email_or_username(identifier)
+            with open("backend_debug.log", "a") as f:
+                f.write(f"DEBUG: authenticate_user called for {identifier}\n")
+        except Exception:
+            pass
 
-            if not user:
-                logger.info(f"Authentication failed: user not found - {identifier}")
-                return AuthenticationResult(
-                    success=False,
-                    error="Invalid credentials",
-                )
+        # Find user by email or username
+        user = await self._repository.get_by_email(identifier)
+        if not user:
+            user = await self._repository.get_by_username(identifier)
 
-            # Check if user is active
-            if not user.is_active:
-                logger.info(f"Authentication failed: user inactive - {identifier}")
-                return AuthenticationResult(
-                    success=False,
-                    error="Account is deactivated. Please contact support.",
-                )
+        if not user:
+            return AuthenticationResult(
+                success=False,
+                error="Invalid credentials",
+            )
 
-            # Verify password
-            if not auth_service.verify_password(password, user.hashed_password):
-                logger.info(f"Authentication failed: invalid password - {identifier}")
-                return AuthenticationResult(
-                    success=False,
-                    error="Invalid credentials",
-                )
+        try:
+            with open("backend_debug.log", "a") as f:
+                f.write(f"DEBUG: User found: {user.username}\n")
+        except Exception:
+            pass
 
-            # Check if email is verified
-            if not user.is_verified:
-                logger.info(f"Authentication failed: email not verified - {identifier}")
-                return AuthenticationResult(
-                    success=False,
-                    error="Email not verified. Please check your email for verification link.",
-                    requires_verification=True,
-                )
+        # Verify password
+        if not auth_service.verify_password(password, user.hashed_password):
+            logger.info(f"Authentication failed: invalid password - {identifier}")
+            return AuthenticationResult(
+                success=False,
+                error="Invalid credentials",
+            )
 
+        # Check if active
+        if not user.is_active:
+            logger.info(f"Authentication failed: user inactive - {identifier}")
+            return AuthenticationResult(
+                success=False,
+                error="Account is deactivated. Please contact support.",
+            )
+
+        # Check email verification
+        if not user.is_verified:
+            logger.info(f"Authentication failed: email not verified - {identifier}")
+            return AuthenticationResult(
+                success=False,
+                error="Email not verified. Please check your email for verification link.",
+                requires_verification=True,
+            )
+
+        try:
+            with open("backend_debug.log", "a") as f:
+                f.write(f"DEBUG: Password verified. Update last login: {update_last_login}\n")
+        except Exception:
+            pass
+
+        try:
             # Update last login timestamp
             if update_last_login:
+                with open("backend_debug.log", "a") as f:
+                    f.write("DEBUG: Calling repository.update_last_login\n")
                 await self._repository.update_last_login(user.id)
+                with open("backend_debug.log", "a") as f:
+                    f.write("DEBUG: Calling session.commit\n")
                 await self._session.commit()
+                with open("backend_debug.log", "a") as f:
+                    f.write("DEBUG: Commit successful\n")
 
             # Generate JWT tokens
             auth_role = _db_role_to_auth_role(user.role)
@@ -329,12 +348,18 @@ class UserService:
 
         except Exception as e:
             logger.error(f"Authentication failed with unexpected error: {e}", exc_info=True)
+            with open("backend_debug.log", "a") as f:
+                f.write(f"DEBUG: Error during auth: {e}\n")
+            # Attempt rollback
+            with contextlib.suppress(Exception):
+                await self._session.rollback()
+
             return AuthenticationResult(
                 success=False,
                 error="An unexpected error occurred during authentication",
             )
 
-    async def get_user_by_id(self, user_id: int) -> Optional[User]:
+    async def get_user_by_id(self, user_id: int) -> User | None:
         """
         Get user by ID.
 
@@ -346,7 +371,7 @@ class UserService:
         """
         return await self._repository.get_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_user_by_email(self, email: str) -> User | None:
         """
         Get user by email.
 
@@ -384,7 +409,7 @@ class UserService:
             )
 
         except InvalidTokenError:
-            logger.info(f"Email verification failed: invalid or expired token")
+            logger.info("Email verification failed: invalid or expired token")
             return EmailVerificationResult(
                 success=False,
                 error="Verification token is invalid or expired",
@@ -401,7 +426,7 @@ class UserService:
     async def resend_verification_email(
         self,
         email: str,
-    ) -> tuple[bool, Optional[str], Optional[str]]:
+    ) -> tuple[bool, str | None, str | None]:
         """
         Generate a new verification token for resending verification email.
 
@@ -655,7 +680,7 @@ class UserService:
         self,
         user_id: int,
         **kwargs,
-    ) -> Optional[User]:
+    ) -> User | None:
         """
         Update user profile fields.
 
@@ -788,8 +813,8 @@ class UserService:
     async def validate_password_strength(
         self,
         password: str,
-        email: Optional[str] = None,
-        username: Optional[str] = None,
+        email: str | None = None,
+        username: str | None = None,
     ) -> PasswordValidationResult:
         """
         Validate password strength without creating a user.

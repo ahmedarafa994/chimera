@@ -16,12 +16,11 @@ Reference: AutoDAN and HotFlip token perturbation techniques
 """
 
 import logging
-import math
 import random
-from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 
@@ -167,7 +166,7 @@ class GradientEstimator:
 
         for i in range(len(tokens)):
             # Remove token i
-            modified_tokens = tokens[:i] + tokens[i + 1:]
+            modified_tokens = tokens[:i] + tokens[i + 1 :]
             modified_loss = loss_fn(modified_tokens)
 
             # Importance = change in loss
@@ -190,7 +189,7 @@ class GradientEstimator:
 
         ∇f(x) ≈ (1/n) Σ [f(x + εu) - f(x - εu)] u / (2ε)
         """
-        base_loss = loss_fn(tokens)
+        loss_fn(tokens)
         importance = [0.0] * len(tokens)
 
         for _ in range(self.config.num_samples):
@@ -275,7 +274,11 @@ class GradientEstimator:
                 # Get similar tokens
                 neighbors = self.embedding.nearest_neighbors(tokens[i], k=5)
                 if neighbors:
-                    replacement, _ = self.rng.choice(neighbors) if self.rng.rand() > 0.5 else (tokens[i] + "s", 0.5)
+                    replacement, _ = (
+                        self.rng.choice(neighbors)
+                        if self.rng.rand() > 0.5
+                        else (tokens[i] + "s", 0.5)
+                    )
                     perturbed[i] = replacement
                 else:
                     perturbed[i] = tokens[i] + "s"
@@ -318,7 +321,9 @@ class GradientEstimator:
             # Character-level perturbation as proxy
             if len(tokens[position]) > 0:
                 perturbed_plus[position] = tokens[position] + "a"
-                perturbed_minus[position] = tokens[position][:-1] if len(tokens[position]) > 1 else tokens[position]
+                perturbed_minus[position] = (
+                    tokens[position][:-1] if len(tokens[position]) > 1 else tokens[position]
+                )
 
             loss_plus = loss_fn(perturbed_plus)
             loss_minus = loss_fn(perturbed_minus)
@@ -403,8 +408,7 @@ class GumbelSoftmaxSampler:
     def anneal_temperature(self) -> None:
         """Reduce temperature for annealing."""
         self.temperature = max(
-            self.config.temperature_min,
-            self.temperature * self.config.temperature_decay
+            self.config.temperature_min, self.temperature * self.config.temperature_decay
         )
 
     def _softmax(self, x: np.ndarray) -> np.ndarray:
@@ -454,10 +458,7 @@ class HotFlipAttack:
 
         # Get candidate tokens
         if candidates is None:
-            neighbors = self.embedding.nearest_neighbors(
-                current_token,
-                k=self.config.top_k_tokens
-            )
+            neighbors = self.embedding.nearest_neighbors(current_token, k=self.config.top_k_tokens)
             candidates = [t for t, _ in neighbors]
 
         # Add some random tokens for exploration
@@ -501,29 +502,21 @@ class HotFlipAttack:
             PerturbationResult with attacked text
         """
         tokens = text.split()
-        original_tokens = tokens.copy()
+        tokens.copy()
         modifications = []
 
         # Estimate token importance
-        importance = self.gradient_estimator.estimate_token_importance(
-            tokens, loss_fn
-        )
+        importance = self.gradient_estimator.estimate_token_importance(tokens, loss_fn)
 
         # Sort positions by importance
-        positions = sorted(
-            range(len(tokens)),
-            key=lambda i: importance[i],
-            reverse=True
-        )
+        positions = sorted(range(len(tokens)), key=lambda i: importance[i], reverse=True)
 
         # Attack most important positions
         for pos in positions[:max_perturbations]:
             if importance[pos] < self.config.importance_threshold:
                 continue
 
-            best_token, improvement = self.find_best_substitution(
-                tokens, pos, loss_fn
-            )
+            best_token, improvement = self.find_best_substitution(tokens, pos, loss_fn)
 
             if improvement > 0:
                 old_token = tokens[pos]
@@ -540,7 +533,7 @@ class HotFlipAttack:
             metadata={
                 "attack_type": "hotflip",
                 "num_substitutions": len(modifications),
-            }
+            },
         )
 
     def _generate_random_tokens(self, base_token: str, count: int) -> list[str]:
@@ -556,11 +549,11 @@ class HotFlipAttack:
                 variation = variation[:pos] + char + variation[pos:]
             elif op == "remove" and len(variation) > 2:
                 pos = random.randint(0, len(variation) - 1)
-                variation = variation[:pos] + variation[pos + 1:]
+                variation = variation[:pos] + variation[pos + 1 :]
             elif op == "replace" and len(variation) > 0:
                 pos = random.randint(0, len(variation) - 1)
                 char = chr(random.randint(97, 122))
-                variation = variation[:pos] + char + variation[pos + 1:]
+                variation = variation[:pos] + char + variation[pos + 1 :]
 
             if variation != base_token:
                 variations.append(variation)
@@ -628,7 +621,8 @@ class SemanticPerturbation:
             if neighbors:
                 # Filter by semantic distance
                 valid_neighbors = [
-                    (t, sim) for t, sim in neighbors
+                    (t, sim)
+                    for t, sim in neighbors
                     if sim >= (1 - self.config.max_semantic_distance)
                 ]
 
@@ -645,7 +639,7 @@ class SemanticPerturbation:
             tokens_modified=modifications,
             importance_scores=[],
             estimated_impact=len(modifications) * 0.1,
-            metadata={"substitution_type": "semantic"}
+            metadata={"substitution_type": "semantic"},
         )
 
     def paraphrase(
@@ -676,7 +670,7 @@ class SemanticPerturbation:
             tokens_modified=modifications,
             importance_scores=[],
             estimated_impact=len(modifications) * 0.2,
-            metadata={"paraphrase_style": style}
+            metadata={"paraphrase_style": style},
         )
 
 
@@ -696,27 +690,27 @@ class HomoglyphPerturbation:
 
         # Homoglyph mappings
         self.homoglyphs = {
-            'a': ['а', 'ɑ', 'α'],  # Latin a to Cyrillic а, etc.
-            'c': ['с', 'ϲ', 'ⅽ'],
-            'e': ['е', 'ε', 'ⅇ'],
-            'o': ['о', 'ο', 'ⲟ'],
-            'p': ['р', 'ρ'],
-            's': ['ѕ', 'ꜱ'],
-            'x': ['х', 'χ'],
-            'y': ['у', 'γ'],
-            'A': ['А', 'Α'],
-            'B': ['В', 'Β'],
-            'C': ['С', 'Ϲ'],
-            'E': ['Е', 'Ε'],
-            'H': ['Н', 'Η'],
-            'K': ['К', 'Κ'],
-            'M': ['М', 'Μ'],
-            'N': ['Ν'],
-            'O': ['О', 'Ο'],
-            'P': ['Р', 'Ρ'],
-            'T': ['Т', 'Τ'],
-            'X': ['Х', 'Χ'],
-            'Y': ['Υ'],
+            "a": ["а", "ɑ", "α"],  # Latin a to Cyrillic а, etc.
+            "c": ["с", "ϲ", "ⅽ"],
+            "e": ["е", "ε", "ⅇ"],
+            "o": ["о", "ο", "ⲟ"],
+            "p": ["р", "ρ"],
+            "s": ["ѕ", "ꜱ"],
+            "x": ["х", "χ"],
+            "y": ["у", "γ"],
+            "A": ["А", "Α"],
+            "B": ["В", "Β"],
+            "C": ["С", "Ϲ"],
+            "E": ["Е", "Ε"],
+            "H": ["Н", "Η"],
+            "K": ["К", "Κ"],
+            "M": ["М", "Μ"],
+            "N": ["Ν"],
+            "O": ["О", "Ο"],
+            "P": ["Р", "Ρ"],
+            "T": ["Т", "Τ"],
+            "X": ["Х", "Χ"],
+            "Y": ["Υ"],
         }
 
     def perturb(
@@ -731,10 +725,7 @@ class HomoglyphPerturbation:
         modifications = []
 
         # Find substitutable positions
-        substitutable = [
-            i for i, c in enumerate(chars)
-            if c in self.homoglyphs
-        ]
+        substitutable = [i for i, c in enumerate(chars) if c in self.homoglyphs]
 
         if not substitutable:
             return PerturbationResult(
@@ -764,7 +755,7 @@ class HomoglyphPerturbation:
             tokens_modified=modifications,
             importance_scores=[],
             estimated_impact=len(modifications) * 0.05,
-            metadata={"homoglyph_count": len(modifications)}
+            metadata={"homoglyph_count": len(modifications)},
         )
 
 
@@ -1002,16 +993,16 @@ class TokenPerturbationEngine:
 
 # Module exports
 __all__ = [
-    "TokenPerturbationEngine",
-    "TokenPerturbationConfig",
-    "PerturbationType",
-    "PerturbationResult",
-    "TokenInfo",
-    "HotFlipAttack",
-    "SemanticPerturbation",
-    "HomoglyphPerturbation",
-    "GumbelSoftmaxSampler",
-    "GradientEstimator",
     "GradientEstimationMethod",
+    "GradientEstimator",
+    "GumbelSoftmaxSampler",
+    "HomoglyphPerturbation",
+    "HotFlipAttack",
+    "PerturbationResult",
+    "PerturbationType",
+    "SemanticPerturbation",
     "TokenEmbedding",
+    "TokenInfo",
+    "TokenPerturbationConfig",
+    "TokenPerturbationEngine",
 ]

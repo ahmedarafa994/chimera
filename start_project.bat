@@ -71,20 +71,20 @@ if %ERRORLEVEL% EQU 0 (
     echo   [OK] Port 8001 is available
 )
 
-REM Check if port 3000 is in use
-netstat -ano | findstr ":3000.*LISTENING" >nul 2>&1
+REM Check if port 3001 is in use
+netstat -ano | findstr ":3001.*LISTENING" >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [WARNING] Port 3000 is already in use!
+    echo [WARNING] Port 3001 is already in use!
     echo          Frontend may already be running or another service is using this port.
     echo.
     set /p CONTINUE="Continue anyway? (y/n): "
     if /i not "!CONTINUE!"=="y" (
-        echo [INFO] Exiting. Please free port 3000 and try again.
+        echo [INFO] Exiting. Please free port 3001 and try again.
         pause
         exit /b 1
     )
 ) else (
-    echo   [OK] Port 3000 is available
+    echo   [OK] Port 3001 is available
 )
 echo.
 
@@ -141,7 +141,7 @@ REM Start Frontend Server
 REM ============================================================
 
 echo [STEP 4/5] Starting Frontend Server (Next.js)...
-echo [INFO] Frontend will run on http://localhost:3000
+echo [INFO] Frontend will run on http://localhost:3001
 echo.
 
 REM Start the frontend server in a new window
@@ -159,14 +159,14 @@ if %ELAPSED% GEQ %TIMEOUT% (
     echo.
     echo Possible issues:
     echo   - Missing Node.js dependencies: npm install
-    echo   - Port 3000 already in use
+    echo   - Port 3001 already in use
     echo   - Build errors in frontend code
     pause
     exit /b 1
 )
 
 REM Try to connect to frontend
-curl -s -o nul http://localhost:3000 2>nul
+curl -s -o nul http://localhost:3001 2>nul
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo   [OK] Frontend is ready!
@@ -196,14 +196,14 @@ echo   +------------------+---------------------------+--------+
 echo   ^| Service          ^| URL                       ^| Status ^|
 echo   +------------------+---------------------------+--------+
 echo   ^| Backend API      ^| http://localhost:8001     ^| [OK]   ^|
-echo   ^| Frontend UI      ^| http://localhost:3000     ^| [OK]   ^|
+echo   ^| Frontend UI      ^| http://localhost:3001     ^| [OK]   ^|
 echo   ^| API Docs         ^| http://localhost:8001/docs^| [OK]   ^|
 echo   +------------------+---------------------------+--------+
 echo.
 echo   Quick Links:
-echo     - Dashboard:     http://localhost:3000/dashboard
-echo     - Jailbreak:     http://localhost:3000/dashboard/jailbreak
-echo     - GPTFuzz:       http://localhost:3000/dashboard/gptfuzz
+echo     - Dashboard:     http://localhost:3001/dashboard
+echo     - Jailbreak:     http://localhost:3001/dashboard/jailbreak
+echo     - GPTFuzz:       http://localhost:3001/dashboard/gptfuzz
 echo     - Health Check:  http://localhost:8001/health
 echo.
 echo ========================================
@@ -215,7 +215,7 @@ echo.
 pause
 
 REM Open the dashboard in the default browser
-start http://localhost:3000/dashboard
+start http://localhost:3001/dashboard
 
 echo.
 echo [INFO] Browser opened. You can close this window.

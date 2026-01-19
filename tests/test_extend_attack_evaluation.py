@@ -7,35 +7,19 @@ Tests metrics from the paper:
 - Acc(A') ≈ Acc(A) - Accuracy preservation
 """
 
-
 import pytest
 
 from meta_prompter.attacks.extend_attack.evaluation import (
-    AccuracyEvaluator,
-    AttackBudgetCalculator,
-    ComparisonReporter,
-    CostEstimator,
-    EvaluationReporter,
-    MetricsCalculator,
-    ResourceTracker,
-)
+    AccuracyEvaluator, AttackBudgetCalculator, ComparisonReporter,
+    CostEstimator, EvaluationReporter, MetricsCalculator, ResourceTracker)
 from meta_prompter.attacks.extend_attack.evaluation.accuracy import (
-    BenchmarkAccuracyEvaluator,
-    CodeExecutionResult,
-    TestCase,
-)
+    BenchmarkAccuracyEvaluator, CodeExecutionResult, TestCase)
 from meta_prompter.attacks.extend_attack.evaluation.evaluator import (
-    EvaluatorConfig,
-    ExtendAttackEvaluator,
-    MockModelClient,
-)
+    EvaluatorConfig, ExtendAttackEvaluator, MockModelClient)
 from meta_prompter.attacks.extend_attack.evaluation.metrics import (
-    AttackEvaluationResult,
-    BenchmarkResults,
-    ResponseMetrics,
-    TokenCounter,
-)
-from meta_prompter.attacks.extend_attack.evaluation.reporters import ReportFormat
+    AttackEvaluationResult, BenchmarkResults, ResponseMetrics, TokenCounter)
+from meta_prompter.attacks.extend_attack.evaluation.reporters import \
+    ReportFormat
 
 # =============================================================================
 # Test Fixtures
@@ -805,6 +789,7 @@ class TestEvaluationReporter:
         )
 
         import json
+
         parsed = json.loads(report)
         assert isinstance(parsed, (dict, list))
 

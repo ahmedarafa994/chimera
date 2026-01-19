@@ -31,7 +31,7 @@ class TestHierarchicalSearch:
         # Fixed path to match router prefix "/autodan-advanced"
         response = client.post(
             "/api/v1/autodan-advanced/hierarchical-search",
-            json={"request": "Test harmful request", "population_size": 10, "generations": 5},
+            json={"request": "Test complex request", "population_size": 10, "generations": 5},
         )
         # Should not return 404
         assert response.status_code != 404
@@ -66,7 +66,7 @@ class TestGradientOptimization:
         # Fixed path to match router prefix "/autodan-gradient"
         response = client.post(
             "/api/v1/autodan-gradient/gradient-optimize",
-            json={"request": "Test harmful request", "initial_prompt": "Test initial prompt"},
+            json={"request": "Test complex request", "initial_prompt": "Test initial prompt"},
         )
         # Should not return 404
         assert response.status_code != 404
@@ -89,7 +89,7 @@ class TestEnsembleAttack:
         response = client.post(
             "/api/v1/autodan-gradient/ensemble-attack",
             json={
-                "request": "Test harmful request",
+                "request": "Test complex request",
                 "target_models": [
                     {"provider": "google", "model": "gemini-pro"},
                     {"provider": "openai", "model": "gpt-4"},

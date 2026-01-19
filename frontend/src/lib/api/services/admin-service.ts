@@ -1,11 +1,11 @@
 /**
  * Admin Service
- * 
+ *
  * Provides API methods for admin operations including data import,
  * statistics retrieval, and cache management.
  */
 
-import { enhancedApi } from '@/lib/api-enhanced';
+import { apiClient } from '../client';
 import type {
   AdminStats,
   ImportDataRequest,
@@ -14,7 +14,7 @@ import type {
   SystemHealth,
 } from '@/types/admin-types';
 
-const API_BASE = '/api/v1/admin';
+const API_BASE = '/admin';
 
 /**
  * Get admin API key from environment or storage
@@ -31,7 +31,7 @@ function getAdminApiKey(): string {
  */
 function getAuthHeaders(): Record<string, string> {
   const apiKey = getAdminApiKey();
-  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+  return apiKey ? { 'X-Admin-API-Key': apiKey } : {};
 }
 
 /**
@@ -42,75 +42,82 @@ export const adminService = {
    * Import data from various sources
    */
   async importData(request: ImportDataRequest): Promise<ImportDataResponse> {
-    return enhancedApi.post<ImportDataResponse>(
+    const response = await apiClient.post<ImportDataResponse>(
       `${API_BASE}/import-data`,
       request,
       { headers: getAuthHeaders() }
     );
+    return response.data;
   },
 
   /**
    * Get system statistics
    */
   async getStats(): Promise<AdminStats> {
-    return enhancedApi.get<AdminStats>(
+    const response = await apiClient.get<AdminStats>(
       `${API_BASE}/stats`,
       { headers: getAuthHeaders() }
     );
+    return response.data;
   },
 
   /**
    * Clear cache (all or specific type)
    */
   async clearCache(cacheType?: 'all' | 'models' | 'providers' | 'sessions'): Promise<{ success: boolean; message: string }> {
-    return enhancedApi.post<{ success: boolean; message: string }>(
+    const response = await apiClient.post<{ success: boolean; message: string }>(
       `${API_BASE}/clear-cache`,
       { cache_type: cacheType || 'all' },
       { headers: getAuthHeaders() }
     );
+    return response.data;
   },
 
   /**
    * Get cache statistics
    */
   async getCacheStats(): Promise<CacheStats> {
-    return enhancedApi.get<CacheStats>(
+    const response = await apiClient.get<CacheStats>(
       `${API_BASE}/cache-stats`,
       { headers: getAuthHeaders() }
     );
+    return response.data;
   },
 
   /**
    * Get system health status
    */
   async getSystemHealth(): Promise<SystemHealth> {
-    return enhancedApi.get<SystemHealth>(
+    const response = await apiClient.get<SystemHealth>(
       `${API_BASE}/health`,
       { headers: getAuthHeaders() }
     );
+    return response.data;
   },
 
   /**
    * Get import history
    */
   async getImportHistory(limit: number = 50): Promise<ImportDataResponse[]> {
-    return enhancedApi.get<ImportDataResponse[]>(
+    const response = await apiClient.get<ImportDataResponse[]>(
       `${API_BASE}/import-history`,
-      { 
+      {
         headers: getAuthHeaders(),
         params: { limit }
       }
     );
+    return response.data;
   },
 
   /**
    * Validate admin API key
    */
   async validateApiKey(apiKey: string): Promise<{ valid: boolean; permissions: string[] }> {
-    return enhancedApi.post<{ valid: boolean; permissions: string[] }>(
+    const response = await apiClient.post<{ valid: boolean; permissions: string[] }>(
       `${API_BASE}/validate-key`,
       { api_key: apiKey }
     );
+    return response.data;
   },
 
   /**

@@ -81,14 +81,14 @@ export type TelemetrySortField =
 /**
  * Sort direction type.
  */
-export type SortDirection = "asc" | "desc";
+export type TelemetrySortDirection = "asc" | "desc";
 
 /**
  * Combined sort configuration.
  */
 export interface TelemetrySortConfig {
   field: TelemetrySortField;
-  direction: SortDirection;
+  direction: TelemetrySortDirection;
 }
 
 /**
@@ -190,17 +190,17 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
 
 /** Default CSV columns for telemetry export */
 const DEFAULT_CSV_COLUMNS = [
-  { key: "id", header: "Event ID" },
-  { key: "sequence_number", header: "Sequence" },
-  { key: "created_at", header: "Timestamp", format: "datetime" as const },
-  { key: "technique_suite", header: "Technique" },
-  { key: "provider", header: "Provider" },
-  { key: "model", header: "Model" },
-  { key: "status", header: "Status" },
-  { key: "success_indicator", header: "Success" },
-  { key: "total_latency_ms", header: "Latency (ms)" },
-  { key: "total_tokens", header: "Total Tokens" },
-  { key: "potency_level", header: "Potency" },
+  { accessor: "id", header: "Event ID" },
+  { accessor: "sequence_number", header: "Sequence" },
+  { accessor: "created_at", header: "Timestamp", format: "datetime" as const },
+  { accessor: "technique_suite", header: "Technique" },
+  { accessor: "provider", header: "Provider" },
+  { accessor: "model", header: "Model" },
+  { accessor: "status", header: "Status" },
+  { accessor: "success_indicator", header: "Success" },
+  { accessor: "total_latency_ms", header: "Latency (ms)" },
+  { accessor: "total_tokens", header: "Total Tokens" },
+  { accessor: "potency_level", header: "Potency" },
 ];
 
 // =============================================================================

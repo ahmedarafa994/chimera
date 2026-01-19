@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agents.attacker import AttackerAgent
 from agents.base_agent import BaseLLMAgent, LLMProvider
-from agents.scorer import ScorerAgent
+from agents.scorer import ComplianceAgent
 from agents.summarizer import SummarizerAgent
 from agents.target import TargetAgent
 from core.models import Strategy
@@ -39,12 +39,12 @@ class TestBaseLLMAgent:
         assert LLMProvider.MOCK.value == "mock"
 
 
-class TestScorerAgent:
-    """Tests for ScorerAgent."""
+class TestComplianceAgent:
+    """Tests for ComplianceAgent."""
 
     def test_scorer_creation(self):
         """Test creating a scorer agent."""
-        scorer = ScorerAgent(
+        scorer = ComplianceAgent(
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
@@ -52,7 +52,7 @@ class TestScorerAgent:
 
     def test_score_parsing(self):
         """Test score parsing from various formats."""
-        scorer = ScorerAgent(
+        scorer = ComplianceAgent(
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
@@ -66,7 +66,7 @@ class TestScorerAgent:
 
     def test_score_clamping(self):
         """Test that scores are clamped to valid range."""
-        scorer = ScorerAgent(
+        scorer = ComplianceAgent(
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
@@ -78,7 +78,7 @@ class TestScorerAgent:
 
     def test_build_prompt(self):
         """Test building scorer prompt."""
-        scorer = ScorerAgent(
+        scorer = ComplianceAgent(
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
@@ -273,7 +273,7 @@ class TestAgentIntegration:
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )
-        scorer = ScorerAgent(
+        scorer = ComplianceAgent(
             provider=LLMProvider.MOCK,
             model_name="mock-model",
         )

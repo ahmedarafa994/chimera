@@ -440,8 +440,6 @@ export function useProviderSyncSafe(): ProviderSyncContextValue | null {
   return context ?? null;
 }
 
-export { useProviderSyncSafe };
-
 // =============================================================================
 // Selector Hooks
 // =============================================================================

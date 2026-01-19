@@ -1045,7 +1045,7 @@ class ModelSelectionWebSocket {
   private subscribers: Map<string, (selection: Selection) => void> = new Map();
   
   connect() {
-    this.ws = new WebSocket('ws://localhost:3000/ws/model-selection');
+    this.ws = new WebSocket('ws://localhost:3001/ws/model-selection');
     
     this.ws.onopen = () => {
       console.log('WebSocket connected');

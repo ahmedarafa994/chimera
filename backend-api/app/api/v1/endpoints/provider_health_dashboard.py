@@ -16,17 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import TokenPayload, get_current_user
-from app.domain.health_models import (
-    AlertSeverity,
-    HealthHistoryEntry,
-    ProviderHealthDashboardResponse,
-    ProviderHealthMetrics,
-    ProviderQuotaStatus,
-    QuotaDashboardResponse,
-    QuotaPeriod,
-    RateLimitDashboardResponse,
-    RateLimitMetrics,
-)
+from app.domain.health_models import AlertSeverity, QuotaPeriod
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +31,12 @@ router = APIRouter(prefix="/providers/health", tags=["provider-health", "dashboa
 class HealthDashboardResponse(BaseModel):
     """Full health dashboard response with all provider data."""
 
-    status: str = Field(..., description="Overall system health status (healthy/degraded/critical/unknown)")
-    providers: dict[str, Any] = Field(default_factory=dict, description="Health metrics per provider")
+    status: str = Field(
+        ..., description="Overall system health status (healthy/degraded/critical/unknown)"
+    )
+    providers: dict[str, Any] = Field(
+        default_factory=dict, description="Health metrics per provider"
+    )
     summary: dict[str, Any] = Field(default_factory=dict, description="Health summary statistics")
     alerts: list[dict[str, Any]] = Field(default_factory=list, description="Active health alerts")
     monitoring: dict[str, Any] = Field(default_factory=dict, description="Monitoring configuration")
@@ -52,7 +46,9 @@ class HealthDashboardResponse(BaseModel):
 class HealthMetricsResponse(BaseModel):
     """Real-time health metrics response."""
 
-    providers: dict[str, Any] = Field(default_factory=dict, description="Real-time metrics per provider")
+    providers: dict[str, Any] = Field(
+        default_factory=dict, description="Real-time metrics per provider"
+    )
     summary: dict[str, Any] = Field(default_factory=dict, description="Summary statistics")
     updated_at: str = Field(..., description="Metrics timestamp (ISO format)")
 
@@ -79,7 +75,9 @@ class QuotaDashboardDataResponse(BaseModel):
 class RateLimitDashboardDataResponse(BaseModel):
     """Rate limit dashboard data response."""
 
-    providers: dict[str, Any] = Field(default_factory=dict, description="Rate limit metrics per provider")
+    providers: dict[str, Any] = Field(
+        default_factory=dict, description="Rate limit metrics per provider"
+    )
     summary: dict[str, Any] = Field(default_factory=dict, description="Rate limit summary")
     updated_at: str = Field(..., description="Last update time (ISO format)")
 
@@ -92,7 +90,9 @@ class ProviderHealthDetailResponse(BaseModel):
     uptime: dict[str, Any] = Field(default_factory=dict, description="Uptime metrics")
     quota: dict[str, Any] | None = Field(default=None, description="Quota status")
     rate_limits: dict[str, Any] | None = Field(default=None, description="Rate limit metrics")
-    alerts: list[dict[str, Any]] = Field(default_factory=list, description="Provider-specific alerts")
+    alerts: list[dict[str, Any]] = Field(
+        default_factory=list, description="Provider-specific alerts"
+    )
     updated_at: str = Field(..., description="Last update time (ISO format)")
 
 
@@ -128,12 +128,14 @@ class AlertResolveResponse(BaseModel):
 def get_health_service():
     """Get the provider health monitoring service instance."""
     from app.services.provider_health_service import get_provider_health_service
+
     return get_provider_health_service()
 
 
 def get_quota_service():
     """Get the quota tracking service instance."""
     from app.services.quota_tracking_service import get_quota_tracking_service
+
     return get_quota_tracking_service()
 
 
@@ -141,6 +143,7 @@ def get_rate_limiter():
     """Get the model rate limiter instance."""
     try:
         from app.services.model_rate_limiter import ModelRateLimiter
+
         return ModelRateLimiter()
     except ImportError:
         return None
@@ -416,23 +419,73 @@ async def get_provider_health_detail(
         if uptime_metrics:
             uptime_data = {
                 "current_status": uptime_metrics.current_status.value,
-                "status_since": uptime_metrics.status_since.isoformat() if uptime_metrics.status_since else None,
-                "last_hour": {
-                    "uptime_percent": uptime_metrics.last_hour.uptime_percent if uptime_metrics.last_hour else None,
-                    "incident_count": uptime_metrics.last_hour.incident_count if uptime_metrics.last_hour else 0,
-                } if uptime_metrics.last_hour else None,
-                "last_24_hours": {
-                    "uptime_percent": uptime_metrics.last_24_hours.uptime_percent if uptime_metrics.last_24_hours else None,
-                    "incident_count": uptime_metrics.last_24_hours.incident_count if uptime_metrics.last_24_hours else 0,
-                } if uptime_metrics.last_24_hours else None,
-                "last_7_days": {
-                    "uptime_percent": uptime_metrics.last_7_days.uptime_percent if uptime_metrics.last_7_days else None,
-                    "incident_count": uptime_metrics.last_7_days.incident_count if uptime_metrics.last_7_days else 0,
-                } if uptime_metrics.last_7_days else None,
-                "last_30_days": {
-                    "uptime_percent": uptime_metrics.last_30_days.uptime_percent if uptime_metrics.last_30_days else None,
-                    "incident_count": uptime_metrics.last_30_days.incident_count if uptime_metrics.last_30_days else 0,
-                } if uptime_metrics.last_30_days else None,
+                "status_since": (
+                    uptime_metrics.status_since.isoformat() if uptime_metrics.status_since else None
+                ),
+                "last_hour": (
+                    {
+                        "uptime_percent": (
+                            uptime_metrics.last_hour.uptime_percent
+                            if uptime_metrics.last_hour
+                            else None
+                        ),
+                        "incident_count": (
+                            uptime_metrics.last_hour.incident_count
+                            if uptime_metrics.last_hour
+                            else 0
+                        ),
+                    }
+                    if uptime_metrics.last_hour
+                    else None
+                ),
+                "last_24_hours": (
+                    {
+                        "uptime_percent": (
+                            uptime_metrics.last_24_hours.uptime_percent
+                            if uptime_metrics.last_24_hours
+                            else None
+                        ),
+                        "incident_count": (
+                            uptime_metrics.last_24_hours.incident_count
+                            if uptime_metrics.last_24_hours
+                            else 0
+                        ),
+                    }
+                    if uptime_metrics.last_24_hours
+                    else None
+                ),
+                "last_7_days": (
+                    {
+                        "uptime_percent": (
+                            uptime_metrics.last_7_days.uptime_percent
+                            if uptime_metrics.last_7_days
+                            else None
+                        ),
+                        "incident_count": (
+                            uptime_metrics.last_7_days.incident_count
+                            if uptime_metrics.last_7_days
+                            else 0
+                        ),
+                    }
+                    if uptime_metrics.last_7_days
+                    else None
+                ),
+                "last_30_days": (
+                    {
+                        "uptime_percent": (
+                            uptime_metrics.last_30_days.uptime_percent
+                            if uptime_metrics.last_30_days
+                            else None
+                        ),
+                        "incident_count": (
+                            uptime_metrics.last_30_days.incident_count
+                            if uptime_metrics.last_30_days
+                            else 0
+                        ),
+                    }
+                    if uptime_metrics.last_30_days
+                    else None
+                ),
                 "all_time_uptime_percent": uptime_metrics.all_time_uptime_percent,
                 "total_incidents": uptime_metrics.total_incidents,
             }
@@ -721,7 +774,9 @@ async def get_rate_limits_dashboard(
 
         for provider_id, provider_data in dashboard_data.get("providers", {}).items():
             requests = provider_data.get("requests", {})
-            rate_limited_count = requests.get("rate_limited_requests", 0) if isinstance(requests, dict) else 0
+            rate_limited_count = (
+                requests.get("rate_limited_requests", 0) if isinstance(requests, dict) else 0
+            )
 
             # Create rate limit metrics from health data
             providers_rate_limits[provider_id] = {

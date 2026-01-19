@@ -210,7 +210,7 @@ PROMETHEUS_PUSHGATEWAY_URL=http://localhost:9091
 ENABLE_PROMETHEUS_METRICS=true
 
 # Grafana
-GRAFANA_URL=http://localhost:3000
+GRAFANA_URL=http://localhost:3001
 GRAFANA_API_KEY=<your-api-key>
 
 # ============================================================================
@@ -497,7 +497,7 @@ The `docker-compose.pipeline.yml` file already includes Grafana configuration:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: redis-datasource
-      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_SERVER_ROOT_URL: http://localhost:3001
     volumes:
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
@@ -517,7 +517,7 @@ sudo systemctl start grafana-server
 sudo systemctl enable grafana-server
 
 # Access Grafana
-open http://localhost:3000
+open http://localhost:3001
 # Default credentials: admin / admin
 ```
 
@@ -525,7 +525,7 @@ open http://localhost:3000
 
 1. **Login and Change Password**
 
-   - Navigate to `http://localhost:3000`
+   - Navigate to `http://localhost:3001`
    - Login with `admin` / `admin`
    - Change password on first login
 
@@ -836,13 +836,13 @@ Severity: Critical
 grafana-cli admin dashboards list
 
 # Export dashboard as JSON
-curl -u admin:admin http://localhost:3000/api/dashboards/uid/chimera_pipeline_overview
+curl -u admin:admin http://localhost:3001/api/dashboards/uid/chimera_pipeline_overview
 
 # Import dashboard via API
 curl -X POST -H "Content-Type: application/json" \
   -u admin:admin \
   -d @dashboard.json \
-  http://localhost:3000/api/dashboards/import
+  http://localhost:3001/api/dashboards/import
 
 # Restart Grafana
 sudo systemctl restart grafana-server

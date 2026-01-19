@@ -38,12 +38,16 @@ from app.core.logging import logger
 class DeltaTableConfig(BaseModel):
     """Configuration for Delta Lake tables."""
 
-    storage_path: str = Field(default="/data/chimera-lake", description="Root path for Delta tables")
+    storage_path: str = Field(
+        default="/data/chimera-lake", description="Root path for Delta tables"
+    )
     enable_time_travel: bool = Field(default=True, description="Enable time travel queries")
     retention_days: int = Field(default=30, ge=1, description="Days to retain historical versions")
     enable_auto_optimize: bool = Field(default=True, description="Auto optimize on write")
     enable_auto_compact: bool = Field(default=True, description="Auto compact small files")
-    target_file_size_mb: int = Field(default=512, ge=128, le=2048, description="Target file size for optimization")
+    target_file_size_mb: int = Field(
+        default=512, ge=128, le=2048, description="Target file size for optimization"
+    )
     z_order_columns: dict[str, list[str]] = Field(
         default_factory=dict, description="Z-order columns per table for clustering"
     )
@@ -144,9 +148,7 @@ class DeltaLakeManager:
 
         return table_path
 
-    def _merge_into_table(
-        self, df: "DataFrame", table_name: str, merge_keys: list[str]
-    ) -> str:
+    def _merge_into_table(self, df: "DataFrame", table_name: str, merge_keys: list[str]) -> str:
         """
         Perform upsert operation using Delta merge.
 
@@ -292,9 +294,7 @@ class DeltaLakeManager:
         delta_table.vacuum(retention_hours)
         logger.info(f"Completed vacuum for {table_name}")
 
-    def get_table_history(
-        self, table_name: str, limit: int = 10
-    ) -> pd.DataFrame:
+    def get_table_history(self, table_name: str, limit: int = 10) -> pd.DataFrame:
         """
         Get Delta table commit history.
 

@@ -1022,17 +1022,13 @@ export function FilterBar({
   const {
     data: techniqueBreakdown,
     isLoading: techniquesLoading,
-  } = useTechniqueBreakdown(campaignId || "", {
-    enabled: !!campaignId && !customTechniqueOptions,
-  });
+  } = useTechniqueBreakdown(campaignId || "", !!campaignId && !customTechniqueOptions);
 
   // Fetch provider options from API if campaignId provided and no custom options
   const {
     data: providerBreakdown,
     isLoading: providersLoading,
-  } = useProviderBreakdown(campaignId || "", {
-    enabled: !!campaignId && !customProviderOptions,
-  });
+  } = useProviderBreakdown(campaignId || "", !!campaignId && !customProviderOptions);
 
   // Build technique options
   const techniqueOptions = React.useMemo(() => {

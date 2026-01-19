@@ -226,7 +226,7 @@ class ModelSyncService:
                 )
 
             # Update user session
-            async with db_manager.get_session() as db_session:
+            async with db_manager.session() as db_session:
                 success = await update_user_session_model(db_session, session_id, request.model_id)
 
                 if success:
@@ -270,7 +270,7 @@ class ModelSyncService:
     async def get_user_model(self, session_id: str) -> ModelInfo | None:
         """Get the currently selected model for a user session."""
         try:
-            async with db_manager.get_session() as db_session:
+            async with db_manager.session() as db_session:
                 session = await get_user_session(db_session, session_id)
                 if session and session.selected_model_id:
                     # Find model info
@@ -340,7 +340,7 @@ class ModelSyncService:
                 )
 
             # Update in database
-            async with db_manager.get_session() as db_session:
+            async with db_manager.session() as db_session:
                 cache_entry = await db_session.get(ModelAvailabilityCache, model_id)
                 if cache_entry:
                     cache_entry.is_available = is_available
@@ -365,7 +365,7 @@ class ModelSyncService:
     async def cleanup_expired_data(self):
         """Clean up expired sessions and cache data."""
         try:
-            async with db_manager.get_session() as db_session:
+            async with db_manager.session() as db_session:
                 await cleanup_expired_sessions(db_session)
 
             logger.info("Cleaned up expired model sync data")

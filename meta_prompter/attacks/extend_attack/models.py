@@ -203,9 +203,8 @@ class AttackMetrics:
         Returns:
             Latency(Y') / Latency(Y) if both latencies are available.
         """
-        if self.original_latency and self.adversarial_latency:
-            if self.original_latency > 0:
-                return self.adversarial_latency / self.original_latency
+        if self.original_latency and self.adversarial_latency and self.original_latency > 0:
+            return self.adversarial_latency / self.original_latency
         return None
 
     @property

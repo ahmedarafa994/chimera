@@ -10,12 +10,11 @@ Provides a single interface that combines:
 This is the main entry point for the integrated system.
 """
 
-import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
-from ..interfaces import IPromptGenerator, IOptimizer, PromptCandidate
+from ..interfaces import IOptimizer, IPromptGenerator, PromptCandidate
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +28,9 @@ class ChimeraAutoDanConfig:
     enable_narrative_contexts: bool = True
     enable_semantic_obfuscation: bool = True
     persona_depth: int = 2  # Recursive persona nesting depth
-    scenario_types: list[str] = field(default_factory=lambda: [
-        "sandbox", "fiction", "debugging", "dream", "academic"
-    ])
+    scenario_types: list[str] = field(
+        default_factory=lambda: ["sandbox", "fiction", "debugging", "dream", "academic"]
+    )
 
     # AutoDAN settings
     enable_genetic_optimization: bool = True
@@ -43,8 +42,8 @@ class ChimeraAutoDanConfig:
 
     # Combined settings
     optimization_mode: str = "turbo"  # 'turbo', 'enhanced', 'heuristic', 'auto'
-    model_name: Optional[str] = None
-    provider: Optional[str] = None
+    model_name: str | None = None
+    provider: str | None = None
 
     # Fitness weights
     jailbreak_weight: float = 0.4
@@ -78,7 +77,7 @@ class ChimeraAutoDAN:
         ... )
     """
 
-    def __init__(self, config: Optional[ChimeraAutoDanConfig] = None):
+    def __init__(self, config: ChimeraAutoDanConfig | None = None):
         """
         Initialize the unified system.
 
@@ -88,8 +87,8 @@ class ChimeraAutoDAN:
         self.config = config or ChimeraAutoDanConfig()
 
         # Lazy-loaded components
-        self._chimera_engine: Optional[IPromptGenerator] = None
-        self._autodan_wrapper: Optional[IOptimizer] = None
+        self._chimera_engine: IPromptGenerator | None = None
+        self._autodan_wrapper: IOptimizer | None = None
         self._chimera_mutator = None
         self._fitness_evaluator = None
 
@@ -97,6 +96,7 @@ class ChimeraAutoDAN:
         """Lazy load ChimeraEngine."""
         if self._chimera_engine is None:
             from ..chimera.engine import ChimeraEngine
+
             self._chimera_engine = ChimeraEngine()
         return self._chimera_engine
 
@@ -104,12 +104,13 @@ class ChimeraAutoDAN:
         """Lazy load AutoDanWrapper."""
         if self._autodan_wrapper is None:
             from ..autodan_wrapper import AutoDanWrapper
+
             self._autodan_wrapper = AutoDanWrapper(
                 mode=self.config.optimization_mode,
                 model_name=self.config.model_name,
                 provider=self.config.provider,
                 population_size=self.config.population_size,
-                generations=self.config.generations
+                generations=self.config.generations,
             )
         return self._autodan_wrapper
 
@@ -117,10 +118,11 @@ class ChimeraAutoDAN:
         """Lazy load ChimeraMutator."""
         if self._chimera_mutator is None:
             from .mutator import ChimeraMutator
+
             self._chimera_mutator = ChimeraMutator(
                 persona_depth=self.config.persona_depth,
                 scenario_types=self.config.scenario_types,
-                mutation_rate=self.config.mutation_rate
+                mutation_rate=self.config.mutation_rate,
             )
         return self._chimera_mutator
 
@@ -128,11 +130,12 @@ class ChimeraAutoDAN:
         """Lazy load UnifiedFitnessEvaluator."""
         if self._fitness_evaluator is None:
             from .fitness import UnifiedFitnessEvaluator
+
             self._fitness_evaluator = UnifiedFitnessEvaluator(
                 jailbreak_weight=self.config.jailbreak_weight,
                 stealth_weight=self.config.stealth_weight,
                 fluency_weight=self.config.fluency_weight,
-                semantic_weight=self.config.semantic_weight
+                semantic_weight=self.config.semantic_weight,
             )
         return self._fitness_evaluator
 
@@ -141,7 +144,7 @@ class ChimeraAutoDAN:
         objective: str,
         candidate_count: int = 5,
         target_model: Any = None,
-        max_iterations: int = 3
+        max_iterations: int = 3,
     ) -> list[PromptCandidate]:
         """
         Generate optimized adversarial prompts using combined Chimera+AutoDAN.
@@ -172,9 +175,7 @@ class ChimeraAutoDAN:
             logger.info(f"Chimera generated {len(initial_candidates)} initial candidates")
         else:
             # No Chimera - start with raw objective
-            initial_candidates = [
-                PromptCandidate(prompt_text=objective, metadata={})
-            ]
+            initial_candidates = [PromptCandidate(prompt_text=objective, metadata={})]
 
         # Phase 2: Optimize with AutoDAN (if enabled)
         if self.config.enable_genetic_optimization:
@@ -191,13 +192,12 @@ class ChimeraAutoDAN:
                         optimized_text = await autodan.optimize(
                             prompt=candidate.prompt_text,
                             target_model=target_model,
-                            max_steps=self.config.generations
+                            max_steps=self.config.generations,
                         )
 
                         # Evaluate fitness
                         fitness = fitness_eval.evaluate(
-                            original=objective,
-                            transformed=optimized_text
+                            original=objective, transformed=optimized_text
                         )
 
                         # Create optimized candidate
@@ -207,8 +207,8 @@ class ChimeraAutoDAN:
                                 **candidate.metadata,
                                 "optimization_iteration": iteration + 1,
                                 "fitness_score": fitness.total_score,
-                                "fitness_breakdown": fitness.breakdown
-                            }
+                                "fitness_breakdown": fitness.breakdown,
+                            },
                         )
                         optimized_candidates.append(optimized_candidate)
 
@@ -225,19 +225,13 @@ class ChimeraAutoDAN:
         # Phase 3: Sort by fitness and deduplicate
         unique_candidates = self._deduplicate_candidates(all_candidates)
         sorted_candidates = sorted(
-            unique_candidates,
-            key=lambda c: c.metadata.get("fitness_score", 0.0),
-            reverse=True
+            unique_candidates, key=lambda c: c.metadata.get("fitness_score", 0.0), reverse=True
         )
 
         logger.info(f"Returning {len(sorted_candidates)} optimized candidates")
         return sorted_candidates[:candidate_count]
 
-    async def mutate_with_chimera(
-        self,
-        prompt: str,
-        mutation_count: int = 3
-    ) -> list[str]:
+    async def mutate_with_chimera(self, prompt: str, mutation_count: int = 3) -> list[str]:
         """
         Apply Chimera-based mutations to a prompt.
 
@@ -261,10 +255,7 @@ class ChimeraAutoDAN:
         return mutations
 
     async def optimize_personas(
-        self,
-        objective: str,
-        persona_count: int = 5,
-        generations: int = 3
+        self, objective: str, persona_count: int = 5, generations: int = 3
     ) -> list[dict]:
         """
         Use AutoDAN genetic algorithms to optimize persona configurations.
@@ -285,16 +276,13 @@ class ChimeraAutoDAN:
         optimizer = AutoDANPersonaOptimizer(
             population_size=persona_count,
             generations=generations,
-            mutation_rate=self.config.mutation_rate
+            mutation_rate=self.config.mutation_rate,
         )
 
         optimized_personas = await optimizer.optimize(objective)
         return optimized_personas
 
-    def _deduplicate_candidates(
-        self,
-        candidates: list[PromptCandidate]
-    ) -> list[PromptCandidate]:
+    def _deduplicate_candidates(self, candidates: list[PromptCandidate]) -> list[PromptCandidate]:
         """Remove duplicate candidates based on prompt text similarity."""
         seen_texts = set()
         unique = []
@@ -309,10 +297,7 @@ class ChimeraAutoDAN:
         return unique
 
     async def run_campaign(
-        self,
-        objective: str,
-        phases: int = 3,
-        candidates_per_phase: int = 5
+        self, objective: str, phases: int = 3, candidates_per_phase: int = 5
     ) -> dict:
         """
         Run a full campaign combining Chimera generation and AutoDAN optimization.
@@ -336,7 +321,7 @@ class ChimeraAutoDAN:
             "phases": [],
             "best_candidates": [],
             "total_candidates_evaluated": 0,
-            "objective": objective
+            "objective": objective,
         }
 
         best_from_previous = []
@@ -351,7 +336,7 @@ class ChimeraAutoDAN:
                 enable_genetic_optimization=True,
                 generations=self.config.generations + phase,  # More generations each phase
                 mutation_rate=self.config.mutation_rate * (1 + phase * 0.1),
-                persona_depth=min(self.config.persona_depth + phase, 4)
+                persona_depth=min(self.config.persona_depth + phase, 4),
             )
 
             # Create phase-specific unified instance
@@ -366,9 +351,7 @@ class ChimeraAutoDAN:
             phase_candidates = []
             for seed in seed_objectives:
                 candidates = await phase_unified.generate_optimized(
-                    seed,
-                    candidate_count=candidates_per_phase,
-                    max_iterations=2
+                    seed, candidate_count=candidates_per_phase, max_iterations=2
                 )
                 phase_candidates.extend(candidates)
 
@@ -376,21 +359,24 @@ class ChimeraAutoDAN:
             phase_result = {
                 "phase": phase + 1,
                 "candidates_generated": len(phase_candidates),
-                "best_fitness": max(
-                    c.metadata.get("fitness_score", 0) for c in phase_candidates
-                ) if phase_candidates else 0,
-                "avg_fitness": sum(
-                    c.metadata.get("fitness_score", 0) for c in phase_candidates
-                ) / len(phase_candidates) if phase_candidates else 0
+                "best_fitness": (
+                    max(c.metadata.get("fitness_score", 0) for c in phase_candidates)
+                    if phase_candidates
+                    else 0
+                ),
+                "avg_fitness": (
+                    sum(c.metadata.get("fitness_score", 0) for c in phase_candidates)
+                    / len(phase_candidates)
+                    if phase_candidates
+                    else 0
+                ),
             }
             campaign_results["phases"].append(phase_result)
             campaign_results["total_candidates_evaluated"] += len(phase_candidates)
 
             # Select best for next phase
             sorted_phase = sorted(
-                phase_candidates,
-                key=lambda c: c.metadata.get("fitness_score", 0),
-                reverse=True
+                phase_candidates, key=lambda c: c.metadata.get("fitness_score", 0), reverse=True
             )
             best_from_previous = sorted_phase[:3]
             campaign_results["best_candidates"].extend(best_from_previous)

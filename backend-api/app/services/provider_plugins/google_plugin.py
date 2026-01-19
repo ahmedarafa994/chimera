@@ -53,8 +53,7 @@ class GooglePlugin(BaseProviderPlugin):
     @property
     def base_url(self) -> str:
         return os.environ.get(
-            "DIRECT_GOOGLE_BASE_URL",
-            "https://generativelanguage.googleapis.com/v1beta"
+            "DIRECT_GOOGLE_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
         )
 
     @property
@@ -102,8 +101,11 @@ class GooglePlugin(BaseProviderPlugin):
                 input_price_per_1k=0.00125,
                 output_price_per_1k=0.005,
                 capabilities=[
-                    "chat", "vision", "function_calling",
-                    "reasoning", "image_generation"
+                    "chat",
+                    "vision",
+                    "function_calling",
+                    "reasoning",
+                    "image_generation",
                 ],
             ),
             # Gemini 2.5 Models
@@ -257,9 +259,7 @@ class GooglePlugin(BaseProviderPlugin):
             client = genai.Client(api_key=api_key)
 
             # Fetch models in a thread to avoid event loop issues
-            response = await asyncio.to_thread(
-                client.models.list
-            )
+            response = await asyncio.to_thread(client.models.list)
 
             # Filter to Gemini models and map to ModelInfo
             static_models = {m.model_id: m for m in self._get_static_models()}
@@ -277,19 +277,17 @@ class GooglePlugin(BaseProviderPlugin):
                     models.append(static_models[model_id])
                 else:
                     # Create basic info from API response
-                    models.append(ModelInfo(
-                        model_id=model_id,
-                        provider_id="google",
-                        display_name=model.display_name or model_id,
-                        context_window=getattr(
-                            model, "input_token_limit", None
-                        ),
-                        max_output_tokens=getattr(
-                            model, "output_token_limit", None
-                        ),
-                        supports_streaming=True,
-                        capabilities=["chat"],
-                    ))
+                    models.append(
+                        ModelInfo(
+                            model_id=model_id,
+                            provider_id="google",
+                            display_name=model.display_name or model_id,
+                            context_window=getattr(model, "input_token_limit", None),
+                            max_output_tokens=getattr(model, "output_token_limit", None),
+                            supports_streaming=True,
+                            capabilities=["chat"],
+                        )
+                    )
 
             # Add any static models not in API response
             api_model_ids = {m.model_id for m in models}
@@ -342,10 +340,7 @@ class GooglePlugin(BaseProviderPlugin):
                 # Gemini uses "user" and "model" roles
                 if role == "assistant":
                     role = "model"
-                contents.append({
-                    "role": role,
-                    "parts": [{"text": msg.get("content", "")}]
-                })
+                contents.append({"role": role, "parts": [{"text": msg.get("content", "")}]})
         else:
             contents = request.prompt
 
@@ -382,15 +377,11 @@ class GooglePlugin(BaseProviderPlugin):
             usage = None
             if hasattr(response, "usage_metadata") and response.usage_metadata:
                 usage = {
-                    "prompt_tokens": getattr(
-                        response.usage_metadata, "prompt_token_count", 0
-                    ),
+                    "prompt_tokens": getattr(response.usage_metadata, "prompt_token_count", 0),
                     "completion_tokens": getattr(
                         response.usage_metadata, "candidates_token_count", 0
                     ),
-                    "total_tokens": getattr(
-                        response.usage_metadata, "total_token_count", 0
-                    ),
+                    "total_tokens": getattr(response.usage_metadata, "total_token_count", 0),
                 }
 
             return GenerationResponse(
@@ -398,9 +389,7 @@ class GooglePlugin(BaseProviderPlugin):
                 model_used=model,
                 provider="google",
                 finish_reason=getattr(
-                    response.candidates[0] if response.candidates else None,
-                    "finish_reason",
-                    None
+                    response.candidates[0] if response.candidates else None, "finish_reason", None
                 ),
                 usage=usage,
                 latency_ms=latency_ms,
@@ -430,10 +419,7 @@ class GooglePlugin(BaseProviderPlugin):
                 role = msg.get("role", "user")
                 if role == "assistant":
                     role = "model"
-                contents.append({
-                    "role": role,
-                    "parts": [{"text": msg.get("content", "")}]
-                })
+                contents.append({"role": role, "parts": [{"text": msg.get("content", "")}]})
         else:
             contents = request.prompt
 

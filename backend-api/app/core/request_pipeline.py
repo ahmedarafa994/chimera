@@ -245,8 +245,7 @@ class RequestPipeline:
         self._stages.sort()  # Sort by order
 
         logger.debug(
-            f"Added stage '{stage.name}' to pipeline '{self._name}' "
-            f"at order {stage.order}"
+            f"Added stage '{stage.name}' to pipeline '{self._name}' " f"at order {stage.order}"
         )
 
     def remove_stage(self, name: str) -> bool:
@@ -317,8 +316,7 @@ class RequestPipeline:
             context = AIRequestContext()
 
         logger.debug(
-            f"Starting pipeline '{self._name}' execution, "
-            f"request_id={context.request_id}"
+            f"Starting pipeline '{self._name}' execution, " f"request_id={context.request_id}"
         )
 
         result = None
@@ -326,11 +324,13 @@ class RequestPipeline:
 
         for stage in self._stages:
             if not stage.enabled:
-                context.add_stage_result(StageResult(
-                    stage_name=stage.name,
-                    status=PipelineStageStatus.SKIPPED,
-                    duration_ms=0,
-                ))
+                context.add_stage_result(
+                    StageResult(
+                        stage_name=stage.name,
+                        status=PipelineStageStatus.SKIPPED,
+                        duration_ms=0,
+                    )
+                )
                 continue
 
             stage_start = time.perf_counter()
@@ -343,37 +343,38 @@ class RequestPipeline:
 
                 duration_ms = (time.perf_counter() - stage_start) * 1000
 
-                context.add_stage_result(StageResult(
-                    stage_name=stage.name,
-                    status=PipelineStageStatus.COMPLETED,
-                    duration_ms=duration_ms,
-                    output=stage_output,
-                ))
+                context.add_stage_result(
+                    StageResult(
+                        stage_name=stage.name,
+                        status=PipelineStageStatus.COMPLETED,
+                        duration_ms=duration_ms,
+                        output=stage_output,
+                    )
+                )
 
                 # Store last successful output as result
                 if stage_output is not None:
                     result = stage_output
 
-                logger.debug(
-                    f"Stage '{stage.name}' completed in {duration_ms:.2f}ms"
-                )
+                logger.debug(f"Stage '{stage.name}' completed in {duration_ms:.2f}ms")
 
             except Exception as e:
                 duration_ms = (time.perf_counter() - stage_start) * 1000
                 error_msg = str(e)
 
-                context.add_stage_result(StageResult(
-                    stage_name=stage.name,
-                    status=PipelineStageStatus.FAILED,
-                    duration_ms=duration_ms,
-                    error=error_msg,
-                ))
+                context.add_stage_result(
+                    StageResult(
+                        stage_name=stage.name,
+                        status=PipelineStageStatus.FAILED,
+                        duration_ms=duration_ms,
+                        error=error_msg,
+                    )
+                )
 
                 context.add_error(f"Stage '{stage.name}' failed: {error_msg}")
 
                 logger.warning(
-                    f"Stage '{stage.name}' failed after {duration_ms:.2f}ms: "
-                    f"{error_msg}"
+                    f"Stage '{stage.name}' failed after {duration_ms:.2f}ms: " f"{error_msg}"
                 )
 
                 if stage.required:
@@ -467,10 +468,7 @@ class PipelineRegistry:
 
     def get_all_status(self) -> dict[str, dict[str, Any]]:
         """Get status of all registered pipelines."""
-        return {
-            name: pipeline.get_pipeline_status()
-            for name, pipeline in self._pipelines.items()
-        }
+        return {name: pipeline.get_pipeline_status() for name, pipeline in self._pipelines.items()}
 
 
 # Global pipeline registry
@@ -538,40 +536,50 @@ def create_default_ai_pipeline() -> RequestPipeline:
         pass
 
     # Add stages
-    pipeline.add_stage(PipelineStage(
-        name="validation",
-        handler=validation_stage,
-        order=10,
-        required=True,
-    ))
+    pipeline.add_stage(
+        PipelineStage(
+            name="validation",
+            handler=validation_stage,
+            order=10,
+            required=True,
+        )
+    )
 
-    pipeline.add_stage(PipelineStage(
-        name="provider_selection",
-        handler=provider_selection_stage,
-        order=20,
-        required=True,
-    ))
+    pipeline.add_stage(
+        PipelineStage(
+            name="provider_selection",
+            handler=provider_selection_stage,
+            order=20,
+            required=True,
+        )
+    )
 
-    pipeline.add_stage(PipelineStage(
-        name="rate_limit",
-        handler=rate_limit_stage,
-        order=30,
-        required=False,  # Don't fail on rate limit check errors
-    ))
+    pipeline.add_stage(
+        PipelineStage(
+            name="rate_limit",
+            handler=rate_limit_stage,
+            order=30,
+            required=False,  # Don't fail on rate limit check errors
+        )
+    )
 
-    pipeline.add_stage(PipelineStage(
-        name="fallback_setup",
-        handler=fallback_setup_stage,
-        order=40,
-        required=False,
-    ))
+    pipeline.add_stage(
+        PipelineStage(
+            name="fallback_setup",
+            handler=fallback_setup_stage,
+            order=40,
+            required=False,
+        )
+    )
 
-    pipeline.add_stage(PipelineStage(
-        name="cost_tracking",
-        handler=cost_tracking_stage,
-        order=200,
-        required=False,  # Cost tracking failure shouldn't fail request
-    ))
+    pipeline.add_stage(
+        PipelineStage(
+            name="cost_tracking",
+            handler=cost_tracking_stage,
+            order=200,
+            required=False,  # Cost tracking failure shouldn't fail request
+        )
+    )
 
     return pipeline
 

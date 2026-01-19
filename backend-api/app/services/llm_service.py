@@ -67,9 +67,8 @@ def _get_provider_resolution_service():
     Returns None if resolution service is not available.
     """
     try:
-        from app.services.provider_resolution_service import (
-            get_provider_resolution_service,
-        )
+        from app.services.provider_resolution_service import get_provider_resolution_service
+
         return get_provider_resolution_service()
     except Exception as e:
         logger.debug(f"ProviderResolutionService not available: {e}")
@@ -83,9 +82,8 @@ def _get_global_model_selection_state():
     Returns None if selection state service is not available.
     """
     try:
-        from app.services.global_model_selection_state import (
-            GlobalModelSelectionState,
-        )
+        from app.services.global_model_selection_state import GlobalModelSelectionState
+
         return GlobalModelSelectionState()
     except Exception as e:
         logger.debug(f"GlobalModelSelectionState not available: {e}")
@@ -100,6 +98,7 @@ def _get_config_manager():
     """
     try:
         from app.core.service_registry import get_ai_config_manager
+
         config_manager = get_ai_config_manager()
         if config_manager.is_loaded():
             return config_manager
@@ -116,6 +115,7 @@ def _get_api_key_failover_service():
     """
     try:
         from app.services.api_key_failover_service import get_api_key_failover_service
+
         return get_api_key_failover_service()
     except Exception as e:
         logger.debug(f"ApiKeyFailoverService not available: {e}")
@@ -130,6 +130,7 @@ def _get_provider_health_service():
     """
     try:
         from app.services.provider_health_service import get_provider_health_service
+
         return get_provider_health_service()
     except Exception as e:
         logger.debug(f"ProviderHealthService not available: {e}")
@@ -144,10 +145,12 @@ def _get_quota_tracking_service():
     """
     try:
         from app.services.quota_tracking_service import get_quota_tracking_service
+
         return get_quota_tracking_service()
     except Exception as e:
         logger.debug(f"QuotaTrackingService not available: {e}")
     return None
+
 
 # =============================================================================
 # LLM Response Cache (PERF-048)
@@ -360,9 +363,7 @@ class LLMService:
         # Cache for pre-created circuit breaker wrappers (PERF-018)
         self._circuit_breaker_cache: dict[str, Callable] = {}
         # Response cache (PERF-048)
-        self._response_cache = LLMResponseCache(
-            max_size=500, default_ttl=self._CACHE_TTL
-        )
+        self._response_cache = LLMResponseCache(max_size=500, default_ttl=self._CACHE_TTL)
         # Request deduplicator (PERF-049)
         self._deduplicator = RequestDeduplicator()
         # Custom failover chains
@@ -516,9 +517,9 @@ class LLMService:
 
         # Filter to only registered providers
         return [
-            p for p in chain
-            if p in self._providers or
-            self._resolve_registered_provider_name(p) in self._providers
+            p
+            for p in chain
+            if p in self._providers or self._resolve_registered_provider_name(p) in self._providers
         ]
 
     def get_failover_chain(self, chain_name: str) -> list[str]:
@@ -545,9 +546,7 @@ class LLMService:
         # Fallback to default chains
         return self._DEFAULT_FAILOVER_CHAIN.get(chain_name, [])
 
-    def set_failover_chain(
-        self, provider: str, failover_providers: list[str]
-    ) -> None:
+    def set_failover_chain(self, provider: str, failover_providers: list[str]) -> None:
         """
         Set a custom failover chain for a provider.
 
@@ -590,9 +589,7 @@ class LLMService:
                 if context and context.selection:
                     provider = context.selection.provider
                     model_id = context.selection.model_id
-                    logger.debug(
-                        f"Using context selection: {provider}/{model_id}"
-                    )
+                    logger.debug(f"Using context selection: {provider}/{model_id}")
                     return (provider, model_id)
             except Exception as e:
                 logger.debug(f"Request context not available: {e}")
@@ -608,37 +605,29 @@ class LLMService:
                     user_id=fallback_user_id,
                     use_cache=True,
                 )
-                logger.debug(
-                    f"Using resolved selection: {provider}/{model}"
-                )
+                logger.debug(f"Using resolved selection: {provider}/{model}")
                 return (provider, model)
             except Exception as e:
-                logger.warning(
-                    f"ProviderResolutionService.resolve() failed: {e}"
-                )
+                logger.warning(f"ProviderResolutionService.resolve() failed: {e}")
 
         # Try model_selection_service directly as fallback
         try:
             from app.services.model_selection_service import model_selection_service
+
             selection = model_selection_service.get_selection()
             if selection:
                 logger.debug(
-                    f"Using model_selection_service: "
-                    f"{selection.provider}/{selection.model}"
+                    f"Using model_selection_service: " f"{selection.provider}/{selection.model}"
                 )
                 return (selection.provider, selection.model)
         except Exception as e:
             logger.debug(f"model_selection_service not available: {e}")
 
         # Fall back to configured defaults
-        default_provider = self._default_provider or getattr(
-            settings, "AI_PROVIDER", "openai"
-        )
+        default_provider = self._default_provider or getattr(settings, "AI_PROVIDER", "openai")
         default_model = getattr(settings, "DEFAULT_MODEL_ID", "gpt-4")
 
-        logger.debug(
-            f"Using default selection: {default_provider}/{default_model}"
-        )
+        logger.debug(f"Using default selection: {default_provider}/{default_model}")
         return (default_provider, default_model)
 
     async def _resolve_provider_for_request(
@@ -663,10 +652,7 @@ class LLMService:
         if request.provider:
             provider_name = request.provider.value
             model_name = request.model
-            logger.debug(
-                f"Using explicit request selection: "
-                f"{provider_name}/{model_name}"
-            )
+            logger.debug(f"Using explicit request selection: " f"{provider_name}/{model_name}")
             return (provider_name, model_name)
 
         # Check if global selection should be used
@@ -674,9 +660,7 @@ class LLMService:
             try:
                 provider, model = await self.get_current_selection_from_context()
                 if provider:
-                    logger.debug(
-                        f"Using global selection: {provider}/{model}"
-                    )
+                    logger.debug(f"Using global selection: {provider}/{model}")
                     return (provider, model)
             except Exception as e:
                 logger.warning(f"Global selection resolution failed: {e}")
@@ -684,9 +668,7 @@ class LLMService:
         # Fall back to default
         default_provider = self._default_provider
         default_model = request.model
-        logger.debug(
-            f"Using default provider: {default_provider}/{default_model}"
-        )
+        logger.debug(f"Using default provider: {default_provider}/{default_model}")
         return (default_provider, default_model)
 
     async def generate_text(self, request: PromptRequest) -> PromptResponse:
@@ -710,9 +692,7 @@ class LLMService:
         request, uses ProviderResolutionService to resolve from context.
         """
         # Resolve provider from request or global selection
-        provider_name, model_name = await self._resolve_provider_for_request(
-            request
-        )
+        provider_name, model_name = await self._resolve_provider_for_request(request)
 
         # Update request with resolved model if not already set
         if model_name and not request.model:
@@ -738,16 +718,12 @@ class LLMService:
         if cache_enabled and request.config and request.config.temperature == 0:
             cached_response = await self._response_cache.get(request)
             if cached_response:
-                logger.debug(
-                    f"Returning cached LLM response for: {circuit_name}"
-                )
+                logger.debug(f"Returning cached LLM response for: {circuit_name}")
                 return cached_response
 
         # PERF-049: Deduplicate concurrent identical requests
         async def execute_request():
-            return await self._execute_with_failover(
-                request, circuit_name, provider
-            )
+            return await self._execute_with_failover(request, circuit_name, provider)
 
         response = await self._deduplicator.deduplicate(request, execute_request)
 
@@ -776,9 +752,7 @@ class LLMService:
                 return
 
             input_tokens = response.usage_metadata.get("prompt_token_count", 0)
-            output_tokens = response.usage_metadata.get(
-                "candidates_token_count", 0
-            )
+            output_tokens = response.usage_metadata.get("candidates_token_count", 0)
 
             cost = config_manager.calculate_cost(
                 provider_name,
@@ -789,18 +763,17 @@ class LLMService:
 
             if cost > 0:
                 self._total_cost += cost
-                self._request_costs.append({
-                    "provider": provider_name,
-                    "model": model_id,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost": cost,
-                    "timestamp": time.time(),
-                })
-                logger.debug(
-                    f"Request cost: ${cost:.6f} "
-                    f"(total: ${self._total_cost:.4f})"
+                self._request_costs.append(
+                    {
+                        "provider": provider_name,
+                        "model": model_id,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "cost": cost,
+                        "timestamp": time.time(),
+                    }
                 )
+                logger.debug(f"Request cost: ${cost:.6f} " f"(total: ${self._total_cost:.4f})")
         except Exception as e:
             logger.debug(f"Cost tracking failed: {e}")
 
@@ -866,15 +839,18 @@ class LLMService:
             # Record success with services
             latency_ms = (time.time() - start_time) * 1000
             await self._record_request_success(
-                primary_provider, current_key_id, latency_ms, response,
-                failover_service, health_service, quota_service
+                primary_provider,
+                current_key_id,
+                latency_ms,
+                response,
+                failover_service,
+                health_service,
+                quota_service,
             )
 
             # Cache successful response (only for deterministic requests)
             cache_enabled = self._CACHE_ENABLED
-            is_deterministic = (
-                request.config and request.config.temperature == 0
-            )
+            is_deterministic = request.config and request.config.temperature == 0
             if cache_enabled and is_deterministic:
                 await self._response_cache.set(request, response)
             return response
@@ -882,8 +858,7 @@ class LLMService:
         except CircuitBreakerOpen as e:
             last_error = e
             logger.warning(
-                f"Circuit breaker open for provider '{e.name}'. "
-                f"Attempting failover..."
+                f"Circuit breaker open for provider '{e.name}'. " f"Attempting failover..."
             )
 
             # Record failure with health service
@@ -909,18 +884,14 @@ class LLMService:
                     try:
                         fallback_provider = self.get_provider(fallback_name)
                         # Create a modified request for the fallback provider
-                        fallback_request = self._create_fallback_request(
-                            request, fallback_name
-                        )
+                        fallback_request = self._create_fallback_request(request, fallback_name)
 
                         response = await self._call_with_circuit_breaker(
                             fallback_name, fallback_provider.generate, fallback_request
                         )
 
                         # Mark response as served by failover
-                        logger.info(
-                            f"Failover successful: {primary_provider} -> {fallback_name}"
-                        )
+                        logger.info(f"Failover successful: {primary_provider} -> {fallback_name}")
                         failover_info = {
                             "original_provider": primary_provider,
                             "fallback_provider": fallback_name,
@@ -930,15 +901,11 @@ class LLMService:
                         return response
 
                     except CircuitBreakerOpen as cb_err:
-                        logger.warning(
-                            f"Failover provider '{fallback_name}' also has open circuit"
-                        )
+                        logger.warning(f"Failover provider '{fallback_name}' also has open circuit")
                         last_error = cb_err
                         continue
                     except Exception as fallback_err:
-                        logger.warning(
-                            f"Failover to '{fallback_name}' failed: {fallback_err}"
-                        )
+                        logger.warning(f"Failover to '{fallback_name}' failed: {fallback_err}")
                         last_error = fallback_err
                         continue
 
@@ -1035,14 +1002,10 @@ class LLMService:
                         return response
 
                     except Exception as retry_error:
-                        logger.warning(
-                            f"Request failed even with backup key: {retry_error}"
-                        )
+                        logger.warning(f"Request failed even with backup key: {retry_error}")
                         # Continue to raise the original error
                 else:
-                    logger.warning(
-                        f"No backup API key available for {primary_provider}"
-                    )
+                    logger.warning(f"No backup API key available for {primary_provider}")
 
             # Re-raise the original error
             raise
@@ -1152,9 +1115,7 @@ class LLMService:
             skip_validation=original.skip_validation,
         )
 
-    async def _call_with_circuit_breaker(
-        self, provider_name: str, func, *args, **kwargs
-    ):
+    async def _call_with_circuit_breaker(self, provider_name: str, func, *args, **kwargs):
         """Wrap provider calls with circuit breaker protection (PERF-021).
 
         Uses pre-created circuit breaker wrappers to avoid decorator
@@ -1328,11 +1289,11 @@ class LLMService:
         available_models = provider_models.get(
             resolved,
             provider_models.get(
-                "google"
-                if resolved == "gemini"
-                else "gemini"
-                if resolved == "google"
-                else resolved,
+                (
+                    "google"
+                    if resolved == "gemini"
+                    else "gemini" if resolved == "google" else resolved
+                ),
                 [],
             ),
         )
@@ -1365,9 +1326,7 @@ class LLMService:
             "default_provider": self._default_provider,
             "circuit_breakers": list(self._circuit_breaker_cache.keys()),
             "failover_enabled": self._FAILOVER_ENABLED,
-            "failover_chains": {
-                p: self._get_failover_providers(p) for p in self._providers
-            },
+            "failover_chains": {p: self._get_failover_providers(p) for p in self._providers},
             "cost_tracking": {
                 "total_cost": self._total_cost,
                 "request_count": len(self._request_costs),
@@ -1411,9 +1370,7 @@ class LLMService:
             try:
                 provider_config = config_manager.get_provider(resolved)
                 if provider_config and not provider_config.enabled:
-                    logger.warning(
-                        f"Provider '{resolved}' is disabled in config"
-                    )
+                    logger.warning(f"Provider '{resolved}' is disabled in config")
             except Exception:
                 pass
 
@@ -1449,9 +1406,7 @@ class LLMService:
     def enable_global_selection(self, enabled: bool = True) -> None:
         """Enable or disable global model selection integration."""
         self._use_global_selection = enabled
-        logger.info(
-            f"Global model selection {'enabled' if enabled else 'disabled'}"
-        )
+        logger.info(f"Global model selection {'enabled' if enabled else 'disabled'}")
 
     def enable_api_key_failover(self, enabled: bool = True) -> None:
         """
@@ -1464,9 +1419,7 @@ class LLMService:
             enabled: Whether API key failover should be enabled
         """
         self._api_key_failover_enabled = enabled
-        logger.info(
-            f"API key failover {'enabled' if enabled else 'disabled'}"
-        )
+        logger.info(f"API key failover {'enabled' if enabled else 'disabled'}")
 
     def get_last_failover_info(self) -> dict[str, Any]:
         """

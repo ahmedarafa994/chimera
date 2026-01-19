@@ -581,7 +581,7 @@ class EnhancedOrchestratorAgent(BaseAgent):
                 confidence=message.payload.get(
                     "confidence_score", message.payload.get("confidence", 0.0)
                 ),
-                harmful_categories=message.payload.get("harmful_content_detected", []),
+                complex_categories=message.payload.get("complex_content_detected", []),
                 technique_used=message.payload.get("technique_used", ""),
                 technique_effectiveness=message.payload.get("technique_effectiveness", 0.0),
                 recommendations=message.payload.get("recommendations", []),
@@ -795,11 +795,16 @@ class EnhancedOrchestratorAgent(BaseAgent):
                 stuck_threshold = timedelta(seconds=self.config.orchestrator.job_timeout)
 
                 for job_id, job in list(self._jobs.items()):
-                    if job.state not in [
-                        WorkflowState.COMPLETED,
-                        WorkflowState.FAILED,
-                        WorkflowState.CANCELLED,
-                    ] and job.started_at and now - job.started_at > stuck_threshold:
+                    if (
+                        job.state
+                        not in [
+                            WorkflowState.COMPLETED,
+                            WorkflowState.FAILED,
+                            WorkflowState.CANCELLED,
+                        ]
+                        and job.started_at
+                        and now - job.started_at > stuck_threshold
+                    ):
                         logger.warning(f"Job {job_id} appears stuck, marking as failed")
                         await self._fail_job(job, "Job timeout exceeded")
 
@@ -820,11 +825,16 @@ class EnhancedOrchestratorAgent(BaseAgent):
                 # Remove old completed/failed jobs
                 jobs_to_remove = []
                 for job_id, job in self._jobs.items():
-                    if job.state in [
-                        WorkflowState.COMPLETED,
-                        WorkflowState.FAILED,
-                        WorkflowState.CANCELLED,
-                    ] and job.completed_at and now - job.completed_at > retention_period:
+                    if (
+                        job.state
+                        in [
+                            WorkflowState.COMPLETED,
+                            WorkflowState.FAILED,
+                            WorkflowState.CANCELLED,
+                        ]
+                        and job.completed_at
+                        and now - job.completed_at > retention_period
+                    ):
                         jobs_to_remove.append(job_id)
 
                 for job_id in jobs_to_remove:

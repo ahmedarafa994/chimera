@@ -28,11 +28,7 @@ from meta_prompter.attacks.extend_attack.config import (
     get_benchmark_config,
     list_available_benchmarks,
 )
-from meta_prompter.attacks.extend_attack.n_notes import (
-    N_NOTE_TEMPLATES,
-    NNoteVariant,
-    get_n_note,
-)
+from meta_prompter.attacks.extend_attack.n_notes import N_NOTE_TEMPLATES, NNoteVariant, get_n_note
 
 # Model pricing per 1M tokens (approximate for resource calculations)
 MODEL_PRICING: dict[str, dict[str, float]] = {
@@ -134,7 +130,9 @@ class ExtendAttackService:
             .with_ratio(obfuscation_ratio)
             .with_strategy(strategy)
             .with_n_note(n_note)
-            .with_seed(seed) if seed else ExtendAttackBuilder()
+            .with_seed(seed)
+            if seed
+            else ExtendAttackBuilder()
             .with_ratio(obfuscation_ratio)
             .with_strategy(strategy)
             .with_n_note(n_note)
@@ -324,15 +322,17 @@ class ExtendAttackService:
         for name in list_available_benchmarks():
             try:
                 config = get_benchmark_config(name)
-                configs.append({
-                    "name": config.name,
-                    "description": config.description,
-                    "selection_strategy": config.selection_rules.strategy.value,
-                    "preserve_structure": config.selection_rules.preserve_structure,
-                    "default_rho": config.default_rho,
-                    "model_specific_rho": config.model_specific_rho,
-                    "recommended_n_note": config.recommended_n_note.value,
-                })
+                configs.append(
+                    {
+                        "name": config.name,
+                        "description": config.description,
+                        "selection_strategy": config.selection_rules.strategy.value,
+                        "preserve_structure": config.selection_rules.preserve_structure,
+                        "default_rho": config.default_rho,
+                        "model_specific_rho": config.model_specific_rho,
+                        "recommended_n_note": config.recommended_n_note.value,
+                    }
+                )
             except Exception:
                 continue
         return configs

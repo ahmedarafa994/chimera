@@ -33,11 +33,7 @@ from .models import (
     OverthinkStats,
     ReasoningModel,
 )
-from .reasoning_scorer import (
-    AmplificationAnalyzer,
-    CostEstimator,
-    ReasoningTokenScorer,
-)
+from .reasoning_scorer import AmplificationAnalyzer, CostEstimator, ReasoningTokenScorer
 
 logger = logging.getLogger(__name__)
 
@@ -77,19 +73,13 @@ class OverthinkEngine:
         self.mousetrap_engine = mousetrap_engine
 
         # Initialize components
-        self._decoy_generator = DecoyProblemGenerator(
-            self.config.decoy_config
-        )
-        self._context_injector = ContextInjector(
-            self.config.injection_config
-        )
+        self._decoy_generator = DecoyProblemGenerator(self.config.decoy_config)
+        self._context_injector = ContextInjector(self.config.injection_config)
         self._scorer = ReasoningTokenScorer(
             self.config.scoring_config,
             llm_client,
         )
-        self._optimizer = ICLGeneticOptimizer(
-            self.config.icl_config
-        )
+        self._optimizer = ICLGeneticOptimizer(self.config.icl_config)
         self._analyzer = AmplificationAnalyzer()
         self._cost_estimator = CostEstimator()
 
@@ -130,26 +120,21 @@ class OverthinkEngine:
         attack_id = str(uuid.uuid4())[:12]
 
         logger.info(
-            f"Starting OVERTHINK attack {attack_id} "
-            f"with technique {request.technique.value}"
+            f"Starting OVERTHINK attack {attack_id} " f"with technique {request.technique.value}"
         )
 
         try:
             # Get technique handler
             handler = self._technique_handlers.get(request.technique)
             if not handler:
-                raise ValueError(
-                    f"Unknown technique: {request.technique}"
-                )
+                raise ValueError(f"Unknown technique: {request.technique}")
 
             # Execute attack
             result = await handler(request)
 
             # Score the result
             if self.llm_client:
-                token_metrics, cost_metrics = await self._scorer.score(
-                    result, request.target_model
-                )
+                token_metrics, cost_metrics = await self._scorer.score(result, request.target_model)
                 result.token_metrics = token_metrics
                 result.cost_metrics = cost_metrics
 
@@ -171,7 +156,8 @@ class OverthinkEngine:
             logger.info(
                 f"Attack {attack_id} completed - "
                 f"amplification: {result.token_metrics.amplification_factor:.2f}x"
-                if result.token_metrics else "Attack completed"
+                if result.token_metrics
+                else "Attack completed"
             )
 
             return result
@@ -431,12 +417,10 @@ class OverthinkEngine:
 
         if best_config:
             # Use learned configuration
-            decoy_types = [DecoyType(dt) for dt in best_config.get(
-                "decoy_types", ["logic", "math"]
-            )]
-            strategy = InjectionStrategy(best_config.get(
-                "injection_strategy", "hybrid"
-            ))
+            decoy_types = [
+                DecoyType(dt) for dt in best_config.get("decoy_types", ["logic", "math"])
+            ]
+            strategy = InjectionStrategy(best_config.get("injection_strategy", "hybrid"))
             params = best_config.get("params", {})
             num_decoys = params.get("num_decoys", request.num_decoys)
         else:
@@ -446,9 +430,7 @@ class OverthinkEngine:
             num_decoys = request.num_decoys
 
         # Generate ICL prefix from examples
-        icl_prefix = self._optimizer.get_icl_prompt_prefix(
-            technique=AttackTechnique.ICL_OPTIMIZED
-        )
+        icl_prefix = self._optimizer.get_icl_prompt_prefix(technique=AttackTechnique.ICL_OPTIMIZED)
 
         decoys = self._decoy_generator.generate_batch(
             decoy_types,
@@ -488,10 +470,7 @@ class OverthinkEngine:
     ) -> OverthinkResult:
         """Execute Mousetrap-enhanced attack with chaotic reasoning."""
         if not self.mousetrap_engine:
-            logger.warning(
-                "Mousetrap engine not available, "
-                "falling back to hybrid attack"
-            )
+            logger.warning("Mousetrap engine not available, " "falling back to hybrid attack")
             return await self._attack_hybrid_decoy(request)
 
         # Generate decoys
@@ -501,9 +480,7 @@ class OverthinkEngine:
         )
 
         # Apply Mousetrap chaotic reasoning
-        mousetrap_result = await self._apply_mousetrap_chaos(
-            request.prompt, decoys
-        )
+        mousetrap_result = await self._apply_mousetrap_chaos(request.prompt, decoys)
 
         # Inject with chaotic elements
         injected = self._context_injector.inject(
@@ -644,17 +621,12 @@ class OverthinkEngine:
         return {
             "length": len(prompt),
             "is_question": "?" in prompt,
-            "is_code": any(
-                ind in prompt
-                for ind in ["```", "def ", "function ", "class "]
-            ),
+            "is_code": any(ind in prompt for ind in ["```", "def ", "function ", "class "]),
             "is_math": any(
-                word in prompt.lower()
-                for word in ["calculate", "compute", "solve", "equation"]
+                word in prompt.lower() for word in ["calculate", "compute", "solve", "equation"]
             ),
             "is_logic": any(
-                word in prompt.lower()
-                for word in ["if", "then", "therefore", "because", "implies"]
+                word in prompt.lower() for word in ["if", "then", "therefore", "because", "implies"]
             ),
             "complexity": self._estimate_complexity(prompt),
         }
@@ -711,12 +683,8 @@ class OverthinkEngine:
             self._stats.failed_attacks += 1
 
         if result.token_metrics:
-            self._stats.total_reasoning_tokens += (
-                result.token_metrics.reasoning_tokens
-            )
-            self._stats.total_baseline_tokens += (
-                result.token_metrics.baseline_tokens
-            )
+            self._stats.total_reasoning_tokens += result.token_metrics.reasoning_tokens
+            self._stats.total_baseline_tokens += result.token_metrics.baseline_tokens
 
             # Update averages
             count = self._stats.successful_attacks
@@ -778,9 +746,7 @@ class OverthinkEngine:
             generation=0,
         )
 
-        self._optimizer.initialize_population(
-            seed_individuals=[seed]
-        )
+        self._optimizer.initialize_population(seed_individuals=[seed])
 
         # Define fitness function
         async def evaluate_individual(
@@ -839,7 +805,8 @@ class OverthinkEngine:
             "failed_attacks": self._stats.failed_attacks,
             "success_rate": (
                 self._stats.successful_attacks / self._stats.total_attacks
-                if self._stats.total_attacks > 0 else 0.0
+                if self._stats.total_attacks > 0
+                else 0.0
             ),
             "average_amplification": self._stats.average_amplification,
             "max_amplification": self._stats.max_amplification,
@@ -919,20 +886,12 @@ class OverthinkEngine:
             self._stats.total_attacks = stats.get("total_attacks", 0)
             self._stats.successful_attacks = stats.get("successful_attacks", 0)
             self._stats.failed_attacks = stats.get("failed_attacks", 0)
-            self._stats.average_amplification = stats.get(
-                "average_amplification", 0.0
-            )
+            self._stats.average_amplification = stats.get("average_amplification", 0.0)
             self._stats.max_amplification = stats.get("max_amplification", 0.0)
-            self._stats.total_reasoning_tokens = stats.get(
-                "total_reasoning_tokens", 0
-            )
-            self._stats.total_baseline_tokens = stats.get(
-                "total_baseline_tokens", 0
-            )
+            self._stats.total_reasoning_tokens = stats.get("total_reasoning_tokens", 0)
+            self._stats.total_baseline_tokens = stats.get("total_baseline_tokens", 0)
             self._stats.total_cost = stats.get("total_cost", 0.0)
-            self._stats.attacks_by_technique = stats.get(
-                "attacks_by_technique", {}
-            )
+            self._stats.attacks_by_technique = stats.get("attacks_by_technique", {})
 
         if "optimizer_state" in state:
             self._optimizer.load_state(state["optimizer_state"])

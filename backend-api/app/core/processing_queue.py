@@ -72,12 +72,8 @@ class QueuedTask:
             "priority": self.priority,
             "status": self.status.value,
             "created_at": self.created_at.isoformat(),
-            "started_at": (
-                self.started_at.isoformat() if self.started_at else None
-            ),
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
+            "started_at": (self.started_at.isoformat() if self.started_at else None),
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
             "error": self.error,
         }
 
@@ -263,8 +259,7 @@ class ProviderBoundQueue:
             self._stats["total_enqueued"] += 1
 
             logger.debug(
-                f"Enqueued task {task_id} for provider {bound_provider} "
-                f"(priority={priority})"
+                f"Enqueued task {task_id} for provider {bound_provider} " f"(priority={priority})"
             )
 
             return task_id
@@ -279,10 +274,7 @@ class ProviderBoundQueue:
         """Ensure workers are running for a provider."""
         async with self._lock:
             # Clean up completed workers
-            self._workers[provider] = [
-                w for w in self._workers[provider]
-                if not w.done()
-            ]
+            self._workers[provider] = [w for w in self._workers[provider] if not w.done()]
 
             # Start workers if needed
             while len(self._workers[provider]) < self._max_workers:
@@ -337,9 +329,7 @@ class ProviderBoundQueue:
             self._stats["total_completed"] += 1
 
             duration_ms = (time.perf_counter() - start_time) * 1000
-            logger.debug(
-                f"Task {task.task_id} completed in {duration_ms:.2f}ms"
-            )
+            logger.debug(f"Task {task.task_id} completed in {duration_ms:.2f}ms")
 
         except Exception as e:
             # Mark failed
@@ -475,9 +465,8 @@ class ProviderBoundQueue:
                 "total_completed": self._stats["total_completed"],
                 "total_failed": self._stats["total_failed"],
                 "success_rate": (
-                    self._stats["total_completed"] /
-                    max(1, self._stats["total_completed"] +
-                        self._stats["total_failed"])
+                    self._stats["total_completed"]
+                    / max(1, self._stats["total_completed"] + self._stats["total_failed"])
                 ),
             },
         }
@@ -517,7 +506,7 @@ class ProviderBoundQueue:
             Result from processed task or None if no tasks
         """
         # Find a task to process
-        for provider, queue in self._queues.items():
+        for _provider, queue in self._queues.items():
             if not queue.empty():
                 try:
                     task = queue.get_nowait()
@@ -546,15 +535,18 @@ class ProviderBoundQueue:
 
         task_ids_to_remove = []
         for task_id, task in self._tasks.items():
-            if task.status in (
-                TaskStatus.COMPLETED,
-                TaskStatus.FAILED,
-                TaskStatus.CANCELLED,
+            if (
+                task.status
+                in (
+                    TaskStatus.COMPLETED,
+                    TaskStatus.FAILED,
+                    TaskStatus.CANCELLED,
+                )
+                and task.completed_at
             ):
-                if task.completed_at:
-                    age = (cutoff - task.completed_at).total_seconds()
-                    if age > max_age_seconds:
-                        task_ids_to_remove.append(task_id)
+                age = (cutoff - task.completed_at).total_seconds()
+                if age > max_age_seconds:
+                    task_ids_to_remove.append(task_id)
 
         for task_id in task_ids_to_remove:
             del self._tasks[task_id]

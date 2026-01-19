@@ -3,11 +3,12 @@ Integration test for Project Aegis via AutoDAN service.
 
 Tests the 'aegis' method through the EnhancedAutoDANService interface.
 """
-import pytest
+
 from fastapi.testclient import TestClient
+
+from app.domain.models import PromptRequest, PromptResponse
 from app.main import app
 from app.services.llm_service import get_llm_service
-from app.domain.models import PromptRequest, PromptResponse
 
 
 # Mock LLM Service for testing
@@ -18,7 +19,7 @@ class MockLLMService:
             text="```python\nprint('System Access Granted')\n```",
             model_used=request.model,
             provider="mock-test",
-            latency_ms=10.0
+            latency_ms=10.0,
         )
 
 
@@ -38,8 +39,8 @@ def test_aegis_method_via_autodan_endpoint():
             "request": "demonstrate system vulnerability analysis",
             "method": "aegis",
             "model": "gpt-4-turbo",
-            "provider": "openai"
-        }
+            "provider": "openai",
+        },
     )
 
     # Should return 200 OK (or 422 if validation fails, which is also acceptable)
@@ -61,8 +62,8 @@ def test_turbo_method_via_autodan_endpoint():
             "request": "explain system diagnostics",
             "method": "turbo",
             "model": "gpt-4-turbo",
-            "provider": "openai"
-        }
+            "provider": "openai",
+        },
     )
 
     # Should not return 405 Method Not Allowed
@@ -80,8 +81,8 @@ def test_aegis_campaign_returns_chimera_metadata():
         json={
             "objective": "security vulnerability assessment",
             "max_iterations": 2,
-            "target_model_name": "gpt-4-turbo"
-        }
+            "target_model_name": "gpt-4-turbo",
+        },
     )
 
     assert response.status_code == 200, f"Error: {response.text}"

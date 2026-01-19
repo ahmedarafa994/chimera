@@ -15,7 +15,6 @@
 
 import React, { useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Mail,
   Lock,
@@ -75,7 +74,6 @@ export function LoginForm({
   onSuccess,
   className,
 }: LoginFormProps) {
-  const router = useRouter();
   const { login, isLoading, error: authError, clearError } = useAuth();
 
   // Form state
@@ -155,6 +153,7 @@ export function LoginForm({
       setFormErrors({});
       setRequiresVerification(false);
       clearError();
+      console.log("[LoginForm] Submitting login form...");
 
       // Validate form
       if (!validateForm()) {
@@ -167,6 +166,7 @@ export function LoginForm({
           username: formState.username.trim(),
           password: formState.password,
         });
+        console.log("[LoginForm] Login successful");
 
         // Handle remember me
         if (formState.rememberMe) {
@@ -185,8 +185,8 @@ export function LoginForm({
           onSuccess();
         }
 
-        // Redirect to destination
-        router.push(redirectTo);
+        // Let the login page handle redirect after auth state is fully updated
+        // This prevents race conditions between auth state update and navigation
       } catch (err) {
         const error = err as AuthError;
 
@@ -211,7 +211,7 @@ export function LoginForm({
         }
       }
     },
-    [formState, login, validateForm, clearError, onSuccess, router, redirectTo]
+    [formState, login, validateForm, clearError, onSuccess]
   );
 
   /**

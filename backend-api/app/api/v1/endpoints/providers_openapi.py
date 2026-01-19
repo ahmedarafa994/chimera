@@ -66,7 +66,9 @@ class SelectProviderRequest(BaseModel):
     )
 
     class Config:
-        json_schema_extra: ClassVar[dict[str, Any]] = {"example": {"provider": "gemini", "model": "gemini-3-pro-preview"}}
+        json_schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {"provider": "gemini", "model": "gemini-3-pro-preview"}
+        }
 
 
 class GenerateWithModelRequest(BaseModel):

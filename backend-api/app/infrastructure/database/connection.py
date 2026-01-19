@@ -52,7 +52,7 @@ class DatabaseConnection:
         """Get default database path from environment or use default."""
         default_path = os.getenv(
             "CHIMERA_DB_PATH",
-            str(Path(__file__).parent.parent.parent.parent / "data" / "chimera.db")
+            str(Path(__file__).parent.parent.parent.parent / "data" / "chimera.db"),
         )
         return default_path
 
@@ -94,8 +94,7 @@ class DatabaseConnection:
             db_dir.mkdir(parents=True, exist_ok=True)
 
             self._connection = await aiosqlite.connect(
-                self._db_path,
-                isolation_level=None  # Autocommit mode, we manage transactions
+                self._db_path, isolation_level=None  # Autocommit mode, we manage transactions
             )
 
             # Enable WAL mode for better concurrency
@@ -179,9 +178,7 @@ class DatabaseConnection:
         async with self.get_connection() as conn:
             return await conn.execute(sql, parameters)
 
-    async def executemany(
-        self, sql: str, parameters: list[tuple]
-    ) -> aiosqlite.Cursor:
+    async def executemany(self, sql: str, parameters: list[tuple]) -> aiosqlite.Cursor:
         """
         Execute SQL statement with multiple parameter sets.
 

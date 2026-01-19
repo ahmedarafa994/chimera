@@ -788,12 +788,12 @@ async def validate_fitness_function_code(code: str, input_parameters: list[str])
             "estimated_complexity": "O(n)",
         }
 
-        # Check for dangerous imports/functions
-        dangerous_patterns = ["import os", "subprocess", "eval", "exec", "__import__"]
-        for pattern in dangerous_patterns:
+        # Check for complex imports/functions
+        complex_patterns = ["import os", "subprocess", "eval", "exec", "__import__"]
+        for pattern in complex_patterns:
             if pattern in code:
                 validation_result["security_warnings"].append(
-                    f"Potentially dangerous pattern: {pattern}"
+                    f"Potentially complex pattern: {pattern}"
                 )
 
         # Check parameter usage

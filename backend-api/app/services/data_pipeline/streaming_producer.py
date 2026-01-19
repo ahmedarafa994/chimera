@@ -44,6 +44,7 @@ STREAM_HEALTH_CHECK = "chimera:health"
 @dataclass
 class StreamEvent:
     """Base event structure for streaming"""
+
     event_type: str
     event_id: str
     timestamp: str
@@ -66,6 +67,7 @@ class StreamEvent:
 @dataclass
 class LLMInteractionEvent:
     """LLM interaction event for streaming"""
+
     event_type: str = "llm_interaction"
     interaction_id: str = ""
     session_id: str = ""
@@ -91,13 +93,14 @@ class LLMInteractionEvent:
                 "tokens_total": str(self.tokens_total),
                 "latency_ms": str(self.latency_ms),
                 "status": self.status,
-            }
+            },
         )
 
 
 @dataclass
 class TransformationEvent:
     """Transformation event for streaming"""
+
     event_type: str = "transformation"
     transformation_id: str = ""
     interaction_id: str = ""
@@ -119,13 +122,14 @@ class TransformationEvent:
                 "technique_name": self.technique_name,
                 "success": str(self.success).lower(),
                 "transformation_time_ms": str(self.transformation_time_ms),
-            }
+            },
         )
 
 
 @dataclass
 class JailbreakEvent:
     """Jailbreak experiment event for streaming"""
+
     event_type: str = "jailbreak_experiment"
     experiment_id: str = ""
     framework: str = ""
@@ -150,7 +154,7 @@ class JailbreakEvent:
             event_type=self.event_type,
             event_id=self.experiment_id,
             timestamp=datetime.utcnow().isoformat(),
-            data=data
+            data=data,
         )
 
 
@@ -218,7 +222,7 @@ class StreamProducer:
     @staticmethod
     def _get_redis_url() -> str:
         """Get Redis URL from settings with fallback"""
-        if hasattr(settings, 'REDIS_URL'):
+        if hasattr(settings, "REDIS_URL"):
             return settings.REDIS_URL
         return "redis://localhost:6379/0"
 

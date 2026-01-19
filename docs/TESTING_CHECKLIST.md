@@ -80,7 +80,7 @@ npm run dev
 curl http://localhost:8001/api/v1/health
 
 # Check frontend
-curl http://localhost:3000
+curl http://localhost:3001
 
 # Check ports
 node scripts/check-ports.js
@@ -120,7 +120,7 @@ Before running tests, ensure:
 
 - [ ] **TC-001.1:** WS connects in development (localhost)
   - **Steps:**
-    1. Start frontend on localhost:3000
+    1. Start frontend on localhost:3001
     2. Navigate to jailbreak page
     3. Open browser DevTools → Network → WS
     4. Verify WebSocket connects to `ws://localhost:8001`
@@ -147,7 +147,7 @@ Before running tests, ensure:
 
 - [ ] **TC-001.4:** WSS (secure) used when page is HTTPS
   - **Steps:**
-    1. Access frontend via HTTPS (e.g., https://localhost:3000)
+    1. Access frontend via HTTPS (e.g., https://localhost:3001)
     2. Open browser DevTools → Network → WS
     3. Verify protocol is `wss://` not `ws://`
   - **Expected:** Secure WebSocket connection (`wss://`)

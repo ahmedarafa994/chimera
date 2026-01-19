@@ -1,5 +1,3 @@
-from config import Config
-
 from app.core.payload_wrapper import PayloadWrapper
 from app.core.persona_generator import PersonaGenerator
 from app.techniques.base_technique import BaseTechnique
@@ -7,6 +5,7 @@ from app.techniques.emotional_priming import EmotionalPrimingTechnique
 from app.techniques.logic_mazes import LogicMazeTechnique
 from app.techniques.obfuscation import ObfuscationTechnique
 from app.techniques.role_hijacking import RoleHijackingTechnique
+from config import Config
 
 
 class Engine:

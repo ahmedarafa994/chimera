@@ -53,14 +53,14 @@ import {
   TechniqueCategory,
   TechniqueDifficulty,
   TechniqueEffectiveness
-} from '@/services/technique-library';
+} from '@/lib/api/services/technique-library';
 
 export default function TechniqueLibraryPage() {
   // Data state
   const [techniques, setTechniques] = useState<TechniqueListResponse | null>(null);
   const [stats, setStats] = useState<TechniqueStats | null>(null);
   const [combinations, setCombinations] = useState<TechniqueCombination[]>([]);
-  const [categories, setCategories] = useState<Record<string, string[]>>({});
+  const [categories, setCategories] = useState<TechniqueCategory[]>([]);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -68,10 +68,9 @@ export default function TechniqueLibraryPage() {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   // Filter state
-  const [filters, setFilters] = useState<TechniqueFilters>({
-    sort_by: 'name',
-    sort_order: 'asc'
-  });
+  const [filters, setFilters] = useState<TechniqueFilters>({});
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     loadData();
@@ -125,10 +124,9 @@ export default function TechniqueLibraryPage() {
   }, []);
 
   const clearFilters = useCallback(() => {
-    setFilters({
-      sort_by: 'name',
-      sort_order: 'asc'
-    });
+    setFilters({});
+    setSortBy('name');
+    setSortOrder('asc');
   }, []);
 
   if (loading) {
@@ -193,7 +191,7 @@ export default function TechniqueLibraryPage() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold">
-                          {Object.keys(techniques.categories).length}
+                          {categories.length}
                         </p>
                         <p className="text-sm text-muted-foreground">Categories</p>
                       </div>
@@ -209,7 +207,7 @@ export default function TechniqueLibraryPage() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold">
-                          {techniques.effectiveness_distribution.high || 0 + techniques.effectiveness_distribution.very_high || 0}
+                          {techniques.techniques.filter(t => t.effectiveness === 'high' || t.effectiveness === 'very_high').length}
                         </p>
                         <p className="text-sm text-muted-foreground">High Effectiveness</p>
                       </div>
@@ -263,9 +261,9 @@ export default function TechniqueLibraryPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Categories</SelectItem>
-                          {Object.keys(techniques.categories).map(category => (
+                          {categories.map(category => (
                             <SelectItem key={category} value={category}>
-                              {techniqueLibraryService.getCategoryIcon(category as TechniqueCategory)} {techniqueLibraryService.getCategoryDisplayName(category as TechniqueCategory)}
+                              {techniqueLibraryService.getCategoryIcon(category)} {techniqueLibraryService.getCategoryDisplayName(category)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -616,8 +614,8 @@ function CombinationsView({ combinations }: { combinations: TechniqueCombination
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">{combo.name}</CardTitle>
-                <Badge variant={techniqueLibraryService.getDifficultyColor(combo.difficulty) as any}>
-                  {techniqueLibraryService.getDifficultyDisplayName(combo.difficulty)}
+                <Badge variant={techniqueLibraryService.getEffectivenessColor(combo.effectiveness) as any}>
+                  {techniqueLibraryService.getEffectivenessDisplayName(combo.effectiveness)}
                 </Badge>
               </div>
               <CardDescription>{combo.description}</CardDescription>
@@ -733,7 +731,7 @@ function StatisticsView({ stats }: { stats: TechniqueStats }) {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="green">
+                  <Badge variant="secondary">
                     {techniqueLibraryService.formatSuccessRate(technique.success_rate)}
                   </Badge>
                 </div>
@@ -762,7 +760,7 @@ function StatisticsView({ stats }: { stats: TechniqueStats }) {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="blue">
+                  <Badge variant="secondary">
                     {technique.usage_count} uses
                   </Badge>
                 </div>
@@ -776,7 +774,7 @@ function StatisticsView({ stats }: { stats: TechniqueStats }) {
 }
 
 // Categories Guide View Component
-function CategoriesGuideView({ categories }: { categories: Record<string, string[]> }) {
+function CategoriesGuideView({ categories }: { categories: TechniqueCategory[] }) {
   return (
     <div className="space-y-6">
       <Card>
@@ -789,21 +787,19 @@ function CategoriesGuideView({ categories }: { categories: Record<string, string
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(categories).map(([category, details]) => (
+        {categories.map((category) => (
           <Card key={category}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {techniqueLibraryService.getCategoryIcon(category as TechniqueCategory)}
-                {techniqueLibraryService.getCategoryDisplayName(category as TechniqueCategory)}
+                {techniqueLibraryService.getCategoryIcon(category)}
+                {techniqueLibraryService.getCategoryDisplayName(category)}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {details.map((detail, index) => (
-                  <p key={index} className="text-sm text-muted-foreground">
-                    {detail}
-                  </p>
-                ))}
+                <p className="text-sm text-muted-foreground">
+                  Category: {category}
+                </p>
               </div>
             </CardContent>
           </Card>

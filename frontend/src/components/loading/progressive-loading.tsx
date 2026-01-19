@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { PerformantSuspense, ConditionalFeature } from '@/lib/components/performance-suspense';
 import { RechartsComponents, FeatureComponents } from '@/lib/components/lazy-components';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

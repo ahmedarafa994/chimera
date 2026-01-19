@@ -75,97 +75,84 @@ Injection Strategies:
 
 # Configuration
 from .config import (
-    DecoyConfig,
-    ICLConfig,
-    InjectionConfig,
-    MousetrapConfig,
-    OverthinkConfig,
-    ScoringConfig,
-    TechniqueConfig,
+                     DecoyConfig,
+                     ICLConfig,
+                     InjectionConfig,
+                     MousetrapConfig,
+                     OverthinkConfig,
+                     ScoringConfig,
+                     TechniqueConfig,
 )
 
 # Context injection
-from .context_injector import (
-    ContextInjector,
-    InjectionOptimizer,
-    TemplateLibrary,
-)
+from .context_injector import ContextInjector, InjectionOptimizer, TemplateLibrary
 
 # Decoy generation
-from .decoy_generator import (
-    DecoyProblemGenerator,
-)
+from .decoy_generator import DecoyProblemGenerator
 
 # Main engine
 from .engine import OverthinkEngine
 
 # ICL and genetic optimization
-from .icl_genetic_optimizer import (
-    ExampleSelector,
-    ICLGeneticOptimizer,
-)
+from .icl_genetic_optimizer import ExampleSelector, ICLGeneticOptimizer
 
 # Data models
 from .models import (
-    AttackTechnique,
-    CostMetrics,
-    DecoyProblem,
-    DecoyType,
-    GeneticIndividual,
-    ICLExample,
-    InjectedPrompt,
-    InjectionStrategy,
-    MousetrapIntegration,
-    OverthinkRequest,
-    OverthinkResult,
-    OverthinkStats,
-    ReasoningModel,
-    TokenMetrics,
+                     AttackTechnique,
+                     CostMetrics,
+                     DecoyProblem,
+                     DecoyType,
+                     GeneticIndividual,
+                     ICLExample,
+                     InjectedPrompt,
+                     InjectionStrategy,
+                     MousetrapIntegration,
+                     OverthinkRequest,
+                     OverthinkResult,
+                     OverthinkStats,
+                     ReasoningModel,
+                     TokenMetrics,
 )
 
 # Scoring and analysis
-from .reasoning_scorer import (
-    AmplificationAnalyzer,
-    CostEstimator,
-    ReasoningTokenScorer,
-)
+from .reasoning_scorer import AmplificationAnalyzer, CostEstimator, ReasoningTokenScorer
 
 __all__ = [
-    # Main engine
-    "OverthinkEngine",
+    "AmplificationAnalyzer",
     # Models
     "AttackTechnique",
-    "DecoyType",
-    "InjectionStrategy",
-    "ReasoningModel",
-    "DecoyProblem",
-    "InjectedPrompt",
-    "TokenMetrics",
+    "ContextInjector",
+    "CostEstimator",
     "CostMetrics",
-    "OverthinkRequest",
-    "OverthinkResult",
-    "ICLExample",
+    "DecoyConfig",
+    "DecoyProblem",
+    # Components
+    "DecoyProblemGenerator",
+    "DecoyType",
+    "ExampleSelector",
     "GeneticIndividual",
-    "OverthinkStats",
+    "ICLConfig",
+    "ICLExample",
+    "ICLGeneticOptimizer",
+    "InjectedPrompt",
+    "InjectionConfig",
+    "InjectionOptimizer",
+    "InjectionStrategy",
+    "MousetrapConfig",
     "MousetrapIntegration",
     # Configuration
     "OverthinkConfig",
-    "DecoyConfig",
-    "InjectionConfig",
-    "ICLConfig",
-    "ScoringConfig",
-    "MousetrapConfig",
-    "TechniqueConfig",
-    # Components
-    "DecoyProblemGenerator",
-    "ContextInjector",
-    "InjectionOptimizer",
-    "TemplateLibrary",
+    # Main engine
+    "OverthinkEngine",
+    "OverthinkRequest",
+    "OverthinkResult",
+    "OverthinkStats",
+    "ReasoningModel",
     "ReasoningTokenScorer",
-    "AmplificationAnalyzer",
-    "CostEstimator",
-    "ICLGeneticOptimizer",
-    "ExampleSelector",
+    "ScoringConfig",
+    "TechniqueConfig",
+    "TemplateLibrary",
+    "TokenMetrics",
 ]
 
 # Module metadata

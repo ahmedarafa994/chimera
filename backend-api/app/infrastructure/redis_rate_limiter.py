@@ -68,7 +68,9 @@ class RedisRateLimiter:
             await self._redis.close()
             self._connected = False
 
-    async def is_allowed(self, key: str, limit: int | None = None, window_seconds: int | None = None) -> bool:
+    async def is_allowed(
+        self, key: str, limit: int | None = None, window_seconds: int | None = None
+    ) -> bool:
         """
         Check if request is allowed under rate limit using sliding window.
 

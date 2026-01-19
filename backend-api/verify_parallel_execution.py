@@ -19,12 +19,12 @@ class MockTarget:
 
 
 class MockScorer:
-    def scoring(self, request, response, **kwargs):
+    def scoring(self, _request, _response, **_kwargs):
         print("  [Mock] Scoring... (sleeping 1s)")
         time.sleep(1)  # Simulate Scorer latency
         return "mock_assessment", "mock_system"
 
-    def wrapper(self, assessment, **kwargs):
+    def wrapper(self, _assessment, **_kwargs):
         return 0.9
 
 

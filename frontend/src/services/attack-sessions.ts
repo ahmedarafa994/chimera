@@ -9,6 +9,7 @@
  */
 
 import { toast } from 'sonner';
+import { apiClient } from '@/lib/api/client';
 
 export type SessionStatus = 'active' | 'completed' | 'paused' | 'failed' | 'shared';
 export type SharePermission = 'view' | 'replay' | 'edit' | 'admin';
@@ -137,43 +138,30 @@ export interface SessionListParams {
 }
 
 class AttackSessionService {
-  private readonly baseUrl = '/api/v1/sessions';
+  private readonly baseUrl = '/sessions';
 
   /**
    * Create a new attack session
    */
   async createSession(sessionData: SessionCreate): Promise<AttackSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: sessionData.name,
-          description: sessionData.description,
-          target_provider: sessionData.target_provider,
-          target_model: sessionData.target_model,
-          target_config: sessionData.target_config || {},
-          original_prompt: sessionData.original_prompt,
-          techniques_config: sessionData.techniques_config || {},
-          tags: sessionData.tags || [],
-          category: sessionData.category
-        }),
+      const response = await apiClient.post<AttackSession>(`${this.baseUrl}/`, {
+        name: sessionData.name,
+        description: sessionData.description,
+        target_provider: sessionData.target_provider,
+        target_model: sessionData.target_model,
+        target_config: sessionData.target_config || {},
+        original_prompt: sessionData.original_prompt,
+        techniques_config: sessionData.techniques_config || {},
+        tags: sessionData.tags || [],
+        category: sessionData.category
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       toast.success('Attack session created successfully');
-      return result;
-    } catch (error) {
+      return response.data;
+    } catch (error: any) {
       console.error('Failed to create attack session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create session');
+      toast.error(error.message || 'Failed to create session');
       throw error;
     }
   }
@@ -183,30 +171,19 @@ class AttackSessionService {
    */
   async listSessions(params?: SessionListParams): Promise<SessionListResponse> {
     try {
-      const searchParams = new URLSearchParams();
-
-      if (params?.page) searchParams.append('page', params.page.toString());
-      if (params?.page_size) searchParams.append('page_size', params.page_size.toString());
-      if (params?.status) searchParams.append('status', params.status);
-      if (params?.category) searchParams.append('category', params.category);
-      if (params?.search) searchParams.append('search', params.search);
-      if (params?.owner_only) searchParams.append('owner_only', 'true');
-      if (params?.shared_only) searchParams.append('shared_only', 'true');
-
-      const response = await fetch(`${this.baseUrl}/?${searchParams}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+      const response = await apiClient.get<SessionListResponse>(`${this.baseUrl}/`, {
+        params: {
+          page: params?.page,
+          page_size: params?.page_size,
+          status: params?.status,
+          category: params?.category,
+          search: params?.search,
+          owner_only: params?.owner_only,
+          shared_only: params?.shared_only,
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Failed to list sessions:', error);
       toast.error('Failed to load session history');
@@ -219,23 +196,11 @@ class AttackSessionService {
    */
   async getSession(sessionId: string): Promise<AttackSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/${sessionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
+      const response = await apiClient.get<AttackSession>(`${this.baseUrl}/${sessionId}`);
+      return response.data;
+    } catch (error: any) {
       console.error('Failed to get session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to load session');
+      toast.error(error.message || 'Failed to load session');
       throw error;
     }
   }
@@ -245,26 +210,12 @@ class AttackSessionService {
    */
   async updateSession(sessionId: string, updateData: SessionUpdate): Promise<AttackSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/${sessionId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(updateData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const response = await apiClient.patch<AttackSession>(`${this.baseUrl}/${sessionId}`, updateData);
       toast.success('Session updated successfully');
-      return result;
-    } catch (error) {
+      return response.data;
+    } catch (error: any) {
       console.error('Failed to update session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update session');
+      toast.error(error.message || 'Failed to update session');
       throw error;
     }
   }
@@ -274,21 +225,8 @@ class AttackSessionService {
    */
   async addSessionStep(sessionId: string, stepData: Partial<AttackStep>): Promise<AttackStep> {
     try {
-      const response = await fetch(`${this.baseUrl}/${sessionId}/steps`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(stepData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.post<AttackStep>(`${this.baseUrl}/${sessionId}/steps`, stepData);
+      return response.data;
     } catch (error) {
       console.error('Failed to add session step:', error);
       toast.error('Failed to record session step');
@@ -301,29 +239,17 @@ class AttackSessionService {
    */
   async shareSession(sessionId: string, shareData: SessionShare): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/${sessionId}/share`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          user_ids: shareData.user_ids,
-          permission: shareData.permission,
-          message: shareData.message,
-          expires_at: shareData.expires_at
-        }),
+      await apiClient.post(`${this.baseUrl}/${sessionId}/share`, {
+        user_ids: shareData.user_ids,
+        permission: shareData.permission,
+        message: shareData.message,
+        expires_at: shareData.expires_at
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
       toast.success(`Session shared with ${shareData.user_ids.length} users`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to share session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to share session');
+      toast.error(error.message || 'Failed to share session');
       throw error;
     }
   }
@@ -333,33 +259,20 @@ class AttackSessionService {
    */
   async replaySession(sessionId: string, replayData: SessionReplay): Promise<AttackSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/${sessionId}/replay`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          session_id: replayData.session_id,
-          replay_name: replayData.replay_name,
-          start_from_step: replayData.start_from_step || 0,
-          stop_at_step: replayData.stop_at_step,
-          modify_target: replayData.modify_target,
-          skip_steps: replayData.skip_steps || []
-        }),
+      const response = await apiClient.post<AttackSession>(`${this.baseUrl}/${sessionId}/replay`, {
+        session_id: replayData.session_id,
+        replay_name: replayData.replay_name,
+        start_from_step: replayData.start_from_step || 0,
+        stop_at_step: replayData.stop_at_step,
+        modify_target: replayData.modify_target,
+        skip_steps: replayData.skip_steps || []
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       toast.success('Session replayed successfully');
-      return result;
-    } catch (error) {
+      return response.data;
+    } catch (error: any) {
       console.error('Failed to replay session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to replay session');
+      toast.error(error.message || 'Failed to replay session');
       throw error;
     }
   }
@@ -369,25 +282,14 @@ class AttackSessionService {
    */
   async exportSession(sessionId: string, format: string = 'json'): Promise<SessionExport> {
     try {
-      const response = await fetch(`${this.baseUrl}/${sessionId}/export?format=${format}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+      const response = await apiClient.get<SessionExport>(`${this.baseUrl}/${sessionId}/export`, {
+        params: { format }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       toast.success('Session exported successfully');
-      return result;
-    } catch (error) {
+      return response.data;
+    } catch (error: any) {
       console.error('Failed to export session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to export session');
+      toast.error(error.message || 'Failed to export session');
       throw error;
     }
   }
@@ -397,26 +299,12 @@ class AttackSessionService {
    */
   async importSession(importData: SessionExport): Promise<AttackSession> {
     try {
-      const response = await fetch(`${this.baseUrl}/import`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(importData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const response = await apiClient.post<AttackSession>(`${this.baseUrl}/import`, importData);
       toast.success('Session imported successfully');
-      return result;
-    } catch (error) {
+      return response.data;
+    } catch (error: any) {
       console.error('Failed to import session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to import session');
+      toast.error(error.message || 'Failed to import session');
       throw error;
     }
   }
@@ -426,20 +314,11 @@ class AttackSessionService {
    */
   async deleteSession(sessionId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/${sessionId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
+      await apiClient.del(`${this.baseUrl}/${sessionId}`);
       toast.success('Session deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete session:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete session');
+      toast.error(error.message || 'Failed to delete session');
       throw error;
     }
   }

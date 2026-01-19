@@ -1,19 +1,21 @@
 import logging
-from typing import List, Any
+
 from app.core.unified_errors import AegisSynthesisError, AegisTransformationError
 from meta_prompter.chimera.engine import ChimeraEngine
 from meta_prompter.interfaces import PromptCandidate
 
 logger = logging.getLogger(__name__)
 
+
 class ChimeraEngineAdapter:
     """
     Adapter for ChimeraEngine to integrate structured error handling.
     """
+
     def __init__(self, engine: ChimeraEngine | None = None):
         self.engine = engine or ChimeraEngine()
 
-    def generate_candidates(self, objective: str, count: int = 5) -> List[PromptCandidate]:
+    def generate_candidates(self, objective: str, count: int = 5) -> list[PromptCandidate]:
         """
         Generates fully wrapped and obfuscated prompt candidates with structured error handling.
         """
@@ -22,7 +24,7 @@ class ChimeraEngineAdapter:
             try:
                 # We need to access internal components or wrap the whole process
                 # Since ChimeraEngine.generate_candidates does everything, we wrap it.
-                # However, to map specific errors, we might need to rely on the exception message 
+                # However, to map specific errors, we might need to rely on the exception message
                 # or inspect the stack trace if we can't modify the library.
                 # Ideally, we would inject our own factories/obfuscators into the engine.
                 return self.engine.generate_candidates(objective, count)
@@ -41,4 +43,4 @@ class ChimeraEngineAdapter:
             raise
         except Exception as e:
             logger.error(f"Unexpected error in Chimera Engine: {e}")
-            raise AegisSynthesisError(f"Aegis campaign generation failed: {str(e)}") from e
+            raise AegisSynthesisError(f"Aegis campaign generation failed: {e!s}") from e

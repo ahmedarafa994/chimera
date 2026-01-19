@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 process.env.NEXT_PUBLIC_API_MODE = 'direct';
 process.env.NEXT_PUBLIC_GEMINI_API_KEY = 'test-gemini-key';
 process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY = 'test-deepseek-key';
-process.env.NEXT_PUBLIC_BACKEND_API_URL = 'http://localhost:8001/api/v1';
+process.env.NEXT_PUBLIC_BACKEND_API_URL = 'http://localhost:8005/api/v1';
 
 // Mock window.matchMedia  
 if (typeof window !== 'undefined') {

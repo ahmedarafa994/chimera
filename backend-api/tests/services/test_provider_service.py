@@ -75,7 +75,7 @@ class TestProviderConfig:
         valid_endpoints = [
             "https://api.openai.com/v1",
             "https://api.anthropic.com",
-            "http://localhost:8000",
+            "http://localhost:8001",
         ]
 
         url_pattern = r"^https?://[\w\-.]+(:\d+)?(/[\w\-.]*)*$"
@@ -214,12 +214,8 @@ class TestRateLimiting:
             "current_tokens": 75000,
         }
 
-        requests_remaining = (
-            rate_limit["requests_per_minute"] - rate_limit["current_requests"]
-        )
-        tokens_remaining = (
-            rate_limit["tokens_per_minute"] - rate_limit["current_tokens"]
-        )
+        requests_remaining = rate_limit["requests_per_minute"] - rate_limit["current_requests"]
+        tokens_remaining = rate_limit["tokens_per_minute"] - rate_limit["current_tokens"]
 
         assert requests_remaining == 15
         assert tokens_remaining == 25000
@@ -291,8 +287,6 @@ class TestModelSync:
         }
 
         # Find models with vision support
-        vision_models = [
-            m for m, caps in models.items() if caps["supports_vision"]
-        ]
+        vision_models = [m for m, caps in models.items() if caps["supports_vision"]]
 
         assert len(vision_models) == 2

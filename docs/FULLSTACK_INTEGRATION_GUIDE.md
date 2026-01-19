@@ -77,7 +77,7 @@ GEMINI_API_KEY=your_gemini_key
 # Server Configuration
 PORT=8001
 ENVIRONMENT=development
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+CORS_ORIGINS=http://localhost:3001,http://localhost:3001
 
 # Rate Limiting
 RATE_LIMIT_PER_MINUTE=60
@@ -636,7 +636,7 @@ You now have a full-stack prompt enhancement system with:
 **Next Steps:**
 1. Start backend: `.venv\Scripts\python.exe backend-api\run.py`
 2. Start frontend: `cd frontend && npm run dev`
-3. Open `http://localhost:3000/enhance`
+3. Open `http://localhost:3001/enhance`
 4. Start enhancing prompts!
 
 ---

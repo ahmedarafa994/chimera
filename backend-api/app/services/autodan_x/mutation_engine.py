@@ -11,12 +11,7 @@ from typing import Any, ClassVar
 
 import numpy as np
 
-from .models import (
-    MomentumState,
-    MutationConfig,
-    MutationOperator,
-    MutationRecord,
-)
+from .models import MomentumState, MutationConfig, MutationOperator, MutationRecord
 
 
 # Helper: cryptographically secure pseudo-floats for security-sensitive choices
@@ -27,6 +22,7 @@ def _secure_random() -> float:
 
 def _secure_uniform(a, b):
     return a + _secure_random() * (b - a)
+
 
 logger = logging.getLogger(__name__)
 
@@ -205,8 +201,8 @@ class MomentumGuidedMutation:
             return parent1, parent2
 
         # Single-point crossover
-        point1 = (secrets.randbelow((len(tokens1) - (1) + 1) + (1)) - 2)
-        point2 = (secrets.randbelow((len(tokens2) - (1) + 1) + (1)) - 2)
+        point1 = secrets.randbelow((len(tokens1) - (1) + 1) + (1)) - 2
+        point2 = secrets.randbelow((len(tokens2) - (1) + 1) + (1)) - 2
 
         # Create offspring
         offspring1_tokens = tokens1[:point1] + tokens2[point2:]
@@ -290,7 +286,7 @@ class MomentumGuidedMutation:
         base_mutations = max(1, int(prompt_length * self.config.mutation_rate))
 
         # Add randomness
-        variance = (secrets.randbelow((2) - (-1) + 1) + (-1))
+        variance = secrets.randbelow((2) - (-1) + 1) + (-1)
         return max(1, base_mutations + variance)
 
     def _select_operator(self) -> MutationOperator:
@@ -314,7 +310,9 @@ class MomentumGuidedMutation:
             return tokens, None
 
         # Find mutable positions (not frozen)
-        mutable_positions: ClassVar[list] = [i for i in range(len(tokens)) if not self.state.is_frozen(i)]
+        mutable_positions: ClassVar[list] = [
+            i for i in range(len(tokens)) if not self.state.is_frozen(i)
+        ]
 
         if not mutable_positions:
             return tokens, None
@@ -613,7 +611,9 @@ class MomentumGuidedMutation:
             "frozen_positions": len(self.state.frozen_positions),
             "successful_operators": dict(self.state.successful_operators),
             "operator_weights": dict(self.operator_weights),
-            "average_momentum": np.mean(list(self.state.token_momenta.values()))
-            if self.state.token_momenta
-            else 0.0,
+            "average_momentum": (
+                np.mean(list(self.state.token_momenta.values()))
+                if self.state.token_momenta
+                else 0.0
+            ),
         }

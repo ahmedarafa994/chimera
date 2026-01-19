@@ -50,11 +50,7 @@ class ConfigurationService:
 
     DEFAULT_CACHE_TTL = timedelta(minutes=5)
 
-    def __init__(
-        self,
-        db: DatabaseConnection,
-        cache_ttl: timedelta | None = None
-    ):
+    def __init__(self, db: DatabaseConnection, cache_ttl: timedelta | None = None):
         """
         Initialize configuration service.
 
@@ -89,8 +85,7 @@ class ConfigurationService:
         """Set value in cache with expiration."""
         cache_key = self._cache_key(namespace, key)
         self._cache[cache_key] = CacheEntry(
-            value=value,
-            expires_at=datetime.now(UTC) + self._cache_ttl
+            value=value, expires_at=datetime.now(UTC) + self._cache_ttl
         )
 
     def _invalidate_cache(self, namespace: str, key: str | None = None) -> None:
@@ -153,9 +148,7 @@ class ConfigurationService:
         self._set_cached("config", "__all__", configs)
         return configs
 
-    async def get_configs_by_provider(
-        self, provider_type: str
-    ) -> list[ProviderConfigEntity]:
+    async def get_configs_by_provider(self, provider_type: str) -> list[ProviderConfigEntity]:
         """
         Get configurations for a specific provider type.
 
@@ -206,7 +199,7 @@ class ConfigurationService:
         provider_type: str,
         name: str,
         settings: dict[str, Any] | None = None,
-        is_default: bool = False
+        is_default: bool = False,
     ) -> ProviderConfigEntity:
         """
         Create new provider configuration.
@@ -221,10 +214,7 @@ class ConfigurationService:
             Created configuration entity.
         """
         entity = ProviderConfigEntity(
-            provider_type=provider_type,
-            name=name,
-            settings=settings or {},
-            is_default=is_default
+            provider_type=provider_type, name=name, settings=settings or {}, is_default=is_default
         )
 
         async with self._lock:
@@ -240,7 +230,7 @@ class ConfigurationService:
         config_id: str,
         name: str | None = None,
         settings: dict[str, Any] | None = None,
-        is_default: bool | None = None
+        is_default: bool | None = None,
     ) -> ProviderConfigEntity:
         """
         Update existing configuration.
@@ -338,9 +328,7 @@ class ConfigurationService:
 
         return key
 
-    async def get_active_api_key(
-        self, provider_type: str
-    ) -> ApiKeyEntity | None:
+    async def get_active_api_key(self, provider_type: str) -> ApiKeyEntity | None:
         """
         Get active API key for a provider.
 
@@ -363,12 +351,7 @@ class ConfigurationService:
 
         return key
 
-    async def store_api_key(
-        self,
-        provider_type: str,
-        key_name: str,
-        api_key: str
-    ) -> ApiKeyEntity:
+    async def store_api_key(self, provider_type: str, key_name: str, api_key: str) -> ApiKeyEntity:
         """
         Store new API key (encrypted at rest).
 
@@ -380,11 +363,7 @@ class ConfigurationService:
         Returns:
             Created API key entity.
         """
-        entity = ApiKeyEntity(
-            provider_type=provider_type,
-            key_name=key_name,
-            api_key=api_key
-        )
+        entity = ApiKeyEntity(provider_type=provider_type, key_name=key_name, api_key=api_key)
 
         async with self._lock:
             uow = UnitOfWork(self._db)
@@ -394,11 +373,7 @@ class ConfigurationService:
         logger.info(f"Stored API key: {key_name} for {provider_type}")
         return created
 
-    async def rotate_api_key(
-        self,
-        key_id: str,
-        new_api_key: str
-    ) -> ApiKeyEntity:
+    async def rotate_api_key(self, key_id: str, new_api_key: str) -> ApiKeyEntity:
         """
         Rotate an existing API key.
 

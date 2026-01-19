@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-
 # Adjust path if needed
 import sys
 import unittest
@@ -13,9 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "b
 
 from app.engines.autodan_turbo.attack_scorer import AttackScorer
 from app.services.autodan.framework_autodan_reasoning.gradient_optimizer import (
-    GradientOptimizer,
-    SurrogateModel,
-)
+    GradientOptimizer, SurrogateModel)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

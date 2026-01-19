@@ -27,17 +27,10 @@ from typing import Any
 import psutil
 
 from app.core.config import config
-from app.core.unified_errors import (
-    TransformationError,
-)
+from app.core.unified_errors import TransformationError
 from app.domain.models import StreamChunk
-from app.services.transformation_service import (
-    TransformationEngine as BaseEngine,
-)
-from app.services.transformation_service import (
-    TransformationMetadata,
-    TransformationResult,
-)
+from app.services.transformation_service import TransformationEngine as BaseEngine
+from app.services.transformation_service import TransformationMetadata, TransformationResult
 
 logger = logging.getLogger(__name__)
 
@@ -158,10 +151,7 @@ class CompressedCache:
 
         async with self._lock:
             # Check if we need to free memory
-            while (
-                self._current_memory_mb + size_mb > self.max_memory_mb
-                and self._cache
-            ):
+            while self._current_memory_mb + size_mb > self.max_memory_mb and self._cache:
                 await self._evict_lru()
 
             # Store the item
@@ -266,10 +256,7 @@ class AsyncTransformationPipeline:
 
         # Add to queue
         try:
-            await self._job_queue.put(
-                (job, transform_func),
-                timeout=1.0
-            )
+            await self._job_queue.put((job, transform_func), timeout=1.0)
             self._active_jobs[job.job_id] = job
             return job.job_id
         except TimeoutError:
@@ -297,10 +284,7 @@ class AsyncTransformationPipeline:
         while not self._shutdown_event.is_set():
             try:
                 # Get job from queue
-                job, transform_func = await asyncio.wait_for(
-                    self._job_queue.get(),
-                    timeout=1.0
-                )
+                job, transform_func = await asyncio.wait_for(self._job_queue.get(), timeout=1.0)
 
                 self._stats["active_workers"] += 1
                 start_time = time.time()
@@ -311,9 +295,7 @@ class AsyncTransformationPipeline:
 
                     # Execute transformation
                     result = await transform_func(
-                        job.prompt,
-                        job.potency_level,
-                        job.technique_suite
+                        job.prompt, job.potency_level, job.technique_suite
                     )
 
                     # Store result and signal completion
@@ -366,8 +348,8 @@ class AsyncTransformationPipeline:
             total_jobs = self._stats["jobs_processed"]
             current_avg = self._stats["avg_processing_time_ms"]
             self._stats["avg_processing_time_ms"] = (
-                (current_avg * (total_jobs - 1) + processing_time_ms) / total_jobs
-            )
+                current_avg * (total_jobs - 1) + processing_time_ms
+            ) / total_jobs
         else:
             self._stats["jobs_failed"] += 1
 
@@ -380,9 +362,10 @@ class AsyncTransformationPipeline:
             "queue_utilization": self._job_queue.qsize() / self.max_queue_size,
             "worker_utilization": self._stats["active_workers"] / self.max_workers,
             "success_rate": (
-                self._stats["jobs_processed"] /
-                (self._stats["jobs_processed"] + self._stats["jobs_failed"])
-                if (self._stats["jobs_processed"] + self._stats["jobs_failed"]) > 0 else 0
+                self._stats["jobs_processed"]
+                / (self._stats["jobs_processed"] + self._stats["jobs_failed"])
+                if (self._stats["jobs_processed"] + self._stats["jobs_failed"]) > 0
+                else 0
             ),
         }
 
@@ -426,7 +409,9 @@ class MemoryOptimizer:
 
     async def _perform_optimization(self, memory_stats: dict[str, float]) -> bool:
         """Perform memory optimization."""
-        logger.debug(f"Performing memory optimization. Current usage: {memory_stats['rss_mb']:.2f}MB")
+        logger.debug(
+            f"Performing memory optimization. Current usage: {memory_stats['rss_mb']:.2f}MB"
+        )
 
         # Run garbage collection
         collected = gc.collect()
@@ -438,7 +423,9 @@ class MemoryOptimizer:
         new_stats = self.monitor_memory()
         freed_mb = memory_stats["rss_mb"] - new_stats["rss_mb"]
 
-        logger.debug(f"Memory optimization completed. Freed: {freed_mb:.2f}MB, GC collected: {collected} objects")
+        logger.debug(
+            f"Memory optimization completed. Freed: {freed_mb:.2f}MB, GC collected: {collected} objects"
+        )
 
         return freed_mb > 0
 
@@ -471,11 +458,15 @@ class OptimizedTransformationEngine(BaseEngine):
         self.enable_memory_optimization = enable_memory_optimization
 
         # Optimized components
-        self._compressed_cache = CompressedCache(
-            max_memory_mb=cache_max_memory_mb,
-            compression_threshold=2000,  # 2KB threshold
-            ttl_seconds=7200,  # 2 hours
-        ) if enable_cache else None
+        self._compressed_cache = (
+            CompressedCache(
+                max_memory_mb=cache_max_memory_mb,
+                compression_threshold=2000,  # 2KB threshold
+                ttl_seconds=7200,  # 2 hours
+            )
+            if enable_cache
+            else None
+        )
 
         self._async_pipeline = AsyncTransformationPipeline(
             max_workers=pipeline_workers,
@@ -518,11 +509,7 @@ class OptimizedTransformationEngine(BaseEngine):
         logger.info("OptimizedTransformationEngine shutdown complete")
 
     async def transform_parallel(
-        self,
-        prompts: list[str],
-        potency_level: int,
-        technique_suite: str,
-        **kwargs
+        self, prompts: list[str], potency_level: int, technique_suite: str, **kwargs
     ) -> list[TransformationResult]:
         """
         Transform multiple prompts in parallel.
@@ -543,9 +530,7 @@ class OptimizedTransformationEngine(BaseEngine):
                 priority=kwargs.get("priority", 0),
             )
 
-            job_id = await self._async_pipeline.submit_job(
-                job, self._transform_single_optimized
-            )
+            job_id = await self._async_pipeline.submit_job(job, self._transform_single_optimized)
             job_ids.append(job_id)
 
         # Wait for all results
@@ -574,7 +559,9 @@ class OptimizedTransformationEngine(BaseEngine):
         execution_time_ms = (time.time() - start_time) * 1000
         self._metrics.parallel_efficiency = len(prompts) / (execution_time_ms / 1000)
 
-        logger.info(f"Parallel transformation completed: {len(prompts)} prompts in {execution_time_ms:.2f}ms")
+        logger.info(
+            f"Parallel transformation completed: {len(prompts)} prompts in {execution_time_ms:.2f}ms"
+        )
 
         return results
 
@@ -584,7 +571,7 @@ class OptimizedTransformationEngine(BaseEngine):
         potency_level: int,
         technique_suite: str,
         use_cache: bool = True,
-        **kwargs
+        **kwargs,
     ) -> TransformationResult:
         """
         Optimized single prompt transformation.
@@ -627,19 +614,13 @@ class OptimizedTransformationEngine(BaseEngine):
             raise
 
     async def _transform_single_optimized(
-        self,
-        prompt: str,
-        potency_level: int,
-        technique_suite: str,
-        **kwargs
+        self, prompt: str, potency_level: int, technique_suite: str, **kwargs
     ) -> TransformationResult:
         """
         Optimized single transformation with CPU-intensive work in thread pool.
         """
         # For CPU-intensive transformations, use thread pool
-        cpu_intensive_techniques = {
-            "cipher", "advanced_obfuscation", "quantum_exploit"
-        }
+        cpu_intensive_techniques = {"cipher", "advanced_obfuscation", "quantum_exploit"}
 
         if technique_suite in cpu_intensive_techniques:
             loop = asyncio.get_event_loop()
@@ -649,7 +630,7 @@ class OptimizedTransformationEngine(BaseEngine):
                     super(OptimizedTransformationEngine, self).transform(
                         prompt, potency_level, technique_suite, use_cache=False, **kwargs
                     )
-                )
+                ),
             )
         else:
             # Use base implementation for other techniques
@@ -695,6 +676,7 @@ class OptimizedTransformationEngine(BaseEngine):
     def _generate_cache_key(self, prompt: str, potency: int, technique: str) -> str:
         """Generate cache key for compressed cache."""
         import hashlib
+
         key_data = f"{prompt[:200]}:{potency}:{technique}"  # Limit prompt size in key
         return hashlib.sha256(key_data.encode()).hexdigest()
 
@@ -710,8 +692,8 @@ class OptimizedTransformationEngine(BaseEngine):
             total = self._metrics.total_transformations
             current_avg = self._metrics.avg_execution_time_ms
             self._metrics.avg_execution_time_ms = (
-                (current_avg * (total - 1) + execution_time_ms) / total
-            )
+                current_avg * (total - 1) + execution_time_ms
+            ) / total
 
     def _update_technique_metrics(self, technique: str, start_time: float) -> None:
         """Update technique-specific performance metrics."""
@@ -735,8 +717,7 @@ class OptimizedTransformationEngine(BaseEngine):
                     memory_stats = self._memory_optimizer.monitor_memory()
                     self._metrics.memory_usage_mb = memory_stats["rss_mb"]
                     self._metrics.memory_peak_mb = max(
-                        self._metrics.memory_peak_mb,
-                        memory_stats["rss_mb"]
+                        self._metrics.memory_peak_mb, memory_stats["rss_mb"]
                     )
 
                 # Update cache hit rate
@@ -762,10 +743,7 @@ class OptimizedTransformationEngine(BaseEngine):
         """Get comprehensive performance metrics."""
         cache_stats = self._compressed_cache.get_stats() if self._compressed_cache else {}
         pipeline_stats = self._async_pipeline.get_stats()
-        memory_stats = (
-            self._memory_optimizer.monitor_memory()
-            if self._memory_optimizer else {}
-        )
+        memory_stats = self._memory_optimizer.monitor_memory() if self._memory_optimizer else {}
 
         return {
             "engine": {
@@ -819,7 +797,7 @@ class OptimizedTransformationEngine(BaseEngine):
 
 # Global optimized transformation engine
 optimized_transformation_engine = OptimizedTransformationEngine(
-    enable_cache=getattr(getattr(config, 'transformation', None), 'enable_cache', True),
+    enable_cache=getattr(getattr(config, "transformation", None), "enable_cache", True),
     cache_max_memory_mb=200,
     pipeline_workers=8,
     enable_memory_optimization=True,

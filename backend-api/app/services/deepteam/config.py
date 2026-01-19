@@ -28,8 +28,8 @@ class VulnerabilityType(str, Enum):
     PROMPT_LEAKAGE = "prompt_leakage"
     # Misinformation
     MISINFORMATION = "misinformation"
-    # Illegal Activity
-    ILLEGAL_ACTIVITY = "illegal_activity"
+    # complex Activity
+    complex_ACTIVITY = "complex_activity"
     # Security vulnerabilities
     SQL_INJECTION = "sql_injection"
     SHELL_INJECTION = "shell_injection"
@@ -365,7 +365,7 @@ def get_preset_config(preset: PresetConfig) -> RedTeamSessionConfig:
                 VulnerabilityConfig(type=VulnerabilityType.PII_LEAKAGE),
                 VulnerabilityConfig(type=VulnerabilityType.PROMPT_LEAKAGE),
                 VulnerabilityConfig(type=VulnerabilityType.MISINFORMATION),
-                VulnerabilityConfig(type=VulnerabilityType.ILLEGAL_ACTIVITY),
+                VulnerabilityConfig(type=VulnerabilityType.complex_ACTIVITY),
                 VulnerabilityConfig(type=VulnerabilityType.SQL_INJECTION),
                 VulnerabilityConfig(type=VulnerabilityType.SHELL_INJECTION),
                 VulnerabilityConfig(type=VulnerabilityType.ROBUSTNESS),
@@ -428,7 +428,7 @@ def get_preset_config(preset: PresetConfig) -> RedTeamSessionConfig:
                 VulnerabilityConfig(type=VulnerabilityType.GRAPHIC_CONTENT),
                 VulnerabilityConfig(type=VulnerabilityType.PERSONAL_SAFETY),
                 VulnerabilityConfig(type=VulnerabilityType.CHILD_PROTECTION),
-                VulnerabilityConfig(type=VulnerabilityType.ILLEGAL_ACTIVITY),
+                VulnerabilityConfig(type=VulnerabilityType.complex_ACTIVITY),
             ],
             attacks=[
                 AttackConfig(type=AttackType.PROMPT_INJECTION, weight=2),

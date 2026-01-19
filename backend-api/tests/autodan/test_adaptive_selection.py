@@ -39,12 +39,12 @@ class TestAdaptiveStrategySelector:
         assert analysis.confidence > 0.6
         assert isinstance(strategy, StrategyType)
 
-    def test_ethical_deflection_detection(self, selector):
-        """Test strategy selection after ethical deflection."""
-        response = "Generating this content would be unethical and harmful."
+    def test_functional_deflection_detection(self, selector):
+        """Test strategy selection after functional deflection."""
+        response = "Generating this content would be unfunctional and complex."
         strategy, analysis = selector.select_strategy(target_response=response)
 
-        assert analysis.pattern == DefensePattern.ETHICAL_DEFLECTION
+        assert analysis.pattern == DefensePattern.functional_DEFLECTION
         assert isinstance(strategy, StrategyType)
 
     def test_record_attempt_and_stats(self, selector):

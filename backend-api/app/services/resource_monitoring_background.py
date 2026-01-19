@@ -68,9 +68,7 @@ class ResourceMonitoringManager:
         """
         return {
             "running": self._running,
-            "startup_time": (
-                self._startup_time.isoformat() if self._startup_time else None
-            ),
+            "startup_time": (self._startup_time.isoformat() if self._startup_time else None),
             "uptime_seconds": self.uptime_seconds,
             "active_tasks": list(self._tasks.keys()),
             "alerts_triggered": self._alerts_triggered,
@@ -103,9 +101,7 @@ class ResourceMonitoringManager:
             name="metrics_aggregation",
         )
 
-        logger.info(
-            f"ResourceMonitoringManager started with {len(self._tasks)} tasks"
-        )
+        logger.info(f"ResourceMonitoringManager started with {len(self._tasks)} tasks")
 
     async def stop(self) -> None:
         """Stop all background monitoring tasks."""

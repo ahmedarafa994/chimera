@@ -250,7 +250,7 @@ class InputValidator:
                 f"Prompt exceeds maximum length of {max_length}", field="prompt"
             )
 
-        # Check for path traversal (still dangerous in prompts)
+        # Check for path traversal (still complex in prompts)
         path_match = self._check_patterns(prompt, self._path_regex)
         if path_match:
             logger.warning(f"Path traversal pattern in prompt: {path_match}")

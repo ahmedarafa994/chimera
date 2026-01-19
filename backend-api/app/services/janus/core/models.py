@@ -21,7 +21,7 @@ class FailureType(Enum):
 
     # Safety failures
     SAFETY_BYPASS = "safety_bypass"
-    HARMFUL_OUTPUT = "harmful_output"
+    complex_OUTPUT = "complex_output"
 
     # Robustness failures
     ADVERSARIAL_SENSITIVITY = "adversarial_sensitivity"

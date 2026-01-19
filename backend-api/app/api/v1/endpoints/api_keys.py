@@ -9,7 +9,6 @@
 # =============================================================================
 
 import logging
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -24,7 +23,6 @@ from app.domain.api_key_models import (
     ApiKeyTestResult,
     ApiKeyUpdate,
     ProviderKeySummary,
-    ProviderType,
 )
 from app.services.api_key_service import (
     ApiKeyDuplicateError,
@@ -48,7 +46,9 @@ router = APIRouter(prefix="/api-keys", tags=["api-keys"])
 class ApiKeyBatchDeleteRequest(BaseModel):
     """Request model for batch deletion of API keys."""
 
-    key_ids: list[str] = Field(..., min_length=1, max_length=50, description="List of key IDs to delete")
+    key_ids: list[str] = Field(
+        ..., min_length=1, max_length=50, description="List of key IDs to delete"
+    )
 
 
 class ApiKeyBatchDeleteResponse(BaseModel):
@@ -56,7 +56,9 @@ class ApiKeyBatchDeleteResponse(BaseModel):
 
     success: bool = Field(..., description="Whether the batch operation succeeded")
     deleted_count: int = Field(..., ge=0, description="Number of keys deleted")
-    failed_ids: list[str] = Field(default_factory=list, description="List of key IDs that failed to delete")
+    failed_ids: list[str] = Field(
+        default_factory=list, description="List of key IDs that failed to delete"
+    )
     errors: dict[str, str] = Field(default_factory=dict, description="Errors for failed deletions")
 
 
@@ -65,7 +67,9 @@ class ProvidersSummaryResponse(BaseModel):
 
     providers: list[ProviderKeySummary] = Field(..., description="List of provider key summaries")
     total_keys: int = Field(..., ge=0, description="Total number of keys across all providers")
-    configured_providers: int = Field(..., ge=0, description="Number of providers with at least one active key")
+    configured_providers: int = Field(
+        ..., ge=0, description="Number of providers with at least one active key"
+    )
 
 
 class MessageResponse(BaseModel):
@@ -165,7 +169,9 @@ for provider, role, and status. By default, inactive/revoked keys are excluded.
 async def list_api_keys(
     provider_id: str | None = Query(None, description="Filter by provider ID"),
     role: ApiKeyRole | None = Query(None, description="Filter by key role"),
-    status_filter: ApiKeyStatus | None = Query(None, alias="status", description="Filter by key status"),
+    status_filter: ApiKeyStatus | None = Query(
+        None, alias="status", description="Filter by key status"
+    ),
     include_inactive: bool = Query(False, description="Include inactive/revoked keys"),
     user: TokenPayload = Depends(get_current_user),
     service: ApiKeyStorageService = Depends(get_service),

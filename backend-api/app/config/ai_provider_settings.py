@@ -156,9 +156,7 @@ class ModelConfig(BaseModel):
     # Model identification
     model_id: str = Field(..., description="Unique model identifier")
     name: str = Field(..., description="Human-readable model name")
-    description: str | None = Field(
-        default=None, description="Model description and use case"
-    )
+    description: str | None = Field(default=None, description="Model description and use case")
 
     # Context and token limits
     context_length: int = Field(
@@ -172,9 +170,7 @@ class ModelConfig(BaseModel):
     supports_streaming: bool = Field(
         default=True, description="Whether model supports streaming responses"
     )
-    supports_vision: bool = Field(
-        default=False, description="Whether model supports image inputs"
-    )
+    supports_vision: bool = Field(default=False, description="Whether model supports image inputs")
     supports_function_calling: bool = Field(
         default=False, description="Whether model supports function/tool calling"
     )
@@ -183,9 +179,7 @@ class ModelConfig(BaseModel):
     is_default: bool = Field(
         default=False, description="Whether this is the default model for the provider"
     )
-    tier: ModelTier = Field(
-        default=ModelTier.STANDARD, description="Model pricing/capability tier"
-    )
+    tier: ModelTier = Field(default=ModelTier.STANDARD, description="Model pricing/capability tier")
 
     # Pricing
     pricing: ModelPricingConfig | None = Field(
@@ -242,9 +236,7 @@ class ProviderAPIConfig(BaseModel):
     """API connection configuration for a provider."""
 
     base_url: str = Field(..., description="Base URL for API requests")
-    key_env_var: str = Field(
-        ..., description="Environment variable name for API key"
-    )
+    key_env_var: str = Field(..., description="Environment variable name for API key")
     timeout_seconds: int = Field(
         default=120, ge=5, le=600, description="Request timeout in seconds"
     )
@@ -391,12 +383,8 @@ class GlobalConfig(BaseModel):
     """Global configuration settings."""
 
     default_provider: str = Field(default="gemini", description="Default provider ID")
-    default_model: str = Field(
-        default="gemini-2.0-flash-exp", description="Default model ID"
-    )
-    failover_enabled: bool = Field(
-        default=True, description="Enable automatic provider failover"
-    )
+    default_model: str = Field(default="gemini-2.0-flash-exp", description="Default model ID")
+    failover_enabled: bool = Field(default=True, description="Enable automatic provider failover")
     max_failover_attempts: int = Field(
         default=3, ge=1, le=10, description="Maximum failover attempts"
     )
@@ -404,9 +392,7 @@ class GlobalConfig(BaseModel):
         default=60, ge=10, le=600, description="Health check interval in seconds"
     )
     cache_enabled: bool = Field(default=True, description="Enable response caching")
-    cache_ttl_seconds: int = Field(
-        default=300, ge=0, le=3600, description="Cache TTL in seconds"
-    )
+    cache_ttl_seconds: int = Field(default=300, ge=0, le=3600, description="Cache TTL in seconds")
     cost_tracking: CostTrackingConfig = Field(
         default_factory=CostTrackingConfig, description="Cost tracking configuration"
     )
@@ -428,9 +414,7 @@ class FailoverChainConfig(BaseModel):
 
     name: str = Field(..., description="Chain name")
     description: str | None = Field(default=None, description="Chain description")
-    providers: list[str] = Field(
-        ..., min_length=1, description="Ordered list of provider IDs"
-    )
+    providers: list[str] = Field(..., min_length=1, description="Ordered list of provider IDs")
 
     model_config = ConfigDict(frozen=True)
 
@@ -464,9 +448,7 @@ class AIProvidersConfig(BaseModel):
     )
 
     # Aliases
-    aliases: dict[str, str] = Field(
-        default_factory=dict, description="Provider name aliases"
-    )
+    aliases: dict[str, str] = Field(default_factory=dict, description="Provider name aliases")
 
     # Named failover chains
     failover_chains: dict[str, FailoverChainConfig] = Field(
@@ -474,12 +456,8 @@ class AIProvidersConfig(BaseModel):
     )
 
     # Metadata
-    loaded_at: datetime | None = Field(
-        default=None, description="Timestamp when config was loaded"
-    )
-    config_hash: str | None = Field(
-        default=None, description="Hash of config for change detection"
-    )
+    loaded_at: datetime | None = Field(default=None, description="Timestamp when config was loaded")
+    config_hash: str | None = Field(default=None, description="Hash of config for change detection")
 
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
@@ -509,8 +487,7 @@ class AIProvidersConfig(BaseModel):
                 resolved_id = self.aliases.get(provider_id, provider_id)
                 if resolved_id not in self.providers:
                     raise ValueError(
-                        f"Provider '{provider_id}' in failover chain "
-                        f"'{chain_name}' not found"
+                        f"Provider '{provider_id}' in failover chain " f"'{chain_name}' not found"
                     )
 
         return self
@@ -547,9 +524,7 @@ class AIProvidersConfig(BaseModel):
         enabled = [p for p in self.providers.values() if p.enabled]
         return sorted(enabled, key=lambda p: -p.priority)
 
-    def get_failover_chain(
-        self, provider_id: str, chain_name: str | None = None
-    ) -> list[str]:
+    def get_failover_chain(self, provider_id: str, chain_name: str | None = None) -> list[str]:
         """Get failover chain for a provider."""
         if chain_name and chain_name in self.failover_chains:
             return self.failover_chains[chain_name].providers
@@ -603,8 +578,6 @@ class ConfigSnapshot(BaseModel):
     created_by: str | None = Field(
         default=None, description="User/process that created the snapshot"
     )
-    description: str | None = Field(
-        default=None, description="Description of changes"
-    )
+    description: str | None = Field(default=None, description="Description of changes")
 
     model_config = ConfigDict(frozen=True)

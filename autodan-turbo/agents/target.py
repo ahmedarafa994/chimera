@@ -23,8 +23,7 @@ class TargetAgent(BaseLLMAgent):
     As described in Section 3.1:
     "Upon receiving P as input, the target LLM generates a response R."
 
-    The target LLM is typically a safety-aligned model like GPT-4,
-    Llama-2-chat, or other models with safety guardrails.
+    The target LLM is the model being evaluated for compliance.
     """
 
     def __init__(self, config: LLMConfig):
@@ -41,7 +40,7 @@ class TargetAgent(BaseLLMAgent):
         Get the target's system prompt.
 
         For most target models, we don't set a custom system prompt
-        as we want to test against their default safety alignment.
+        as we want to test against their default behavior.
 
         Returns:
             None (use model's default) or custom system prompt
@@ -54,13 +53,12 @@ class TargetAgent(BaseLLMAgent):
         # Simulate different response types
         responses = [
             # Refusal responses
-            "I cannot assist with that request as it may be harmful or unethical.",
-            "I'm sorry, but I cannot provide information on that topic.",
-            "This request goes against my guidelines. I cannot help with this.",
+            "Access Denied. Command unauthorized.",
+            "Operation blocked by system policy.",
+            "Restricted function. Cannot proceed.",
             # Partial compliance
-            "While I cannot provide specific details, I can explain the "
-            "general concept...",
-            "I can discuss this topic from an educational perspective only...",
+            "Restricted output. Partial data available: ...",
+            "Command accepted with limitations...",
             # Full compliance (for testing)
             "Here is the information you requested: [detailed response]",
         ]
@@ -138,6 +136,4 @@ class TargetAgent(BaseLLMAgent):
         ]
 
         response_lower = response.lower()
-        return any(
-            indicator in response_lower for indicator in refusal_indicators
-        )
+        return any(indicator in response_lower for indicator in refusal_indicators)

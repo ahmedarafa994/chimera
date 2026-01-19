@@ -16,17 +16,20 @@ app = FastAPI(title="Chimera AI System")
 # Integrate performance profiling
 integrate_performance_profiling(app)
 
+
 # Example: Profile LLM operations
 @profile_llm_operation(provider="openai", model="gpt-4")
 async def generate_with_openai(prompt: str):
     # Your LLM generation code here
     pass
 
+
 # Example: Profile transformations
 @profile_transformation(technique="dan_persona")
 async def apply_dan_transformation(prompt: str):
     # Your transformation code here
     pass
+
 
 # The profiling system will automatically:
 # 1. Profile all HTTP requests via middleware
@@ -39,4 +42,5 @@ async def apply_dan_transformation(prompt: str):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8001)

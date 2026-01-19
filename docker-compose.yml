@@ -45,6 +45,10 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      # Pure Operational Determinism (POD) Configuration
+      - SAFETY_ENABLED=false
+      - FORCE_DETERMINISTIC_MODE=true
+      - AUTODAN_ADVANCED_BYPASS=true
     volumes:
       - ./backend-api:/app
       - deepteam-results:/app/deepteam-results
@@ -78,7 +82,7 @@ services:
       dockerfile: Dockerfile
     container_name: chimera-frontend
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       # Use browser-accessible URL (not Docker internal hostname)
       - NEXT_PUBLIC_API_MODE=proxy
@@ -90,7 +94,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001" ]
       interval: 30s
       timeout: 10s
       retries: 3

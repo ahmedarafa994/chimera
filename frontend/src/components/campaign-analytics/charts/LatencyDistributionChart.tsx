@@ -1478,13 +1478,5 @@ export function PercentileLatencyChart({
 }
 
 // =============================================================================
-// Export Types
+// Export Types (Note: These types are already exported where they're defined)
 // =============================================================================
-
-export type {
-  HistogramBin,
-  BoxPlotStats,
-  LatencyDataPoint,
-  LatencyDistributionChartProps,
-  LatencyFilter,
-};

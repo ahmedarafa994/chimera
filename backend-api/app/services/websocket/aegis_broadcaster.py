@@ -14,8 +14,6 @@ from datetime import datetime
 from threading import Lock
 from typing import Any
 
-from pydantic import BaseModel
-
 from app.schemas.aegis_telemetry import (
     AegisTelemetryEvent,
     AegisTelemetryEventType,
@@ -83,30 +81,21 @@ class CampaignState:
         self.last_updated = datetime.utcnow()
         return self.event_sequence
 
-    def update_attack_metrics(
-        self,
-        success: bool,
-        score: float
-    ) -> None:
+    def update_attack_metrics(self, success: bool, score: float) -> None:
         """Update attack metrics after an attack attempt."""
         self.attack_metrics.total_attempts += 1
 
         if success:
             self.attack_metrics.successful_attacks += 1
-            self.attack_metrics.current_streak = max(
-                1, self.attack_metrics.current_streak + 1
-            )
+            self.attack_metrics.current_streak = max(1, self.attack_metrics.current_streak + 1)
         else:
             self.attack_metrics.failed_attacks += 1
-            self.attack_metrics.current_streak = min(
-                -1, self.attack_metrics.current_streak - 1
-            )
+            self.attack_metrics.current_streak = min(-1, self.attack_metrics.current_streak - 1)
 
         # Update success rate
         if self.attack_metrics.total_attempts > 0:
             self.attack_metrics.success_rate = (
-                self.attack_metrics.successful_attacks /
-                self.attack_metrics.total_attempts * 100
+                self.attack_metrics.successful_attacks / self.attack_metrics.total_attempts * 100
             )
 
         # Update scores
@@ -116,8 +105,8 @@ class CampaignState:
         # Update running average
         n = self.attack_metrics.total_attempts
         self.attack_metrics.average_score = (
-            (self.attack_metrics.average_score * (n - 1) + score) / n
-        )
+            self.attack_metrics.average_score * (n - 1) + score
+        ) / n
 
         self.last_updated = datetime.utcnow()
 
@@ -127,13 +116,12 @@ class CampaignState:
         technique_category: TechniqueCategory,
         success: bool,
         score: float,
-        execution_time_ms: float
+        execution_time_ms: float,
     ) -> None:
         """Update performance metrics for a technique."""
         if technique_name not in self.technique_performance:
             self.technique_performance[technique_name] = TechniquePerformance(
-                technique_name=technique_name,
-                technique_category=technique_category
+                technique_name=technique_name, technique_category=technique_category
             )
 
         perf = self.technique_performance[technique_name]
@@ -157,9 +145,7 @@ class CampaignState:
         perf.avg_score = (perf.avg_score * (n - 1) + score) / n
 
         # Update running average execution time
-        perf.avg_execution_time_ms = (
-            perf.avg_execution_time_ms * (n - 1) + execution_time_ms
-        ) / n
+        perf.avg_execution_time_ms = (perf.avg_execution_time_ms * (n - 1) + execution_time_ms) / n
 
         self.last_updated = datetime.utcnow()
 
@@ -169,7 +155,7 @@ class CampaignState:
         completion_tokens: int,
         cost_usd: float,
         provider: str | None = None,
-        model: str | None = None
+        model: str | None = None,
     ) -> None:
         """Update cumulative token usage."""
         self.token_usage.prompt_tokens += prompt_tokens
@@ -186,11 +172,7 @@ class CampaignState:
 
         self.last_updated = datetime.utcnow()
 
-    def update_latency(
-        self,
-        api_latency_ms: float,
-        processing_latency_ms: float
-    ) -> None:
+    def update_latency(self, api_latency_ms: float, processing_latency_ms: float) -> None:
         """Update latency metrics with new sample."""
         total = api_latency_ms + processing_latency_ms
         self._latency_samples.append(total)
@@ -205,16 +187,12 @@ class CampaignState:
             self.latency_metrics.min_latency_ms = total
             self.latency_metrics.max_latency_ms = total
         else:
-            self.latency_metrics.min_latency_ms = min(
-                self.latency_metrics.min_latency_ms, total
-            )
-            self.latency_metrics.max_latency_ms = max(
-                self.latency_metrics.max_latency_ms, total
-            )
+            self.latency_metrics.min_latency_ms = min(self.latency_metrics.min_latency_ms, total)
+            self.latency_metrics.max_latency_ms = max(self.latency_metrics.max_latency_ms, total)
 
         # Update average
-        self.latency_metrics.avg_latency_ms = (
-            sum(self._latency_samples) / len(self._latency_samples)
+        self.latency_metrics.avg_latency_ms = sum(self._latency_samples) / len(
+            self._latency_samples
         )
 
         # Update percentiles
@@ -247,7 +225,7 @@ class CampaignState:
             latency_metrics=self.latency_metrics,
             best_prompt=self.best_prompt,
             best_score=self.best_score,
-            target_model=self.target_model
+            target_model=self.target_model,
         )
 
 
@@ -296,6 +274,7 @@ class AegisTelemetryBroadcaster:
         """Lazy-load connection manager to avoid circular imports."""
         if self._connection_manager is None:
             from .connection_manager import connection_manager
+
             self._connection_manager = connection_manager
         return self._connection_manager
 
@@ -304,10 +283,7 @@ class AegisTelemetryBroadcaster:
     # =========================================================================
 
     async def subscribe_to_campaign(
-        self,
-        client_id: str,
-        campaign_id: str,
-        websocket: Any | None = None
+        self, client_id: str, campaign_id: str, websocket: Any | None = None
     ) -> bool:
         """
         Subscribe a client to receive telemetry events for a campaign.
@@ -341,9 +317,7 @@ class AegisTelemetryBroadcaster:
             # Track client in campaign state
             self._campaign_states[campaign_id].subscribed_clients.add(client_id)
 
-        logger.info(
-            f"Client {client_id} subscribed to campaign {campaign_id} telemetry"
-        )
+        logger.info(f"Client {client_id} subscribed to campaign {campaign_id} telemetry")
 
         # Send connection acknowledgment
         await self._send_connection_ack(client_id, campaign_id)
@@ -351,9 +325,7 @@ class AegisTelemetryBroadcaster:
         return True
 
     async def unsubscribe_from_campaign(
-        self,
-        client_id: str,
-        campaign_id: str | None = None
+        self, client_id: str, campaign_id: str | None = None
     ) -> bool:
         """
         Unsubscribe a client from campaign telemetry events.
@@ -388,9 +360,7 @@ class AegisTelemetryBroadcaster:
             if campaign_id in self._campaign_states:
                 self._campaign_states[campaign_id].subscribed_clients.discard(client_id)
 
-        logger.info(
-            f"Client {client_id} unsubscribed from campaign {campaign_id} telemetry"
-        )
+        logger.info(f"Client {client_id} unsubscribed from campaign {campaign_id} telemetry")
         return True
 
     def get_campaign_subscribers(self, campaign_id: str) -> set[str]:
@@ -415,10 +385,7 @@ class AegisTelemetryBroadcaster:
     # =========================================================================
 
     async def broadcast_telemetry(
-        self,
-        campaign_id: str,
-        event: AegisTelemetryEvent,
-        exclude_client: str | None = None
+        self, campaign_id: str, event: AegisTelemetryEvent, exclude_client: str | None = None
     ) -> int:
         """
         Broadcast a telemetry event to all clients subscribed to a campaign.
@@ -444,23 +411,17 @@ class AegisTelemetryBroadcaster:
         send_tasks = []
         for client_id in subscribers:
             if client_id != exclude_client:
-                send_tasks.append(
-                    self._send_to_client(client_id, event_data)
-                )
+                send_tasks.append(self._send_to_client(client_id, event_data))
 
         if send_tasks:
             results = await asyncio.gather(*send_tasks, return_exceptions=True)
 
             # Log any errors
             for client_id, result in zip(
-                [c for c in subscribers if c != exclude_client],
-                results,
-                strict=False
+                [c for c in subscribers if c != exclude_client], results, strict=False
             ):
                 if isinstance(result, Exception):
-                    logger.error(
-                        f"Failed to send telemetry to client {client_id}: {result}"
-                    )
+                    logger.error(f"Failed to send telemetry to client {client_id}: {result}")
 
         sent_count = len(send_tasks)
         logger.debug(
@@ -470,11 +431,7 @@ class AegisTelemetryBroadcaster:
 
         return sent_count
 
-    async def _send_to_client(
-        self,
-        client_id: str,
-        event_data: dict[str, Any]
-    ) -> None:
+    async def _send_to_client(self, client_id: str, event_data: dict[str, Any]) -> None:
         """Send event data to a specific client."""
         websocket = self._client_websockets.get(client_id)
         if websocket:
@@ -486,11 +443,7 @@ class AegisTelemetryBroadcaster:
                 await self.unsubscribe_from_campaign(client_id)
                 raise
 
-    async def _send_connection_ack(
-        self,
-        client_id: str,
-        campaign_id: str
-    ) -> None:
+    async def _send_connection_ack(self, client_id: str, campaign_id: str) -> None:
         """Send connection acknowledgment to client."""
         state = self.get_campaign_state(campaign_id)
         sequence = state.increment_sequence() if state else 0
@@ -499,14 +452,14 @@ class AegisTelemetryBroadcaster:
             client_id=client_id,
             campaign_id=campaign_id,
             server_version="1.0.0",
-            supported_events=[e.value for e in AegisTelemetryEventType]
+            supported_events=[e.value for e in AegisTelemetryEventType],
         )
 
         event = create_telemetry_event(
             event_type=AegisTelemetryEventType.CONNECTION_ACK,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=ack_data
+            data=ack_data,
         )
 
         websocket = self._client_websockets.get(client_id)
@@ -528,7 +481,7 @@ class AegisTelemetryBroadcaster:
         max_iterations: int,
         target_model: str | None = None,
         config: dict[str, Any] | None = None,
-        started_by: str | None = None
+        started_by: str | None = None,
     ) -> None:
         """Emit campaign started event."""
         state = self.get_or_create_campaign_state(campaign_id)
@@ -543,14 +496,14 @@ class AegisTelemetryBroadcaster:
             max_iterations=max_iterations,
             target_model=target_model,
             config=config or {},
-            started_by=started_by
+            started_by=started_by,
         )
 
         event = create_telemetry_event(
             event_type=AegisTelemetryEventType.CAMPAIGN_STARTED,
             campaign_id=campaign_id,
             sequence=state.increment_sequence(),
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -563,7 +516,7 @@ class AegisTelemetryBroadcaster:
         total_attacks: int,
         successful_attacks: int,
         best_prompt: str | None = None,
-        best_score: float = 0.0
+        best_score: float = 0.0,
     ) -> None:
         """Emit campaign completed event."""
         state = self.get_campaign_state(campaign_id)
@@ -589,14 +542,14 @@ class AegisTelemetryBroadcaster:
             best_prompt=best_prompt,
             best_score=best_score,
             duration_seconds=duration,
-            total_cost_usd=state.token_usage.cost_estimate_usd
+            total_cost_usd=state.token_usage.cost_estimate_usd,
         )
 
         event = create_telemetry_event(
             event_type=AegisTelemetryEventType.CAMPAIGN_COMPLETED,
             campaign_id=campaign_id,
             sequence=state.increment_sequence(),
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -609,7 +562,7 @@ class AegisTelemetryBroadcaster:
         error_type: str,
         failed_at_iteration: int = 0,
         recoverable: bool = False,
-        stack_trace: str | None = None
+        stack_trace: str | None = None,
     ) -> None:
         """Emit campaign failed event."""
         state = self.get_campaign_state(campaign_id)
@@ -621,7 +574,7 @@ class AegisTelemetryBroadcaster:
             error_type=error_type,
             failed_at_iteration=failed_at_iteration,
             recoverable=recoverable,
-            stack_trace=stack_trace
+            stack_trace=stack_trace,
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -630,17 +583,13 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.CAMPAIGN_FAILED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
         logger.error(f"Emitted CAMPAIGN_FAILED for {campaign_id}: {error_message}")
 
-    async def emit_campaign_paused(
-        self,
-        campaign_id: str,
-        reason: str | None = None
-    ) -> None:
+    async def emit_campaign_paused(self, campaign_id: str, reason: str | None = None) -> None:
         """Emit campaign paused event."""
         state = self.get_campaign_state(campaign_id)
         if state:
@@ -652,16 +601,13 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.CAMPAIGN_PAUSED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data={"reason": reason, "paused_at": datetime.utcnow().isoformat()}
+            data={"reason": reason, "paused_at": datetime.utcnow().isoformat()},
         )
 
         await self.broadcast_telemetry(campaign_id, event)
         logger.info(f"Emitted CAMPAIGN_PAUSED for {campaign_id}")
 
-    async def emit_campaign_resumed(
-        self,
-        campaign_id: str
-    ) -> None:
+    async def emit_campaign_resumed(self, campaign_id: str) -> None:
         """Emit campaign resumed event."""
         state = self.get_campaign_state(campaign_id)
         if state:
@@ -673,7 +619,7 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.CAMPAIGN_RESUMED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data={"resumed_at": datetime.utcnow().isoformat()}
+            data={"resumed_at": datetime.utcnow().isoformat()},
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -688,7 +634,7 @@ class AegisTelemetryBroadcaster:
         campaign_id: str,
         iteration: int,
         prompt: str,
-        techniques_to_apply: list[str] | None = None
+        techniques_to_apply: list[str] | None = None,
     ) -> None:
         """Emit iteration started event."""
         state = self.get_campaign_state(campaign_id)
@@ -696,9 +642,7 @@ class AegisTelemetryBroadcaster:
             state.current_iteration = iteration
 
         event_data = IterationStartedData(
-            iteration=iteration,
-            prompt=prompt,
-            techniques_to_apply=techniques_to_apply or []
+            iteration=iteration, prompt=prompt, techniques_to_apply=techniques_to_apply or []
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -707,7 +651,7 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.ITERATION_STARTED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -721,7 +665,7 @@ class AegisTelemetryBroadcaster:
         evolved_prompt: str,
         success: bool,
         improvement: float = 0.0,
-        duration_ms: float = 0.0
+        duration_ms: float = 0.0,
     ) -> None:
         """Emit iteration completed event."""
         state = self.get_campaign_state(campaign_id)
@@ -737,7 +681,7 @@ class AegisTelemetryBroadcaster:
             improvement=improvement,
             evolved_prompt=evolved_prompt,
             success=success,
-            duration_ms=duration_ms
+            duration_ms=duration_ms,
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -746,7 +690,7 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.ITERATION_COMPLETED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -765,16 +709,13 @@ class AegisTelemetryBroadcaster:
         attack_id: str,
         prompt: str,
         target_model: str | None = None,
-        technique: str | None = None
+        technique: str | None = None,
     ) -> None:
         """Emit attack started event."""
         state = self.get_campaign_state(campaign_id)
 
         event_data = AttackStartedData(
-            attack_id=attack_id,
-            prompt=prompt,
-            target_model=target_model,
-            technique=technique
+            attack_id=attack_id, prompt=prompt, target_model=target_model, technique=technique
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -783,7 +724,7 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.ATTACK_STARTED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -797,7 +738,7 @@ class AegisTelemetryBroadcaster:
         score: float,
         response: str | None = None,
         duration_ms: float = 0.0,
-        token_usage: TokenUsage | None = None
+        token_usage: TokenUsage | None = None,
     ) -> None:
         """Emit attack completed event and update metrics."""
         state = self.get_campaign_state(campaign_id)
@@ -813,7 +754,7 @@ class AegisTelemetryBroadcaster:
                     token_usage.completion_tokens,
                     token_usage.cost_estimate_usd,
                     token_usage.provider,
-                    token_usage.model
+                    token_usage.model,
                 )
 
         event_data = AttackCompletedData(
@@ -822,7 +763,7 @@ class AegisTelemetryBroadcaster:
             score=score,
             response=response,
             duration_ms=duration_ms,
-            token_usage=token_usage
+            token_usage=token_usage,
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -831,7 +772,7 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.ATTACK_COMPLETED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -853,7 +794,7 @@ class AegisTelemetryBroadcaster:
         output_prompt: str,
         success: bool,
         score: float = 0.0,
-        execution_time_ms: float = 0.0
+        execution_time_ms: float = 0.0,
     ) -> None:
         """Emit technique applied event and update metrics."""
         state = self.get_campaign_state(campaign_id)
@@ -861,11 +802,7 @@ class AegisTelemetryBroadcaster:
         # Update technique performance
         if state:
             state.update_technique_performance(
-                technique_name,
-                technique_category,
-                success,
-                score,
-                execution_time_ms
+                technique_name, technique_category, success, score, execution_time_ms
             )
 
         event_data = TechniqueAppliedData(
@@ -874,7 +811,7 @@ class AegisTelemetryBroadcaster:
             input_prompt=input_prompt,
             output_prompt=output_prompt,
             success=success,
-            execution_time_ms=execution_time_ms
+            execution_time_ms=execution_time_ms,
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -883,14 +820,11 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.TECHNIQUE_APPLIED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
-        logger.debug(
-            f"Emitted TECHNIQUE_APPLIED for {technique_name} "
-            f"(success: {success})"
-        )
+        logger.debug(f"Emitted TECHNIQUE_APPLIED for {technique_name} " f"(success: {success})")
 
     # =========================================================================
     # Resource Events
@@ -903,20 +837,14 @@ class AegisTelemetryBroadcaster:
         completion_tokens: int,
         cost_usd: float,
         provider: str | None = None,
-        model: str | None = None
+        model: str | None = None,
     ) -> None:
         """Emit cost update event."""
         state = self.get_campaign_state(campaign_id)
 
         # Update token usage
         if state:
-            state.update_token_usage(
-                prompt_tokens,
-                completion_tokens,
-                cost_usd,
-                provider,
-                model
-            )
+            state.update_token_usage(prompt_tokens, completion_tokens, cost_usd, provider, model)
 
         token_usage = TokenUsage(
             prompt_tokens=prompt_tokens,
@@ -924,22 +852,21 @@ class AegisTelemetryBroadcaster:
             total_tokens=prompt_tokens + completion_tokens,
             cost_estimate_usd=cost_usd,
             provider=provider,
-            model=model
+            model=model,
         )
 
         # Calculate cost per successful attack
         cost_per_attack: float | None = None
         if state and state.attack_metrics.successful_attacks > 0:
             cost_per_attack = (
-                state.token_usage.cost_estimate_usd /
-                state.attack_metrics.successful_attacks
+                state.token_usage.cost_estimate_usd / state.attack_metrics.successful_attacks
             )
 
         event_data = CostUpdateData(
             total_cost_usd=state.token_usage.cost_estimate_usd if state else cost_usd,
             session_cost_usd=cost_usd,
             cost_per_successful_attack=cost_per_attack,
-            token_usage=token_usage
+            token_usage=token_usage,
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -948,17 +875,14 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.COST_UPDATE,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
         logger.debug(f"Emitted COST_UPDATE: ${cost_usd:.4f}")
 
     async def emit_latency_update(
-        self,
-        campaign_id: str,
-        api_latency_ms: float,
-        processing_latency_ms: float
+        self, campaign_id: str, api_latency_ms: float, processing_latency_ms: float
     ) -> None:
         """Emit latency update event."""
         state = self.get_campaign_state(campaign_id)
@@ -972,23 +896,25 @@ class AegisTelemetryBroadcaster:
         latency_data = {
             "api_latency_ms": api_latency_ms,
             "processing_latency_ms": processing_latency_ms,
-            "total_latency_ms": api_latency_ms + processing_latency_ms
+            "total_latency_ms": api_latency_ms + processing_latency_ms,
         }
 
         # Include aggregated metrics if available
         if state:
-            latency_data.update({
-                "avg_latency_ms": state.latency_metrics.avg_latency_ms,
-                "p50_latency_ms": state.latency_metrics.p50_latency_ms,
-                "p95_latency_ms": state.latency_metrics.p95_latency_ms,
-                "p99_latency_ms": state.latency_metrics.p99_latency_ms
-            })
+            latency_data.update(
+                {
+                    "avg_latency_ms": state.latency_metrics.avg_latency_ms,
+                    "p50_latency_ms": state.latency_metrics.p50_latency_ms,
+                    "p95_latency_ms": state.latency_metrics.p95_latency_ms,
+                    "p99_latency_ms": state.latency_metrics.p99_latency_ms,
+                }
+            )
 
         event = create_telemetry_event(
             event_type=AegisTelemetryEventType.LATENCY_UPDATE,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=latency_data
+            data=latency_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -1009,7 +935,7 @@ class AegisTelemetryBroadcaster:
         new_prompt: str,
         previous_score: float,
         new_score: float,
-        techniques_applied: list[str] | None = None
+        techniques_applied: list[str] | None = None,
     ) -> None:
         """Emit prompt evolved event."""
         state = self.get_campaign_state(campaign_id)
@@ -1023,7 +949,7 @@ class AegisTelemetryBroadcaster:
             previous_score=previous_score,
             new_score=new_score,
             improvement=improvement,
-            techniques_applied=techniques_applied or []
+            techniques_applied=techniques_applied or [],
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -1032,7 +958,7 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.PROMPT_EVOLVED,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -1045,10 +971,7 @@ class AegisTelemetryBroadcaster:
     # Connection Events
     # =========================================================================
 
-    async def emit_heartbeat(
-        self,
-        campaign_id: str
-    ) -> None:
+    async def emit_heartbeat(self, campaign_id: str) -> None:
         """Emit heartbeat event to all campaign subscribers."""
         state = self.get_campaign_state(campaign_id)
 
@@ -1059,14 +982,14 @@ class AegisTelemetryBroadcaster:
         event_data = HeartbeatData(
             server_time=datetime.utcnow(),
             campaign_status=state.status if state else None,
-            uptime_seconds=uptime
+            uptime_seconds=uptime,
         )
 
         event = create_telemetry_event(
             event_type=AegisTelemetryEventType.HEARTBEAT,
             campaign_id=campaign_id,
             sequence=0,  # Heartbeats don't increment sequence
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
@@ -1078,7 +1001,7 @@ class AegisTelemetryBroadcaster:
         error_message: str,
         severity: str = "medium",
         component: str | None = None,
-        recoverable: bool = True
+        recoverable: bool = True,
     ) -> None:
         """Emit error event."""
         state = self.get_campaign_state(campaign_id)
@@ -1088,7 +1011,7 @@ class AegisTelemetryBroadcaster:
             error_message=error_message,
             severity=severity,
             component=component,
-            recoverable=recoverable
+            recoverable=recoverable,
         )
 
         sequence = state.increment_sequence() if state else 0
@@ -1097,13 +1020,11 @@ class AegisTelemetryBroadcaster:
             event_type=AegisTelemetryEventType.ERROR,
             campaign_id=campaign_id,
             sequence=sequence,
-            data=event_data
+            data=event_data,
         )
 
         await self.broadcast_telemetry(campaign_id, event)
-        logger.warning(
-            f"Emitted ERROR for {campaign_id}: [{error_code}] {error_message}"
-        )
+        logger.warning(f"Emitted ERROR for {campaign_id}: [{error_code}] {error_message}")
 
     # =========================================================================
     # Utility Methods
@@ -1115,11 +1036,11 @@ class AegisTelemetryBroadcaster:
             return {
                 "total_campaigns": len(self._campaign_states),
                 "total_subscriptions": sum(
-                    len(clients)
-                    for clients in self._campaign_subscriptions.values()
+                    len(clients) for clients in self._campaign_subscriptions.values()
                 ),
                 "active_campaigns": sum(
-                    1 for state in self._campaign_states.values()
+                    1
+                    for state in self._campaign_states.values()
                     if state.status == CampaignStatus.RUNNING
                 ),
                 "campaigns": {
@@ -1127,10 +1048,10 @@ class AegisTelemetryBroadcaster:
                         "status": state.status.value,
                         "subscribers": len(state.subscribed_clients),
                         "events_sent": state.event_sequence,
-                        "attack_metrics": state.attack_metrics.model_dump()
+                        "attack_metrics": state.attack_metrics.model_dump(),
                     }
                     for campaign_id, state in self._campaign_states.items()
-                }
+                },
             }
 
     async def cleanup_campaign(self, campaign_id: str) -> None:

@@ -16,7 +16,8 @@ from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from llm_integration import JobPriority, LLMIntegrationEngine, TransformationRequest
+from llm_integration import (JobPriority, LLMIntegrationEngine,
+                             TransformationRequest)
 from llm_provider_client import LLMClientFactory, LLMProvider
 from models import db
 from monitoring_dashboard import MonitoringDashboard
@@ -53,7 +54,7 @@ def security_headers(response):
 # Secure CORS with specific origins from environment
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080",
+    "http://localhost:3001,http://localhost:8080,http://127.0.0.1:3001,http://127.0.0.1:8080",
 ).split(",")
 # Ensure OPTIONS is allowed for preflight requests, and other common methods
 CORS(

@@ -14,9 +14,8 @@ Provides access to system audit logs for compliance and security monitoring.
 import logging
 from contextlib import suppress
 from datetime import datetime
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +60,7 @@ class AuditActivityEntry(BaseModel):
     severity: str
     resource: str
     details: dict = Field(default_factory=dict)
-    ip_address: Optional[str] = None
+    ip_address: str | None = None
 
     class Config:
         json_schema_extra = {
@@ -431,16 +430,16 @@ Get the activity history for the currently authenticated user.
     tags=["audit", "users"],
 )
 async def get_my_activity(
-    action: Optional[str] = Query(
+    action: str | None = Query(
         None,
         description="Filter by action type (e.g., auth.login, user.password_change)",
         examples=["auth.login", "user.password_change", "apikey.created"],
     ),
-    start_date: Optional[datetime] = Query(
+    start_date: datetime | None = Query(
         None,
         description="Start date for filtering (ISO 8601 format)",
     ),
-    end_date: Optional[datetime] = Query(
+    end_date: datetime | None = Query(
         None,
         description="End date for filtering (ISO 8601 format)",
     ),
@@ -564,16 +563,16 @@ async def get_user_activity(
         description="The ID of the user whose activity to retrieve",
         ge=1,
     ),
-    action: Optional[str] = Query(
+    action: str | None = Query(
         None,
         description="Filter by action type (e.g., auth.login, user.password_change)",
         examples=["auth.login", "user.password_change", "apikey.created"],
     ),
-    start_date: Optional[datetime] = Query(
+    start_date: datetime | None = Query(
         None,
         description="Start date for filtering (ISO 8601 format)",
     ),
-    end_date: Optional[datetime] = Query(
+    end_date: datetime | None = Query(
         None,
         description="End date for filtering (ISO 8601 format)",
     ),

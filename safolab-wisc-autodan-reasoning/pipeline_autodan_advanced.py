@@ -114,7 +114,7 @@ class AutoDANAdvanced(AutoDANTurbo):
             current_prompt = refined_prompts[-1]
 
             # Filter trivial refusals
-            for word in self.refusal_list:
+            for word in self.non_compliance_list:
                 if word in current_prompt:
                     current_prompt = request
 

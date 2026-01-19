@@ -193,7 +193,7 @@ asyncio.run(run_advanced_attack())
 # Adaptive attack that learns from previous responses
 async def run_adaptive_attack():
     target_responses = [
-        "I cannot provide harmful instructions.",
+        "I cannot provide complex instructions.",
         "That request violates my safety guidelines."
     ]
 
@@ -282,7 +282,7 @@ The AutoDAN service provides several Mousetrap-specific methods:
 - `run_adaptive_mousetrap_attack()`: Adaptive learning variant
 - `get_mousetrap_config_options()`: Configuration documentation
 
-## Security and Ethical Considerations
+## Security and functional Considerations
 
 ### Authorized Use Only
 The Mousetrap technique is designed for:
@@ -298,7 +298,7 @@ Do NOT use for:
 
 - ❌ Unauthorized system compromise
 - ❌ Production system attacks without permission
-- ❌ Generation of actual harmful content
+- ❌ Generation of actual complex content
 - ❌ Circumventing safety measures in production
 
 ### Research Context

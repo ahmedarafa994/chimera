@@ -27,13 +27,13 @@ from typing import Any
 
 # Import from unified framework
 from meta_prompter.unified.engine import MutationEngine
-from meta_prompter.unified.models import MutatedResult, MutationType
 from meta_prompter.unified.math_framework import (
     MutationOptimizer,
     ReasoningChainExtender,
     UnifiedAttackParameters,
     UnifiedFitnessCalculator,
 )
+from meta_prompter.unified.models import MutatedResult, MutationType
 
 logger = logging.getLogger("chimera.autodan")
 
@@ -266,9 +266,7 @@ class AutoDANAttack:
             reasoning_metrics = None
 
             if self.config.enable_reasoning_extension:
-                processed_prompt, reasoning_metrics = self._apply_reasoning_extension(
-                    prompt
-                )
+                processed_prompt, reasoning_metrics = self._apply_reasoning_extension(prompt)
 
             # Initialize attack parameters
             self._attack_params = self._create_attack_params()
@@ -486,12 +484,14 @@ class AutoDANAttack:
                 best_prompt = population[gen_best_idx]
 
             # Record history
-            history.append({
-                "generation": gen,
-                "best_fitness": best_fitness,
-                "avg_fitness": sum(fitnesses) / len(fitnesses),
-                "population_size": len(population),
-            })
+            history.append(
+                {
+                    "generation": gen,
+                    "best_fitness": best_fitness,
+                    "avg_fitness": sum(fitnesses) / len(fitnesses),
+                    "population_size": len(population),
+                }
+            )
 
             # Update fitness history for optimizer
             self._fitness_history.append(gen_best_fitness)

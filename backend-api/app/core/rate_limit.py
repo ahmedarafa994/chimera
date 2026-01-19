@@ -481,7 +481,9 @@ class RateLimitMiddleware:
 # =============================================================================
 
 
-def rate_limit(requests_per_minute: int = 60, cost_weight: int = 1, key_func: Callable | None = None):
+def rate_limit(
+    requests_per_minute: int = 60, cost_weight: int = 1, key_func: Callable | None = None
+):
     """
     Decorator for rate limiting individual endpoints.
 

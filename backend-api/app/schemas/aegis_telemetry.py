@@ -759,9 +759,7 @@ def create_attack_metrics(
     Returns:
         AttackMetrics instance with calculated fields
     """
-    success_rate = (
-        (successful_attacks / total_attempts * 100) if total_attempts > 0 else 0.0
-    )
+    success_rate = (successful_attacks / total_attempts * 100) if total_attempts > 0 else 0.0
     failed_attacks = total_attempts - successful_attacks
 
     return AttackMetrics(

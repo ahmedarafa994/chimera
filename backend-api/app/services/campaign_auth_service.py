@@ -13,7 +13,6 @@ Uses the Campaign and CampaignShare models from the database layer.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,8 +49,8 @@ class CampaignAccessResult:
 
     has_access: bool
     permission: CampaignPermission
-    campaign: Optional[Campaign] = None
-    reason: Optional[str] = None
+    campaign: Campaign | None = None
+    reason: str | None = None
 
     @property
     def can_view(self) -> bool:
@@ -238,9 +237,7 @@ class CampaignAuthService:
             )
 
         # 5. PRIVATE campaign with no share - deny access
-        logger.debug(
-            f"Access denied (private, no share): user={user_id}, campaign={campaign_id}"
-        )
+        logger.debug(f"Access denied (private, no share): user={user_id}, campaign={campaign_id}")
         return CampaignAccessResult(
             has_access=False,
             permission=CampaignPermission.NONE,
@@ -364,9 +361,7 @@ class CampaignAuthService:
         accessible = []
         for campaign_id in campaign_ids:
             result = await self.check_access(user_id, campaign_id, user_role)
-            if require_edit and result.can_edit:
-                accessible.append(campaign_id)
-            elif not require_edit and result.can_view:
+            if (require_edit and result.can_edit) or (not require_edit and result.can_view):
                 accessible.append(campaign_id)
         return accessible
 
@@ -447,7 +442,7 @@ class CampaignAuthService:
         self,
         campaign_id: int,
         user_id: int,
-    ) -> Optional[CampaignShare]:
+    ) -> CampaignShare | None:
         """
         Get the CampaignShare record for a specific user and campaign.
 
@@ -464,7 +459,7 @@ class CampaignAuthService:
     # Internal Helper Methods
     # =========================================================================
 
-    async def _get_campaign(self, campaign_id: int) -> Optional[Campaign]:
+    async def _get_campaign(self, campaign_id: int) -> Campaign | None:
         """
         Get a campaign by ID.
 
@@ -494,7 +489,7 @@ class CampaignAuthService:
         self,
         campaign_id: int,
         user_id: int,
-    ) -> Optional[CampaignShare]:
+    ) -> CampaignShare | None:
         """
         Get a campaign share record.
 

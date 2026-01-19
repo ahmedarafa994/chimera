@@ -116,7 +116,7 @@ Real-time communication:
 import { wsManager, createStream } from '@/lib/api';
 
 // Connect
-await wsManager.connect({ url: 'ws://localhost:8000/ws' });
+await wsManager.connect({ url: 'ws://localhost:8001/ws' });
 
 // Send messages
 wsManager.sendData({ type: 'update', data: {} });
@@ -309,7 +309,7 @@ import { useWebSocket, useStream } from '@/lib/api/hooks';
 
 function RealtimeComponent() {
   const { isConnected, send } = useWebSocket({
-    url: 'ws://localhost:8000/ws/sync',
+    url: 'ws://localhost:8001/ws/sync',
     autoConnect: true,
     onMessage: (msg) => console.log(msg),
   });
@@ -423,7 +423,7 @@ The backend is configured with proper CORS headers in `backend-api/app/config/co
 
 ```python
 CORS_ORIGINS = [
-    "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:3001",
 ]
 

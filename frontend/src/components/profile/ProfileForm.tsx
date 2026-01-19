@@ -254,7 +254,7 @@ export function ProfileForm({ onUpdate, className }: ProfileFormProps) {
         const apiConfig = getApiConfig();
         const headers = getApiHeaders();
 
-        const response = await fetch(`${apiConfig.apiUrl}/api/v1/users/me`, {
+        const response = await fetch(`${apiConfig.backendApiUrl}/api/v1/users/me`, {
           method: "PUT",
           headers: {
             ...headers,

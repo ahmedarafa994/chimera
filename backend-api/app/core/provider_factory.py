@@ -50,6 +50,7 @@ def _get_config_manager():
     """
     try:
         from app.core.service_registry import get_ai_config_manager
+
         config_manager = get_ai_config_manager()
         if config_manager.is_loaded():
             return config_manager
@@ -106,9 +107,7 @@ class ProviderFactory:
         return PROVIDER_ALIASES.get(normalized, normalized)
 
     @classmethod
-    def get_provider_config(
-        cls, provider_name: str
-    ) -> dict[str, Any] | None:
+    def get_provider_config(cls, provider_name: str) -> dict[str, Any] | None:
         """
         Get configuration for a provider from AIConfigManager.
 
@@ -120,9 +119,7 @@ class ProviderFactory:
         """
         config_manager = _get_config_manager()
         if not config_manager:
-            logger.debug(
-                f"Config manager not available for provider: {provider_name}"
-            )
+            logger.debug(f"Config manager not available for provider: {provider_name}")
             return None
 
         try:
@@ -147,17 +144,13 @@ class ProviderFactory:
                     "capabilities": {
                         "supports_streaming": caps.supports_streaming,
                         "supports_vision": caps.supports_vision,
-                        "supports_function_calling": (
-                            caps.supports_function_calling
-                        ),
+                        "supports_function_calling": (caps.supports_function_calling),
                         "supports_json_mode": caps.supports_json_mode,
                     },
                     "circuit_breaker": {
                         "enabled": cb.enabled,
                         "failure_threshold": cb.failure_threshold,
-                        "recovery_timeout_seconds": (
-                            cb.recovery_timeout_seconds
-                        ),
+                        "recovery_timeout_seconds": (cb.recovery_timeout_seconds),
                     },
                     "rate_limits": {
                         "requests_per_minute": rl.requests_per_minute,
@@ -171,9 +164,7 @@ class ProviderFactory:
             return None
 
         except Exception as e:
-            logger.warning(
-                f"Failed to get provider config for '{provider_name}': {e}"
-            )
+            logger.warning(f"Failed to get provider config for '{provider_name}': {e}")
             return None
 
     @classmethod
@@ -205,8 +196,7 @@ class ProviderFactory:
         if not provider_class:
             available = ", ".join(sorted(cls._providers.keys()))
             raise ValueError(
-                f"Unknown provider: {provider_name}. "
-                f"Available providers: {available}"
+                f"Unknown provider: {provider_name}. " f"Available providers: {available}"
             )
 
         # Get config-driven settings if available
@@ -230,8 +220,7 @@ class ProviderFactory:
                 )
             else:
                 logger.info(
-                    f"Creating provider: {resolved} "
-                    "(using defaults, config not available)"
+                    f"Creating provider: {resolved} " "(using defaults, config not available)"
                 )
         else:
             logger.info(f"Creating provider: {resolved} (config disabled)")
@@ -309,9 +298,7 @@ class ProviderFactory:
         return 3
 
     @classmethod
-    def register_provider(
-        cls, name: str, provider_class: type[LLMProviderInterface]
-    ) -> None:
+    def register_provider(cls, name: str, provider_class: type[LLMProviderInterface]) -> None:
         """
         Register a custom provider.
 
