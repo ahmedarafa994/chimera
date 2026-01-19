@@ -22,6 +22,7 @@ export interface FitnessFunction {
 
 export interface ExperimentDesign {
   id: string;
+  experiment_id?: string; // alias for id for backward compatibility
   title: string;
   description: string;
   research_question: string;

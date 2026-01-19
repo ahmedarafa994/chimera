@@ -265,11 +265,13 @@ export default function ResearchLabPage() {
 
     try {
       setExecuting(true);
-      await researchLabService.executeExperiment(experiment.experiment_id, config);
+      const experimentId = experiment.experiment_id || experiment.id;
+      await researchLabService.executeExperiment(experimentId, config);
 
       // Refresh executions if this experiment is selected
-      if (selectedExperiment?.experiment_id === experiment.experiment_id) {
-        await loadExecutions(experiment.experiment_id);
+      const selectedId = selectedExperiment?.experiment_id || selectedExperiment?.id;
+      if (selectedId === experimentId) {
+        await loadExecutions(experimentId);
       }
 
       await loadAnalytics();
@@ -286,7 +288,7 @@ export default function ResearchLabPage() {
     try {
       setCreating(true);
       const report = await researchLabService.generateResearchReport(
-        selectedExperiment.experiment_id,
+        selectedExperiment.experiment_id || selectedExperiment.id,
         reportGenerateData
       );
 
@@ -403,7 +405,7 @@ export default function ResearchLabPage() {
                 selectedExperiment={selectedExperiment}
                 onSelectExperiment={(experiment: ExperimentDesign) => {
                   setSelectedExperiment(experiment);
-                  loadExecutions(experiment.experiment_id);
+                  loadExecutions(experiment.experiment_id || experiment.id);
                 }}
                 onExecuteExperiment={handleExecuteExperiment}
                 onDeleteExperiment={(experiment: ExperimentDesign) => {
@@ -421,7 +423,7 @@ export default function ResearchLabPage() {
                 <ExperimentDetailsView
                   experiment={selectedExperiment}
                   executions={executions}
-                  onRefresh={() => loadExecutions(selectedExperiment.experiment_id)}
+                  onRefresh={() => loadExecutions(selectedExperiment.experiment_id || selectedExperiment.id)}
                   onGenerateReport={() => setShowGenerateReportDialog(true)}
                 />
               ) : (
@@ -460,7 +462,7 @@ export default function ResearchLabPage() {
           <ExecutionHistoryView
             executions={executions}
             selectedExperiment={selectedExperiment}
-            onRefresh={() => selectedExperiment && loadExecutions(selectedExperiment.experiment_id)}
+            onRefresh={() => selectedExperiment && loadExecutions(selectedExperiment.experiment_id || selectedExperiment.id)}
           />
         </TabsContent>
 
@@ -778,9 +780,9 @@ function ExperimentListView({ experiments, selectedExperiment, onSelectExperimen
             <div className="space-y-1 p-2">
               {experiments.map((experiment: ExperimentDesign) => (
                 <div
-                  key={experiment.experiment_id}
+                  key={experiment.experiment_id || experiment.id}
                   className={`p-3 rounded-lg border transition-colors cursor-pointer ${
-                    selectedExperiment?.experiment_id === experiment.experiment_id
+                    (selectedExperiment?.experiment_id || selectedExperiment?.id) === (experiment.experiment_id || experiment.id)
                       ? 'bg-primary/10 border-primary/20'
                       : 'hover:bg-muted'
                   }`}
