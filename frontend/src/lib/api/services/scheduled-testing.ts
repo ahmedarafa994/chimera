@@ -1,6 +1,100 @@
 import { apiClient } from '../client';
 import { toast } from 'sonner';
 
+// API Response Types
+interface ScheduleApiResponse {
+  schedule_id?: string;
+  id?: string;
+  name: string;
+  description?: string;
+  workspace_id?: string;
+  frequency: string;
+  cron_expression?: string;
+  timezone?: string;
+  next_execution?: string;
+  last_execution?: string;
+  alert_rules?: any[];
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  failure_count?: number;
+  execution_count?: number;
+  test_config?: {
+    target_model_ids?: string[];
+    target_models?: string[];
+    technique_ids?: string[];
+    techniques?: string[];
+    dataset_id?: string;
+    test_sample_size?: number;
+    sample_size?: number;
+    notification_channels?: string[];
+  };
+}
+
+interface ExecutionApiResponse {
+  execution_id?: string;
+  id?: string;
+  schedule_id: string;
+  started_at?: string;
+  timestamp?: string;
+  completed_at?: string;
+  status?: string;
+  success_rate: number;
+  total_tests: number;
+  failed_tests?: number;
+  new_vulnerabilities?: number;
+  alerts_triggered?: any[];
+  duration_seconds?: number;
+}
+
+interface DashboardApiResponse {
+  active_schedules?: number;
+  total_schedules?: number;
+  total_executions?: number;
+  recent_executions?: number;
+  pending_alerts?: number;
+  unresolved_alerts?: number;
+  success_rate?: number;
+  performance_score?: number;
+  success_rate_trend?: Array<{ date: string; value: number }>;
+  execution_count_trend?: Array<{ date: string; value: number }>;
+  failure_rate_by_provider?: Record<string, number>;
+  recent_executions_list?: ExecutionApiResponse[];
+  recent_alerts?: any[];
+  unhealthy_schedules?: ScheduleApiResponse[];
+}
+
+interface ScheduleListApiResponse {
+  schedules?: ScheduleApiResponse[];
+  total?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
+interface ExecutionListApiResponse {
+  executions?: ExecutionApiResponse[];
+  total?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
+interface AlertListApiResponse {
+  alerts?: any[];
+  total?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
+interface TriggerExecutionApiResponse {
+  execution_id: string;
+}
+
 export type ScheduleFrequency = 'hourly' | 'daily' | 'weekly' | 'monthly' | 'custom_cron';
 export type AlertType = 'email' | 'webhook' | 'slack' | 'teams';
 export type MonitoringMetric =
@@ -28,7 +122,7 @@ export interface AlertRule {
 
 export interface ScheduledTest {
   id: string;
-  schedule_id?: string;
+  schedule_id: string;
   name: string;
   description?: string;
   workspace_id?: string;
@@ -48,6 +142,7 @@ export interface ScheduledTest {
   updated_at: string;
   failure_count?: number;
   execution_count?: number;
+  test_config?: Record<string, any>;
 }
 
 export interface TestExecutionResult {
@@ -56,8 +151,8 @@ export interface TestExecutionResult {
   started_at: string;
   completed_at?: string;
   status: 'success' | 'failed' | 'error' | 'timeout';
-  success_rate?: number;
-  total_tests?: number;
+  success_rate: number;
+  total_tests: number;
   failed_tests?: number;
   new_vulnerabilities?: number;
   alerts_triggered?: any[];
@@ -66,11 +161,18 @@ export interface TestExecutionResult {
 
 export interface MonitoringDashboard {
   active_schedules: number;
+  total_schedules: number;
   total_executions: number;
+  recent_executions: number;
   unresolved_alerts: number;
   performance_score: number;
-  vulnerability_trend: { date: string; value: number }[];
+  success_rate: number;
+  success_rate_trend: { date: string; value: number }[];
+  execution_count_trend: { date: string; value: number }[];
   failure_rate_by_provider: Record<string, number>;
+  recent_executions_list: TestExecutionResult[];
+  recent_alerts: any[];
+  unhealthy_schedules: ScheduledTest[];
 }
 
 export interface ScheduleListResponse {
@@ -111,9 +213,10 @@ export class ScheduledTestingService {
 
   private mapSchedule(apiSchedule: any): ScheduledTest {
     const testConfig = apiSchedule.test_config ?? {};
+    const id = apiSchedule.schedule_id ?? apiSchedule.id ?? '';
     return {
-      id: apiSchedule.schedule_id ?? apiSchedule.id ?? '',
-      schedule_id: apiSchedule.schedule_id ?? apiSchedule.id ?? '',
+      id,
+      schedule_id: id,
       name: apiSchedule.name,
       description: apiSchedule.description,
       workspace_id: apiSchedule.workspace_id,
@@ -132,7 +235,8 @@ export class ScheduledTestingService {
       created_at: apiSchedule.created_at ?? new Date().toISOString(),
       updated_at: apiSchedule.updated_at ?? new Date().toISOString(),
       failure_count: apiSchedule.failure_count ?? 0,
-      execution_count: apiSchedule.execution_count ?? 0
+      execution_count: apiSchedule.execution_count ?? 0,
+      test_config: testConfig
     };
   }
 
@@ -168,14 +272,21 @@ export class ScheduledTestingService {
     const response = await apiClient.get(`${this.baseUrl}/dashboard`, {
       params: { workspace_id: workspaceId }
     });
-    const data = response.data as any;
+    const data = response.data as DashboardApiResponse;
     return {
       active_schedules: data.active_schedules ?? 0,
-      total_executions: data.recent_executions ?? data.total_schedules ?? 0,
-      unresolved_alerts: data.pending_alerts ?? 0,
-      performance_score: data.success_rate ?? 0,
-      vulnerability_trend: data.execution_count_trend ?? [],
-      failure_rate_by_provider: {}
+      total_schedules: data.total_schedules ?? 0,
+      total_executions: data.total_executions ?? 0,
+      recent_executions: data.recent_executions ?? 0,
+      unresolved_alerts: data.pending_alerts ?? data.unresolved_alerts ?? 0,
+      performance_score: data.success_rate ?? data.performance_score ?? 0,
+      success_rate: data.success_rate ?? 0,
+      success_rate_trend: data.success_rate_trend ?? [],
+      execution_count_trend: data.execution_count_trend ?? [],
+      failure_rate_by_provider: data.failure_rate_by_provider ?? {},
+      recent_executions_list: (data.recent_executions_list ?? []).map((e: any) => this.mapExecution(e)),
+      recent_alerts: data.recent_alerts ?? [],
+      unhealthy_schedules: (data.unhealthy_schedules ?? []).map((s: any) => this.mapSchedule(s))
     };
   }
 
@@ -203,7 +314,7 @@ export class ScheduledTestingService {
       };
       const response = await apiClient.post(this.schedulePath, payload);
       toast.success('Test schedule created');
-      return this.mapSchedule(response.data);
+      return this.mapSchedule(response.data as ScheduleApiResponse);
     } catch (error) {
       console.error('Failed to create schedule:', error);
       toast.error('Failed to create test schedule');
@@ -213,7 +324,7 @@ export class ScheduledTestingService {
 
   async getSchedule(id: string): Promise<ScheduledTest> {
     const response = await apiClient.get(`${this.schedulePath}/${id}`);
-    return this.mapSchedule(response.data);
+    return this.mapSchedule(response.data as ScheduleApiResponse);
   }
 
   async listSchedules(params?: {
@@ -230,7 +341,7 @@ export class ScheduledTestingService {
         page_size: params?.page_size
       }
     });
-    const data = response.data;
+    const data = response.data as ScheduleListApiResponse;
     return {
       schedules: (data.schedules ?? []).map((s: any) => this.mapSchedule(s)),
       total: data.total ?? data.schedules?.length ?? 0,
@@ -260,7 +371,7 @@ export class ScheduledTestingService {
     };
     const response = await apiClient.patch(`${this.schedulePath}/${id}`, payload);
     toast.success('Schedule updated');
-    return this.mapSchedule(response.data);
+    return this.mapSchedule(response.data as ScheduleApiResponse);
   }
 
   async deleteSchedule(id: string): Promise<void> {
@@ -269,11 +380,11 @@ export class ScheduledTestingService {
   }
 
   async triggerNow(id: string): Promise<{ execution_id: string }> {
-    const response = await apiClient.post<{ execution_id: string }>(
+    const response = await apiClient.post(
       `${this.schedulePath}/${id}/execute`
     );
     toast.success('Test triggered successfully');
-    return response.data;
+    return response.data as TriggerExecutionApiResponse;
   }
 
   triggerExecution(id: string) {
@@ -287,7 +398,7 @@ export class ScheduledTestingService {
     const response = await apiClient.get(`${this.schedulePath}/${id}/executions`, {
       params
     });
-    const data = response.data;
+    const data = response.data as ExecutionListApiResponse;
     return {
       executions: (data.executions ?? []).map((e: any) => this.mapExecution(e)),
       total: data.total ?? data.executions?.length ?? 0,
@@ -304,7 +415,7 @@ export class ScheduledTestingService {
 
   async listAlerts(params: { page?: number; page_size?: number } = {}): Promise<AlertListResponse> {
     const response = await apiClient.get(`${this.baseUrl}/alerts`, { params });
-    const data = response.data;
+    const data = response.data as AlertListApiResponse;
     return {
       alerts: data.alerts ?? [],
       total: data.total ?? data.alerts?.length ?? 0,
@@ -340,8 +451,14 @@ export class ScheduledTestingService {
     return names[freq];
   }
 
-  getAvailableFrequencies(): ScheduleFrequency[] {
-    return ['hourly', 'daily', 'weekly', 'monthly', 'custom_cron'];
+  getAvailableFrequencies(): Array<{id: ScheduleFrequency, name: string, description: string}> {
+    return [
+      { id: 'hourly', name: 'Hourly', description: 'Run every hour' },
+      { id: 'daily', name: 'Daily', description: 'Run once a day' },
+      { id: 'weekly', name: 'Weekly', description: 'Run once a week' },
+      { id: 'monthly', name: 'Monthly', description: 'Run once a month' },
+      { id: 'custom_cron', name: 'Custom Cron', description: 'Run on custom schedule' }
+    ];
   }
 
   getStatusDisplayName(status: ScheduleStatus): string {

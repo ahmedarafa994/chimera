@@ -1,6 +1,60 @@
 import { apiClient } from '../client';
 import { toast } from 'sonner';
 
+// API Response Types
+interface TechniqueApiResponse {
+  technique_id?: string;
+  id?: string;
+  name?: string;
+  description?: string;
+  category?: string;
+  technique_type?: string;
+  status?: string;
+  visibility?: string;
+  workspace_id?: string;
+  created_by?: string;
+  created_by_name?: string;
+  created_at?: string;
+  updated_at?: string;
+  parent_technique_id?: string;
+  base_technique_id?: string;
+  version?: string;
+  steps?: TechniqueStep[];
+  parameters?: TechniqueParameter[];
+  tags?: string[];
+  complexity_score?: number;
+  estimated_execution_time?: number;
+  usage_count?: number;
+  success_rate?: number;
+  average_execution_time?: number;
+  metadata?: Record<string, any>;
+}
+
+interface TemplateApiResponse {
+  template_id?: string;
+  id?: string;
+  name?: string;
+  description?: string;
+  category?: string;
+  steps_template?: TechniqueStep[];
+  base_steps?: TechniqueStep[];
+  parameters_template?: TechniqueParameter[];
+  base_parameters?: TechniqueParameter[];
+  preview_image_url?: string;
+}
+
+interface TechniqueListApiResponse {
+  techniques?: TechniqueApiResponse[];
+  templates?: TemplateApiResponse[];
+  total_techniques?: number;
+  total?: number;
+  total_templates?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
 export type TechniqueType = 'transformation' | 'validation' | 'execution' | 'composition';
 export type ParameterType = 'string' | 'integer' | 'float' | 'boolean' | 'list' | 'object';
 export type TechniqueStatus = 'draft' | 'testing' | 'active' | 'deprecated';
@@ -68,6 +122,20 @@ export interface CustomTechnique {
   average_execution_time?: number;
   metadata?: Record<string, any>;
 }
+
+export interface TechniqueExecution {
+  execution_id: string;
+  technique_id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  started_at: string;
+  completed_at?: string;
+  execution_time: number;
+  results: Record<string, any>;
+  logs: string[];
+}
+
+export type TechniqueCreate = Partial<CustomTechnique>;
+export type TechniqueUpdate = Partial<CustomTechnique>;
 
 export interface TechniqueListResponse {
   techniques: CustomTechnique[];
@@ -153,7 +221,7 @@ class TechniqueBuilderService {
       };
       const response = await apiClient.post(this.baseUrl, payload);
       toast.success('Technique saved to draft');
-      return this.mapTechnique(response.data);
+      return this.mapTechnique(response.data as TechniqueApiResponse);
     } catch (error) {
       console.error('Failed to create technique:', error);
       toast.error('Failed to create custom technique');
@@ -164,7 +232,7 @@ class TechniqueBuilderService {
   async getTechnique(id: string): Promise<CustomTechnique> {
     try {
       const response = await apiClient.get(`${this.baseUrl}/${id}`);
-      return this.mapTechnique(response.data);
+      return this.mapTechnique(response.data as TechniqueApiResponse);
     } catch (error) {
       console.error('Failed to get technique:', error);
       toast.error('Failed to load technique details');
@@ -191,7 +259,7 @@ class TechniqueBuilderService {
           offset: params?.offset
         }
       });
-      const data = response.data;
+      const data = response.data as TechniqueListApiResponse;
       return {
         techniques: (data.techniques ?? []).map((t: any) => this.mapTechnique(t)),
         templates: (data.templates ?? []).map((tpl: any) => this.mapTemplate(tpl)),
@@ -213,7 +281,7 @@ class TechniqueBuilderService {
     try {
       const response = await apiClient.patch(`${this.baseUrl}/${id}`, updateData);
       toast.success('Technique updated successfully');
-      return this.mapTechnique(response.data);
+      return this.mapTechnique(response.data as TechniqueApiResponse);
     } catch (error) {
       console.error('Failed to update technique:', error);
       toast.error('Failed to update technique');
@@ -225,7 +293,7 @@ class TechniqueBuilderService {
     try {
       const response = await apiClient.post(`${this.baseUrl}/${techniqueId}/clone`);
       toast.success('Technique cloned successfully');
-      return this.mapTechnique(response.data);
+      return this.mapTechnique(response.data as TechniqueApiResponse);
     } catch (error) {
       console.error('Failed to clone technique:', error);
       toast.error('Failed to clone technique');
@@ -244,13 +312,13 @@ class TechniqueBuilderService {
     }
   }
 
-  async testTechnique(techniqueId: string, request: TechniqueTestRequest): Promise<any> {
+  async testTechnique(techniqueId: string, request: TechniqueTestRequest): Promise<Record<string, any>> {
     try {
       const response = await apiClient.post(`${this.baseUrl}/${techniqueId}/test`, {
         test_input: request.test_input,
         parameters: request.test_parameters ?? {}
       });
-      return response.data;
+      return response.data as Record<string, any>;
     } catch (error) {
       console.error('Failed to test technique:', error);
       toast.error('Failed to test technique');
@@ -260,7 +328,113 @@ class TechniqueBuilderService {
 
   async getTechniqueStats(techniqueId: string): Promise<TechniqueStatsResponse> {
     const response = await apiClient.get(`${this.baseUrl}/${techniqueId}/stats`);
-    return response.data;
+    return response.data as TechniqueStatsResponse;
+  }
+
+  async listTechniques(params?: {
+    workspace_id?: string;
+    status?: TechniqueStatus;
+    type?: TechniqueType;
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<TechniqueListResponse> {
+    return this.listCustomTechniques({
+      ...params,
+      limit: params?.page_size,
+      offset: params?.page && params?.page_size ? (params.page - 1) * params.page_size : undefined
+    });
+  }
+
+  validateTechniqueCreate(data: Partial<CustomTechnique>): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (!data.name?.trim()) errors.name = 'Name is required';
+    if (!data.technique_type) errors.technique_type = 'Technique type is required';
+    return errors;
+  }
+
+  validateTestRequest(data: TechniqueTestRequest): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (!data.test_input?.trim()) errors.test_input = 'Test input is required';
+    return errors;
+  }
+
+  formatExecutionTime(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
+  }
+
+  getCategories(): Array<{id: string, name: string}> {
+    return [
+      { id: 'Transformation', name: 'Transformation' },
+      { id: 'Obfuscation', name: 'Obfuscation' },
+      { id: 'Persona', name: 'Persona' },
+      { id: 'Context', name: 'Context' },
+      { id: 'Validation', name: 'Validation' },
+      { id: 'Hybrid', name: 'Hybrid' }
+    ];
+  }
+
+  formatSuccessRate(rate?: number): string {
+    if (rate === undefined) return 'N/A';
+    return `${(rate * 100).toFixed(1)}%`;
+  }
+
+  getParameterTypeDisplayName(type: ParameterType): string {
+    const names: Record<ParameterType, string> = {
+      string: 'String',
+      integer: 'Integer',
+      float: 'Float',
+      boolean: 'Boolean',
+      list: 'List',
+      object: 'Object'
+    };
+    return names[type] || type;
+  }
+
+  getVisibilityColor(visibility: VisibilityLevel): string {
+    const colors: Record<VisibilityLevel, string> = {
+      private: 'gray',
+      team: 'blue',
+      public: 'green'
+    };
+    return colors[visibility] || 'gray';
+  }
+
+  getVisibilityDisplayName(visibility: VisibilityLevel): string {
+    const names: Record<VisibilityLevel, string> = {
+      private: 'Private',
+      team: 'Team',
+      public: 'Public'
+    };
+    return names[visibility] || visibility;
+  }
+
+  formatComplexityScore(score?: number): string {
+    if (score === undefined) return 'N/A';
+    if (score < 3) return 'Low Complexity';
+    if (score < 7) return 'Medium Complexity';
+    return 'High Complexity';
+  }
+
+  getTechniqueTypeDisplayName(type: TechniqueType): string {
+    const names: Record<TechniqueType, string> = {
+      transformation: 'Transformation',
+      validation: 'Validation',
+      execution: 'Execution',
+      composition: 'Composition'
+    };
+    return names[type] || type;
+  }
+
+  getStatusDisplayName(status: TechniqueStatus): string {
+    const names: Record<TechniqueStatus, string> = {
+      draft: 'Draft',
+      testing: 'Testing',
+      active: 'Active',
+      deprecated: 'Deprecated'
+    };
+    return names[status] || status;
   }
 
   getTechniqueTypeColor(type: TechniqueType): string {

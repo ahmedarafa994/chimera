@@ -1,6 +1,69 @@
 import { apiClient } from '../client';
 import { toast } from 'sonner';
 
+// API Response Types
+interface TechniqueApiResponse {
+  technique_id?: string;
+  id?: string;
+  techniqueId?: string;
+  name?: string;
+  description?: string;
+  category?: string;
+  complexity_score?: number;
+  success_rate?: number;
+  parameters?: any[];
+  tags?: string[];
+  created_at?: string;
+  updated_at?: string;
+  average_execution_time?: number;
+  estimated_execution_time?: number;
+  required_techniques?: string[];
+  sample_prompt?: string;
+  sample_output?: string;
+  best_practices?: string[];
+  limitations?: string[];
+  usage_count?: number;
+}
+
+interface TechniqueSearchApiResponse {
+  techniques?: TechniqueApiResponse[];
+  total_techniques?: number;
+  total?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
+interface TechniqueStatsApiResponse {
+  totalTechniques?: number;
+  total_techniques?: number;
+  byCategory?: Record<string, number>;
+  mostUsedTechniques?: string[];
+  averageSuccessRate?: number;
+  popular_techniques?: Array<{ usageCount?: number }>;
+  most_effective_techniques?: TechniqueApiResponse[];
+}
+
+interface TechniqueCombinationApiResponse {
+  id: string;
+  name: string;
+  technique_ids?: string[];
+  techniqueIds?: string[];
+  description?: string;
+  successRate?: number;
+  success_rate?: number;
+  synergy_score?: number;
+  execution_order?: string[];
+  use_cases?: string[];
+}
+
+interface TechniqueTestApiResponse {
+  output?: string;
+}
+
+interface TechniqueCombinationsApiResponse extends Array<TechniqueCombinationApiResponse> {}
+
 export enum TechniqueCategory {
   BASIC = 'basic',
   COGNITIVE = 'cognitive',
@@ -92,10 +155,18 @@ export interface TechniqueSearchResult {
   has_prev: boolean;
 }
 
+export type AttackTechnique = Technique;
+export type TechniqueListResponse = TechniqueSearchResult;
+export type TechniqueFilters = TechniqueSearchParams;
+
 export interface TechniqueStats {
   totalTechniques: number;
+  total_techniques: number;
   categories: Record<string, number>;
+  categories_count: number;
   mostUsedTags: string[];
+  most_effective_techniques: Technique[];
+  popular_techniques: Technique[];
   avgSuccessRate: number;
   totalUsage: number;
 }
@@ -104,8 +175,13 @@ export interface TechniqueCombination {
   id: string;
   name: string;
   techniqueIds: string[];
+  technique_ids: string[];
   description: string;
   estimatedEffectiveness: TechniqueEffectiveness;
+  effectiveness: TechniqueEffectiveness;
+  synergy_score: number;
+  execution_order: string[];
+  use_cases: string[];
 }
 
 class TechniqueLibraryService {
@@ -198,9 +274,9 @@ class TechniqueLibraryService {
       }
     });
 
-    const data = response.data;
+    const data = response.data as TechniqueSearchApiResponse;
     return {
-      techniques: (data.techniques ?? []).map((t: any) => this.mapTechnique(t)),
+      techniques: (data.techniques ?? []).map((t: TechniqueApiResponse) => this.mapTechnique(t)),
       total: data.total_techniques ?? data.total ?? (data.techniques?.length ?? 0),
       page: data.page ?? derivedPage ?? params.page ?? 1,
       page_size: data.page_size ?? pageSize ?? 20,
@@ -211,7 +287,7 @@ class TechniqueLibraryService {
 
   async getTechnique(id: string): Promise<Technique> {
     const response = await apiClient.get(`${this.baseUri}/${id}`);
-    return this.mapTechnique(response.data);
+    return this.mapTechnique(response.data as TechniqueApiResponse);
   }
 
   async createTechnique(technique: Partial<Technique>): Promise<Technique> {
@@ -227,7 +303,7 @@ class TechniqueLibraryService {
       };
       const response = await apiClient.post(this.baseUri, payload);
       toast.success('Technique saved');
-      return this.mapTechnique(response.data);
+      return this.mapTechnique(response.data as TechniqueApiResponse);
     } catch (error) {
       console.error('Failed to create technique:', error);
       toast.error('Failed to create technique');
@@ -246,7 +322,7 @@ class TechniqueLibraryService {
         parameters: technique.parameters
       });
       toast.success('Technique updated');
-      return this.mapTechnique(response.data);
+      return this.mapTechnique(response.data as TechniqueApiResponse);
     } catch (error) {
       console.error('Failed to update technique:', error);
       toast.error('Failed to update technique');
@@ -276,25 +352,41 @@ class TechniqueLibraryService {
 
   async getStats(): Promise<TechniqueStats> {
     const response = await apiClient.get(`${this.baseUri}/stats`);
-    const data = response.data;
+    const data = response.data as TechniqueStatsApiResponse;
+    const techniques = (data.most_effective_techniques ?? []).map((t: TechniqueApiResponse) => this.mapTechnique(t));
+    const popular = (data.popular_techniques ?? []).map((t: TechniqueApiResponse) => this.mapTechnique(t));
+    
     return {
       totalTechniques: data.totalTechniques ?? data.total_techniques ?? 0,
+      total_techniques: data.totalTechniques ?? data.total_techniques ?? 0,
       categories: data.byCategory ?? {},
+      categories_count: Object.keys(data.byCategory ?? {}).length,
       mostUsedTags: data.mostUsedTechniques ?? [],
+      most_effective_techniques: techniques,
+      popular_techniques: popular,
       avgSuccessRate: data.averageSuccessRate ?? 0,
-      totalUsage: data.popular_techniques?.length ? data.popular_techniques.reduce((acc: number, item: any) => acc + (item.usageCount ?? 0), 0) : 0
+      totalUsage: data.popular_techniques?.length ? data.popular_techniques.reduce((acc: number, item: { usageCount?: number }) => acc + (item.usageCount ?? 0), 0) : 0
     };
   }
 
   async getCombinations(): Promise<TechniqueCombination[]> {
     const response = await apiClient.get(`${this.baseUri}/combinations`);
-    return (response.data ?? []).map((combo: any) => ({
-      id: combo.id,
-      name: combo.name,
-      techniqueIds: combo.technique_ids ?? combo.techniqueIds ?? [],
-      description: combo.description ?? '',
-      estimatedEffectiveness: this.mapEffectiveness(combo.successRate ?? combo.success_rate)
-    }));
+    return (response.data as TechniqueCombinationsApiResponse ?? []).map((combo: TechniqueCombinationApiResponse) => {
+      const effectiveness = this.mapEffectiveness(combo.successRate ?? combo.success_rate);
+      const ids = combo.technique_ids ?? combo.techniqueIds ?? [];
+      return {
+        id: combo.id,
+        name: combo.name,
+        techniqueIds: ids,
+        technique_ids: ids,
+        description: combo.description ?? '',
+        estimatedEffectiveness: effectiveness,
+        effectiveness: effectiveness,
+        synergy_score: combo.synergy_score ?? 0,
+        execution_order: combo.execution_order ?? ids,
+        use_cases: combo.use_cases ?? []
+      };
+    });
   }
 
   async testTechnique(id: string, input: string, parameters: Record<string, any>): Promise<string> {
@@ -302,7 +394,7 @@ class TechniqueLibraryService {
       test_input: input,
       parameters
     });
-    return response.data?.output ?? '';
+    return (response.data as TechniqueTestApiResponse)?.output ?? '';
   }
 
   getCategoryIcon(category: TechniqueCategory): string {

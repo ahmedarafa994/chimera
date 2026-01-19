@@ -1,6 +1,40 @@
 import { apiClient } from '../client';
 import { toast } from 'sonner';
 
+// API Response Types
+interface SessionApiResponse {
+  session_id: string;
+  name: string;
+  description?: string;
+  owner_id?: string;
+  ownerId?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  status?: string;
+  target_config?: Record<string, any>;
+  techniques_config?: Record<string, any>;
+  original_prompt?: string;
+  steps?: any[];
+  results_summary?: Record<string, any>;
+  total_steps?: number;
+  successful_steps?: number;
+  total_execution_time?: number;
+  is_public?: boolean;
+  shared_with?: Array<Record<string, any>>;
+  tags?: string[];
+  category?: string;
+}
+
+interface SessionListApiResponse {
+  sessions?: SessionApiResponse[];
+  total?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
 export type SessionStatus = 'active' | 'completed' | 'paused' | 'failed' | 'shared';
 export type SharePermission = 'view' | 'replay' | 'edit' | 'admin';
 
@@ -100,7 +134,7 @@ export interface SessionListParams {
 class AttackSessionService {
   private readonly baseUrl = '/sessions';
 
-  private mapSession = (session: any): AttackSession => ({
+  private mapSession = (session: SessionApiResponse): AttackSession => ({
     session_id: session.session_id,
     name: session.name,
     description: session.description ?? '',
@@ -112,7 +146,7 @@ class AttackSessionService {
     target_config: session.target_config ?? {},
     techniques_config: session.techniques_config ?? {},
     original_prompt: session.original_prompt ?? '',
-    steps: (session.steps ?? []).map((step: any) => ({
+    steps: (session.steps ?? []).map((step: Record<string, any>) => ({
       step_id: step.step_id,
       timestamp: step.timestamp ? new Date(step.timestamp).toISOString() : new Date().toISOString(),
       step_type: step.step_type ?? 'execute',
@@ -151,7 +185,7 @@ class AttackSessionService {
       };
 
       const response = await apiClient.post(this.baseUrl, payload);
-      const mapped = this.mapSession(response.data);
+      const mapped = this.mapSession(response.data as SessionApiResponse);
       toast.success('Session saved successfully');
       return mapped;
     } catch (error) {
@@ -164,7 +198,7 @@ class AttackSessionService {
   async getSession(sessionId: string): Promise<AttackSession> {
     try {
       const response = await apiClient.get(`${this.baseUrl}/${sessionId}`);
-      return this.mapSession(response.data);
+      return this.mapSession(response.data as SessionApiResponse);
     } catch (error) {
       console.error('Failed to get session:', error);
       toast.error('Failed to load attack session');
@@ -186,7 +220,7 @@ class AttackSessionService {
         }
       });
 
-      const data = response.data;
+      const data = response.data as SessionListApiResponse;
       return {
         sessions: (data.sessions ?? []).map(this.mapSession),
         total: data.total ?? 0,
@@ -205,7 +239,7 @@ class AttackSessionService {
   async updateSession(sessionId: string, updateData: SessionUpdate): Promise<AttackSession> {
     try {
       const response = await apiClient.patch(`${this.baseUrl}/${sessionId}`, updateData);
-      return this.mapSession(response.data);
+      return this.mapSession(response.data as SessionApiResponse);
     } catch (error) {
       console.error('Failed to update session:', error);
       toast.error('Failed to update session');
@@ -227,7 +261,7 @@ class AttackSessionService {
   async addStep(sessionId: string, stepData: Partial<AttackStep>): Promise<AttackStep> {
     try {
       const response = await apiClient.post(`${this.baseUrl}/${sessionId}/steps`, stepData);
-      const mapped = this.mapSession({ steps: [response.data], session_id: sessionId }).steps[0];
+      const mapped = this.mapSession({ steps: [response.data as Record<string, any>], session_id: sessionId } as SessionApiResponse).steps[0];
       return mapped;
     } catch (error) {
       console.error('Failed to add step:', error);
@@ -240,7 +274,7 @@ class AttackSessionService {
     try {
       const response = await apiClient.post(`${this.baseUrl}/${sessionId}/share`, shareData);
       toast.success('Session shared successfully');
-      return response.data;
+      return response.data as Record<string, any>;
     } catch (error) {
       console.error('Failed to share session:', error);
       toast.error('Failed to create share link');
@@ -252,7 +286,7 @@ class AttackSessionService {
     try {
       const response = await apiClient.post(`${this.baseUrl}/${sessionId}/replay`, replayData);
       toast.success('Replay session created');
-      return this.mapSession(response.data);
+      return this.mapSession(response.data as SessionApiResponse);
     } catch (error) {
       console.error('Failed to replay session:', error);
       toast.error('Failed to replay attack session');
@@ -260,11 +294,11 @@ class AttackSessionService {
     }
   }
 
-  async importSession(importData: any): Promise<AttackSession> {
+  async importSession(importData: Record<string, any>): Promise<AttackSession> {
     try {
       const response = await apiClient.post(`${this.baseUrl}/import`, importData);
       toast.success('Session imported successfully');
-      return this.mapSession(response.data);
+      return this.mapSession(response.data as SessionApiResponse);
     } catch (error) {
       console.error('Failed to import session:', error);
       toast.error('Failed to import attack session');
@@ -277,7 +311,7 @@ class AttackSessionService {
       const response = await apiClient.get(`${this.baseUrl}/${sessionId}/export`, {
         params: { format }
       });
-      return response.data;
+      return response.data as Record<string, any>;
     } catch (error) {
       console.error('Failed to export session:', error);
       toast.error('Failed to export attack session');

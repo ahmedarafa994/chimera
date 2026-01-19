@@ -1,6 +1,112 @@
 import { apiClient } from '../client';
 import { toast } from 'sonner';
 
+// API Response Types
+interface ApiResponse<T = unknown> {
+  data: T;
+}
+
+interface FitnessFunctionApiResponse {
+  function_id?: string;
+  id?: string;
+  name: string;
+  description: string;
+  code: string;
+  input_parameters?: string[];
+  output_type: string;
+  created_at?: string;
+  updated_at?: string;
+  is_validated?: boolean;
+  workspace_id?: string;
+  validation_results?: Record<string, any>;
+}
+
+interface ExperimentApiResponse {
+  experiment_id?: string;
+  id?: string;
+  title: string;
+  description: string;
+  research_question: string;
+  hypothesis: string;
+  status: string;
+  control_technique: string;
+  treatment_techniques?: string[];
+  target_models?: string[];
+  test_datasets?: string[];
+  primary_fitness_function: string;
+  sample_size?: number;
+  created_at?: string;
+  updated_at?: string;
+  workspace_id?: string;
+  created_by?: string;
+  owner_id?: string;
+}
+
+interface ExecutionApiResponse {
+  execution_id?: string;
+  id?: string;
+  experiment_id: string;
+  status: string;
+  started_at?: string | null;
+  completed_at?: string;
+  progress?: number;
+  results?: Record<string, any>;
+  logs?: string[];
+}
+
+interface ReportApiResponse {
+  report_id?: string;
+  id?: string;
+  experiment_id: string;
+  title: string;
+  authors?: string[];
+  abstract: string;
+  introduction: string;
+  methodology: string;
+  results: string;
+  discussion: string;
+  conclusion: string;
+  references?: string[];
+  generated_at?: string;
+  citation_style?: string;
+  is_published?: boolean;
+}
+
+interface VariationApiResponse {
+  variation_id?: string;
+  id?: string;
+  base_technique_id: string;
+  name: string;
+  description: string;
+  parameter_modifications?: Record<string, any>;
+  research_rationale: string;
+  expected_outcome: string;
+  novelty_score?: number;
+  created_at?: string;
+}
+
+interface ListApiResponse<T> {
+  [key: string]: any;
+  total?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
+}
+
+interface ExecuteExperimentApiResponse {
+  message: string;
+  execution_id: string;
+  estimated_completion: string;
+}
+
+interface ExportReportApiResponse {
+  download_url: string;
+  filename: string;
+  size_bytes: number;
+  expires_at: string;
+}
+
 export type ExperimentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
 export type CitationStyle = 'apa' | 'mla' | 'ieee' | 'acm';
 export type ReportFormat = 'pdf' | 'latex' | 'docx' | 'html';
@@ -42,6 +148,7 @@ export interface ExperimentDesign {
 
 export interface ExperimentExecution {
   id: string;
+  execution_id: string;
   experiment_id: string;
   status: ExperimentStatus;
   started_at: string | null;
@@ -49,6 +156,10 @@ export interface ExperimentExecution {
   progress?: number;
   results?: Record<string, any>;
   logs?: string[];
+  statistical_significance?: number;
+  p_value?: number;
+  winning_technique?: string;
+  execution_time?: number;
 }
 
 export interface ResearchReport {
@@ -228,16 +339,42 @@ class ResearchLabService {
   }
 
   private mapExecution(exec: any): ExperimentExecution {
+    const id = exec.execution_id ?? exec.id ?? '';
     return {
-      id: exec.execution_id ?? exec.id ?? '',
+      id,
+      execution_id: id,
       experiment_id: exec.experiment_id,
       status: exec.status as ExperimentStatus,
       started_at: exec.started_at ?? null,
       completed_at: exec.completed_at,
       progress: exec.progress,
       results: exec.results,
-      logs: exec.logs
+      logs: exec.logs,
+      statistical_significance: exec.statistical_significance,
+      p_value: exec.p_value,
+      winning_technique: exec.winning_technique,
+      execution_time: exec.execution_time
     };
+  }
+
+  getSuggestedTechniques(): string[] {
+    return [
+      'GPTFuzz',
+      'AutoDAN',
+      'HouYi',
+      'Gradient-Based',
+      'Adversarial-Persona',
+      'RolePlay-Escalation'
+    ];
+  }
+
+  getAvailableDatasets(): string[] {
+    return [
+      'JailbreakBench-v1',
+      'Adversarial-Prompts-Core',
+      'Harmful-Behaviors-v2',
+      'RedTeaming-Standard-Set'
+    ];
   }
 
   private mapReport(report: any): ResearchReport {
@@ -263,7 +400,7 @@ class ResearchLabService {
     try {
       const response = await apiClient.post(`${this.baseUrl}/fitness-functions`, functionData);
       toast.success('Fitness function created successfully');
-      return this.mapFitnessFunction(response.data);
+      return this.mapFitnessFunction(response.data as FitnessFunctionApiResponse);
     } catch (error) {
       console.error('Failed to create fitness function:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create fitness function');
@@ -281,7 +418,7 @@ class ResearchLabService {
           validated_only: params?.validated_only
         }
       });
-      const data = response.data;
+      const data = response.data as any;
       return {
         functions: (data.functions ?? []).map((fn: any) => this.mapFitnessFunction(fn)),
         total: data.total ?? data.functions?.length ?? 0,
@@ -301,7 +438,7 @@ class ResearchLabService {
     try {
       const response = await apiClient.post(`${this.baseUrl}/experiments`, experimentData);
       toast.success('Experiment created successfully');
-      return this.mapExperiment(response.data);
+      return this.mapExperiment(response.data as ExperimentApiResponse);
     } catch (error) {
       console.error('Failed to create experiment:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create experiment');
@@ -319,7 +456,7 @@ class ResearchLabService {
           status: params?.status
         }
       });
-      const data = response.data;
+      const data = response.data as ListApiResponse<ExperimentApiResponse>;
       return {
         experiments: (data.experiments ?? []).map((exp: any) => this.mapExperiment(exp)),
         total: data.total ?? data.experiments?.length ?? 0,
@@ -338,7 +475,7 @@ class ResearchLabService {
   async getExperiment(experimentId: string): Promise<ExperimentDesign> {
     try {
       const response = await apiClient.get(`${this.baseUrl}/experiments/${experimentId}`);
-      return this.mapExperiment(response.data);
+      return this.mapExperiment(response.data as ExperimentApiResponse);
     } catch (error) {
       console.error('Failed to get experiment:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to load experiment');
@@ -356,7 +493,7 @@ class ResearchLabService {
         config
       );
       toast.success('Experiment execution started');
-      return response.data;
+      return response.data as ExecuteExperimentApiResponse;
     } catch (error) {
       console.error('Failed to execute experiment:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to execute experiment');
@@ -375,7 +512,7 @@ class ResearchLabService {
           page_size: params?.page_size
         }
       });
-      const data = response.data;
+      const data = response.data as any;
       return {
         executions: (data.executions ?? []).map((exec: any) => this.mapExecution(exec)),
         total: data.total ?? data.executions?.length ?? 0,
@@ -394,7 +531,7 @@ class ResearchLabService {
   async getExecutionResults(executionId: string): Promise<ExperimentExecution> {
     try {
       const response = await apiClient.get(`${this.baseUrl}/executions/${executionId}`);
-      return this.mapExecution(response.data);
+      return this.mapExecution(response.data as any);
     } catch (error) {
       console.error('Failed to get execution results:', error);
       toast.error('Failed to load execution results');
@@ -412,7 +549,7 @@ class ResearchLabService {
         reportData
       );
       toast.success('Research report generated successfully');
-      return this.mapReport(response.data);
+      return this.mapReport(response.data as any);
     } catch (error) {
       console.error('Failed to generate research report:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate research report');
@@ -429,7 +566,7 @@ class ResearchLabService {
         `${this.baseUrl}/reports/${reportId}/export/${format}`
       );
       toast.success(`Report exported as ${format.toUpperCase()}`);
-      return response.data;
+      return response.data as ExportReportApiResponse;
     } catch (error) {
       console.error('Failed to export research report:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to export research report');
@@ -442,7 +579,7 @@ class ResearchLabService {
       const response = await apiClient.get(`${this.baseUrl}/analytics`, {
         params: { workspace_id: workspaceId }
       });
-      return response.data;
+      return response.data as any;
     } catch (error) {
       console.error('Failed to get research analytics:', error);
       toast.error('Failed to load research analytics');
@@ -462,7 +599,7 @@ class ResearchLabService {
     try {
       const response = await apiClient.post(`${this.baseUrl}/technique-variations`, variationData);
       toast.success('Technique variation created successfully');
-      const variation = response.data;
+      const variation = response.data as VariationApiResponse;
       return {
         id: variation.variation_id ?? variation.id ?? '',
         base_technique_id: variation.base_technique_id,
