@@ -409,7 +409,7 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
 
           reconnectTimeoutRef.current = setTimeout(() => {
             setReconnectAttempts((prev) => prev + 1);
-            connect();
+            connectImpl();
           }, delay);
         }
       };

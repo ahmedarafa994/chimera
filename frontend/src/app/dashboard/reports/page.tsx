@@ -79,7 +79,7 @@ export default function SecurityReportsPage() {
       setLoading(true);
 
       const [assessmentsData, reportsData] = await Promise.all([
-        assessmentService.getAssessments(),
+        assessmentService.listAssessments(),
         securityReportService.listReports()
       ]);
 

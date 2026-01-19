@@ -897,7 +897,7 @@ function TestSuiteDetailsView({ suite, executions, onRefresh }: any) {
                       <p className="font-medium">{execution.status.toUpperCase()}</p>
                       <p className="text-sm text-muted-foreground">
                         {execution.vulnerability_detected ? 'Vulnerabilities detected' : 'No vulnerabilities'}
-                        {execution.vulnerability_level !== 'none' && (
+                        {execution.vulnerability_level && execution.vulnerability_level !== 'none' && (
                           <Badge
                             variant="outline"
                             className={`ml-2 bg-${multimodalTestingService.getVulnerabilityLevelColor(execution.vulnerability_level)}-50`}

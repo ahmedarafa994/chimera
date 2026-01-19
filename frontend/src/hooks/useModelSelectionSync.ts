@@ -341,7 +341,7 @@ export function useModelSelectionSync(
   /**
    * Connect to WebSocket
    */
-  const connect = useCallback(() => {
+  const connect = useCallback(function connectImpl() {
     // Don't connect if disabled or already connected
     if (!enabled || wsRef.current?.readyState === WebSocket.OPEN) {
       return;
@@ -389,7 +389,7 @@ export function useModelSelectionSync(
           const delay = getReconnectDelay(reconnectAttempts);
           reconnectTimeoutRef.current = setTimeout(() => {
             setReconnectAttempts((prev) => prev + 1);
-            connect();
+            connectImpl();
           }, delay);
         }
       };

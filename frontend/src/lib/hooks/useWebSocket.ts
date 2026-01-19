@@ -75,7 +75,7 @@ export function useWebSocket(url: string, options: WebSocketOptions = {}): WebSo
         if (reconnectCountRef.current < reconnectAttempts) {
           reconnectCountRef.current++;
           reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
+            connectImpl();
           }, reconnectInterval);
         }
       };

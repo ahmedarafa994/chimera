@@ -367,7 +367,7 @@ export function useAttackProgress(options: UseAttackProgressOptions): UseAttackP
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(function connectImpl() {
     if (!sessionId) return;
 
     const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/unified-attack/${sessionId}`;
@@ -387,7 +387,7 @@ export function useAttackProgress(options: UseAttackProgressOptions): UseAttackP
         
         // Attempt reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
+          connectImpl();
         }, 3000);
       };
 

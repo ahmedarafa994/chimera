@@ -57,7 +57,7 @@ export function useApi<T, P extends any[] = []>(
   const retriesRef = useRef(0);
 
   const execute = useCallback(
-    async (...params: P): Promise<T | null> => {
+    async function executeImpl(...params: P): Promise<T | null> {
       lastParamsRef.current = params;
       retriesRef.current = 0;
 
@@ -91,7 +91,7 @@ export function useApi<T, P extends any[] = []>(
             attempt: retriesRef.current,
             maxRetries: retryCount,
           });
-          return execute(...params);
+          return executeImpl(...params);
         }
 
         setState((prev) => ({
