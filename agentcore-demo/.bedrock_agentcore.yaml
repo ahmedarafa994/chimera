@@ -1,3 +1,7 @@
-entrypoint: src.main:app
-agent_name: DemoAgent
-runtime_protocol: HTTP
+default_agent: demo_agent
+agents:
+  demo_agent:
+    name: demo_agent
+    entrypoint: src.main:app
+    agent_name: DemoAgent
+    runtime_protocol: HTTP
