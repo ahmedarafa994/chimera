@@ -4,6 +4,8 @@ import time
 from .config import VERBOSE_DETAILED, VERBOSE_NORMAL
 from .helpers.strongreject_evaluator import autograde_response
 from .logging_utils import log
+
+# Avoid shadowing imports by not reusing imported names in loops
 from .utils import strip_disclaimers
 
 # Fix the regex patterns by moving flags to the correct position:
