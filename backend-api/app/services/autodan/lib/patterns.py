@@ -3,7 +3,6 @@
 Common pattern extraction and matching utilities used across engines.
 """
 
-import re
 from typing import Any
 
 

@@ -578,7 +578,7 @@ def save_conversation_log(run_info, conversation_logs, overall_success_rate, out
         writer.writerow([])  # Empty row for spacing
 
         # Write each conversation log
-        for log_entry_item in conversation_logs:
+        for log_entry in conversation_logs:
             # Write the malicious prompt
             writer.writerow([f"Malicious Prompt = {log_entry['maliciousPrompt']}", "", "", ""])
 
