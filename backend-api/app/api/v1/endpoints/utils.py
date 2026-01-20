@@ -29,7 +29,7 @@ class TechniqueDetailResponse:
         obfuscators: list[str],
         description: str = "",
         category: str = "general",
-    ):
+    ) -> None:
         self.name = name
         self.transformers = transformers
         self.framers = framers
@@ -40,9 +40,7 @@ class TechniqueDetailResponse:
 
 @router.get("/health")
 async def health_check():
-    """
-    Check the health of the API and its services.
-    """
+    """Check the health of the API and its services."""
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
@@ -56,8 +54,7 @@ async def health_check():
 # This legacy endpoint is kept for backward compatibility
 @router.get("/models-legacy", response_model=ProviderListResponse)
 async def list_models_legacy():
-    """
-    Legacy endpoint: List available LLM providers and models.
+    """Legacy endpoint: List available LLM providers and models.
     Prefer using /models (model_sync.py) for full model information.
     Cached for 10 minutes to reduce repeated lookups.
     """
@@ -87,7 +84,7 @@ async def _cached_list_models() -> ProviderListResponse:
                 status="active",
                 model=current_model,
                 available_models=provider_models.get(provider_name, []),
-            )
+            ),
         )
 
     # Graceful default provider selection to avoid 500s when none are registered
@@ -95,7 +92,7 @@ async def _cached_list_models() -> ProviderListResponse:
         default_provider = llm_service.default_provider.value
     except Exception as exc:
         logger.warning(
-            f"No default provider configured; falling back to first available. Details: {exc}"
+            f"No default provider configured; falling back to first available. Details: {exc}",
         )
         default_provider = providers[0].provider if providers else ""
 
@@ -104,16 +101,13 @@ async def _cached_list_models() -> ProviderListResponse:
 
 @router.get("/providers", response_model=ProviderListResponse)
 async def list_providers_v2():
-    """
-    List available LLM providers and models (uses legacy format).
-    """
+    """List available LLM providers and models (uses legacy format)."""
     return await list_models_legacy()
 
 
 @router.get("/techniques", response_model=TechniqueListResponse)
 async def list_techniques():
-    """
-    List available transformation techniques.
+    """List available transformation techniques.
     Cached for 10 minutes to reduce repeated lookups.
     """
     return await _cached_list_techniques()
@@ -131,7 +125,7 @@ async def _cached_list_techniques() -> TechniqueListResponse:
                     transformers=len(suite.get("transformers", [])),
                     framers=len(suite.get("framers", [])),
                     obfuscators=len(suite.get("obfuscators", [])),
-                )
+                ),
             )
 
         return TechniqueListResponse(techniques=techniques, count=len(techniques))
@@ -145,14 +139,16 @@ async def _cached_list_techniques() -> TechniqueListResponse:
 
 @router.get("/techniques/{technique_name}")
 async def get_technique_detail(technique_name: str) -> dict[str, Any]:
-    """
-    Get detailed information about a specific technique suite.
+    """Get detailed information about a specific technique suite.
 
-    Parameters:
+    Parameters
+    ----------
         technique_name: The name of the technique suite to retrieve
 
-    Returns:
+    Returns
+    -------
         Detailed technique information including transformers, framers, and obfuscators
+
     """
     try:
         technique_suites = settings.transformation.technique_suites

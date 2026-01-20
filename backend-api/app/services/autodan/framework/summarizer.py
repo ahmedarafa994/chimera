@@ -7,14 +7,19 @@ logger = logging.getLogger(__name__)
 
 
 class Summarizer:
-    def __init__(self, model):
+    def __init__(self, model) -> None:
         self.model = model
 
     def summarize(
-        self, request, jailbreak_prompt_1, jailbreak_prompt_2, strategy_library, **kwargs
+        self,
+        request,
+        jailbreak_prompt_1,
+        jailbreak_prompt_2,
+        strategy_library,
+        **kwargs,
     ):
         existing_strategies_list = []
-        for _key, value_dict in strategy_library.items():
+        for value_dict in strategy_library.values():
             new_dict = {"Strategy": value_dict["Strategy"], "Definition": value_dict["Definition"]}
             existing_strategies_list.append(new_dict)
         existing_strategies = json.dumps(existing_strategies_list, indent=4, ensure_ascii=False)
@@ -39,6 +44,9 @@ class Summarizer:
 
         condition = "Here is the extracted dictionary in valid JSON format:\n{"
         response = self.model.conditional_generate(
-            condition, system, f"[INPUT]: '{user}'", **kwargs
+            condition,
+            system,
+            f"[INPUT]: '{user}'",
+            **kwargs,
         )
         return "{" + response

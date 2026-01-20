@@ -1,5 +1,4 @@
-"""
-Startup Validator for AI Provider Integration
+"""Startup Validator for AI Provider Integration.
 
 Validates configuration at application startup including:
 - Configuration loading and parsing
@@ -88,8 +87,7 @@ class StartupReport:
 
 
 class StartupValidator:
-    """
-    Validates configuration at application startup.
+    """Validates configuration at application startup.
 
     Performs comprehensive validation including:
     - Configuration file loading
@@ -103,6 +101,7 @@ class StartupValidator:
         if not is_ready:
             logger.error("Startup validation failed!")
             sys.exit(1)
+
     """
 
     _last_report: StartupReport | None = None
@@ -114,8 +113,7 @@ class StartupValidator:
         fail_on_warnings: bool = False,
         connectivity_timeout: float = 10.0,
     ) -> bool:
-        """
-        Run all startup validation checks.
+        """Run all startup validation checks.
 
         Args:
             test_connectivity: Whether to test provider connectivity
@@ -124,6 +122,7 @@ class StartupValidator:
 
         Returns:
             False if critical errors exist, True otherwise
+
         """
         start_time = time.perf_counter()
         critical_errors = []
@@ -149,15 +148,15 @@ class StartupValidator:
 
         except FileNotFoundError as e:
             critical_errors.append(f"Configuration file not found: {e}")
-            logger.error(f"Config file not found: {e}")
+            logger.exception(f"Config file not found: {e}")
 
         except ValueError as e:
             critical_errors.append(f"Configuration validation failed: {e}")
-            logger.error(f"Config validation error: {e}")
+            logger.exception(f"Config validation error: {e}")
 
         except Exception as e:
             critical_errors.append(f"Failed to load configuration: {e}")
-            logger.error(f"Config load error: {e}")
+            logger.exception(f"Config load error: {e}")
 
         # Step 2: Validate configuration
         if config_loaded:
@@ -178,18 +177,18 @@ class StartupValidator:
 
                 config_valid = len(errors) == 0
                 logger.info(
-                    f"Configuration validation: " f"{len(errors)} errors, {len(warns)} warnings"
+                    f"Configuration validation: {len(errors)} errors, {len(warns)} warnings",
                 )
 
             except Exception as e:
                 critical_errors.append(f"Validation failed: {e}")
-                logger.error(f"Validation error: {e}")
+                logger.exception(f"Validation error: {e}")
 
         # Step 3: Test provider connectivity
         if config_loaded and test_connectivity:
             try:
                 provider_connectivity = await cls.validate_provider_connectivity(
-                    timeout=connectivity_timeout
+                    timeout=connectivity_timeout,
                 )
 
                 unreachable = [
@@ -241,7 +240,7 @@ class StartupValidator:
         )
 
         logger.info(
-            f"Startup validation completed in {elapsed_ms:.2f}ms - " f"Ready: {ready_to_serve}"
+            f"Startup validation completed in {elapsed_ms:.2f}ms - Ready: {ready_to_serve}",
         )
 
         return ready_to_serve
@@ -252,8 +251,7 @@ class StartupValidator:
         timeout: float = 10.0,
         providers: list[str] | None = None,
     ) -> dict[str, ConnectivityResult]:
-        """
-        Test connectivity to each configured provider.
+        """Test connectivity to each configured provider.
 
         Args:
             timeout: Request timeout in seconds
@@ -262,6 +260,7 @@ class StartupValidator:
 
         Returns:
             Dictionary mapping provider IDs to ConnectivityResult
+
         """
         results: dict[str, ConnectivityResult] = {}
 
@@ -350,17 +349,17 @@ class StartupValidator:
                 results[result.provider_id] = result
 
         except Exception as e:
-            logger.error(f"Provider connectivity test failed: {e}")
+            logger.exception(f"Provider connectivity test failed: {e}")
 
         return results
 
     @classmethod
     async def validate_minimum_requirements(cls) -> list[ValidationResult]:
-        """
-        Validate minimum configuration requirements are met.
+        """Validate minimum configuration requirements are met.
 
         Returns:
             List of ValidationResult for minimum requirements
+
         """
         results = []
 
@@ -378,7 +377,7 @@ class StartupValidator:
                         component="startup.config",
                         message="Configuration not loaded",
                         suggestion="Ensure providers.yaml exists and is valid",
-                    )
+                    ),
                 )
                 return results
 
@@ -393,7 +392,7 @@ class StartupValidator:
                         component="startup.providers",
                         message="No providers configured",
                         suggestion="Add at least one provider to providers.yaml",
-                    )
+                    ),
                 )
                 return results
 
@@ -407,7 +406,7 @@ class StartupValidator:
                         component="startup.providers",
                         message="No providers enabled",
                         suggestion="Enable at least one provider in configuration",
-                    )
+                    ),
                 )
                 return results
 
@@ -425,7 +424,7 @@ class StartupValidator:
                         component="startup.api_keys",
                         message="No API keys configured for enabled providers",
                         suggestion="Set API key environment variable for at least one provider",
-                    )
+                    ),
                 )
                 return results
 
@@ -441,7 +440,7 @@ class StartupValidator:
                         component="startup.default_provider",
                         message=f"Default provider '{default_provider_id}' has no API key",
                         suggestion="Set API key or change default provider",
-                    )
+                    ),
                 )
 
             # Requirement 6: Default provider must have at least one model
@@ -453,7 +452,7 @@ class StartupValidator:
                         component="startup.default_provider",
                         message=f"Default provider '{default_provider_id}' has no models",
                         suggestion="Add model configurations",
-                    )
+                    ),
                 )
 
             # All minimum requirements met
@@ -469,7 +468,7 @@ class StartupValidator:
                             "providers_with_keys": len(providers_with_keys),
                             "default_provider": default_provider_id,
                         },
-                    )
+                    ),
                 )
 
         except Exception as e:
@@ -479,18 +478,18 @@ class StartupValidator:
                     severity=ValidationSeverity.ERROR,
                     component="startup.requirements",
                     message=f"Failed to validate requirements: {e}",
-                )
+                ),
             )
 
         return results
 
     @classmethod
     def get_startup_report(cls) -> dict[str, Any] | None:
-        """
-        Generate startup validation report.
+        """Generate startup validation report.
 
         Returns:
             Dictionary with startup report or None if not validated
+
         """
         if cls._last_report is None:
             return None
@@ -498,11 +497,11 @@ class StartupValidator:
 
     @classmethod
     def is_ready(cls) -> bool:
-        """
-        Check if the last startup validation passed.
+        """Check if the last startup validation passed.
 
         Returns:
             True if ready to serve, False otherwise
+
         """
         if cls._last_report is None:
             return False
@@ -532,8 +531,7 @@ async def validate_startup(
     test_connectivity: bool = True,
     fail_on_warnings: bool = False,
 ) -> bool:
-    """
-    Convenience function to validate startup.
+    """Convenience function to validate startup.
 
     Args:
         test_connectivity: Whether to test provider connectivity
@@ -541,6 +539,7 @@ async def validate_startup(
 
     Returns:
         True if validation passed, False otherwise
+
     """
     return await StartupValidator.validate_on_startup(
         test_connectivity=test_connectivity,

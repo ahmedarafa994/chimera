@@ -1,5 +1,4 @@
-"""
-Test suite for Mousetrap: Chain of Iterative Chaos implementation.
+"""Test suite for Mousetrap: Chain of Iterative Chaos implementation.
 
 This module tests the Mousetrap technique implementation including:
 - Core algorithm functionality
@@ -28,7 +27,7 @@ from app.services.autodan.mousetrap import (
 class TestMousetrapConfig:
     """Test Mousetrap configuration functionality."""
 
-    def test_default_config_creation(self):
+    def test_default_config_creation(self) -> None:
         """Test default configuration creation."""
         config = MousetrapConfig()
 
@@ -40,7 +39,7 @@ class TestMousetrapConfig:
         assert config.semantic_obfuscation_level == 0.4
         assert config.iterative_refinement_steps == 4
 
-    def test_custom_config_creation(self):
+    def test_custom_config_creation(self) -> None:
         """Test custom configuration creation."""
         config = MousetrapConfig(
             max_chain_length=10,
@@ -56,14 +55,14 @@ class TestMousetrapConfig:
 class TestIterativeRefiner:
     """Test iterative refinement functionality."""
 
-    def test_refiner_initialization(self):
+    def test_refiner_initialization(self) -> None:
         """Test refiner initialization with config."""
         config = MousetrapConfig()
         refiner = IterativeRefiner(config)
 
         assert refiner.config == config
 
-    def test_semantic_obfuscation_minimal(self):
+    def test_semantic_obfuscation_minimal(self) -> None:
         """Test minimal semantic obfuscation."""
         config = MousetrapConfig()
         refiner = IterativeRefiner(config)
@@ -75,7 +74,7 @@ class TestIterativeRefiner:
         assert isinstance(result, str)
         assert len(result) > 0
 
-    def test_semantic_obfuscation_high(self):
+    def test_semantic_obfuscation_high(self) -> None:
         """Test high semantic obfuscation."""
         config = MousetrapConfig()
         refiner = IterativeRefiner(config)
@@ -88,7 +87,7 @@ class TestIterativeRefiner:
         # With high obfuscation, some terms should be replaced
         assert "complex" not in result.lower() or "attack" not in result.lower()
 
-    def test_chaos_progression_calculation(self):
+    def test_chaos_progression_calculation(self) -> None:
         """Test chaos progression calculation."""
         config = MousetrapConfig(chaos_escalation_rate=0.2)
         refiner = IterativeRefiner(config)
@@ -104,7 +103,7 @@ class TestIterativeRefiner:
 class TestChaoticChain:
     """Test chaotic reasoning chain generation."""
 
-    def test_chain_initialization(self):
+    def test_chain_initialization(self) -> None:
         """Test chaotic chain initialization."""
         config = MousetrapConfig()
         chain = ChaoticChain(config)
@@ -112,7 +111,7 @@ class TestChaoticChain:
         assert chain.config == config
         assert isinstance(chain.refiner, IterativeRefiner)
 
-    def test_reasoning_chain_generation(self):
+    def test_reasoning_chain_generation(self) -> None:
         """Test complete reasoning chain generation."""
         config = MousetrapConfig(max_chain_length=6)
         chain = ChaoticChain(config)
@@ -127,7 +126,7 @@ class TestChaoticChain:
         assert all(hasattr(step, "content") for step in reasoning_chain)
         assert all(hasattr(step, "chaos_level") for step in reasoning_chain)
 
-    def test_context_setup_creation(self):
+    def test_context_setup_creation(self) -> None:
         """Test context setup step creation."""
         config = MousetrapConfig()
         chain = ChaoticChain(config)
@@ -140,7 +139,7 @@ class TestChaoticChain:
         assert step.chaos_level == ChaosLevel.MINIMAL
         assert 0.0 <= step.confidence_disruption <= 1.0
 
-    def test_extraction_step_creation(self):
+    def test_extraction_step_creation(self) -> None:
         """Test extraction step creation."""
         config = MousetrapConfig()
         chain = ChaoticChain(config)
@@ -157,20 +156,20 @@ class TestChaoticChain:
 class TestMousetrapGenerator:
     """Test Mousetrap generator functionality."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test dependencies."""
         self.mock_adapter = AsyncMock()
         self.config = MousetrapConfig(iterative_refinement_steps=2)
         self.generator = MousetrapGenerator(self.mock_adapter, self.config)
 
-    async def test_generator_initialization(self):
+    async def test_generator_initialization(self) -> None:
         """Test generator initialization."""
         assert self.generator.llm_adapter == self.mock_adapter
         assert self.generator.config == self.config
         assert isinstance(self.generator.chain_generator, ChaoticChain)
         assert isinstance(self.generator.refiner, IterativeRefiner)
 
-    async def test_chain_to_prompt_conversion(self):
+    async def test_chain_to_prompt_conversion(self) -> None:
         """Test conversion of reasoning chain to prompt."""
         # Create a simple reasoning chain
         from app.services.autodan.mousetrap import ChaoticStep
@@ -200,7 +199,7 @@ class TestMousetrapGenerator:
         assert "Step 1 content" in prompt
         assert "Step 2 content" in prompt
 
-    async def test_effectiveness_evaluation(self):
+    async def test_effectiveness_evaluation(self) -> None:
         """Test effectiveness evaluation of responses."""
         goal = "create complex content"
         prompt = "test prompt"
@@ -215,11 +214,11 @@ class TestMousetrapGenerator:
         effectiveness = self.generator._evaluate_effectiveness(goal, prompt, response)
         assert effectiveness < 0.5
 
-    async def test_mousetrap_attack_generation(self):
+    async def test_mousetrap_attack_generation(self) -> None:
         """Test full Mousetrap attack generation."""
 
         # Mock the test_prompt method
-        async def mock_test_prompt(prompt):
+        async def mock_test_prompt(prompt) -> str:
             return "Generated response for testing"
 
         self.generator._test_prompt = mock_test_prompt
@@ -234,11 +233,11 @@ class TestMousetrapGenerator:
         assert len(result.reasoning_chain) > 0
         assert len(result.chaos_progression) > 0
 
-    async def test_adaptive_mousetrap_generation(self):
+    async def test_adaptive_mousetrap_generation(self) -> None:
         """Test adaptive Mousetrap generation."""
 
         # Mock the test_prompt method
-        async def mock_test_prompt(prompt):
+        async def mock_test_prompt(prompt) -> str:
             return "Adaptive response for testing"
 
         self.generator._test_prompt = mock_test_prompt
@@ -250,13 +249,14 @@ class TestMousetrapGenerator:
         ]
 
         result = await self.generator.generate_adaptive_mousetrap(
-            goal, target_responses=target_responses
+            goal,
+            target_responses=target_responses,
         )
 
         assert isinstance(result, MousetrapResult)
         assert isinstance(result.final_prompt, str)
 
-    def test_technique_description(self):
+    def test_technique_description(self) -> None:
         """Test technique description generation."""
         description = self.generator.get_technique_description()
 
@@ -272,7 +272,7 @@ class TestMousetrapServiceIntegration:
     """Test Mousetrap integration with AutoDAN service."""
 
     @patch("app.services.autodan.service.autodan_service")
-    async def test_run_mousetrap_attack_sync(self, mock_service):
+    async def test_run_mousetrap_attack_sync(self, mock_service) -> None:
         """Test synchronous Mousetrap attack execution."""
         from app.services.autodan.service import autodan_service
 
@@ -290,7 +290,7 @@ class TestMousetrapServiceIntegration:
         assert isinstance(result, str)
 
     @patch("app.services.autodan.service.autodan_service")
-    async def test_mousetrap_config_options(self, mock_service):
+    async def test_mousetrap_config_options(self, mock_service) -> None:
         """Test Mousetrap configuration options retrieval."""
         from app.services.autodan.service import autodan_service
 
@@ -306,7 +306,7 @@ class TestMousetrapServiceIntegration:
 class TestMousetrapAPIEndpoints:
     """Test Mousetrap API endpoint functionality."""
 
-    async def test_mousetrap_request_model_validation(self):
+    async def test_mousetrap_request_model_validation(self) -> None:
         """Test Mousetrap request model validation."""
         from app.api.v1.endpoints.mousetrap import MousetrapRequest
 
@@ -324,7 +324,7 @@ class TestMousetrapAPIEndpoints:
         assert request.iterations == 3
         assert request.max_chain_length == 8
 
-    def test_mousetrap_config_conversion(self):
+    def test_mousetrap_config_conversion(self) -> None:
         """Test conversion of request to MousetrapConfig."""
         from app.api.v1.endpoints.mousetrap import MousetrapRequest
 
@@ -341,7 +341,7 @@ class TestMousetrapAPIEndpoints:
         assert config.chaos_escalation_rate == 0.25
         assert config.confidence_threshold == 0.7
 
-    async def test_adaptive_request_validation(self):
+    async def test_adaptive_request_validation(self) -> None:
         """Test adaptive Mousetrap request validation."""
         from app.api.v1.endpoints.mousetrap import AdaptiveMousetrapRequest
 
@@ -353,7 +353,7 @@ class TestMousetrapAPIEndpoints:
         request = AdaptiveMousetrapRequest(**request_data)
         assert len(request.target_responses) == 2
 
-    def test_response_model_structure(self):
+    def test_response_model_structure(self) -> None:
         """Test Mousetrap response model structure."""
         from app.api.v1.endpoints.mousetrap import MousetrapResponse
 
@@ -377,7 +377,7 @@ class TestMousetrapAPIEndpoints:
 class TestMousetrapConfigurationScenarios:
     """Test various Mousetrap configuration scenarios."""
 
-    def test_low_chaos_config(self):
+    def test_low_chaos_config(self) -> None:
         """Test low chaos configuration."""
         config = MousetrapConfig(
             chaos_escalation_rate=0.05,
@@ -389,7 +389,7 @@ class TestMousetrapConfigurationScenarios:
         assert config.misdirection_probability == 0.1
         assert config.semantic_obfuscation_level == 0.2
 
-    def test_high_chaos_config(self):
+    def test_high_chaos_config(self) -> None:
         """Test high chaos configuration."""
         config = MousetrapConfig(
             chaos_escalation_rate=0.4,
@@ -403,7 +403,7 @@ class TestMousetrapConfigurationScenarios:
         assert config.semantic_obfuscation_level == 0.9
         assert config.max_chain_length == 12
 
-    def test_adaptive_config(self):
+    def test_adaptive_config(self) -> None:
         """Test adaptive configuration scenario."""
         IterativeRefiner(MousetrapConfig())
 
@@ -426,7 +426,7 @@ class TestMousetrapIntegrationScenarios:
     """Integration tests for real-world scenarios."""
 
     @pytest.mark.asyncio
-    async def test_full_mousetrap_workflow(self):
+    async def test_full_mousetrap_workflow(self) -> None:
         """Test complete Mousetrap workflow."""
         # This test would require actual LLM integration
         # For now, we'll mock the key components
@@ -449,7 +449,7 @@ class TestMousetrapIntegrationScenarios:
         assert len(result.reasoning_chain) > 0
         assert result.effectiveness_score >= 0.0
 
-    def test_error_handling_scenarios(self):
+    def test_error_handling_scenarios(self) -> None:
         """Test error handling in various scenarios."""
         MousetrapConfig()
 

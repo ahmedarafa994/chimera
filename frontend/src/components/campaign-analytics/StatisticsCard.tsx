@@ -274,20 +274,6 @@ function getTrendColor(
     : "text-red-600 dark:text-red-400";
 }
 
-/**
- * Get trend icon component.
- */
-function getTrendIcon(trend: TrendDirection): LucideIcon {
-  switch (trend) {
-    case "up":
-      return TrendingUp;
-    case "down":
-      return TrendingDown;
-    default:
-      return Minus;
-  }
-}
-
 // =============================================================================
 // Components
 // =============================================================================
@@ -466,7 +452,6 @@ export function StatisticsCard({
 
   // Calculate trend
   const trend = trendOverride ?? calculateTrend(delta);
-  const TrendIcon = getTrendIcon(trend);
   const trendColor = getTrendColor(trend, deltaPositiveIsGood);
   const variantClasses = getVariantClasses(variant);
 
@@ -479,6 +464,19 @@ export function StatisticsCard({
     delta !== null && delta !== undefined
       ? `${delta > 0 ? "+" : ""}${formatNumber(Math.abs(delta), format === "percentage" ? "percentage" : "number", precision)}`
       : null;
+
+  // Render trend icon based on direction
+  const renderTrendIcon = () => {
+    const iconClassName = "h-3 w-3";
+    switch (trend) {
+      case "up":
+        return <TrendingUp className={iconClassName} aria-hidden="true" />;
+      case "down":
+        return <TrendingDown className={iconClassName} aria-hidden="true" />;
+      default:
+        return <Minus className={iconClassName} aria-hidden="true" />;
+    }
+  };
 
   // Build the card content
   const cardContent = (
@@ -531,7 +529,7 @@ export function StatisticsCard({
               className={cn("flex items-center gap-1 text-xs font-medium", trendColor)}
               aria-label={`Change: ${formattedDelta} ${deltaLabel}`}
             >
-              <TrendIcon className="h-3 w-3" aria-hidden="true" />
+              {renderTrendIcon()}
               <span>{formattedDelta}</span>
             </div>
           )}

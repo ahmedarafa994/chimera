@@ -1,6 +1,4 @@
-"""
-Base class for all prompt transformers.
-"""
+"""Base class for all prompt transformers."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -26,13 +24,12 @@ class BaseTransformer(ABC):
 
     @abstractmethod
     def transform(self, context: TransformationContext) -> str:
-        """
-        Transform the prompt based on the context.
+        """Transform the prompt based on the context.
 
         Args:
             context: The transformation context containing prompt and settings.
 
         Returns:
             The transformed prompt string.
+
         """
-        pass

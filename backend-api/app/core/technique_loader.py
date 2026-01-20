@@ -10,11 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class TechniqueLoader:
-    """
-    Responsible for dynamically loading transformation techniques from YAML/JSON files.
-    """
+    """Responsible for dynamically loading transformation techniques from YAML/JSON files."""
 
-    def __init__(self, techniques_path: str | None = None):
+    def __init__(self, techniques_path: str | None = None) -> None:
         if techniques_path is None:
             # Use absolute path relative to this file's location
             from pathlib import Path
@@ -36,8 +34,7 @@ class TechniqueLoader:
         self._loaded_techniques: dict[str, dict[str, Any]] = {}
 
     def load_techniques(self) -> dict[str, dict[str, Any]]:
-        """
-        Scans the directory and loads all valid technique definitions.
+        """Scans the directory and loads all valid technique definitions.
         Returns a dictionary mapping technique IDs (or names) to their config.
         """
         logger.info(f"Scanning for techniques in: {self.techniques_path}")
@@ -68,14 +65,14 @@ class TechniqueLoader:
                     self._loaded_techniques[tech_id] = technique_data
                     logger.debug(f"Loaded technique: {tech_id} from {file_path}")
             except Exception as e:
-                logger.error(f"Failed to load technique from {file_path}: {e}")
+                logger.exception(f"Failed to load technique from {file_path}: {e}")
 
         logger.info(f"Successfully loaded {len(self._loaded_techniques)} techniques.")
         return self._loaded_techniques
 
     def _parse_file(self, file_path: str) -> dict[str, Any] | None:
         """Parses a single YAML or JSON file."""
-        if file_path.endswith(".yaml") or file_path.endswith(".yml"):
+        if file_path.endswith((".yaml", ".yml")):
             with open(file_path, encoding="utf-8") as f:
                 return yaml.safe_load(f)
         elif file_path.endswith(".json"):
@@ -90,9 +87,8 @@ class TechniqueLoader:
         return self._loaded_techniques.get(technique_id.lower())
 
     def convert_to_suite_format(self, technique_data: dict[str, Any]) -> dict[str, list[str]]:
-        """
-        Converts a raw technique definition into the 'suite' format expected by LLMIntegrationEngine.
-        Expected format: { "transformers": [], "framers": [], "obfuscators": [], "assemblers": [] }
+        """Converts a raw technique definition into the 'suite' format expected by LLMIntegrationEngine.
+        Expected format: { "transformers": [], "framers": [], "obfuscators": [], "assemblers": [] }.
         """
         transformers = technique_data.get("transformers", [])
         framers = technique_data.get("framers", [])

@@ -1,5 +1,4 @@
-"""
-AutoDAN Engines Module
+"""AutoDAN Engines Module.
 
 This module provides optimized engines for adversarial prompt generation:
 - GeneticOptimizer: Enhanced genetic algorithm with multiple mutation strategies
@@ -11,32 +10,32 @@ This module provides optimized engines for adversarial prompt generation:
 
 from .adaptive_selector import AdaptiveStrategySelector
 from .genetic_optimizer import (
-                                CrossoverOperator,
-                                FitnessCache,
-                                Individual,
-                                MutationOperator,
-                                PopulationStats,
-                                SelectionOperator,
+    CrossoverOperator,
+    FitnessCache,
+    Individual,
+    MutationOperator,
+    PopulationStats,
+    SelectionOperator,
 )
 from .genetic_optimizer_complete import AsyncGeneticOptimizer, GeneticOptimizerComplete
 from .parallel_processor import (
-                                BatchResult,
-                                CacheEntry,
-                                CacheEvictionPolicy,
-                                ParallelProcessor,
-                                ResourcePool,
-                                SmartCache,
-                                cached,
+    BatchResult,
+    CacheEntry,
+    CacheEvictionPolicy,
+    ParallelProcessor,
+    ResourcePool,
+    SmartCache,
+    cached,
 )
 from .token_perturbation import (
-                                AdversarialSuffixGenerator,
-                                HomoglyphMapper,
-                                PerturbationResult,
-                                PerturbationType,
-                                TokenPerturbationEngine,
-                                UnicodeManipulator,
-                                apply_perturbation,
-                                generate_adversarial_variants,
+    AdversarialSuffixGenerator,
+    HomoglyphMapper,
+    PerturbationResult,
+    PerturbationType,
+    TokenPerturbationEngine,
+    UnicodeManipulator,
+    apply_perturbation,
+    generate_adversarial_variants,
 )
 
 __all__ = [

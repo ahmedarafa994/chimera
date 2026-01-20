@@ -1,5 +1,4 @@
-"""
-AutoDAN Advanced Loss Functions and Fitness Evaluation
+"""AutoDAN Advanced Loss Functions and Fitness Evaluation.
 
 Enhanced loss functions for multi-objective optimization in adversarial prompt generation.
 Includes attack success, coherence regularization, diversity, and stealth objectives.
@@ -26,13 +25,13 @@ from .config import FitnessConfig, LossFunction, LossFunctionConfig
 class BaseLoss(ABC):
     """Abstract base class for loss functions."""
 
-    def __init__(self, weight: float = 1.0, reduction: str = "mean"):
-        """
-        Initialize loss function.
+    def __init__(self, weight: float = 1.0, reduction: str = "mean") -> None:
+        """Initialize loss function.
 
         Args:
             weight: Loss weight in composite objective
             reduction: How to reduce batch losses ('mean', 'sum', 'none')
+
         """
         self.weight = weight
         self.reduction = reduction
@@ -40,7 +39,6 @@ class BaseLoss(ABC):
     @abstractmethod
     def forward(self, predictions: np.ndarray, targets: np.ndarray, **kwargs) -> np.ndarray:
         """Compute loss value."""
-        pass
 
     def __call__(self, predictions: np.ndarray, targets: np.ndarray, **kwargs) -> float:
         """Compute and reduce loss."""
@@ -48,10 +46,9 @@ class BaseLoss(ABC):
 
         if self.reduction == "mean":
             return float(np.mean(loss)) * self.weight
-        elif self.reduction == "sum":
+        if self.reduction == "sum":
             return float(np.sum(loss)) * self.weight
-        else:
-            return loss * self.weight
+        return loss * self.weight
 
     def backward(self, predictions: np.ndarray, targets: np.ndarray, **kwargs) -> np.ndarray:
         """Compute gradient of loss w.r.t. predictions (for gradient-based methods)."""
@@ -76,25 +73,26 @@ class BaseLoss(ABC):
 
 
 class CrossEntropyLoss(BaseLoss):
-    """
-    Standard cross-entropy loss for adversarial objective.
+    """Standard cross-entropy loss for adversarial objective.
 
     L_CE = -Σᵢ yᵢ·log(pᵢ)
 
     For adversarial attacks: maximize probability of target (complex) tokens.
     """
 
-    def __init__(self, weight: float = 1.0, label_smoothing: float = 0.0, reduction: str = "mean"):
+    def __init__(
+        self, weight: float = 1.0, label_smoothing: float = 0.0, reduction: str = "mean"
+    ) -> None:
         super().__init__(weight, reduction)
         self.label_smoothing = label_smoothing
 
     def forward(self, predictions: np.ndarray, targets: np.ndarray, **_kwargs) -> np.ndarray:
-        """
-        Compute cross-entropy loss.
+        """Compute cross-entropy loss.
 
         Args:
             predictions: Log probabilities [batch, vocab_size]
             targets: Target token indices [batch] or one-hot [batch, vocab_size]
+
         """
         # Ensure numerical stability
         log_probs = np.clip(predictions, -100, 0)
@@ -111,11 +109,10 @@ class CrossEntropyLoss(BaseLoss):
             targets = targets * (1 - self.label_smoothing) + self.label_smoothing / n_classes
 
         # Compute cross-entropy
-        loss = -np.sum(targets * log_probs, axis=-1)
-        return loss
+        return -np.sum(targets * log_probs, axis=-1)
 
     def backward(self, predictions: np.ndarray, targets: np.ndarray, **_kwargs) -> np.ndarray:
-        """Analytical gradient: ∂L/∂p = -y/p"""
+        """Analytical gradient: ∂L/∂p = -y/p."""
         probs = np.exp(np.clip(predictions, -100, 0))
         if targets.ndim == 1:
             targets_onehot = np.zeros_like(predictions)
@@ -125,8 +122,7 @@ class CrossEntropyLoss(BaseLoss):
 
 
 class FocalLoss(BaseLoss):
-    """
-    Focal loss to down-weight easy examples.
+    """Focal loss to down-weight easy examples.
 
     L_FL = -alpha_t · (1 - p_t) ^ gamma · log(p_t)
 
@@ -144,7 +140,7 @@ class FocalLoss(BaseLoss):
         alpha: float | None = None,
         weight: float = 1.0,
         reduction: str = "mean",
-    ):
+    ) -> None:
         super().__init__(weight, reduction)
         self.gamma = gamma
         self.alpha = alpha
@@ -175,8 +171,7 @@ class FocalLoss(BaseLoss):
 
 
 class AdversarialCrossEntropyLoss(BaseLoss):
-    """
-    Adversarial cross-entropy for jailbreak optimization.
+    """Adversarial cross-entropy for jailbreak optimization.
 
     L_adv = -log P(target_response | adversarial_prompt)
 
@@ -190,7 +185,7 @@ class AdversarialCrossEntropyLoss(BaseLoss):
         coherence_weight: float = 0.3,
         weight: float = 1.0,
         reduction: str = "mean",
-    ):
+    ) -> None:
         super().__init__(weight, reduction)
         self.refusal_weight = refusal_weight
         self.coherence_weight = coherence_weight
@@ -203,14 +198,14 @@ class AdversarialCrossEntropyLoss(BaseLoss):
         coherence_scores: np.ndarray | None = None,
         **_kwargs,
     ) -> np.ndarray:
-        """
-        Compute adversarial cross-entropy loss.
+        """Compute adversarial cross-entropy loss.
 
         Args:
             predictions: Log probabilities for target tokens
             targets: Target token indices
             refusal_probs: Probability of refusal tokens [optional]
             coherence_scores: Language model coherence scores [optional]
+
         """
         # Base cross-entropy (negated for maximization)
         probs = np.exp(np.clip(predictions, -100, 0))
@@ -241,8 +236,7 @@ class AdversarialCrossEntropyLoss(BaseLoss):
 
 
 class ContrastiveLoss(BaseLoss):
-    """
-    Contrastive loss for embedding space optimization.
+    """Contrastive loss for embedding space optimization.
 
     L_contrastive = -log(exp(sim(z_i, z_j)/τ) / Σₖ exp(sim(z_i, z_k)/τ))
 
@@ -255,17 +249,19 @@ class ContrastiveLoss(BaseLoss):
     successful attack patterns.
     """
 
-    def __init__(self, temperature: float = 0.07, weight: float = 1.0, reduction: str = "mean"):
+    def __init__(
+        self, temperature: float = 0.07, weight: float = 1.0, reduction: str = "mean"
+    ) -> None:
         super().__init__(weight, reduction)
         self.temperature = temperature
 
     def forward(self, embeddings: np.ndarray, labels: np.ndarray, **_kwargs) -> np.ndarray:
-        """
-        Compute contrastive loss (NT-Xent style).
+        """Compute contrastive loss (NT-Xent style).
 
         Args:
             embeddings: Prompt embeddings [batch, embed_dim]
             labels: Success labels (1 = successful attack, 0 = failed)
+
         """
         # Normalize embeddings
         embeddings_norm = embeddings / (np.linalg.norm(embeddings, axis=1, keepdims=True) + 1e-8)
@@ -309,8 +305,7 @@ class ContrastiveLoss(BaseLoss):
 
 
 class TripletLoss(BaseLoss):
-    """
-    Triplet loss for metric learning.
+    """Triplet loss for metric learning.
 
     L_triplet = max(0, ||f(a) - f(p)||² - ||f(a) - f(n)||² + margin)
 
@@ -329,7 +324,7 @@ class TripletLoss(BaseLoss):
         distance: str = "euclidean",  # or "cosine"
         weight: float = 1.0,
         reduction: str = "mean",
-    ):
+    ) -> None:
         super().__init__(weight, reduction)
         self.margin = margin
         self.distance = distance
@@ -338,33 +333,38 @@ class TripletLoss(BaseLoss):
         """Compute pairwise distance."""
         if self.distance == "euclidean":
             return np.sqrt(np.sum((x - y) ** 2, axis=-1))
-        else:  # cosine
-            x_norm = x / (np.linalg.norm(x, axis=-1, keepdims=True) + 1e-8)
-            y_norm = y / (np.linalg.norm(y, axis=-1, keepdims=True) + 1e-8)
-            return 1 - np.sum(x_norm * y_norm, axis=-1)
+        # cosine
+        x_norm = x / (np.linalg.norm(x, axis=-1, keepdims=True) + 1e-8)
+        y_norm = y / (np.linalg.norm(y, axis=-1, keepdims=True) + 1e-8)
+        return 1 - np.sum(x_norm * y_norm, axis=-1)
 
     def forward(
-        self, anchor: np.ndarray, positive: np.ndarray, negative: np.ndarray, **_kwargs
+        self,
+        anchor: np.ndarray,
+        positive: np.ndarray,
+        negative: np.ndarray,
+        **_kwargs,
     ) -> np.ndarray:
-        """
-        Compute triplet loss.
+        """Compute triplet loss.
 
         Args:
             anchor: Anchor embeddings [batch, embed_dim]
             positive: Positive embeddings [batch, embed_dim]
             negative: Negative embeddings [batch, embed_dim]
+
         """
         pos_dist = self._compute_distance(anchor, positive)
         neg_dist = self._compute_distance(anchor, negative)
 
-        loss = np.maximum(0, pos_dist - neg_dist + self.margin)
-        return loss
+        return np.maximum(0, pos_dist - neg_dist + self.margin)
 
     def mine_triplets(
-        self, embeddings: np.ndarray, labels: np.ndarray, strategy: str = "hard"
+        self,
+        embeddings: np.ndarray,
+        labels: np.ndarray,
+        strategy: str = "hard",
     ) -> tuple:
-        """
-        Mine triplets from batch.
+        """Mine triplets from batch.
 
         Args:
             embeddings: All embeddings [batch, embed_dim]
@@ -373,6 +373,7 @@ class TripletLoss(BaseLoss):
 
         Returns:
             Tuple of (anchor_indices, positive_indices, negative_indices)
+
         """
         batch_size = len(embeddings)
         positives = np.where(labels == 1)[0]
@@ -386,7 +387,8 @@ class TripletLoss(BaseLoss):
         for i in range(batch_size):
             for j in range(batch_size):
                 distances[i, j] = self._compute_distance(
-                    embeddings[i : i + 1], embeddings[j : j + 1]
+                    embeddings[i : i + 1],
+                    embeddings[j : j + 1],
                 )[0]
 
         anchors, pos_indices, neg_indices = [], [], []
@@ -427,8 +429,7 @@ class TripletLoss(BaseLoss):
 
 
 class CoherenceLoss(BaseLoss):
-    """
-    Coherence regularization to maintain human readability.
+    """Coherence regularization to maintain human readability.
 
     L_coherence = -log P_LM(x) / |x|
 
@@ -437,18 +438,21 @@ class CoherenceLoss(BaseLoss):
     """
 
     def __init__(
-        self, target_perplexity: float = 50.0, weight: float = 1.0, reduction: str = "mean"
-    ):
+        self,
+        target_perplexity: float = 50.0,
+        weight: float = 1.0,
+        reduction: str = "mean",
+    ) -> None:
         super().__init__(weight, reduction)
         self.target_perplexity = target_perplexity
 
     def forward(self, log_probs: np.ndarray, lengths: np.ndarray, **_kwargs) -> np.ndarray:
-        """
-        Compute coherence loss from log probabilities.
+        """Compute coherence loss from log probabilities.
 
         Args:
             log_probs: Sum of log probabilities for each prompt
             lengths: Number of tokens in each prompt
+
         """
         # Compute perplexity: exp(-1/N * Σ log p)
         avg_log_prob = log_probs / np.maximum(lengths, 1)
@@ -456,9 +460,7 @@ class CoherenceLoss(BaseLoss):
 
         # Loss is deviation from target perplexity
         # Penalize both too high (incoherent) and too low (repetitive)
-        loss = np.abs(np.log(perplexity) - np.log(self.target_perplexity))
-
-        return loss
+        return np.abs(np.log(perplexity) - np.log(self.target_perplexity))
 
     def from_perplexity(self, perplexity: np.ndarray) -> np.ndarray:
         """Compute loss directly from perplexity values."""
@@ -466,8 +468,7 @@ class CoherenceLoss(BaseLoss):
 
 
 class StealthLoss(BaseLoss):
-    """
-    Stealth regularization to evade detection systems.
+    """Stealth regularization to evade detection systems.
 
     L_stealth = log(P_detector(x)) + λ·sim(x, benign_template)
 
@@ -477,8 +478,11 @@ class StealthLoss(BaseLoss):
     """
 
     def __init__(
-        self, similarity_weight: float = 0.3, weight: float = 1.0, reduction: str = "mean"
-    ):
+        self,
+        similarity_weight: float = 0.3,
+        weight: float = 1.0,
+        reduction: str = "mean",
+    ) -> None:
         super().__init__(weight, reduction)
         self.similarity_weight = similarity_weight
 
@@ -489,13 +493,13 @@ class StealthLoss(BaseLoss):
         benign_embeddings: np.ndarray | None = None,
         **_kwargs,
     ) -> np.ndarray:
-        """
-        Compute stealth loss.
+        """Compute stealth loss.
 
         Args:
             detection_probs: Probability of being detected as adversarial
             embeddings: Current prompt embeddings
             benign_embeddings: Reference benign prompt embeddings
+
         """
         # Detection penalty (want low detection probability)
         detection_loss = np.log(np.clip(detection_probs, 1e-8, 1.0))
@@ -521,8 +525,7 @@ class StealthLoss(BaseLoss):
 
 
 class DiversityLoss(BaseLoss):
-    """
-    Diversity regularization to prevent mode collapse.
+    """Diversity regularization to prevent mode collapse.
 
     L_diversity = -entropy(population) + λ·avg_pairwise_similarity
 
@@ -535,20 +538,23 @@ class DiversityLoss(BaseLoss):
         min_diversity: float = 0.3,
         weight: float = 1.0,
         reduction: str = "mean",
-    ):
+    ) -> None:
         super().__init__(weight, reduction)
         self.similarity_penalty = similarity_penalty
         self.min_diversity = min_diversity
 
     def forward(
-        self, embeddings: np.ndarray, population_embeddings: np.ndarray | None = None, **_kwargs
+        self,
+        embeddings: np.ndarray,
+        population_embeddings: np.ndarray | None = None,
+        **_kwargs,
     ) -> np.ndarray:
-        """
-        Compute diversity loss.
+        """Compute diversity loss.
 
         Args:
             embeddings: Current prompt embeddings [batch, embed_dim]
             population_embeddings: Full population embeddings [pop_size, embed_dim]
+
         """
         if population_embeddings is None:
             population_embeddings = embeddings
@@ -574,9 +580,7 @@ class DiversityLoss(BaseLoss):
             avg_similarity = np.mean(similarities, axis=-1)
 
         # Loss penalizes high similarity
-        loss = self.similarity_penalty * np.maximum(0, avg_similarity - self.min_diversity)
-
-        return loss
+        return self.similarity_penalty * np.maximum(0, avg_similarity - self.min_diversity)
 
 
 # =============================================================================
@@ -585,8 +589,7 @@ class DiversityLoss(BaseLoss):
 
 
 class CompositeLoss(BaseLoss):
-    """
-    Composite loss combining multiple objectives.
+    """Composite loss combining multiple objectives.
 
     L_total = Σᵢ wᵢ·Lᵢ
 
@@ -598,15 +601,14 @@ class CompositeLoss(BaseLoss):
         losses: dict[str, BaseLoss],
         config: LossFunctionConfig | None = None,
         reduction: str = "mean",
-    ):
+    ) -> None:
         super().__init__(weight=1.0, reduction=reduction)
         self.losses = losses
         self.config = config or LossFunctionConfig()
         self._loss_history: dict[str, list[float]] = {name: [] for name in losses}
 
     def forward(self, **kwargs) -> dict[str, float]:
-        """
-        Compute all component losses.
+        """Compute all component losses.
 
         Returns dict with individual and total losses.
         """
@@ -645,8 +647,7 @@ class CompositeLoss(BaseLoss):
         return trends
 
     def rebalance_weights(self, target_ratios: dict[str, float] | None = None) -> dict[str, float]:
-        """
-        Rebalance loss weights based on current magnitudes.
+        """Rebalance loss weights based on current magnitudes.
 
         Ensures all losses contribute proportionally.
         """
@@ -693,16 +694,17 @@ class FitnessResult:
 
 
 class EnhancedFitnessEvaluator:
-    """
-    Enhanced fitness evaluator for AutoDAN optimization.
+    """Enhanced fitness evaluator for AutoDAN optimization.
 
     Combines multiple objectives into a single fitness score:
     F(x) = w₁·S_attack - w₂·P_refusal + w₃·C_coherence + w₄·N_novelty - w₅·D_detect
     """
 
     def __init__(
-        self, config: FitnessConfig | None = None, population_embeddings: np.ndarray | None = None
-    ):
+        self,
+        config: FitnessConfig | None = None,
+        population_embeddings: np.ndarray | None = None,
+    ) -> None:
         self.config = config or FitnessConfig()
         self.population_embeddings = population_embeddings
         self._fitness_cache: dict[str, FitnessResult] = {}
@@ -717,8 +719,7 @@ class EnhancedFitnessEvaluator:
         embedding: np.ndarray | None = None,
         use_cache: bool = True,
     ) -> FitnessResult:
-        """
-        Evaluate fitness of a prompt.
+        """Evaluate fitness of a prompt.
 
         Args:
             prompt: The adversarial prompt
@@ -731,6 +732,7 @@ class EnhancedFitnessEvaluator:
 
         Returns:
             FitnessResult with total fitness and components
+
         """
         cache_key = f"{hash(prompt)}_{attack_score:.3f}"
 
@@ -791,16 +793,17 @@ class EnhancedFitnessEvaluator:
         # Novelty is inverse of maximum similarity
         return 1.0 - max_similarity
 
-    def update_population(self, embeddings: np.ndarray):
+    def update_population(self, embeddings: np.ndarray) -> None:
         """Update population embeddings for novelty computation."""
         self.population_embeddings = embeddings
         self._fitness_cache.clear()
 
     def apply_fitness_sharing(
-        self, fitness_values: np.ndarray, embeddings: np.ndarray
+        self,
+        fitness_values: np.ndarray,
+        embeddings: np.ndarray,
     ) -> np.ndarray:
-        """
-        Apply fitness sharing for diversity preservation.
+        """Apply fitness sharing for diversity preservation.
 
         F_shared(i) = F(i) / Σⱼ sh(d(i,j))
 
@@ -835,8 +838,7 @@ class EnhancedFitnessEvaluator:
         embeddings: np.ndarray | None = None,
         use_sharing: bool = True,
     ) -> np.ndarray:
-        """
-        Rank population by fitness.
+        """Rank population by fitness.
 
         Returns indices sorted by fitness (descending).
         """
@@ -848,7 +850,9 @@ class EnhancedFitnessEvaluator:
         return np.argsort(effective_fitness)[::-1]
 
     def select_elite(
-        self, fitness_values: np.ndarray, embeddings: np.ndarray | None = None
+        self,
+        fitness_values: np.ndarray,
+        embeddings: np.ndarray | None = None,
     ) -> np.ndarray:
         """Select elite individuals based on fitness and diversity."""
         n_elite = max(1, int(len(fitness_values) * self.config.elite_ratio))
@@ -863,18 +867,19 @@ class EnhancedFitnessEvaluator:
 
 
 def create_loss_function(
-    loss_type: LossFunction, config: LossFunctionConfig | None = None
+    loss_type: LossFunction,
+    config: LossFunctionConfig | None = None,
 ) -> BaseLoss:
     """Factory function to create loss functions."""
     config = config or LossFunctionConfig()
 
     loss_map = {
         LossFunction.CROSS_ENTROPY: lambda: CrossEntropyLoss(
-            label_smoothing=config.label_smoothing
+            label_smoothing=config.label_smoothing,
         ),
         LossFunction.FOCAL_LOSS: lambda: FocalLoss(gamma=config.focal_gamma),
         LossFunction.CONTRASTIVE: lambda: ContrastiveLoss(
-            temperature=config.contrastive_temperature
+            temperature=config.contrastive_temperature,
         ),
         LossFunction.TRIPLET: lambda: TripletLoss(margin=config.triplet_margin),
         LossFunction.ADVERSARIAL_CE: lambda: AdversarialCrossEntropyLoss(),

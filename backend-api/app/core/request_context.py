@@ -1,5 +1,4 @@
-"""
-Request Context Propagation
+"""Request Context Propagation.
 
 Provides request-scoped context that flows through all application layers,
 carrying provider/model selection and request metadata.
@@ -33,13 +32,13 @@ T = TypeVar("T")
 
 # Context variable for storing request context
 _request_context: ContextVar[Optional["RequestContext"]] = ContextVar(
-    "request_context", default=None
+    "request_context",
+    default=None,
 )
 
 
 class RequestContext(BaseModel):
-    """
-    Immutable request-scoped context carrying provider/model selection.
+    """Immutable request-scoped context carrying provider/model selection.
 
     This context is created at the API boundary and flows through all layers
     of the application, ensuring consistent provider/model usage for the entire
@@ -53,6 +52,7 @@ class RequestContext(BaseModel):
         model: Selected model (e.g., "gpt-4o", "claude-3-5-sonnet")
         timestamp: When the context was created
         metadata: Additional request metadata (IP, user agent, etc.)
+
     """
 
     request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -70,12 +70,9 @@ class RequestContext(BaseModel):
 class MissingContextError(Exception):
     """Raised when attempting to get context but none exists."""
 
-    pass
-
 
 class ContextManager:
-    """
-    Manages request-scoped context using Python's contextvars.
+    """Manages request-scoped context using Python's contextvars.
 
     Provides async context manager for running code with a specific context
     and utilities for getting/checking current context.
@@ -83,8 +80,7 @@ class ContextManager:
 
     @staticmethod
     async def run_with_context(context: RequestContext, fn: Callable[[], Awaitable[T]]) -> T:
-        """
-        Run an async function with the given context.
+        """Run an async function with the given context.
 
         Args:
             context: RequestContext to use for this execution
@@ -99,6 +95,7 @@ class ContextManager:
                 context,
                 lambda: my_service.do_work()
             )
+
         """
         token = _request_context.set(context)
         try:
@@ -108,8 +105,7 @@ class ContextManager:
 
     @staticmethod
     def get_context() -> RequestContext:
-        """
-        Get the current request context.
+        """Get the current request context.
 
         Returns:
             Current RequestContext
@@ -120,20 +116,23 @@ class ContextManager:
         Example:
             context = ContextManager.get_context()
             print(f"Using provider: {context.provider}")
+
         """
         context = _request_context.get()
         if context is None:
-            raise MissingContextError(
+            msg = (
                 "No request context found. Ensure the request is running "
                 "within a context created by ContextManager.run_with_context() "
                 "or context propagation middleware."
+            )
+            raise MissingContextError(
+                msg,
             )
         return context
 
     @staticmethod
     def get_context_or_none() -> RequestContext | None:
-        """
-        Get the current request context, or None if not set.
+        """Get the current request context, or None if not set.
 
         Returns:
             Current RequestContext or None
@@ -142,13 +141,13 @@ class ContextManager:
             context = ContextManager.get_context_or_none()
             if context:
                 print(f"Provider: {context.provider}")
+
         """
         return _request_context.get()
 
     @staticmethod
     def has_context() -> bool:
-        """
-        Check if a request context is currently set.
+        """Check if a request context is currently set.
 
         Returns:
             True if context exists, False otherwise
@@ -156,26 +155,26 @@ class ContextManager:
         Example:
             if ContextManager.has_context():
                 context = ContextManager.get_context()
+
         """
         return _request_context.get() is not None
 
     @staticmethod
     def set_context(context: RequestContext) -> None:
-        """
-        Set the request context directly (use with caution).
+        """Set the request context directly (use with caution).
 
         Warning: This should rarely be used directly. Prefer run_with_context()
         which properly handles cleanup.
 
         Args:
             context: RequestContext to set
+
         """
         _request_context.set(context)
 
     @staticmethod
     def clear_context() -> None:
-        """
-        Clear the current request context.
+        """Clear the current request context.
 
         Warning: This should rarely be used directly.
         """
@@ -212,8 +211,7 @@ def get_context_metadata(key: str, default: Any = None) -> Any:
 
 
 def create_child_context(**updates) -> RequestContext:
-    """
-    Create a new context based on current context with updates.
+    """Create a new context based on current context with updates.
 
     Useful for creating derived contexts (e.g., for sub-requests).
 
@@ -229,6 +227,7 @@ def create_child_context(**updates) -> RequestContext:
             request_id=str(uuid.uuid4()),
             metadata={"parent_request_id": get_request_id()}
         )
+
     """
     current = ContextManager.get_context()
     current_dict = current.dict()

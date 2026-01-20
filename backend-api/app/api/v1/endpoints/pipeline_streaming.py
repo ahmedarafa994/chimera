@@ -1,5 +1,4 @@
-"""
-Data Pipeline Streaming WebSocket Endpoints
+"""Data Pipeline Streaming WebSocket Endpoints.
 
 Real-time WebSocket endpoints for delivering live metrics and pipeline events
 to frontend clients.
@@ -28,14 +27,14 @@ router = APIRouter(tags=["Pipeline Streaming"])
 
 # Connection manager for WebSocket clients
 class ConnectionManager:
-    """Manages WebSocket connections for broadcasting"""
+    """Manages WebSocket connections for broadcasting."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: dict[str, set[WebSocket]] = {}
         self.client_metadata: dict[WebSocket, dict[str, Any]] = {}
 
     async def connect(self, websocket: WebSocket, channel: str, client_id: str) -> None:
-        """Connect a WebSocket client to a channel"""
+        """Connect a WebSocket client to a channel."""
         await websocket.accept()
 
         if channel not in self.active_connections:
@@ -51,7 +50,7 @@ class ConnectionManager:
         logger.info(f"Client {client_id} connected to channel {channel}")
 
     def disconnect(self, websocket: WebSocket) -> None:
-        """Disconnect a WebSocket client"""
+        """Disconnect a WebSocket client."""
         metadata = self.client_metadata.get(websocket, {})
         channel = metadata.get("channel")
         client_id = metadata.get("client_id", "unknown")
@@ -63,15 +62,15 @@ class ConnectionManager:
         logger.info(f"Client {client_id} disconnected from channel {channel}")
 
     async def send_personal(self, message: dict, websocket: WebSocket) -> None:
-        """Send a message to a specific client"""
+        """Send a message to a specific client."""
         try:
             await websocket.send_json(message)
         except Exception as e:
-            logger.error(f"Failed to send personal message: {e}")
+            logger.exception(f"Failed to send personal message: {e}")
             self.disconnect(websocket)
 
     async def broadcast(self, channel: str, message: dict) -> None:
-        """Broadcast a message to all clients in a channel"""
+        """Broadcast a message to all clients in a channel."""
         if channel not in self.active_connections:
             return
 
@@ -88,7 +87,7 @@ class ConnectionManager:
             self.disconnect(connection)
 
     def get_client_count(self, channel: str | None = None) -> int:
-        """Get count of connected clients"""
+        """Get count of connected clients."""
         if channel:
             return len(self.active_connections.get(channel, set()))
         return sum(len(conns) for conns in self.active_connections.values())
@@ -103,17 +102,18 @@ async def metrics_stream(
     websocket: WebSocket,
     provider: str = Query(..., description="LLM provider to stream metrics for"),
     metric_type: str = Query(
-        "latency", description="Type of metric (latency, tokens, errors, requests)"
+        "latency",
+        description="Type of metric (latency, tokens, errors, requests)",
     ),
     interval_seconds: int = Query(5, description="Update interval in seconds"),
-):
-    """
-    Real-time metrics stream for a provider
+) -> None:
+    """Real-time metrics stream for a provider.
 
     Streams metrics updates at the specified interval.
 
     Example:
         ws://localhost:8001/api/v1/pipeline/streaming/metrics?provider=google&metric_type=latency&interval_seconds=5
+
     """
     client_id = f"metrics-{provider}-{metric_type}-{datetime.utcnow().timestamp()}"
     channel = "metrics"
@@ -175,7 +175,7 @@ async def metrics_stream(
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                logger.error(f"Error in metrics stream: {e}")
+                logger.exception(f"Error in metrics stream: {e}")
                 await manager.send_personal(
                     {
                         "type": "error",
@@ -196,17 +196,18 @@ async def metrics_stream(
 async def events_stream(
     websocket: WebSocket,
     event_types: str = Query(
-        "all", description="Comma-separated event types (llm,transformation,jailbreak)"
+        "all",
+        description="Comma-separated event types (llm,transformation,jailbreak)",
     ),
     client_id: str | None = Query(None, description="Optional client identifier"),
-):
-    """
-    Live event stream from the pipeline
+) -> None:
+    """Live event stream from the pipeline.
 
     Streams events as they are published to Redis Streams.
 
     Example:
         ws://localhost:8001/api/v1/pipeline/streaming/events?event_types=llm,transformation
+
     """
     client_id = client_id or f"events-{datetime.utcnow().timestamp()}"
     channel = "events"
@@ -234,8 +235,8 @@ async def events_stream(
         )
 
         # Set custom analytics handler to forward events
-        async def event_forwarder(entry):
-            """Forward events to WebSocket client"""
+        async def event_forwarder(entry) -> None:
+            """Forward events to WebSocket client."""
             try:
                 event_type = entry.event_type
 
@@ -260,7 +261,7 @@ async def events_stream(
                 )
 
             except Exception as e:
-                logger.error(f"Error forwarding event: {e}")
+                logger.exception(f"Error forwarding event: {e}")
 
         # Register handler
         pipeline.set_analytics_handler(event_forwarder)
@@ -279,7 +280,7 @@ async def events_stream(
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                logger.error(f"Error in event stream: {e}")
+                logger.exception(f"Error in event stream: {e}")
                 break
 
     except WebSocketDisconnect:
@@ -293,14 +294,14 @@ async def health_stream(
     websocket: WebSocket,
     interval_seconds: int = Query(10, description="Health check interval in seconds"),
     client_id: str | None = Query(None, description="Optional client identifier"),
-):
-    """
-    Pipeline health monitoring stream
+) -> None:
+    """Pipeline health monitoring stream.
 
     Streams health status and pipeline statistics at the specified interval.
 
     Example:
         ws://localhost:8001/api/v1/pipeline/streaming/health?interval_seconds=10
+
     """
     client_id = client_id or f"health-{datetime.utcnow().timestamp()}"
     channel = "health"
@@ -344,7 +345,7 @@ async def health_stream(
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                logger.error(f"Error in health stream: {e}")
+                logger.exception(f"Error in health stream: {e}")
                 await manager.send_personal(
                     {
                         "type": "error",
@@ -363,7 +364,7 @@ async def health_stream(
 
 # REST endpoints for streaming status
 class StreamingStatusResponse(BaseModel):
-    """Response model for streaming status"""
+    """Response model for streaming status."""
 
     active_connections: int
     channels: dict[str, int]
@@ -373,8 +374,7 @@ class StreamingStatusResponse(BaseModel):
 
 @router.get("/pipeline/streaming/status", response_model=StreamingStatusResponse)
 async def get_streaming_status():
-    """
-    Get current streaming status
+    """Get current streaming status.
 
     Returns information about active WebSocket connections and pipeline status.
     """
@@ -394,12 +394,12 @@ async def get_streaming_status():
         )
 
     except Exception as e:
-        logger.error(f"Failed to get streaming status: {e}")
+        logger.exception(f"Failed to get streaming status: {e}")
         raise
 
 
 class BroadcastRequest(BaseModel):
-    """Request model for broadcasting messages"""
+    """Request model for broadcasting messages."""
 
     channel: str
     message: dict[str, Any]
@@ -407,8 +407,7 @@ class BroadcastRequest(BaseModel):
 
 @router.post("/pipeline/streaming/broadcast")
 async def broadcast_message(request: BroadcastRequest):
-    """
-    Broadcast a message to all clients in a channel
+    """Broadcast a message to all clients in a channel.
 
     Admin endpoint for sending system-wide notifications.
     """
@@ -429,5 +428,5 @@ async def broadcast_message(request: BroadcastRequest):
         }
 
     except Exception as e:
-        logger.error(f"Failed to broadcast message: {e}")
+        logger.exception(f"Failed to broadcast message: {e}")
         raise

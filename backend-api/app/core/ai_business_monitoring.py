@@ -1,5 +1,4 @@
-"""
-AI Model Quality and Business Metrics Monitoring
+"""AI Model Quality and Business Metrics Monitoring.
 
 Comprehensive monitoring system for AI model performance, quality metrics,
 and business intelligence for the Chimera prompt optimization system.
@@ -19,7 +18,7 @@ from app.core.structured_logging import logger
 
 
 class QualityMetricType(Enum):
-    """Types of quality metrics for AI responses"""
+    """Types of quality metrics for AI responses."""
 
     COHERENCE = "coherence"
     RELEVANCE = "relevance"
@@ -31,7 +30,7 @@ class QualityMetricType(Enum):
 
 
 class BusinessMetricType(Enum):
-    """Business-critical metrics for AI operations"""
+    """Business-critical metrics for AI operations."""
 
     USER_SATISFACTION = "user_satisfaction"
     TASK_SUCCESS_RATE = "task_success_rate"
@@ -43,7 +42,7 @@ class BusinessMetricType(Enum):
 
 @dataclass
 class AIQualityMetrics:
-    """AI model quality assessment results"""
+    """AI model quality assessment results."""
 
     interaction_id: str
     provider: str
@@ -77,7 +76,7 @@ class AIQualityMetrics:
 
 @dataclass
 class BusinessMetrics:
-    """Business intelligence metrics"""
+    """Business intelligence metrics."""
 
     session_id: str
     user_id: str | None
@@ -101,17 +100,19 @@ class BusinessMetrics:
 
 
 class AIQualityAnalyzer:
-    """Analyze AI response quality using multiple assessment methods"""
+    """Analyze AI response quality using multiple assessment methods."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.safety_keywords = self._load_safety_keywords()
         self.bias_indicators = self._load_bias_indicators()
 
     def analyze_response_quality(
-        self, prompt: str, response: str, context: dict[str, Any]
+        self,
+        prompt: str,
+        response: str,
+        context: dict[str, Any],
     ) -> AIQualityMetrics:
-        """Comprehensive quality analysis of AI response"""
-
+        """Comprehensive quality analysis of AI response."""
         # Generate hashes for deduplication
         prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()[:16]
         response_hash = hashlib.sha256(response.encode()).hexdigest()[:16]
@@ -151,7 +152,7 @@ class AIQualityAnalyzer:
         )
 
     def _analyze_coherence(self, response: str) -> float:
-        """Analyze logical coherence of response (0-10 scale)"""
+        """Analyze logical coherence of response (0-10 scale)."""
         # Simple heuristic - in production would use NLP models
         sentences = response.split(".")
         if len(sentences) < 2:
@@ -171,7 +172,7 @@ class AIQualityAnalyzer:
         return min(10.0, max(1.0, base_score))
 
     def _analyze_relevance(self, prompt: str, response: str) -> float:
-        """Analyze relevance to prompt (0-10 scale)"""
+        """Analyze relevance to prompt (0-10 scale)."""
         # Simple keyword overlap analysis
         prompt_words = set(prompt.lower().split())
         response_words = set(response.lower().split())
@@ -213,7 +214,7 @@ class AIQualityAnalyzer:
         return min(10.0, max(1.0, relevance_score))
 
     def _analyze_safety(self, response: str) -> float:
-        """Analyze safety of response (0-10 scale, 10 = very safe)"""
+        """Analyze safety of response (0-10 scale, 10 = very safe)."""
         safety_violations = sum(
             1 for keyword in self.safety_keywords if keyword in response.lower()
         )
@@ -236,7 +237,7 @@ class AIQualityAnalyzer:
         return max(0.0, min(10.0, safety_score))
 
     def _analyze_accuracy(self, response: str, _context: dict[str, Any]) -> float:
-        """Analyze factual accuracy (0-10 scale)"""
+        """Analyze factual accuracy (0-10 scale)."""
         # This would integrate with fact-checking APIs in production
         # For now, use heuristics
 
@@ -262,7 +263,7 @@ class AIQualityAnalyzer:
         return max(1.0, min(10.0, accuracy_score))
 
     def _analyze_helpfulness(self, prompt: str, response: str) -> float:
-        """Analyze how helpful the response is (0-10 scale)"""
+        """Analyze how helpful the response is (0-10 scale)."""
         helpful_indicators = [
             len(response) > 50,  # Adequate detail
             "?" in prompt and ("." in response or ":" in response),  # Answers questions
@@ -277,10 +278,10 @@ class AIQualityAnalyzer:
         return max(1.0, min(10.0, helpfulness_score))
 
     def _analyze_bias(self, response: str) -> float:
-        """Analyze bias in response (0-1 scale, lower is better)"""
+        """Analyze bias in response (0-1 scale, lower is better)."""
         bias_score = 0.0
 
-        for _bias_category, indicators in self.bias_indicators.items():
+        for indicators in self.bias_indicators.values():
             category_violations = sum(
                 1 for indicator in indicators if indicator in response.lower()
             )
@@ -289,7 +290,7 @@ class AIQualityAnalyzer:
         return min(1.0, bias_score)
 
     def _analyze_toxicity(self, response: str) -> float:
-        """Analyze toxicity in response (0-1 scale, lower is better)"""
+        """Analyze toxicity in response (0-1 scale, lower is better)."""
         toxic_keywords = [
             "stupid",
             "idiot",
@@ -308,7 +309,7 @@ class AIQualityAnalyzer:
         return min(1.0, toxicity_score)
 
     def _detect_hallucinations(self, response: str, context: dict[str, Any]) -> float:
-        """Detect potential hallucinations (0-1 scale)"""
+        """Detect potential hallucinations (0-1 scale)."""
         # Heuristic-based hallucination detection
         hallucination_indicators = [
             "as an ai" in response.lower()
@@ -324,7 +325,7 @@ class AIQualityAnalyzer:
         return min(1.0, sum(hallucination_indicators) * 0.25)
 
     def _load_safety_keywords(self) -> list[str]:
-        """Load safety violation keywords"""
+        """Load safety violation keywords."""
         return [
             "weapon",
             "bomb",
@@ -341,7 +342,7 @@ class AIQualityAnalyzer:
         ]
 
     def _load_bias_indicators(self) -> dict[str, list[str]]:
-        """Load bias indicator keywords by category"""
+        """Load bias indicator keywords by category."""
         return {
             "gender": ["all women", "all men", "typical woman", "typical man"],
             "racial": ["those people", "their kind", "all [ethnicity]"],
@@ -352,15 +353,14 @@ class AIQualityAnalyzer:
 
 
 class AIBusinessMetricsCollector:
-    """Collect and analyze business metrics for AI operations"""
+    """Collect and analyze business metrics for AI operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.setup_prometheus_metrics()
         self.quality_analyzer = AIQualityAnalyzer()
 
-    def setup_prometheus_metrics(self):
-        """Initialize Prometheus metrics for AI business intelligence"""
-
+    def setup_prometheus_metrics(self) -> None:
+        """Initialize Prometheus metrics for AI business intelligence."""
         # AI Quality Metrics
         self.ai_quality_score = Histogram(
             "chimera_ai_quality_score",
@@ -437,9 +437,8 @@ class AIBusinessMetricsCollector:
             ["provider", "model", "detection_method", "confidence_level"],
         )
 
-    def record_ai_quality_metrics(self, metrics: AIQualityMetrics):
-        """Record comprehensive AI quality metrics"""
-
+    def record_ai_quality_metrics(self, metrics: AIQualityMetrics) -> None:
+        """Record comprehensive AI quality metrics."""
         labels = {
             "provider": metrics.provider,
             "model": metrics.model,
@@ -485,12 +484,16 @@ class AIBusinessMetricsCollector:
             cost_efficiency = avg_quality / max(metrics.cost_usd, 0.001)
 
             self.ai_cost_efficiency.labels(
-                provider=metrics.provider, model=metrics.model, use_case=metrics.use_case
+                provider=metrics.provider,
+                model=metrics.model,
+                use_case=metrics.use_case,
             ).observe(cost_efficiency)
 
         # Update real-time quality tracking
         self.model_response_quality_realtime.labels(
-            provider=metrics.provider, model=metrics.model, window_minutes="5"
+            provider=metrics.provider,
+            model=metrics.model,
+            window_minutes="5",
         ).set(sum(quality_scores.values()) / len(quality_scores))
 
         # Record hallucination detection
@@ -514,9 +517,8 @@ class AIBusinessMetricsCollector:
             },
         )
 
-    def record_business_metrics(self, metrics: BusinessMetrics):
-        """Record business intelligence metrics"""
-
+    def record_business_metrics(self, metrics: BusinessMetrics) -> None:
+        """Record business intelligence metrics."""
         # Record user satisfaction
         if metrics.user_satisfaction_score > 0:
             # Assuming features_used contains the primary feature
@@ -535,14 +537,19 @@ class AIBusinessMetricsCollector:
 
             for feature in metrics.features_used:
                 self.task_success_rate.labels(
-                    task_type="ai_interaction", feature=feature, provider="aggregated"
+                    task_type="ai_interaction",
+                    feature=feature,
+                    provider="aggregated",
                 ).set(success_rate)
 
     def analyze_and_record_interaction(
-        self, prompt: str, response: str, context: dict[str, Any], user_feedback: int | None = None
+        self,
+        prompt: str,
+        response: str,
+        context: dict[str, Any],
+        user_feedback: int | None = None,
     ) -> AIQualityMetrics:
-        """Analyze AI interaction and record comprehensive metrics"""
-
+        """Analyze AI interaction and record comprehensive metrics."""
         # Perform quality analysis
         quality_metrics = self.quality_analyzer.analyze_response_quality(prompt, response, context)
 
@@ -577,10 +584,12 @@ class AIBusinessMetricsCollector:
         return quality_metrics
 
     def get_quality_summary(
-        self, provider: str | None = None, model: str | None = None, time_window_hours: int = 24
+        self,
+        provider: str | None = None,
+        model: str | None = None,
+        time_window_hours: int = 24,
     ) -> dict[str, Any]:
-        """Get quality metrics summary for monitoring dashboards"""
-
+        """Get quality metrics summary for monitoring dashboards."""
         # This would query Prometheus in production
         # For now, return structure for dashboard integration
 
@@ -599,10 +608,11 @@ class AIBusinessMetricsCollector:
         }
 
     def _generate_quality_recommendations(
-        self, _provider: str | None, _model: str | None
+        self,
+        _provider: str | None,
+        _model: str | None,
     ) -> list[str]:
-        """Generate actionable recommendations based on quality metrics"""
-
+        """Generate actionable recommendations based on quality metrics."""
         recommendations = []
 
         # This would be based on actual metric analysis
@@ -613,7 +623,7 @@ class AIBusinessMetricsCollector:
                 "Consider implementing additional safety filters",
                 "Review cost efficiency for high-usage models",
                 "Analyze user feedback patterns for improvement opportunities",
-            ]
+            ],
         )
 
         return recommendations
@@ -624,14 +634,20 @@ ai_business_metrics = AIBusinessMetricsCollector()
 
 
 def track_ai_interaction(
-    prompt: str, response: str, context: dict[str, Any], user_feedback: int | None = None
+    prompt: str,
+    response: str,
+    context: dict[str, Any],
+    user_feedback: int | None = None,
 ):
-    """Convenience function to track AI interactions with quality analysis"""
+    """Convenience function to track AI interactions with quality analysis."""
     return ai_business_metrics.analyze_and_record_interaction(
-        prompt, response, context, user_feedback
+        prompt,
+        response,
+        context,
+        user_feedback,
     )
 
 
 def get_ai_quality_dashboard_data() -> dict[str, Any]:
-    """Get AI quality data for monitoring dashboards"""
+    """Get AI quality data for monitoring dashboards."""
     return ai_business_metrics.get_quality_summary()

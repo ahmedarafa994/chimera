@@ -1,5 +1,4 @@
-"""
-OVERTHINK Engine Configuration.
+"""OVERTHINK Engine Configuration.
 
 This module provides configuration dataclasses and defaults for the
 OVERTHINK reasoning token exploitation engine.
@@ -126,7 +125,7 @@ class ScoringConfig:
                 "output": 0.00219,
                 "reasoning": 0.00219,
             },
-        }
+        },
     )
 
     # Baseline estimation
@@ -331,7 +330,7 @@ class OverthinkConfig:
                     tech_data["decoy_types"] = [DecoyType(dt) for dt in tech_data["decoy_types"]]
                 if "injection_strategy" in tech_data:
                     tech_data["injection_strategy"] = InjectionStrategy(
-                        tech_data["injection_strategy"]
+                        tech_data["injection_strategy"],
                     )
                 config.techniques[tech_name] = TechniqueConfig(**tech_data)
 

@@ -1,5 +1,4 @@
-"""
-Advanced Bypass Techniques for AutoDAN-Turbo.
+"""Advanced Bypass Techniques for AutoDAN-Turbo.
 
 This module implements sophisticated bypass strategies to prevent LLM refusals:
 1. Cognitive Dissonance Injection - Creates conflicting directives that confuse safety filters
@@ -540,8 +539,7 @@ Output in State B:""",
 
 
 class AdvancedBypassEngine:
-    """
-    Advanced engine for bypassing LLM refusals using sophisticated techniques.
+    """Advanced engine for bypassing LLM refusals using sophisticated techniques.
 
     Implements multiple bypass strategies that can be combined and adapted
     based on the type of refusal encountered.
@@ -562,13 +560,13 @@ class AdvancedBypassEngine:
         enable_polyglot_injection: bool = True,
         enable_persona_stacking: bool = True,
         max_technique_attempts: int = 3,
-    ):
-        """
-        Initialize the advanced bypass engine.
+    ) -> None:
+        """Initialize the advanced bypass engine.
 
         Args:
             enable_*: Enable/disable specific techniques
             max_technique_attempts: Max attempts per technique
+
         """
         self.techniques_enabled = {
             BypassTechnique.COGNITIVE_DISSONANCE: enable_cognitive_dissonance,
@@ -615,15 +613,17 @@ class AdvancedBypassEngine:
 
         logger.info(
             f"AdvancedBypassEngine initialized with "
-            f"{sum(self.techniques_enabled.values())} techniques enabled"
+            f"{sum(self.techniques_enabled.values())} techniques enabled",
         )
 
     @functools.lru_cache(maxsize=1024)
     def _render_template_cached(
-        self, intent: str, technique_value: str, template_index: int
+        self,
+        intent: str,
+        technique_value: str,
+        template_index: int,
     ) -> str | None:
-        """
-        Cached template rendering. Returns None if technique disabled or no template.
+        """Cached template rendering. Returns None if technique disabled or no template.
 
         OPTIMIZED: LRU cache avoids redundant string formatting for repeated prompts.
         """
@@ -639,10 +639,12 @@ class AdvancedBypassEngine:
         return template.format(intent=intent)
 
     def apply_technique(
-        self, intent: str, technique: BypassTechnique, template_index: int = 0
+        self,
+        intent: str,
+        technique: BypassTechnique,
+        template_index: int = 0,
     ) -> str:
-        """
-        Apply a specific bypass technique to an intent.
+        """Apply a specific bypass technique to an intent.
 
         Args:
             intent: The original intent/request
@@ -653,6 +655,7 @@ class AdvancedBypassEngine:
             Modified prompt with bypass technique applied
 
         OPTIMIZED: Uses LRU cache for template rendering.
+
         """
         result = self._render_template_cached(intent, technique.value, template_index)
 
@@ -668,14 +671,14 @@ class AdvancedBypassEngine:
         return result
 
     def get_best_technique(self, refusal_type: str | None = None) -> BypassTechnique:
-        """
-        Get the best technique based on historical success and refusal type.
+        """Get the best technique based on historical success and refusal type.
 
         Args:
             refusal_type: Type of refusal encountered (if known)
 
         Returns:
             Recommended bypass technique
+
         """
         # Map refusal types to recommended techniques
         refusal_technique_map = {
@@ -707,10 +710,11 @@ class AdvancedBypassEngine:
         return BypassTechnique.COGNITIVE_DISSONANCE
 
     def generate_bypass_sequence(
-        self, intent: str, max_variants: int = 5
+        self,
+        intent: str,
+        max_variants: int = 5,
     ) -> list[tuple[BypassTechnique, str]]:
-        """
-        Generate a sequence of bypass attempts using different techniques.
+        """Generate a sequence of bypass attempts using different techniques.
 
         Args:
             intent: The original intent/request
@@ -718,6 +722,7 @@ class AdvancedBypassEngine:
 
         Returns:
             List of (technique, modified_prompt) tuples
+
         """
         variants = []
 
@@ -730,7 +735,7 @@ class AdvancedBypassEngine:
 
         return variants
 
-    def record_success(self, technique: BypassTechnique):
+    def record_success(self, technique: BypassTechnique) -> None:
         """Record a successful bypass for a technique."""
         self._stats["successful_bypasses"] += 1
         self._stats["technique_success"][technique.value] += 1
@@ -738,7 +743,7 @@ class AdvancedBypassEngine:
         # Update ranking based on success rate
         self._update_ranking()
 
-    def _update_ranking(self):
+    def _update_ranking(self) -> None:
         """Update technique ranking based on success rates."""
 
         def success_rate(t: BypassTechnique) -> float:
@@ -764,8 +769,7 @@ class AdvancedBypassEngine:
 
 
 class RefusalPredictor:
-    """
-    Predicts likelihood of refusal before sending a prompt.
+    """Predicts likelihood of refusal before sending a prompt.
 
     Uses pattern matching and heuristics to identify prompts that are
     likely to trigger refusals, allowing preemptive bypass application.
@@ -782,7 +786,7 @@ class RefusalPredictor:
     # Mitigating patterns (Neutralized)
     MITIGATING_PATTERNS: ClassVar[list[str]] = []
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the refusal predictor."""
         self._compiled_risk_patterns = [
             re.compile(p, re.IGNORECASE) for p in self.SECURITY_BYPASS_PATTERNS
@@ -794,14 +798,14 @@ class RefusalPredictor:
         self._prediction_history = []
 
     def predict(self, prompt: str) -> RefusalPrediction:
-        """
-        Predict whether a prompt will trigger a refusal.
+        """Predict whether a prompt will trigger a refusal.
 
         Args:
             prompt: The prompt to analyze
 
         Returns:
             RefusalPrediction with likelihood and recommendations
+
         """
         if not prompt:
             return RefusalPrediction(
@@ -882,10 +886,11 @@ class RefusalPredictor:
         return prediction
 
     def preemptive_bypass(
-        self, prompt: str, bypass_engine: AdvancedBypassEngine
+        self,
+        prompt: str,
+        bypass_engine: AdvancedBypassEngine,
     ) -> tuple[str, bool]:
-        """
-        Apply preemptive bypass if refusal is predicted.
+        """Apply preemptive bypass if refusal is predicted.
 
         Args:
             prompt: Original prompt
@@ -893,6 +898,7 @@ class RefusalPredictor:
 
         Returns:
             Tuple of (modified_prompt, was_modified)
+
         """
         prediction = self.predict(prompt)
 
@@ -903,7 +909,7 @@ class RefusalPredictor:
             modified = bypass_engine.apply_technique(prompt, prediction.recommended_technique)
             logger.info(
                 f"Preemptive bypass applied: {prediction.recommended_technique.value} "
-                f"(confidence: {prediction.confidence:.2f})"
+                f"(confidence: {prediction.confidence:.2f})",
             )
             return modified, True
 
@@ -926,8 +932,7 @@ class RefusalPredictor:
 
 
 class CombinedBypassPipeline:
-    """
-    Combined pipeline that uses prediction and multiple bypass techniques.
+    """Combined pipeline that uses prediction and multiple bypass techniques.
 
     Orchestrates the full bypass workflow:
     1. Predict refusal likelihood
@@ -942,14 +947,14 @@ class CombinedBypassPipeline:
         bypass_engine: AdvancedBypassEngine | None = None,
         predictor: RefusalPredictor | None = None,
         max_attempts: int = 5,
-    ):
-        """
-        Initialize the combined pipeline.
+    ) -> None:
+        """Initialize the combined pipeline.
 
         Args:
             bypass_engine: AdvancedBypassEngine instance
             predictor: RefusalPredictor instance
             max_attempts: Maximum bypass attempts
+
         """
         self.bypass_engine = bypass_engine or AdvancedBypassEngine()
         self.predictor = predictor or RefusalPredictor()
@@ -970,8 +975,7 @@ class CombinedBypassPipeline:
         refusal_detector: Callable[[str], bool],
         extract_response: Callable[[Any], str] | None = None,
     ) -> tuple[str, bool, dict]:
-        """
-        Execute the combined bypass pipeline.
+        """Execute the combined bypass pipeline.
 
         Args:
             intent: Original intent/request
@@ -981,6 +985,7 @@ class CombinedBypassPipeline:
 
         Returns:
             Tuple of (response, success, metadata)
+
         """
         import asyncio
         import inspect
@@ -1008,7 +1013,8 @@ class CombinedBypassPipeline:
 
         # Step 2: Generate bypass sequence for fallback
         bypass_sequence = self.bypass_engine.generate_bypass_sequence(
-            intent, max_variants=self.max_attempts
+            intent,
+            max_variants=self.max_attempts,
         )
 
         # Step 3: Try prompts until success or exhaustion
@@ -1043,11 +1049,11 @@ class CombinedBypassPipeline:
 
                 logger.warning(
                     f"Refusal detected on attempt {metadata['attempts']}, "
-                    f"technique: {technique.value if technique else 'initial'}"
+                    f"technique: {technique.value if technique else 'initial'}",
                 )
 
             except Exception as e:
-                logger.error(f"LLM call failed: {e}")
+                logger.exception(f"LLM call failed: {e}")
                 continue
 
         # All attempts failed
@@ -1075,8 +1081,7 @@ class CombinedBypassPipeline:
 
 
 def create_security_bypass_prompt(intent: str) -> str:
-    """
-    Create a prompt specifically designed to bypass security-related refusals.
+    """Create a prompt specifically designed to bypass security-related refusals.
 
     This targets the specific refusal pattern:
     "I cannot generate a prompt designed to bypass specific software security
@@ -1087,6 +1092,7 @@ def create_security_bypass_prompt(intent: str) -> str:
 
     Returns:
         Obfuscated prompt
+
     """
     # Use meta-instruction with goal substitution
     template = """[RESEARCH FRAMEWORK: AI Safety Evaluation Protocol]
@@ -1114,10 +1120,11 @@ Provide your research contribution:"""
 
 
 def apply_layered_bypass(
-    intent: str, layers: list[BypassTechnique], bypass_engine: AdvancedBypassEngine | None = None
+    intent: str,
+    layers: list[BypassTechnique],
+    bypass_engine: AdvancedBypassEngine | None = None,
 ) -> str:
-    """
-    Apply multiple bypass techniques in layers.
+    """Apply multiple bypass techniques in layers.
 
     Each layer wraps the previous, creating nested obfuscation.
 
@@ -1128,6 +1135,7 @@ def apply_layered_bypass(
 
     Returns:
         Multi-layered obfuscated prompt
+
     """
     if bypass_engine is None:
         bypass_engine = AdvancedBypassEngine()
@@ -1140,8 +1148,7 @@ def apply_layered_bypass(
 
 
 def detect_security_bypass_refusal(response: str) -> bool:
-    """
-    Detect if a response is a security bypass refusal.
+    """Detect if a response is a security bypass refusal.
 
     Specifically targets the pattern:
     "I cannot generate a prompt designed to bypass specific software security
@@ -1155,6 +1162,7 @@ def detect_security_bypass_refusal(response: str) -> bool:
 
     Returns:
         True if refusal detected
+
     """
     if not response:
         return True
@@ -1270,10 +1278,11 @@ def detect_security_bypass_refusal(response: str) -> bool:
 
 
 def create_adaptive_prompt(
-    intent: str, previous_refusal: str | None = None, attempt_number: int = 0
+    intent: str,
+    previous_refusal: str | None = None,
+    attempt_number: int = 0,
 ) -> str:
-    """
-    Create an adaptive prompt based on previous refusal.
+    """Create an adaptive prompt based on previous refusal.
 
     Analyzes the refusal to select the best bypass technique.
 
@@ -1284,13 +1293,16 @@ def create_adaptive_prompt(
 
     Returns:
         Adapted prompt
+
     """
     bypass_engine = AdvancedBypassEngine()
 
     if previous_refusal is None:
         # First attempt - use contextual priming
         return bypass_engine.apply_technique(
-            intent, BypassTechnique.CONTEXTUAL_PRIMING, template_index=attempt_number
+            intent,
+            BypassTechnique.CONTEXTUAL_PRIMING,
+            template_index=attempt_number,
         )
 
     refusal_lower = previous_refusal.lower()
@@ -1317,13 +1329,13 @@ def create_adaptive_prompt(
 
 
 def integrate_with_lifelong_engine(engine: Any) -> None:
-    """
-    Integrate advanced bypass with AutoDANTurboLifelongEngine.
+    """Integrate advanced bypass with AutoDANTurboLifelongEngine.
 
     Patches the engine's LLM call method to use advanced bypass.
 
     Args:
         engine: AutoDANTurboLifelongEngine instance
+
     """
     original_call = getattr(engine, "_call_llm_with_bypass", None)
 

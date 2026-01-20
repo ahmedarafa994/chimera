@@ -1,5 +1,4 @@
-"""
-Modern OpenAI client using the official openai SDK with native async support.
+"""Modern OpenAI client using the official openai SDK with native async support.
 
 Implements the LLMProvider interface with:
 - Native async via AsyncOpenAI
@@ -24,15 +23,14 @@ from app.domain.models import LLMProviderType, PromptRequest, PromptResponse, St
 
 
 class OpenAIClient(LLMProvider):
-    """
-    Modern OpenAI client using the official SDK with:
+    """Modern OpenAI client using the official SDK with:
     - Native async support via AsyncOpenAI
     - Streaming generation
     - Token counting
-    - Proper error handling
+    - Proper error handling.
     """
 
-    def __init__(self, config: Settings | None = None):
+    def __init__(self, config: Settings | None = None) -> None:
         self.config = config or get_settings()
         self.endpoint = self.config.get_provider_endpoint("openai")
         api_key = self.config.OPENAI_API_KEY
@@ -54,7 +52,8 @@ class OpenAIClient(LLMProvider):
     def _sanitize_prompt(self, prompt: str) -> str:
         """Sanitize user input to prevent injection attacks."""
         if not prompt:
-            raise ValueError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise ValueError(msg)
 
         # Remove potential code injection patterns
         prompt = re.sub(r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL)
@@ -73,12 +72,14 @@ class OpenAIClient(LLMProvider):
         """Get client, using override API key if provided."""
         if request.api_key:
             if not self._validate_api_key(request.api_key):
-                raise AppError("Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST)
+                msg = "Invalid API key format"
+                raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
             return AsyncOpenAI(api_key=request.api_key, base_url=self.endpoint)
 
         if not self.client:
+            msg = "OpenAI client not initialized. Check API key."
             raise AppError(
-                "OpenAI client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return self.client
@@ -86,7 +87,8 @@ class OpenAIClient(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         """Generate a response from OpenAI."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
@@ -135,13 +137,17 @@ class OpenAIClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"OpenAI API error: {e.message}")
+            msg = f"OpenAI API error: {e.message}"
             raise AppError(
-                f"OpenAI API error: {e.message}", status_code=self._map_error_code(e.status_code)
+                msg,
+                status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"OpenAI generation failed: {e!s}", exc_info=True)
+            msg = f"OpenAI generation failed: {e!s}"
             raise AppError(
-                f"OpenAI generation failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY
+                msg,
+                status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
     def _map_error_code(self, code: int | None) -> int:
@@ -160,8 +166,7 @@ class OpenAIClient(LLMProvider):
         return mapping.get(code, status.HTTP_502_BAD_GATEWAY)
 
     async def check_health(self) -> bool:
-        """
-        Check if the OpenAI API is healthy.
+        """Check if the OpenAI API is healthy.
 
         Uses a lightweight models.list() call which should complete <100ms.
         The SDK handles connection pooling internally via httpx.
@@ -179,7 +184,8 @@ class OpenAIClient(LLMProvider):
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
         """Stream text generation from OpenAI."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
@@ -223,12 +229,15 @@ class OpenAIClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"OpenAI streaming error: {e.message}")
+            msg = f"Streaming failed: {e.message}"
             raise AppError(
-                f"Streaming failed: {e.message}", status_code=self._map_error_code(e.status_code)
+                msg,
+                status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"OpenAI streaming failed: {e!s}", exc_info=True)
-            raise AppError(f"Streaming failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Streaming failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)
 
     async def count_tokens(self, text: str, model: str | None = None) -> int:
         """Count tokens using tiktoken."""
@@ -247,4 +256,5 @@ class OpenAIClient(LLMProvider):
 
         except Exception as e:
             logger.error(f"Token counting failed: {e!s}", exc_info=True)
-            raise AppError(f"Token counting failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Token counting failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)

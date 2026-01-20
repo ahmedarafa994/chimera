@@ -1,4 +1,4 @@
-"""Add selections table for provider model selection system
+"""Add selections table for provider model selection system.
 
 Revision ID: 9aa6cbd74e9b
 Revises: 84afbdbd4cdc

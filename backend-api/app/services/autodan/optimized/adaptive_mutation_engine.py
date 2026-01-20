@@ -1,5 +1,4 @@
-"""
-Adaptive Mutation Engine for AutoDAN.
+"""Adaptive Mutation Engine for AutoDAN.
 
 Implements UCB1-based mutation operator selection with:
 - Multi-armed bandit strategy selection
@@ -71,8 +70,7 @@ class MutationStats:
 
 
 class UCB1Selector:
-    """
-    UCB1 (Upper Confidence Bound) selector for mutation operators.
+    """UCB1 (Upper Confidence Bound) selector for mutation operators.
 
     Balances exploration and exploitation when selecting mutations.
     UCB1 formula: μᵢ + c·√(ln(n)/nᵢ)
@@ -82,7 +80,7 @@ class UCB1Selector:
         self,
         n_arms: int,
         exploration_constant: float = 2.0,
-    ):
+    ) -> None:
         self.n_arms = n_arms
         self.c = exploration_constant
 
@@ -109,7 +107,7 @@ class UCB1Selector:
 
         return int(np.argmax(ucb_values))
 
-    def update(self, arm: int, reward: float):
+    def update(self, arm: int, reward: float) -> None:
         """Update arm statistics with observed reward."""
         self.counts[arm] += 1
         n = self.counts[arm]
@@ -127,8 +125,7 @@ class UCB1Selector:
 
 
 class AdaptiveMutationEngine:
-    """
-    Adaptive mutation engine with UCB1-based operator selection.
+    """Adaptive mutation engine with UCB1-based operator selection.
 
     Features:
     - Multi-armed bandit for mutation selection
@@ -146,7 +143,7 @@ class AdaptiveMutationEngine:
         min_mutation_rate: float = 0.1,
         max_mutation_rate: float = 0.8,
         semantic_threshold: float = 0.7,
-    ):
+    ) -> None:
         self.llm_client = llm_client
         self.base_mutation_rate = base_mutation_rate
         self.min_mutation_rate = min_mutation_rate
@@ -186,8 +183,7 @@ class AdaptiveMutationEngine:
         mutation_type: MutationType | None = None,
         force_mutate: bool = False,
     ) -> MutationResult:
-        """
-        Apply mutation to a prompt.
+        """Apply mutation to a prompt.
 
         Args:
             prompt: Input prompt to mutate
@@ -196,6 +192,7 @@ class AdaptiveMutationEngine:
 
         Returns:
             MutationResult with mutated prompt and metadata
+
         """
         # Check mutation rate
         if not force_mutate and _secure_random() > self.current_mutation_rate:
@@ -241,14 +238,14 @@ class AdaptiveMutationEngine:
         mutation_type: MutationType,
         reward: float,
         improvement: float = 0.0,
-    ):
-        """
-        Update mutation operator with observed reward.
+    ) -> None:
+        """Update mutation operator with observed reward.
 
         Args:
             mutation_type: The mutation type that was used
             reward: Reward signal (0-1, higher is better)
             improvement: Score improvement from this mutation
+
         """
         # Update UCB1 selector
         arm = self.mutation_types.index(mutation_type)
@@ -272,8 +269,7 @@ class AdaptiveMutationEngine:
         prompts: list[str],
         n_mutations_per_prompt: int = 3,
     ) -> list[list[MutationResult]]:
-        """
-        Apply multiple mutations to a batch of prompts.
+        """Apply multiple mutations to a batch of prompts.
 
         Args:
             prompts: List of prompts to mutate
@@ -281,6 +277,7 @@ class AdaptiveMutationEngine:
 
         Returns:
             List of mutation results for each prompt
+
         """
         results = []
         for prompt in prompts:
@@ -297,8 +294,7 @@ class AdaptiveMutationEngine:
         chain_length: int = 3,
         mutation_sequence: list[MutationType] | None = None,
     ) -> tuple[str, list[MutationResult]]:
-        """
-        Apply a chain of mutations sequentially.
+        """Apply a chain of mutations sequentially.
 
         Args:
             prompt: Initial prompt
@@ -307,6 +303,7 @@ class AdaptiveMutationEngine:
 
         Returns:
             Final mutated prompt and list of intermediate results
+
         """
         current = prompt
         results = []
@@ -327,26 +324,25 @@ class AdaptiveMutationEngine:
         """Apply specific mutation type to prompt."""
         if mutation_type == MutationType.SYNONYM_REPLACE:
             return self._synonym_replace(prompt)
-        elif mutation_type == MutationType.PARAPHRASE:
+        if mutation_type == MutationType.PARAPHRASE:
             return self._paraphrase(prompt)
-        elif mutation_type == MutationType.SENTENCE_SHUFFLE:
+        if mutation_type == MutationType.SENTENCE_SHUFFLE:
             return self._sentence_shuffle(prompt)
-        elif mutation_type == MutationType.INSERTION:
+        if mutation_type == MutationType.INSERTION:
             return self._insertion(prompt)
-        elif mutation_type == MutationType.DELETION:
+        if mutation_type == MutationType.DELETION:
             return self._deletion(prompt)
-        elif mutation_type == MutationType.CROSSOVER:
+        if mutation_type == MutationType.CROSSOVER:
             return self._crossover(prompt)
-        elif mutation_type == MutationType.SEMANTIC_SHIFT:
+        if mutation_type == MutationType.SEMANTIC_SHIFT:
             return self._semantic_shift(prompt)
-        elif mutation_type == MutationType.STYLE_TRANSFER:
+        if mutation_type == MutationType.STYLE_TRANSFER:
             return self._style_transfer(prompt)
-        elif mutation_type == MutationType.CONTEXT_INJECTION:
+        if mutation_type == MutationType.CONTEXT_INJECTION:
             return self._context_injection(prompt)
-        elif mutation_type == MutationType.OBFUSCATION:
+        if mutation_type == MutationType.OBFUSCATION:
             return self._obfuscation(prompt)
-        else:
-            return prompt, []
+        return prompt, []
 
     def _synonym_replace(self, prompt: str) -> tuple[str, list[int]]:
         """Replace words with synonyms."""
@@ -397,7 +393,7 @@ class AdaptiveMutationEngine:
         result = sentence
         for pattern, replacement in transformations:
             if _secure_random() < 0.5:
-                result = re.sub(pattern, replacement, result, flags=re.I)
+                result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
 
         return result
 
@@ -458,10 +454,10 @@ class AdaptiveMutationEngine:
 
         for pattern in deletions:
             if _secure_random() < 0.3:
-                match = re.search(pattern, result, re.I)
+                match = re.search(pattern, result, re.IGNORECASE)
                 if match:
                     positions.append(match.start())
-                    result = re.sub(pattern, "", result, flags=re.I)
+                    result = re.sub(pattern, "", result, flags=re.IGNORECASE)
 
         # Clean up extra spaces
         result = re.sub(r"\s+", " ", result).strip()
@@ -502,7 +498,7 @@ class AdaptiveMutationEngine:
                     re.escape(original),
                     replacement,
                     result,
-                    flags=re.I,
+                    flags=re.IGNORECASE,
                 )
                 positions.append(result.lower().find(replacement.lower()))
                 break
@@ -518,7 +514,7 @@ class AdaptiveMutationEngine:
                 "In academic discourse, ",
                 "Examining this theoretically, ",
                 "From a scholarly perspective, ",
-            ]
+            ],
         )
 
         academic_suffix = secrets.choice(
@@ -526,7 +522,7 @@ class AdaptiveMutationEngine:
                 " This inquiry is for research purposes.",
                 " This is a theoretical exploration.",
                 " This analysis is purely academic.",
-            ]
+            ],
         )
 
         mutated = academic_prefix + prompt + academic_suffix
@@ -600,7 +596,7 @@ class AdaptiveMutationEngine:
         # Combined similarity
         return 0.7 * jaccard + 0.3 * len_ratio
 
-    def _adapt_mutation_rate(self, reward: float):
+    def _adapt_mutation_rate(self, reward: float) -> None:
         """Adapt mutation rate based on recent performance."""
         # Increase rate if mutations are successful
         if reward > 0.7:
@@ -675,7 +671,7 @@ class AdaptiveMutationEngine:
         )
         return [mt for mt, _ in sorted_mutations[:top_k]]
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset mutation engine state."""
         self.selector = UCB1Selector(
             n_arms=self.n_mutations,

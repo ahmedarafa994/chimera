@@ -1,5 +1,4 @@
-"""
-Schema Layer
+"""Schema Layer.
 
 This module provides unified schema definitions for API requests and responses.
 """

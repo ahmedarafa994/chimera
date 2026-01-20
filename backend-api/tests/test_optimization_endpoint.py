@@ -9,16 +9,18 @@ client = TestClient(app)
 
 
 @pytest.mark.asyncio
-async def test_optimize_endpoint():
+async def test_optimize_endpoint() -> None:
     # Mock auth to bypass API key check
     with (
         patch("app.middleware.auth.APIKeyMiddleware._is_valid_api_key", return_value=True),
         # Mock the LLM service to avoid real API calls
-        patch("app.services.llm_service.llm_service.generate", new_callable=AsyncMock) as mock_generate,
+        patch(
+            "app.services.llm_service.llm_service.generate", new_callable=AsyncMock
+        ) as mock_generate,
     ):
         # Response object structure expected by the code
         class MockResponse:
-            def __init__(self, content):
+            def __init__(self, content) -> None:
                 self.content = content
                 self.model_used = "gpt-4"
                 self.provider = "openai"
@@ -41,9 +43,6 @@ async def test_optimize_endpoint():
 
         response = client.post("/api/v1/optimize/optimize", json=payload, headers=headers)
 
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.json()}")
-
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is not None
@@ -55,9 +54,7 @@ if __name__ == "__main__":
 
     try:
         asyncio.run(test_optimize_endpoint())
-        print("Test passed!")
-    except Exception as e:
-        print(f"Test failed: {e}")
+    except Exception:
         import traceback
 
         traceback.print_exc()

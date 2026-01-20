@@ -1,5 +1,4 @@
-"""
-Endpoint Health Monitoring and Alerting System - FIXED VERSION
+"""Endpoint Health Monitoring and Alerting System - FIXED VERSION.
 
 This module provides:
 1. Real-time endpoint health monitoring
@@ -13,7 +12,7 @@ import logging
 import time
 from collections import defaultdict, deque
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -104,7 +103,7 @@ class HealthDashboard(BaseModel):
 class EndpointHealthMonitor:
     """Monitors endpoint health and generates alerts."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics = {}
         self.health_status = {}
         self.alerts = {}
@@ -116,7 +115,7 @@ class EndpointHealthMonitor:
         # Initialize default alert rules
         self._initialize_default_rules()
 
-    def _initialize_default_rules(self):
+    def _initialize_default_rules(self) -> None:
         """Initialize default alert rules."""
         default_rules = [
             AlertRule(
@@ -142,7 +141,9 @@ class EndpointHealthMonitor:
         for rule in default_rules:
             self.alert_rules[rule.name] = rule
 
-    def record_request(self, endpoint: str, method: str, success: bool, response_time: float):
+    def record_request(
+        self, endpoint: str, method: str, success: bool, response_time: float
+    ) -> None:
         """Record a request for monitoring."""
         if not self.monitoring_enabled:
             return
@@ -188,7 +189,7 @@ class EndpointHealthMonitor:
                 "timestamp": timestamp,
                 "success": success,
                 "response_time": response_time,
-            }
+            },
         )
 
         recent_requests = list(self.request_history[key])[-100:]
@@ -218,7 +219,7 @@ class EndpointHealthMonitor:
 
         return "healthy"
 
-    def _check_alerts(self, endpoint_key: str, metrics: EndpointMetrics):
+    def _check_alerts(self, endpoint_key: str, metrics: EndpointMetrics) -> None:
         """Check if any alert rules are triggered."""
         for rule_name, rule in self.alert_rules.items():
             if not rule.enabled:
@@ -244,7 +245,7 @@ class EndpointHealthMonitor:
             elif not should_alert and alert_key in self.alerts:
                 self._resolve_alert(alert_key)
 
-    def _generate_alert(self, rule: AlertRule, endpoint_key: str, metrics: EndpointMetrics):
+    def _generate_alert(self, rule: AlertRule, endpoint_key: str, metrics: EndpointMetrics) -> None:
         """Generate a new alert."""
         alert_id = f"alert_{int(time.time())}_{len(self.alerts)}"
         endpoint = metrics.endpoint
@@ -274,7 +275,7 @@ class EndpointHealthMonitor:
 
         logger.warning(f"Alert generated: {alert.message}")
 
-    def _resolve_alert(self, alert_key: str):
+    def _resolve_alert(self, alert_key: str) -> None:
         """Resolve an active alert."""
         if alert_key in self.alerts:
             alert = self.alerts[alert_key]
@@ -286,9 +287,9 @@ class EndpointHealthMonitor:
         """Generate alert message."""
         if rule.condition == "error_rate":
             return f"High error rate detected: {metrics.error_rate:.2%} (threshold: {rule.threshold:.2%})"
-        elif rule.condition == "response_time":
+        if rule.condition == "response_time":
             return f"Slow response time: {metrics.average_response_time:.0f}ms (threshold: {rule.threshold:.0f}ms)"
-        elif rule.condition == "availability":
+        if rule.condition == "availability":
             return f"Low availability: {metrics.availability:.2%} (threshold: {rule.threshold:.2%})"
 
         return f"Alert condition '{rule.condition}' triggered"
@@ -308,41 +309,43 @@ class EndpointHealthMonitor:
             url = f"{base_url}{endpoint}"
 
             timeout = aiohttp.ClientTimeout(total=10)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.request(method, url) as response:
-                    response_time = (time.time() - start_time) * 1000
-                    success = 200 <= response.status < 400
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.request(method, url) as response,
+            ):
+                response_time = (time.time() - start_time) * 1000
+                success = 200 <= response.status < 400
 
-                    # Record the health check
-                    self.record_request(endpoint, method, success, response_time)
+                # Record the health check
+                self.record_request(endpoint, method, success, response_time)
 
-                    metrics = self.metrics.get(key)
-                    consecutive_failures = 0
+                metrics = self.metrics.get(key)
+                consecutive_failures = 0
 
-                    if metrics:
-                        # Calculate consecutive failures
-                        recent_requests = list(self.request_history[key])[-10:]
-                        for req in reversed(recent_requests):
-                            if not req["success"]:
-                                consecutive_failures += 1
-                            else:
-                                break
+                if metrics:
+                    # Calculate consecutive failures
+                    recent_requests = list(self.request_history[key])[-10:]
+                    for req in reversed(recent_requests):
+                        if not req["success"]:
+                            consecutive_failures += 1
+                        else:
+                            break
 
-                    return EndpointHealth(
-                        endpoint=endpoint,
-                        method=method,
-                        status="healthy" if success else "unhealthy",
-                        response_time_ms=response_time,
-                        last_checked=datetime.utcnow().isoformat(),
-                        consecutive_failures=consecutive_failures,
-                        uptime_percentage=metrics.availability * 100 if metrics else 0.0,
-                    )
+                return EndpointHealth(
+                    endpoint=endpoint,
+                    method=method,
+                    status="healthy" if success else "unhealthy",
+                    response_time_ms=response_time,
+                    last_checked=datetime.utcnow().isoformat(),
+                    consecutive_failures=consecutive_failures,
+                    uptime_percentage=metrics.availability * 100 if metrics else 0.0,
+                )
 
         except Exception as e:
             response_time = (time.time() - start_time) * 1000
             self.record_request(endpoint, method, False, response_time)
 
-            logger.error(f"Health check failed for {method} {endpoint}: {e}")
+            logger.exception(f"Health check failed for {method} {endpoint}: {e}")
 
             return EndpointHealth(
                 endpoint=endpoint,
@@ -454,15 +457,12 @@ health_monitor = EndpointHealthMonitor()
 
 @router.get("/health/dashboard", response_model=HealthDashboard, tags=["health", "monitoring"])
 async def get_health_dashboard():
-    """
-    Get comprehensive health dashboard with all endpoint statuses.
-    """
+    """Get comprehensive health dashboard with all endpoint statuses."""
     try:
-        dashboard = health_monitor.get_dashboard()
-        return dashboard
+        return health_monitor.get_dashboard()
 
     except Exception as e:
-        logger.error(f"Failed to generate health dashboard: {e}")
+        logger.exception(f"Failed to generate health dashboard: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate health dashboard",
@@ -471,9 +471,7 @@ async def get_health_dashboard():
 
 @router.get("/health/endpoints", tags=["health", "monitoring"])
 async def list_monitored_endpoints():
-    """
-    List all monitored endpoints with their metrics.
-    """
+    """List all monitored endpoints with their metrics."""
     try:
         endpoints = {}
 
@@ -501,7 +499,7 @@ async def list_monitored_endpoints():
         }
 
     except Exception as e:
-        logger.error(f"Failed to list endpoints: {e}")
+        logger.exception(f"Failed to list endpoints: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve endpoint list",
@@ -509,25 +507,24 @@ async def list_monitored_endpoints():
 
 
 @router.post(
-    "/health/check/{endpoint:path}", response_model=EndpointHealth, tags=["health", "monitoring"]
+    "/health/check/{endpoint:path}",
+    response_model=EndpointHealth,
+    tags=["health", "monitoring"],
 )
 async def check_endpoint_health(
     endpoint: str,
-    method: str = Query("GET", description="HTTP method to check"),
+    method: Annotated[str, Query(description="HTTP method to check")] = "GET",
 ):
-    """
-    Perform real-time health check for a specific endpoint.
-    """
+    """Perform real-time health check for a specific endpoint."""
     try:
         # Ensure endpoint starts with /
         if not endpoint.startswith("/"):
             endpoint = "/" + endpoint
 
-        health_result = await health_monitor.health_check_endpoint(endpoint, method.upper())
-        return health_result
+        return await health_monitor.health_check_endpoint(endpoint, method.upper())
 
     except Exception as e:
-        logger.error(f"Health check failed for {method} {endpoint}: {e}")
+        logger.exception(f"Health check failed for {method} {endpoint}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Health check failed: {e!s}",
@@ -536,12 +533,10 @@ async def check_endpoint_health(
 
 @router.get("/health/alerts", tags=["health", "monitoring"])
 async def get_alerts(
-    status: str | None = Query(None, description="Filter by alert status"),
-    limit: int = Query(50, description="Maximum number of alerts to return"),
+    status: Annotated[str | None, Query(description="Filter by alert status")] = None,
+    limit: Annotated[int, Query(description="Maximum number of alerts to return")] = 50,
 ):
-    """
-    Get alerts with optional filtering.
-    """
+    """Get alerts with optional filtering."""
     try:
         alerts = list(health_monitor.alerts.values())
 
@@ -563,7 +558,7 @@ async def get_alerts(
         }
 
     except Exception as e:
-        logger.error(f"Failed to get alerts: {e}")
+        logger.exception(f"Failed to get alerts: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve alerts",

@@ -1,5 +1,4 @@
-"""
-Google Provider Plugin - Implementation for Gemini models.
+"""Google Provider Plugin - Implementation for Gemini models.
 
 This module implements the Google provider plugin, supporting Gemini Pro,
 Gemini Flash, and other Google AI models through the unified provider interface.
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class GoogleClient(BaseLLMClient):
-    """
-    Google-specific LLM client implementation.
+    """Google-specific LLM client implementation.
 
     Wraps the Google Generative AI SDK to implement the BaseLLMClient interface.
     """
@@ -31,15 +29,15 @@ class GoogleClient(BaseLLMClient):
         model_id: str,
         api_key: str,
         **kwargs: Any,
-    ):
-        """
-        Initialize Google client.
+    ) -> None:
+        """Initialize Google client.
 
         Args:
             provider_id: Provider identifier ('google')
             model_id: Model identifier (e.g., 'gemini-1.5-pro')
             api_key: Google API key
             **kwargs: Additional configuration
+
         """
         self._provider_id = provider_id
         self._model_id = model_id
@@ -69,8 +67,7 @@ class GoogleClient(BaseLLMClient):
         system_instruction: str | None = None,
         **kwargs: Any,
     ) -> PromptResponse:
-        """
-        Generate text completion using Google Gemini API.
+        """Generate text completion using Google Gemini API.
 
         Args:
             prompt: The input prompt text
@@ -81,6 +78,7 @@ class GoogleClient(BaseLLMClient):
 
         Returns:
             PromptResponse with generated text and metadata
+
         """
         # Build generation config
         generation_config = {
@@ -129,7 +127,7 @@ class GoogleClient(BaseLLMClient):
             )
 
         except Exception as e:
-            logger.error(f"Google generation failed: {e}")
+            logger.exception(f"Google generation failed: {e}")
             raise
 
     async def stream(
@@ -140,8 +138,7 @@ class GoogleClient(BaseLLMClient):
         system_instruction: str | None = None,
         **kwargs: Any,
     ):
-        """
-        Stream text completion from Google Gemini API.
+        """Stream text completion from Google Gemini API.
 
         Args:
             prompt: The input prompt text
@@ -152,6 +149,7 @@ class GoogleClient(BaseLLMClient):
 
         Yields:
             Text chunks as they are generated
+
         """
         # Build generation config
         generation_config = {
@@ -181,7 +179,7 @@ class GoogleClient(BaseLLMClient):
                     yield chunk.text
 
         except Exception as e:
-            logger.error(f"Google streaming failed: {e}")
+            logger.exception(f"Google streaming failed: {e}")
             raise
 
     def get_capabilities(self) -> set[Capability]:
@@ -204,14 +202,13 @@ class GoogleClient(BaseLLMClient):
 
 
 class GooglePlugin(BaseProviderPlugin):
-    """
-    Google provider plugin implementation.
+    """Google provider plugin implementation.
 
     Provides factory methods and metadata for Gemini models.
     Supports aliases: 'google' and 'gemini'.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Google plugin."""
         super().__init__(
             provider_id="google",
@@ -235,7 +232,7 @@ class GooglePlugin(BaseProviderPlugin):
 
     def _build_model_list(self) -> list[Model]:
         """Build list of available Google/Gemini models (January 2026)."""
-        models = [
+        return [
             Model(
                 id="gemini-3-pro",
                 name="Gemini 3 Pro (Flagship)",
@@ -298,11 +295,8 @@ class GooglePlugin(BaseProviderPlugin):
             ),
         ]
 
-        return models
-
     def create_client(self, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create a Google client for the specified model.
+        """Create a Google client for the specified model.
 
         Args:
             model_id: The model identifier
@@ -313,21 +307,27 @@ class GooglePlugin(BaseProviderPlugin):
 
         Raises:
             ValueError: If model is not available or API key missing
+
         """
         # Validate model
         if not self.validate_model_id(model_id):
             available = [m.id for m in self.get_available_models()]
-            raise ValueError(
+            msg = (
                 f"Model '{model_id}' not available from Google. "
                 f"Available models: {', '.join(available)}"
+            )
+            raise ValueError(
+                msg,
             )
 
         # Get API key
         api_key = self._get_api_key()
         if not api_key:
+            msg = (
+                f"Google API key not configured. Set {self._api_key_env_var} environment variable."
+            )
             raise ValueError(
-                f"Google API key not configured. "
-                f"Set {self._api_key_env_var} environment variable."
+                msg,
             )
 
         # Create client

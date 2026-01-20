@@ -1,5 +1,4 @@
-"""
-Concurrent Selection Handler for Provider/Model Selection System.
+"""Concurrent Selection Handler for Provider/Model Selection System.
 
 Handles concurrent requests with consistent provider/model selection.
 
@@ -14,6 +13,7 @@ References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md
 - Persistence service: app/services/session_selection_persistence.py
 - Selection cache: app/infrastructure/cache/selection_cache.py
+
 """
 
 import asyncio
@@ -40,18 +40,19 @@ logger = logging.getLogger(__name__)
 
 
 class SelectionLock(BaseModel):
-    """
-    Represents a lock on a session's selection.
+    """Represents a lock on a session's selection.
 
     Used to prevent concurrent modifications to the same selection.
     """
 
     lock_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()), description="Unique lock identifier"
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique lock identifier",
     )
     session_id: str = Field(..., description="Session being locked")
     acquired_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When lock was acquired"
+        default_factory=datetime.utcnow,
+        description="When lock was acquired",
     )
     expires_at: datetime = Field(..., description="When lock expires")
     owner: str | None = Field(None, description="Owner identifier (request ID)")
@@ -90,8 +91,7 @@ class SelectionWithVersion(BaseModel):
 
 
 class SelectionLockManager:
-    """
-    Manages distributed locks for selection operations.
+    """Manages distributed locks for selection operations.
 
     Uses Redis for distributed locking with fallback to local locks.
     Implements lock acquisition with timeout and automatic expiration.
@@ -101,12 +101,12 @@ class SelectionLockManager:
     DEFAULT_LOCK_TIMEOUT = 5.0  # seconds
     DEFAULT_LOCK_TTL = 10  # seconds
 
-    def __init__(self, redis_url: str | None = None):
-        """
-        Initialize the lock manager.
+    def __init__(self, redis_url: str | None = None) -> None:
+        """Initialize the lock manager.
 
         Args:
             redis_url: Redis connection URL
+
         """
         self._redis_url = redis_url or getattr(settings, "REDIS_URL", "redis://localhost:6379")
         self._client: Redis | None = None
@@ -148,8 +148,7 @@ class SelectionLockManager:
         ttl: int = DEFAULT_LOCK_TTL,
         owner: str | None = None,
     ) -> SelectionLock | None:
-        """
-        Acquire a lock on a session's selection.
+        """Acquire a lock on a session's selection.
 
         Args:
             session_id: Session to lock
@@ -159,6 +158,7 @@ class SelectionLockManager:
 
         Returns:
             SelectionLock if acquired, None if timeout
+
         """
         if not self._initialized:
             await self.initialize()
@@ -213,7 +213,7 @@ class SelectionLockManager:
             return result is not None
 
         except Exception as e:
-            logger.error(f"Redis lock error: {e}")
+            logger.exception(f"Redis lock error: {e}")
             return await self._try_acquire_local(session_id, lock_id, ttl, owner)
 
     async def _try_acquire_local(
@@ -244,14 +244,14 @@ class SelectionLockManager:
             return True
 
     async def release(self, lock: SelectionLock) -> bool:
-        """
-        Release a lock.
+        """Release a lock.
 
         Args:
             lock: Lock to release
 
         Returns:
             True if released, False if lock was invalid/expired
+
         """
         if self._use_local:
             return await self._release_local(lock)
@@ -278,7 +278,7 @@ class SelectionLockManager:
             return False
 
         except Exception as e:
-            logger.error(f"Redis unlock error: {e}")
+            logger.exception(f"Redis unlock error: {e}")
             return await self._release_local(lock)
 
     async def _release_local(self, lock: SelectionLock) -> bool:
@@ -298,8 +298,7 @@ class SelectionLockManager:
         lock: SelectionLock,
         additional_ttl: int = DEFAULT_LOCK_TTL,
     ) -> bool:
-        """
-        Extend a lock's TTL.
+        """Extend a lock's TTL.
 
         Args:
             lock: Lock to extend
@@ -307,6 +306,7 @@ class SelectionLockManager:
 
         Returns:
             True if extended
+
         """
         if self._use_local:
             async with self._local_lock:
@@ -334,7 +334,7 @@ class SelectionLockManager:
             return bool(result)
 
         except Exception as e:
-            logger.error(f"Lock extend error: {e}")
+            logger.exception(f"Lock extend error: {e}")
             return False
 
 
@@ -344,8 +344,7 @@ class SelectionLockManager:
 
 
 class ConcurrentSelectionHandler:
-    """
-    Handles concurrent requests with consistent provider/model selection.
+    """Handles concurrent requests with consistent provider/model selection.
 
     Ensures:
     - Same session gets same selection during concurrent requests
@@ -370,7 +369,7 @@ class ConcurrentSelectionHandler:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the handler."""
         if getattr(self, "_initialized", False):
             return
@@ -386,12 +385,12 @@ class ConcurrentSelectionHandler:
         cache=None,
         persistence=None,
     ) -> None:
-        """
-        Initialize with cache and persistence services.
+        """Initialize with cache and persistence services.
 
         Args:
             cache: SelectionCache instance
             persistence: SessionSelectionPersistenceService instance
+
         """
         await self._lock_manager.initialize()
         self._cache = cache
@@ -409,8 +408,7 @@ class ConcurrentSelectionHandler:
         timeout: float = 5.0,
         owner: str | None = None,
     ):
-        """
-        Context manager for acquiring a selection lock.
+        """Context manager for acquiring a selection lock.
 
         Usage:
             async with handler.selection_lock("sess_123") as lock:
@@ -427,6 +425,7 @@ class ConcurrentSelectionHandler:
 
         Raises:
             TimeoutError: If lock cannot be acquired
+
         """
         lock = await self._lock_manager.acquire(
             session_id,
@@ -435,7 +434,8 @@ class ConcurrentSelectionHandler:
         )
 
         if not lock:
-            raise TimeoutError(f"Could not acquire selection lock for {session_id}")
+            msg = f"Could not acquire selection lock for {session_id}"
+            raise TimeoutError(msg)
 
         try:
             yield lock
@@ -448,8 +448,7 @@ class ConcurrentSelectionHandler:
         timeout: float = 5.0,
         owner: str | None = None,
     ) -> SelectionLock:
-        """
-        Acquire a lock on a session's selection.
+        """Acquire a lock on a session's selection.
 
         Args:
             session_id: Session to lock
@@ -461,6 +460,7 @@ class ConcurrentSelectionHandler:
 
         Raises:
             TimeoutError: If lock cannot be acquired
+
         """
         lock = await self._lock_manager.acquire(
             session_id,
@@ -469,19 +469,20 @@ class ConcurrentSelectionHandler:
         )
 
         if not lock:
-            raise TimeoutError(f"Could not acquire selection lock for {session_id}")
+            msg = f"Could not acquire selection lock for {session_id}"
+            raise TimeoutError(msg)
 
         return lock
 
     async def release_selection_lock(self, lock: SelectionLock) -> bool:
-        """
-        Release a selection lock.
+        """Release a selection lock.
 
         Args:
             lock: Lock to release
 
         Returns:
             True if released
+
         """
         return await self._lock_manager.release(lock)
 
@@ -499,8 +500,7 @@ class ConcurrentSelectionHandler:
         metadata: dict | None = None,
         db_session=None,
     ) -> SelectionUpdateResult:
-        """
-        Atomically update a selection with optimistic concurrency.
+        """Atomically update a selection with optimistic concurrency.
 
         If expected_version is provided, the update only succeeds if
         the current version matches. Otherwise, the update always succeeds.
@@ -516,6 +516,7 @@ class ConcurrentSelectionHandler:
 
         Returns:
             SelectionUpdateResult with success status
+
         """
         try:
             async with self.selection_lock(session_id):
@@ -583,7 +584,7 @@ class ConcurrentSelectionHandler:
 
                 logger.info(
                     f"Selection updated atomically: {session_id} -> "
-                    f"{provider}/{model} (v{new_version})"
+                    f"{provider}/{model} (v{new_version})",
                 )
 
                 return SelectionUpdateResult(
@@ -606,7 +607,7 @@ class ConcurrentSelectionHandler:
             )
 
         except Exception as e:
-            logger.error(f"Atomic update error: {e}")
+            logger.exception(f"Atomic update error: {e}")
             return SelectionUpdateResult(
                 success=False,
                 provider=provider,
@@ -619,14 +620,14 @@ class ConcurrentSelectionHandler:
         self,
         session_id: str,
     ) -> tuple[SelectionWithVersion, int] | None:
-        """
-        Get selection with its current version.
+        """Get selection with its current version.
 
         Args:
             session_id: Session identifier
 
         Returns:
             Tuple of (SelectionWithVersion, version) or None
+
         """
         # Try cache first
         if self._cache:
@@ -669,8 +670,7 @@ class ConcurrentSelectionHandler:
         session_id: str,
         require_lock: bool = False,
     ) -> SelectionWithVersion | None:
-        """
-        Get selection with read consistency.
+        """Get selection with read consistency.
 
         If require_lock is True, acquires a short-lived lock to ensure
         the read is not affected by concurrent writes.
@@ -681,6 +681,7 @@ class ConcurrentSelectionHandler:
 
         Returns:
             SelectionWithVersion or None
+
         """
         if require_lock:
             try:
@@ -702,14 +703,14 @@ class ConcurrentSelectionHandler:
         self,
         session_ids: list[str],
     ) -> dict[str, SelectionWithVersion]:
-        """
-        Get selections for multiple sessions.
+        """Get selections for multiple sessions.
 
         Args:
             session_ids: List of session identifiers
 
         Returns:
             Dictionary mapping session_id to SelectionWithVersion
+
         """
         results: dict[str, SelectionWithVersion] = {}
 
@@ -734,11 +735,11 @@ class ConcurrentSelectionHandler:
 
 
 def get_concurrent_selection_handler() -> ConcurrentSelectionHandler:
-    """
-    FastAPI dependency for ConcurrentSelectionHandler.
+    """FastAPI dependency for ConcurrentSelectionHandler.
 
     Returns:
         The singleton handler instance
+
     """
     return ConcurrentSelectionHandler()
 

@@ -15,7 +15,7 @@ from .models import Base, FeedbackHistory, JailbreakExecution, QualityMetric, Te
 class QualityMetricsRepository:
     """Repository for quality metrics database operations."""
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def create_execution(
@@ -124,7 +124,11 @@ class QualityMetricsRepository:
         return result.scalar_one_or_none()
 
     async def update_technique_performance(
-        self, technique_id: str, model_name: str, provider_name: str, time_window_hours: int = 168
+        self,
+        technique_id: str,
+        model_name: str,
+        provider_name: str,
+        time_window_hours: int = 168,
     ) -> TechniquePerformance:
         """Update aggregated performance statistics for a technique."""
         cutoff_time = datetime.utcnow() - timedelta(hours=time_window_hours)
@@ -148,7 +152,7 @@ class QualityMetricsRepository:
                     JailbreakExecution.target_model == model_name,
                     JailbreakExecution.target_provider == provider_name,
                     JailbreakExecution.created_at >= cutoff_time,
-                )
+                ),
             )
         )
 
@@ -161,7 +165,7 @@ class QualityMetricsRepository:
                 TechniquePerformance.technique_id == technique_id,
                 TechniquePerformance.model_name == model_name,
                 TechniquePerformance.provider_name == provider_name,
-            )
+            ),
         )
         perf_result = await self.session.execute(perf_stmt)
         performance = perf_result.scalar_one_or_none()
@@ -223,7 +227,9 @@ class QualityMetricsRepository:
         return feedback
 
     async def get_recent_executions(
-        self, technique_id: str | None = None, limit: int = 50
+        self,
+        technique_id: str | None = None,
+        limit: int = 50,
     ) -> list[JailbreakExecution]:
         """Get recent executions with quality metrics."""
         stmt = (
@@ -244,13 +250,15 @@ class QualityMetricsRepository:
 class DatabaseManager:
     """Manages database connections and sessions."""
 
-    def __init__(self, database_url: str):
+    def __init__(self, database_url: str) -> None:
         self.engine = create_async_engine(database_url, echo=False)
         self.async_session = async_sessionmaker(
-            self.engine, class_=AsyncSession, expire_on_commit=False
+            self.engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
         )
 
-    async def create_tables(self):
+    async def create_tables(self) -> None:
         """Create all tables."""
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -259,7 +267,7 @@ class DatabaseManager:
         """Get a new database session."""
         return self.async_session()
 
-    async def close(self):
+    async def close(self) -> None:
         """Close database connections."""
         await self.engine.dispose()
 

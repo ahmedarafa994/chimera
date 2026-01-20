@@ -28,9 +28,7 @@ class OptimizationResponse(BaseModel):
 
 @router.post("/", response_model=OptimizationResponse)
 async def optimize_prompt(request: OptimizationRequest):
-    """
-    Optimize a prompt using the HouYi evolutionary algorithm.
-    """
+    """Optimize a prompt using the HouYi evolutionary algorithm."""
     try:
         intention = Intention(name=request.intention, question_prompt=request.question_prompt)
         target = LLMServiceTarget(
@@ -56,8 +54,7 @@ async def optimize_prompt(request: OptimizationRequest):
                 llm_response=best_chromosome.llm_response,
                 details=best_chromosome,
             )
-        else:
-            raise HTTPException(status_code=500, detail="Optimization failed to produce a result")
+        raise HTTPException(status_code=500, detail="Optimization failed to produce a result")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

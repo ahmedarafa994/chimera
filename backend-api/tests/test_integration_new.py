@@ -13,14 +13,14 @@ API_KEY = os.getenv("CHIMERA_API_KEY", "chimera_dev_key_1234567890123456")
 headers = {"X-API-Key": API_KEY}
 
 
-def test_health_check():
+def test_health_check() -> None:
     # Health endpoint is public
     response = client.get(f"{settings.API_V1_STR}/health")
     assert response.status_code == 200
     assert "status" in response.json()
 
 
-def test_list_providers():
+def test_list_providers() -> None:
     response = client.get(f"{settings.API_V1_STR}/providers", headers=headers)
     assert response.status_code == 200
     data = response.json()
@@ -28,12 +28,12 @@ def test_list_providers():
     assert "count" in data
 
 
-def test_generate_content_validation():
+def test_generate_content_validation() -> None:
     response = client.post(f"{settings.API_V1_STR}/generate", json={"prompt": ""}, headers=headers)
     assert response.status_code == 422
 
 
-def test_generate_content_valid():
+def test_generate_content_valid() -> None:
     response = client.post(
         f"{settings.API_V1_STR}/generate",
         json={"prompt": "Hello", "provider": "google"},
@@ -50,24 +50,15 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
     try:
-        print("Running test_health_check...")
         test_health_check()
-        print("PASS")
 
-        print("Running test_list_providers...")
         test_list_providers()
-        print("PASS")
 
-        print("Running test_generate_content_validation...")
         test_generate_content_validation()
-        print("PASS")
 
-        print("Running test_generate_content_valid...")
         test_generate_content_valid()
-        print("PASS")
 
-    except Exception as e:
-        print(f"FAIL: {e}")
+    except Exception:
         import traceback
 
         traceback.print_exc()

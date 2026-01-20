@@ -1,5 +1,4 @@
-"""
-OpenAI Provider Plugin for Project Chimera.
+"""OpenAI Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for OpenAI API integration,
 supporting models like GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo, and o1.
@@ -24,8 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for OpenAI API.
+    """Provider plugin for OpenAI API.
 
     Supports GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo, o1 reasoning models, etc.
     """
@@ -236,8 +234,7 @@ class OpenAIPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available OpenAI models.
+        """List available OpenAI models.
 
         Attempts to fetch from API, falls back to static list on failure.
         """
@@ -283,7 +280,7 @@ class OpenAIPlugin(BaseProviderPlugin):
                             display_name=model_id,
                             supports_streaming=True,
                             capabilities=["chat"],
-                        )
+                        ),
                     )
 
             # Add any static models not in API response
@@ -295,7 +292,7 @@ class OpenAIPlugin(BaseProviderPlugin):
             return models
 
         except Exception as e:
-            logger.error(f"Error fetching OpenAI models: {e}")
+            logger.exception(f"Error fetching OpenAI models: {e}")
             raise
 
     async def validate_api_key(self, api_key: str) -> bool:
@@ -312,14 +309,17 @@ class OpenAIPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using OpenAI API."""
         from openai import AsyncOpenAI
 
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("OpenAI API key is required")
+            msg = "OpenAI API key is required"
+            raise ValueError(msg)
 
         client = AsyncOpenAI(api_key=key, base_url=self.base_url)
         model = request.model or self.get_default_model()
@@ -374,18 +374,21 @@ class OpenAIPlugin(BaseProviderPlugin):
                 request_id=response.id,
             )
         except Exception as e:
-            logger.error(f"OpenAI generation error: {e}")
+            logger.exception(f"OpenAI generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from OpenAI API."""
         from openai import AsyncOpenAI
 
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("OpenAI API key is required")
+            msg = "OpenAI API key is required"
+            raise ValueError(msg)
 
         client = AsyncOpenAI(api_key=key, base_url=self.base_url)
         model = request.model or self.get_default_model()
@@ -433,5 +436,5 @@ class OpenAIPlugin(BaseProviderPlugin):
                         finish_reason=chunk.choices[0].finish_reason,
                     )
         except Exception as e:
-            logger.error(f"OpenAI streaming error: {e}")
+            logger.exception(f"OpenAI streaming error: {e}")
             raise

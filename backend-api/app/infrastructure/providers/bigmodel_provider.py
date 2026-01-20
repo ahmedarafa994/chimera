@@ -1,5 +1,4 @@
-"""
-BigModel (ZhiPu AI) Provider Implementation for Direct API Integration
+"""BigModel (ZhiPu AI) Provider Implementation for Direct API Integration.
 
 Story 1.2: Direct API Integration
 Implements native API format for BigModel (智谱AI) with streaming support.
@@ -28,8 +27,7 @@ from app.infrastructure.providers.base import BaseProvider, is_retryable_error
 
 
 class BigModelProvider(BaseProvider):
-    """
-    BigModel (ZhiPu AI) provider implementation using native Chat Completions API.
+    """BigModel (ZhiPu AI) provider implementation using native Chat Completions API.
 
     Features:
     - Direct API integration with BigModel
@@ -63,12 +61,12 @@ class BigModelProvider(BaseProvider):
         "glm-4-flashx-250414",
     ]
 
-    def __init__(self, config: Settings | None = None):
-        """
-        Initialize the BigModel provider.
+    def __init__(self, config: Settings | None = None) -> None:
+        """Initialize the BigModel provider.
 
         Args:
             config: Optional configuration settings.
+
         """
         super().__init__("bigmodel", config)
         self._http_client: httpx.AsyncClient | None = None
@@ -78,14 +76,14 @@ class BigModelProvider(BaseProvider):
     # =========================================================================
 
     def _initialize_client(self, api_key: str) -> httpx.AsyncClient:
-        """
-        Initialize the BigModel API HTTP client.
+        """Initialize the BigModel API HTTP client.
 
         Args:
             api_key: The API key for authentication.
 
         Returns:
             The initialized httpx async client.
+
         """
         return httpx.AsyncClient(
             base_url=self._BASE_URL,
@@ -98,21 +96,21 @@ class BigModelProvider(BaseProvider):
         )
 
     def _get_default_model(self) -> str:
-        """
-        Get the default model name for BigModel.
+        """Get the default model name for BigModel.
 
         Returns:
             The default model name.
+
         """
         model = getattr(self.config, "bigmodel_model", None)
         return model or self._DEFAULT_MODEL
 
     def _get_api_key(self) -> str | None:
-        """
-        Get the BigModel API key from configuration.
+        """Get the BigModel API key from configuration.
 
         Returns:
             The API key, or None if not configured.
+
         """
         return getattr(self.config, "BIGMODEL_API_KEY", None)
 
@@ -122,8 +120,7 @@ class BigModelProvider(BaseProvider):
         request: PromptRequest,
         model_name: str,
     ) -> PromptResponse:
-        """
-        Generate text using BigModel Chat Completions API.
+        """Generate text using BigModel Chat Completions API.
 
         Args:
             client: The httpx client instance.
@@ -135,6 +132,7 @@ class BigModelProvider(BaseProvider):
 
         Raises:
             AppError: If generation fails.
+
         """
         # Build messages array
         messages = []
@@ -158,8 +156,9 @@ class BigModelProvider(BaseProvider):
 
             # Parse response
             if "choices" not in data or not data["choices"]:
+                msg = "No choices in BigModel response"
                 raise AppError(
-                    "No choices in BigModel response",
+                    msg,
                     status_code=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -198,38 +197,41 @@ class BigModelProvider(BaseProvider):
 
             status_code = e.response.status_code
             if status_code == 401:
+                msg = "Invalid BigModel API key"
                 raise AppError(
-                    "Invalid BigModel API key",
+                    msg,
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 ) from e
-            elif status_code == 429:
+            if status_code == 429:
+                msg = "BigModel rate limit exceeded"
                 raise AppError(
-                    "BigModel rate limit exceeded",
+                    msg,
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 ) from e
-            else:
-                raise AppError(
-                    f"BigModel API error: {e.response.text}",
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                ) from e
+            msg = f"BigModel API error: {e.response.text}"
+            raise AppError(
+                msg,
+                status_code=status.HTTP_502_BAD_GATEWAY,
+            ) from e
 
         except httpx.RequestError as e:
             if is_retryable_error(e):
+                msg = f"BigModel API connection error: {e}"
                 raise AppError(
-                    f"BigModel API connection error: {e}",
+                    msg,
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 ) from e
             raise
 
     async def _check_health_impl(self, client: httpx.AsyncClient) -> bool:
-        """
-        Check BigModel API health with a minimal request.
+        """Check BigModel API health with a minimal request.
 
         Args:
             client: The httpx client instance.
 
         Returns:
             True if the provider is healthy.
+
         """
         try:
             response = await client.post(
@@ -251,14 +253,14 @@ class BigModelProvider(BaseProvider):
     # =========================================================================
 
     def _build_generation_config(self, request: PromptRequest) -> dict[str, Any]:
-        """
-        Build generation config from request parameters.
+        """Build generation config from request parameters.
 
         Args:
             request: The prompt request.
 
         Returns:
             Generation config dict for BigModel API.
+
         """
         config = {}
 
@@ -287,8 +289,7 @@ class BigModelProvider(BaseProvider):
     # =========================================================================
 
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation from BigModel API.
+        """Stream text generation from BigModel API.
 
         Args:
             request: The prompt request.
@@ -298,6 +299,7 @@ class BigModelProvider(BaseProvider):
 
         Raises:
             AppError: If streaming fails.
+
         """
         client = self._get_client(request.api_key)
         model_name = request.model or self._get_default_model()
@@ -346,7 +348,7 @@ class BigModelProvider(BaseProvider):
                             reasoning_text = delta.get("reasoning_content", "")
                             if reasoning_text:
                                 logger.debug(
-                                    f"[bigmodel] Stream reasoning chunk: {len(reasoning_text)} chars"
+                                    f"[bigmodel] Stream reasoning chunk: {len(reasoning_text)} chars",
                                 )
 
                             # Check finish reason
@@ -369,13 +371,15 @@ class BigModelProvider(BaseProvider):
                         continue
 
         except httpx.HTTPStatusError as e:
+            msg = f"BigModel streaming error: {e.response.text}"
             raise AppError(
-                f"BigModel streaming error: {e.response.text}",
+                msg,
                 status_code=e.response.status_code,
             ) from e
         except Exception as e:
+            msg = f"BigModel streaming failed: {e}"
             raise AppError(
-                f"BigModel streaming failed: {e}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             ) from e
 
@@ -389,8 +393,7 @@ class BigModelProvider(BaseProvider):
         thinking_enabled: bool = True,
         clear_thinking: bool = True,
     ) -> PromptResponse:
-        """
-        Generate text with thinking mode enabled.
+        """Generate text with thinking mode enabled.
 
         Only GLM-4.5+ models support this feature. The model will provide
         reasoning_content in addition to the regular content.
@@ -402,6 +405,7 @@ class BigModelProvider(BaseProvider):
 
         Returns:
             The generated response with reasoning content.
+
         """
         client = self._get_client(request.api_key)
         model_name = request.model or self._get_default_model()
@@ -431,8 +435,9 @@ class BigModelProvider(BaseProvider):
             data = response.json()
 
             if "choices" not in data or not data["choices"]:
+                msg = "No choices in BigModel response"
                 raise AppError(
-                    "No choices in BigModel response",
+                    msg,
                     status_code=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -463,7 +468,7 @@ class BigModelProvider(BaseProvider):
             if reasoning_content:
                 usage_metadata["reasoning_content"] = reasoning_content
 
-            response_obj = PromptResponse(
+            return PromptResponse(
                 text=text,
                 model_used=model_name,
                 provider="bigmodel",
@@ -471,11 +476,10 @@ class BigModelProvider(BaseProvider):
                 finish_reason=finish_reason,
             )
 
-            return response_obj
-
         except httpx.HTTPStatusError as e:
+            msg = f"BigModel API error: {e.response.text}"
             raise AppError(
-                f"BigModel API error: {e.response.text}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             ) from e
 

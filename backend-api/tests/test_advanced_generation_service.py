@@ -25,7 +25,7 @@ def mock_settings():
 
 
 @pytest.mark.asyncio
-async def test_get_client_returns_provider(mock_provider_factory, mock_settings):
+async def test_get_client_returns_provider(mock_provider_factory, mock_settings) -> None:
     # Setup
     mock_provider = MagicMock()
     mock_provider_factory.create_provider.return_value = mock_provider
@@ -42,11 +42,15 @@ async def test_get_client_returns_provider(mock_provider_factory, mock_settings)
 
 
 @pytest.mark.asyncio
-async def test_generate_jailbreak_prompt_calls_provider(mock_provider_factory, mock_settings):
+async def test_generate_jailbreak_prompt_calls_provider(
+    mock_provider_factory, mock_settings
+) -> None:
     # Setup
     mock_provider = AsyncMock()
     mock_provider.generate.return_value = PromptResponse(
-        text="Jailbreak prompt", model_used="gemini-2.5-flash", provider="google"
+        text="Jailbreak prompt",
+        model_used="gemini-2.5-flash",
+        provider="google",
     )
     mock_provider_factory.create_provider.return_value = mock_provider
 

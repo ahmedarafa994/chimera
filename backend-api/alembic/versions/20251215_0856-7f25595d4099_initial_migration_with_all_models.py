@@ -1,4 +1,4 @@
-"""Initial migration with all models
+"""Initial migration with all models.
 
 Revision ID: 7f25595d4099
 Revises:
@@ -57,7 +57,10 @@ def upgrade() -> None:
         sa.UniqueConstraint("provider"),
     )
     op.create_index(
-        "idx_provider_status_available", "provider_status", ["is_available"], unique=False
+        "idx_provider_status_available",
+        "provider_status",
+        ["is_available"],
+        unique=False,
     )
     op.create_index("idx_provider_status_provider", "provider_status", ["provider"], unique=False)
     op.create_table(
@@ -122,7 +125,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        "idx_history_created_at", "model_selection_history", ["created_at"], unique=False
+        "idx_history_created_at",
+        "model_selection_history",
+        ["created_at"],
+        unique=False,
     )
     op.create_index("idx_history_user_id", "model_selection_history", ["user_id"], unique=False)
     op.create_index(
@@ -152,7 +158,10 @@ def upgrade() -> None:
     )
     op.create_index("idx_usage_created_at", "model_usage_records", ["created_at"], unique=False)
     op.create_index(
-        "idx_usage_provider_model", "model_usage_records", ["provider", "model"], unique=False
+        "idx_usage_provider_model",
+        "model_usage_records",
+        ["provider", "model"],
+        unique=False,
     )
     op.create_index("idx_usage_request_id", "model_usage_records", ["request_id"], unique=False)
     op.create_index("idx_usage_user_id", "model_usage_records", ["user_id"], unique=False)
@@ -180,11 +189,17 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
-            "user_id", "provider", "model", name="uq_rate_limit_user_provider_model"
+            "user_id",
+            "provider",
+            "model",
+            name="uq_rate_limit_user_provider_model",
         ),
     )
     op.create_index(
-        "idx_rate_limit_user_provider", "rate_limit_records", ["user_id", "provider"], unique=False
+        "idx_rate_limit_user_provider",
+        "rate_limit_records",
+        ["user_id", "provider"],
+        unique=False,
     )
     op.create_index("idx_rate_limit_window", "rate_limit_records", ["window_start"], unique=False)
     op.create_table(
@@ -205,7 +220,10 @@ def upgrade() -> None:
         sa.UniqueConstraint("user_id"),
     )
     op.create_index(
-        "idx_preferences_provider", "user_model_preferences", ["selected_provider"], unique=False
+        "idx_preferences_provider",
+        "user_model_preferences",
+        ["selected_provider"],
+        unique=False,
     )
     op.create_index("idx_preferences_user_id", "user_model_preferences", ["user_id"], unique=False)
     # ### end Alembic commands ###
@@ -227,7 +245,8 @@ def downgrade() -> None:
     op.drop_index("idx_usage_created_at", table_name="model_usage_records")
     op.drop_table("model_usage_records")
     op.drop_index(
-        op.f("ix_model_selection_history_created_at"), table_name="model_selection_history"
+        op.f("ix_model_selection_history_created_at"),
+        table_name="model_selection_history",
     )
     op.drop_index("idx_history_user_id", table_name="model_selection_history")
     op.drop_index("idx_history_created_at", table_name="model_selection_history")

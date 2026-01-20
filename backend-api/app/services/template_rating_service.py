@@ -5,7 +5,10 @@ from app.schemas.prompt_library import RateTemplateRequest, RatingStatistics
 
 class TemplateRatingService:
     async def rate_template(
-        self, template_id: str, user_id: str, request: RateTemplateRequest
+        self,
+        template_id: str,
+        user_id: str,
+        request: RateTemplateRequest,
     ) -> PromptTemplate | None:
         template = await prompt_library_repository.get_by_id(template_id)
         if not template:
@@ -33,14 +36,14 @@ class TemplateRatingService:
         return await prompt_library_repository.update(template)
 
     async def get_ratings(self, template_id: str) -> list[TemplateRating]:
-        """Get all ratings for a template"""
+        """Get all ratings for a template."""
         template = await prompt_library_repository.get_by_id(template_id)
         if not template:
             return []
         return template.ratings
 
     async def get_rating_statistics(self, template_id: str) -> RatingStatistics:
-        """Get rating statistics for a template"""
+        """Get rating statistics for a template."""
         template = await prompt_library_repository.get_by_id(template_id)
 
         if not template or not template.ratings:
@@ -65,9 +68,12 @@ class TemplateRatingService:
         )
 
     async def update_rating(
-        self, template_id: str, user_id: str, request: RateTemplateRequest
+        self,
+        template_id: str,
+        user_id: str,
+        request: RateTemplateRequest,
     ) -> PromptTemplate | None:
-        """Update an existing rating"""
+        """Update an existing rating."""
         template = await prompt_library_repository.get_by_id(template_id)
         if not template:
             return None
@@ -86,7 +92,7 @@ class TemplateRatingService:
         return None  # Rating not found
 
     async def delete_rating(self, template_id: str, user_id: str) -> bool:
-        """Delete a user's rating for a template"""
+        """Delete a user's rating for a template."""
         template = await prompt_library_repository.get_by_id(template_id)
         if not template:
             return False

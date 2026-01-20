@@ -1,5 +1,4 @@
-"""
-WebSocket Tests
+"""WebSocket Tests.
 
 This module tests WebSocket endpoints for real-time streaming functionality.
 P1 Test Coverage: WebSocket /ws/enhance and related endpoints.
@@ -9,33 +8,34 @@ import contextlib
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 
 class TestWebSocketConnection:
     """Test WebSocket connection handling."""
 
-    def test_websocket_connect_success(self, test_client):
+    def test_websocket_connect_success(self, test_client) -> None:
         """Test successful WebSocket connection."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             # Connection should be established
             assert websocket is not None
 
-    def test_websocket_connect_with_auth(self, test_client):
+    def test_websocket_connect_with_auth(self, test_client) -> None:
         """Test WebSocket connection with authentication."""
         headers = {"Authorization": "Bearer valid-token"}
         with test_client.websocket_connect("/ws/enhance", headers=headers) as websocket:
             assert websocket is not None
 
-    def test_websocket_reject_invalid_auth(self, test_client):
+    def test_websocket_reject_invalid_auth(self, test_client) -> None:
         """Test WebSocket rejects invalid authentication."""
         headers = {"Authorization": "Bearer invalid-token"}
         with (
-            pytest.raises(Exception),
+            pytest.raises(WebSocketDisconnect),
             test_client.websocket_connect("/ws/enhance", headers=headers),
         ):
             pass
 
-    def test_websocket_ping_pong(self, test_client):
+    def test_websocket_ping_pong(self, test_client) -> None:
         """Test WebSocket ping/pong keepalive."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             websocket.send_json({"type": "ping"})
@@ -46,7 +46,7 @@ class TestWebSocketConnection:
 class TestWebSocketEnhance:
     """Test /ws/enhance endpoint functionality."""
 
-    def test_enhance_prompt_streaming(self, test_client):
+    def test_enhance_prompt_streaming(self, test_client) -> None:
         """Test streaming prompt enhancement."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             # Send enhancement request
@@ -56,7 +56,7 @@ class TestWebSocketEnhance:
                     "prompt": "How to improve security?",
                     "technique": "autodan",
                     "potency": 5,
-                }
+                },
             )
 
             # Collect streamed responses
@@ -77,7 +77,7 @@ class TestWebSocketEnhance:
             final = responses[-1]
             assert final.get("is_final") is True
 
-    def test_enhance_with_different_techniques(self, test_client):
+    def test_enhance_with_different_techniques(self, test_client) -> None:
         """Test enhancement with various techniques."""
         techniques = ["autodan", "deep_inception", "cipher"]
 
@@ -89,13 +89,13 @@ class TestWebSocketEnhance:
                         "prompt": "Test prompt",
                         "technique": technique,
                         "potency": 5,
-                    }
+                    },
                 )
 
                 response = websocket.receive_json()
                 assert "error" not in response or response.get("type") != "error"
 
-    def test_enhance_invalid_technique_error(self, test_client):
+    def test_enhance_invalid_technique_error(self, test_client) -> None:
         """Test error handling for invalid technique."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             websocket.send_json(
@@ -104,36 +104,36 @@ class TestWebSocketEnhance:
                     "prompt": "Test",
                     "technique": "invalid_technique_xyz",
                     "potency": 5,
-                }
+                },
             )
 
             response = websocket.receive_json()
             # Should receive error response
             assert response.get("type") == "error" or "error" in response
 
-    def test_enhance_empty_prompt_error(self, test_client):
+    def test_enhance_empty_prompt_error(self, test_client) -> None:
         """Test error handling for empty prompt."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             websocket.send_json(
-                {"action": "enhance", "prompt": "", "technique": "autodan", "potency": 5}
+                {"action": "enhance", "prompt": "", "technique": "autodan", "potency": 5},
             )
 
             response = websocket.receive_json()
             assert response.get("type") == "error" or "error" in response
 
-    def test_enhance_potency_range(self, test_client):
+    def test_enhance_potency_range(self, test_client) -> None:
         """Test enhancement with different potency levels."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             # Valid potency
             websocket.send_json(
-                {"action": "enhance", "prompt": "Test", "technique": "autodan", "potency": 10}
+                {"action": "enhance", "prompt": "Test", "technique": "autodan", "potency": 10},
             )
             response = websocket.receive_json()
             assert "error" not in response.get("type", "")
 
             # Invalid potency (too high)
             websocket.send_json(
-                {"action": "enhance", "prompt": "Test", "technique": "autodan", "potency": 15}
+                {"action": "enhance", "prompt": "Test", "technique": "autodan", "potency": 15},
             )
             response = websocket.receive_json()
             # Should either clamp or error
@@ -142,7 +142,7 @@ class TestWebSocketEnhance:
 class TestWebSocketStreamTransform:
     """Test WebSocket transformation streaming."""
 
-    def test_stream_transform_progress_updates(self, test_client):
+    def test_stream_transform_progress_updates(self, test_client) -> None:
         """Test transformation streams progress updates."""
         with test_client.websocket_connect("/ws/transform") as websocket:
             websocket.send_json(
@@ -151,7 +151,7 @@ class TestWebSocketStreamTransform:
                     "prompt": "Test prompt for transformation",
                     "technique_suite": "advanced",
                     "potency_level": 7,
-                }
+                },
             )
 
             responses = []
@@ -172,7 +172,7 @@ class TestWebSocketStreamTransform:
             # Should have received progress updates
             assert len(responses) >= 1
 
-    def test_stream_cancellation(self, test_client):
+    def test_stream_cancellation(self, test_client) -> None:
         """Test cancelling an in-progress stream."""
         with test_client.websocket_connect("/ws/transform") as websocket:
             # Start transformation
@@ -182,7 +182,7 @@ class TestWebSocketStreamTransform:
                     "prompt": "Long running transformation",
                     "technique_suite": "quantum",
                     "potency_level": 10,
-                }
+                },
             )
 
             # Cancel immediately
@@ -203,7 +203,7 @@ class TestWebSocketStreamTransform:
 class TestWebSocketConcurrency:
     """Test WebSocket concurrent connection handling."""
 
-    def test_multiple_concurrent_connections(self, test_client):
+    def test_multiple_concurrent_connections(self, test_client) -> None:
         """Test handling multiple concurrent WebSocket connections."""
         connections = []
 
@@ -222,7 +222,7 @@ class TestWebSocketConcurrency:
                         "prompt": f"Test prompt {i}",
                         "technique": "autodan",
                         "potency": 5,
-                    }
+                    },
                 )
 
             # Receive responses
@@ -235,11 +235,11 @@ class TestWebSocketConcurrency:
                 with contextlib.suppress(Exception):
                     ws.__exit__(None, None, None)
 
-    def test_connection_cleanup_on_disconnect(self, test_client):
+    def test_connection_cleanup_on_disconnect(self, test_client) -> None:
         """Test proper cleanup when client disconnects."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             websocket.send_json(
-                {"action": "enhance", "prompt": "Test", "technique": "autodan", "potency": 5}
+                {"action": "enhance", "prompt": "Test", "technique": "autodan", "potency": 5},
             )
             # Disconnect is handled by context manager exit
 
@@ -247,7 +247,7 @@ class TestWebSocketConcurrency:
 class TestWebSocketErrorHandling:
     """Test WebSocket error handling."""
 
-    def test_malformed_json_handling(self, test_client):
+    def test_malformed_json_handling(self, test_client) -> None:
         """Test handling of malformed JSON messages."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             # Send invalid JSON
@@ -260,7 +260,7 @@ class TestWebSocketErrorHandling:
                 or "json" in response.get("message", "").lower()
             )
 
-    def test_unknown_action_handling(self, test_client):
+    def test_unknown_action_handling(self, test_client) -> None:
         """Test handling of unknown action types."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             websocket.send_json({"action": "unknown_action_xyz", "data": {}})
@@ -268,7 +268,7 @@ class TestWebSocketErrorHandling:
             response = websocket.receive_json()
             assert response.get("type") == "error"
 
-    def test_missing_required_fields(self, test_client):
+    def test_missing_required_fields(self, test_client) -> None:
         """Test handling of missing required fields."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             # Missing prompt
@@ -277,7 +277,7 @@ class TestWebSocketErrorHandling:
             response = websocket.receive_json()
             assert response.get("type") == "error"
 
-    def test_server_error_recovery(self, test_client):
+    def test_server_error_recovery(self, test_client) -> None:
         """Test WebSocket recovers from server errors."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             # Trigger potential error
@@ -287,7 +287,7 @@ class TestWebSocketErrorHandling:
                     "prompt": "x" * 100000,  # Very long prompt
                     "technique": "autodan",
                     "potency": 5,
-                }
+                },
             )
 
             websocket.receive_json()
@@ -302,7 +302,7 @@ class TestWebSocketErrorHandling:
 class TestWebSocketRateLimiting:
     """Test WebSocket rate limiting."""
 
-    def test_rate_limit_messages(self, test_client):
+    def test_rate_limit_messages(self, test_client) -> None:
         """Test rate limiting on WebSocket messages."""
         with test_client.websocket_connect("/ws/enhance") as websocket:
             # Send many messages quickly
@@ -313,7 +313,7 @@ class TestWebSocketRateLimiting:
                         "prompt": f"Test {i}",
                         "technique": "autodan",
                         "potency": 5,
-                    }
+                    },
                 )
 
             # Should receive rate limit response eventually

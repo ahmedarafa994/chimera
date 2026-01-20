@@ -9,7 +9,7 @@ import re
 import secrets
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import ClassVar
+from typing import Any, ClassVar
 
 
 def _secure_random() -> float:

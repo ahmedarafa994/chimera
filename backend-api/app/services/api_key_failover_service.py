@@ -106,13 +106,16 @@ class FailoverEvent(BaseModel):
     to_key_id: str | None = Field(default=None, description="Key being failed over to")
     reason: FailoverReason = Field(..., description="Reason for failover")
     error_message: str | None = Field(
-        default=None, description="Error message that triggered failover"
+        default=None,
+        description="Error message that triggered failover",
     )
     triggered_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When failover occurred"
+        default_factory=datetime.utcnow,
+        description="When failover occurred",
     )
     cooldown_until: datetime | None = Field(
-        default=None, description="When the from_key will be available again"
+        default=None,
+        description="When the from_key will be available again",
     )
     success: bool = Field(default=False, description="Whether failover succeeded")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional event metadata")
@@ -129,8 +132,8 @@ class FailoverEvent(BaseModel):
                 "triggered_at": "2025-01-11T15:30:00Z",
                 "cooldown_until": "2025-01-11T15:31:00Z",
                 "success": True,
-            }
-        }
+            },
+        },
     )
 
     def to_dict(self) -> dict[str, Any]:
@@ -155,7 +158,8 @@ class KeyCooldownInfo(BaseModel):
     key_id: str = Field(..., description="Key identifier")
     provider_id: str = Field(..., description="Provider identifier")
     state: KeyCooldownState = Field(
-        default=KeyCooldownState.AVAILABLE, description="Current cooldown state"
+        default=KeyCooldownState.AVAILABLE,
+        description="Current cooldown state",
     )
     cooldown_until: datetime | None = Field(default=None, description="When cooldown ends")
     reason: FailoverReason | None = Field(default=None, description="Reason for cooldown")
@@ -173,8 +177,8 @@ class KeyCooldownInfo(BaseModel):
                 "reason": "rate_limited",
                 "consecutive_failures": 3,
                 "total_failures": 15,
-            }
-        }
+            },
+        },
     )
 
     def is_available(self) -> bool:
@@ -220,11 +224,13 @@ class ProviderFailoverState(BaseModel):
     primary_key_id: str | None = Field(default=None, description="Primary key ID")
     is_using_backup: bool = Field(default=False, description="Whether currently using a backup key")
     last_failover_at: datetime | None = Field(
-        default=None, description="When last failover occurred"
+        default=None,
+        description="When last failover occurred",
     )
     failover_count: int = Field(default=0, description="Total failovers for this provider")
     strategy: FailoverStrategy = Field(
-        default=FailoverStrategy.PRIORITY, description="Failover strategy"
+        default=FailoverStrategy.PRIORITY,
+        description="Failover strategy",
     )
     round_robin_index: int = Field(default=0, description="Current index for round-robin strategy")
 
@@ -238,8 +244,8 @@ class ProviderFailoverState(BaseModel):
                 "last_failover_at": "2025-01-11T15:30:00Z",
                 "failover_count": 5,
                 "strategy": "priority",
-            }
-        }
+            },
+        },
     )
 
     def to_dict(self) -> dict[str, Any]:
@@ -263,7 +269,8 @@ class FailoverConfig(BaseModel):
     provider_id: str = Field(..., description="Provider identifier")
     enabled: bool = Field(default=True, description="Whether failover is enabled")
     strategy: FailoverStrategy = Field(
-        default=FailoverStrategy.PRIORITY, description="Failover strategy"
+        default=FailoverStrategy.PRIORITY,
+        description="Failover strategy",
     )
     rate_limit_cooldown_seconds: int = Field(
         default=DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
@@ -326,8 +333,7 @@ class FailoverConfig(BaseModel):
 
 
 class ApiKeyFailoverService:
-    """
-    Intelligent failover service for API key rotation.
+    """Intelligent failover service for API key rotation.
 
     Features:
     - Detect rate limit errors from provider responses
@@ -430,7 +436,7 @@ class ApiKeyFailoverService:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in recovery check loop: {e}")
+                logger.exception(f"Error in recovery check loop: {e}")
                 await asyncio.sleep(30)
 
     async def _check_for_recovery(self) -> None:
@@ -447,14 +453,14 @@ class ApiKeyFailoverService:
                     await self._recover_to_primary(provider_id)
 
     async def _recover_to_primary(self, provider_id: str) -> bool:
-        """
-        Attempt to recover to primary key.
+        """Attempt to recover to primary key.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             True if recovery successful
+
         """
         state = self._provider_states.get(provider_id)
         if not state or not state.primary_key_id:
@@ -472,7 +478,7 @@ class ApiKeyFailoverService:
 
         logger.info(
             f"Recovered to primary key for {provider_id}: "
-            f"{state.primary_key_id} (was: {old_key_id})"
+            f"{state.primary_key_id} (was: {old_key_id})",
         )
 
         # Trigger callbacks
@@ -480,7 +486,7 @@ class ApiKeyFailoverService:
             try:
                 callback(provider_id, state.primary_key_id)
             except Exception as e:
-                logger.error(f"Error in recovery callback: {e}")
+                logger.exception(f"Error in recovery callback: {e}")
 
         return True
 
@@ -500,8 +506,7 @@ class ApiKeyFailoverService:
         max_consecutive_failures: int = 5,
         auto_recover: bool = True,
     ) -> None:
-        """
-        Configure failover behavior for a provider.
+        """Configure failover behavior for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -513,6 +518,7 @@ class ApiKeyFailoverService:
             use_exponential_backoff: Use exponential backoff
             max_consecutive_failures: Max failures before permanent block
             auto_recover: Auto-recover to primary
+
         """
         self._configs[provider_id] = FailoverConfig(
             provider_id=provider_id,
@@ -558,14 +564,14 @@ class ApiKeyFailoverService:
 
     @staticmethod
     def is_rate_limit_error(error_message: str | None) -> bool:
-        """
-        Detect if an error message indicates a rate limit.
+        """Detect if an error message indicates a rate limit.
 
         Args:
             error_message: Error message from provider
 
         Returns:
             True if this is a rate limit error
+
         """
         if not error_message:
             return False
@@ -579,8 +585,7 @@ class ApiKeyFailoverService:
         is_timeout: bool = False,
         is_circuit_breaker: bool = False,
     ) -> FailoverReason:
-        """
-        Detect the reason for failover from error context.
+        """Detect the reason for failover from error context.
 
         Args:
             error_message: Error message
@@ -589,6 +594,7 @@ class ApiKeyFailoverService:
 
         Returns:
             FailoverReason enum
+
         """
         if is_circuit_breaker:
             return FailoverReason.CIRCUIT_BREAKER_OPEN
@@ -610,8 +616,7 @@ class ApiKeyFailoverService:
         provider_id: str,
         exclude_key_ids: list[str] | None = None,
     ) -> tuple[str | None, str | None]:
-        """
-        Get the best available API key for a provider.
+        """Get the best available API key for a provider.
 
         Integrates with ApiKeyStorageService to get keys and applies
         failover logic based on cooldowns and strategy.
@@ -622,6 +627,7 @@ class ApiKeyFailoverService:
 
         Returns:
             Tuple of (key_id, decrypted_api_key) or (None, None) if no key available
+
         """
         try:
             from app.services.api_key_service import api_key_service
@@ -659,7 +665,9 @@ class ApiKeyFailoverService:
 
             # Select key based on strategy
             selected_key = self._select_key_by_strategy(
-                provider_id, available_keys, config.strategy
+                provider_id,
+                available_keys,
+                config.strategy,
             )
 
             if not selected_key:
@@ -690,8 +698,7 @@ class ApiKeyFailoverService:
         available_keys: list,
         strategy: FailoverStrategy,
     ):
-        """
-        Select a key based on the configured strategy.
+        """Select a key based on the configured strategy.
 
         Args:
             provider_id: Provider identifier
@@ -700,6 +707,7 @@ class ApiKeyFailoverService:
 
         Returns:
             Selected key or None
+
         """
         if not available_keys:
             return None
@@ -713,7 +721,7 @@ class ApiKeyFailoverService:
             )
             return sorted_keys[0]
 
-        elif strategy == FailoverStrategy.ROUND_ROBIN:
+        if strategy == FailoverStrategy.ROUND_ROBIN:
             state = self._provider_states.get(provider_id)
             if state:
                 index = state.round_robin_index % len(available_keys)
@@ -721,12 +729,12 @@ class ApiKeyFailoverService:
                 return available_keys[index]
             return available_keys[0]
 
-        elif strategy == FailoverStrategy.LEAST_USED:
+        if strategy == FailoverStrategy.LEAST_USED:
             # Sort by request count (ascending)
             sorted_keys = sorted(available_keys, key=lambda k: k.request_count)
             return sorted_keys[0]
 
-        elif strategy == FailoverStrategy.RANDOM:
+        if strategy == FailoverStrategy.RANDOM:
             import random
 
             return random.choice(available_keys)
@@ -747,8 +755,7 @@ class ApiKeyFailoverService:
         is_timeout: bool = False,
         is_circuit_breaker: bool = False,
     ) -> tuple[str | None, str | None]:
-        """
-        Handle an error for a key and trigger failover if needed.
+        """Handle an error for a key and trigger failover if needed.
 
         Args:
             provider_id: Provider identifier
@@ -760,6 +767,7 @@ class ApiKeyFailoverService:
 
         Returns:
             Tuple of (new_key_id, new_api_key) or (None, None) if no backup available
+
         """
         # Detect reason
         if is_rate_limit or self.is_rate_limit_error(error):
@@ -806,7 +814,7 @@ class ApiKeyFailoverService:
                 cooldown_info.state = KeyCooldownState.PERMANENTLY_BLOCKED
                 logger.warning(
                     f"Key {key_id} permanently blocked after "
-                    f"{cooldown_info.consecutive_failures} consecutive failures"
+                    f"{cooldown_info.consecutive_failures} consecutive failures",
                 )
 
             # Record in api_key_service
@@ -820,7 +828,8 @@ class ApiKeyFailoverService:
         # Attempt failover
         if config.enabled:
             new_key_id, new_api_key = await self.get_available_key(
-                provider_id, exclude_key_ids=[key_id]
+                provider_id,
+                exclude_key_ids=[key_id],
             )
 
             # Create failover event
@@ -852,7 +861,7 @@ class ApiKeyFailoverService:
 
                 logger.info(
                     f"Failover successful for {provider_id}: "
-                    f"{key_id} -> {new_key_id} (reason: {reason.value})"
+                    f"{key_id} -> {new_key_id} (reason: {reason.value})",
                 )
                 return new_key_id, new_api_key
 
@@ -866,7 +875,7 @@ class ApiKeyFailoverService:
 
         logger.info(
             f"Failover event recorded: [{event.reason.value}] "
-            f"{event.provider_id}: {event.from_key_id} -> {event.to_key_id or 'NONE'}"
+            f"{event.provider_id}: {event.from_key_id} -> {event.to_key_id or 'NONE'}",
         )
 
         # Trigger callbacks
@@ -874,17 +883,17 @@ class ApiKeyFailoverService:
             try:
                 callback(event)
             except Exception as e:
-                logger.error(f"Error in failover callback: {e}")
+                logger.exception(f"Error in failover callback: {e}")
 
     async def record_success(self, provider_id: str, key_id: str) -> None:
-        """
-        Record a successful request for a key.
+        """Record a successful request for a key.
 
         Resets consecutive failure counter.
 
         Args:
             provider_id: Provider identifier
             key_id: Key that succeeded
+
         """
         async with self._lock:
             cooldown_info = self._key_cooldowns.get(key_id)
@@ -896,8 +905,7 @@ class ApiKeyFailoverService:
     # =========================================================================
 
     async def reset_provider(self, provider_id: str) -> bool:
-        """
-        Reset a provider to its primary key.
+        """Reset a provider to its primary key.
 
         Clears cooldowns and resets failover state.
 
@@ -906,6 +914,7 @@ class ApiKeyFailoverService:
 
         Returns:
             True if reset successful
+
         """
         async with self._lock:
             state = self._provider_states.get(provider_id)
@@ -941,14 +950,14 @@ class ApiKeyFailoverService:
             return True
 
     async def clear_cooldown(self, key_id: str) -> bool:
-        """
-        Clear cooldown for a specific key.
+        """Clear cooldown for a specific key.
 
         Args:
             key_id: Key identifier
 
         Returns:
             True if cooldown cleared
+
         """
         async with self._lock:
             cooldown = self._key_cooldowns.get(key_id)
@@ -987,14 +996,14 @@ class ApiKeyFailoverService:
     # =========================================================================
 
     async def get_failover_status(self, provider_id: str) -> dict[str, Any]:
-        """
-        Get current failover status for a provider.
+        """Get current failover status for a provider.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             Status dictionary
+
         """
         state = self._provider_states.get(provider_id)
         if not state:
@@ -1040,8 +1049,7 @@ class ApiKeyFailoverService:
         reason: FailoverReason | None = None,
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        """
-        Get failover event history.
+        """Get failover event history.
 
         Args:
             provider_id: Filter by provider
@@ -1050,6 +1058,7 @@ class ApiKeyFailoverService:
 
         Returns:
             List of failover event dictionaries
+
         """
         events = list(self._failover_events)
 

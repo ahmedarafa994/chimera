@@ -1,5 +1,4 @@
-"""
-Advanced Cost Optimization and Provider Performance Monitoring
+"""Advanced Cost Optimization and Provider Performance Monitoring.
 
 Comprehensive cost tracking, optimization recommendations, and provider
 performance comparison for LLM usage in the Chimera system.
@@ -19,7 +18,7 @@ from app.core.structured_logging import logger
 
 
 class ProviderTier(Enum):
-    """Provider cost tier classification"""
+    """Provider cost tier classification."""
 
     PREMIUM = "premium"  # High cost, high quality
     STANDARD = "standard"  # Balanced cost/quality
@@ -27,7 +26,7 @@ class ProviderTier(Enum):
 
 
 class CostAlert(Enum):
-    """Cost alert severity levels"""
+    """Cost alert severity levels."""
 
     BUDGET_WARNING = "budget_warning"  # 80% of budget
     BUDGET_CRITICAL = "budget_critical"  # 95% of budget
@@ -37,7 +36,7 @@ class CostAlert(Enum):
 
 @dataclass
 class ProviderPricing:
-    """Pricing structure for LLM providers"""
+    """Pricing structure for LLM providers."""
 
     provider: str
     model: str
@@ -54,7 +53,7 @@ class ProviderPricing:
 
 @dataclass
 class CostOptimizationRecommendation:
-    """Cost optimization recommendation"""
+    """Cost optimization recommendation."""
 
     priority: str  # high, medium, low
     category: str  # provider_switch, usage_optimization, technique_optimization
@@ -67,7 +66,7 @@ class CostOptimizationRecommendation:
 
 @dataclass
 class UsagePattern:
-    """User/system usage pattern for optimization"""
+    """User/system usage pattern for optimization."""
 
     pattern_id: str
     use_case: str
@@ -79,15 +78,14 @@ class UsagePattern:
 
 
 class LLMProviderPricingManager:
-    """Manage pricing information for all LLM providers"""
+    """Manage pricing information for all LLM providers."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.provider_pricing: dict[str, dict[str, ProviderPricing]] = {}
         self.load_provider_pricing()
 
-    def load_provider_pricing(self):
-        """Load current pricing for all providers and models"""
-
+    def load_provider_pricing(self) -> None:
+        """Load current pricing for all providers and models."""
         # OpenAI pricing (as of 2024)
         self.provider_pricing["openai"] = {
             "gpt-4": ProviderPricing(
@@ -189,17 +187,21 @@ class LLMProviderPricingManager:
                 average_quality_score=7.5,
                 reliability_score=0.96,
                 speed_score=8.8,
-            )
+            ),
         }
 
     def get_pricing(self, provider: str, model: str) -> ProviderPricing | None:
-        """Get pricing information for a provider/model combination"""
+        """Get pricing information for a provider/model combination."""
         return self.provider_pricing.get(provider, {}).get(model)
 
     def calculate_request_cost(
-        self, provider: str, model: str, input_tokens: int, output_tokens: int
+        self,
+        provider: str,
+        model: str,
+        input_tokens: int,
+        output_tokens: int,
     ) -> float:
-        """Calculate cost for a specific request"""
+        """Calculate cost for a specific request."""
         pricing = self.get_pricing(provider, model)
         if not pricing:
             return 0.0
@@ -217,7 +219,7 @@ class LLMProviderPricingManager:
         quality_threshold: float = 8.0,
         max_cost_ratio: float = 2.0,
     ) -> list[tuple[str, str, float, float]]:
-        """Find cost-efficient alternatives to current provider/model"""
+        """Find cost-efficient alternatives to current provider/model."""
         current_pricing = self.get_pricing(current_provider, current_model)
         if not current_pricing:
             return []
@@ -252,9 +254,9 @@ class LLMProviderPricingManager:
 
 
 class CostOptimizationEngine:
-    """Analyze usage patterns and recommend cost optimizations"""
+    """Analyze usage patterns and recommend cost optimizations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.pricing_manager = LLMProviderPricingManager()
         self.usage_patterns: dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
         self.cost_history: deque = deque(maxlen=10000)
@@ -274,10 +276,12 @@ class CostOptimizationEngine:
         use_case: str,
         response_time_ms: float,
     ) -> dict[str, Any]:
-        """Record usage and calculate cost metrics"""
-
+        """Record usage and calculate cost metrics."""
         cost = self.pricing_manager.calculate_request_cost(
-            provider, model, input_tokens, output_tokens
+            provider,
+            model,
+            input_tokens,
+            output_tokens,
         )
 
         usage_record = {
@@ -307,13 +311,13 @@ class CostOptimizationEngine:
                 "cost": cost,
                 "provider": provider,
                 "model": model,
-            }
+            },
         )
 
         return usage_record
 
     def analyze_cost_trends(self, hours_back: int = 24) -> dict[str, Any]:
-        """Analyze cost trends and spending patterns"""
+        """Analyze cost trends and spending patterns."""
         cutoff_time = datetime.now(UTC) - timedelta(hours=hours_back)
 
         recent_costs = [
@@ -361,7 +365,7 @@ class CostOptimizationEngine:
         }
 
     def generate_optimization_recommendations(self) -> list[CostOptimizationRecommendation]:
-        """Generate specific cost optimization recommendations"""
+        """Generate specific cost optimization recommendations."""
         recommendations = []
 
         # Analyze recent usage patterns
@@ -381,7 +385,7 @@ class CostOptimizationEngine:
                     description="Daily budget at 80%+ utilization. Consider switching to more economical models for non-critical use cases.",
                     implementation_effort="medium",
                     risk_level="low",
-                )
+                ),
             )
 
         # Provider cost analysis
@@ -391,7 +395,9 @@ class CostOptimizationEngine:
         # Find alternatives for expensive provider
         provider_name, model_name = most_expensive_provider.split(":")
         alternatives = self.pricing_manager.get_cost_efficient_alternatives(
-            provider_name, model_name, quality_threshold=7.5
+            provider_name,
+            model_name,
+            quality_threshold=7.5,
         )
 
         if alternatives:
@@ -410,7 +416,7 @@ class CostOptimizationEngine:
                     description=f"Switch from {provider_name}:{model_name} to {alt_provider}:{alt_model} for {savings_percent:.1f}% savings",
                     implementation_effort="low",
                     risk_level="medium",
-                )
+                ),
             )
 
         # Usage pattern optimization
@@ -422,7 +428,7 @@ class CostOptimizationEngine:
         return recommendations[:10]  # Top 10 recommendations
 
     def _analyze_usage_patterns(self) -> list[CostOptimizationRecommendation]:
-        """Analyze usage patterns for optimization opportunities"""
+        """Analyze usage patterns for optimization opportunities."""
         recommendations = []
 
         for pattern_key, usage_records in self.usage_patterns.items():
@@ -450,13 +456,13 @@ class CostOptimizationEngine:
                         description=f'Use case "{use_case}" with technique "{technique}" shows low cost efficiency. Consider simpler techniques or alternative providers.',
                         implementation_effort="high",
                         risk_level="medium",
-                    )
+                    ),
                 )
 
         return recommendations
 
     def check_cost_alerts(self) -> list[dict[str, Any]]:
-        """Check for cost-related alerts"""
+        """Check for cost-related alerts."""
         alerts = []
         cost_analysis = self.analyze_cost_trends(24)
 
@@ -470,18 +476,18 @@ class CostOptimizationEngine:
                 {
                     "type": CostAlert.BUDGET_CRITICAL,
                     "severity": "critical",
-                    "message": f'Daily budget 95% utilized (${cost_analysis["projected_daily_cost"]:.2f} / ${self.daily_budget:.2f})',
+                    "message": f"Daily budget 95% utilized (${cost_analysis['projected_daily_cost']:.2f} / ${self.daily_budget:.2f})",
                     "projected_overage": cost_analysis["projected_daily_cost"] - self.daily_budget,
-                }
+                },
             )
         elif daily_utilization >= 0.8:
             alerts.append(
                 {
                     "type": CostAlert.BUDGET_WARNING,
                     "severity": "warning",
-                    "message": f'Daily budget 80% utilized (${cost_analysis["projected_daily_cost"]:.2f} / ${self.daily_budget:.2f})',
+                    "message": f"Daily budget 80% utilized (${cost_analysis['projected_daily_cost']:.2f} / ${self.daily_budget:.2f})",
                     "projected_overage": 0,
-                }
+                },
             )
 
         # Spending spike detection
@@ -490,24 +496,23 @@ class CostOptimizationEngine:
                 {
                     "type": CostAlert.SPIKE_DETECTED,
                     "severity": "warning",
-                    "message": f'Cost spike detected: {cost_analysis["trend_magnitude"]*100:.1f}% increase in spending rate',
+                    "message": f"Cost spike detected: {cost_analysis['trend_magnitude'] * 100:.1f}% increase in spending rate",
                     "trend_data": cost_analysis,
-                }
+                },
             )
 
         return alerts
 
 
 class CostMonitoringCollector:
-    """Prometheus metrics collector for cost monitoring"""
+    """Prometheus metrics collector for cost monitoring."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.setup_cost_metrics()
         self.optimization_engine = CostOptimizationEngine()
 
-    def setup_cost_metrics(self):
-        """Initialize cost-related Prometheus metrics"""
-
+    def setup_cost_metrics(self) -> None:
+        """Initialize cost-related Prometheus metrics."""
         # Cost tracking metrics
         self.llm_cost_total = Counter(
             "chimera_llm_cost_usd_total",
@@ -571,7 +576,9 @@ class CostMonitoringCollector:
         )
 
         self.cost_alerts_active = Gauge(
-            "chimera_cost_alerts_active", "Number of active cost alerts", ["alert_type", "severity"]
+            "chimera_cost_alerts_active",
+            "Number of active cost alerts",
+            ["alert_type", "severity"],
         )
 
     def record_llm_cost(
@@ -584,9 +591,8 @@ class CostMonitoringCollector:
         technique: str,
         use_case: str,
         response_time_ms: float,
-    ):
-        """Record LLM usage cost and efficiency metrics"""
-
+    ) -> None:
+        """Record LLM usage cost and efficiency metrics."""
         # Calculate cost
         usage_record = self.optimization_engine.record_usage(
             provider,
@@ -613,17 +619,19 @@ class CostMonitoringCollector:
         ).inc(cost)
 
         self.llm_cost_per_request.labels(provider=provider, model=model, use_case=use_case).observe(
-            cost
+            cost,
         )
 
         if usage_record["total_tokens"] > 0:
             self.llm_cost_per_token.labels(provider=provider, model=model).observe(
-                usage_record["cost_per_token"]
+                usage_record["cost_per_token"],
             )
 
         # Record efficiency
         self.cost_efficiency_score.labels(
-            provider=provider, model=model, use_case=use_case
+            provider=provider,
+            model=model,
+            use_case=use_case,
         ).observe(usage_record["quality_per_dollar"])
 
         # Update budget utilization
@@ -646,36 +654,36 @@ class CostMonitoringCollector:
             },
         )
 
-    def _update_budget_metrics(self):
-        """Update budget utilization metrics"""
+    def _update_budget_metrics(self) -> None:
+        """Update budget utilization metrics."""
         cost_analysis = self.optimization_engine.analyze_cost_trends(24)
 
         if cost_analysis.get("status") != "no_data":
             # Daily budget utilization
             self.budget_utilization.labels(period="daily", budget_type="llm_usage").set(
-                cost_analysis["budget_utilization"]["daily"]
+                cost_analysis["budget_utilization"]["daily"],
             )
 
             # Monthly budget utilization
             self.budget_utilization.labels(period="monthly", budget_type="llm_usage").set(
-                cost_analysis["budget_utilization"]["monthly"]
+                cost_analysis["budget_utilization"]["monthly"],
             )
 
             # Cost trend
             trend_value = {"increasing": 1, "stable": 0, "decreasing": -1}.get(
-                cost_analysis["cost_trend"], 0
+                cost_analysis["cost_trend"],
+                0,
             )
 
             self.cost_trend.labels(time_window_hours="24").set(trend_value)
 
-    def _update_provider_comparisons(self):
-        """Update provider cost comparison metrics"""
+    def _update_provider_comparisons(self) -> None:
+        """Update provider cost comparison metrics."""
         # This would be implemented with actual provider comparison logic
         # For now, placeholder implementation
-        pass
 
-    def _update_cost_alerts(self):
-        """Update cost alert metrics"""
+    def _update_cost_alerts(self) -> None:
+        """Update cost alert metrics."""
         alerts = self.optimization_engine.check_cost_alerts()
 
         # Reset alert counters
@@ -692,7 +700,7 @@ class CostMonitoringCollector:
             self.cost_alerts_active.labels(alert_type=alert_type, severity=severity).set(count)
 
     def generate_cost_report(self) -> dict[str, Any]:
-        """Generate comprehensive cost analysis report"""
+        """Generate comprehensive cost analysis report."""
         cost_analysis = self.optimization_engine.analyze_cost_trends(24)
         recommendations = self.optimization_engine.generate_optimization_recommendations()
         alerts = self.optimization_engine.check_cost_alerts()
@@ -705,7 +713,7 @@ class CostMonitoringCollector:
             "summary": {
                 "total_savings_potential": sum(rec.potential_savings for rec in recommendations),
                 "high_priority_recommendations": len(
-                    [r for r in recommendations if r.priority == "high"]
+                    [r for r in recommendations if r.priority == "high"],
                 ),
                 "budget_status": (
                     "healthy"
@@ -729,8 +737,8 @@ def track_llm_cost(
     technique: str = "none",
     use_case: str = "general",
     response_time_ms: float = 0,
-):
-    """Convenience function to track LLM costs and efficiency"""
+) -> None:
+    """Convenience function to track LLM costs and efficiency."""
     cost_monitor.record_llm_cost(
         provider,
         model,
@@ -744,5 +752,5 @@ def track_llm_cost(
 
 
 def get_cost_optimization_report() -> dict[str, Any]:
-    """Get comprehensive cost optimization report"""
+    """Get comprehensive cost optimization report."""
     return cost_monitor.generate_cost_report()

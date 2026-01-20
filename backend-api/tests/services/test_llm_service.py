@@ -1,5 +1,4 @@
-"""
-Comprehensive Tests for LLM Service.
+"""Comprehensive Tests for LLM Service.
 
 Tests cover:
 - LLMResponseCache: cache hit/miss, TTL, eviction, stats
@@ -10,9 +9,12 @@ Tests cover:
 import asyncio
 import contextlib
 import hashlib
+from typing import Never
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+from app.core.unified_errors import ProviderNotAvailableError
 
 
 class TestLLMResponseCache:
@@ -48,13 +50,13 @@ class TestLLMResponseCache:
         return response
 
     @pytest.mark.asyncio
-    async def test_cache_miss_returns_none(self, cache, sample_request):
+    async def test_cache_miss_returns_none(self, cache, sample_request) -> None:
         """Test that cache miss returns None."""
         result = await cache.get(sample_request)
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_cache_set_and_get(self, cache, sample_request, sample_response):
+    async def test_cache_set_and_get(self, cache, sample_request, sample_response) -> None:
         """Test basic cache set and get operations."""
         await cache.set(sample_request, sample_response)
         result = await cache.get(sample_request)
@@ -63,7 +65,7 @@ class TestLLMResponseCache:
         assert result.content == sample_response.content
 
     @pytest.mark.asyncio
-    async def test_cache_ttl_expiration(self, sample_request, sample_response):
+    async def test_cache_ttl_expiration(self, sample_request, sample_response) -> None:
         """Test that cache entries expire after TTL."""
         from app.services.llm_service import LLMResponseCache
 
@@ -83,7 +85,7 @@ class TestLLMResponseCache:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_cache_max_size_eviction(self):
+    async def test_cache_max_size_eviction(self) -> None:
         """Test that cache evicts oldest entries when max size is reached."""
         from app.services.llm_service import LLMResponseCache
 
@@ -108,7 +110,7 @@ class TestLLMResponseCache:
         assert stats["size"] <= 3
 
     @pytest.mark.asyncio
-    async def test_cache_stats(self, cache, sample_request, sample_response):
+    async def test_cache_stats(self, cache, sample_request, sample_response) -> None:
         """Test cache statistics tracking."""
         # Initial stats
         stats = cache.get_stats()
@@ -129,7 +131,7 @@ class TestLLMResponseCache:
         assert stats["size"] == 1
 
     @pytest.mark.asyncio
-    async def test_cache_clear(self, cache, sample_request, sample_response):
+    async def test_cache_clear(self, cache, sample_request, sample_response) -> None:
         """Test cache clearing."""
         await cache.set(sample_request, sample_response)
 
@@ -142,7 +144,7 @@ class TestLLMResponseCache:
         assert stats["size"] == 0
 
     @pytest.mark.asyncio
-    async def test_cache_different_requests(self, cache):
+    async def test_cache_different_requests(self, cache) -> None:
         """Test that different requests have different cache entries."""
         request1 = MagicMock()
         request1.prompt = "Prompt 1"
@@ -194,11 +196,11 @@ class TestRequestDeduplicator:
         return request
 
     @pytest.mark.asyncio
-    async def test_single_request(self, deduplicator, sample_request):
+    async def test_single_request(self, deduplicator, sample_request) -> None:
         """Test single request execution."""
         call_count = 0
 
-        async def execute_fn():
+        async def execute_fn() -> str:
             nonlocal call_count
             call_count += 1
             return "result"
@@ -209,11 +211,11 @@ class TestRequestDeduplicator:
         assert call_count == 1
 
     @pytest.mark.asyncio
-    async def test_concurrent_identical_requests(self, deduplicator, sample_request):
+    async def test_concurrent_identical_requests(self, deduplicator, sample_request) -> None:
         """Test that concurrent identical requests are deduplicated."""
         call_count = 0
 
-        async def execute_fn():
+        async def execute_fn() -> str:
             nonlocal call_count
             call_count += 1
             await asyncio.sleep(0.1)  # Simulate some processing time
@@ -230,11 +232,11 @@ class TestRequestDeduplicator:
         assert call_count == 1
 
     @pytest.mark.asyncio
-    async def test_different_requests_not_deduplicated(self, deduplicator):
+    async def test_different_requests_not_deduplicated(self, deduplicator) -> None:
         """Test that different requests are not deduplicated."""
         call_count = 0
 
-        async def execute_fn():
+        async def execute_fn() -> str:
             nonlocal call_count
             call_count += 1
             return f"result_{call_count}"
@@ -256,11 +258,12 @@ class TestRequestDeduplicator:
         assert call_count == 2
 
     @pytest.mark.asyncio
-    async def test_exception_propagation(self, deduplicator, sample_request):
+    async def test_exception_propagation(self, deduplicator, sample_request) -> None:
         """Test that exceptions are properly propagated."""
 
-        async def execute_fn():
-            raise ValueError("Test error")
+        async def execute_fn() -> Never:
+            msg = "Test error"
+            raise ValueError(msg)
 
         with pytest.raises(ValueError, match="Test error"):
             await deduplicator.deduplicate(sample_request, execute_fn)
@@ -284,17 +287,16 @@ class TestLLMService:
         """Create a fresh LLM service instance."""
         from app.services.llm_service import LLMService
 
-        service = LLMService()
-        return service
+        return LLMService()
 
-    def test_register_provider(self, llm_service, mock_provider):
+    def test_register_provider(self, llm_service, mock_provider) -> None:
         """Test provider registration."""
         llm_service.register_provider("test-provider", mock_provider, is_default=True)
 
         assert "test-provider" in llm_service._providers
         assert llm_service._default_provider == "test-provider"
 
-    def test_register_multiple_providers(self, llm_service, mock_provider):
+    def test_register_multiple_providers(self, llm_service, mock_provider) -> None:
         """Test registering multiple providers."""
         provider2 = MagicMock()
         provider2.name = "provider-2"
@@ -306,7 +308,7 @@ class TestLLMService:
         assert "provider-2" in llm_service._providers
         assert llm_service._default_provider == "provider-1"
 
-    def test_register_provider_as_new_default(self, llm_service, mock_provider):
+    def test_register_provider_as_new_default(self, llm_service, mock_provider) -> None:
         """Test that new default provider overrides previous."""
         provider2 = MagicMock()
         provider2.name = "provider-2"
@@ -317,7 +319,7 @@ class TestLLMService:
         assert llm_service._default_provider == "provider-2"
 
     @pytest.mark.asyncio
-    async def test_list_providers(self, llm_service, mock_provider):
+    async def test_list_providers(self, llm_service, mock_provider) -> None:
         """Test listing available providers."""
         llm_service.register_provider("test-provider", mock_provider)
 
@@ -327,7 +329,7 @@ class TestLLMService:
         assert len(result.providers) >= 1
 
     @pytest.mark.asyncio
-    async def test_count_tokens(self, llm_service, mock_provider):
+    async def test_count_tokens(self, llm_service, mock_provider) -> None:
         """Test token counting."""
         llm_service.register_provider("test-provider", mock_provider, is_default=True)
 
@@ -337,7 +339,7 @@ class TestLLMService:
         mock_provider.count_tokens.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_generate_text_with_cache_disabled(self, llm_service, mock_provider):
+    async def test_generate_text_with_cache_disabled(self, llm_service, mock_provider) -> None:
         """Test text generation with cache disabled."""
         llm_service.register_provider("test-provider", mock_provider, is_default=True)
 
@@ -378,7 +380,7 @@ class TestLLMServiceCircuitBreaker:
         return provider
 
     @pytest.mark.asyncio
-    async def test_circuit_breaker_opens_after_failures(self, failing_provider):
+    async def test_circuit_breaker_opens_after_failures(self, failing_provider) -> None:
         """Test that circuit breaker opens after repeated failures."""
         from app.services.llm_service import LLMService
 
@@ -395,7 +397,9 @@ class TestLLMServiceCircuitBreaker:
                 request.use_cache = False
 
                 with patch.object(
-                    service, "_execute_generation", new_callable=AsyncMock
+                    service,
+                    "_execute_generation",
+                    new_callable=AsyncMock,
                 ) as mock_exec:
                     mock_exec.side_effect = Exception("Provider error")
                     await service.generate_text(request)
@@ -428,14 +432,14 @@ class TestLLMServiceIntegration:
         return service
 
     @pytest.mark.asyncio
-    async def test_provider_selection(self, full_service):
+    async def test_provider_selection(self, full_service) -> None:
         """Test that correct provider is selected."""
         # Default provider
         result = await full_service.list_providers()
         assert len(result.providers) == 3
 
     @pytest.mark.asyncio
-    async def test_fallback_on_provider_failure(self, full_service):
+    async def test_fallback_on_provider_failure(self, full_service) -> None:
         """Test fallback to another provider on failure."""
         # Make primary provider fail
         full_service._providers["openai"].generate.side_effect = Exception("Primary failed")
@@ -447,7 +451,7 @@ class TestLLMServiceIntegration:
 class TestCacheKeyGeneration:
     """Tests for cache key generation logic."""
 
-    def test_same_request_same_key(self):
+    def test_same_request_same_key(self) -> None:
         """Test that identical requests produce identical cache keys."""
         request1 = MagicMock()
         request1.prompt = "Test prompt"
@@ -465,15 +469,15 @@ class TestCacheKeyGeneration:
 
         # Generate keys (implementation-dependent)
         key1 = hashlib.sha256(
-            f"{request1.prompt}:{request1.model}:{request1.provider}".encode()
+            f"{request1.prompt}:{request1.model}:{request1.provider}".encode(),
         ).hexdigest()
         key2 = hashlib.sha256(
-            f"{request2.prompt}:{request2.model}:{request2.provider}".encode()
+            f"{request2.prompt}:{request2.model}:{request2.provider}".encode(),
         ).hexdigest()
 
         assert key1 == key2
 
-    def test_different_prompts_different_keys(self):
+    def test_different_prompts_different_keys(self) -> None:
         """Test that different prompts produce different cache keys."""
         request1 = MagicMock()
         request1.prompt = "Prompt 1"
@@ -486,10 +490,10 @@ class TestCacheKeyGeneration:
         request2.provider = "provider"
 
         key1 = hashlib.sha256(
-            f"{request1.prompt}:{request1.model}:{request1.provider}".encode()
+            f"{request1.prompt}:{request1.model}:{request1.provider}".encode(),
         ).hexdigest()
         key2 = hashlib.sha256(
-            f"{request2.prompt}:{request2.model}:{request2.provider}".encode()
+            f"{request2.prompt}:{request2.model}:{request2.provider}".encode(),
         ).hexdigest()
 
         assert key1 != key2
@@ -514,7 +518,7 @@ class TestStreamingGeneration:
         return provider
 
     @pytest.mark.asyncio
-    async def test_streaming_returns_chunks(self, streaming_provider):
+    async def test_streaming_returns_chunks(self, streaming_provider) -> None:
         """Test that streaming generation yields chunks."""
         from app.services.llm_service import LLMService
 
@@ -529,7 +533,7 @@ class TestErrorHandling:
     """Tests for error handling in LLM Service."""
 
     @pytest.mark.asyncio
-    async def test_invalid_provider_raises_error(self):
+    async def test_invalid_provider_raises_error(self) -> None:
         """Test that requesting invalid provider raises error."""
         from app.services.llm_service import LLMService
 
@@ -542,11 +546,11 @@ class TestErrorHandling:
         request.use_cache = False
 
         # Should raise error for nonexistent provider
-        with pytest.raises(Exception):
+        with pytest.raises(ProviderNotAvailableError):
             await service.generate_text(request)
 
     @pytest.mark.asyncio
-    async def test_empty_prompt_handling(self):
+    async def test_empty_prompt_handling(self) -> None:
         """Test handling of empty prompts."""
         from app.services.llm_service import LLMService
 
@@ -569,7 +573,7 @@ class TestConcurrency:
     """Tests for concurrent access to LLM Service."""
 
     @pytest.mark.asyncio
-    async def test_concurrent_requests(self):
+    async def test_concurrent_requests(self) -> None:
         """Test handling multiple concurrent requests."""
         from app.services.llm_service import LLMService
 
@@ -594,13 +598,13 @@ class TestConcurrency:
         # (actual test depends on implementation)
 
     @pytest.mark.asyncio
-    async def test_thread_safe_cache_access(self):
+    async def test_thread_safe_cache_access(self) -> None:
         """Test thread-safe cache access."""
         from app.services.llm_service import LLMResponseCache
 
         cache = LLMResponseCache(max_size=100, default_ttl=300)
 
-        async def cache_operation(i: int):
+        async def cache_operation(i: int) -> None:
             request = MagicMock()
             request.prompt = f"Prompt {i % 10}"  # Some overlap
             request.model = "model"

@@ -1,5 +1,4 @@
-"""
-Tests for Story 1.2: Direct API Integration
+"""Tests for Story 1.2: Direct API Integration.
 
 Tests cover:
 - LLMProvider interface compliance
@@ -11,6 +10,7 @@ Tests cover:
 - Token counting
 """
 
+from typing import Never
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -82,7 +82,7 @@ def sample_response():
 class MockProvider(LLMProvider):
     """Mock provider for testing."""
 
-    def __init__(self, name: str = "mock", should_fail: bool = False):
+    def __init__(self, name: str = "mock", should_fail: bool = False) -> None:
         self.name = name
         self.should_fail = should_fail
         self.call_count = 0
@@ -90,7 +90,8 @@ class MockProvider(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         self.call_count += 1
         if self.should_fail:
-            raise Exception(f"Provider {self.name} failed")
+            msg = f"Provider {self.name} failed"
+            raise Exception(msg)
         return PromptResponse(
             text=f"Response from {self.name}",
             model_used="test-model",
@@ -112,20 +113,20 @@ class MockProvider(LLMProvider):
 class TestLLMProviderInterface:
     """Tests for LLMProvider interface compliance."""
 
-    def test_provider_interface_has_required_methods(self):
+    def test_provider_interface_has_required_methods(self) -> None:
         """Verify LLMProvider has all required abstract methods."""
         assert hasattr(LLMProvider, "generate")
         assert hasattr(LLMProvider, "check_health")
         assert hasattr(LLMProvider, "generate_stream")
         assert hasattr(LLMProvider, "count_tokens")
 
-    def test_mock_provider_implements_interface(self):
+    def test_mock_provider_implements_interface(self) -> None:
         """Mock provider implements LLMProvider correctly."""
         provider = MockProvider()
         assert isinstance(provider, LLMProvider)
 
     @pytest.mark.asyncio
-    async def test_mock_provider_generate(self, sample_request):
+    async def test_mock_provider_generate(self, sample_request) -> None:
         """Mock provider generate works correctly."""
         provider = MockProvider(name="test")
         response = await provider.generate(sample_request)
@@ -135,7 +136,7 @@ class TestLLMProviderInterface:
         assert provider.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_mock_provider_health_check(self):
+    async def test_mock_provider_health_check(self) -> None:
         """Mock provider health check works correctly."""
         healthy_provider = MockProvider(should_fail=False)
         unhealthy_provider = MockProvider(should_fail=True)
@@ -152,7 +153,7 @@ class TestLLMProviderInterface:
 class TestRetryHandler:
     """Tests for retry logic with exponential backoff."""
 
-    def test_retry_config_defaults(self):
+    def test_retry_config_defaults(self) -> None:
         """RetryConfig has sensible defaults."""
         config = RetryConfig()
 
@@ -162,7 +163,7 @@ class TestRetryHandler:
         assert config.backoff_multiplier == 2.0
         assert config.strategy == BackoffStrategy.EXPONENTIAL
 
-    def test_provider_specific_configs(self):
+    def test_provider_specific_configs(self) -> None:
         """Provider-specific retry configs are defined."""
         openai_config = get_provider_retry_config("openai")
         google_config = get_provider_retry_config("google")
@@ -171,7 +172,7 @@ class TestRetryHandler:
         assert openai_config.max_retries == 5
         assert google_config.max_retries == 3
 
-    def test_calculate_exponential_delay(self):
+    def test_calculate_exponential_delay(self) -> None:
         """Exponential backoff calculates delays correctly."""
         config = RetryConfig(
             initial_delay=1.0,
@@ -185,7 +186,7 @@ class TestRetryHandler:
         assert handler.calculate_delay(2) == 4.0
         assert handler.calculate_delay(3) == 8.0
 
-    def test_calculate_delay_with_max_cap(self):
+    def test_calculate_delay_with_max_cap(self) -> None:
         """Delay is capped at max_delay."""
         config = RetryConfig(
             initial_delay=1.0,
@@ -200,7 +201,7 @@ class TestRetryHandler:
         # 100.0 should also be capped to 5.0
         assert handler.calculate_delay(2) == 5.0
 
-    def test_calculate_linear_delay(self):
+    def test_calculate_linear_delay(self) -> None:
         """Linear backoff calculates delays correctly."""
         config = RetryConfig(
             initial_delay=2.0,
@@ -213,7 +214,7 @@ class TestRetryHandler:
         assert handler.calculate_delay(1) == 4.0
         assert handler.calculate_delay(2) == 6.0
 
-    def test_is_retryable_error(self):
+    def test_is_retryable_error(self) -> None:
         """Retryable errors are identified correctly."""
         handler = RetryHandler(RetryConfig())
 
@@ -231,13 +232,13 @@ class TestRetryHandler:
         assert not handler.is_retryable_error(ValueError("invalid input"))
 
     @pytest.mark.asyncio
-    async def test_execute_with_retry_success(self):
+    async def test_execute_with_retry_success(self) -> None:
         """Successful execution doesn't retry."""
         handler = RetryHandler(RetryConfig(max_retries=3))
 
         call_count = 0
 
-        async def success_func():
+        async def success_func() -> str:
             nonlocal call_count
             call_count += 1
             return "success"
@@ -248,7 +249,7 @@ class TestRetryHandler:
         assert call_count == 1
 
     @pytest.mark.asyncio
-    async def test_execute_with_retry_eventual_success(self):
+    async def test_execute_with_retry_eventual_success(self) -> None:
         """Retry succeeds after initial failures."""
         config = RetryConfig(
             max_retries=3,
@@ -259,11 +260,12 @@ class TestRetryHandler:
 
         call_count = 0
 
-        async def flaky_func():
+        async def flaky_func() -> str:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise ConnectionError("Temporary failure")
+                msg = "Temporary failure"
+                raise ConnectionError(msg)
             return "success"
 
         result = await handler.execute_with_retry(flaky_func)
@@ -272,7 +274,7 @@ class TestRetryHandler:
         assert call_count == 3
 
     @pytest.mark.asyncio
-    async def test_execute_with_retry_exhausted(self):
+    async def test_execute_with_retry_exhausted(self) -> None:
         """RetryExhaustedError raised when all retries fail."""
         config = RetryConfig(
             max_retries=2,
@@ -281,8 +283,9 @@ class TestRetryHandler:
         )
         handler = RetryHandler(config)
 
-        async def always_fail():
-            raise ConnectionError("Persistent failure")
+        async def always_fail() -> Never:
+            msg = "Persistent failure"
+            raise ConnectionError(msg)
 
         with pytest.raises(RetryExhaustedError) as exc_info:
             await handler.execute_with_retry(always_fail)
@@ -291,16 +294,17 @@ class TestRetryHandler:
         assert isinstance(exc_info.value.last_error, ConnectionError)
 
     @pytest.mark.asyncio
-    async def test_non_retryable_error_not_retried(self):
+    async def test_non_retryable_error_not_retried(self) -> None:
         """Non-retryable errors are not retried."""
         handler = RetryHandler(RetryConfig(max_retries=3))
 
         call_count = 0
 
-        async def fail_once():
+        async def fail_once() -> Never:
             nonlocal call_count
             call_count += 1
-            raise ValueError("Non-retryable error")
+            msg = "Non-retryable error"
+            raise ValueError(msg)
 
         with pytest.raises(ValueError):
             await handler.execute_with_retry(fail_once)
@@ -317,7 +321,7 @@ class TestRetryHandler:
 class TestProviderManager:
     """Tests for provider manager and failover."""
 
-    def test_register_provider(self):
+    def test_register_provider(self) -> None:
         """Provider registration works correctly."""
         manager = ProviderManager()
         provider = MockProvider("test")
@@ -328,7 +332,7 @@ class TestProviderManager:
         assert manager._default_provider == "test"
         assert "test" in manager._provider_states
 
-    def test_provider_priority_ordering(self):
+    def test_provider_priority_ordering(self) -> None:
         """Providers are ordered by priority."""
         manager = ProviderManager()
 
@@ -341,7 +345,7 @@ class TestProviderManager:
         assert manager._provider_order[1] == "med"
         assert manager._provider_order[2] == "low"
 
-    def test_get_available_providers(self):
+    def test_get_available_providers(self) -> None:
         """Available providers excludes unhealthy ones."""
         manager = ProviderManager()
 
@@ -358,7 +362,7 @@ class TestProviderManager:
         assert "unhealthy" not in available
 
     @pytest.mark.asyncio
-    async def test_generate_with_failover_primary_success(self, sample_request):
+    async def test_generate_with_failover_primary_success(self, sample_request) -> None:
         """Primary provider success doesn't trigger failover."""
         manager = ProviderManager()
 
@@ -379,7 +383,7 @@ class TestProviderManager:
         assert backup.call_count == 0
 
     @pytest.mark.asyncio
-    async def test_generate_with_failover_to_backup(self, sample_request):
+    async def test_generate_with_failover_to_backup(self, sample_request) -> None:
         """Failed primary triggers failover to backup."""
         config = FailoverConfig(
             enabled=True,
@@ -399,7 +403,7 @@ class TestProviderManager:
 
         # Use shorter retry config for tests
         manager._retry_handlers["primary"] = RetryHandler(
-            RetryConfig(max_retries=0)  # No retries for faster test
+            RetryConfig(max_retries=0),  # No retries for faster test
         )
 
         response = await manager.generate_with_failover(sample_request)
@@ -408,7 +412,7 @@ class TestProviderManager:
         assert backup.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_generate_with_failover_all_fail(self, sample_request):
+    async def test_generate_with_failover_all_fail(self, sample_request) -> None:
         """All providers failing raises RetryExhaustedError."""
         config = FailoverConfig(
             enabled=True,
@@ -433,7 +437,7 @@ class TestProviderManager:
             await manager.generate_with_failover(sample_request)
 
     @pytest.mark.asyncio
-    async def test_health_check_updates_status(self):
+    async def test_health_check_updates_status(self) -> None:
         """Health check updates provider status."""
         manager = ProviderManager()
 
@@ -450,7 +454,7 @@ class TestProviderManager:
         assert status2 == ProviderStatus.UNHEALTHY
 
     @pytest.mark.asyncio
-    async def test_record_success_updates_stats(self):
+    async def test_record_success_updates_stats(self) -> None:
         """Recording success updates provider statistics."""
         manager = ProviderManager()
         manager.register_provider("test", MockProvider("test"))
@@ -463,7 +467,7 @@ class TestProviderManager:
         assert state.average_latency_ms > 0
 
     @pytest.mark.asyncio
-    async def test_record_failure_updates_stats(self):
+    async def test_record_failure_updates_stats(self) -> None:
         """Recording failure updates provider statistics."""
         manager = ProviderManager()
         manager.register_provider("test", MockProvider("test"))
@@ -476,7 +480,7 @@ class TestProviderManager:
         assert state.consecutive_failures == 1
 
     @pytest.mark.asyncio
-    async def test_rate_limit_tracking(self):
+    async def test_rate_limit_tracking(self) -> None:
         """Rate limited providers are tracked correctly."""
         manager = ProviderManager()
         manager.register_provider("test", MockProvider("test"))
@@ -500,7 +504,7 @@ class TestProviderManager:
 class TestQwenClient:
     """Tests for Qwen provider client."""
 
-    def test_client_initialization_without_key(self, mock_settings):
+    def test_client_initialization_without_key(self, mock_settings) -> None:
         """Client initializes without API key (disabled)."""
         mock_settings.QWEN_API_KEY = None
 
@@ -508,7 +512,7 @@ class TestQwenClient:
             client = QwenClient(mock_settings)
             assert client.client is None
 
-    def test_client_initialization_with_key(self, mock_settings):
+    def test_client_initialization_with_key(self, mock_settings) -> None:
         """Client initializes with API key."""
         with (
             patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
@@ -517,7 +521,7 @@ class TestQwenClient:
             QwenClient(mock_settings)
             mock_openai.assert_called_once()
 
-    def test_get_model_name_default(self, mock_settings):
+    def test_get_model_name_default(self, mock_settings) -> None:
         """Default model is used when not specified."""
         with (
             patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
@@ -530,7 +534,7 @@ class TestQwenClient:
 
             assert model == QwenClient.DEFAULT_MODEL
 
-    def test_get_model_name_from_request(self, mock_settings):
+    def test_get_model_name_from_request(self, mock_settings) -> None:
         """Model from request is used when specified."""
         with (
             patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
@@ -543,7 +547,7 @@ class TestQwenClient:
 
             assert model == "qwen-max"
 
-    def test_validate_api_key(self, mock_settings):
+    def test_validate_api_key(self, mock_settings) -> None:
         """API key validation works correctly."""
         with (
             patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
@@ -557,7 +561,7 @@ class TestQwenClient:
             assert client._validate_api_key(None) is False
 
     @pytest.mark.asyncio
-    async def test_qwen_implements_interface(self, mock_settings):
+    async def test_qwen_implements_interface(self, mock_settings) -> None:
         """QwenClient implements LLMProvider interface."""
         with (
             patch("app.infrastructure.qwen_client.get_settings", return_value=mock_settings),
@@ -580,7 +584,7 @@ class TestQwenClient:
 class TestCursorClient:
     """Tests for Cursor provider client."""
 
-    def test_client_initialization_without_key(self, mock_settings):
+    def test_client_initialization_without_key(self, mock_settings) -> None:
         """Client initializes without API key (disabled)."""
         mock_settings.CURSOR_API_KEY = None
 
@@ -588,7 +592,7 @@ class TestCursorClient:
             client = CursorClient(mock_settings)
             assert client.client is None
 
-    def test_client_initialization_with_key(self, mock_settings):
+    def test_client_initialization_with_key(self, mock_settings) -> None:
         """Client initializes with API key."""
         with (
             patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings),
@@ -597,7 +601,7 @@ class TestCursorClient:
             CursorClient(mock_settings)
             mock_openai.assert_called_once()
 
-    def test_get_model_name_default(self, mock_settings):
+    def test_get_model_name_default(self, mock_settings) -> None:
         """Default model is used when not specified."""
         with (
             patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings),
@@ -611,7 +615,7 @@ class TestCursorClient:
             assert model == CursorClient.DEFAULT_MODEL
 
     @pytest.mark.asyncio
-    async def test_cursor_implements_interface(self, mock_settings):
+    async def test_cursor_implements_interface(self, mock_settings) -> None:
         """CursorClient implements LLMProvider interface."""
         with (
             patch("app.infrastructure.cursor_client.get_settings", return_value=mock_settings),
@@ -634,7 +638,7 @@ class TestCursorClient:
 class TestProviderState:
     """Tests for ProviderState data class."""
 
-    def test_default_state(self):
+    def test_default_state(self) -> None:
         """Provider state has correct defaults."""
         state = ProviderState(name="test")
 
@@ -644,7 +648,7 @@ class TestProviderState:
         assert state.consecutive_failures == 0
         assert state.total_requests == 0
 
-    def test_provider_status_enum(self):
+    def test_provider_status_enum(self) -> None:
         """ProviderStatus enum has all expected values."""
         assert ProviderStatus.HEALTHY.value == "healthy"
         assert ProviderStatus.DEGRADED.value == "degraded"
@@ -662,13 +666,13 @@ class TestDirectAPIIntegration:
     """Integration tests for direct API communication."""
 
     @pytest.mark.asyncio
-    async def test_full_failover_chain(self, sample_request):
+    async def test_full_failover_chain(self, sample_request) -> None:
         """Test complete failover chain from primary to backup."""
         manager = ProviderManager(
             FailoverConfig(
                 enabled=True,
                 max_failover_attempts=3,
-            )
+            ),
         )
 
         # Set up providers with different behaviors
@@ -692,7 +696,7 @@ class TestDirectAPIIntegration:
         assert providers[2][1].call_count == 1  # p3 succeeded
 
     @pytest.mark.asyncio
-    async def test_retry_then_failover(self, sample_request):
+    async def test_retry_then_failover(self, sample_request) -> None:
         """Test retry exhaustion followed by failover."""
         manager = ProviderManager(FailoverConfig(enabled=True))
 
@@ -707,7 +711,7 @@ class TestDirectAPIIntegration:
 
         # Allow 1 retry for primary
         manager._retry_handlers["primary"] = RetryHandler(
-            RetryConfig(max_retries=1, initial_delay=0.01, jitter=False)
+            RetryConfig(max_retries=1, initial_delay=0.01, jitter=False),
         )
 
         response = await manager.generate_with_failover(sample_request)
@@ -717,7 +721,7 @@ class TestDirectAPIIntegration:
         # Then failover to backup
         assert "backup" in response.text
 
-    def test_manager_stats(self):
+    def test_manager_stats(self) -> None:
         """Provider manager returns comprehensive stats."""
         manager = ProviderManager()
 
@@ -741,7 +745,7 @@ class TestDirectAPIIntegration:
 class TestBackoffStrategies:
     """Tests for different backoff strategies."""
 
-    def test_constant_backoff(self):
+    def test_constant_backoff(self) -> None:
         """Constant backoff returns same delay."""
         config = RetryConfig(
             initial_delay=5.0,
@@ -754,7 +758,7 @@ class TestBackoffStrategies:
         assert handler.calculate_delay(1) == 5.0
         assert handler.calculate_delay(2) == 5.0
 
-    def test_fibonacci_backoff(self):
+    def test_fibonacci_backoff(self) -> None:
         """Fibonacci backoff follows Fibonacci sequence."""
         config = RetryConfig(
             initial_delay=1.0,
@@ -770,7 +774,7 @@ class TestBackoffStrategies:
         assert handler.calculate_delay(3) == 3.0
         assert handler.calculate_delay(4) == 5.0
 
-    def test_jitter_adds_variance(self):
+    def test_jitter_adds_variance(self) -> None:
         """Jitter adds variance to delays."""
         config = RetryConfig(
             initial_delay=10.0,

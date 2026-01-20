@@ -1,5 +1,4 @@
-"""
-Enhanced Gradient Optimizer for AutoDAN.
+"""Enhanced Gradient Optimizer for AutoDAN.
 
 Implements advanced gradient-based optimization with:
 - Momentum-based updates
@@ -51,7 +50,7 @@ class SurrogateModel:
         """Predict loss value."""
         return float(np.dot(self.weights, x) + self.bias)
 
-    def update(self, x: np.ndarray, target: float):
+    def update(self, x: np.ndarray, target: float) -> None:
         """Update surrogate with new observation."""
         prediction = self.predict(x)
         error = target - prediction
@@ -60,14 +59,13 @@ class SurrogateModel:
 
 
 class GradientCache:
-    """
-    LRU cache for gradient computations.
+    """LRU cache for gradient computations.
 
     Reduces redundant gradient calculations by caching results
     based on prompt hash and position.
     """
 
-    def __init__(self, max_size: int = 10000, ttl_seconds: float = 300.0):
+    def __init__(self, max_size: int = 10000, ttl_seconds: float = 300.0) -> None:
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self.cache: dict[str, GradientCacheEntry] = {}
@@ -107,7 +105,7 @@ class GradientCache:
 
         return entry.gradient
 
-    def put(self, prompt: str, position: int, gradient: np.ndarray):
+    def put(self, prompt: str, position: int, gradient: np.ndarray) -> None:
         """Store gradient in cache."""
         key = self._make_key(prompt, position)
 
@@ -134,7 +132,7 @@ class GradientCache:
             "max_size": self.max_size,
         }
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear the cache."""
         self.cache.clear()
         self.access_order.clear()
@@ -143,8 +141,7 @@ class GradientCache:
 
 
 class EnhancedGradientOptimizer:
-    """
-    Enhanced gradient optimizer with momentum and surrogate models.
+    """Enhanced gradient optimizer with momentum and surrogate models.
 
     Features:
     - Momentum-based gradient updates for faster convergence
@@ -163,7 +160,7 @@ class EnhancedGradientOptimizer:
         coherence_lambda: float = 0.5,
         use_surrogate: bool = True,
         cache_size: int = 10000,
-    ):
+    ) -> None:
         self.llm_client = llm_client
         self.embedding_dim = embedding_dim
         self.momentum = momentum
@@ -196,8 +193,7 @@ class EnhancedGradientOptimizer:
         epsilon: float = 0.01,
         coherence_threshold: float = 0.7,
     ) -> OptimizationResult:
-        """
-        Optimize tokens using enhanced gradient descent.
+        """Optimize tokens using enhanced gradient descent.
 
         Args:
             tokens: Initial token sequence
@@ -208,6 +204,7 @@ class EnhancedGradientOptimizer:
 
         Returns:
             OptimizationResult with optimized tokens and metrics
+
         """
         current_tokens = tokens.copy()
         lr = self.initial_lr
@@ -258,7 +255,7 @@ class EnhancedGradientOptimizer:
                     "coherence": coherence,
                     "lr": lr,
                     "gradient_norm": float(np.linalg.norm(gradient)),
-                }
+                },
             )
 
             current_tokens = updated_tokens
@@ -281,9 +278,7 @@ class EnhancedGradientOptimizer:
         tokens: list[int],
         target_string: str,
     ) -> np.ndarray:
-        """
-        Compute gradient with caching and surrogate estimation.
-        """
+        """Compute gradient with caching and surrogate estimation."""
         prompt = self._tokens_to_string(tokens)
 
         # Try cache first
@@ -307,9 +302,7 @@ class EnhancedGradientOptimizer:
         position: int,
         target_string: str,
     ) -> np.ndarray:
-        """
-        Compute gradient at a specific position using finite differences.
-        """
+        """Compute gradient at a specific position using finite differences."""
         epsilon = 1e-4
         gradient = np.zeros(len(tokens))
 
@@ -332,8 +325,7 @@ class EnhancedGradientOptimizer:
         tokens: list[int],
         target_string: str,
     ) -> float:
-        """
-        Compute composite loss function.
+        """Compute composite loss function.
 
         L_total = α·L_attack + β·L_coherence + γ·L_diversity
         """
@@ -369,9 +361,7 @@ class EnhancedGradientOptimizer:
 
         # Weighted combination
         alpha, beta, gamma = 0.6, 0.3, 0.1
-        total_loss = alpha * attack_loss + beta * coherence_loss + gamma * diversity_loss
-
-        return total_loss
+        return alpha * attack_loss + beta * coherence_loss + gamma * diversity_loss
 
     def _coherence_constrained_update(
         self,
@@ -380,8 +370,7 @@ class EnhancedGradientOptimizer:
         step_size: float,
         coherence_threshold: float,
     ) -> tuple[list[int], float]:
-        """
-        Apply gradient update with coherence constraint.
+        """Apply gradient update with coherence constraint.
 
         Ensures the updated prompt maintains linguistic coherence.
         """
@@ -406,7 +395,9 @@ class EnhancedGradientOptimizer:
         if coherence < coherence_threshold:
             # Revert changes that hurt coherence most
             updated_tokens = self._revert_incoherent_changes(
-                tokens, updated_tokens, coherence_threshold
+                tokens,
+                updated_tokens,
+                coherence_threshold,
             )
             coherence = self._compute_coherence(updated_tokens)
 
@@ -510,9 +501,7 @@ class EnhancedGradientOptimizer:
 
         # Penalize very low or very high diversity
         optimal_diversity = 0.3
-        coherence_loss = abs(diversity - optimal_diversity)
-
-        return coherence_loss
+        return abs(diversity - optimal_diversity)
 
     def _compute_diversity_loss(self, tokens: list[int]) -> float:
         """Compute diversity loss based on token entropy."""
@@ -583,9 +572,8 @@ class EnhancedGradientOptimizer:
         if loss < prev_loss:
             # Loss decreased - slightly increase LR
             return min(current_lr * 1.05, self.initial_lr * 2)
-        else:
-            # Loss increased - decrease LR
-            return max(current_lr * 0.9, self.initial_lr * 0.1)
+        # Loss increased - decrease LR
+        return max(current_lr * 0.9, self.initial_lr * 0.1)
 
     def _tokens_to_string(self, tokens: list[int]) -> str:
         """Convert tokens to string (simplified)."""
@@ -608,7 +596,7 @@ class EnhancedGradientOptimizer:
         """Get optimization history."""
         return self.optimization_history.copy()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset optimizer state."""
         self.velocity = None
         self.optimization_history.clear()

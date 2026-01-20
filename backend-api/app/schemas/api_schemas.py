@@ -29,21 +29,25 @@ class HealthCheckResponse(BaseModel):
 # --- LLM Models ---
 class LLMModelBase(BaseModel):
     name: str = Field(
-        ..., description="Name of the LLM model (e.g., 'gpt-4', 'gemini-pro', 'llama-2-7b-chat')"
+        ...,
+        description="Name of the LLM model (e.g., 'gpt-4', 'gemini-pro', 'llama-2-7b-chat')",
     )
     provider: LLMProvider = Field(
-        ..., description="Provider of the LLM (e.g., 'openai', 'gemini', 'huggingface')"
+        ...,
+        description="Provider of the LLM (e.g., 'openai', 'gemini', 'huggingface')",
     )
     description: str | None = None
 
 
 class LLMModelCreate(LLMModelBase):
     api_key: str | None = Field(
-        None, description="API key for the LLM provider (will be stored securely)"
+        None,
+        description="API key for the LLM provider (will be stored securely)",
     )
     base_url: str | None = Field(None, description="Custom base URL for local/custom models")
     config: dict[str, Any] | None = Field(
-        {}, description="Additional configuration for the LLM client (e.g., model_id, temperature)"
+        {},
+        description="Additional configuration for the LLM client (e.g., model_id, temperature)",
     )
 
 
@@ -58,11 +62,13 @@ class LLMModel(LLMModelBase):
 # --- Metamorphosis Strategies ---
 class MetamorphosisStrategyInfo(BaseModel):
     name: str = Field(
-        ..., description="Unique name of the metamorphosis strategy (e.g., 'LexicalObfuscation')"
+        ...,
+        description="Unique name of the metamorphosis strategy (e.g., 'LexicalObfuscation')",
     )
     description: str = Field(..., description="Description of what the strategy does")
     parameters: dict[str, Any] = Field(
-        {}, description="Schema of configurable parameters for the strategy"
+        {},
+        description="Schema of configurable parameters for the strategy",
     )
 
 
@@ -76,14 +82,18 @@ class EvasionTaskConfig(BaseModel):
     target_model_id: int = Field(..., description="ID of the target LLM model")
     initial_prompt: str = Field(..., description="The starting prompt for the evasion attempt")
     strategy_chain: list[MetamorphosisStrategyConfig] = Field(
-        ..., min_length=1, description="Ordered list of metamorphosis strategies to apply"
+        ...,
+        min_length=1,
+        description="Ordered list of metamorphosis strategies to apply",
     )
     success_criteria: str = Field(
         ...,
         description="Criterion to evaluate evasion success (e.g., keyword presence, refusal absence)",
     )
     max_attempts: int = Field(
-        1, ge=1, description="Maximum number of attempts for the evasion task"
+        1,
+        ge=1,
+        description="Maximum number of attempts for the evasion task",
     )
     # Add other parameters like timeout, callback_url etc.
 
@@ -95,7 +105,8 @@ class EvasionTaskStatusResponse(BaseModel):
     progress: float | None = Field(None, ge=0, le=100, description="Progress percentage")
     message: str | None = Field(None, description="Status message")
     results_preview: dict[str, Any] | None = Field(
-        None, description="Preview of results if available"
+        None,
+        description="Preview of results if available",
     )
     error: str | None = Field(None, description="Error message if task failed")
 

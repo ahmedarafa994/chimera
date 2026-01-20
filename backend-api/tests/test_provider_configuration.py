@@ -1,5 +1,4 @@
-"""
-Test Suite for Story 1.1: Provider Configuration Management
+"""Test Suite for Story 1.1: Provider Configuration Management.
 
 This module provides comprehensive tests for the provider configuration system including:
 - Configuration loading and validation (AC: #1, #3, #8)
@@ -89,7 +88,7 @@ class TestConfigurationLoading:
     """Tests for configuration loading from environment variables."""
 
     @pytest.mark.unit
-    def test_config_loads_from_environment(self, clean_env):
+    def test_config_loads_from_environment(self, clean_env) -> None:
         """Test that configuration loads from environment variables."""
         os.environ["OPENAI_API_KEY"] = "test-openai-key"
         os.environ["GOOGLE_API_KEY"] = "test-google-key"
@@ -102,7 +101,7 @@ class TestConfigurationLoading:
         assert settings.GOOGLE_API_KEY == "test-google-key"
 
     @pytest.mark.unit
-    def test_config_has_default_values(self):
+    def test_config_has_default_values(self) -> None:
         """Test that configuration has sensible default values."""
         from app.core.config import settings
 
@@ -111,14 +110,14 @@ class TestConfigurationLoading:
         assert settings.DEFAULT_MODEL_ID == "deepseek-chat"
 
     @pytest.mark.unit
-    def test_config_api_connection_mode_default(self):
+    def test_config_api_connection_mode_default(self) -> None:
         """Test that API connection mode defaults to DIRECT."""
         from app.core.config import APIConnectionMode, settings
 
         assert settings.API_CONNECTION_MODE == APIConnectionMode.DIRECT
 
     @pytest.mark.unit
-    def test_config_provider_models_available(self):
+    def test_config_provider_models_available(self) -> None:
         """Test that provider models are configured for all providers."""
         from app.core.config import settings
 
@@ -143,7 +142,7 @@ class TestConfigurationLoading:
         assert len(models["cursor"]) > 0
 
     @pytest.mark.unit
-    def test_config_api_key_name_map(self):
+    def test_config_api_key_name_map(self) -> None:
         """Test API key name mapping for all providers."""
         from app.core.config import API_KEY_NAME_MAP
 
@@ -165,7 +164,7 @@ class TestProviderConfigSections:
     """Tests for individual provider configuration sections."""
 
     @pytest.mark.unit
-    def test_each_provider_has_config_section(self):
+    def test_each_provider_has_config_section(self) -> None:
         """Test that each provider has its own configuration section."""
         from app.core.config import settings
 
@@ -180,7 +179,7 @@ class TestProviderConfigSections:
         assert hasattr(settings, "DEEPSEEK_MODEL")
 
     @pytest.mark.unit
-    def test_provider_endpoints_configured(self):
+    def test_provider_endpoints_configured(self) -> None:
         """Test that base URLs are configured for all providers."""
         from app.core.config import settings
 
@@ -193,12 +192,10 @@ class TestProviderConfigSections:
 
         # Verify URLs are valid format
         for provider, url in endpoints.items():
-            assert url.startswith("http://") or url.startswith(
-                "https://"
-            ), f"Invalid URL for {provider}: {url}"
+            assert url.startswith(("http://", "https://")), f"Invalid URL for {provider}: {url}"
 
     @pytest.mark.unit
-    def test_provider_endpoint_returns_correct_url(self):
+    def test_provider_endpoint_returns_correct_url(self) -> None:
         """Test that get_provider_endpoint returns correct URLs."""
         from app.core.config import settings
 
@@ -209,7 +206,7 @@ class TestProviderConfigSections:
         assert "deepseek.com" in settings.get_provider_endpoint("deepseek")
 
     @pytest.mark.unit
-    def test_provider_model_selection_available(self):
+    def test_provider_model_selection_available(self) -> None:
         """Test that model selection is available for each provider."""
         from app.core.config import settings
 
@@ -250,7 +247,7 @@ class TestProxyModeConfiguration:
     """Tests for proxy mode (AIClient-2-API Server) configuration."""
 
     @pytest.mark.unit
-    def test_proxy_mode_endpoint_configurable(self):
+    def test_proxy_mode_endpoint_configurable(self) -> None:
         """Test that proxy mode endpoint is configurable."""
         from app.core.config import settings
 
@@ -258,7 +255,7 @@ class TestProxyModeConfiguration:
         assert settings.PROXY_MODE_ENDPOINT == "http://localhost:8080"
 
     @pytest.mark.unit
-    def test_proxy_mode_has_all_settings(self):
+    def test_proxy_mode_has_all_settings(self) -> None:
         """Test that all proxy mode settings are available."""
         from app.core.config import settings
 
@@ -269,7 +266,7 @@ class TestProxyModeConfiguration:
         assert hasattr(settings, "PROXY_MODE_HEALTH_CHECK_INTERVAL")
 
     @pytest.mark.unit
-    def test_proxy_mode_timeout_has_valid_range(self):
+    def test_proxy_mode_timeout_has_valid_range(self) -> None:
         """Test that proxy timeout has valid range constraints."""
         from app.core.config import settings
 
@@ -278,7 +275,7 @@ class TestProxyModeConfiguration:
         assert settings.PROXY_MODE_TIMEOUT <= 120
 
     @pytest.mark.unit
-    def test_proxy_mode_health_check_interval_valid(self):
+    def test_proxy_mode_health_check_interval_valid(self) -> None:
         """Test proxy health check interval has valid range."""
         from app.core.config import settings
 
@@ -287,7 +284,7 @@ class TestProxyModeConfiguration:
         assert settings.PROXY_MODE_HEALTH_CHECK_INTERVAL <= 300
 
     @pytest.mark.unit
-    def test_get_proxy_config_returns_dict(self):
+    def test_get_proxy_config_returns_dict(self) -> None:
         """Test that get_proxy_config returns a complete configuration dict."""
         from app.core.config import settings
 
@@ -311,14 +308,14 @@ class TestDirectModeConfiguration:
     """Tests for direct API mode configuration."""
 
     @pytest.mark.unit
-    def test_direct_mode_is_default(self):
+    def test_direct_mode_is_default(self) -> None:
         """Test that direct mode is the default connection mode."""
         from app.core.config import APIConnectionMode, settings
 
         assert settings.API_CONNECTION_MODE == APIConnectionMode.DIRECT
 
     @pytest.mark.unit
-    def test_direct_mode_base_urls_configurable(self):
+    def test_direct_mode_base_urls_configurable(self) -> None:
         """Test that direct mode base URLs are configurable per provider."""
         from app.core.config import settings
 
@@ -330,7 +327,7 @@ class TestDirectModeConfiguration:
         assert hasattr(settings, "DIRECT_CURSOR_BASE_URL")
 
     @pytest.mark.unit
-    def test_connection_mode_returns_direct(self):
+    def test_connection_mode_returns_direct(self) -> None:
         """Test that get_connection_mode returns DIRECT."""
         from app.core.config import APIConnectionMode, settings
 
@@ -347,7 +344,7 @@ class TestAPIKeyEncryption:
     """Tests for API key encryption at rest."""
 
     @pytest.mark.security
-    def test_encrypt_api_key_returns_encrypted_format(self, sample_api_keys):
+    def test_encrypt_api_key_returns_encrypted_format(self, sample_api_keys) -> None:
         """Test that encrypt_api_key returns encrypted format with enc: prefix."""
         from app.core.encryption import encrypt_api_key
 
@@ -357,7 +354,7 @@ class TestAPIKeyEncryption:
         assert encrypted != sample_api_keys["openai"]
 
     @pytest.mark.security
-    def test_decrypt_api_key_returns_original(self, sample_api_keys):
+    def test_decrypt_api_key_returns_original(self, sample_api_keys) -> None:
         """Test that decrypt_api_key returns the original key."""
         from app.core.encryption import decrypt_api_key, encrypt_api_key
 
@@ -368,7 +365,7 @@ class TestAPIKeyEncryption:
         assert decrypted == original
 
     @pytest.mark.security
-    def test_is_encrypted_detects_encrypted_keys(self, sample_api_keys):
+    def test_is_encrypted_detects_encrypted_keys(self, sample_api_keys) -> None:
         """Test that is_encrypted correctly identifies encrypted keys."""
         from app.core.encryption import encrypt_api_key, is_encrypted
 
@@ -378,7 +375,7 @@ class TestAPIKeyEncryption:
         assert is_encrypted(sample_api_keys["openai"]) is False
 
     @pytest.mark.security
-    def test_ensure_key_encrypted_encrypts_only_once(self, sample_api_keys):
+    def test_ensure_key_encrypted_encrypts_only_once(self, sample_api_keys) -> None:
         """Test that ensure_key_encrypted doesn't double-encrypt."""
         from app.core.encryption import encrypt_api_key, ensure_key_encrypted
 
@@ -396,7 +393,7 @@ class TestAPIKeyEncryption:
         assert result.startswith("enc:")
 
     @pytest.mark.security
-    def test_decrypt_plaintext_returns_original(self, sample_api_keys):
+    def test_decrypt_plaintext_returns_original(self, sample_api_keys) -> None:
         """Test that decrypting plaintext key returns it unchanged."""
         from app.core.encryption import decrypt_api_key
 
@@ -406,7 +403,7 @@ class TestAPIKeyEncryption:
         assert result == original
 
     @pytest.mark.security
-    def test_encryption_uses_consistent_key(self, sample_api_keys):
+    def test_encryption_uses_consistent_key(self, sample_api_keys) -> None:
         """Test that encryption/decryption uses consistent key across calls."""
         from app.core.encryption import decrypt_api_key, encrypt_api_key
 
@@ -421,7 +418,7 @@ class TestAPIKeyEncryption:
         assert decrypt_api_key(encrypted2) == original
 
     @pytest.mark.security
-    def test_empty_key_returns_empty(self):
+    def test_empty_key_returns_empty(self) -> None:
         """Test that empty keys are handled gracefully."""
         from app.core.encryption import decrypt_api_key, encrypt_api_key
 
@@ -441,7 +438,7 @@ class TestConfigurationValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_api_key_format_openai(self, sample_api_keys):
+    async def test_validate_api_key_format_openai(self, sample_api_keys) -> None:
         """Test OpenAI API key format validation."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -459,7 +456,7 @@ class TestConfigurationValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_api_key_format_anthropic(self, sample_api_keys):
+    async def test_validate_api_key_format_anthropic(self, sample_api_keys) -> None:
         """Test Anthropic API key format validation."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -467,13 +464,14 @@ class TestConfigurationValidation:
 
         # Valid key
         valid, _error = await validator.validate_api_key_format(
-            "anthropic", sample_api_keys["anthropic"]
+            "anthropic",
+            sample_api_keys["anthropic"],
         )
         assert valid is True
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_api_key_format_google(self, sample_api_keys):
+    async def test_validate_api_key_format_google(self, sample_api_keys) -> None:
         """Test Google API key format validation."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -485,7 +483,7 @@ class TestConfigurationValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_empty_api_key_returns_error(self):
+    async def test_validate_empty_api_key_returns_error(self) -> None:
         """Test that empty API key returns validation error."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -497,14 +495,16 @@ class TestConfigurationValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_provider_config_returns_recommendations(self, sample_api_keys):
+    async def test_validate_provider_config_returns_recommendations(self, sample_api_keys) -> None:
         """Test that invalid configs provide recommendations."""
         from app.core.config_manager import ProviderConfigValidator
 
         validator = ProviderConfigValidator()
 
         result = await validator.validate_provider_config(
-            provider="openai", api_key="invalid-key", test_connectivity=False
+            provider="openai",
+            api_key="invalid-key",
+            test_connectivity=False,
         )
 
         assert "recommendations" in result
@@ -512,7 +512,7 @@ class TestConfigurationValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_base_url_format(self):
+    async def test_validate_base_url_format(self) -> None:
         """Test base URL format validation."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -531,7 +531,7 @@ class TestConfigurationValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validation_uses_default_url_when_missing(self, sample_api_keys):
+    async def test_validation_uses_default_url_when_missing(self, sample_api_keys) -> None:
         """Test that validation uses default URL when none provided."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -559,14 +559,16 @@ class TestErrorMessageQuality:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_invalid_key_error_has_remediation(self):
+    async def test_invalid_key_error_has_remediation(self) -> None:
         """Test that invalid key errors include remediation steps."""
         from app.core.config_manager import ProviderConfigValidator
 
         validator = ProviderConfigValidator()
 
         result = await validator.validate_provider_config(
-            provider="openai", api_key="invalid", test_connectivity=False
+            provider="openai",
+            api_key="invalid",
+            test_connectivity=False,
         )
 
         # Should have recommendations for fixing
@@ -576,7 +578,7 @@ class TestErrorMessageQuality:
         assert has_provider_mention
 
     @pytest.mark.unit
-    def test_pattern_description_is_human_readable(self):
+    def test_pattern_description_is_human_readable(self) -> None:
         """Test that API key pattern descriptions are human readable."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -602,7 +604,7 @@ class TestHotReloadFunctionality:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_reload_config_updates_settings(self, clean_env):
+    async def test_reload_config_updates_settings(self, clean_env) -> None:
         """Test that reload_config updates settings without restart."""
         from app.core.config_manager import config_manager
 
@@ -617,7 +619,7 @@ class TestHotReloadFunctionality:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_reload_config_tracks_changes(self, clean_env):
+    async def test_reload_config_tracks_changes(self, clean_env) -> None:
         """Test that reload_config tracks configuration changes."""
         from app.core.config_manager import config_manager
 
@@ -630,7 +632,7 @@ class TestHotReloadFunctionality:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_reload_config_validates_new_config(self, clean_env):
+    async def test_reload_config_validates_new_config(self, clean_env) -> None:
         """Test that reload_config validates the new configuration."""
         from app.core.config_manager import config_manager
 
@@ -645,13 +647,13 @@ class TestHotReloadFunctionality:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_reload_config_executes_callbacks(self, clean_env):
+    async def test_reload_config_executes_callbacks(self, clean_env) -> None:
         """Test that reload_config executes registered callbacks."""
         from app.core.config_manager import config_manager
 
         callback_called = []
 
-        def test_callback():
+        def test_callback() -> None:
             callback_called.append(True)
 
         config_manager.add_reload_callback(test_callback)
@@ -664,13 +666,13 @@ class TestHotReloadFunctionality:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_reload_config_handles_async_callbacks(self, clean_env):
+    async def test_reload_config_handles_async_callbacks(self, clean_env) -> None:
         """Test that reload_config handles async callbacks."""
         from app.core.config_manager import config_manager
 
         callback_called = []
 
-        async def async_callback():
+        async def async_callback() -> None:
             callback_called.append(True)
 
         config_manager.add_reload_callback(async_callback)
@@ -683,7 +685,7 @@ class TestHotReloadFunctionality:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_reload_completes_within_performance_target(self, clean_env):
+    async def test_reload_completes_within_performance_target(self, clean_env) -> None:
         """Test that reload completes within performance target (<1s)."""
         from app.core.config_manager import config_manager
 
@@ -693,7 +695,7 @@ class TestHotReloadFunctionality:
         assert result["elapsed_ms"] < 1000
 
     @pytest.mark.unit
-    def test_enable_hot_reload_setting_exists(self):
+    def test_enable_hot_reload_setting_exists(self) -> None:
         """Test that ENABLE_CONFIG_HOT_RELOAD setting exists."""
         from app.core.config import settings
 
@@ -711,7 +713,7 @@ class TestProviderConfigSummary:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_get_provider_config_summary(self, clean_env):
+    async def test_get_provider_config_summary(self, clean_env) -> None:
         """Test getting provider configuration summary."""
         from app.core.config_manager import config_manager
 
@@ -727,7 +729,7 @@ class TestProviderConfigSummary:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_summary_includes_encryption_status(self, clean_env):
+    async def test_summary_includes_encryption_status(self, clean_env) -> None:
         """Test that summary includes encryption status for each provider."""
         from app.core.config_manager import config_manager
         from app.core.encryption import encrypt_api_key
@@ -753,7 +755,7 @@ class TestProxyModeValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_validate_proxy_mode_when_enabled(self, clean_env):
+    async def test_validate_proxy_mode_when_enabled(self, clean_env) -> None:
         """Test proxy mode validation when enabled."""
         from app.core.config_manager import config_manager
 
@@ -766,7 +768,7 @@ class TestProxyModeValidation:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_proxy_mode_validation_provides_recommendations(self, clean_env):
+    async def test_proxy_mode_validation_provides_recommendations(self, clean_env) -> None:
         """Test that proxy mode validation provides helpful recommendations."""
         from app.core.config import APIConnectionMode, settings
         from app.core.config_manager import config_manager
@@ -795,21 +797,21 @@ class TestURLValidation:
     """Tests for endpoint URL validation."""
 
     @pytest.mark.unit
-    def test_validate_valid_https_url(self):
+    def test_validate_valid_https_url(self) -> None:
         """Test validation of valid HTTPS URL."""
         from app.core.config import settings
 
         assert settings.validate_endpoint_url("https://api.openai.com/v1") is True
 
     @pytest.mark.unit
-    def test_validate_valid_http_localhost(self):
+    def test_validate_valid_http_localhost(self) -> None:
         """Test validation of HTTP localhost URL."""
         from app.core.config import settings
 
         assert settings.validate_endpoint_url("http://localhost:8080") is True
 
     @pytest.mark.unit
-    def test_validate_invalid_url(self):
+    def test_validate_invalid_url(self) -> None:
         """Test validation of invalid URL."""
         from app.core.config import settings
 
@@ -818,7 +820,7 @@ class TestURLValidation:
         assert settings.validate_endpoint_url(None) is False
 
     @pytest.mark.unit
-    def test_validate_url_with_path(self):
+    def test_validate_url_with_path(self) -> None:
         """Test validation of URL with path."""
         from app.core.config import settings
 
@@ -835,7 +837,7 @@ class TestConfigurationIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_full_provider_validation_flow(self, sample_api_keys, clean_env):
+    async def test_full_provider_validation_flow(self, sample_api_keys, clean_env) -> None:
         """Test complete provider validation flow."""
         from app.core.config_manager import ProviderConfigValidator
 
@@ -857,7 +859,7 @@ class TestConfigurationIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_encrypted_key_validation(self, sample_api_keys, clean_env):
+    async def test_encrypted_key_validation(self, sample_api_keys, clean_env) -> None:
         """Test that encrypted keys can be validated."""
         from app.core.config_manager import ProviderConfigValidator
         from app.core.encryption import encrypt_api_key
@@ -873,7 +875,7 @@ class TestConfigurationIntegration:
         assert valid is True
 
     @pytest.mark.integration
-    def test_settings_and_config_are_same_instance(self):
+    def test_settings_and_config_are_same_instance(self) -> None:
         """Test that settings and config are the same instance (alias)."""
         from app.core.config import config, settings
 
@@ -889,7 +891,7 @@ class TestConfigurationPerformance:
     """Performance tests for configuration operations."""
 
     @pytest.mark.performance
-    def test_config_loading_performance(self):
+    def test_config_loading_performance(self) -> None:
         """Test that configuration loads within performance target (<100ms)."""
         import time
 
@@ -903,7 +905,7 @@ class TestConfigurationPerformance:
         assert elapsed_ms < 100, f"Config loading took {elapsed_ms:.2f}ms"
 
     @pytest.mark.performance
-    def test_encryption_performance(self, sample_api_keys):
+    def test_encryption_performance(self, sample_api_keys) -> None:
         """Test that encryption/decryption meets performance target (<10ms)."""
         import time
 
@@ -925,7 +927,7 @@ class TestConfigurationPerformance:
 
     @pytest.mark.performance
     @pytest.mark.asyncio
-    async def test_validation_performance(self, sample_api_keys):
+    async def test_validation_performance(self, sample_api_keys) -> None:
         """Test that validation completes quickly."""
         import time
 

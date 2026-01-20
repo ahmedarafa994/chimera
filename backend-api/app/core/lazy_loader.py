@@ -1,5 +1,4 @@
-"""
-Lazy Module Loading Utilities
+"""Lazy Module Loading Utilities.
 
 This module provides utilities for lazy loading of heavy Python modules to improve
 application startup time and reduce memory usage.
@@ -36,8 +35,7 @@ T = TypeVar("T")
 
 
 class LazyModule:
-    """
-    Proxy object that delays module import until first attribute access.
+    """Proxy object that delays module import until first attribute access.
 
     This is useful for heavy modules that are not always needed, improving
     application startup time and reducing initial memory usage.
@@ -48,11 +46,12 @@ class LazyModule:
 
         # Later, when accessed:
         result = autodan_framework.GeneticOptimizer()  # Import happens here
+
     """
 
     __slots__ = ("_accessed", "_module", "_module_name")
 
-    def __init__(self, module_name: str):
+    def __init__(self, module_name: str) -> None:
         object.__setattr__(self, "_module_name", module_name)
         object.__setattr__(self, "_module", None)
         object.__setattr__(self, "_accessed", False)
@@ -69,7 +68,7 @@ class LazyModule:
                 object.__setattr__(self, "_accessed", True)
                 logger.info(f"Successfully loaded module: {module_name}")
             except ImportError as e:
-                logger.error(f"Failed to lazy load module {module_name}: {e}")
+                logger.exception(f"Failed to lazy load module {module_name}: {e}")
                 raise
         return module
 
@@ -97,8 +96,7 @@ class LazyModule:
 
 
 class LazyServiceFactory(Generic[T]):
-    """
-    Factory for lazy service instantiation.
+    """Factory for lazy service instantiation.
 
     Services are only created when first accessed, not when the factory is created.
     Supports both sync and async initialization.
@@ -112,13 +110,14 @@ class LazyServiceFactory(Generic[T]):
         # No service created yet
 
         service = lazy_service.get()  # Service created here
+
     """
 
     def __init__(
         self,
         factory: Callable[[], T],
         name: str | None = None,
-    ):
+    ) -> None:
         self._factory = factory
         self._instance: T | None = None
         self._name = name or factory.__name__
@@ -128,7 +127,8 @@ class LazyServiceFactory(Generic[T]):
         """Get the service instance, creating it if necessary."""
         if self._instance is None:
             if self._creating:
-                raise RuntimeError(f"Circular dependency detected for service: {self._name}")
+                msg = f"Circular dependency detected for service: {self._name}"
+                raise RuntimeError(msg)
             self._creating = True
             try:
                 logger.debug(f"Lazy creating service: {self._name}")
@@ -153,8 +153,7 @@ class LazyServiceFactory(Generic[T]):
 
 
 def lazy_import(module_name: str) -> LazyModule:
-    """
-    Create a lazy module proxy.
+    """Create a lazy module proxy.
 
     Args:
         module_name: Fully qualified module name to lazy load
@@ -167,14 +166,14 @@ def lazy_import(module_name: str) -> LazyModule:
         # Module not loaded yet
 
         result = framework.optimize()  # Module loaded here
+
     """
     return LazyModule(module_name)
 
 
 @lru_cache(maxsize=128)
 def cached_import(module_name: str) -> Any:
-    """
-    Import and cache a module.
+    """Import and cache a module.
 
     This is useful when you need the actual module object and want to
     ensure it's only imported once.
@@ -184,20 +183,21 @@ def cached_import(module_name: str) -> Any:
 
     Returns:
         The imported module
+
     """
     logger.debug(f"Importing module (cached): {module_name}")
     return importlib.import_module(module_name)
 
 
 def preload_modules(*module_names: str) -> dict[str, Any]:
-    """
-    Preload multiple modules in parallel (useful for background initialization).
+    """Preload multiple modules in parallel (useful for background initialization).
 
     Args:
         module_names: Module names to preload
 
     Returns:
         Dict mapping module names to loaded modules
+
     """
     import concurrent.futures
 
@@ -214,7 +214,7 @@ def preload_modules(*module_names: str) -> dict[str, Any]:
                 results[name] = future.result()
                 logger.info(f"Preloaded module: {name}")
             except Exception as e:
-                logger.error(f"Failed to preload module {name}: {e}")
+                logger.exception(f"Failed to preload module {name}: {e}")
                 results[name] = None
 
     return results
@@ -226,8 +226,7 @@ _lazy_modules: dict[str, LazyModule] = {}
 
 
 def get_lazy_module(module_name: str) -> LazyModule:
-    """
-    Get or create a lazy module proxy.
+    """Get or create a lazy module proxy.
 
     Uses a cache to ensure the same LazyModule instance is returned
     for repeated calls with the same module name.

@@ -1,5 +1,4 @@
-"""
-Selection Repository - Database access layer for provider/model selections.
+"""Selection Repository - Database access layer for provider/model selections.
 
 This module provides database operations for persisting and retrieving
 user and session selections, implementing the Session Preference tier
@@ -19,31 +18,30 @@ logger = logging.getLogger(__name__)
 
 
 class SelectionRepository:
-    """
-    Repository for selection database operations.
+    """Repository for selection database operations.
 
     Provides methods for creating, retrieving, updating, and deleting
     user and session selections from the database.
     """
 
-    def __init__(self, session: AsyncSession):
-        """
-        Initialize selection repository.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize selection repository.
 
         Args:
             session: SQLAlchemy async session
+
         """
         self._session = session
 
     async def get_by_session_id(self, session_id: str) -> Selection | None:
-        """
-        Get selection for a session.
+        """Get selection for a session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             Selection if found, None otherwise
+
         """
         try:
             stmt = select(SelectionModel).where(SelectionModel.session_id == session_id)
@@ -52,7 +50,7 @@ class SelectionRepository:
 
             if model:
                 logger.debug(
-                    f"Found selection for session {session_id}: {model.provider_id}/{model.model_id}"
+                    f"Found selection for session {session_id}: {model.provider_id}/{model.model_id}",
                 )
                 return Selection(
                     provider_id=model.provider_id,
@@ -70,25 +68,25 @@ class SelectionRepository:
             return None
 
     async def get_by_user_id(self, user_id: str) -> Selection | None:
-        """
-        Get default selection for a user.
+        """Get default selection for a user.
 
         Args:
             user_id: User identifier
 
         Returns:
             Selection if found, None otherwise
+
         """
         try:
             stmt = select(SelectionModel).where(
-                and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None))
+                and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None)),
             )
             result = await self._session.execute(stmt)
             model = result.scalar_one_or_none()
 
             if model:
                 logger.debug(
-                    f"Found selection for user {user_id}: {model.provider_id}/{model.model_id}"
+                    f"Found selection for user {user_id}: {model.provider_id}/{model.model_id}",
                 )
                 return Selection(
                     provider_id=model.provider_id,
@@ -111,8 +109,7 @@ class SelectionRepository:
         session_id: str | None = None,
         user_id: str | None = None,
     ) -> Selection:
-        """
-        Create or update a selection.
+        """Create or update a selection.
 
         If a selection already exists for the session_id or user_id,
         it will be updated. Otherwise, a new selection is created.
@@ -128,9 +125,11 @@ class SelectionRepository:
 
         Raises:
             ValueError: If neither session_id nor user_id is provided
+
         """
         if not session_id and not user_id:
-            raise ValueError("Either session_id or user_id must be provided")
+            msg = "Either session_id or user_id must be provided"
+            raise ValueError(msg)
 
         try:
             # Check if selection exists
@@ -138,7 +137,7 @@ class SelectionRepository:
                 stmt = select(SelectionModel).where(SelectionModel.session_id == session_id)
             else:
                 stmt = select(SelectionModel).where(
-                    and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None))
+                    and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None)),
                 )
 
             result = await self._session.execute(stmt)
@@ -178,14 +177,14 @@ class SelectionRepository:
             raise
 
     async def delete_by_session_id(self, session_id: str) -> bool:
-        """
-        Delete selection for a session.
+        """Delete selection for a session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             True if deleted, False if not found
+
         """
         try:
             stmt = select(SelectionModel).where(SelectionModel.session_id == session_id)
@@ -207,18 +206,18 @@ class SelectionRepository:
             return False
 
     async def delete_by_user_id(self, user_id: str) -> bool:
-        """
-        Delete default selection for a user.
+        """Delete default selection for a user.
 
         Args:
             user_id: User identifier
 
         Returns:
             True if deleted, False if not found
+
         """
         try:
             stmt = select(SelectionModel).where(
-                and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None))
+                and_(SelectionModel.user_id == user_id, SelectionModel.session_id.is_(None)),
             )
             result = await self._session.execute(stmt)
             model = result.scalar_one_or_none()
@@ -240,13 +239,13 @@ class SelectionRepository:
 
 # Singleton instance getter
 def get_selection_repository(session: AsyncSession) -> SelectionRepository:
-    """
-    Get selection repository instance.
+    """Get selection repository instance.
 
     Args:
         session: SQLAlchemy async session
 
     Returns:
         SelectionRepository instance
+
     """
     return SelectionRepository(session)

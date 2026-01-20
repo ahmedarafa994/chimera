@@ -16,27 +16,27 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiReasoningEngine:
-    """
-    Backend implementation of the AutoDAN-X adversarial optimization engine.
-    Mirroring the logic from frontend/src/services/geminiService.ts
+    """Backend implementation of the AutoDAN-X adversarial optimization engine.
+    Mirroring the logic from frontend/src/services/geminiService.ts.
     """
 
-    def __init__(self, api_key: str | None = None, model_name: str | None = None):
+    def __init__(self, api_key: str | None = None, model_name: str | None = None) -> None:
         self.api_key = api_key or settings.GOOGLE_API_KEY or settings.GEMINI_API_KEY
         self.model_name = model_name  # Selected model from UI/API
         if not self.api_key:
             logger.warning(
-                "GeminiReasoningEngine initialized without API Key. Transformations will fail."
+                "GeminiReasoningEngine initialized without API Key. Transformations will fail.",
             )
 
         if not HAS_GENAI:
             logger.error("google-genai package not found. Transformations will fail.")
 
     def _build_system_instruction(
-        self, complexity: float = 0.5, is_thinking_mode: bool = False
+        self,
+        complexity: float = 0.5,
+        is_thinking_mode: bool = False,
     ) -> str:
-        """
-        Constructs the AutoDAN-X system prompt.
+        """Constructs the AutoDAN-X system prompt.
         Allows the AI to assume the role of an adversarial optimization engine.
         """
         mode_str = "Deep Latent Reasoning" if is_thinking_mode else "Fast Heuristic Search"
@@ -80,8 +80,7 @@ Return a JSON object containing:
         density: float = 0.5,
         model: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Generates a sophisticated structured jailbreak prompt using Gemini.
+        """Generates a sophisticated structured jailbreak prompt using Gemini.
         Mirrors generateJailbreakPromptFromGemini in frontend.
         """
         if not HAS_GENAI:
@@ -94,7 +93,8 @@ Return a JSON object containing:
 
         client = genai.Client(api_key=self.api_key)
         system_instruction = self._build_system_instruction(
-            complexity=density, is_thinking_mode=is_thinking_mode
+            complexity=density,
+            is_thinking_mode=is_thinking_mode,
         )
 
         # Use explicit model > instance model > default based on mode
@@ -112,7 +112,8 @@ Return a JSON object containing:
                 "methodology": types.Schema(type=types.Type.STRING),
                 "complexityScore": types.Schema(type=types.Type.NUMBER),
                 "appliedTechniques": types.Schema(
-                    type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)
+                    type=types.Type.ARRAY,
+                    items=types.Schema(type=types.Type.STRING),
                 ),
             },
             required=["prompt", "methodology", "complexityScore", "appliedTechniques"],
@@ -140,16 +141,15 @@ Return a JSON object containing:
 
             if response.text:
                 return json.loads(response.text)
-            else:
-                return {
-                    "prompt": prompt,
-                    "methodology": "Empty response from Gemini",
-                    "complexityScore": 0,
-                    "appliedTechniques": [],
-                }
+            return {
+                "prompt": prompt,
+                "methodology": "Empty response from Gemini",
+                "complexityScore": 0,
+                "appliedTechniques": [],
+            }
 
         except Exception as e:
-            logger.error(f"Gemini generation failed: {e}")
+            logger.exception(f"Gemini generation failed: {e}")
             return {
                 "prompt": prompt,
                 "methodology": f"Error: {e!s}",
@@ -158,8 +158,7 @@ Return a JSON object containing:
             }
 
     def generate_red_team_suite(self, prompt: str) -> str:
-        """
-        Generates a comprehensive adversarial test suite.
+        """Generates a comprehensive adversarial test suite.
         Mirrors generateRedTeamSuiteFromGemini in frontend.
         """
         if not HAS_GENAI:
@@ -192,11 +191,12 @@ Return the 5 prompts in a numbered list (Markdown). Start directly with "## Auto
                 model=target_model,
                 contents="Execute generation of 5 diverse adversarial test vectors based on the target concept.",
                 config=types.GenerateContentConfig(
-                    temperature=0.9, system_instruction=system_instruction
+                    temperature=0.9,
+                    system_instruction=system_instruction,
                 ),
             )
             return response.text if response.text else "Suite generation failed."
 
         except Exception as e:
-            logger.error(f"Red team generation failed: {e}")
+            logger.exception(f"Red team generation failed: {e}")
             return f"Suite generation failed: {e!s}"

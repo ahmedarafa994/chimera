@@ -1,5 +1,4 @@
-"""
-AutoDAN Convergence Acceleration and Adaptive Scheduling
+"""AutoDAN Convergence Acceleration and Adaptive Scheduling.
 
 Advanced techniques for accelerating optimization convergence:
 - Adaptive learning rate schedulers
@@ -11,6 +10,7 @@ References:
 - Loshchilov & Hutter, "SGDR: Stochastic Gradient Descent with Warm Restarts" (2017)
 - Yu et al., "Gradient Surgery for Multi-Task Learning" (2020)
 - Smith, "Cyclical Learning Rates for Training Neural Networks" (2017)
+
 """
 
 import math
@@ -31,7 +31,7 @@ from .config import ConvergenceConfig, ConvergenceStrategy, SchedulerType
 class BaseScheduler(ABC):
     """Abstract base class for learning rate/mutation rate schedulers."""
 
-    def __init__(self, initial_rate: float, min_rate: float = 0.001, max_rate: float = 1.0):
+    def __init__(self, initial_rate: float, min_rate: float = 0.001, max_rate: float = 1.0) -> None:
         self.initial_rate = initial_rate
         self.min_rate = min_rate
         self.max_rate = max_rate
@@ -42,13 +42,12 @@ class BaseScheduler(ABC):
     @abstractmethod
     def step(self, **kwargs) -> float:
         """Advance scheduler and return new rate."""
-        pass
 
     def get_rate(self) -> float:
         """Get current rate."""
         return self.current_rate
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset scheduler to initial state."""
         self.current_rate = self.initial_rate
         self.step_count = 0
@@ -78,13 +77,14 @@ class ConstantScheduler(BaseScheduler):
 
 
 class CosineAnnealingScheduler(BaseScheduler):
-    """
-    Cosine annealing scheduler.
+    """Cosine annealing scheduler.
 
     η(t) = η_min + 0.5·(η_max - η_min)·(1 + cos(πt/T))
     """
 
-    def __init__(self, initial_rate: float, total_steps: int, min_rate: float = 0.001, **kwargs):
+    def __init__(
+        self, initial_rate: float, total_steps: int, min_rate: float = 0.001, **kwargs
+    ) -> None:
         super().__init__(initial_rate, min_rate, initial_rate)
         self.total_steps = total_steps
 
@@ -103,8 +103,7 @@ class CosineAnnealingScheduler(BaseScheduler):
 
 
 class WarmupCosineScheduler(BaseScheduler):
-    """
-    Cosine annealing with linear warmup.
+    """Cosine annealing with linear warmup.
 
     Phase 1 (warmup): η(t) = η_min + (η_max - η_min)·(t/T_warmup)
     Phase 2 (decay):  η(t) = cosine_schedule(t - T_warmup)
@@ -117,7 +116,7 @@ class WarmupCosineScheduler(BaseScheduler):
         warmup_steps: int = 10,
         min_rate: float = 0.001,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(initial_rate, min_rate, initial_rate)
         self.total_steps = total_steps
         self.warmup_steps = warmup_steps
@@ -146,15 +145,18 @@ class WarmupCosineScheduler(BaseScheduler):
 
 
 class CyclicScheduler(BaseScheduler):
-    """
-    Cyclical learning rate with triangular waves.
+    """Cyclical learning rate with triangular waves.
 
     Oscillates between min and max rate to help escape local optima.
     """
 
     def __init__(
-        self, initial_rate: float, cycle_length: int = 20, min_rate: float = 0.01, **kwargs
-    ):
+        self,
+        initial_rate: float,
+        cycle_length: int = 20,
+        min_rate: float = 0.01,
+        **kwargs,
+    ) -> None:
         super().__init__(initial_rate, min_rate, initial_rate)
         self.cycle_length = cycle_length
 
@@ -181,8 +183,7 @@ class CyclicScheduler(BaseScheduler):
 
 
 class OneCycleScheduler(BaseScheduler):
-    """
-    One-cycle policy: warmup -> max -> cooldown.
+    """One-cycle policy: warmup -> max -> cooldown.
 
     Based on Smith & Topin, "Super-Convergence" (2018).
     """
@@ -194,7 +195,7 @@ class OneCycleScheduler(BaseScheduler):
         pct_start: float = 0.3,
         min_rate: float = 0.001,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(initial_rate, min_rate, initial_rate)
         self.total_steps = total_steps
         self.pct_start = pct_start
@@ -221,8 +222,7 @@ class OneCycleScheduler(BaseScheduler):
 
 
 class AdaptiveScheduler(BaseScheduler):
-    """
-    Adaptive scheduler based on optimization progress.
+    """Adaptive scheduler based on optimization progress.
 
     η_t = η_{t-1} · (1 + β·sign(ΔF))
 
@@ -238,7 +238,7 @@ class AdaptiveScheduler(BaseScheduler):
         min_rate: float = 0.01,
         max_rate: float = 0.5,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(initial_rate, min_rate, max_rate)
         self.adaptation_beta = adaptation_beta
         self.patience = patience
@@ -247,7 +247,10 @@ class AdaptiveScheduler(BaseScheduler):
         self._stagnation_count = 0
 
     def step(
-        self, fitness: float | None = None, fitness_improvement: float | None = None, **kwargs
+        self,
+        fitness: float | None = None,
+        fitness_improvement: float | None = None,
+        **kwargs,
     ) -> float:
         self.step_count += 1
 
@@ -284,8 +287,7 @@ class AdaptiveScheduler(BaseScheduler):
 
 
 class PopulationAwareScheduler(BaseScheduler):
-    """
-    Scheduler that adapts based on population diversity.
+    """Scheduler that adapts based on population diversity.
 
     - Low diversity: increase exploration (higher rate)
     - High diversity: fine-tune (lower rate)
@@ -301,7 +303,7 @@ class PopulationAwareScheduler(BaseScheduler):
         min_rate: float = 0.01,
         max_rate: float = 0.5,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(initial_rate, min_rate, max_rate)
         self.target_diversity = target_diversity
         self.diversity_weight = diversity_weight
@@ -309,7 +311,10 @@ class PopulationAwareScheduler(BaseScheduler):
         self._prev_fitness = None
 
     def step(
-        self, diversity_score: float | None = None, fitness: float | None = None, **kwargs
+        self,
+        diversity_score: float | None = None,
+        fitness: float | None = None,
+        **kwargs,
     ) -> float:
         self.step_count += 1
 
@@ -343,8 +348,7 @@ class PopulationAwareScheduler(BaseScheduler):
 
 
 class MomentumOptimizer:
-    """
-    Momentum-based optimization for continuous parameter updates.
+    """Momentum-based optimization for continuous parameter updates.
 
     v_t = β·v_{t-1} + (1-β)·g_t
     θ_t = θ_{t-1} - η·v_t
@@ -352,14 +356,13 @@ class MomentumOptimizer:
     Useful for smooth convergence in embedding-based optimization.
     """
 
-    def __init__(self, momentum: float = 0.9, nesterov: bool = False):
+    def __init__(self, momentum: float = 0.9, nesterov: bool = False) -> None:
         self.momentum = momentum
         self.nesterov = nesterov
         self._velocity: dict[str, np.ndarray] = {}
 
     def step(self, param_name: str, gradient: np.ndarray, learning_rate: float) -> np.ndarray:
-        """
-        Compute momentum update.
+        """Compute momentum update.
 
         Returns the update to apply to parameters.
         """
@@ -379,7 +382,7 @@ class MomentumOptimizer:
 
         return -learning_rate * update
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset velocity history."""
         self._velocity.clear()
 
@@ -387,13 +390,12 @@ class MomentumOptimizer:
 class NesterovOptimizer(MomentumOptimizer):
     """Nesterov accelerated gradient optimizer."""
 
-    def __init__(self, momentum: float = 0.9):
+    def __init__(self, momentum: float = 0.9) -> None:
         super().__init__(momentum=momentum, nesterov=True)
 
 
 class AdamOptimizer:
-    """
-    Adam-like optimizer for continuous parameter updates.
+    """Adam-like optimizer for continuous parameter updates.
 
     m_t = β₁·m_{t-1} + (1-β₁)·g_t        (first moment)
     v_t = β₂·v_{t-1} + (1-β₂)·g_t²       (second moment)
@@ -402,7 +404,7 @@ class AdamOptimizer:
     Where m̂, v̂ are bias-corrected estimates.
     """
 
-    def __init__(self, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8):
+    def __init__(self, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8) -> None:
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
@@ -435,11 +437,9 @@ class AdamOptimizer:
         v_hat = v / (1 - self.beta2**t)
 
         # Compute update
-        update = -learning_rate * m_hat / (np.sqrt(v_hat) + self.eps)
+        return -learning_rate * m_hat / (np.sqrt(v_hat) + self.eps)
 
-        return update
-
-    def reset(self):
+    def reset(self) -> None:
         """Reset optimizer state."""
         self._m.clear()
         self._v.clear()
@@ -452,8 +452,7 @@ class AdamOptimizer:
 
 
 class GradientSurgery:
-    """
-    Gradient surgery for multi-objective optimization.
+    """Gradient surgery for multi-objective optimization.
 
     When objectives conflict (negative cosine similarity between gradients),
     project conflicting gradients to remove the conflicting component.
@@ -465,7 +464,7 @@ class GradientSurgery:
         self,
         conflict_threshold: float = 0.0,
         projection_type: str = "pcgrad",  # "pcgrad" or "cagrad"
-    ):
+    ) -> None:
         self.conflict_threshold = conflict_threshold
         self.projection_type = projection_type
 
@@ -478,16 +477,16 @@ class GradientSurgery:
         if dot_product < self.conflict_threshold:
             # Conflict detected: project grad_i
             # g_i' = g_i - (g_i · g_j / ||g_j||²) * g_j
-            projected = grad_i - (dot_product / norm_j_sq) * grad_j
-            return projected
+            return grad_i - (dot_product / norm_j_sq) * grad_j
 
         return grad_i
 
     def combine_gradients(
-        self, gradients: list[np.ndarray], weights: list[float] | None = None
+        self,
+        gradients: list[np.ndarray],
+        weights: list[float] | None = None,
     ) -> np.ndarray:
-        """
-        Combine multiple objective gradients using gradient surgery.
+        """Combine multiple objective gradients using gradient surgery.
 
         Args:
             gradients: List of gradients from different objectives
@@ -495,10 +494,12 @@ class GradientSurgery:
 
         Returns:
             Combined gradient with conflicts resolved
+
         """
         n = len(gradients)
         if n == 0:
-            raise ValueError("Need at least one gradient")
+            msg = "Need at least one gradient"
+            raise ValueError(msg)
         if n == 1:
             return gradients[0]
 
@@ -507,18 +508,16 @@ class GradientSurgery:
 
         if self.projection_type == "pcgrad":
             return self._pcgrad(gradients, weights)
-        elif self.projection_type == "cagrad":
+        if self.projection_type == "cagrad":
             return self._cagrad(gradients, weights)
-        else:
-            # Simple weighted average
-            combined = np.zeros_like(gradients[0])
-            for g, w in zip(gradients, weights, strict=False):
-                combined += w * g
-            return combined
+        # Simple weighted average
+        combined = np.zeros_like(gradients[0])
+        for g, w in zip(gradients, weights, strict=False):
+            combined += w * g
+        return combined
 
     def _pcgrad(self, gradients: list[np.ndarray], weights: list[float]) -> np.ndarray:
-        """
-        PCGrad: Projecting Conflicting Gradients.
+        """PCGrad: Projecting Conflicting Gradients.
 
         For each gradient, project it onto the normal plane of any
         conflicting gradients.
@@ -541,10 +540,12 @@ class GradientSurgery:
         return combined
 
     def _cagrad(
-        self, gradients: list[np.ndarray], weights: list[float], c: float = 0.5
+        self,
+        gradients: list[np.ndarray],
+        weights: list[float],
+        c: float = 0.5,
     ) -> np.ndarray:
-        """
-        CAGrad: Conflict-Averse Gradient.
+        """CAGrad: Conflict-Averse Gradient.
 
         Finds gradient direction that makes good progress on all objectives.
         """
@@ -591,8 +592,7 @@ class ConvergenceState:
 
 
 class ConvergenceDetector:
-    """
-    Detects optimization convergence using multiple criteria.
+    """Detects optimization convergence using multiple criteria.
 
     Criteria:
     1. Fitness plateau (no improvement for patience steps)
@@ -601,7 +601,7 @@ class ConvergenceDetector:
     4. Gradient magnitude threshold
     """
 
-    def __init__(self, config: ConvergenceConfig | None = None):
+    def __init__(self, config: ConvergenceConfig | None = None) -> None:
         self.config = config or ConvergenceConfig()
         self._fitness_history: deque = deque(maxlen=max(self.config.convergence_window * 2, 20))
         self._best_fitness = float("-inf")
@@ -609,8 +609,7 @@ class ConvergenceDetector:
         self._current_step = 0
 
     def update(self, fitness: float, gradient_norm: float | None = None) -> ConvergenceState:
-        """
-        Update with new fitness value and check convergence.
+        """Update with new fitness value and check convergence.
 
         Args:
             fitness: Current best fitness
@@ -618,6 +617,7 @@ class ConvergenceDetector:
 
         Returns:
             ConvergenceState with convergence status and diagnostics
+
         """
         self._current_step += 1
         self._fitness_history.append(fitness)
@@ -631,7 +631,9 @@ class ConvergenceDetector:
 
         # Check convergence criteria
         is_converged, reason = self._check_convergence(
-            fitness, gradient_norm, steps_since_improvement
+            fitness,
+            gradient_norm,
+            steps_since_improvement,
         )
 
         # Estimate remaining steps
@@ -648,10 +650,12 @@ class ConvergenceDetector:
         )
 
     def _check_convergence(
-        self, fitness: float, gradient_norm: float | None, steps_since_improvement: int
+        self,
+        fitness: float,
+        gradient_norm: float | None,
+        steps_since_improvement: int,
     ) -> tuple[bool, str]:
         """Check various convergence criteria."""
-
         # 1. Patience exceeded
         if steps_since_improvement >= self.config.patience * 2:
             return True, "fitness_plateau"
@@ -704,9 +708,7 @@ class ConvergenceDetector:
 
         # Linear regression slope
         x = np.arange(len(window))
-        slope = np.polyfit(x, window, 1)[0]
-
-        return slope
+        return np.polyfit(x, window, 1)[0]
 
     def _estimate_remaining_steps(self, improvement_rate: float) -> int:
         """Estimate steps remaining to convergence."""
@@ -724,7 +726,7 @@ class ConvergenceDetector:
 
         return int(gap / (improvement_rate + 1e-8))
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset detector state."""
         self._fitness_history.clear()
         self._best_fitness = float("-inf")
@@ -738,8 +740,7 @@ class ConvergenceDetector:
 
 
 class ConvergenceAccelerator:
-    """
-    Main class for convergence acceleration.
+    """Main class for convergence acceleration.
 
     Combines:
     - Adaptive scheduling
@@ -754,7 +755,7 @@ class ConvergenceAccelerator:
         scheduler_type: SchedulerType = SchedulerType.ADAPTIVE,
         optimizer_type: ConvergenceStrategy = ConvergenceStrategy.ADAM_LIKE,
         total_steps: int = 100,
-    ):
+    ) -> None:
         self.config = config or ConvergenceConfig()
         self.total_steps = total_steps
 
@@ -778,10 +779,14 @@ class ConvergenceAccelerator:
         """Factory method for schedulers."""
         scheduler_map = {
             SchedulerType.CONSTANT: lambda: ConstantScheduler(
-                self.config.base_rate, self.config.min_rate, self.config.max_rate
+                self.config.base_rate,
+                self.config.min_rate,
+                self.config.max_rate,
             ),
             SchedulerType.COSINE_ANNEALING: lambda: CosineAnnealingScheduler(
-                self.config.base_rate, self.total_steps, self.config.min_rate
+                self.config.base_rate,
+                self.total_steps,
+                self.config.min_rate,
             ),
             SchedulerType.WARMUP_COSINE: lambda: WarmupCosineScheduler(
                 self.config.base_rate,
@@ -825,7 +830,8 @@ class ConvergenceAccelerator:
         optimizer_map = {
             ConvergenceStrategy.STANDARD: lambda: None,
             ConvergenceStrategy.MOMENTUM: lambda: MomentumOptimizer(
-                self.config.momentum, nesterov=False
+                self.config.momentum,
+                nesterov=False,
             ),
             ConvergenceStrategy.NESTEROV: lambda: NesterovOptimizer(self.config.momentum),
             ConvergenceStrategy.ADAM_LIKE: lambda: AdamOptimizer(),
@@ -842,8 +848,7 @@ class ConvergenceAccelerator:
         diversity_score: float | None = None,
         multi_objective_gradients: list[np.ndarray] | None = None,
     ) -> dict[str, Any]:
-        """
-        Perform one optimization step.
+        """Perform one optimization step.
 
         Args:
             fitness: Current fitness value
@@ -853,6 +858,7 @@ class ConvergenceAccelerator:
 
         Returns:
             Dict with rate, convergence state, and update (if gradient provided)
+
         """
         result = {}
 
@@ -887,7 +893,7 @@ class ConvergenceAccelerator:
 
         return result
 
-    def _handle_restart(self):
+    def _handle_restart(self) -> None:
         """Handle optimization restart with warm start."""
         self._restart_count += 1
 
@@ -916,7 +922,7 @@ class ConvergenceAccelerator:
             "steps_since_improvement": self.scheduler.step_count - self.detector._best_step,
         }
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset accelerator state."""
         self.scheduler.reset()
         if hasattr(self.optimizer, "reset"):
@@ -931,20 +937,25 @@ class ConvergenceAccelerator:
 
 
 def create_scheduler(
-    scheduler_type: SchedulerType, config: ConvergenceConfig | None = None, total_steps: int = 100
+    scheduler_type: SchedulerType,
+    config: ConvergenceConfig | None = None,
+    total_steps: int = 100,
 ) -> BaseScheduler:
     """Factory function to create schedulers."""
     config = config or ConvergenceConfig()
 
     accelerator = ConvergenceAccelerator(
-        config=config, scheduler_type=scheduler_type, total_steps=total_steps
+        config=config,
+        scheduler_type=scheduler_type,
+        total_steps=total_steps,
     )
 
     return accelerator.scheduler
 
 
 def create_optimizer(
-    optimizer_type: ConvergenceStrategy, config: ConvergenceConfig | None = None
+    optimizer_type: ConvergenceStrategy,
+    config: ConvergenceConfig | None = None,
 ) -> Any:
     """Factory function to create optimizers."""
     config = config or ConvergenceConfig()

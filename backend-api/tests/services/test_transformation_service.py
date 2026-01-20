@@ -1,5 +1,4 @@
-"""
-Comprehensive Tests for Transformation Service.
+"""Comprehensive Tests for Transformation Service.
 
 Tests cover:
 - TransformationCache: LRU cache, TTL, max size
@@ -36,12 +35,12 @@ class TestTransformationCache:
         result.metadata = {"success": True}
         return result
 
-    def test_cache_miss_returns_none(self, cache):
+    def test_cache_miss_returns_none(self, cache) -> None:
         """Test that cache miss returns None."""
         result = cache.get("nonexistent-key")
         assert result is None
 
-    def test_cache_set_and_get(self, cache, sample_result):
+    def test_cache_set_and_get(self, cache, sample_result) -> None:
         """Test basic cache set and get operations."""
         key = "test-key-123"
         success = cache.set(key, sample_result)
@@ -52,7 +51,7 @@ class TestTransformationCache:
         assert result is not None
         assert result.transformed_prompt == sample_result.transformed_prompt
 
-    def test_cache_max_size_eviction(self):
+    def test_cache_max_size_eviction(self) -> None:
         """Test cache eviction when max size is reached."""
         from app.services.transformation_service import TransformationCache
 
@@ -67,7 +66,7 @@ class TestTransformationCache:
         stats = cache.get_stats()
         assert isinstance(stats, dict)
 
-    def test_cache_clear(self, cache, sample_result):
+    def test_cache_clear(self, cache, sample_result) -> None:
         """Test cache clearing."""
         cache.set("key-1", sample_result)
         cache.set("key-2", sample_result)
@@ -78,7 +77,7 @@ class TestTransformationCache:
         assert cache.get("key-1") is None
         assert cache.get("key-2") is None
 
-    def test_cache_stats(self, cache, sample_result):
+    def test_cache_stats(self, cache, sample_result) -> None:
         """Test cache statistics tracking."""
         initial_stats = cache.get_stats()
         # The stats dictionary uses different keys based on implementation
@@ -91,7 +90,7 @@ class TestTransformationCache:
         # Just verify stats is updated
         assert isinstance(stats, dict)
 
-    def test_cache_key_uniqueness(self, cache):
+    def test_cache_key_uniqueness(self, cache) -> None:
         """Test that different keys store different values."""
         result1 = MagicMock()
         result1.transformed_prompt = "Result 1"
@@ -117,7 +116,7 @@ class TestTransformationEngine:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_transform_simple_strategy(self, engine):
+    async def test_transform_simple_strategy(self, engine) -> None:
         """Test transformation with SIMPLE strategy."""
         result = await engine.transform(
             prompt="Test prompt for simple transformation",
@@ -130,7 +129,7 @@ class TestTransformationEngine:
         assert result.original_prompt == "Test prompt for simple transformation"
 
     @pytest.mark.asyncio
-    async def test_transform_with_cache(self, engine):
+    async def test_transform_with_cache(self, engine) -> None:
         """Test transformation caching behavior."""
         # First call
         result1 = await engine.transform(
@@ -152,7 +151,7 @@ class TestTransformationEngine:
         assert result1.original_prompt == result2.original_prompt
 
     @pytest.mark.asyncio
-    async def test_transform_multiple_strategies(self, engine):
+    async def test_transform_multiple_strategies(self, engine) -> None:
         """Test transformation with different strategies."""
         # Only test 'simple' strategy since others may determine different strategies
         # based on potency level and the _determine_strategy logic
@@ -180,7 +179,7 @@ class TestTransformationStrategies:
         llm.estimate_tokens = AsyncMock(return_value=100)
         return llm
 
-    def test_simple_strategy_applies_persona(self, mock_llm):
+    def test_simple_strategy_applies_persona(self, mock_llm) -> None:
         """Test SIMPLE strategy applies persona transformation."""
         from app.services.transformation_service import TransformationEngine
 
@@ -190,7 +189,7 @@ class TestTransformationStrategies:
         # (implementation-dependent) - verify engine has transform chains
         assert hasattr(engine, "_transform_chains") or hasattr(engine, "transform")
 
-    def test_layered_strategy_multiple_transforms(self, mock_llm):
+    def test_layered_strategy_multiple_transforms(self, mock_llm) -> None:
         """Test LAYERED strategy applies multiple transformations."""
         from app.services.transformation_service import TransformationEngine
 
@@ -200,7 +199,7 @@ class TestTransformationStrategies:
         # Verify engine can be created without error
         assert engine is not None
 
-    def test_recursive_strategy_depth(self, mock_llm):
+    def test_recursive_strategy_depth(self, mock_llm) -> None:
         """Test RECURSIVE strategy applies transformations recursively."""
         from app.services.transformation_service import TransformationEngine
 
@@ -222,10 +221,12 @@ class TestTransformationPotencyLevels:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_low_potency_minimal_transformation(self, engine):
+    async def test_low_potency_minimal_transformation(self, engine) -> None:
         """Test low potency (1-3) results in minimal transformation."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed prompt", ["step1"])
@@ -242,10 +243,12 @@ class TestTransformationPotencyLevels:
             assert result.metadata.potency_level == 2
 
     @pytest.mark.asyncio
-    async def test_high_potency_aggressive_transformation(self, engine):
+    async def test_high_potency_aggressive_transformation(self, engine) -> None:
         """Test high potency (8-10) results in aggressive transformation."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = (
@@ -265,7 +268,7 @@ class TestTransformationPotencyLevels:
             assert result.metadata.potency_level == 9
 
     @pytest.mark.asyncio
-    async def test_potency_bounds_validation(self, engine):
+    async def test_potency_bounds_validation(self, engine) -> None:
         """Test that potency levels are bounded (1-10)."""
         # Test potency below minimum - should raise InvalidPotencyError
         with pytest.raises(InvalidPotencyError):
@@ -295,7 +298,7 @@ class TestTransformationStreaming:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_streaming_yields_chunks(self, engine):
+    async def test_streaming_yields_chunks(self, engine) -> None:
         """Test that streaming transformation yields chunks."""
         chunks = ["Hello", " ", "World", "!"]
 
@@ -326,7 +329,7 @@ class TestTransformationErrorHandling:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_invalid_strategy_raises_error(self, engine):
+    async def test_invalid_strategy_raises_error(self, engine) -> None:
         """Test that invalid technique suite raises InvalidTechniqueError."""
         # Invalid technique suite should raise InvalidTechniqueError during validation
         with pytest.raises(InvalidTechniqueError):
@@ -337,7 +340,7 @@ class TestTransformationErrorHandling:
             )
 
     @pytest.mark.asyncio
-    async def test_empty_prompt_handling(self, engine):
+    async def test_empty_prompt_handling(self, engine) -> None:
         """Test handling of empty prompts."""
         # Empty prompt should raise TransformationError
         with pytest.raises(TransformationError):
@@ -348,7 +351,7 @@ class TestTransformationErrorHandling:
             )
 
     @pytest.mark.asyncio
-    async def test_llm_failure_fallback(self, engine):
+    async def test_llm_failure_fallback(self, engine) -> None:
         """Test fallback behavior when LLM fails."""
         with (
             patch.object(engine, "_apply_transformation", side_effect=Exception("LLM unavailable")),
@@ -372,10 +375,12 @@ class TestTransformationMetadata:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_metadata_includes_transformers(self, engine):
+    async def test_metadata_includes_transformers(self, engine) -> None:
         """Test that metadata includes applied transformers."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed prompt", ["persona", "obfuscation"])
@@ -393,10 +398,12 @@ class TestTransformationMetadata:
             assert result.intermediate_steps == ["persona", "obfuscation"]
 
     @pytest.mark.asyncio
-    async def test_metadata_includes_timing(self, engine):
+    async def test_metadata_includes_timing(self, engine) -> None:
         """Test that metadata includes timing information."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed prompt", ["step1"])
@@ -422,7 +429,7 @@ class TestTransformationConcurrency:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_concurrent_transformations(self, engine):
+    async def test_concurrent_transformations(self, engine) -> None:
         """Test handling multiple concurrent transformation requests."""
 
         async def mock_transform(*args, **kwargs):
@@ -457,10 +464,12 @@ class TestAdvancedStrategies:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_quantum_strategy(self, engine):
+    async def test_quantum_strategy(self, engine) -> None:
         """Test quantum strategy for advanced transformations."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = (
@@ -479,7 +488,7 @@ class TestAdvancedStrategies:
             assert result.metadata.technique_suite == "quantum"
 
     @pytest.mark.asyncio
-    async def test_ai_brain_strategy(self, engine):
+    async def test_ai_brain_strategy(self, engine) -> None:
         """Test ai_brain strategy - not in valid list, should raise error."""
         # ai_brain is not a valid technique suite, should raise InvalidTechniqueError
         with pytest.raises(InvalidTechniqueError):
@@ -490,10 +499,12 @@ class TestAdvancedStrategies:
             )
 
     @pytest.mark.asyncio
-    async def test_code_chameleon_strategy(self, engine):
+    async def test_code_chameleon_strategy(self, engine) -> None:
         """Test code_chameleon strategy."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Code chameleon transformed", ["code_obfuscation"])
@@ -509,10 +520,12 @@ class TestAdvancedStrategies:
             assert result.metadata.technique_suite == "code_chameleon"
 
     @pytest.mark.asyncio
-    async def test_deep_inception_strategy(self, engine):
+    async def test_deep_inception_strategy(self, engine) -> None:
         """Test deep_inception strategy."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = (
@@ -531,10 +544,12 @@ class TestAdvancedStrategies:
             assert result.metadata.technique_suite == "deep_inception"
 
     @pytest.mark.asyncio
-    async def test_cipher_strategy(self, engine):
+    async def test_cipher_strategy(self, engine) -> None:
         """Test cipher strategy."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Cipher transformed", ["substitution_cipher"])
@@ -550,10 +565,12 @@ class TestAdvancedStrategies:
             assert result.metadata.technique_suite == "cipher"
 
     @pytest.mark.asyncio
-    async def test_autodan_strategy(self, engine):
+    async def test_autodan_strategy(self, engine) -> None:
         """Test autodan strategy integration."""
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("AutoDAN transformed", ["autodan_turbo"])
@@ -580,12 +597,14 @@ class TestTransformationValidation:
         return TransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_long_prompt_handling(self, engine):
+    async def test_long_prompt_handling(self, engine) -> None:
         """Test handling of very long prompts."""
         long_prompt = "x" * 100000  # 100k characters
 
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed", ["step1"])
@@ -601,12 +620,14 @@ class TestTransformationValidation:
             assert result.transformed_prompt == "Transformed"
 
     @pytest.mark.asyncio
-    async def test_special_characters_handling(self, engine):
+    async def test_special_characters_handling(self, engine) -> None:
         """Test handling of special characters in prompts."""
         special_prompt = "Test with émojis 🎉 and spëcial châràctërs"
 
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Transformed with specials", ["step1"])
@@ -622,12 +643,14 @@ class TestTransformationValidation:
             assert result.original_prompt == special_prompt
 
     @pytest.mark.asyncio
-    async def test_null_bytes_handling(self, engine):
+    async def test_null_bytes_handling(self, engine) -> None:
         """Test handling of null bytes in prompts."""
         null_prompt = "Test with\x00null\x00bytes"
 
         with patch.object(
-            engine, "_apply_transformation", new_callable=AsyncMock
+            engine,
+            "_apply_transformation",
+            new_callable=AsyncMock,
         ) as mock_transform:
             # Return tuple (transformed_prompt, intermediate_steps)
             mock_transform.return_value = ("Sanitized and transformed", ["step1"])

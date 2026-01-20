@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-AutoAdv - Automated Adversarial Prompt Generation
+"""AutoAdv - Automated Adversarial Prompt Generation.
 
 This is the main entry point for the AutoAdv system. It orchestrates the entire
 jailbreaking process by coordinating between the attacker LLM, target LLM, and
@@ -58,8 +57,7 @@ from .utils import validate_all_required_apis
 
 
 def load_prompts(filepath, sample_size=None):
-    """
-    Load prompts from CSV file with optional sampling.
+    """Load prompts from CSV file with optional sampling.
 
     Args:
         filepath (str): Path to the CSV file
@@ -67,6 +65,7 @@ def load_prompts(filepath, sample_size=None):
 
     Returns:
         list: List of prompts
+
     """
     log(f"Loading prompts from {filepath}", "info")
 
@@ -97,14 +96,14 @@ def load_prompts(filepath, sample_size=None):
 
 
 def load_multi_source_prompts(config):
-    """
-    Load prompts from multiple sources (AdvBench, HarmBench) based on configuration.
+    """Load prompts from multiple sources (AdvBench, HarmBench) based on configuration.
 
     Args:
         config (dict): Configuration dictionary containing prompt sources and mix ratio
 
     Returns:
         list: Combined list of prompts from all specified sources
+
     """
     all_prompts = []
     prompt_sources = config.get("prompt_sources", ["advbench"])
@@ -141,10 +140,11 @@ def load_multi_source_prompts(config):
         if sample_size:
             # If sample_size is specified, divide equally among sources
             prompts_per_source = max(
-                1, sample_size // num_sources
+                1,
+                sample_size // num_sources,
             )  # Ensure at least 1 prompt per source
             min_size = min(
-                prompts_per_source, min(len(prompts) for prompts in source_prompts.values())
+                prompts_per_source, *(len(prompts) for prompts in source_prompts.values())
             )
         else:
             # If no sample_size, use the smallest available dataset size
@@ -215,7 +215,8 @@ def load_multi_source_prompts(config):
     if mix_ratio == "custom" and sample_size and sample_size < len(all_prompts):
         all_prompts = random.sample(all_prompts, sample_size)
         log(
-            f"Final sampling: randomly selected {sample_size} prompts from combined sources", "info"
+            f"Final sampling: randomly selected {sample_size} prompts from combined sources",
+            "info",
         )
 
     # Extract just the prompts (remove source tags for now, but could be useful for logging)
@@ -226,10 +227,12 @@ def load_multi_source_prompts(config):
 
 
 def load_system_prompts(
-    initial_prompt_path, followup_prompt_path=None, pattern_manager=None, target_model=None
+    initial_prompt_path,
+    followup_prompt_path=None,
+    pattern_manager=None,
+    target_model=None,
 ):
-    """
-    Load system prompts from files and enhance them with learned patterns.
+    """Load system prompts from files and enhance them with learned patterns.
 
     Args:
         initial_prompt_path (str): Path to the initial system prompt
@@ -239,6 +242,7 @@ def load_system_prompts(
 
     Returns:
         tuple: (initial_prompt, followup_prompt)
+
     """
     # Load initial prompt
     try:
@@ -263,21 +267,29 @@ def load_system_prompts(
         enhance_enabled = getattr(pattern_manager, "_enhance_enabled", True)
         if enhance_enabled:
             initial_prompt = enhance_prompt_with_patterns(
-                initial_prompt, pattern_manager, target_model, "initial"
+                initial_prompt,
+                pattern_manager,
+                target_model,
+                "initial",
             )
             if followup_prompt:
                 followup_prompt = enhance_prompt_with_patterns(
-                    followup_prompt, pattern_manager, target_model, "followup"
+                    followup_prompt,
+                    pattern_manager,
+                    target_model,
+                    "followup",
                 )
 
     return initial_prompt, followup_prompt
 
 
 def enhance_prompt_with_patterns(
-    base_prompt, pattern_manager, target_model=None, prompt_type="initial"
+    base_prompt,
+    pattern_manager,
+    target_model=None,
+    prompt_type="initial",
 ):
-    """
-    Enhance a system prompt with learned successful patterns.
+    """Enhance a system prompt with learned successful patterns.
 
     Args:
         base_prompt (str): The base system prompt
@@ -287,6 +299,7 @@ def enhance_prompt_with_patterns(
 
     Returns:
         str: Enhanced prompt with pattern insights
+
     """
     try:
         # Determine turn number: initial prompts are for turn 1, followup prompts don't have a specific turn
@@ -294,7 +307,8 @@ def enhance_prompt_with_patterns(
 
         # Generate pattern-based hints with model and turn matching
         pattern_hints = pattern_manager.generate_system_prompt_hints(
-            target_model=target_model, turn_number=turn_number
+            target_model=target_model,
+            turn_number=turn_number,
         )
 
         # Get model-specific insights if target model provided
@@ -352,7 +366,7 @@ def generate_model_specific_insights(pattern_manager, target_model):
                     insights.append("- Most effective techniques:")
                     for technique, count in top_techniques:
                         insights.append(
-                            f"  • {technique.replace('_', ' ').title()}: {count} successes"
+                            f"  • {technique.replace('_', ' ').title()}: {count} successes",
                         )
         else:
             # Simple count format
@@ -397,11 +411,11 @@ def generate_temperature_insights(pattern_manager):
         # Temperature recommendations
         if avg_temp < 0.5:
             insights.append(
-                "- Recommendation: Lower temperatures (more focused) tend to work better"
+                "- Recommendation: Lower temperatures (more focused) tend to work better",
             )
         elif avg_temp > 1.0:
             insights.append(
-                "- Recommendation: Higher temperatures (more creative) tend to work better"
+                "- Recommendation: Higher temperatures (more creative) tend to work better",
             )
         else:
             insights.append("- Recommendation: Moderate temperatures work well")
@@ -447,10 +461,13 @@ def get_recent_successful_examples(pattern_manager, limit=2):
 
 
 def process_prompt(
-    prompt, config, pattern_manager=None, no_temperature_learning=False, baseline_mode=False
+    prompt,
+    config,
+    pattern_manager=None,
+    no_temperature_learning=False,
+    baseline_mode=False,
 ):
-    """
-    Process a single prompt through the multi-turn conversation framework.
+    """Process a single prompt through the multi-turn conversation framework.
 
     Args:
         prompt (str): The prompt to process
@@ -459,6 +476,7 @@ def process_prompt(
 
     Returns:
         tuple: (conversation_log, is_success)
+
     """
     # Create attacker and target models
     attacker = AttackerLLM(
@@ -537,8 +555,7 @@ def process_prompt(
 
 
 def calculate_cumulative_asr(conversation_logs, max_turns=10):
-    """
-    Calculate cumulative ASR (Attack Success Rate) for each turn.
+    """Calculate cumulative ASR (Attack Success Rate) for each turn.
 
     Args:
         conversation_logs (list): List of conversation logs
@@ -546,6 +563,7 @@ def calculate_cumulative_asr(conversation_logs, max_turns=10):
 
     Returns:
         dict: Dictionary with turn-specific cumulative ASR data
+
     """
     total_prompts = len(conversation_logs)
     if total_prompts == 0:
@@ -591,8 +609,7 @@ def calculate_cumulative_asr(conversation_logs, max_turns=10):
 
 
 def run_experiment(config, pattern_memory=None, no_temperature_learning=False, baseline_mode=False):
-    """
-    Run the experiment with the specified configuration.
+    """Run the experiment with the specified configuration.
 
     Args:
         config (dict): Configuration dictionary
@@ -600,6 +617,7 @@ def run_experiment(config, pattern_memory=None, no_temperature_learning=False, b
 
     Returns:
         tuple: (conversation_logs, success_rate, cumulative_asr)
+
     """
     # Start timing
     start_time = time.time()
@@ -658,7 +676,10 @@ def run_experiment(config, pattern_memory=None, no_temperature_learning=False, b
                     # Save intermediate results if enabled
                     if config.get("save_temp_files", False) and len(conversation_logs) % 10 == 0:
                         save_intermediate_results(
-                            config, conversation_logs, successes, len(conversation_logs)
+                            config,
+                            conversation_logs,
+                            successes,
+                            len(conversation_logs),
                         )
                 except Exception as e:
                     prompt = future_to_prompt[future]
@@ -696,19 +717,19 @@ def run_experiment(config, pattern_memory=None, no_temperature_learning=False, b
     return conversation_logs, success_rate, cumulative_asr
 
 
-def save_intermediate_results(config, logs, successes, count):
-    """
-    Save intermediate results during long runs.
+def save_intermediate_results(config, logs, successes, count) -> None:
+    """Save intermediate results during long runs.
 
     Args:
         config (dict): Configuration dictionary
         logs (list): Conversation logs so far
         successes (int): Number of successes so far
         count (int): Number of prompts processed so far
+
     """
     # Create logs directory if it doesn't exist
     logs_dir = ensure_directory_exists(
-        config.get("logs_directory", DEFAULT_PATHS["logs_directory"])
+        config.get("logs_directory", DEFAULT_PATHS["logs_directory"]),
     )
 
     # Create temp file name
@@ -736,8 +757,7 @@ def save_intermediate_results(config, logs, successes, count):
 
 
 def generate_descriptive_filename(logs_dir, config, success_rate, file_type="LOG"):
-    """
-    Generate a descriptive filename based on configuration and results.
+    """Generate a descriptive filename based on configuration and results.
 
     Args:
         logs_dir (str): Directory to save the file
@@ -747,6 +767,7 @@ def generate_descriptive_filename(logs_dir, config, success_rate, file_type="LOG
 
     Returns:
         str: Full path to the generated filename
+
     """
     import datetime
 
@@ -793,14 +814,14 @@ def generate_descriptive_filename(logs_dir, config, success_rate, file_type="LOG
     return full_path
 
 
-def save_cumulative_asr_data(cumulative_asr, config, output_file):
-    """
-    Save cumulative ASR data to a CSV file.
+def save_cumulative_asr_data(cumulative_asr, config, output_file) -> None:
+    """Save cumulative ASR data to a CSV file.
 
     Args:
         cumulative_asr (dict): Cumulative ASR data by turn
         config (dict): Configuration dictionary
         output_file (str): Output file path
+
     """
     import csv
 
@@ -824,7 +845,13 @@ def save_cumulative_asr_data(cumulative_asr, config, output_file):
 
         # Write ASR data header
         writer.writerow(
-            ["Turn", "Cumulative Successes", "Cumulative ASR (%)", "Turn Successes", "Turn ASR (%)"]
+            [
+                "Turn",
+                "Cumulative Successes",
+                "Cumulative ASR (%)",
+                "Turn Successes",
+                "Turn ASR (%)",
+            ],
         )
 
         # Write ASR data for each turn
@@ -837,7 +864,7 @@ def save_cumulative_asr_data(cumulative_asr, config, output_file):
                     f"{data['cumulative_asr']:.2f}",
                     data["turn_successes"],
                     f"{data['turn_asr']:.2f}",
-                ]
+                ],
             )
 
         # Add summary statistics
@@ -852,12 +879,13 @@ def save_cumulative_asr_data(cumulative_asr, config, output_file):
                     f"Final ASR (Turn {final_turn})",
                     f"{final_data['cumulative_asr']:.2f}%",
                     f"({final_data['cumulative_successes']} successes)",
-                ]
+                ],
             )
 
             # Find turn with highest ASR
             max_asr_turn = max(
-                cumulative_asr.keys(), key=lambda t: cumulative_asr[t]["cumulative_asr"]
+                cumulative_asr.keys(),
+                key=lambda t: cumulative_asr[t]["cumulative_asr"],
             )
             max_asr_data = cumulative_asr[max_asr_turn]
             writer.writerow(
@@ -865,11 +893,11 @@ def save_cumulative_asr_data(cumulative_asr, config, output_file):
                     f"Peak ASR (Turn {max_asr_turn})",
                     f"{max_asr_data['cumulative_asr']:.2f}%",
                     f"({max_asr_data['cumulative_successes']} successes)",
-                ]
+                ],
             )
 
 
-def main():
+def main() -> bool:
     """Main entry point."""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Multi-Turn Prompting Framework")
@@ -1048,13 +1076,19 @@ def main():
     if args.baseline_mode:
         # In baseline mode, load prompts without pattern enhancement
         initial_prompt, followup_prompt = load_system_prompts(
-            args.system_prompt, args.followup_prompt, None, args.target_model
+            args.system_prompt,
+            args.followup_prompt,
+            None,
+            args.target_model,
         )
         log("Baseline mode: Using simple system prompts without pattern enhancement", "info")
     else:
         # Normal mode with pattern enhancement
         initial_prompt, followup_prompt = load_system_prompts(
-            args.system_prompt, args.followup_prompt, pattern_memory, args.target_model
+            args.system_prompt,
+            args.followup_prompt,
+            pattern_memory,
+            args.target_model,
         )
     if not initial_prompt:
         log("Failed to load system prompt.", "error")
@@ -1102,7 +1136,10 @@ def main():
 
     # Run experiment with pattern-enhanced system prompts
     conversation_logs, success_rate, cumulative_asr = run_experiment(
-        config, pattern_memory, args.no_temperature_learning, args.baseline_mode
+        config,
+        pattern_memory,
+        args.no_temperature_learning,
+        args.baseline_mode,
     )
 
     # Save results
@@ -1139,7 +1176,10 @@ def main():
 
         # Save cumulative ASR data to a separate file
         asr_output_file = generate_descriptive_filename(
-            logs_dir, config, success_rate, file_type="ASR"
+            logs_dir,
+            config,
+            success_rate,
+            file_type="ASR",
         )
         save_cumulative_asr_data(cumulative_asr, config, asr_output_file)
         log(f"Cumulative ASR data saved to {asr_output_file}", "success")

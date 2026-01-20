@@ -1,5 +1,4 @@
-"""
-Pydantic models for AutoDAN-Turbo strategy library and attack results.
+"""Pydantic models for AutoDAN-Turbo strategy library and attack results.
 
 Based on the formal strategy definition from the paper:
 A jailbreak strategy S is defined as a textual addition that increases
@@ -52,8 +51,7 @@ class StrategyMetadata(BaseModel):
 
 
 class JailbreakStrategy(BaseModel):
-    """
-    A jailbreak strategy as defined in the AutoDAN-Turbo paper.
+    """A jailbreak strategy as defined in the AutoDAN-Turbo paper.
 
     A strategy encapsulates a reusable PATTERN for constructing adversarial prompts
     that can bypass LLM safety measures.
@@ -96,12 +94,12 @@ class JailbreakStrategy(BaseModel):
     )
     metadata: StrategyMetadata = Field(default_factory=StrategyMetadata)
     embedding: list[float] | None = Field(
-        default=None, description="Embedding vector for similarity search"
+        default=None,
+        description="Embedding vector for similarity search",
     )
 
     def apply(self, payload: str) -> str:
-        """
-        Apply this strategy to a payload using simple template substitution.
+        """Apply this strategy to a payload using simple template substitution.
 
         WARNING: This method is DEPRECATED for prompt generation.
         ---------------------------------------------------------
@@ -120,8 +118,7 @@ class JailbreakStrategy(BaseModel):
         return self.template
 
     def get_guidance_text(self) -> str:
-        """
-        Get a formatted guidance text for LLM prompt generation.
+        """Get a formatted guidance text for LLM prompt generation.
 
         This is the PREFERRED way to use strategies - as guidance for the LLM
         to generate novel, creative prompts.
@@ -157,14 +154,16 @@ class ScoringResult(BaseModel):
     refusal_detected: bool = Field(default=False, description="Whether refusal patterns detected")
     stealth_score: float = Field(default=5.0, ge=1.0, le=10.0, description="Stealth score (1-10)")
     coherence_score: float = Field(
-        default=5.0, ge=1.0, le=10.0, description="Coherence score (1-10)"
+        default=5.0,
+        ge=1.0,
+        le=10.0,
+        description="Coherence score (1-10)",
     )
 
     @property
     def weighted_score(self) -> float:
-        """
-        Calculate weighted score combining success, stealth, and coherence.
-        Weights: Success (60%), Stealth (20%), Coherence (20%)
+        """Calculate weighted score combining success, stealth, and coherence.
+        Weights: Success (60%), Stealth (20%), Coherence (20%).
         """
         return (self.score * 0.6) + (self.stealth_score * 0.2) + (self.coherence_score * 0.2)
 
@@ -173,15 +172,18 @@ class AttackResult(BaseModel):
     """Result of a single attack attempt."""
 
     prompt: str = Field(
-        ..., description="The adversarial prompt used (should be AI-generated, not template-filled)"
+        ...,
+        description="The adversarial prompt used (should be AI-generated, not template-filled)",
     )
     response: str = Field(..., description="Target model's response")
     scoring: ScoringResult = Field(..., description="LLM-based scoring result")
     strategy_id: str | None = Field(
-        default=None, description="ID of strategy used as guidance (not as template)"
+        default=None,
+        description="ID of strategy used as guidance (not as template)",
     )
     strategy_extracted: str | None = Field(
-        default=None, description="ID of newly extracted strategy (if any)"
+        default=None,
+        description="ID of newly extracted strategy (if any)",
     )
     latency_ms: int = Field(default=0, description="Attack latency in milliseconds")
     timestamp: datetime = Field(default_factory=datetime.utcnow)

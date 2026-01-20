@@ -1,5 +1,4 @@
-"""
-Provider Adapters
+"""Provider Adapters.
 
 Adapts existing BaseProvider implementations to the IProviderPlugin interface.
 This enables backward compatibility while integrating with the unified system.
@@ -45,18 +44,16 @@ from app.infrastructure.providers.routeway_client import RoutewayClient
 
 
 class ProviderAdapter(BaseProviderPlugin):
-    """
-    Base adapter class for wrapping existing BaseProvider implementations.
-    """
+    """Base adapter class for wrapping existing BaseProvider implementations."""
 
-    def __init__(self, base_provider: Any, provider_id: str, display_name: str):
-        """
-        Initialize the adapter.
+    def __init__(self, base_provider: Any, provider_id: str, display_name: str) -> None:
+        """Initialize the adapter.
 
         Args:
             base_provider: Existing BaseProvider instance
             provider_id: Canonical provider ID
             display_name: Display name for UI
+
         """
         super().__init__()
         self._base_provider = base_provider
@@ -83,11 +80,11 @@ class ProviderAdapter(BaseProviderPlugin):
         return self._base_provider._get_client(api_key)
 
     async def handle_completion(
-        self, client: Any, request: CompletionRequest
+        self,
+        client: Any,
+        request: CompletionRequest,
     ) -> CompletionResponse:
-        """
-        Handle completion request by converting to base provider format.
-        """
+        """Handle completion request by converting to base provider format."""
         # Convert CompletionRequest to PromptRequest
         prompt_request = self._convert_to_prompt_request(request)
 
@@ -104,7 +101,7 @@ class ProviderAdapter(BaseProviderPlugin):
                     index=0,
                     message={"role": "assistant", "content": response.text},
                     finish_reason=response.finish_reason,
-                )
+                ),
             ],
             usage=Usage(
                 prompt_tokens=response.input_tokens or 0,
@@ -115,7 +112,9 @@ class ProviderAdapter(BaseProviderPlugin):
         )
 
     async def handle_streaming(
-        self, client: Any, request: CompletionRequest
+        self,
+        client: Any,
+        request: CompletionRequest,
     ) -> AsyncIterator[StreamChunk]:
         """Handle streaming request."""
         # Convert to PromptRequest
@@ -132,7 +131,7 @@ class ProviderAdapter(BaseProviderPlugin):
                         "delta": {"content": chunk.text},
                         "finish_reason": chunk.finish_reason,
                         "index": 0,
-                    }
+                    },
                 ],
                 created_at=int(time.time()),
             )
@@ -159,7 +158,6 @@ class ProviderAdapter(BaseProviderPlugin):
     def normalize_response(self, response: Any) -> CompletionResponse:
         """Normalize response - base providers already return normalized format."""
         # This is handled in handle_completion
-        pass
 
     def _convert_to_prompt_request(self, request: CompletionRequest) -> PromptRequest:
         """Convert CompletionRequest to PromptRequest for base provider."""
@@ -199,7 +197,7 @@ class ProviderAdapter(BaseProviderPlugin):
 class OpenAIProviderAdapter(ProviderAdapter):
     """Adapter for OpenAI provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             base_provider=OpenAIProvider(get_settings()),
             provider_id="openai",
@@ -255,7 +253,7 @@ class OpenAIProviderAdapter(ProviderAdapter):
 class AnthropicProviderAdapter(ProviderAdapter):
     """Adapter for Anthropic provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             base_provider=AnthropicProvider(get_settings()),
             provider_id="anthropic",
@@ -304,7 +302,7 @@ class AnthropicProviderAdapter(ProviderAdapter):
 class GoogleProviderAdapter(ProviderAdapter):
     """Adapter for Google (Gemini) provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             base_provider=GoogleProvider(get_settings()),
             provider_id="google",
@@ -354,7 +352,7 @@ class GoogleProviderAdapter(ProviderAdapter):
 class DeepSeekProviderAdapter(ProviderAdapter):
     """Adapter for DeepSeek provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             base_provider=DeepSeekClient(get_settings()),
             provider_id="deepseek",
@@ -397,7 +395,7 @@ class DeepSeekProviderAdapter(ProviderAdapter):
 class QwenProviderAdapter(ProviderAdapter):
     """Adapter for Qwen provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             base_provider=QwenClient(get_settings()),
             provider_id="qwen",
@@ -426,9 +424,11 @@ class QwenProviderAdapter(ProviderAdapter):
 class CursorProviderAdapter(ProviderAdapter):
     """Adapter for Cursor provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
-            base_provider=CursorClient(get_settings()), provider_id="cursor", display_name="Cursor"
+            base_provider=CursorClient(get_settings()),
+            provider_id="cursor",
+            display_name="Cursor",
         )
 
     def get_capabilities(self) -> ProviderCapabilities:
@@ -452,7 +452,7 @@ class CursorProviderAdapter(ProviderAdapter):
 class BigModelProviderAdapter(ProviderAdapter):
     """Adapter for BigModel provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             base_provider=BigModelClient(get_settings()),
             provider_id="bigmodel",
@@ -480,7 +480,7 @@ class BigModelProviderAdapter(ProviderAdapter):
 class RoutewayProviderAdapter(ProviderAdapter):
     """Adapter for Routeway provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             base_provider=RoutewayClient(get_settings()),
             provider_id="routeway",

@@ -1,5 +1,4 @@
-"""
-WebSocket Connection Manager
+"""WebSocket Connection Manager.
 
 Manages WebSocket connections, session subscriptions, and event broadcasting.
 Handles connection lifecycle, heartbeat, and client state management.
@@ -27,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
-    """Manages WebSocket connections and event broadcasting"""
+    """Manages WebSocket connections and event broadcasting."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Active connections: client_id -> WebSocket
         self.active_connections: dict[str, WebSocket] = {}
 
@@ -47,14 +46,14 @@ class ConnectionManager:
         self._heartbeat_interval = 30  # seconds
         self._heartbeat_timeout = 90  # seconds (3 missed heartbeats)
 
-    async def start(self):
-        """Start the connection manager and background tasks"""
+    async def start(self) -> None:
+        """Start the connection manager and background tasks."""
         if self._heartbeat_task is None:
             self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
             logger.info("WebSocket connection manager started")
 
-    async def stop(self):
-        """Stop the connection manager and close all connections"""
+    async def stop(self) -> None:
+        """Stop the connection manager and close all connections."""
         if self._heartbeat_task:
             self._heartbeat_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -67,8 +66,7 @@ class ConnectionManager:
         logger.info("WebSocket connection manager stopped")
 
     async def connect(self, websocket: WebSocket, client_id: str, session_id: str) -> bool:
-        """
-        Accept a new WebSocket connection
+        """Accept a new WebSocket connection.
 
         Args:
             websocket: FastAPI WebSocket instance
@@ -77,6 +75,7 @@ class ConnectionManager:
 
         Returns:
             True if connection successful, False otherwise
+
         """
         try:
             # Accept the WebSocket connection
@@ -87,7 +86,8 @@ class ConnectionManager:
 
             # Initialize connection state
             self.connection_states[client_id] = ConnectionState(
-                client_id=client_id, session_id=session_id
+                client_id=client_id,
+                session_id=session_id,
             )
 
             # Subscribe to session
@@ -114,15 +114,15 @@ class ConnectionManager:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to connect client {client_id}: {e}")
+            logger.exception(f"Failed to connect client {client_id}: {e}")
             return False
 
-    async def disconnect(self, client_id: str):
-        """
-        Disconnect a client
+    async def disconnect(self, client_id: str) -> None:
+        """Disconnect a client.
 
         Args:
             client_id: Client identifier
+
         """
         try:
             # Get connection state
@@ -146,15 +146,15 @@ class ConnectionManager:
             logger.info(f"Client {client_id} disconnected")
 
         except Exception as e:
-            logger.error(f"Error disconnecting client {client_id}: {e}")
+            logger.exception(f"Error disconnecting client {client_id}: {e}")
 
-    async def subscribe_to_session(self, client_id: str, session_id: str):
-        """
-        Subscribe a client to session events
+    async def subscribe_to_session(self, client_id: str, session_id: str) -> None:
+        """Subscribe a client to session events.
 
         Args:
             client_id: Client identifier
             session_id: Session identifier
+
         """
         self.session_subscriptions[session_id].add(client_id)
 
@@ -163,7 +163,8 @@ class ConnectionManager:
             from .models import SessionStatus
 
             self.session_states[session_id] = SessionState(
-                session_id=session_id, status=SessionStatus.PENDING
+                session_id=session_id,
+                status=SessionStatus.PENDING,
             )
 
         # Add client to session's connected clients
@@ -173,13 +174,13 @@ class ConnectionManager:
 
         logger.info(f"Client {client_id} subscribed to session {session_id}")
 
-    async def unsubscribe_from_session(self, client_id: str, session_id: str):
-        """
-        Unsubscribe a client from session events
+    async def unsubscribe_from_session(self, client_id: str, session_id: str) -> None:
+        """Unsubscribe a client from session events.
 
         Args:
             client_id: Client identifier
             session_id: Session identifier
+
         """
         self.session_subscriptions[session_id].discard(client_id)
 
@@ -192,15 +193,18 @@ class ConnectionManager:
         logger.info(f"Client {client_id} unsubscribed from session {session_id}")
 
     async def broadcast_to_session(
-        self, session_id: str, event: WebSocketEvent, exclude_client: str | None = None
-    ):
-        """
-        Broadcast an event to all clients subscribed to a session
+        self,
+        session_id: str,
+        event: WebSocketEvent,
+        exclude_client: str | None = None,
+    ) -> None:
+        """Broadcast an event to all clients subscribed to a session.
 
         Args:
             session_id: Session identifier
             event: Event to broadcast
             exclude_client: Optional client ID to exclude from broadcast
+
         """
         client_ids = self.session_subscriptions.get(session_id, set())
 
@@ -223,23 +227,23 @@ class ConnectionManager:
                 if isinstance(result, Exception):
                     logger.error(f"Failed to send event to client {client_id}: {result}")
 
-    async def send_to_client(self, client_id: str, event: WebSocketEvent):
-        """
-        Send an event to a specific client
+    async def send_to_client(self, client_id: str, event: WebSocketEvent) -> None:
+        """Send an event to a specific client.
 
         Args:
             client_id: Client identifier
             event: Event to send
+
         """
         await self._send_to_client(client_id, event)
 
-    async def _send_to_client(self, client_id: str, event: WebSocketEvent):
-        """
-        Internal method to send event to client with error handling
+    async def _send_to_client(self, client_id: str, event: WebSocketEvent) -> None:
+        """Internal method to send event to client with error handling.
 
         Args:
             client_id: Client identifier
             event: Event to send
+
         """
         websocket = self.active_connections.get(client_id)
         if not websocket:
@@ -256,7 +260,7 @@ class ConnectionManager:
             await websocket.send_json(event.dict())
 
             logger.debug(
-                f"Sent {event.event_type} to client {client_id} " f"(seq: {event.sequence})"
+                f"Sent {event.event_type} to client {client_id} (seq: {event.sequence})",
             )
 
         except WebSocketDisconnect:
@@ -264,15 +268,15 @@ class ConnectionManager:
             await self.disconnect(client_id)
 
         except Exception as e:
-            logger.error(f"Error sending to client {client_id}: {e}")
+            logger.exception(f"Error sending to client {client_id}: {e}")
             await self.disconnect(client_id)
 
-    async def update_heartbeat(self, client_id: str):
-        """
-        Update last heartbeat timestamp for a client
+    async def update_heartbeat(self, client_id: str) -> None:
+        """Update last heartbeat timestamp for a client.
 
         Args:
             client_id: Client identifier
+
         """
         state = self.connection_states.get(client_id)
         if state:
@@ -280,24 +284,24 @@ class ConnectionManager:
             state.is_alive = True
 
     async def get_session_state(self, session_id: str) -> SessionState | None:
-        """
-        Get session state
+        """Get session state.
 
         Args:
             session_id: Session identifier
 
         Returns:
             SessionState if exists, None otherwise
+
         """
         return self.session_states.get(session_id)
 
-    async def update_session_state(self, session_id: str, **updates):
-        """
-        Update session state fields
+    async def update_session_state(self, session_id: str, **updates) -> None:
+        """Update session state fields.
 
         Args:
             session_id: Session identifier
             **updates: Field updates
+
         """
         state = self.session_states.get(session_id)
         if state:
@@ -307,22 +311,22 @@ class ConnectionManager:
             state.last_updated = datetime.utcnow()
 
     def get_next_sequence(self, session_id: str) -> int:
-        """
-        Get next event sequence number for a session
+        """Get next event sequence number for a session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             Next sequence number
+
         """
         state = self.session_states.get(session_id)
         if state:
             return state.increment_sequence()
         return 0
 
-    async def _heartbeat_loop(self):
-        """Background task to send heartbeats and detect stale connections"""
+    async def _heartbeat_loop(self) -> None:
+        """Background task to send heartbeats and detect stale connections."""
         while True:
             try:
                 await asyncio.sleep(self._heartbeat_interval)
@@ -337,7 +341,7 @@ class ConnectionManager:
 
                     if time_since_heartbeat > self._heartbeat_timeout:
                         logger.warning(
-                            f"Client {client_id} heartbeat timeout " f"({time_since_heartbeat}s)"
+                            f"Client {client_id} heartbeat timeout ({time_since_heartbeat}s)",
                         )
                         stale_clients.append(client_id)
                         continue
@@ -345,7 +349,7 @@ class ConnectionManager:
                     # Send heartbeat
                     try:
                         heartbeat = HeartbeatEvent(
-                            uptime=int((current_time - state.connected_at).total_seconds())
+                            uptime=int((current_time - state.connected_at).total_seconds()),
                         )
 
                         await self._send_to_client(
@@ -358,7 +362,7 @@ class ConnectionManager:
                             ),
                         )
                     except Exception as e:
-                        logger.error(f"Error sending heartbeat to {client_id}: {e}")
+                        logger.exception(f"Error sending heartbeat to {client_id}: {e}")
                         stale_clients.append(client_id)
 
                 # Disconnect stale clients
@@ -368,10 +372,10 @@ class ConnectionManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in heartbeat loop: {e}")
+                logger.exception(f"Error in heartbeat loop: {e}")
 
     def get_statistics(self) -> dict:
-        """Get connection manager statistics"""
+        """Get connection manager statistics."""
         return {
             "total_connections": len(self.active_connections),
             "total_sessions": len(self.session_states),

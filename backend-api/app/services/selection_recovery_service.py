@@ -1,5 +1,4 @@
-"""
-Selection Recovery Service for Provider/Model Selection System.
+"""Selection Recovery Service for Provider/Model Selection System.
 
 Service for recovering selection state after failures.
 
@@ -12,6 +11,7 @@ Features:
 References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md
 - Persistence service: app/services/session_selection_persistence.py
+
 """
 
 import logging
@@ -39,10 +39,12 @@ class RecoveryResult(BaseModel):
     provider: str = Field(..., description="Recovered provider")
     model: str = Field(..., description="Recovered model")
     source: str = Field(
-        default="default", description="Source of recovery (database, cache, default, migration)"
+        default="default",
+        description="Source of recovery (database, cache, default, migration)",
     )
     was_migrated: bool = Field(
-        default=False, description="Whether data was migrated from legacy format"
+        default=False,
+        description="Whether data was migrated from legacy format",
     )
     error: str | None = Field(None, description="Error if recovery failed")
 
@@ -113,8 +115,7 @@ class LegacySelectionFormat(BaseModel):
 
 
 class SelectionRecoveryService:
-    """
-    Service for recovering selection state after failures.
+    """Service for recovering selection state after failures.
 
     Features:
     - Automatic recovery from database
@@ -137,7 +138,7 @@ class SelectionRecoveryService:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the recovery service."""
         if getattr(self, "_initialized", False):
             return
@@ -157,12 +158,12 @@ class SelectionRecoveryService:
         persistence=None,
         cache=None,
     ) -> None:
-        """
-        Initialize with persistence and cache services.
+        """Initialize with persistence and cache services.
 
         Args:
             persistence: SessionSelectionPersistenceService instance
             cache: SelectionCache instance
+
         """
         self._persistence = persistence
         self._cache = cache
@@ -179,8 +180,7 @@ class SelectionRecoveryService:
         db_session: AsyncSession | None = None,
         use_defaults: bool = True,
     ) -> RecoveryResult:
-        """
-        Recover selection state for a session.
+        """Recover selection state for a session.
 
         Recovery order:
         1. Try to load from cache
@@ -196,6 +196,7 @@ class SelectionRecoveryService:
 
         Returns:
             RecoveryResult with recovered selection
+
         """
         logger.info(f"Starting recovery for session: {session_id}")
 
@@ -220,7 +221,9 @@ class SelectionRecoveryService:
         if self._persistence and db_session:
             try:
                 load_result = await self._persistence.load_selection(
-                    session_id, user_id, db_session
+                    session_id,
+                    user_id,
+                    db_session,
                 )
                 if load_result.found and load_result.record:
                     result = RecoveryResult(
@@ -296,8 +299,7 @@ class SelectionRecoveryService:
         old_format: dict,
         db_session: AsyncSession | None = None,
     ) -> RecoveryResult:
-        """
-        Recover selection from legacy format.
+        """Recover selection from legacy format.
 
         Handles migration from various old formats to new format.
 
@@ -307,6 +309,7 @@ class SelectionRecoveryService:
 
         Returns:
             RecoveryResult with migrated selection
+
         """
         try:
             # Parse legacy format
@@ -365,12 +368,12 @@ class SelectionRecoveryService:
                 },
             )
 
-            logger.info(f"Migrated legacy selection: {session_id} -> " f"{provider}/{model}")
+            logger.info(f"Migrated legacy selection: {session_id} -> {provider}/{model}")
 
             return result
 
         except Exception as e:
-            logger.error(f"Legacy migration failed: {e}")
+            logger.exception(f"Legacy migration failed: {e}")
             return RecoveryResult(
                 success=False,
                 session_id=old_format.get("session_id", "unknown"),
@@ -384,8 +387,7 @@ class SelectionRecoveryService:
         self,
         old_format: dict,
     ):
-        """
-        Migrate from old selection format to new format.
+        """Migrate from old selection format to new format.
 
         Alias for recover_from_legacy for API compatibility.
 
@@ -394,6 +396,7 @@ class SelectionRecoveryService:
 
         Returns:
             SelectionRecord if migration successful, None otherwise
+
         """
         from app.services.session_selection_persistence import SelectionRecord
 
@@ -418,8 +421,7 @@ class SelectionRecoveryService:
         user_id: str | None = None,
         db_session: AsyncSession | None = None,
     ) -> dict[str, RecoveryResult]:
-        """
-        Recover selections for multiple sessions.
+        """Recover selections for multiple sessions.
 
         Args:
             session_ids: List of session identifiers
@@ -428,6 +430,7 @@ class SelectionRecoveryService:
 
         Returns:
             Dictionary mapping session_id to RecoveryResult
+
         """
         results: dict[str, RecoveryResult] = {}
 
@@ -488,7 +491,7 @@ class SelectionRecoveryService:
         if len(self._audit_log) > self._max_audit_entries:
             self._audit_log = self._audit_log[-self._max_audit_entries :]
 
-        logger.debug(f"Recovery logged: {result.session_id} " f"({result.source}, {recovery_type})")
+        logger.debug(f"Recovery logged: {result.session_id} ({result.source}, {recovery_type})")
 
     # -------------------------------------------------------------------------
     # Audit Access
@@ -499,8 +502,7 @@ class SelectionRecoveryService:
         session_id: str | None = None,
         limit: int = 100,
     ) -> list[RecoveryAuditEntry]:
-        """
-        Get recovery audit log entries.
+        """Get recovery audit log entries.
 
         Args:
             session_id: Optional filter by session
@@ -508,6 +510,7 @@ class SelectionRecoveryService:
 
         Returns:
             List of RecoveryAuditEntry
+
         """
         entries = self._audit_log
 
@@ -517,11 +520,11 @@ class SelectionRecoveryService:
         return entries[-limit:]
 
     def get_recovery_stats(self) -> dict[str, Any]:
-        """
-        Get recovery statistics.
+        """Get recovery statistics.
 
         Returns:
             Dictionary with recovery statistics
+
         """
         if not self._audit_log:
             return {
@@ -549,11 +552,11 @@ class SelectionRecoveryService:
         }
 
     def clear_audit_log(self) -> int:
-        """
-        Clear the audit log.
+        """Clear the audit log.
 
         Returns:
             Number of entries cleared
+
         """
         count = len(self._audit_log)
         self._audit_log.clear()
@@ -567,11 +570,11 @@ class SelectionRecoveryService:
 
 
 def get_selection_recovery_service() -> SelectionRecoveryService:
-    """
-    FastAPI dependency for SelectionRecoveryService.
+    """FastAPI dependency for SelectionRecoveryService.
 
     Returns:
         The singleton service instance
+
     """
     return SelectionRecoveryService()
 

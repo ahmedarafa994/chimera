@@ -1,5 +1,4 @@
-"""
-BigModel (ZhiPu AI) Client implementing LLMProvider interface.
+"""BigModel (ZhiPu AI) Client implementing LLMProvider interface.
 
 This client wraps the BigModelProvider for use with the ProviderFactory.
 """
@@ -21,7 +20,7 @@ from app.infrastructure.providers.bigmodel_provider import BigModelProvider
 class BigModelClient(LLMProvider):
     """BigModel (ZhiPu AI) client implementing LLMProvider interface."""
 
-    def __init__(self, config: Settings = None):
+    def __init__(self, config: Settings = None) -> None:
         self.config = config or get_settings()
         api_key = self.config.BIGMODEL_API_KEY
         if not api_key:
@@ -41,11 +40,13 @@ class BigModelClient(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         """Generate text using BigModel."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         if not self._provider:
+            msg = "BigModel client not initialized. Check API key."
             raise AppError(
-                "BigModel client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -68,8 +69,10 @@ class BigModelClient(LLMProvider):
             raise
         except Exception as e:
             logger.error(f"BigModel generation failed: {e!s}", exc_info=True)
+            msg = f"BigModel generation failed: {e!s}"
             raise AppError(
-                f"BigModel generation failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY
+                msg,
+                status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
     async def check_health(self) -> bool:
@@ -87,11 +90,13 @@ class BigModelClient(LLMProvider):
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
         """Stream text generation using BigModel."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         if not self._provider:
+            msg = "BigModel client not initialized. Check API key."
             raise AppError(
-                "BigModel client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -106,11 +111,11 @@ class BigModelClient(LLMProvider):
             raise
         except Exception as e:
             logger.error(f"BigModel streaming failed: {e!s}", exc_info=True)
-            raise AppError(f"Streaming failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Streaming failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)
 
     async def count_tokens(self, text: str, model: str | None = None) -> int:
-        """
-        Count tokens using tiktoken.
+        """Count tokens using tiktoken.
 
         BigModel uses a tokenizer similar to OpenAI's, so we use tiktoken
         with cl100k_base encoding as a reasonable approximation.
@@ -121,4 +126,5 @@ class BigModelClient(LLMProvider):
             return len(tokens)
         except Exception as e:
             logger.error(f"Token counting failed: {e!s}", exc_info=True)
-            raise AppError(f"Token counting failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Token counting failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)

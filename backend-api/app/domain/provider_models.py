@@ -1,5 +1,4 @@
-"""
-Provider Domain Models
+"""Provider Domain Models.
 
 Comprehensive models for dynamic AI provider management including:
 - Provider configuration and metadata
@@ -17,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProviderStatus(str, Enum):
-    """Provider availability status"""
+    """Provider availability status."""
 
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
@@ -28,7 +27,7 @@ class ProviderStatus(str, Enum):
 
 
 class ProviderTier(str, Enum):
-    """Provider pricing/capability tier"""
+    """Provider pricing/capability tier."""
 
     FREE = "free"
     STANDARD = "standard"
@@ -37,7 +36,7 @@ class ProviderTier(str, Enum):
 
 
 class ProviderType(str, Enum):
-    """Supported provider types"""
+    """Supported provider types."""
 
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
@@ -52,7 +51,7 @@ class ProviderType(str, Enum):
 
 
 class ProviderCapabilities(BaseModel):
-    """Provider capability flags"""
+    """Provider capability flags."""
 
     supports_streaming: bool = True
     supports_vision: bool = False
@@ -67,7 +66,7 @@ class ProviderCapabilities(BaseModel):
 
 
 class ModelInfo(BaseModel):
-    """Model information within a provider"""
+    """Model information within a provider."""
 
     id: str
     name: str
@@ -86,7 +85,7 @@ class ModelInfo(BaseModel):
 
 
 class ProviderHealthInfo(BaseModel):
-    """Provider health and performance metrics"""
+    """Provider health and performance metrics."""
 
     status: ProviderStatus = ProviderStatus.INITIALIZING
     last_check: datetime | None = None
@@ -101,7 +100,7 @@ class ProviderHealthInfo(BaseModel):
 
 
 class ProviderConfig(BaseModel):
-    """Provider configuration for registration"""
+    """Provider configuration for registration."""
 
     provider_type: ProviderType
     name: str = Field(..., min_length=1, max_length=100)
@@ -123,28 +122,36 @@ class ProviderConfig(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
     @field_validator("name")
+    @classmethod
     def validate_name(cls, v):
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError(
+            msg = (
                 "Provider name must contain only alphanumeric characters, underscores, and hyphens"
+            )
+            raise ValueError(
+                msg,
             )
         return v.lower()
 
     @field_validator("api_key")
+    @classmethod
     def validate_api_key(cls, v):
         if v is not None and len(v) < 10:
-            raise ValueError("API key must be at least 10 characters")
+            msg = "API key must be at least 10 characters"
+            raise ValueError(msg)
         return v
 
     @field_validator("api_base_url")
+    @classmethod
     def validate_api_base_url(cls, v):
         if v is not None and not v.startswith(("http://", "https://")):
-            raise ValueError("API base URL must start with http:// or https://")
+            msg = "API base URL must start with http:// or https://"
+            raise ValueError(msg)
         return v.rstrip("/") if v else v
 
 
 class ProviderInfo(BaseModel):
-    """Complete provider information for API responses"""
+    """Complete provider information for API responses."""
 
     id: str
     provider_type: ProviderType
@@ -178,13 +185,13 @@ class ProviderInfo(BaseModel):
                 "priority": 100,
                 "default_model": "gpt-4o",
                 "models": [{"id": "gpt-4o", "name": "GPT-4o", "max_tokens": 128000}],
-            }
+            },
         },
     )
 
 
 class ProviderRegistration(BaseModel):
-    """Request model for registering a new provider"""
+    """Request model for registering a new provider."""
 
     provider_type: ProviderType
     name: str = Field(..., min_length=1, max_length=100)
@@ -204,16 +211,20 @@ class ProviderRegistration(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
     @field_validator("name")
+    @classmethod
     def validate_name(cls, v):
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError(
+            msg = (
                 "Provider name must contain only alphanumeric characters, underscores, and hyphens"
+            )
+            raise ValueError(
+                msg,
             )
         return v.lower()
 
 
 class ProviderUpdate(BaseModel):
-    """Request model for updating a provider"""
+    """Request model for updating a provider."""
 
     display_name: str | None = None
     api_key: str | None = None
@@ -232,7 +243,7 @@ class ProviderUpdate(BaseModel):
 
 
 class ProviderTestResult(BaseModel):
-    """Result of testing a provider connection"""
+    """Result of testing a provider connection."""
 
     success: bool
     provider_id: str
@@ -244,7 +255,7 @@ class ProviderTestResult(BaseModel):
 
 
 class ProviderSelectionRequest(BaseModel):
-    """Request to select/switch active provider"""
+    """Request to select/switch active provider."""
 
     provider_id: str
     model_id: str | None = None
@@ -254,7 +265,7 @@ class ProviderSelectionRequest(BaseModel):
 
 
 class ProviderSelectionResponse(BaseModel):
-    """Response after selecting a provider"""
+    """Response after selecting a provider."""
 
     success: bool
     provider_id: str
@@ -268,7 +279,7 @@ class ProviderSelectionResponse(BaseModel):
 
 
 class ProviderListResponse(BaseModel):
-    """Response containing list of providers"""
+    """Response containing list of providers."""
 
     providers: list[ProviderInfo]
     total: int
@@ -277,7 +288,7 @@ class ProviderListResponse(BaseModel):
 
 
 class ProviderHealthResponse(BaseModel):
-    """Response containing provider health information"""
+    """Response containing provider health information."""
 
     provider_id: str
     health: ProviderHealthInfo
@@ -285,7 +296,7 @@ class ProviderHealthResponse(BaseModel):
 
 
 class ProviderFallbackConfig(BaseModel):
-    """Configuration for provider fallback behavior"""
+    """Configuration for provider fallback behavior."""
 
     enabled: bool = True
     max_attempts: int = Field(default=3, ge=1, le=10)
@@ -296,10 +307,11 @@ class ProviderFallbackConfig(BaseModel):
 
 
 class ProviderRoutingConfig(BaseModel):
-    """Configuration for provider routing/load balancing"""
+    """Configuration for provider routing/load balancing."""
 
     strategy: str = Field(
-        default="priority", pattern="^(priority|round_robin|least_latency|cost_optimized)$"
+        default="priority",
+        pattern="^(priority|round_robin|least_latency|cost_optimized)$",
     )
     health_check_interval_seconds: int = Field(default=30, ge=10, le=300)
     circuit_breaker_threshold: int = Field(default=5, ge=1, le=20)

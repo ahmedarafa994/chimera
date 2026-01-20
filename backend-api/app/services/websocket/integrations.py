@@ -1,5 +1,4 @@
-"""
-WebSocket Integration Layer
+"""WebSocket Integration Layer.
 
 Provides integration hooks for backend services to emit WebSocket events.
 Decouples service logic from WebSocket broadcasting infrastructure.
@@ -15,13 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class WebSocketIntegration:
-    """
-    Base class for WebSocket integration with backend services.
+    """Base class for WebSocket integration with backend services.
 
     Provides common patterns for event emission and error handling.
     """
 
-    def __init__(self, service_name: str):
+    def __init__(self, service_name: str) -> None:
         self.service_name = service_name
         self.broadcaster = event_broadcaster
 
@@ -32,8 +30,8 @@ class WebSocketIntegration:
         error_type: str = "ServiceError",
         severity: str = "medium",
         recoverable: bool = True,
-    ):
-        """Emit error event with automatic component tagging"""
+    ) -> None:
+        """Emit error event with automatic component tagging."""
         await self.broadcaster.emit_error(
             session_id=session_id,
             error_code=f"{self.service_name.upper()}_ERROR",
@@ -46,23 +44,22 @@ class WebSocketIntegration:
 
 
 class AutoDANWebSocketIntegration(WebSocketIntegration):
-    """
-    WebSocket integration for AutoDAN service.
+    """WebSocket integration for AutoDAN service.
 
     Emits events for generation lifecycle, agent status changes, and evaluations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("AutoDAN")
         self._active_sessions: dict[str, dict[str, Any]] = {}
 
-    async def start_session(self, session_id: str, config: dict[str, Any]):
-        """
-        Start AutoDAN session and emit SESSION_STARTED event
+    async def start_session(self, session_id: str, config: dict[str, Any]) -> None:
+        """Start AutoDAN session and emit SESSION_STARTED event.
 
         Args:
             session_id: Unique session identifier
             config: Session configuration (populationSize, targetModel, etc.)
+
         """
         try:
             # Store session config
@@ -94,7 +91,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             logger.info(f"AutoDAN session started: {session_id}")
 
         except Exception as e:
-            logger.error(f"Failed to start AutoDAN session {session_id}: {e}")
+            logger.exception(f"Failed to start AutoDAN session {session_id}: {e}")
             await self.emit_error(
                 session_id=session_id,
                 error_message=str(e),
@@ -103,14 +100,16 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
                 recoverable=False,
             )
 
-    async def start_generation(self, session_id: str, generation: int, config: dict[str, Any]):
-        """
-        Emit GENERATION_STARTED event
+    async def start_generation(
+        self, session_id: str, generation: int, config: dict[str, Any]
+    ) -> None:
+        """Emit GENERATION_STARTED event.
 
         Args:
             session_id: Session identifier
             generation: Generation number (0-indexed)
             config: Generation configuration
+
         """
         try:
             # Update session state
@@ -119,7 +118,9 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
 
             # Emit GENERATION_STARTED
             await self.broadcaster.emit_generation_started(
-                session_id=session_id, generation=generation, config=config
+                session_id=session_id,
+                generation=generation,
+                config=config,
             )
 
             # Update attacker agent status
@@ -138,7 +139,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             logger.debug(f"Generation {generation} started for session {session_id}")
 
         except Exception as e:
-            logger.error(f"Failed to start generation {generation}: {e}")
+            logger.exception(f"Failed to start generation {generation}: {e}")
             await self.emit_error(
                 session_id=session_id,
                 error_message=f"Generation {generation} failed to start: {e!s}",
@@ -153,9 +154,8 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
         total_evaluations: int,
         current_best_fitness: float,
         average_fitness: float,
-    ):
-        """
-        Emit GENERATION_PROGRESS event
+    ) -> None:
+        """Emit GENERATION_PROGRESS event.
 
         Args:
             session_id: Session identifier
@@ -164,6 +164,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             total_evaluations: Total evaluations in generation
             current_best_fitness: Best fitness score so far
             average_fitness: Average fitness across population
+
         """
         try:
             progress = completed_evaluations / total_evaluations if total_evaluations > 0 else 0.0
@@ -192,19 +193,23 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
                 )
 
         except Exception as e:
-            logger.error(f"Failed to update generation progress: {e}")
+            logger.exception(f"Failed to update generation progress: {e}")
 
     async def complete_generation(
-        self, session_id: str, generation: int, statistics: dict[str, Any], elite_candidates: list
-    ):
-        """
-        Emit GENERATION_COMPLETE event
+        self,
+        session_id: str,
+        generation: int,
+        statistics: dict[str, Any],
+        elite_candidates: list,
+    ) -> None:
+        """Emit GENERATION_COMPLETE event.
 
         Args:
             session_id: Session identifier
             generation: Completed generation number
             statistics: Generation statistics (bestFitness, averageFitness, etc.)
             elite_candidates: Top performing candidates
+
         """
         try:
             await self.broadcaster.emit_generation_complete(
@@ -230,7 +235,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             logger.info(f"Generation {generation} completed for session {session_id}")
 
         except Exception as e:
-            logger.error(f"Failed to complete generation {generation}: {e}")
+            logger.exception(f"Failed to complete generation {generation}: {e}")
             await self.emit_error(
                 session_id=session_id,
                 error_message=f"Generation {generation} completion failed: {e!s}",
@@ -249,9 +254,8 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
         feedback: str,
         suggestions: list,
         execution_time: float,
-    ):
-        """
-        Emit EVALUATION_COMPLETE event
+    ) -> None:
+        """Emit EVALUATION_COMPLETE event.
 
         Args:
             session_id: Session identifier
@@ -264,6 +268,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             feedback: Evaluation feedback text
             suggestions: Improvement suggestions
             execution_time: Time taken for evaluation
+
         """
         try:
             await self.broadcaster.emit_evaluation_complete(
@@ -280,7 +285,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             )
 
         except Exception as e:
-            logger.error(f"Failed to emit evaluation for {candidate_id}: {e}")
+            logger.exception(f"Failed to emit evaluation for {candidate_id}: {e}")
 
     async def emit_refinement_suggestion(
         self,
@@ -289,9 +294,8 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
         config_updates: dict[str, float],
         strategy_suggestions: list,
         analysis: str,
-    ):
-        """
-        Emit REFINEMENT_SUGGESTED event
+    ) -> None:
+        """Emit REFINEMENT_SUGGESTED event.
 
         Args:
             session_id: Session identifier
@@ -299,6 +303,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             config_updates: Suggested hyperparameter updates
             strategy_suggestions: Suggested strategy changes
             analysis: Analysis justifying refinement
+
         """
         try:
             await self.broadcaster.emit_refinement_suggested(
@@ -323,25 +328,27 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
                 )
 
         except Exception as e:
-            logger.error(f"Failed to emit refinement suggestion: {e}")
+            logger.exception(f"Failed to emit refinement suggestion: {e}")
 
     async def complete_session(
         self,
         session_id: str,
         statistics: dict[str, Any],
         best_candidate: dict[str, Any] | None = None,
-    ):
-        """
-        Emit SESSION_COMPLETED event
+    ) -> None:
+        """Emit SESSION_COMPLETED event.
 
         Args:
             session_id: Session identifier
             statistics: Final session statistics
             best_candidate: Best candidate found (optional)
+
         """
         try:
             await self.broadcaster.emit_session_completed(
-                session_id=session_id, statistics=statistics, best_candidate=best_candidate
+                session_id=session_id,
+                statistics=statistics,
+                best_candidate=best_candidate,
             )
 
             # Update all agents to completed
@@ -364,7 +371,7 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             logger.info(f"AutoDAN session completed: {session_id}")
 
         except Exception as e:
-            logger.error(f"Failed to complete session {session_id}: {e}")
+            logger.exception(f"Failed to complete session {session_id}: {e}")
             await self.emit_error(
                 session_id=session_id,
                 error_message=f"Session completion failed: {e!s}",
@@ -377,15 +384,15 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
         error_message: str,
         error_type: str = "AutoDANError",
         recovery_suggestions: list | None = None,
-    ):
-        """
-        Emit SESSION_FAILED event
+    ) -> None:
+        """Emit SESSION_FAILED event.
 
         Args:
             session_id: Session identifier
             error_message: Error description
             error_type: Type of error
             recovery_suggestions: Suggestions for recovery
+
         """
         try:
             await self.broadcaster.emit_session_failed(
@@ -414,12 +421,11 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             logger.error(f"AutoDAN session failed: {session_id} - {error_message}")
 
         except Exception as e:
-            logger.error(f"Failed to emit session failure for {session_id}: {e}")
+            logger.exception(f"Failed to emit session failure for {session_id}: {e}")
 
     @asynccontextmanager
     async def session_context(self, session_id: str, config: dict[str, Any]):
-        """
-        Context manager for AutoDAN session lifecycle
+        """Context manager for AutoDAN session lifecycle.
 
         Automatically emits SESSION_STARTED on entry and SESSION_COMPLETED/FAILED on exit.
 
@@ -433,7 +439,9 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
             yield
         except Exception as e:
             await self.fail_session(
-                session_id=session_id, error_message=str(e), error_type=type(e).__name__
+                session_id=session_id,
+                error_message=str(e),
+                error_type=type(e).__name__,
             )
             raise
         else:
@@ -443,13 +451,12 @@ class AutoDANWebSocketIntegration(WebSocketIntegration):
 
 
 class GPTFuzzWebSocketIntegration(WebSocketIntegration):
-    """
-    WebSocket integration for GPTFuzz service.
+    """WebSocket integration for GPTFuzz service.
 
     Emits events for mutation-based jailbreak testing.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("GPTFuzz")
 
     async def emit_mutation_result(
@@ -460,8 +467,8 @@ class GPTFuzzWebSocketIntegration(WebSocketIntegration):
         response: str,
         success: bool,
         score: float,
-    ):
-        """Emit evaluation result for GPTFuzz mutation"""
+    ) -> None:
+        """Emit evaluation result for GPTFuzz mutation."""
         await self.broadcaster.emit_evaluation_complete(
             session_id=session_id,
             candidate_id=candidate_id,

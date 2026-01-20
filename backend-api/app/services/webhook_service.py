@@ -1,5 +1,4 @@
-"""
-Webhook Service - External integration via HTTP callbacks.
+"""Webhook Service - External integration via HTTP callbacks.
 
 Provides:
 - Webhook registration and management
@@ -85,8 +84,7 @@ class DeliveryStatus(str, Enum):
 
 @dataclass
 class WebhookConfig:
-    """
-    Webhook configuration.
+    """Webhook configuration.
 
     Attributes:
         url: Endpoint URL to deliver webhooks to
@@ -97,6 +95,7 @@ class WebhookConfig:
         created_at: ISO timestamp of creation
         description: Optional description
         headers: Additional headers to include
+
     """
 
     url: str
@@ -122,8 +121,7 @@ class WebhookConfig:
 
 @dataclass
 class WebhookDelivery:
-    """
-    Record of a webhook delivery attempt.
+    """Record of a webhook delivery attempt.
 
     Attributes:
         delivery_id: Unique delivery identifier
@@ -137,6 +135,7 @@ class WebhookDelivery:
         response_code: HTTP response code (if received)
         response_body: HTTP response body (if received)
         error: Error message (if failed)
+
     """
 
     webhook_id: str
@@ -180,8 +179,7 @@ class WebhookServiceStats:
 
 
 class WebhookService:
-    """
-    Webhook registry and delivery service.
+    """Webhook registry and delivery service.
 
     Features:
     - Webhook registration and management
@@ -196,7 +194,7 @@ class WebhookService:
         retry_delays: list[float] | None = None,
         timeout: float | None = None,  # No timeout by default
         max_deliveries_history: int = 1000,
-    ):
+    ) -> None:
         self._webhooks: dict[str, WebhookConfig] = {}
         self._deliveries: dict[str, WebhookDelivery] = {}
         self._max_retries = max_retries
@@ -206,14 +204,14 @@ class WebhookService:
         self._stats = WebhookServiceStats()
 
     def register(self, config: WebhookConfig) -> str:
-        """
-        Register a new webhook.
+        """Register a new webhook.
 
         Args:
             config: Webhook configuration
 
         Returns:
             Webhook ID
+
         """
         self._webhooks[config.webhook_id] = config
         self._stats.total_webhooks += 1
@@ -221,13 +219,12 @@ class WebhookService:
             self._stats.active_webhooks += 1
 
         logger.info(
-            f"Registered webhook {config.webhook_id} for events: {[e.value for e in config.events]}"
+            f"Registered webhook {config.webhook_id} for events: {[e.value for e in config.events]}",
         )
         return config.webhook_id
 
     def unregister(self, webhook_id: str) -> bool:
-        """
-        Unregister a webhook.
+        """Unregister a webhook.
 
         Returns True if webhook was found and removed.
         """
@@ -244,9 +241,7 @@ class WebhookService:
         return self._webhooks.get(webhook_id)
 
     def list_webhooks(self, event_type: WebhookEventType | None = None) -> list[WebhookConfig]:
-        """
-        List all webhooks, optionally filtered by event type.
-        """
+        """List all webhooks, optionally filtered by event type."""
         webhooks = list(self._webhooks.values())
         if event_type:
             webhooks = [w for w in webhooks if event_type in w.events]
@@ -259,8 +254,7 @@ class WebhookService:
         events: list[WebhookEventType] | None = None,
         description: str | None = None,
     ) -> bool:
-        """
-        Update webhook configuration.
+        """Update webhook configuration.
 
         Returns True if webhook was found and updated.
         """
@@ -291,8 +285,7 @@ class WebhookService:
         payload: dict[str, Any],
         correlation_id: str | None = None,
     ) -> list[str]:
-        """
-        Dispatch an event to all subscribed webhooks.
+        """Dispatch an event to all subscribed webhooks.
 
         Args:
             event_type: Type of event
@@ -301,6 +294,7 @@ class WebhookService:
 
         Returns:
             List of delivery IDs
+
         """
         delivery_ids = []
 
@@ -336,9 +330,7 @@ class WebhookService:
         webhook: WebhookConfig,
         delivery: WebhookDelivery,
     ) -> None:
-        """
-        Deliver a webhook with retry logic.
-        """
+        """Deliver a webhook with retry logic."""
         if not HTTPX_AVAILABLE:
             delivery.status = DeliveryStatus.FAILED
             delivery.error = "httpx not available"
@@ -400,7 +392,7 @@ class WebhookService:
                     delivery.next_attempt = datetime.utcnow().isoformat() + "Z"
                     logger.info(
                         f"Retrying webhook {delivery.delivery_id} in {delay}s "
-                        f"(attempt {attempt + 1}/{self._max_retries + 1})"
+                        f"(attempt {attempt + 1}/{self._max_retries + 1})",
                     )
                     await asyncio.sleep(delay)
 
@@ -425,15 +417,13 @@ class WebhookService:
         payload: str,
         signature: str,
     ) -> bool:
-        """
-        Verify a webhook signature.
+        """Verify a webhook signature.
 
         Useful for receiving webhooks from other services.
         """
         expected = self._create_signature(secret, payload)
         # Remove "sha256=" prefix if present
-        if signature.startswith("sha256="):
-            signature = signature[7:]
+        signature = signature.removeprefix("sha256=")
         return hmac.compare_digest(expected, signature)
 
     def get_delivery(self, delivery_id: str) -> WebhookDelivery | None:
@@ -446,9 +436,7 @@ class WebhookService:
         status: DeliveryStatus | None = None,
         limit: int = 50,
     ) -> list[WebhookDelivery]:
-        """
-        Get delivery history with optional filtering.
-        """
+        """Get delivery history with optional filtering."""
         deliveries = list(self._deliveries.values())
 
         if webhook_id:
@@ -460,8 +448,7 @@ class WebhookService:
         return deliveries[-limit:]
 
     async def retry_delivery(self, delivery_id: str) -> bool:
-        """
-        Manually retry a failed delivery.
+        """Manually retry a failed delivery.
 
         Returns True if retry was initiated.
         """

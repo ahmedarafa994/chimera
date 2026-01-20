@@ -1,5 +1,4 @@
-"""
-Provider Plugin System for Project Chimera
+"""Provider Plugin System for Project Chimera.
 
 This module implements a plugin-based architecture for AI provider integrations.
 Each provider implements the ProviderPlugin protocol, enabling:
@@ -203,8 +202,7 @@ class StreamChunk:
 
 @runtime_checkable
 class ProviderPlugin(Protocol):
-    """
-    Protocol for AI provider plugins.
+    """Protocol for AI provider plugins.
 
     All provider plugins must implement this protocol to be compatible
     with the unified provider system.
@@ -221,8 +219,7 @@ class ProviderPlugin(Protocol):
         ...
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List all available models from this provider.
+        """List all available models from this provider.
 
         Args:
             api_key: Optional API key to use for the request.
@@ -230,26 +227,28 @@ class ProviderPlugin(Protocol):
 
         Returns:
             List of ModelInfo objects describing available models.
+
         """
         ...
 
     async def validate_api_key(self, api_key: str) -> bool:
-        """
-        Validate an API key for this provider.
+        """Validate an API key for this provider.
 
         Args:
             api_key: The API key to validate.
 
         Returns:
             True if the API key is valid, False otherwise.
+
         """
         ...
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
-        """
-        Generate text using this provider.
+        """Generate text using this provider.
 
         Args:
             request: The generation request parameters.
@@ -257,14 +256,16 @@ class ProviderPlugin(Protocol):
 
         Returns:
             GenerationResponse with the generated text and metadata.
+
         """
         ...
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation from this provider.
+        """Stream text generation from this provider.
 
         Args:
             request: The generation request parameters.
@@ -272,6 +273,7 @@ class ProviderPlugin(Protocol):
 
         Yields:
             StreamChunk objects containing incremental text.
+
         """
         ...
 
@@ -294,14 +296,13 @@ class ProviderPlugin(Protocol):
 
 
 class BaseProviderPlugin(ABC):
-    """
-    Abstract base class for provider plugins.
+    """Abstract base class for provider plugins.
 
     Provides common functionality and ensures all plugins implement
     the required methods.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._models_cache: list[ModelInfo] | None = None
         self._cache_timestamp: datetime | None = None
         self._cache_ttl_seconds: int = 3600  # 1 hour default
@@ -310,13 +311,11 @@ class BaseProviderPlugin(ABC):
     @abstractmethod
     def provider_type(self) -> str:
         """Unique identifier for this provider type."""
-        pass
 
     @property
     @abstractmethod
     def display_name(self) -> str:
         """Human-readable name for this provider."""
-        pass
 
     @property
     def aliases(self) -> list[str]:
@@ -339,8 +338,7 @@ class BaseProviderPlugin(ABC):
         return [ProviderCapability.STREAMING]
 
     def is_configured(self) -> bool:
-        """
-        Check if this provider is properly configured (API key available).
+        """Check if this provider is properly configured (API key available).
 
         Returns True if:
         - No API key is required, OR
@@ -359,31 +357,30 @@ class BaseProviderPlugin(ABC):
     @abstractmethod
     def get_default_model(self) -> str:
         """Get the default model for this provider."""
-        pass
 
     @abstractmethod
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
         """List all available models from this provider."""
-        pass
 
     @abstractmethod
     async def validate_api_key(self, api_key: str) -> bool:
         """Validate an API key for this provider."""
-        pass
 
     @abstractmethod
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using this provider."""
-        pass
 
     @abstractmethod
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from this provider."""
-        pass
 
     def get_provider_info(self) -> ProviderInfo:
         """Get information about this provider."""
@@ -441,8 +438,7 @@ class BaseProviderPlugin(ABC):
 
 
 class PluginRegistry:
-    """
-    Registry for provider plugins.
+    """Registry for provider plugins.
 
     Manages registration, lookup, and lifecycle of provider plugins.
     """
@@ -457,7 +453,7 @@ class PluginRegistry:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the plugin registry."""
         if self._initialized:
             return
@@ -468,11 +464,11 @@ class PluginRegistry:
         logger.info("PluginRegistry initialized")
 
     def register(self, plugin: ProviderPlugin) -> None:
-        """
-        Register a provider plugin.
+        """Register a provider plugin.
 
         Args:
             plugin: The plugin to register.
+
         """
         provider_type = plugin.provider_type.lower()
 
@@ -491,14 +487,14 @@ class PluginRegistry:
         logger.info(f"Registered plugin for provider: {provider_type} ({plugin.display_name})")
 
     def unregister(self, provider_type: str) -> bool:
-        """
-        Unregister a provider plugin.
+        """Unregister a provider plugin.
 
         Args:
             provider_type: The provider type to unregister.
 
         Returns:
             True if the plugin was unregistered, False if not found.
+
         """
         provider_type = provider_type.lower()
 
@@ -516,14 +512,14 @@ class PluginRegistry:
         return True
 
     def get(self, provider_type: str) -> ProviderPlugin | None:
-        """
-        Get a provider plugin by type or alias.
+        """Get a provider plugin by type or alias.
 
         Args:
             provider_type: The provider type or alias.
 
         Returns:
             The plugin if found, None otherwise.
+
         """
         provider_type = provider_type.lower()
 
@@ -547,14 +543,14 @@ class PluginRegistry:
         return list(self._plugins.keys())
 
     def resolve_alias(self, provider_type: str) -> str:
-        """
-        Resolve a provider alias to its canonical type.
+        """Resolve a provider alias to its canonical type.
 
         Args:
             provider_type: The provider type or alias.
 
         Returns:
             The canonical provider type.
+
         """
         provider_type = provider_type.lower()
         return self._aliases.get(provider_type, provider_type)
@@ -625,14 +621,14 @@ def get_registry() -> PluginRegistry:
 
 
 def register_all_plugins() -> int:
-    """
-    Register all available provider plugins.
+    """Register all available provider plugins.
 
     This function imports and registers all built-in provider plugins.
     Should be called during application startup.
 
     Returns:
         Number of plugins successfully registered.
+
     """
     registered_count = 0
 
@@ -655,7 +651,8 @@ def register_all_plugins() -> int:
         try:
             # Dynamic import
             module = __import__(
-                f"app.services.provider_plugins.{module_name}", fromlist=[class_name]
+                f"app.services.provider_plugins.{module_name}",
+                fromlist=[class_name],
             )
             plugin_class = getattr(module, class_name)
             plugin_instance = plugin_class()
@@ -667,15 +664,14 @@ def register_all_plugins() -> int:
         except AttributeError as e:
             logger.warning(f"Plugin class {class_name} not found in {module_name}: {e}")
         except Exception as e:
-            logger.error(f"Error registering plugin {class_name}: {e}")
+            logger.exception(f"Error registering plugin {class_name}: {e}")
 
     logger.info(f"Registered {registered_count}/{len(plugin_modules)} provider plugins")
     return registered_count
 
 
 async def initialize_plugins() -> None:
-    """
-    Initialize the plugin system asynchronously.
+    """Initialize the plugin system asynchronously.
 
     This function registers all plugins and performs any async initialization.
     """

@@ -27,7 +27,7 @@ Base = declarative_base()
 
 
 class UserRole(str, PyEnum):
-    """User roles matching the spec requirements"""
+    """User roles matching the spec requirements."""
 
     ADMIN = "admin"  # Full system access
     RESEARCHER = "researcher"  # Create/edit campaigns, execute jailbreaks
@@ -35,7 +35,7 @@ class UserRole(str, PyEnum):
 
 
 class CampaignVisibility(str, PyEnum):
-    """Campaign visibility levels for access control"""
+    """Campaign visibility levels for access control."""
 
     PRIVATE = "private"  # Only owner can access
     TEAM = "team"  # All users in the same organization/team can access
@@ -43,7 +43,7 @@ class CampaignVisibility(str, PyEnum):
 
 
 class CampaignSharePermission(str, PyEnum):
-    """Permission levels for shared campaigns"""
+    """Permission levels for shared campaigns."""
 
     VIEW = "view"  # Read-only access to campaign
     EDIT = "edit"  # Can modify campaign content
@@ -55,8 +55,7 @@ class CampaignSharePermission(str, PyEnum):
 
 
 class User(Base):
-    """
-    User model for multi-user authentication system.
+    """User model for multi-user authentication system.
 
     Supports email/password authentication with email verification,
     role-based access control, and per-user API key management.
@@ -121,8 +120,7 @@ class User(Base):
 
 
 class UserAPIKey(Base):
-    """
-    Per-user API key model for programmatic access.
+    """Per-user API key model for programmatic access.
 
     Allows users to create multiple API keys with optional expiration,
     names for identification, and usage tracking.
@@ -167,8 +165,7 @@ class UserAPIKey(Base):
 
 
 class UserPreferences(Base):
-    """
-    User preferences and settings model.
+    """User preferences and settings model.
 
     Stores user-specific settings for the application including
     default provider preferences, UI settings, and notification preferences.
@@ -217,7 +214,9 @@ class DBLLMModel(Base):
     provider = Column(String, nullable=False)  # Store enum value as string
     description = Column(String, nullable=True)
     config = Column(
-        JSON, nullable=False, default={}
+        JSON,
+        nullable=False,
+        default={},
     )  # Store sanitized config, API keys should be in a secrets manager
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
@@ -263,7 +262,9 @@ class JailbreakDataset(Base):
     updated_at = Column(DateTime, onupdate=func.now())
 
     prompts = relationship(
-        "JailbreakPrompt", back_populates="dataset", cascade="all, delete-orphan"
+        "JailbreakPrompt",
+        back_populates="dataset",
+        cascade="all, delete-orphan",
     )
 
 
@@ -292,8 +293,7 @@ class JailbreakPrompt(Base):
 
 
 class Campaign(Base):
-    """
-    Campaign model for organizing jailbreak research and prompt testing.
+    """Campaign model for organizing jailbreak research and prompt testing.
 
     Supports ownership, visibility levels (private/team/public), and explicit
     sharing with specific users via CampaignShare. Campaigns group related
@@ -366,8 +366,7 @@ class Campaign(Base):
 
 
 class CampaignShare(Base):
-    """
-    Explicit campaign sharing model for granting access to specific users.
+    """Explicit campaign sharing model for granting access to specific users.
 
     When a campaign has PRIVATE visibility, the owner can still share it with
     specific users via this model. Each share grants either VIEW or EDIT
@@ -438,7 +437,7 @@ class CampaignShare(Base):
 
 
 class AssessmentStatus(str, PyEnum):
-    """Assessment status levels"""
+    """Assessment status levels."""
 
     PENDING = "pending"  # Assessment queued
     RUNNING = "running"  # Assessment in progress
@@ -448,8 +447,7 @@ class AssessmentStatus(str, PyEnum):
 
 
 class Assessment(Base):
-    """
-    Security assessment model for storing vulnerability testing results.
+    """Security assessment model for storing vulnerability testing results.
 
     Each assessment represents a complete security evaluation against
     a target LLM provider/model with specific techniques.

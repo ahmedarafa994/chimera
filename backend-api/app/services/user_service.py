@@ -1,5 +1,4 @@
-"""
-User Service - Business logic layer for user operations.
+"""User Service - Business logic layer for user operations.
 
 This module orchestrates user operations including:
 - User registration with password validation
@@ -96,8 +95,7 @@ class PasswordChangeResult:
 
 
 def _db_role_to_auth_role(db_role: UserRole) -> Role:
-    """
-    Map database UserRole to auth module Role.
+    """Map database UserRole to auth module Role.
 
     The database uses UserRole enum (admin, researcher, viewer) while
     the auth module uses Role enum with additional roles for different contexts.
@@ -121,8 +119,7 @@ def _db_role_to_auth_role(db_role: UserRole) -> Role:
 
 
 class UserService:
-    """
-    Service layer for user operations.
+    """Service layer for user operations.
 
     Orchestrates user management operations including registration,
     authentication, password management, and email verification.
@@ -137,12 +134,12 @@ class UserService:
     VERIFICATION_TOKEN_EXPIRY_HOURS = 24
     PASSWORD_RESET_TOKEN_EXPIRY_HOURS = 1
 
-    def __init__(self, session: AsyncSession):
-        """
-        Initialize user service.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize user service.
 
         Args:
             session: SQLAlchemy async session for database operations
+
         """
         self._session = session
         self._repository = get_user_repository(session)
@@ -158,8 +155,7 @@ class UserService:
         password: str,
         role: UserRole = UserRole.VIEWER,
     ) -> RegistrationResult:
-        """
-        Register a new user with password validation.
+        """Register a new user with password validation.
 
         Validates password strength, checks email/username uniqueness,
         creates user with verification token, and returns result.
@@ -172,6 +168,7 @@ class UserService:
 
         Returns:
             RegistrationResult with user and verification token on success
+
         """
         errors = []
 
@@ -184,7 +181,7 @@ class UserService:
             return RegistrationResult(success=False, errors=errors)
 
         # Hash password
-        hashed_password = auth_service.hash_password(password)
+        hashed_password = await auth_service.hash_password_async(password)
 
         # Generate verification token
         verification_token = self._generate_token()
@@ -251,8 +248,7 @@ class UserService:
         password: str,
         update_last_login: bool = True,
     ) -> AuthenticationResult:
-        """
-        Authenticate a user by email/username and password.
+        """Authenticate a user by email/username and password.
 
         Verifies credentials against the database and returns JWT tokens
         on successful authentication.
@@ -264,6 +260,7 @@ class UserService:
 
         Returns:
             AuthenticationResult with tokens on success, error on failure
+
         """
         try:
             with open("backend_debug.log", "a") as f:
@@ -289,7 +286,7 @@ class UserService:
             pass
 
         # Verify password
-        if not auth_service.verify_password(password, user.hashed_password):
+        if not await auth_service.verify_password_async(password, user.hashed_password):
             logger.info(f"Authentication failed: invalid password - {identifier}")
             return AuthenticationResult(
                 success=False,
@@ -360,26 +357,26 @@ class UserService:
             )
 
     async def get_user_by_id(self, user_id: int) -> User | None:
-        """
-        Get user by ID.
+        """Get user by ID.
 
         Args:
             user_id: User's unique identifier
 
         Returns:
             User object if found, None otherwise
+
         """
         return await self._repository.get_by_id(user_id)
 
     async def get_user_by_email(self, email: str) -> User | None:
-        """
-        Get user by email.
+        """Get user by email.
 
         Args:
             email: User's email address
 
         Returns:
             User object if found, None otherwise
+
         """
         return await self._repository.get_by_email(email)
 
@@ -388,14 +385,14 @@ class UserService:
     # =========================================================================
 
     async def verify_email(self, token: str) -> EmailVerificationResult:
-        """
-        Verify user's email using verification token.
+        """Verify user's email using verification token.
 
         Args:
             token: Email verification token from email link
 
         Returns:
             EmailVerificationResult with user on success
+
         """
         try:
             user = await self._repository.verify_email(token)
@@ -427,14 +424,14 @@ class UserService:
         self,
         email: str,
     ) -> tuple[bool, str | None, str | None]:
-        """
-        Generate a new verification token for resending verification email.
+        """Generate a new verification token for resending verification email.
 
         Args:
             email: User's email address
 
         Returns:
             Tuple of (success, new_token, error_message)
+
         """
         try:
             user = await self._repository.get_by_email(email)
@@ -473,8 +470,7 @@ class UserService:
     # =========================================================================
 
     async def request_password_reset(self, email: str) -> PasswordResetResult:
-        """
-        Request a password reset for a user.
+        """Request a password reset for a user.
 
         Generates a reset token that can be used to reset the password.
         For security, always returns success even if email doesn't exist.
@@ -484,6 +480,7 @@ class UserService:
 
         Returns:
             PasswordResetResult with reset token on success
+
         """
         try:
             user = await self._repository.get_by_email(email)
@@ -533,8 +530,7 @@ class UserService:
         token: str,
         new_password: str,
     ) -> PasswordChangeResult:
-        """
-        Reset user's password using reset token.
+        """Reset user's password using reset token.
 
         Validates the new password strength and updates the password if valid.
 
@@ -544,6 +540,7 @@ class UserService:
 
         Returns:
             PasswordChangeResult with validation details
+
         """
         try:
             # First, find user by reset token to get their email for validation
@@ -573,7 +570,7 @@ class UserService:
                 )
 
             # Hash new password
-            hashed_password = auth_service.hash_password(new_password)
+            hashed_password = await auth_service.hash_password_async(new_password)
 
             # Update password in database
             await self._repository.reset_password(token, hashed_password)
@@ -607,8 +604,7 @@ class UserService:
         current_password: str,
         new_password: str,
     ) -> PasswordChangeResult:
-        """
-        Change user's password (requires current password verification).
+        """Change user's password (requires current password verification).
 
         Args:
             user_id: User's unique identifier
@@ -617,6 +613,7 @@ class UserService:
 
         Returns:
             PasswordChangeResult with validation details
+
         """
         try:
             user = await self._repository.get_by_id(user_id)
@@ -629,7 +626,7 @@ class UserService:
                 )
 
             # Verify current password
-            if not auth_service.verify_password(current_password, user.hashed_password):
+            if not await auth_service.verify_password_async(current_password, user.hashed_password):
                 logger.info(f"Password change failed: incorrect current password - user {user_id}")
                 return PasswordChangeResult(
                     success=False,
@@ -653,7 +650,7 @@ class UserService:
                 )
 
             # Hash new password and update
-            hashed_password = auth_service.hash_password(new_password)
+            hashed_password = await auth_service.hash_password_async(new_password)
             await self._repository.update_password(user_id, hashed_password)
             await self._session.commit()
 
@@ -681,8 +678,7 @@ class UserService:
         user_id: int,
         **kwargs,
     ) -> User | None:
-        """
-        Update user profile fields.
+        """Update user profile fields.
 
         Allowed fields: username
         (email changes require re-verification, handled separately)
@@ -693,6 +689,7 @@ class UserService:
 
         Returns:
             Updated User object or None if not found
+
         """
         # Filter allowed fields
         allowed_fields = {"username"}
@@ -728,14 +725,14 @@ class UserService:
     # =========================================================================
 
     async def deactivate_user(self, user_id: int) -> bool:
-        """
-        Deactivate a user account.
+        """Deactivate a user account.
 
         Args:
             user_id: User's unique identifier
 
         Returns:
             True if deactivated, False if user not found
+
         """
         try:
             success = await self._repository.deactivate_user(user_id)
@@ -750,14 +747,14 @@ class UserService:
             raise
 
     async def activate_user(self, user_id: int) -> bool:
-        """
-        Activate a user account.
+        """Activate a user account.
 
         Args:
             user_id: User's unique identifier
 
         Returns:
             True if activated, False if user not found
+
         """
         try:
             success = await self._repository.activate_user(user_id)
@@ -772,8 +769,7 @@ class UserService:
             raise
 
     async def update_user_role(self, user_id: int, role: UserRole) -> bool:
-        """
-        Update user's role.
+        """Update user's role.
 
         Args:
             user_id: User's unique identifier
@@ -781,6 +777,7 @@ class UserService:
 
         Returns:
             True if role was updated, False if user not found
+
         """
         try:
             success = await self._repository.update_role(user_id, role)
@@ -799,14 +796,14 @@ class UserService:
     # =========================================================================
 
     def _generate_token(self, length: int = 32) -> str:
-        """
-        Generate a cryptographically secure random token.
+        """Generate a cryptographically secure random token.
 
         Args:
             length: Length of the token in bytes (hex encoded = 2x length)
 
         Returns:
             Hex-encoded random token
+
         """
         return secrets.token_hex(length)
 
@@ -816,8 +813,7 @@ class UserService:
         email: str | None = None,
         username: str | None = None,
     ) -> PasswordValidationResult:
-        """
-        Validate password strength without creating a user.
+        """Validate password strength without creating a user.
 
         Useful for real-time password strength feedback during registration.
 
@@ -828,6 +824,7 @@ class UserService:
 
         Returns:
             PasswordValidationResult with detailed feedback
+
         """
         return validate_password(password, email=email, username=username)
 
@@ -838,14 +835,14 @@ class UserService:
 
 
 def get_user_service(session: AsyncSession) -> UserService:
-    """
-    Get user service instance.
+    """Get user service instance.
 
     Args:
         session: SQLAlchemy async session
 
     Returns:
         UserService instance
+
     """
     return UserService(session)
 
@@ -856,8 +853,7 @@ def get_user_service(session: AsyncSession) -> UserService:
 
 
 async def get_user_service_dependency(session: AsyncSession) -> UserService:
-    """
-    FastAPI dependency for getting user service.
+    """FastAPI dependency for getting user service.
 
     Usage:
         @router.post("/register")

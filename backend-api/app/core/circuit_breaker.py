@@ -1,5 +1,4 @@
-"""
-Circuit Breaker Pattern Implementation
+"""Circuit Breaker Pattern Implementation
 Resilience pattern for external service calls (AI providers, APIs).
 
 HIGH-001 FIX: This module now re-exports from the shared implementation
@@ -15,13 +14,13 @@ Usage:
 
 # Re-export from shared implementation for backward compatibility
 from app.core.shared.circuit_breaker import (
-                                             CircuitBreaker,
-                                             CircuitBreakerConfig,
-                                             CircuitBreakerOpen,
-                                             CircuitBreakerRegistry,
-                                             CircuitState,
-                                             circuit_breaker,
-                                             is_circuit_open,
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitBreakerOpen,
+    CircuitBreakerRegistry,
+    CircuitState,
+    circuit_breaker,
+    is_circuit_open,
 )
 
 # Legacy alias for backward compatibility

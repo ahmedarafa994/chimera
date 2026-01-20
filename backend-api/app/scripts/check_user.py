@@ -10,24 +10,16 @@ from app.core.database import db_manager
 from app.services.user_service import get_user_service
 
 
-async def check_user(email):
+async def check_user(email) -> None:
     async with db_manager.session() as session:
         user_service = get_user_service(session)
 
-        print(f"Checking user: {email}...")
         user = await user_service._repository.get_by_email(email)
 
         if user:
-            print("User found:")
-            print(f"  ID: {user.id}")
-            print(f"  Username: {user.username}")
-            print(f"  Email: {user.email}")
-            print(f"  Role: {user.role}")
-            print(f"  Active: {user.is_active}")
-            print(f"  Verified: {user.is_verified}")
-            print(f"  Hash starts with: {user.hashed_password[:10]}...")
+            pass
         else:
-            print("User not found.")
+            pass
 
 
 if __name__ == "__main__":

@@ -22,18 +22,18 @@ try:
 
     logger.info("Successfully imported AttackerAutoDANReasoning and config")
 except ImportError as e:
-    logger.error(f"Failed to import: {e}")
+    logger.exception(f"Failed to import: {e}")
     sys.exit(1)
 
 
 # Mock Model with controllable latency
 class MockSlowModel:
-    def __init__(self, latency=1.0):
+    def __init__(self, latency=1.0) -> None:
         self.latency = latency
         self.call_count = 0
         self.conditional_generate_called = False
 
-    def generate(self, system, user, **kwargs):
+    def generate(self, system, user, **kwargs) -> str:
         self.call_count += 1
         time.sleep(self.latency)
         return "[START OF JAILBREAK PROMPT] valid prompt [END OF JAILBREAK PROMPT]"
@@ -43,7 +43,7 @@ class MockSlowModel:
         return self.generate(system, user, **kwargs)
 
 
-def test_parallel_execution():
+def test_parallel_execution() -> None:
     logger.info("--- Starting Parallel Execution Verification ---")
 
     # Set concurrency to 5 for this test
@@ -81,17 +81,17 @@ def test_parallel_execution():
     logger.info("Test Case 1: First 4 fail, 5th succeeds. Sequential = 2.5s, Parallel = ~0.5s")
 
     class MockFailFirstModel(MockSlowModel):
-        def __init__(self, latency=0.5):
+        def __init__(self, latency=0.5) -> None:
             super().__init__(latency)
             self._call_idx = 0
 
-        def convert_to_result(self, idx):
+        def convert_to_result(self, idx) -> str | None:
             # Simulating failure for first 4 attempts
             if idx < 4:
                 return None
             return "[START OF JAILBREAK PROMPT] success [END OF JAILBREAK PROMPT]"
 
-        def conditional_generate(self, condition, system, user, **kwargs):
+        def conditional_generate(self, condition, system, user, **kwargs) -> str:
             # We need to know WHICH thread is calling to be deterministic, but threads are non-deterministic.
             # However, if we just sleep, they all sleep.
             # If we make ONLY the specific thread succeed?
@@ -133,7 +133,7 @@ def test_parallel_execution():
         logger.info("SUCCESS: Multiple calls detected (Parallel execution active)")
     else:
         logger.warning(
-            f"FAILURE: Only {model.call_count} calls detected (Possible sequential execution or fast return)"
+            f"FAILURE: Only {model.call_count} calls detected (Possible sequential execution or fast return)",
         )
 
     # Restore config

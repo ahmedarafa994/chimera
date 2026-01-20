@@ -1,5 +1,4 @@
-"""
-Routeway Provider Plugin for Project Chimera.
+"""Routeway Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for Routeway AI gateway integration,
 supporting unified access to multiple model providers through a single endpoint.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class RoutewayPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for Routeway AI gateway.
+    """Provider plugin for Routeway AI gateway.
 
     Routeway is an AI gateway that provides unified access to multiple
     model providers through a single OpenAI-compatible API endpoint.
@@ -70,8 +68,7 @@ class RoutewayPlugin(BaseProviderPlugin):
         return os.environ.get("ROUTEWAY_DEFAULT_MODEL", "gpt-4o")
 
     def _get_static_models(self) -> list[ModelInfo]:
-        """
-        Return static model definitions for Routeway.
+        """Return static model definitions for Routeway.
 
         Routeway proxies to multiple providers, so it supports
         a wide variety of models from different providers.
@@ -176,8 +173,7 @@ class RoutewayPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available Routeway models.
+        """List available Routeway models.
 
         Attempts to fetch from API, falls back to static list.
         """
@@ -221,7 +217,7 @@ class RoutewayPlugin(BaseProviderPlugin):
                         context_window=model.get("context_length", 8192),
                         supports_streaming=True,
                         capabilities=["chat"],
-                    )
+                    ),
                 )
 
         api_ids = {m.model_id for m in models}
@@ -247,12 +243,15 @@ class RoutewayPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using Routeway API (OpenAI-compatible)."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Routeway API key is required")
+            msg = "Routeway API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
         start_time = time.time()
@@ -317,19 +316,22 @@ class RoutewayPlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Routeway API error: {e.response.status_code}")
+            logger.exception(f"Routeway API error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"Routeway generation error: {e}")
+            logger.exception(f"Routeway generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Routeway API."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Routeway API key is required")
+            msg = "Routeway API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
 
@@ -402,5 +404,5 @@ class RoutewayPlugin(BaseProviderPlugin):
                             logger.warning(f"Parse error: {e}")
                             continue
         except Exception as e:
-            logger.error(f"Routeway streaming error: {e}")
+            logger.exception(f"Routeway streaming error: {e}")
             raise

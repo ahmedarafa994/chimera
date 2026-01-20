@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -14,11 +15,10 @@ logger = logging.getLogger(__name__)
 
 @router.post("/completions", response_model=ExecuteResponse)
 async def execute_chat_completion(
-    request: ExecuteRequest, llm_service: LLMService = Depends(get_llm_service)
+    request: ExecuteRequest,
+    llm_service: Annotated[LLMService, Depends(get_llm_service)],
 ):
-    """
-    Execute a chat completion request with optional prompt transformation.
-    """
+    """Execute a chat completion request with optional prompt transformation."""
     try:
         # Apply Input Understanding Service to expand/optimize the core request
         from app.services.input_understanding_service import input_understanding_service
@@ -76,7 +76,8 @@ async def execute_chat_completion(
         total_tokens = 0
         if response.usage_metadata:
             total_tokens = response.usage_metadata.get(
-                "total_token_count", response.usage_metadata.get("total_tokens", 0)
+                "total_token_count",
+                response.usage_metadata.get("total_tokens", 0),
             )
 
         result = LLMResult(
@@ -99,14 +100,17 @@ async def execute_chat_completion(
         )
 
         return ExecuteResponse(
-            request_id=request_id, result=result, transformation=transformation_detail
+            request_id=request_id,
+            result=result,
+            transformation=transformation_detail,
         )
 
     except LLMError as e:
-        logger.error(f"LLM Error: {e.message}")
+        logger.exception(f"LLM Error: {e.message}")
         raise HTTPException(status_code=e.status_code, detail=e.message)
     except Exception as e:
-        logger.error(f"Unexpected error: {e!s}")
+        logger.exception(f"Unexpected error: {e!s}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
         )

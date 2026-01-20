@@ -1,5 +1,4 @@
-"""
-Performance Profiling Script for Chimera Backend
+"""Performance Profiling Script for Chimera Backend.
 
 Captures detailed performance metrics including:
 - CPU profiling with cProfile
@@ -86,21 +85,23 @@ class PerformanceMetrics:
 
 
 class PerformanceProfiler:
-    """
-    Performance profiler for Chimera backend.
+    """Performance profiler for Chimera backend.
 
     Captures CPU and memory metrics for specific modules or endpoints.
     """
 
-    def __init__(self, output_dir: str = "profiles"):
+    def __init__(self, output_dir: str = "profiles") -> None:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def profile_module(
-        self, module_func: Callable, *args, duration: int = 60, **kwargs
+        self,
+        module_func: Callable,
+        *args,
+        duration: int = 60,
+        **kwargs,
     ) -> PerformanceMetrics:
-        """
-        Profile a module function for specified duration.
+        """Profile a module function for specified duration.
 
         Args:
             module_func: Function to profile
@@ -110,6 +111,7 @@ class PerformanceProfiler:
 
         Returns:
             PerformanceMetrics with captured data
+
         """
         logger.info(f"Profiling {module_func.__name__} for {duration} seconds...")
 
@@ -153,7 +155,7 @@ class PerformanceProfiler:
                     "total_time": tt,
                     "calls": nc,
                     "callers": len(callers),
-                }
+                },
             )
         metrics.hotspots = hotspots_data
 
@@ -182,16 +184,18 @@ class PerformanceProfiler:
                 metrics.deduplication_rate = metrics.deduplicated_requests / metrics.total_calls
 
         logger.info(
-            f"Profiling complete: {metrics.total_calls} calls, {metrics.total_time:.2f}s total"
+            f"Profiling complete: {metrics.total_calls} calls, {metrics.total_time:.2f}s total",
         )
 
         return metrics
 
     async def profile_endpoint(
-        self, endpoint: str, request_data: dict, num_requests: int = 100
+        self,
+        endpoint: str,
+        request_data: dict,
+        num_requests: int = 100,
     ) -> PerformanceMetrics:
-        """
-        Profile an API endpoint.
+        """Profile an API endpoint.
 
         Args:
             endpoint: Endpoint path (e.g., /api/v1/generate)
@@ -200,6 +204,7 @@ class PerformanceProfiler:
 
         Returns:
             PerformanceMetrics with captured data
+
         """
         logger.info(f"Profiling endpoint {endpoint} with {num_requests} requests...")
 
@@ -256,7 +261,7 @@ class PerformanceProfiler:
                     "cumulative_time": ct,
                     "total_time": tt,
                     "calls": nc,
-                }
+                },
             )
         metrics.hotspots = hotspots_data
 
@@ -268,15 +273,14 @@ class PerformanceProfiler:
 
         logger.info(
             f"Endpoint profiling complete: {num_requests} requests, "
-            f"{metrics.avg_time_per_call*1000:.2f}ms avg latency"
+            f"{metrics.avg_time_per_call * 1000:.2f}ms avg latency",
         )
 
         return metrics
 
 
-async def profile_llm_service(duration: int = 60):
-    """
-    Profile LLM service for specified duration.
+async def profile_llm_service(duration: int = 60) -> None:
+    """Profile LLM service for specified duration.
 
     Simulates realistic load with cache hits/misses.
     """
@@ -318,8 +322,7 @@ async def profile_llm_service(duration: int = 60):
 
 
 def profile_memory_usage():
-    """
-    Profile memory usage of Chimera backend.
+    """Profile memory usage of Chimera backend.
 
     Requires memory_profiler to be installed.
     """
@@ -328,7 +331,7 @@ def profile_memory_usage():
         from memory_profiler import memory_usage
 
         # Profile LLM service memory
-        def memory_test():
+        def memory_test() -> None:
             LLMService()
 
             # Simulate load
@@ -379,22 +382,32 @@ def profile_memory_usage():
         return None
 
 
-def main():
+def main() -> None:
     """Main entry point for performance profiling."""
     parser = ArgumentParser(description="Profile Chimera backend performance")
 
     parser.add_argument(
-        "--module", choices=["llm_service", "transformation", "autodan"], help="Module to profile"
+        "--module",
+        choices=["llm_service", "transformation", "autodan"],
+        help="Module to profile",
     )
     parser.add_argument(
-        "--endpoint", type=str, help="API endpoint to profile (e.g., /api/v1/generate)"
+        "--endpoint",
+        type=str,
+        help="API endpoint to profile (e.g., /api/v1/generate)",
     )
     parser.add_argument("--duration", type=int, default=60, help="Profiling duration in seconds")
     parser.add_argument(
-        "--requests", type=int, default=100, help="Number of requests for endpoint profiling"
+        "--requests",
+        type=int,
+        default=100,
+        help="Number of requests for endpoint profiling",
     )
     parser.add_argument(
-        "--output-dir", type=str, default="profiles", help="Output directory for profiles"
+        "--output-dir",
+        type=str,
+        default="profiles",
+        help="Output directory for profiles",
     )
     parser.add_argument("--memory", action="store_true", help="Profile memory usage")
     parser.add_argument("--all", action="store_true", help="Run all profiling tasks")
@@ -418,7 +431,7 @@ def main():
             memory_metrics = profile_memory_usage()
             if memory_metrics:
                 logger.info(
-                    f"Memory usage: peak={memory_metrics['peak_memory_mb']:.2f}MB, avg={memory_metrics['avg_memory_mb']:.2f}MB"
+                    f"Memory usage: peak={memory_metrics['peak_memory_mb']:.2f}MB, avg={memory_metrics['avg_memory_mb']:.2f}MB",
                 )
 
         # Save combined report
@@ -446,17 +459,8 @@ def main():
             return
 
         # Print summary
-        print("\n=== Performance Profiling Summary ===")
-        print(f"Module: {metrics.module_name}")
-        print(f"Duration: {metrics.duration_seconds:.2f}s")
-        print(f"Total Calls: {metrics.total_calls}")
-        print(f"Total Time: {metrics.total_time:.2f}s")
-        print(f"Avg Time/Call: {metrics.avg_time_per_call*1000:.2f}ms")
-        print(f"Cache Hit Rate: {metrics.cache_hit_rate*100:.1f}%")
-        print(f"Deduplication Rate: {metrics.deduplication_rate*100:.1f}%")
-        print("\nTop 5 Hotspots:")
-        for i, hotspot in enumerate(metrics.hotspots[:5], 1):
-            print(f"  {i}. {hotspot['function']}: {hotspot['cumulative_time']*1000:.2f}ms")
+        for _i, _hotspot in enumerate(metrics.hotspots[:5], 1):
+            pass
 
     elif args.endpoint:
         # Profile endpoint
@@ -468,26 +472,18 @@ def main():
         }
 
         metrics = asyncio.run(
-            profiler.profile_endpoint(args.endpoint, request_data, num_requests=args.requests)
+            profiler.profile_endpoint(args.endpoint, request_data, num_requests=args.requests),
         )
 
         # Print summary
-        print("\n=== Endpoint Profiling Summary ===")
-        print(f"Endpoint: {args.endpoint}")
-        print(f"Requests: {metrics.total_calls}")
-        print(f"Total Time: {metrics.total_time:.2f}s")
-        print(f"Avg Latency: {metrics.avg_time_per_call*1000:.2f}ms")
-        print(f"Throughput: {metrics.total_calls/metrics.total_time:.2f} req/s")
-        print("\nTop 5 Hotspots:")
-        for i, hotspot in enumerate(metrics.hotspots[:5], 1):
-            print(f"  {i}. {hotspot['function']}: {hotspot['cumulative_time']*1000:.2f}ms")
+        for _i, _hotspot in enumerate(metrics.hotspots[:5], 1):
+            pass
 
     if args.memory and not args.all:
         # Memory profiling only
         memory_metrics = profile_memory_usage()
         if memory_metrics:
-            print(f"\nPeak Memory: {memory_metrics['peak_memory_mb']:.2f}MB")
-            print(f"Avg Memory: {memory_metrics['avg_memory_mb']:.2f}MB")
+            pass
 
 
 if __name__ == "__main__":

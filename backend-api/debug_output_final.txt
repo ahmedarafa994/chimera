@@ -1,0 +1,142 @@
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:85: UserWarning: Field name "avg_rating" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:85: UserWarning: Field name "total_ratings" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:85: UserWarning: Field name "effectiveness_score" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+2026-01-20 02:15:00,830 - app.core.connection_pool - INFO - ConnectionPoolManager initialized
+2026-01-20 02:15:00,881 - app.core.ai_config_manager - INFO - AIConfigManager initialized
+2026-01-20 02:15:00,881 - app.core.service_registry - INFO - Registered service: ai_config_manager
+2026-01-20 02:15:00,881 - app.services.provider_management_service - INFO - ProviderManagementService initialized
+2026-01-20 02:15:01,000 - app.core.auth - WARNING - JWT_SECRET not set - using generated key (not for production!)
+2026-01-20 02:15:01,000 - app.core.auth - INFO - REDIS_URL not set - using in-memory token revocation (OK for development)
+2026-01-20 02:15:01,296 - chimera - INFO - llm_service singleton created: instance_id=2613473888304, module=app.services.llm_service
+2026-01-20 02:15:01,780 - faiss.loader - INFO - Loading faiss with AVX512 support.
+2026-01-20 02:15:01,780 - faiss.loader - INFO - Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-01-20 02:15:01,780 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2026-01-20 02:15:01,806 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+2026-01-20 02:15:11,376 - chimera - INFO - SessionService using Redis backend for persistence
+2026-01-20 02:15:11,380 - chimera - WARNING - Failed to connect to GlobalModelSelectionState: type object 'GlobalModelSelectionState' has no attribute 'get_instance'. Session selections will not sync globally.
+2026-01-20 02:15:11,380 - chimera - INFO - SessionService initialized. Default: localproxy/deepseek-chat
+2026-01-20 02:15:11,528 - app.services.provider_plugins - INFO - PluginRegistry initialized
+2026-01-20 02:15:11,563 - app.services.provider_registry - INFO - ProviderRegistry initialized
+2026-01-20 00:15:13 [32mINFO    [0m chimera: Loaded model selection: deepseek/deepseek:deepseek-chat
+2026-01-20 02:15:13,240 - chimera - INFO - Loaded model selection: deepseek/deepseek:deepseek-chat
+2026-01-20 02:15:13,240 - app.services.unified_provider_registry - INFO - Unified provider registry initialized
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Response compression middleware enabled
+[32mINFO    [0m 02:15:13 chimera.main: Response compression middleware enabled
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Security headers middleware enabled
+[32mINFO    [0m 02:15:13 chimera.main: Security headers middleware enabled
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Rate limiting middleware enabled: 1000 calls per 60s
+[32mINFO    [0m 02:15:13 chimera.main: Rate limiting middleware enabled: 1000 calls per 60s
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Input validation middleware enabled
+[32mINFO    [0m 02:15:13 chimera.main: Input validation middleware enabled
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: CSRF middleware enabled (enforce=False)
+[32mINFO    [0m 02:15:13 chimera.main: CSRF middleware enabled (enforce=False)
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Selection middleware enabled with database-backed session preferences
+[32mINFO    [0m 02:15:13 chimera.main: Selection middleware enabled with database-backed session preferences
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Provider rate limiting middleware enabled
+[32mINFO    [0m 02:15:13 chimera.main: Provider rate limiting middleware enabled
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Cost tracking middleware enabled
+[32mINFO    [0m 02:15:13 chimera.main: Cost tracking middleware enabled
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Auth rate limiting disabled in development mode
+[32mINFO    [0m 02:15:13 chimera.main: Auth rate limiting disabled in development mode
+2026-01-20 00:15:13 [32mINFO    [0m chimera.main: Chimera+AutoDAN router registered successfully
+[32mINFO    [0m 02:15:13 chimera.main: Chimera+AutoDAN router registered successfully
+[32mINFO    [0m 02:15:13 app.middleware.selection_middleware: SelectionMiddleware initialized (default=openai/gpt-4-turbo)
+2026-01-20 00:15:13 [32mINFO    [0m chimera.lifespan: Starting up Chimera Backend...
+[32mINFO    [0m 02:15:13 chimera.lifespan: Starting up Chimera Backend...
+2026-01-20 00:15:13 [32mINFO    [0m chimera.lifespan: Registering services in Service Registry...
+[32mINFO    [0m 02:15:13 chimera.lifespan: Registering services in Service Registry...
+[32mINFO    [0m 02:15:13 app.core.service_registry: Registered service: llm_service
+[32mINFO    [0m 02:15:13 app.core.service_registry: Registered service: transformation_engine
+[32mINFO    [0m 02:15:13 app.core.service_registry: Registered service: metamorph_service
+[32mINFO    [0m 02:15:13 app.core.service_registry: Registered service: model_router_service
+2026-01-20 00:15:13 [32mINFO    [0m chimera.lifespan: Configuring AI providers based on available API keys...
+[32mINFO    [0m 02:15:13 chimera.lifespan: Configuring AI providers based on available API keys...
+2026-01-20 00:15:13 [32mINFO    [0m chimera.lifespan: Configured default AI provider: localproxy
+[32mINFO    [0m 02:15:13 chimera.lifespan: Configured default AI provider: localproxy
+2026-01-20 00:15:13 [32mINFO    [0m chimera: Creating provider: deepseek (using defaults, config not available)
+[32mINFO    [0m 02:15:13 chimera: Creating provider: deepseek (using defaults, config not available)
+2026-01-20 00:15:14 [32mINFO    [0m chimera: DeepSeekClient configured in DIRECT mode via OpenAI SDK
+[32mINFO    [0m 02:15:14 chimera: DeepSeekClient configured in DIRECT mode via OpenAI SDK
+2026-01-20 00:15:14 [32mINFO    [0m chimera: Registered provider: deepseek (default=False) [instance_id=2613473888304, providers_count=1]
+[32mINFO    [0m 02:15:14 chimera: Registered provider: deepseek (default=False) [instance_id=2613473888304, providers_count=1]
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: [OK] deepseek provider registered
+[32mINFO    [0m 02:15:14 chimera.lifespan: [OK] deepseek provider registered
+2026-01-20 00:15:14 [32mINFO    [0m chimera: Creating provider: gemini (using defaults, config not available)
+[32mINFO    [0m 02:15:14 chimera: Creating provider: gemini (using defaults, config not available)
+2026-01-20 00:15:14 [32mINFO    [0m chimera: GeminiClient configured in DIRECT mode via SDK
+[32mINFO    [0m 02:15:14 chimera: GeminiClient configured in DIRECT mode via SDK
+2026-01-20 00:15:14 [32mINFO    [0m chimera: Registered provider: gemini (default=False) [instance_id=2613473888304, providers_count=2]
+[32mINFO    [0m 02:15:14 chimera: Registered provider: gemini (default=False) [instance_id=2613473888304, providers_count=2]
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: [OK] gemini provider registered
+[32mINFO    [0m 02:15:14 chimera.lifespan: [OK] gemini provider registered
+2026-01-20 00:15:14 [32mINFO    [0m chimera: Creating provider: anthropic (using defaults, config not available)
+[32mINFO    [0m 02:15:14 chimera: Creating provider: anthropic (using defaults, config not available)
+2026-01-20 00:15:14 [32mINFO    [0m chimera: AnthropicClient configured in DIRECT mode via SDK
+[32mINFO    [0m 02:15:14 chimera: AnthropicClient configured in DIRECT mode via SDK
+2026-01-20 00:15:14 [32mINFO    [0m chimera: Registered provider: anthropic (default=False) [instance_id=2613473888304, providers_count=3]
+[32mINFO    [0m 02:15:14 chimera: Registered provider: anthropic (default=False) [instance_id=2613473888304, providers_count=3]
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: [OK] anthropic provider registered
+[32mINFO    [0m 02:15:14 chimera.lifespan: [OK] anthropic provider registered
+2026-01-20 00:15:14 [32mINFO    [0m chimera: Creating provider: routeway (using defaults, config not available)
+[32mINFO    [0m 02:15:14 chimera: Creating provider: routeway (using defaults, config not available)
+2026-01-20 00:15:14 [32mINFO    [0m chimera: RoutewayClient configured in DIRECT mode
+[32mINFO    [0m 02:15:14 chimera: RoutewayClient configured in DIRECT mode
+2026-01-20 00:15:14 [32mINFO    [0m chimera: Registered provider: routeway (default=False) [instance_id=2613473888304, providers_count=4]
+[32mINFO    [0m 02:15:14 chimera: Registered provider: routeway (default=False) [instance_id=2613473888304, providers_count=4]
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: [OK] routeway provider registered
+[32mINFO    [0m 02:15:14 chimera.lifespan: [OK] routeway provider registered
+2026-01-20 00:15:14 [33mWARNING [0m chimera.lifespan: Configured default 'localproxy' not available. Using 'deepseek' as fallback default.
+[33mWARNING [0m 02:15:14 chimera.lifespan: Configured default 'localproxy' not available. Using 'deepseek' as fallback default.
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: Successfully registered 4 LLM provider(s)
+[32mINFO    [0m 02:15:14 chimera.lifespan: Successfully registered 4 LLM provider(s)
+2026-01-20 00:15:14 [31mERROR   [0m chimera.lifespan: Error setting up config hot-reload: EnhancedConfigManager.__init__() takes 1 positional argument but 2 were given
+[31mERROR   [0m 02:15:14 chimera.lifespan: Error setting up config hot-reload: EnhancedConfigManager.__init__() takes 1 positional argument but 2 were given
+Traceback (most recent call last):
+  File "K:\MUZIK\chimera\backend-api\app\core\lifespan.py", line 222, in _setup_config_hot_reload
+    _config_manager = EnhancedConfigManager(settings)
+TypeError: EnhancedConfigManager.__init__() takes 1 positional argument but 2 were given
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: Initializing integration health monitoring service...
+[32mINFO    [0m 02:15:14 chimera.lifespan: Initializing integration health monitoring service...
+[32mINFO    [0m 02:15:14 app.services.integration_health_service: Starting Integration Health Service
+[32mINFO    [0m 02:15:14 app.services.integration_health_service: Initialized health metrics for 4 providers
+[32mINFO    [0m 02:15:14 app.services.integration_health_service: Integration Health Service started (check_interval=30s)
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: Integration health monitoring service started
+[32mINFO    [0m 02:15:14 chimera.lifespan: Integration health monitoring service started
+2026-01-20 00:15:14 [32mINFO    [0m chimera.lifespan: Initializing all registered services...
+[32mINFO    [0m 02:15:14 chimera.lifespan: Initializing all registered services...
+[32mINFO    [0m 02:15:14 app.core.service_registry: Initializing service: metamorph_service
+[32mINFO    [0m 02:15:14 app.services.metamorph_service: Loading datasets from: K:\MUZIK\chimera\imported_data
+[32mINFO    [0m 02:15:15 app.services.metamorph_service: Loaded 6/6 datasets
+[32mINFO    [0m 02:15:15 app.services.metamorph_service: MetamorphService initialized successfully
+[32mINFO    [0m 02:15:15 app.core.service_registry: Initializing service: model_router_service
+2026-01-20 00:15:15 [32mINFO    [0m chimera: ModelRouterService initialized with providers: gemini, deepseek
+[32mINFO    [0m 02:15:15 chimera: ModelRouterService initialized with providers: gemini, deepseek
+[32mINFO    [0m 02:15:15 app.core.service_registry: All services initialized successfully
+2026-01-20 00:15:15 [32mINFO    [0m chimera.lifespan: Application startup complete
+[32mINFO    [0m 02:15:15 chimera.lifespan: Application startup complete
+2026-01-20 00:15:15 [32mINFO    [0m chimera: Generating content with model: deepseek-chat (Direct)
+[32mINFO    [0m 02:15:15 chimera: Generating content with model: deepseek-chat (Direct)
+2026-01-20 00:15:15 [32mINFO    [0m chimera: Generating content with model: gemini-3-pro-preview (Direct/Async)
+[32mINFO    [0m 02:15:15 chimera: Generating content with model: gemini-3-pro-preview (Direct/Async)
+[32mINFO    [0m 02:15:15 root: AFC is enabled with max remote calls: 10.
+2026-01-20 00:15:15 [32mINFO    [0m chimera: Generating content with model: claude-3-5-sonnet-20241022 (Direct)
+[32mINFO    [0m 02:15:15 chimera: Generating content with model: claude-3-5-sonnet-20241022 (Direct)
+[32mINFO    [0m 02:15:15 app.services.integration_health_service: Provider routeway health status changed: unknown -> unhealthy
+2026-01-20 00:15:15 [33mWARNING [0m chimera.lifespan: Provider routeway is now UNHEALTHY - circuit breaker may be activated
+[33mWARNING [0m 02:15:15 chimera.lifespan: Provider routeway is now UNHEALTHY - circuit breaker may be activated
+[33mWARNING [0m 02:15:15 app.services.integration_health_service: Health alert triggered: critical - Provider routeway is critically unhealthy (error rate: 100.0%)
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8001): [winerror 10048] only one usage of each socket address (protocol/network address/port) is normally permitted
+2026-01-20 00:15:15 [32mINFO    [0m chimera.lifespan: Shutting down...
+[32mINFO    [0m 02:15:15 chimera.lifespan: Shutting down...
+[32mINFO    [0m 02:15:15 app.core.service_registry: All services shut down
+[32mINFO    [0m 02:15:15 app.services.integration_health_service: Stopping Integration Health Service
+[32mINFO    [0m 02:15:15 app.services.integration_health_service: Health check loop cancelled
+[32mINFO    [0m 02:15:15 app.services.integration_health_service: Integration Health Service stopped
+2026-01-20 00:15:15 [32mINFO    [0m chimera.lifespan: Integration health monitoring service stopped
+[32mINFO    [0m 02:15:15 chimera.lifespan: Integration health monitoring service stopped
+2026-01-20 00:15:15 [32mINFO    [0m chimera.lifespan: All worker pools shut down
+[32mINFO    [0m 02:15:15 chimera.lifespan: All worker pools shut down

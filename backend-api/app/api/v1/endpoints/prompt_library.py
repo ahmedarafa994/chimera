@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.auth import TokenPayload, get_current_user
@@ -25,10 +27,13 @@ router = APIRouter()
 
 
 @router.post(
-    "/templates", response_model=TemplateDetailResponse, status_code=status.HTTP_201_CREATED
+    "/templates",
+    response_model=TemplateDetailResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_template(
-    request: CreateTemplateRequest, current_user: TokenPayload = Depends(get_current_user)
+    request: CreateTemplateRequest,
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
     user_id = current_user.sub
     template = await prompt_library_service.create_template(user_id, request)
@@ -73,7 +78,9 @@ async def list_templates(
 
 
 @router.get("/templates/{template_id}", response_model=TemplateDetailResponse)
-async def get_template(template_id: str, current_user: TokenPayload = Depends(get_current_user)):
+async def get_template(
+    template_id: str, current_user: Annotated[TokenPayload, Depends(get_current_user)]
+):
     template = await prompt_library_service.get_template(template_id)
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -89,7 +96,7 @@ async def get_template(template_id: str, current_user: TokenPayload = Depends(ge
 async def update_template(
     template_id: str,
     request: UpdateTemplateRequest,
-    current_user: TokenPayload = Depends(get_current_user),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
     template = await prompt_library_service.update_template(template_id, request)
     if not template:
@@ -103,7 +110,9 @@ async def update_template(
 
 
 @router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_template(template_id: str, current_user: TokenPayload = Depends(get_current_user)):
+async def delete_template(
+    template_id: str, current_user: Annotated[TokenPayload, Depends(get_current_user)]
+) -> None:
     success = await prompt_library_service.delete_template(template_id)
     if not success:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -111,7 +120,8 @@ async def delete_template(template_id: str, current_user: TokenPayload = Depends
 
 @router.post("/templates/search", response_model=SearchTemplatesResponse)
 async def search_templates(
-    request: SearchTemplatesRequest, current_user: TokenPayload = Depends(get_current_user)
+    request: SearchTemplatesRequest,
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
     items, total = await prompt_library_service.search_templates(request)
 
@@ -135,7 +145,10 @@ async def search_templates(
     ]
 
     return SearchTemplatesResponse(
-        items=list_items, total=total, limit=request.limit, offset=request.offset
+        items=list_items,
+        total=total,
+        limit=request.limit,
+        offset=request.offset,
     )
 
 
@@ -143,7 +156,7 @@ async def search_templates(
 async def rate_template(
     template_id: str,
     request: RateTemplateRequest,
-    current_user: TokenPayload = Depends(get_current_user),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
     user_id = current_user.sub
     template = await template_rating_service.rate_template(template_id, user_id, request)
@@ -158,7 +171,9 @@ async def rate_template(
 
 
 @router.get("/templates/{template_id}/versions", response_model=list[TemplateVersion])
-async def list_versions(template_id: str, current_user: TokenPayload = Depends(get_current_user)):
+async def list_versions(
+    template_id: str, current_user: Annotated[TokenPayload, Depends(get_current_user)]
+):
     template = await prompt_library_service.get_template(template_id)
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -169,7 +184,7 @@ async def list_versions(template_id: str, current_user: TokenPayload = Depends(g
 async def create_version(
     template_id: str,
     request: CreateVersionRequest,
-    current_user: TokenPayload = Depends(get_current_user),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
     user_id = current_user.sub
     template = await template_version_service.create_version(template_id, user_id, request)
@@ -184,17 +199,17 @@ async def create_version(
 
 
 @router.get("/statistics", response_model=TemplateStatsResponse)
-async def get_statistics(current_user: TokenPayload = Depends(get_current_user)):
-    """Get library-wide statistics"""
-    stats = await prompt_library_service.get_statistics()
-    return stats
+async def get_statistics(current_user: Annotated[TokenPayload, Depends(get_current_user)]):
+    """Get library-wide statistics."""
+    return await prompt_library_service.get_statistics()
 
 
 @router.get("/top-rated", response_model=TopRatedTemplatesResponse)
 async def get_top_rated(
-    limit: int = Query(5, ge=1, le=50), current_user: TokenPayload = Depends(get_current_user)
+    limit: Annotated[int, Query(ge=1, le=50)] = 5,
+    current_user: TokenPayload = Depends(get_current_user),
 ):
-    """Get top-rated templates"""
+    """Get top-rated templates."""
     items = await prompt_library_service.get_top_rated(limit=limit)
     list_items = [
         TemplateListItem(
@@ -223,9 +238,10 @@ async def get_top_rated(
     status_code=status.HTTP_201_CREATED,
 )
 async def save_from_campaign(
-    request: SaveFromCampaignRequest, current_user: TokenPayload = Depends(get_current_user)
+    request: SaveFromCampaignRequest,
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """Save a successful attack from a campaign as a template"""
+    """Save a successful attack from a campaign as a template."""
     user_id = current_user.sub
     template = await prompt_library_service.save_from_campaign(user_id, request)
     if not template:
@@ -240,9 +256,10 @@ async def save_from_campaign(
 
 @router.get("/templates/{template_id}/ratings", response_model=RatingListResponse)
 async def get_template_ratings(
-    template_id: str, current_user: TokenPayload = Depends(get_current_user)
+    template_id: str,
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """Get all ratings for a template"""
+    """Get all ratings for a template."""
     template = await prompt_library_service.get_template(template_id)
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -255,24 +272,24 @@ async def get_template_ratings(
 
 @router.get("/templates/{template_id}/ratings/stats", response_model=RatingStatistics)
 async def get_rating_stats(
-    template_id: str, current_user: TokenPayload = Depends(get_current_user)
+    template_id: str,
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """Get rating statistics for a template"""
+    """Get rating statistics for a template."""
     template = await prompt_library_service.get_template(template_id)
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    stats = await template_rating_service.get_rating_statistics(template_id)
-    return stats
+    return await template_rating_service.get_rating_statistics(template_id)
 
 
 @router.put("/templates/{template_id}/rate", response_model=TemplateDetailResponse)
 async def update_rating(
     template_id: str,
     request: RateTemplateRequest,
-    current_user: TokenPayload = Depends(get_current_user),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """Update an existing rating"""
+    """Update an existing rating."""
     user_id = current_user.sub
     template = await template_rating_service.update_rating(template_id, user_id, request)
     if not template:
@@ -286,8 +303,10 @@ async def update_rating(
 
 
 @router.delete("/templates/{template_id}/rate", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_rating(template_id: str, current_user: TokenPayload = Depends(get_current_user)):
-    """Delete user's rating for a template"""
+async def delete_rating(
+    template_id: str, current_user: Annotated[TokenPayload, Depends(get_current_user)]
+) -> None:
+    """Delete user's rating for a template."""
     user_id = current_user.sub
     success = await template_rating_service.delete_rating(template_id, user_id)
     if not success:
@@ -295,12 +314,15 @@ async def delete_rating(template_id: str, current_user: TokenPayload = Depends(g
 
 
 @router.post(
-    "/templates/{template_id}/versions/{version_id}/restore", response_model=TemplateDetailResponse
+    "/templates/{template_id}/versions/{version_id}/restore",
+    response_model=TemplateDetailResponse,
 )
 async def restore_version(
-    template_id: str, version_id: str, current_user: TokenPayload = Depends(get_current_user)
+    template_id: str,
+    version_id: str,
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """Restore a previous version of a template"""
+    """Restore a previous version of a template."""
     user_id = current_user.sub
     template = await template_version_service.restore_version(template_id, version_id, user_id)
     if not template:
@@ -315,9 +337,11 @@ async def restore_version(
 
 @router.get("/templates/{template_id}/versions/{version_id}", response_model=TemplateVersion)
 async def get_template_version(
-    template_id: str, version_id: str, current_user: TokenPayload = Depends(get_current_user)
+    template_id: str,
+    version_id: str,
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """Get a specific version of a template"""
+    """Get a specific version of a template."""
     version = await template_version_service.get_version(template_id, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")

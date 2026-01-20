@@ -1,5 +1,4 @@
-"""
-Optimized LLM Service with advanced performance features.
+"""Optimized LLM Service with advanced performance features.
 
 This module provides comprehensive optimizations for LLM operations:
 - Request batching and parallel execution
@@ -79,11 +78,9 @@ class BatchConfig:
 
 
 class AdvancedCache:
-    """
-    Multi-tier caching system with Redis and in-memory tiers.
-    """
+    """Multi-tier caching system with Redis and in-memory tiers."""
 
-    def __init__(self, config: CacheConfig):
+    def __init__(self, config: CacheConfig) -> None:
         self.config = config
         self._memory_cache: dict[str, tuple[Any, float]] = {}
         self._redis_client: aioredis.Redis | None = None
@@ -97,7 +94,7 @@ class AdvancedCache:
         }
         self._lock = asyncio.Lock()
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize Redis connection if enabled."""
         if self.config.use_redis:
             try:
@@ -139,9 +136,8 @@ class AdvancedCache:
                 if time.time() - timestamp < self.config.memory_cache_ttl:
                     self._stats["memory_hits"] += 1
                     return response
-                else:
-                    del self._memory_cache[key]
-                    self._stats["evictions"] += 1
+                del self._memory_cache[key]
+                self._stats["evictions"] += 1
 
         self._stats["memory_misses"] += 1
 
@@ -158,7 +154,8 @@ class AdvancedCache:
                         if len(self._memory_cache) >= self.config.memory_cache_size:
                             # Remove oldest entry
                             oldest_key = min(
-                                self._memory_cache.keys(), key=lambda k: self._memory_cache[k][1]
+                                self._memory_cache.keys(),
+                                key=lambda k: self._memory_cache[k][1],
                             )
                             del self._memory_cache[oldest_key]
                             self._stats["evictions"] += 1
@@ -239,7 +236,7 @@ class AdvancedCache:
 class ConnectionPool:
     """Connection pool for LLM providers."""
 
-    def __init__(self, provider: LLMProvider, config: ConnectionPoolConfig):
+    def __init__(self, provider: LLMProvider, config: ConnectionPoolConfig) -> None:
         self.provider = provider
         self.config = config
         self._connections: deque = deque()
@@ -261,8 +258,7 @@ class ConnectionPool:
                 if time.time() - timestamp < self.config.max_idle_time:
                     self._stats["reused"] += 1
                     return connection
-                else:
-                    self._stats["expired"] += 1
+                self._stats["expired"] += 1
 
             # Create new connection if under limit
             if self._active_connections < self.config.max_connections:
@@ -301,7 +297,7 @@ class ConnectionPool:
 class BatchProcessor:
     """Processes batched LLM requests for improved throughput."""
 
-    def __init__(self, config: BatchConfig):
+    def __init__(self, config: BatchConfig) -> None:
         self.config = config
         self._pending_batches: dict[str, list[BatchRequest]] = defaultdict(list)
         self._batch_timers: dict[str, asyncio.Handle] = {}
@@ -315,14 +311,20 @@ class BatchProcessor:
         }
 
     async def submit_request(
-        self, request: PromptRequest, provider_func: Callable, priority: int = 0
+        self,
+        request: PromptRequest,
+        provider_func: Callable,
+        priority: int = 0,
     ) -> PromptResponse:
         """Submit a request for batched processing."""
         self._stats["total_requests"] += 1
 
         batch_key = self._get_batch_key(request)
         batch_request = BatchRequest(
-            request_id=str(time.time()), request=request, future=asyncio.Future(), priority=priority
+            request_id=str(time.time()),
+            request=request,
+            future=asyncio.Future(),
+            priority=priority,
         )
 
         async with self._lock:
@@ -383,7 +385,9 @@ class BatchProcessor:
                 self._active_batches -= 1
 
     async def _process_single_request(
-        self, batch_req: BatchRequest, provider_func: Callable
+        self,
+        batch_req: BatchRequest,
+        provider_func: Callable,
     ) -> None:
         """Process a single request within a batch."""
         try:
@@ -407,8 +411,7 @@ class BatchProcessor:
 
 
 class OptimizedLLMService(BaseLLMService):
-    """
-    Optimized LLM Service with advanced performance features.
+    """Optimized LLM Service with advanced performance features.
 
     Features:
     - Advanced multi-tier caching (Redis + in-memory)
@@ -424,7 +427,7 @@ class OptimizedLLMService(BaseLLMService):
         cache_config: CacheConfig | None = None,
         batch_config: BatchConfig | None = None,
         pool_config: ConnectionPoolConfig | None = None,
-    ):
+    ) -> None:
         super().__init__()
 
         # Configuration
@@ -475,7 +478,7 @@ class OptimizedLLMService(BaseLLMService):
 
         logger.info("OptimizedLLMService shutdown complete")
 
-    def register_provider(self, name: str, provider: LLMProvider, is_default: bool = False):
+    def register_provider(self, name: str, provider: LLMProvider, is_default: bool = False) -> None:
         """Register provider with connection pooling."""
         super().register_provider(name, provider, is_default)
 
@@ -486,9 +489,7 @@ class OptimizedLLMService(BaseLLMService):
         logger.info(f"Provider {normalized_name} registered with connection pool")
 
     async def generate_text(self, request: PromptRequest) -> PromptResponse:
-        """
-        Optimized text generation with caching, batching, and pooling.
-        """
+        """Optimized text generation with caching, batching, and pooling."""
         start_time = time.time()
 
         try:
@@ -523,12 +524,15 @@ class OptimizedLLMService(BaseLLMService):
 
             return response
 
-        except Exception as e:
+        except Exception:
             self._performance_stats["error_rate"] += 1
-            raise e
+            raise
 
     async def _execute_with_pooling(
-        self, circuit_name: str, provider: LLMProvider, request: PromptRequest
+        self,
+        circuit_name: str,
+        provider: LLMProvider,
+        request: PromptRequest,
     ) -> PromptResponse:
         """Execute request using connection pooling and circuit breaker."""
         # Get connection from pool
@@ -536,10 +540,11 @@ class OptimizedLLMService(BaseLLMService):
         if pool:
             connection = await pool.get_connection()
             try:
-                response = await self._call_with_circuit_breaker(
-                    circuit_name, connection.generate, request
+                return await self._call_with_circuit_breaker(
+                    circuit_name,
+                    connection.generate,
+                    request,
                 )
-                return response
             finally:
                 await pool.return_connection(connection)
         else:
@@ -558,7 +563,7 @@ class OptimizedLLMService(BaseLLMService):
             non_cached_times = [t for t in self._request_times if t > 1]  # Cached are usually <1ms
             if non_cached_times:
                 self._performance_stats["avg_response_time_ms"] = sum(non_cached_times) / len(
-                    non_cached_times
+                    non_cached_times,
                 )
 
     def _track_token_usage(self, response: PromptResponse) -> None:
@@ -588,7 +593,7 @@ class OptimizedLLMService(BaseLLMService):
                     f"Requests: {self._performance_stats['requests_processed']}, "
                     f"Avg response: {self._performance_stats['avg_response_time_ms']:.2f}ms, "
                     f"Cache hit rate: {self._performance_stats['cache_hit_rate']:.2%}, "
-                    f"Total tokens: {self._performance_stats['total_tokens_used']}"
+                    f"Total tokens: {self._performance_stats['total_tokens_used']}",
                 )
 
             except asyncio.CancelledError:

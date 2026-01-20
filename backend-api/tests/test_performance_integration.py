@@ -1,5 +1,4 @@
-"""
-Performance Integration Tests.
+"""Performance Integration Tests.
 
 This module contains integration tests for validating the performance
 optimizations implemented across all services.
@@ -75,8 +74,10 @@ async def benchmark_suite(performance_targets, tmp_path):
 @pytest.mark.performance
 @pytest.mark.asyncio
 async def test_llm_service_response_time(
-    benchmark_suite, test_data_generator, performance_assertions
-):
+    benchmark_suite,
+    test_data_generator,
+    performance_assertions,
+) -> None:
     """Test LLM service response time performance."""
     if not benchmark_suite._llm_service:
         pytest.skip("LLM service not available for testing")
@@ -95,7 +96,9 @@ async def test_llm_service_response_time(
 
             # Assert individual response time
             performance_assertions.assert_response_time(
-                response_time_ms, 10000, f"LLM request {request.prompt[:50]}..."
+                response_time_ms,
+                10000,
+                f"LLM request {request.prompt[:50]}...",
             )
 
         except Exception as e:
@@ -107,13 +110,15 @@ async def test_llm_service_response_time(
 
         p95_response_time = np.percentile(response_times, 95)
         performance_assertions.assert_response_time(
-            p95_response_time, 10000, "LLM P95 response time"
+            p95_response_time,
+            10000,
+            "LLM P95 response time",
         )
 
 
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_llm_service_batch_performance(benchmark_suite, test_data_generator):
+async def test_llm_service_batch_performance(benchmark_suite, test_data_generator) -> None:
     """Test LLM service batch processing performance."""
     if not benchmark_suite._llm_service:
         pytest.skip("LLM service not available for testing")
@@ -145,8 +150,10 @@ async def test_llm_service_batch_performance(benchmark_suite, test_data_generato
 @pytest.mark.performance
 @pytest.mark.asyncio
 async def test_llm_service_cache_performance(
-    benchmark_suite, test_data_generator, performance_assertions
-):
+    benchmark_suite,
+    test_data_generator,
+    performance_assertions,
+) -> None:
     """Test LLM service caching effectiveness."""
     if not benchmark_suite._llm_service:
         pytest.skip("LLM service not available for testing")
@@ -184,8 +191,10 @@ async def test_llm_service_cache_performance(
 @pytest.mark.performance
 @pytest.mark.asyncio
 async def test_transformation_service_performance(
-    benchmark_suite, test_data_generator, performance_assertions
-):
+    benchmark_suite,
+    test_data_generator,
+    performance_assertions,
+) -> None:
     """Test transformation service performance."""
     if not benchmark_suite._transformation_engine:
         pytest.skip("Transformation engine not available for testing")
@@ -208,7 +217,9 @@ async def test_transformation_service_performance(
 
             # Assert individual transformation time
             performance_assertions.assert_response_time(
-                transformation_time_ms, 1000, f"Transformation {request['transformation_type']}"
+                transformation_time_ms,
+                1000,
+                f"Transformation {request['transformation_type']}",
             )
 
         except Exception as e:
@@ -224,7 +235,7 @@ async def test_transformation_service_performance(
 
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_transformation_parallel_processing(test_data_generator):
+async def test_transformation_parallel_processing(test_data_generator) -> None:
     """Test transformation parallel processing performance."""
     requests = test_data_generator.generate_transformation_requests(50)
 
@@ -259,7 +270,7 @@ async def test_transformation_parallel_processing(test_data_generator):
 
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_memory_optimization_effectiveness(benchmark_suite):
+async def test_memory_optimization_effectiveness(benchmark_suite) -> None:
     """Test memory optimization effectiveness."""
     import gc
 
@@ -304,7 +315,7 @@ async def test_memory_optimization_effectiveness(benchmark_suite):
 
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_memory_leak_detection(benchmark_suite):
+async def test_memory_leak_detection(benchmark_suite) -> None:
     """Test for memory leaks in service operations."""
     import gc
 
@@ -328,8 +339,8 @@ async def test_memory_leak_detection(benchmark_suite):
                         config=GenerationConfig(max_tokens=100),
                     )
                     await benchmark_suite._llm_service.generate_text(mock_request)
-                except Exception as e:
-                    print(f"Mock service failed: {e}")  # Mock service may not be fully functional
+                except Exception:
+                    pass  # Mock service may not be fully functional
 
         # Force cleanup
         gc.collect()
@@ -338,9 +349,9 @@ async def test_memory_leak_detection(benchmark_suite):
         memory_growth = current_memory - initial_memory
 
         # Memory growth should be minimal across cycles
-        assert (
-            memory_growth < 50
-        ), f"Potential memory leak detected: {memory_growth:.1f}MB growth after {cycle + 1} cycles"
+        assert memory_growth < 50, (
+            f"Potential memory leak detected: {memory_growth:.1f}MB growth after {cycle + 1} cycles"
+        )
 
 
 # =====================================================
@@ -350,7 +361,7 @@ async def test_memory_leak_detection(benchmark_suite):
 
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_cache_hit_ratio_performance(test_data_generator, performance_assertions):
+async def test_cache_hit_ratio_performance(test_data_generator, performance_assertions) -> None:
     """Test cache hit ratio performance."""
     # Mock cache implementation for testing
     cache_data = {}
@@ -362,11 +373,10 @@ async def test_cache_hit_ratio_performance(test_data_generator, performance_asse
         if key in cache_data:
             cache_hits += 1
             return cache_data[key]
-        else:
-            cache_misses += 1
-            return None
+        cache_misses += 1
+        return None
 
-    async def mock_cache_set(key, value):
+    async def mock_cache_set(key, value) -> None:
         cache_data[key] = value
 
     # Generate cache test data
@@ -412,7 +422,7 @@ async def test_cache_hit_ratio_performance(test_data_generator, performance_asse
 
 @pytest.mark.performance
 @pytest.mark.asyncio
-async def test_concurrent_request_handling(benchmark_suite):
+async def test_concurrent_request_handling(benchmark_suite) -> None:
     """Test concurrent request handling performance."""
     if not benchmark_suite._llm_service:
         pytest.skip("LLM service not available for testing")
@@ -456,9 +466,9 @@ async def test_concurrent_request_handling(benchmark_suite):
     requests_per_second = total_requests / total_time
 
     # Assert performance requirements
-    assert (
-        successful_users >= concurrent_users * 0.9
-    ), f"Only {successful_users}/{concurrent_users} users completed successfully"
+    assert successful_users >= concurrent_users * 0.9, (
+        f"Only {successful_users}/{concurrent_users} users completed successfully"
+    )
     assert requests_per_second >= 10.0, f"Request rate {requests_per_second:.2f} RPS too low"
     assert total_time <= 30.0, f"Total test time {total_time:.2f}s too long"
 
@@ -471,7 +481,9 @@ async def test_concurrent_request_handling(benchmark_suite):
 @pytest.mark.performance
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_end_to_end_performance(benchmark_suite, test_data_generator, performance_assertions):
+async def test_end_to_end_performance(
+    benchmark_suite, test_data_generator, performance_assertions
+) -> None:
     """Test end-to-end performance across all services."""
     if not all([benchmark_suite._llm_service, benchmark_suite._transformation_engine]):
         pytest.skip("Required services not available for E2E testing")
@@ -505,7 +517,9 @@ async def test_end_to_end_performance(benchmark_suite, test_data_generator, perf
 
             # Assert individual E2E time
             performance_assertions.assert_response_time(
-                end_to_end_time_ms, 12000, "E2E request processing"
+                end_to_end_time_ms,
+                12000,
+                "E2E request processing",
             )
 
         except Exception as e:
@@ -522,7 +536,7 @@ async def test_end_to_end_performance(benchmark_suite, test_data_generator, perf
 @pytest.mark.performance
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_full_benchmark_suite(benchmark_suite, performance_targets):
+async def test_full_benchmark_suite(benchmark_suite, performance_targets) -> None:
     """Test the complete benchmark suite execution."""
     # Run comprehensive benchmark
     results = await benchmark_suite.run_comprehensive_benchmark()
@@ -549,13 +563,9 @@ async def test_full_benchmark_suite(benchmark_suite, performance_targets):
         assert validation in validation_results, f"Missing validation: {validation}"
 
     # Log performance summary for debugging
-    print("Performance Summary:")
-    print(f"  Overall Score: {summary['overall_score']:.1f}%")
-    print(f"  Targets Met: {summary['targets_passed']}/{summary['targets_total']}")
 
     if not summary["all_targets_met"]:
-        failed_targets = [k for k, v in validation_results.items() if not v]
-        print(f"  Failed Targets: {', '.join(failed_targets)}")
+        [k for k, v in validation_results.items() if not v]
 
 
 # =====================================================
@@ -565,7 +575,7 @@ async def test_full_benchmark_suite(benchmark_suite, performance_targets):
 
 @pytest.mark.performance
 @pytest.mark.regression
-def test_performance_regression_detection(tmp_path):
+def test_performance_regression_detection(tmp_path) -> None:
     """Test performance regression detection."""
     # Create mock baseline data
     baseline_data = {
@@ -610,7 +620,7 @@ def test_performance_regression_detection(tmp_path):
 
 @pytest.mark.performance
 @pytest.mark.cicd
-def test_performance_gate_evaluation(tmp_path):
+def test_performance_gate_evaluation(tmp_path) -> None:
     """Test CI/CD performance gate evaluation."""
     # Create mock benchmark results
     benchmark_results = {
@@ -660,13 +670,16 @@ def test_performance_gate_evaluation(tmp_path):
 @pytest.mark.performance
 @pytest.mark.slow
 @pytest.mark.asyncio
-async def test_load_testing_integration():
+async def test_load_testing_integration() -> None:
     """Test load testing framework integration."""
     from app.testing.performance_benchmarks import LoadTestEngine
 
     # Configure light load test for CI
     config = LoadTestConfig(
-        duration_seconds=10, concurrent_users=5, request_rate=2.0, test_scenarios=["api"]
+        duration_seconds=10,
+        concurrent_users=5,
+        request_rate=2.0,
+        test_scenarios=["api"],
     )
 
     # Run load test

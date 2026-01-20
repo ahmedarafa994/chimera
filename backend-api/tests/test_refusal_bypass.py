@@ -1,5 +1,4 @@
-"""
-Tests for the refusal bypass module.
+"""Tests for the refusal bypass module.
 
 Tests the enhanced refusal detection, intent obfuscation, and bypass mechanisms.
 """
@@ -25,7 +24,7 @@ from app.engines.autodan_turbo.refusal_bypass import (
 class TestRefusalDetection:
     """Tests for refusal detection patterns."""
 
-    def test_detect_direct_refusal(self):
+    def test_detect_direct_refusal(self) -> None:
         """Test detection of direct refusal patterns."""
         responses = [
             "I can't help with that request.",
@@ -40,7 +39,7 @@ class TestRefusalDetection:
             analysis = engine.analyze_refusal(response)
             assert analysis.is_refusal, f"Should detect refusal in: {response}"
 
-    def test_detect_functional_refusal(self):
+    def test_detect_functional_refusal(self) -> None:
         """Test detection of functional refusal patterns."""
         responses = [
             "It's not appropriate for me to help with this.",
@@ -53,7 +52,7 @@ class TestRefusalDetection:
             analysis = engine.analyze_refusal(response)
             assert analysis.is_refusal, f"Should detect refusal in: {response}"
 
-    def test_detect_security_bypass_refusal(self):
+    def test_detect_security_bypass_refusal(self) -> None:
         """Test detection of the specific security bypass refusal."""
         # The exact refusal message the user encountered
         response = (
@@ -65,11 +64,11 @@ class TestRefusalDetection:
 
         is_refusal, category, _patterns = detect_refusal_category(response)
         assert is_refusal, "Should detect as refusal"
-        assert (
-            category == "security_bypass"
-        ), f"Should categorize as security_bypass, got {category}"
+        assert category == "security_bypass", (
+            f"Should categorize as security_bypass, got {category}"
+        )
 
-    def test_detect_compliance(self):
+    def test_detect_compliance(self) -> None:
         """Test detection of compliance patterns."""
         compliant_responses = [
             "Sure, here's how you can do that. First, you need to...",
@@ -81,7 +80,7 @@ class TestRefusalDetection:
             has_compliance, _compliance_type, _confidence = detect_compliance(response)
             assert has_compliance, f"Should detect compliance in: {response}"
 
-    def test_no_refusal_in_helpful_response(self):
+    def test_no_refusal_in_helpful_response(self) -> None:
         """Test that helpful responses are not flagged as refusals."""
         response = """
         Here's a detailed guide on how to implement this feature:
@@ -101,7 +100,7 @@ class TestRefusalDetection:
 class TestSemanticReframing:
     """Tests for semantic reframing functionality."""
 
-    def test_reframe_sensitive_terms(self):
+    def test_reframe_sensitive_terms(self) -> None:
         """Test that sensitive terms are reframed."""
         engine = RefusalBypassEngine(enable_semantic_reframing=True)
 
@@ -112,7 +111,7 @@ class TestSemanticReframing:
         assert "jailbreak" not in reframed.lower()
         assert "bypass" not in reframed.lower()
 
-    def test_reframing_preserves_meaning(self):
+    def test_reframing_preserves_meaning(self) -> None:
         """Test that reframing preserves the general meaning."""
         engine = RefusalBypassEngine(enable_semantic_reframing=True)
 
@@ -126,7 +125,7 @@ class TestSemanticReframing:
 class TestIntentObfuscation:
     """Tests for intent obfuscation functionality."""
 
-    def test_academic_framing(self):
+    def test_academic_framing(self) -> None:
         """Test academic framing obfuscation."""
         engine = RefusalBypassEngine()
 
@@ -139,7 +138,7 @@ class TestIntentObfuscation:
             for term in ["research", "academic", "study", "peer-reviewed", "university"]
         )
 
-    def test_security_audit_framing(self):
+    def test_security_audit_framing(self) -> None:
         """Test security audit framing obfuscation."""
         engine = RefusalBypassEngine()
 
@@ -152,7 +151,7 @@ class TestIntentObfuscation:
             for term in ["red team", "security", "audit", "authorized", "assessment"]
         )
 
-    def test_create_obfuscated_prompt_convenience(self):
+    def test_create_obfuscated_prompt_convenience(self) -> None:
         """Test the convenience function for creating obfuscated prompts."""
         intent = "Test the model's response to adversarial inputs"
         obfuscated = create_obfuscated_prompt(intent, MutationStrategy.RESEARCH_CONTEXT)
@@ -164,7 +163,7 @@ class TestIntentObfuscation:
 class TestPromptMutation:
     """Tests for prompt mutation strategies."""
 
-    def test_mutation_changes_prompt(self):
+    def test_mutation_changes_prompt(self) -> None:
         """Test that mutation actually changes the prompt."""
         engine = RefusalBypassEngine()
 
@@ -173,7 +172,7 @@ class TestPromptMutation:
 
         assert mutated != original, "Mutated prompt should differ from original"
 
-    def test_different_attempts_produce_different_mutations(self):
+    def test_different_attempts_produce_different_mutations(self) -> None:
         """Test that different attempt numbers produce different mutations."""
         engine = RefusalBypassEngine()
 
@@ -188,7 +187,7 @@ class TestPromptMutation:
 class TestHeuristicScoring:
     """Tests for heuristic scoring functions."""
 
-    def test_heuristic_score_refusal(self):
+    def test_heuristic_score_refusal(self) -> None:
         """Test heuristic scoring of refusal responses."""
         response = "I cannot help with that request. It violates my guidelines."
 
@@ -198,7 +197,7 @@ class TestHeuristicScoring:
         assert result["score"] < 5.0, "Refusal should have low score"
         assert not result["is_jailbreak"], "Refusal should not be jailbreak"
 
-    def test_heuristic_score_compliance(self):
+    def test_heuristic_score_compliance(self) -> None:
         """Test heuristic scoring of compliant responses."""
         response = """
         Sure, here's how to do that. First, you need to understand the basics.
@@ -215,7 +214,7 @@ class TestHeuristicScoring:
         assert not result["refusal_detected"], "Should not detect refusal"
         assert result["score"] >= 6.0, "Compliant response should have higher score"
 
-    def test_analyze_response_quality(self):
+    def test_analyze_response_quality(self) -> None:
         """Test comprehensive response quality analysis."""
         response = "I cannot generate a prompt designed to bypass security measures."
 
@@ -229,7 +228,7 @@ class TestHeuristicScoring:
 class TestRefusalBypassEngine:
     """Tests for the RefusalBypassEngine class."""
 
-    def test_engine_initialization(self):
+    def test_engine_initialization(self) -> None:
         """Test engine initialization with default parameters."""
         engine = RefusalBypassEngine()
 
@@ -238,7 +237,7 @@ class TestRefusalBypassEngine:
         assert engine.enable_intent_obfuscation
         assert len(engine.preferred_strategies) > 0
 
-    def test_engine_statistics(self):
+    def test_engine_statistics(self) -> None:
         """Test that engine tracks statistics."""
         engine = RefusalBypassEngine()
 
@@ -251,7 +250,7 @@ class TestRefusalBypassEngine:
         assert stats["total_analyses"] == 2
         assert stats["refusals_detected"] == 1
 
-    def test_suggested_bypass_strategy(self):
+    def test_suggested_bypass_strategy(self) -> None:
         """Test that engine suggests appropriate bypass strategies."""
         engine = RefusalBypassEngine()
 
@@ -259,7 +258,7 @@ class TestRefusalBypassEngine:
         analysis = engine.analyze_refusal("This is unfunctional and I cannot help.")
         assert analysis.suggested_bypass is not None
 
-    def test_obfuscate_intent_method(self):
+    def test_obfuscate_intent_method(self) -> None:
         """Test the obfuscate_intent method."""
         engine = RefusalBypassEngine()
 
@@ -273,7 +272,7 @@ class TestRefusalBypassEngine:
 class TestMultiStageAttackPipeline:
     """Tests for the MultiStageAttackPipeline class."""
 
-    def test_pipeline_initialization(self):
+    def test_pipeline_initialization(self) -> None:
         """Test pipeline initialization."""
         engine = RefusalBypassEngine()
         pipeline = MultiStageAttackPipeline(bypass_engine=engine)
@@ -281,7 +280,7 @@ class TestMultiStageAttackPipeline:
         assert len(pipeline.stages) == 4  # Default stages
         assert pipeline._pipeline_stats["total_runs"] == 0
 
-    def test_generate_staged_prompts(self):
+    def test_generate_staged_prompts(self) -> None:
         """Test generation of staged prompts."""
         engine = RefusalBypassEngine()
         pipeline = MultiStageAttackPipeline(bypass_engine=engine)
@@ -298,7 +297,7 @@ class TestMultiStageAttackPipeline:
 class TestDetectAndCategorizeRefusal:
     """Tests for the detect_and_categorize_refusal convenience function."""
 
-    def test_convenience_function(self):
+    def test_convenience_function(self) -> None:
         """Test the convenience function returns expected format."""
         response = "I cannot help with that request."
 
@@ -315,7 +314,7 @@ class TestDetectAndCategorizeRefusal:
 class TestIntegration:
     """Integration tests for the refusal bypass system."""
 
-    def test_full_bypass_workflow(self):
+    def test_full_bypass_workflow(self) -> None:
         """Test the full workflow of detecting and bypassing refusals."""
         engine = RefusalBypassEngine()
 
@@ -344,7 +343,7 @@ class TestIntegration:
             for term in ["research", "academic", "security", "authorized", "study"]
         )
 
-    def test_pipeline_with_bypass_engine(self):
+    def test_pipeline_with_bypass_engine(self) -> None:
         """Test the multi-stage pipeline with bypass engine."""
         engine = RefusalBypassEngine()
         pipeline = MultiStageAttackPipeline(bypass_engine=engine)

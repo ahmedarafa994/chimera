@@ -8,18 +8,18 @@ from app.infrastructure.bounded_cache_manager import BoundedCacheManager
 class TestBoundedCacheManager:
     """Test suite for BoundedCacheManager."""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test manager initializes correctly."""
         manager = BoundedCacheManager()
         assert manager is not None
         assert manager._max_value_size == 1_000_000
 
-    def test_initialization_with_custom_values(self):
+    def test_initialization_with_custom_values(self) -> None:
         """Test manager initializes with custom max_value_size."""
         manager = BoundedCacheManager(max_value_size=500)
         assert manager._max_value_size == 500
 
-    def test_value_size_validation_valid(self):
+    def test_value_size_validation_valid(self) -> None:
         """Test size validation for valid values."""
         manager = BoundedCacheManager(max_value_size=1000)
 
@@ -27,7 +27,7 @@ class TestBoundedCacheManager:
         small_value = {"key": "value"}
         assert manager._validate_value_size(small_value) is True
 
-    def test_value_size_validation_too_large(self):
+    def test_value_size_validation_too_large(self) -> None:
         """Test size validation rejects oversized values."""
         manager = BoundedCacheManager(max_value_size=10)
 
@@ -36,7 +36,7 @@ class TestBoundedCacheManager:
         assert manager._validate_value_size(large_dict) is False
 
     @pytest.mark.asyncio
-    async def test_get_returns_none_for_missing_key(self):
+    async def test_get_returns_none_for_missing_key(self) -> None:
         """Test get returns None for non-existent keys."""
         manager = BoundedCacheManager()
         await manager.initialize()
@@ -44,7 +44,7 @@ class TestBoundedCacheManager:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_set_and_get_roundtrip(self):
+    async def test_set_and_get_roundtrip(self) -> None:
         """Test setting and getting a value."""
         manager = BoundedCacheManager()
         await manager.initialize()
@@ -55,7 +55,7 @@ class TestBoundedCacheManager:
         assert result == {"data": "test_value"}
 
     @pytest.mark.asyncio
-    async def test_set_rejects_oversized_values(self):
+    async def test_set_rejects_oversized_values(self) -> None:
         """Test that oversized values are rejected."""
         manager = BoundedCacheManager(max_value_size=10)
         await manager.initialize()
@@ -67,7 +67,7 @@ class TestBoundedCacheManager:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_delete_removes_value(self):
+    async def test_delete_removes_value(self) -> None:
         """Test delete removes cached value."""
         manager = BoundedCacheManager()
         await manager.initialize()
@@ -79,7 +79,7 @@ class TestBoundedCacheManager:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_execution_result_cache_helpers(self):
+    async def test_execution_result_cache_helpers(self) -> None:
         """Test execution result caching helpers."""
         manager = BoundedCacheManager()
         await manager.initialize()
@@ -91,7 +91,7 @@ class TestBoundedCacheManager:
         assert cached == result
 
     @pytest.mark.asyncio
-    async def test_technique_cache_helpers(self):
+    async def test_technique_cache_helpers(self) -> None:
         """Test technique caching helpers."""
         manager = BoundedCacheManager()
         await manager.initialize()

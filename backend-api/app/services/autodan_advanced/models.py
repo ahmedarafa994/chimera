@@ -1,6 +1,4 @@
-"""
-Pydantic models for AutoDAN Advanced services.
-"""
+"""Pydantic models for AutoDAN Advanced services."""
 
 from datetime import datetime
 
@@ -19,7 +17,10 @@ class HierarchicalSearchRequest(BaseModel):
     crossover_rate: float = Field(0.7, ge=0.0, le=1.0, description="Crossover rate")
     elitism_ratio: float = Field(0.1, ge=0.0, le=0.5, description="Elitism ratio")
     diversity_weight: float = Field(
-        0.3, ge=0.0, le=1.0, description="Weight for diversity vs fitness"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Weight for diversity vs fitness",
     )
 
 

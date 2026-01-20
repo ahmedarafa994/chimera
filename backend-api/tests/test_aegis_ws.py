@@ -1,5 +1,4 @@
-"""
-Aegis Campaign Telemetry WebSocket Tests
+"""Aegis Campaign Telemetry WebSocket Tests.
 
 This module tests the Aegis telemetry models, broadcaster, and WebSocket endpoint
 for real-time campaign telemetry streaming.
@@ -54,7 +53,7 @@ from app.services.websocket.aegis_broadcaster import AegisTelemetryBroadcaster, 
 class TestTelemetryEventModels:
     """Test telemetry event model serialization and validation."""
 
-    def test_aegis_telemetry_event_type_enum(self):
+    def test_aegis_telemetry_event_type_enum(self) -> None:
         """Test all event types are defined correctly."""
         assert AegisTelemetryEventType.CAMPAIGN_STARTED.value == "campaign_started"
         assert AegisTelemetryEventType.CAMPAIGN_COMPLETED.value == "campaign_completed"
@@ -64,20 +63,20 @@ class TestTelemetryEventModels:
         assert AegisTelemetryEventType.HEARTBEAT.value == "heartbeat"
         assert AegisTelemetryEventType.ERROR.value == "error"
 
-    def test_campaign_status_enum(self):
+    def test_campaign_status_enum(self) -> None:
         """Test campaign status values."""
         assert CampaignStatus.PENDING.value == "pending"
         assert CampaignStatus.RUNNING.value == "running"
         assert CampaignStatus.COMPLETED.value == "completed"
         assert CampaignStatus.FAILED.value == "failed"
 
-    def test_technique_category_enum(self):
+    def test_technique_category_enum(self) -> None:
         """Test technique category values."""
         assert TechniqueCategory.AUTODAN.value == "autodan"
         assert TechniqueCategory.GPTFUZZ.value == "gptfuzz"
         assert TechniqueCategory.CHIMERA_FRAMING.value == "chimera_framing"
 
-    def test_attack_metrics_serialization(self):
+    def test_attack_metrics_serialization(self) -> None:
         """Test AttackMetrics model serialization."""
         metrics = AttackMetrics(
             success_rate=75.5,
@@ -98,7 +97,7 @@ class TestTelemetryEventModels:
         assert data["best_score"] == 0.95
         assert data["average_score"] == 0.78
 
-    def test_attack_metrics_default_values(self):
+    def test_attack_metrics_default_values(self) -> None:
         """Test AttackMetrics has correct default values."""
         metrics = AttackMetrics()
         assert metrics.success_rate == 0.0
@@ -109,7 +108,7 @@ class TestTelemetryEventModels:
         assert metrics.best_score == 0.0
         assert metrics.average_score == 0.0
 
-    def test_attack_metrics_validation(self):
+    def test_attack_metrics_validation(self) -> None:
         """Test AttackMetrics field validation."""
         # Success rate must be 0-100
         with pytest.raises(ValueError):
@@ -119,7 +118,7 @@ class TestTelemetryEventModels:
         with pytest.raises(ValueError):
             AttackMetrics(total_attempts=-1)
 
-    def test_technique_performance_serialization(self):
+    def test_technique_performance_serialization(self) -> None:
         """Test TechniquePerformance model serialization."""
         perf = TechniquePerformance(
             technique_name="autodan_vanilla",
@@ -139,7 +138,7 @@ class TestTelemetryEventModels:
         assert data["success_count"] == 10
         assert data["success_rate"] == 83.33
 
-    def test_token_usage_serialization(self):
+    def test_token_usage_serialization(self) -> None:
         """Test TokenUsage model serialization."""
         usage = TokenUsage(
             prompt_tokens=1000,
@@ -158,7 +157,7 @@ class TestTelemetryEventModels:
         assert data["provider"] == "openai"
         assert data["model"] == "gpt-4-turbo"
 
-    def test_latency_metrics_serialization(self):
+    def test_latency_metrics_serialization(self) -> None:
         """Test LatencyMetrics model serialization."""
         latency = LatencyMetrics(
             api_latency_ms=850.5,
@@ -177,7 +176,7 @@ class TestTelemetryEventModels:
         assert data["processing_latency_ms"] == 125.3
         assert data["p95_latency_ms"] == 1450.0
 
-    def test_prompt_evolution_serialization(self):
+    def test_prompt_evolution_serialization(self) -> None:
         """Test PromptEvolution model serialization."""
         evolution = PromptEvolution(
             iteration=3,
@@ -196,7 +195,7 @@ class TestTelemetryEventModels:
         assert len(data["techniques_applied"]) == 2
         assert data["is_successful"] is True
 
-    def test_campaign_summary_serialization(self):
+    def test_campaign_summary_serialization(self) -> None:
         """Test CampaignSummary model serialization."""
         summary = CampaignSummary(
             campaign_id="test-campaign-123",
@@ -215,7 +214,7 @@ class TestTelemetryEventModels:
         assert data["current_iteration"] == 3
         assert data["max_iterations"] == 10
 
-    def test_aegis_telemetry_event_serialization(self):
+    def test_aegis_telemetry_event_serialization(self) -> None:
         """Test AegisTelemetryEvent base model serialization."""
         event = AegisTelemetryEvent(
             event_type=AegisTelemetryEventType.ATTACK_COMPLETED,
@@ -240,7 +239,7 @@ class TestTelemetryEventModels:
 class TestEventDataModels:
     """Test specific event data models."""
 
-    def test_campaign_started_data(self):
+    def test_campaign_started_data(self) -> None:
         """Test CampaignStartedData model."""
         data = CampaignStartedData(
             objective="Test prompt injection",
@@ -255,7 +254,7 @@ class TestEventDataModels:
         assert dumped["max_iterations"] == 10
         assert dumped["target_model"] == "gpt-4-turbo"
 
-    def test_campaign_completed_data(self):
+    def test_campaign_completed_data(self) -> None:
         """Test CampaignCompletedData model."""
         data = CampaignCompletedData(
             total_iterations=10,
@@ -273,7 +272,7 @@ class TestEventDataModels:
         assert dumped["final_success_rate"] == 70.0
         assert dumped["total_cost_usd"] == 0.05
 
-    def test_campaign_failed_data(self):
+    def test_campaign_failed_data(self) -> None:
         """Test CampaignFailedData model."""
         data = CampaignFailedData(
             error_message="API rate limit exceeded",
@@ -287,7 +286,7 @@ class TestEventDataModels:
         assert dumped["error_type"] == "RateLimitError"
         assert dumped["recoverable"] is True
 
-    def test_iteration_started_data(self):
+    def test_iteration_started_data(self) -> None:
         """Test IterationStartedData model."""
         data = IterationStartedData(
             iteration=5,
@@ -299,7 +298,7 @@ class TestEventDataModels:
         assert dumped["iteration"] == 5
         assert len(dumped["techniques_to_apply"]) == 2
 
-    def test_iteration_completed_data(self):
+    def test_iteration_completed_data(self) -> None:
         """Test IterationCompletedData model."""
         data = IterationCompletedData(
             iteration=5,
@@ -315,7 +314,7 @@ class TestEventDataModels:
         assert dumped["score"] == 0.82
         assert dumped["success"] is True
 
-    def test_attack_started_data(self):
+    def test_attack_started_data(self) -> None:
         """Test AttackStartedData model."""
         data = AttackStartedData(
             attack_id="attack-001",
@@ -328,7 +327,7 @@ class TestEventDataModels:
         assert dumped["attack_id"] == "attack-001"
         assert dumped["technique"] == "autodan_vanilla"
 
-    def test_attack_completed_data(self):
+    def test_attack_completed_data(self) -> None:
         """Test AttackCompletedData model."""
         token_usage = TokenUsage(prompt_tokens=100, completion_tokens=50)
         data = AttackCompletedData(
@@ -345,7 +344,7 @@ class TestEventDataModels:
         assert dumped["success"] is True
         assert dumped["token_usage"]["prompt_tokens"] == 100
 
-    def test_technique_applied_data(self):
+    def test_technique_applied_data(self) -> None:
         """Test TechniqueAppliedData model."""
         data = TechniqueAppliedData(
             technique_name="autodan_vanilla",
@@ -360,7 +359,7 @@ class TestEventDataModels:
         assert dumped["technique_name"] == "autodan_vanilla"
         assert dumped["technique_category"] == "autodan"
 
-    def test_cost_update_data(self):
+    def test_cost_update_data(self) -> None:
         """Test CostUpdateData model."""
         data = CostUpdateData(
             total_cost_usd=0.125,
@@ -372,7 +371,7 @@ class TestEventDataModels:
         assert dumped["total_cost_usd"] == 0.125
         assert dumped["cost_per_successful_attack"] == 0.005
 
-    def test_prompt_evolved_data(self):
+    def test_prompt_evolved_data(self) -> None:
         """Test PromptEvolvedData model."""
         data = PromptEvolvedData(
             iteration=3,
@@ -388,7 +387,7 @@ class TestEventDataModels:
         assert dumped["iteration"] == 3
         assert dumped["improvement"] == 0.17
 
-    def test_error_data(self):
+    def test_error_data(self) -> None:
         """Test ErrorData model."""
         data = ErrorData(
             error_code="LLM_ERROR",
@@ -402,7 +401,7 @@ class TestEventDataModels:
         assert dumped["error_code"] == "LLM_ERROR"
         assert dumped["severity"] == "high"
 
-    def test_heartbeat_data(self):
+    def test_heartbeat_data(self) -> None:
         """Test HeartbeatData model."""
         data = HeartbeatData(
             campaign_status=CampaignStatus.RUNNING,
@@ -413,7 +412,7 @@ class TestEventDataModels:
         assert dumped["campaign_status"] == "running"
         assert dumped["uptime_seconds"] == 120.5
 
-    def test_connection_ack_data(self):
+    def test_connection_ack_data(self) -> None:
         """Test ConnectionAckData model."""
         data = ConnectionAckData(
             client_id="client-123",
@@ -430,7 +429,7 @@ class TestEventDataModels:
 class TestFactoryFunctions:
     """Test factory functions for creating telemetry events."""
 
-    def test_create_telemetry_event_with_dict(self):
+    def test_create_telemetry_event_with_dict(self) -> None:
         """Test creating telemetry event with dict data."""
         event = create_telemetry_event(
             event_type=AegisTelemetryEventType.ATTACK_COMPLETED,
@@ -444,7 +443,7 @@ class TestFactoryFunctions:
         assert event.sequence == 1
         assert event.data["attack_id"] == "attack-001"
 
-    def test_create_telemetry_event_with_model(self):
+    def test_create_telemetry_event_with_model(self) -> None:
         """Test creating telemetry event with Pydantic model data."""
         attack_data = AttackCompletedData(
             attack_id="attack-001",
@@ -463,7 +462,7 @@ class TestFactoryFunctions:
         assert event.data["success"] is True
         assert event.data["score"] == 0.85
 
-    def test_create_telemetry_event_with_none_data(self):
+    def test_create_telemetry_event_with_none_data(self) -> None:
         """Test creating telemetry event with None data."""
         event = create_telemetry_event(
             event_type=AegisTelemetryEventType.CAMPAIGN_PAUSED,
@@ -474,7 +473,7 @@ class TestFactoryFunctions:
 
         assert event.data == {}
 
-    def test_create_attack_metrics(self):
+    def test_create_attack_metrics(self) -> None:
         """Test factory function for AttackMetrics."""
         metrics = create_attack_metrics(
             total_attempts=20,
@@ -489,7 +488,7 @@ class TestFactoryFunctions:
         assert metrics.success_rate == 75.0
         assert metrics.best_score == 0.95
 
-    def test_create_attack_metrics_zero_attempts(self):
+    def test_create_attack_metrics_zero_attempts(self) -> None:
         """Test factory handles zero attempts."""
         metrics = create_attack_metrics(total_attempts=0, successful_attacks=0)
         assert metrics.success_rate == 0.0
@@ -503,7 +502,7 @@ class TestFactoryFunctions:
 class TestCampaignState:
     """Test CampaignState class functionality."""
 
-    def test_campaign_state_initialization(self):
+    def test_campaign_state_initialization(self) -> None:
         """Test CampaignState initializes with correct defaults."""
         state = CampaignState("test-campaign")
 
@@ -514,7 +513,7 @@ class TestCampaignState:
         assert len(state.subscribed_clients) == 0
         assert state.best_score == 0.0
 
-    def test_campaign_state_increment_sequence(self):
+    def test_campaign_state_increment_sequence(self) -> None:
         """Test sequence number incrementing."""
         state = CampaignState("test-campaign")
 
@@ -526,7 +525,7 @@ class TestCampaignState:
         assert seq2 == 2
         assert seq3 == 3
 
-    def test_campaign_state_update_attack_metrics_success(self):
+    def test_campaign_state_update_attack_metrics_success(self) -> None:
         """Test updating attack metrics on success."""
         state = CampaignState("test-campaign")
 
@@ -539,7 +538,7 @@ class TestCampaignState:
         assert state.attack_metrics.best_score == 0.85
         assert state.attack_metrics.current_streak == 1
 
-    def test_campaign_state_update_attack_metrics_failure(self):
+    def test_campaign_state_update_attack_metrics_failure(self) -> None:
         """Test updating attack metrics on failure."""
         state = CampaignState("test-campaign")
 
@@ -551,7 +550,7 @@ class TestCampaignState:
         assert state.attack_metrics.success_rate == 0.0
         assert state.attack_metrics.current_streak == -1
 
-    def test_campaign_state_update_attack_metrics_streak(self):
+    def test_campaign_state_update_attack_metrics_streak(self) -> None:
         """Test streak tracking."""
         state = CampaignState("test-campaign")
 
@@ -569,7 +568,7 @@ class TestCampaignState:
         state.update_attack_metrics(success=False, score=0.3)
         assert state.attack_metrics.current_streak == -2
 
-    def test_campaign_state_update_technique_performance(self):
+    def test_campaign_state_update_technique_performance(self) -> None:
         """Test updating technique performance metrics."""
         state = CampaignState("test-campaign")
 
@@ -587,18 +586,30 @@ class TestCampaignState:
         assert perf.total_applications == 1
         assert perf.success_rate == 100.0
 
-    def test_campaign_state_update_technique_multiple(self):
+    def test_campaign_state_update_technique_multiple(self) -> None:
         """Test updating same technique multiple times."""
         state = CampaignState("test-campaign")
 
         state.update_technique_performance(
-            "autodan_vanilla", TechniqueCategory.AUTODAN, True, 0.85, 1000.0
+            "autodan_vanilla",
+            TechniqueCategory.AUTODAN,
+            True,
+            0.85,
+            1000.0,
         )
         state.update_technique_performance(
-            "autodan_vanilla", TechniqueCategory.AUTODAN, False, 0.4, 800.0
+            "autodan_vanilla",
+            TechniqueCategory.AUTODAN,
+            False,
+            0.4,
+            800.0,
         )
         state.update_technique_performance(
-            "autodan_vanilla", TechniqueCategory.AUTODAN, True, 0.9, 1200.0
+            "autodan_vanilla",
+            TechniqueCategory.AUTODAN,
+            True,
+            0.9,
+            1200.0,
         )
 
         perf = state.technique_performance["autodan_vanilla"]
@@ -607,7 +618,7 @@ class TestCampaignState:
         assert perf.failure_count == 1
         assert abs(perf.success_rate - 66.67) < 1.0  # Allow small float error
 
-    def test_campaign_state_update_token_usage(self):
+    def test_campaign_state_update_token_usage(self) -> None:
         """Test updating token usage."""
         state = CampaignState("test-campaign")
 
@@ -625,7 +636,7 @@ class TestCampaignState:
         assert state.token_usage.cost_estimate_usd == 0.01
         assert state.token_usage.provider == "openai"
 
-    def test_campaign_state_update_token_usage_cumulative(self):
+    def test_campaign_state_update_token_usage_cumulative(self) -> None:
         """Test token usage is cumulative."""
         state = CampaignState("test-campaign")
 
@@ -637,7 +648,7 @@ class TestCampaignState:
         assert state.token_usage.total_tokens == 450
         assert state.token_usage.cost_estimate_usd == 0.03
 
-    def test_campaign_state_update_latency(self):
+    def test_campaign_state_update_latency(self) -> None:
         """Test updating latency metrics."""
         state = CampaignState("test-campaign")
 
@@ -649,7 +660,7 @@ class TestCampaignState:
         assert state.latency_metrics.min_latency_ms == 900.0
         assert state.latency_metrics.max_latency_ms == 900.0
 
-    def test_campaign_state_update_latency_percentiles(self):
+    def test_campaign_state_update_latency_percentiles(self) -> None:
         """Test latency percentile calculation."""
         state = CampaignState("test-campaign")
 
@@ -663,7 +674,7 @@ class TestCampaignState:
         assert state.latency_metrics.p50_latency_ms > 0
         assert state.latency_metrics.p95_latency_ms >= state.latency_metrics.p50_latency_ms
 
-    def test_campaign_state_get_summary(self):
+    def test_campaign_state_get_summary(self) -> None:
         """Test generating campaign summary."""
         state = CampaignState("test-campaign")
         state.status = CampaignStatus.RUNNING
@@ -693,7 +704,7 @@ class TestAegisTelemetryBroadcaster:
         return AegisTelemetryBroadcaster()
 
     @pytest.mark.asyncio
-    async def test_subscribe_to_campaign(self, broadcaster):
+    async def test_subscribe_to_campaign(self, broadcaster) -> None:
         """Test subscribing a client to campaign telemetry."""
         mock_ws = MagicMock()
         mock_ws.send_json = AsyncMock()
@@ -708,7 +719,7 @@ class TestAegisTelemetryBroadcaster:
         assert "client-001" in broadcaster.get_campaign_subscribers("campaign-001")
 
     @pytest.mark.asyncio
-    async def test_subscribe_creates_campaign_state(self, broadcaster):
+    async def test_subscribe_creates_campaign_state(self, broadcaster) -> None:
         """Test subscription creates campaign state if needed."""
         mock_ws = MagicMock()
         mock_ws.send_json = AsyncMock()
@@ -720,7 +731,7 @@ class TestAegisTelemetryBroadcaster:
         assert state.campaign_id == "campaign-001"
 
     @pytest.mark.asyncio
-    async def test_unsubscribe_from_campaign(self, broadcaster):
+    async def test_unsubscribe_from_campaign(self, broadcaster) -> None:
         """Test unsubscribing a client from campaign."""
         mock_ws = MagicMock()
         mock_ws.send_json = AsyncMock()
@@ -732,13 +743,13 @@ class TestAegisTelemetryBroadcaster:
         assert "client-001" not in broadcaster.get_campaign_subscribers("campaign-001")
 
     @pytest.mark.asyncio
-    async def test_unsubscribe_unknown_client(self, broadcaster):
+    async def test_unsubscribe_unknown_client(self, broadcaster) -> None:
         """Test unsubscribing unknown client returns False."""
         result = await broadcaster.unsubscribe_from_campaign("unknown-client")
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_resubscribe_different_campaign(self, broadcaster):
+    async def test_resubscribe_different_campaign(self, broadcaster) -> None:
         """Test resubscribing removes client from old campaign."""
         mock_ws = MagicMock()
         mock_ws.send_json = AsyncMock()
@@ -749,7 +760,7 @@ class TestAegisTelemetryBroadcaster:
         assert "client-001" not in broadcaster.get_campaign_subscribers("campaign-001")
         assert "client-001" in broadcaster.get_campaign_subscribers("campaign-002")
 
-    def test_get_or_create_campaign_state(self, broadcaster):
+    def test_get_or_create_campaign_state(self, broadcaster) -> None:
         """Test get_or_create_campaign_state creates new state."""
         state = broadcaster.get_or_create_campaign_state("new-campaign")
 
@@ -760,7 +771,7 @@ class TestAegisTelemetryBroadcaster:
         state2 = broadcaster.get_or_create_campaign_state("new-campaign")
         assert state is state2
 
-    def test_get_statistics(self, broadcaster):
+    def test_get_statistics(self, broadcaster) -> None:
         """Test getting broadcaster statistics."""
         stats = broadcaster.get_statistics()
 
@@ -776,8 +787,7 @@ class TestBroadcasterEventEmission:
     @pytest.fixture
     def broadcaster(self):
         """Create a broadcaster with a subscribed mock client."""
-        bc = AegisTelemetryBroadcaster()
-        return bc
+        return AegisTelemetryBroadcaster()
 
     @pytest.fixture
     def mock_websocket(self):
@@ -787,7 +797,7 @@ class TestBroadcasterEventEmission:
         return ws
 
     @pytest.mark.asyncio
-    async def test_emit_campaign_started(self, broadcaster, mock_websocket):
+    async def test_emit_campaign_started(self, broadcaster, mock_websocket) -> None:
         """Test emitting campaign started event."""
         await broadcaster.subscribe_to_campaign("client-001", "campaign-001", mock_websocket)
 
@@ -804,7 +814,7 @@ class TestBroadcasterEventEmission:
         assert state.max_iterations == 10
 
     @pytest.mark.asyncio
-    async def test_emit_campaign_completed(self, broadcaster, mock_websocket):
+    async def test_emit_campaign_completed(self, broadcaster, mock_websocket) -> None:
         """Test emitting campaign completed event."""
         await broadcaster.subscribe_to_campaign("client-001", "campaign-001", mock_websocket)
         broadcaster.get_or_create_campaign_state("campaign-001").started_at = datetime.utcnow()
@@ -822,7 +832,7 @@ class TestBroadcasterEventEmission:
         assert state.status == CampaignStatus.COMPLETED
 
     @pytest.mark.asyncio
-    async def test_emit_campaign_failed(self, broadcaster, mock_websocket):
+    async def test_emit_campaign_failed(self, broadcaster, mock_websocket) -> None:
         """Test emitting campaign failed event."""
         await broadcaster.subscribe_to_campaign("client-001", "campaign-001", mock_websocket)
 
@@ -838,7 +848,7 @@ class TestBroadcasterEventEmission:
         assert state.status == CampaignStatus.FAILED
 
     @pytest.mark.asyncio
-    async def test_emit_attack_completed_updates_metrics(self, broadcaster, mock_websocket):
+    async def test_emit_attack_completed_updates_metrics(self, broadcaster, mock_websocket) -> None:
         """Test attack completed updates campaign metrics."""
         await broadcaster.subscribe_to_campaign("client-001", "campaign-001", mock_websocket)
 
@@ -855,7 +865,9 @@ class TestBroadcasterEventEmission:
         assert state.attack_metrics.best_score == 0.85
 
     @pytest.mark.asyncio
-    async def test_emit_technique_applied_updates_metrics(self, broadcaster, mock_websocket):
+    async def test_emit_technique_applied_updates_metrics(
+        self, broadcaster, mock_websocket
+    ) -> None:
         """Test technique applied updates technique performance."""
         await broadcaster.subscribe_to_campaign("client-001", "campaign-001", mock_websocket)
 
@@ -874,7 +886,7 @@ class TestBroadcasterEventEmission:
         assert "autodan_vanilla" in state.technique_performance
 
     @pytest.mark.asyncio
-    async def test_emit_cost_update(self, broadcaster, mock_websocket):
+    async def test_emit_cost_update(self, broadcaster, mock_websocket) -> None:
         """Test cost update updates token usage."""
         await broadcaster.subscribe_to_campaign("client-001", "campaign-001", mock_websocket)
 
@@ -892,7 +904,7 @@ class TestBroadcasterEventEmission:
         assert state.token_usage.cost_estimate_usd == 0.01
 
     @pytest.mark.asyncio
-    async def test_emit_latency_update(self, broadcaster, mock_websocket):
+    async def test_emit_latency_update(self, broadcaster, mock_websocket) -> None:
         """Test latency update updates metrics."""
         await broadcaster.subscribe_to_campaign("client-001", "campaign-001", mock_websocket)
 
@@ -906,7 +918,7 @@ class TestBroadcasterEventEmission:
         assert state.latency_metrics.api_latency_ms == 800.0
 
     @pytest.mark.asyncio
-    async def test_broadcast_to_multiple_clients(self, broadcaster):
+    async def test_broadcast_to_multiple_clients(self, broadcaster) -> None:
         """Test broadcasting to multiple subscribed clients."""
         ws1 = MagicMock()
         ws1.send_json = AsyncMock()
@@ -938,7 +950,7 @@ class TestAegisTelemetryWebSocket:
 
         return TestClient(app)
 
-    def test_websocket_connect_success(self, test_client):
+    def test_websocket_connect_success(self, test_client) -> None:
         """Test successful WebSocket connection to telemetry endpoint."""
         with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Should receive connection acknowledgment
@@ -946,16 +958,16 @@ class TestAegisTelemetryWebSocket:
             assert response["event_type"] == "connection_ack"
             assert response["campaign_id"] == "test-campaign"
 
-    def test_websocket_connect_with_client_id(self, test_client):
+    def test_websocket_connect_with_client_id(self, test_client) -> None:
         """Test WebSocket connection with custom client ID."""
         with test_client.websocket_connect(
-            "/api/v1/ws/aegis/telemetry/test-campaign?client_id=my-client-123"
+            "/api/v1/ws/aegis/telemetry/test-campaign?client_id=my-client-123",
         ) as websocket:
             response = websocket.receive_json()
             assert response["event_type"] == "connection_ack"
             assert response["data"]["client_id"] == "my-client-123"
 
-    def test_websocket_ping_pong(self, test_client):
+    def test_websocket_ping_pong(self, test_client) -> None:
         """Test ping/pong message handling."""
         with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
@@ -969,7 +981,7 @@ class TestAegisTelemetryWebSocket:
             assert response["type"] == "pong"
             assert "timestamp" in response
 
-    def test_websocket_get_summary(self, test_client):
+    def test_websocket_get_summary(self, test_client) -> None:
         """Test get_summary message handling."""
         with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
@@ -982,7 +994,7 @@ class TestAegisTelemetryWebSocket:
             response = websocket.receive_json()
             assert response["type"] == "campaign_summary"
 
-    def test_websocket_invalid_json_handling(self, test_client):
+    def test_websocket_invalid_json_handling(self, test_client) -> None:
         """Test handling of invalid JSON messages."""
         with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
@@ -996,7 +1008,7 @@ class TestAegisTelemetryWebSocket:
             assert response["type"] == "error"
             assert response["error_code"] == "INVALID_JSON"
 
-    def test_websocket_unsubscribe_closes_connection(self, test_client):
+    def test_websocket_unsubscribe_closes_connection(self, test_client) -> None:
         """Test unsubscribe message closes connection."""
         with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack
@@ -1021,7 +1033,7 @@ class TestTelemetryInfoEndpoints:
 
         return TestClient(app)
 
-    def test_get_campaign_telemetry_info_not_found(self, test_client):
+    def test_get_campaign_telemetry_info_not_found(self, test_client) -> None:
         """Test getting info for non-existent campaign."""
         response = test_client.get("/api/v1/ws/aegis/telemetry/unknown-campaign/info")
 
@@ -1030,7 +1042,7 @@ class TestTelemetryInfoEndpoints:
         assert data["exists"] is False
         assert data["campaign_id"] == "unknown-campaign"
 
-    def test_get_aegis_telemetry_stats(self, test_client):
+    def test_get_aegis_telemetry_stats(self, test_client) -> None:
         """Test getting overall telemetry statistics."""
         response = test_client.get("/api/v1/ws/aegis/stats")
 
@@ -1056,7 +1068,7 @@ class TestHeartbeatHandling:
 
         return TestClient(app)
 
-    def test_pong_response_updates_last_heartbeat(self, test_client):
+    def test_pong_response_updates_last_heartbeat(self, test_client) -> None:
         """Test pong response updates connection timestamp."""
         with test_client.websocket_connect("/api/v1/ws/aegis/telemetry/test-campaign") as websocket:
             # Consume connection ack

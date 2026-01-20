@@ -1,6 +1,5 @@
-"""
-End-to-End API Tests
-Tests critical API workflows from end to end
+"""End-to-End API Tests
+Tests critical API workflows from end to end.
 """
 
 import pytest
@@ -18,10 +17,10 @@ def server_is_running(url: str) -> bool:
 
 @pytest.mark.e2e
 class TestAPIEndToEnd:
-    """E2E tests for API workflows"""
+    """E2E tests for API workflows."""
 
-    def test_health_check_workflow(self, api_base_url):
-        """Test health check endpoint availability"""
+    def test_health_check_workflow(self, api_base_url) -> None:
+        """Test health check endpoint availability."""
         if not server_is_running(api_base_url):
             pytest.skip("Backend server not running")
 
@@ -32,8 +31,8 @@ class TestAPIEndToEnd:
         valid_statuses = ["healthy", "operational", "degraded", "starting", "ok"]
         assert data["status"] in valid_statuses
 
-    def test_provider_list_workflow(self, api_base_url, authenticated_client):
-        """Test provider listing workflow"""
+    def test_provider_list_workflow(self, api_base_url, authenticated_client) -> None:
+        """Test provider listing workflow."""
         response = requests.get(
             f"{api_base_url}/api/v1/providers",
             headers={"X-API-Key": "test_api_key_for_testing_only"},
@@ -44,8 +43,8 @@ class TestAPIEndToEnd:
         assert "providers" in data or isinstance(data, list)
 
     @pytest.mark.skip(reason="Requires running backend server")
-    def test_generation_workflow(self, api_base_url):
-        """Test complete generation workflow"""
+    def test_generation_workflow(self, api_base_url) -> None:
+        """Test complete generation workflow."""
         payload = {
             "prompt": "Test prompt",
             "provider": "google",

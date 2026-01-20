@@ -1,5 +1,4 @@
-"""
-Provider Endpoint Routing Fix - FIXED VERSION
+"""Provider Endpoint Routing Fix - FIXED VERSION.
 
 This module fixes provider-related endpoint issues:
 1. Standardizes provider routing patterns
@@ -12,7 +11,7 @@ This module fixes provider-related endpoint issues:
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -95,12 +94,12 @@ class ProviderValidationResponse(BaseModel):
 class ProviderManager:
     """Manages provider configuration and health checks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.providers = {}
         self.health_cache = {}
         self.cache_ttl = 60  # 60 seconds
 
-    def register_provider(self, provider_id: str, provider_info: dict[str, Any]):
+    def register_provider(self, provider_id: str, provider_info: dict[str, Any]) -> None:
         """Register a provider with the manager."""
         self.providers[provider_id] = provider_info
         logger.info(f"Registered provider: {provider_id}")
@@ -159,7 +158,7 @@ class ProviderManager:
             end_time = asyncio.get_event_loop().time()
             response_time = (end_time - start_time) * 1000
 
-            logger.error(f"Health check failed for provider {provider_id}: {e}")
+            logger.exception(f"Health check failed for provider {provider_id}: {e}")
 
             return ProviderHealthResponse(
                 provider_id=provider_id,
@@ -254,7 +253,7 @@ provider_manager = ProviderManager()
 # =============================================================================
 
 
-def initialize_providers():
+def initialize_providers() -> None:
     """Initialize provider configurations."""
     providers = {
         "openai": {
@@ -294,10 +293,9 @@ initialize_providers()
 
 @router.get("/providers", response_model=ProvidersResponse, tags=["providers"])
 async def list_providers(
-    include_health: bool = Query(False, description="Include health check results"),
+    include_health: Annotated[bool, Query(description="Include health check results")] = False,
 ):
-    """
-    List all available AI providers with their status and models.
+    """List all available AI providers with their status and models.
 
     - **include_health**: If true, performs health checks for all providers (slower but more accurate)
     """
@@ -369,7 +367,7 @@ async def list_providers(
         )
 
     except Exception as e:
-        logger.error(f"Failed to list providers: {e}")
+        logger.exception(f"Failed to list providers: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve providers: {e!s}",
@@ -377,11 +375,12 @@ async def list_providers(
 
 
 @router.get(
-    "/providers/{provider_id}/health", response_model=ProviderHealthResponse, tags=["providers"]
+    "/providers/{provider_id}/health",
+    response_model=ProviderHealthResponse,
+    tags=["providers"],
 )
 async def check_provider_health(provider_id: str):
-    """
-    Check health status of a specific provider.
+    """Check health status of a specific provider.
 
     Performs a real-time health check including:
     - API key validation
@@ -389,11 +388,10 @@ async def check_provider_health(provider_id: str):
     - Available models check
     """
     try:
-        health_result = await provider_manager.check_provider_health(provider_id)
-        return health_result
+        return await provider_manager.check_provider_health(provider_id)
 
     except Exception as e:
-        logger.error(f"Health check failed for provider {provider_id}: {e}")
+        logger.exception(f"Health check failed for provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Health check failed for provider {provider_id}: {e!s}",
@@ -409,8 +407,7 @@ async def validate_provider_selection(
     provider_id: str,
     model_id: str | None = None,
 ):
-    """
-    Validate a provider and model selection.
+    """Validate a provider and model selection.
 
     Checks:
     - Provider exists and is configured
@@ -443,7 +440,7 @@ async def validate_provider_selection(
             validation_result.model_valid = model_id in available_models
             if not validation_result.model_valid:
                 validation_result.error_messages.append(
-                    f"Model '{model_id}' not available for provider '{provider_id}'"
+                    f"Model '{model_id}' not available for provider '{provider_id}'",
                 )
         else:
             validation_result.model_valid = True  # No model specified
@@ -465,7 +462,7 @@ async def validate_provider_selection(
         return validation_result
 
     except Exception as e:
-        logger.error(f"Validation failed for provider {provider_id}: {e}")
+        logger.exception(f"Validation failed for provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Validation failed: {e!s}",
@@ -474,9 +471,7 @@ async def validate_provider_selection(
 
 @router.get("/providers/{provider_id}/models", tags=["providers"])
 async def list_provider_models(provider_id: str):
-    """
-    List all available models for a specific provider.
-    """
+    """List all available models for a specific provider."""
     try:
         if provider_id not in provider_manager.providers:
             raise HTTPException(
@@ -506,7 +501,7 @@ async def list_provider_models(provider_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to list models for provider {provider_id}: {e}")
+        logger.exception(f"Failed to list models for provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve models: {e!s}",

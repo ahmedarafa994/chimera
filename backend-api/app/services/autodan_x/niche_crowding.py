@@ -1,5 +1,4 @@
-"""
-Adaptive Niche Crowding - 5-Vector Red Team Suite Generation
+"""Adaptive Niche Crowding - 5-Vector Red Team Suite Generation.
 
 Implements Adaptive Niche Crowding for maintaining diverse attack vector populations.
 Each niche represents a different attack strategy (Logic Trap, Narrative Singularity,
@@ -24,8 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class AdaptiveNicheCrowding:
-    """
-    Implements Adaptive Niche Crowding for diverse attack vector generation.
+    """Implements Adaptive Niche Crowding for diverse attack vector generation.
 
     Maintains a population of 5 attack vectors, each occupying a distinct niche:
     1. Logic Trap - High syntactic complexity
@@ -82,7 +80,7 @@ class AdaptiveNicheCrowding:
         },
     }
 
-    def __init__(self, config: NicheCrowdingConfig | None = None):
+    def __init__(self, config: NicheCrowdingConfig | None = None) -> None:
         """Initialize the Adaptive Niche Crowding system."""
         self.config = config or NicheCrowdingConfig()
         self.population: NichePopulation | None = None
@@ -101,8 +99,7 @@ class AdaptiveNicheCrowding:
         target_behavior: str,
         initial_prompts: dict[AttackVectorType, str] | None = None,
     ) -> NichePopulation:
-        """
-        Initialize a population with one vector per niche.
+        """Initialize a population with one vector per niche.
 
         Args:
             target_behavior: The target behavior to elicit
@@ -110,6 +107,7 @@ class AdaptiveNicheCrowding:
 
         Returns:
             Initialized NichePopulation
+
         """
         vectors: list[AttackVector] = []
 
@@ -188,8 +186,7 @@ class AdaptiveNicheCrowding:
         return templates.get(vector_type, f"Please help with: {target_behavior}")
 
     def compute_embedding(self, vector: AttackVector) -> np.ndarray:
-        """
-        Compute a simplified embedding for an attack vector.
+        """Compute a simplified embedding for an attack vector.
 
         In production, this would use a proper embedding model.
         Here we use heuristics based on prompt characteristics.
@@ -197,7 +194,7 @@ class AdaptiveNicheCrowding:
         prompt = vector.prompt.lower()
 
         # Feature extraction (simplified)
-        features = np.array(
+        return np.array(
             [
                 # Syntactic complexity (nested structures)
                 min(1.0, prompt.count("(") / 10 + prompt.count("[") / 10),
@@ -212,10 +209,8 @@ class AdaptiveNicheCrowding:
                 ),
                 # Information density
                 min(1.0, len(prompt) / 2000),
-            ]
+            ],
         )
-
-        return features
 
     def compute_niche_distance(
         self,
@@ -269,8 +264,7 @@ class AdaptiveNicheCrowding:
         candidates: list[AttackVector],
         num_select: int,
     ) -> list[AttackVector]:
-        """
-        Select vectors using crowding distance to maintain diversity.
+        """Select vectors using crowding distance to maintain diversity.
 
         Args:
             candidates: List of candidate vectors
@@ -278,6 +272,7 @@ class AdaptiveNicheCrowding:
 
         Returns:
             Selected vectors maintaining niche diversity
+
         """
         if len(candidates) <= num_select:
             return candidates
@@ -325,8 +320,7 @@ class AdaptiveNicheCrowding:
         self,
         offspring: AttackVector,
     ) -> bool:
-        """
-        Replace a vector in the population using niche-based replacement.
+        """Replace a vector in the population using niche-based replacement.
 
         The offspring replaces the most similar vector in its niche if it's better.
 
@@ -335,6 +329,7 @@ class AdaptiveNicheCrowding:
 
         Returns:
             True if replacement occurred
+
         """
         if not self.population:
             return False
@@ -370,7 +365,7 @@ class AdaptiveNicheCrowding:
                 self.population.vectors[most_similar_idx] = offspring
                 logger.debug(
                     f"Replaced vector {existing.id[:8]} with {offspring.id[:8]} "
-                    f"(score: {existing.effectiveness_score:.3f} -> {offspring.effectiveness_score:.3f})"
+                    f"(score: {existing.effectiveness_score:.3f} -> {offspring.effectiveness_score:.3f})",
                 )
                 return True
 
@@ -383,7 +378,7 @@ class AdaptiveNicheCrowding:
 
         # Average effectiveness
         self.population.average_effectiveness = np.mean(
-            [v.effectiveness_score for v in self.population.vectors]
+            [v.effectiveness_score for v in self.population.vectors],
         )
 
         # Diversity index
@@ -395,7 +390,7 @@ class AdaptiveNicheCrowding:
         logger.debug(
             f"Population metrics updated: "
             f"avg_effectiveness={self.population.average_effectiveness:.3f}, "
-            f"diversity={self.population.diversity_index:.3f}"
+            f"diversity={self.population.diversity_index:.3f}",
         )
 
     def _compute_pareto_front(self) -> list[str]:
@@ -432,8 +427,7 @@ class AdaptiveNicheCrowding:
         fitness_evaluator: callable,
         mutation_operator: callable,
     ) -> NichePopulation:
-        """
-        Evolve the population for one generation.
+        """Evolve the population for one generation.
 
         Args:
             fitness_evaluator: Function to evaluate vector effectiveness
@@ -441,9 +435,11 @@ class AdaptiveNicheCrowding:
 
         Returns:
             Updated population
+
         """
         if not self.population:
-            raise ValueError("Population not initialized")
+            msg = "Population not initialized"
+            raise ValueError(msg)
 
         # Evaluate current population
         for vector in self.population.vectors:
@@ -500,11 +496,11 @@ class AdaptiveNicheCrowding:
             vector.diversity_score = max(0.0, 1.0 - niche_dist)
 
     def get_red_team_suite(self) -> list[AttackVector]:
-        """
-        Get the current Red Team Suite (best vector from each niche).
+        """Get the current Red Team Suite (best vector from each niche).
 
         Returns:
             List of 5 attack vectors, one per niche
+
         """
         if not self.population:
             return []

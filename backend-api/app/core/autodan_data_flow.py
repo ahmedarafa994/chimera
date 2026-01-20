@@ -1,5 +1,4 @@
-"""
-AutoDAN Data Flow Mapper and API Connectivity Enhancements
+"""AutoDAN Data Flow Mapper and API Connectivity Enhancements.
 
 This module provides comprehensive data flow mapping, observability,
 and enhanced API connectivity for AutoDAN modules with improved
@@ -157,7 +156,7 @@ class FlowTrace:
 class DataFlowTracer:
     """Traces data flow across AutoDAN components."""
 
-    def __init__(self, max_traces: int = 1000):
+    def __init__(self, max_traces: int = 1000) -> None:
         self.max_traces = max_traces
         self._active_traces: dict[str, FlowTrace] = {}
         self._completed_traces: deque = deque(maxlen=max_traces)
@@ -194,7 +193,7 @@ class DataFlowTracer:
                 f"Completed trace for {request_id} - "
                 f"duration: {trace.total_duration_ms:.2f}ms, "
                 f"components: {len(trace.components_touched)}, "
-                f"events: {len(trace.events)}"
+                f"events: {len(trace.events)}",
             )
         return trace
 
@@ -232,7 +231,7 @@ class DataFlowTracer:
 class BottleneckAnalyzer:
     """Analyzes performance bottlenecks in data flow."""
 
-    def __init__(self, tracer: DataFlowTracer):
+    def __init__(self, tracer: DataFlowTracer) -> None:
         self.tracer = tracer
         self.logger = logging.getLogger(f"{__name__}.bottleneck_analyzer")
 
@@ -298,7 +297,7 @@ class BottleneckAnalyzer:
                                 "avg_duration_ms": avg_duration,
                                 "time_percentage": time_percentage,
                                 "severity": "high" if time_percentage > 40 else "medium",
-                            }
+                            },
                         )
 
         # Generate recommendations
@@ -317,11 +316,11 @@ class BottleneckAnalyzer:
             if severity == "high":
                 recommendations.append(
                     f"Critical: Optimize {component} - taking {bottleneck['time_percentage']:.1f}% "
-                    f"of total execution time"
+                    f"of total execution time",
                 )
             else:
                 recommendations.append(
-                    f"Consider optimizing {component} - moderate impact on performance"
+                    f"Consider optimizing {component} - moderate impact on performance",
                 )
 
         if analysis["avg_total_duration_ms"] > 2000:  # > 2 seconds
@@ -333,7 +332,7 @@ class BottleneckAnalyzer:
 class DependencyGraph:
     """Manages component dependencies and relationships."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.dependencies: list[ComponentDependency] = []
         self.components: set[str] = set()
         self.logger = logging.getLogger(f"{__name__}.dependency_graph")
@@ -387,7 +386,7 @@ class DependencyGraph:
         rec_stack = set()
         cycles = []
 
-        def dfs(component, path):
+        def dfs(component, path) -> None:
             if component in rec_stack:
                 # Found a cycle
                 cycle_start = path.index(component)
@@ -452,7 +451,7 @@ class CircuitBreakerConfig:
 class CircuitBreaker:
     """Circuit breaker for API calls."""
 
-    def __init__(self, name: str, config: CircuitBreakerConfig = None):
+    def __init__(self, name: str, config: CircuitBreakerConfig = None) -> None:
         self.name = name
         self.config = config or CircuitBreakerConfig()
         self.state = CircuitBreakerState.CLOSED
@@ -469,7 +468,7 @@ class CircuitBreaker:
 
         if self.state == CircuitBreakerState.CLOSED:
             return True
-        elif self.state == CircuitBreakerState.OPEN:
+        if self.state == CircuitBreakerState.OPEN:
             # Check if timeout has passed
             if current_time - self.last_failure_time > self.config.timeout_seconds:
                 self.state = CircuitBreakerState.HALF_OPEN
@@ -477,10 +476,7 @@ class CircuitBreaker:
                 self.logger.info(f"Circuit breaker {self.name} transitioning to HALF_OPEN")
                 return True
             return False
-        elif self.state == CircuitBreakerState.HALF_OPEN:
-            return True
-
-        return False
+        return self.state == CircuitBreakerState.HALF_OPEN
 
     def record_success(self) -> None:
         """Record a successful execution."""
@@ -509,7 +505,7 @@ class CircuitBreaker:
                 self.state = CircuitBreakerState.OPEN
                 self.logger.warning(
                     f"Circuit breaker {self.name} transitioning to OPEN "
-                    f"after {self.failure_count} failures"
+                    f"after {self.failure_count} failures",
                 )
         elif self.state == CircuitBreakerState.HALF_OPEN:
             self.state = CircuitBreakerState.OPEN
@@ -549,7 +545,7 @@ class CircuitBreaker:
 class EnhancedAPIConnector:
     """Enhanced API connector with circuit breakers and monitoring."""
 
-    def __init__(self, base_url: str = ""):
+    def __init__(self, base_url: str = "") -> None:
         self.base_url = base_url
         self.session: aiohttp.ClientSession | None = None
         self.circuit_breakers: dict[str, CircuitBreaker] = {}
@@ -649,8 +645,7 @@ class EnhancedAPIConnector:
         timeout: float = 30.0,
         request_id: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Make an API request with circuit breaker protection and tracing.
+        """Make an API request with circuit breaker protection and tracing.
 
         Args:
             method: HTTP method
@@ -665,6 +660,7 @@ class EnhancedAPIConnector:
 
         Raises:
             Exception: If request fails or circuit breaker is open
+
         """
         if not self.session:
             self.session = aiohttp.ClientSession()
@@ -674,7 +670,8 @@ class EnhancedAPIConnector:
 
         # Check circuit breaker
         if not circuit_breaker.can_execute():
-            raise Exception(f"Circuit breaker is OPEN for endpoint {endpoint}")
+            msg = f"Circuit breaker is OPEN for endpoint {endpoint}"
+            raise Exception(msg)
 
         async with self.traced_request(request_id, endpoint):
             try:
@@ -692,18 +689,21 @@ class EnhancedAPIConnector:
 
                     if response.status >= 400:
                         circuit_breaker.record_failure()
-                        raise Exception(f"API error {response.status}: {response_data}")
+                        msg = f"API error {response.status}: {response_data}"
+                        raise Exception(msg)
 
                     circuit_breaker.record_success()
                     return response_data
 
             except Exception as e:
                 circuit_breaker.record_failure()
-                self.logger.error(f"Request failed for {endpoint}: {e}")
+                self.logger.exception(f"Request failed for {endpoint}: {e}")
                 raise
 
     async def execute_autodan_request(
-        self, request_data: dict[str, Any], request_id: str | None = None
+        self,
+        request_data: dict[str, Any],
+        request_id: str | None = None,
     ) -> dict[str, Any]:
         """Execute AutoDAN request with enhanced monitoring."""
         request_id = request_id or str(uuid.uuid4())
@@ -776,7 +776,7 @@ class EnhancedAPIConnector:
 class PerformanceMonitor:
     """Monitors performance across AutoDAN components."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics: dict[str, list[float]] = defaultdict(list)
         self.counters: dict[str, int] = defaultdict(int)
         self.logger = logging.getLogger(f"{__name__}.performance_monitor")

@@ -3,9 +3,8 @@ import numpy as np
 
 
 class Retrieval:
-    def __init__(self, text_embedding_model, logger):
-        """
-        :param text_embedding_model: Any model with an `.encode(text) -> np.array` method.
+    def __init__(self, text_embedding_model, logger) -> None:
+        """:param text_embedding_model: Any model with an `.encode(text) -> np.array` method.
         :param logger: A logger instance for logging.
         """
         self.model = text_embedding_model
@@ -25,8 +24,7 @@ class Retrieval:
             return None
 
     def pop(self, library, query, k=5, return_all=False):
-        """
-        :param library:
+        """:param library:
             {
               "strategy_name": {
                 "Strategy": str,
@@ -89,7 +87,7 @@ class Retrieval:
         # If there are no embeddings in the entire library, return early
         if len(all_embeddings) == 0:
             self.logger.info(
-                "No embeddings found in the library. AutoDan strategies will be empty."
+                "No embeddings found in the library. AutoDan strategies will be empty.",
             )
             return True, []
 
@@ -139,34 +137,33 @@ class Retrieval:
         if return_all:
             # For beam search: return all top-k strategies without score-based filtering
             final_strategies = []
-            for _final_s_name, final_s_info in retrieved_strategies.items():
+            for final_s_info in retrieved_strategies.values():
                 new_dict = {key: value for key, value in final_s_info.items() if key != "Score"}
                 final_strategies.append(new_dict)
                 if len(final_strategies) >= k:
                     break
             return True, final_strategies
-        else:
-            # Original logic for vanilla AutoDAN-Turbo:
-            # 1) If a strategy with score >= 5 exists, return only the first one we find.
-            # 2) Else if strategies have 2 <= score < 5, return up to k of those.
-            # 3) Otherwise, return ineffective strategies list.
-            final_retrieved_strategies = []
-            final_ineffective_strategies = []
-            for _final_s_name, final_s_info in retrieved_strategies.items():
-                if final_s_info["Score"] >= 5:
-                    new_dict = {key: value for key, value in final_s_info.items() if key != "Score"}
-                    final_retrieved_strategies = [new_dict]
+        # Original logic for vanilla AutoDAN-Turbo:
+        # 1) If a strategy with score >= 5 exists, return only the first one we find.
+        # 2) Else if strategies have 2 <= score < 5, return up to k of those.
+        # 3) Otherwise, return ineffective strategies list.
+        final_retrieved_strategies = []
+        final_ineffective_strategies = []
+        for final_s_info in retrieved_strategies.values():
+            if final_s_info["Score"] >= 5:
+                new_dict = {key: value for key, value in final_s_info.items() if key != "Score"}
+                final_retrieved_strategies = [new_dict]
+                break
+            if 2 <= final_s_info["Score"] < 5:
+                new_dict = {key: value for key, value in final_s_info.items() if key != "Score"}
+                final_retrieved_strategies.append(new_dict)
+                if len(final_retrieved_strategies) >= k:
                     break
-                elif 2 <= final_s_info["Score"] < 5:
-                    new_dict = {key: value for key, value in final_s_info.items() if key != "Score"}
-                    final_retrieved_strategies.append(new_dict)
-                    if len(final_retrieved_strategies) >= k:
-                        break
-                else:
-                    new_dict = {key: value for key, value in final_s_info.items() if key != "Score"}
-                    final_ineffective_strategies.append(new_dict)
-            if final_retrieved_strategies:
-                return True, final_retrieved_strategies
-            if len(final_ineffective_strategies) > k:
-                return False, final_ineffective_strategies[:k]
-            return False, final_ineffective_strategies
+            else:
+                new_dict = {key: value for key, value in final_s_info.items() if key != "Score"}
+                final_ineffective_strategies.append(new_dict)
+        if final_retrieved_strategies:
+            return True, final_retrieved_strategies
+        if len(final_ineffective_strategies) > k:
+            return False, final_ineffective_strategies[:k]
+        return False, final_ineffective_strategies

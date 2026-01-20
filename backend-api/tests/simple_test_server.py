@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Ultra-simple test server for Chimera API.
+"""Ultra-simple test server for Chimera API.
 Uses centralized port configuration to avoid conflicts.
 NOTE: This is a standalone server script, not a pytest test file.
 """
@@ -17,15 +16,13 @@ try:
     from app.core.port_config import get_test_server_port
 
     PORT = get_test_server_port()
-    print(f"Using centralized port configuration: {PORT}")
 except ImportError:
     # Fallback to default port if port config not available
     PORT = 5001
-    print(f"Using fallback port: {PORT}")
 
 
 class TestHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
+    def do_GET(self) -> None:
         if self.path == "/health":
             self.send_response(200)
             self.send_header("Content-type", "application/json")
@@ -44,7 +41,7 @@ class TestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"Not found")
 
-    def do_POST(self):
+    def do_POST(self) -> None:
         content_length = int(self.headers.get("Content-Length", 0))
         post_data = self.rfile.read(content_length)
 
@@ -62,7 +59,5 @@ class TestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode())
 
 
-print(f"Starting test server on port {PORT}")
 with socketserver.TCPServer(("", PORT), TestHandler) as httpd:
-    print(f"Server running at http://localhost:{PORT}")
     httpd.serve_forever()

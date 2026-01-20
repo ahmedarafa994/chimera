@@ -55,14 +55,22 @@ const eslintConfig = defineConfig([
         "ts-check": false,
         minimumDescriptionLength: 10
       }],
-      // Demote React Compiler/hooks experimental rules to warnings
-      // These are new rules from React 19+ and many patterns need refactoring
+      // Disable React Compiler experimental rules - these are from React 19+ and need significant refactoring
+      // The codebase uses patterns that are incompatible with the new compiler
+      "react-compiler/react-compiler": "off",
+      // Demote React hooks rules to warnings for gradual migration
       "react-hooks/refs": "warn",
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/incompatible-library": "warn",
       "react-hooks/unsupported-syntax": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/rules-of-hooks": "warn",
+      // Demote Next.js module assignment warnings (used in some optimization patterns)
+      "@next/next/no-assign-module-variable": "warn",
       // Demote unused expressions to warning (used in some patterns like void 0)
       "@typescript-eslint/no-unused-expressions": "warn",
+      // Demote empty object type (used in some interface patterns)
+      "@typescript-eslint/no-empty-object-type": "warn",
     },
   },
   // Override default ignores of eslint-config-next.

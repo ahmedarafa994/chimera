@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""
-Comprehensive test to verify no port conflicts exist and ensure test server reliability
-"""
+"""Comprehensive test to verify no port conflicts exist and ensure test server reliability."""
 
 import os
 import subprocess
+import sys
 import time
 
 import requests
@@ -12,10 +11,8 @@ import requests
 from app.core.port_config import get_ports
 
 
-def test_port_conflicts():
-    """Test that no port conflicts exist in the configuration"""
-    print("Testing port conflict detection...")
-
+def test_port_conflicts() -> bool:
+    """Test that no port conflicts exist in the configuration."""
     # Get port configuration
     port_config = get_ports()
 
@@ -27,27 +24,22 @@ def test_port_conflicts():
     for service_name, port in all_ports.items():
         if port in used_ports:
             conflicts.append(
-                f"Port {port} conflict: {service_name} vs {port_config._get_service_by_port(port)}"
+                f"Port {port} conflict: {service_name} vs {port_config._get_service_by_port(port)}",
             )
         else:
             used_ports.add(port)
 
-    if conflicts:
-        print(f"[ERROR] Port conflicts detected: {', '.join(conflicts)}")
-        return False
-    else:
-        print(f"[OK] No port conflicts detected. {len(used_ports)} unique ports assigned.")
-        return True
+    return not conflicts
 
 
-def test_test_server_reliability():
-    """Test that the test server starts reliably on the correct port"""
-    print("Testing test server reliability...")
-
+def test_test_server_reliability() -> bool | None:
+    """Test that the test server starts reliably on the correct port."""
     try:
         # Start the server
         proc = subprocess.Popen(
-            ["py", "tests/test_server.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            ["py", "tests/test_server.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
 
         # Wait for server to start
@@ -61,41 +53,26 @@ def test_test_server_reliability():
                 expected_port = 5001
                 actual_port = data.get("port", 0)
 
-                if actual_port == expected_port:
-                    print(f"[OK] Test server running reliably on port {actual_port}")
-                    return True
-                else:
-                    print(
-                        f"[ERROR] Test server running on wrong port: expected {expected_port}, got {actual_port}"
-                    )
-                    return False
-            else:
-                print(f"[ERROR] Test server returned status {response.status_code}")
-                return False
-        except requests.exceptions.ConnectionError:
-            print("[ERROR] Test server did not start on port 5001")
+                return actual_port == expected_port
             return False
-        except Exception as e:
-            print(f"[ERROR] Error testing server: {e}")
+        except requests.exceptions.ConnectionError:
+            return False
+        except Exception:
             return False
         finally:
             # Clean up
             try:
                 proc.terminate()
                 proc.wait(timeout=2)
-                print("[OK] Test server cleaned up successfully")
-            except Exception as e:
-                print(f"[WARNING] Could not clean up test server process: {e}")
+            except Exception:
+                pass
 
-    except Exception as e:
-        print(f"[ERROR] Error starting test server: {e}")
+    except Exception:
         return False
 
 
-def test_environment_variable_overrides():
-    """Test that environment variable overrides work correctly"""
-    print("Testing environment variable overrides...")
-
+def test_environment_variable_overrides() -> bool | None:
+    """Test that environment variable overrides work correctly."""
     # Test with environment variable override
     os.environ["TEST_SERVER_PORT"] = "5002"
 
@@ -107,15 +84,9 @@ def test_environment_variable_overrides():
         # Should use the environment variable override
         test_port = test_config.get_port("test_server")
 
-        if test_port == 5002:
-            print("[OK] Environment variable override working correctly")
-            return True
-        else:
-            print(f"[ERROR] Environment variable override failed: expected 5002, got {test_port}")
-            return False
+        return test_port == 5002
 
-    except Exception as e:
-        print(f"[ERROR] Environment variable test failed: {e}")
+    except Exception:
         return False
     finally:
         # Clean up environment variable
@@ -123,10 +94,8 @@ def test_environment_variable_overrides():
             del os.environ["TEST_SERVER_PORT"]
 
 
-def test_port_validation():
-    """Test port validation functionality"""
-    print("Testing port validation functionality...")
-
+def test_port_validation() -> bool | None:
+    """Test port validation functionality."""
     try:
         from app.core.port_config import get_ports
 
@@ -139,25 +108,14 @@ def test_port_validation():
         # Test that unassigned ports are available
         free_port_available = port_config.validate_port_available(8080)  # Should be True
 
-        if not backend_available and not test_server_available and free_port_available:
-            print("[OK] Port validation working correctly")
-            return True
-        else:
-            print(
-                f"[ERROR] Port validation failed: backend_available={backend_available}, test_server_available={test_server_available}, free_port_available={free_port_available}"
-            )
-            return False
+        return bool(not backend_available and not test_server_available and free_port_available)
 
-    except Exception as e:
-        print(f"[ERROR] Port validation test failed: {e}")
+    except Exception:
         return False
 
 
-def main():
-    """Run all comprehensive port tests"""
-    print("Running comprehensive port configuration tests...")
-    print("=" * 60)
-
+def main() -> bool:
+    """Run all comprehensive port tests."""
     tests = [
         test_port_conflicts,
         test_port_validation,
@@ -170,25 +128,16 @@ def main():
         try:
             result = test()
             results.append(result)
-        except Exception as e:
-            print(f"[ERROR] Test {test.__name__} failed with exception: {e}")
+        except Exception:
             results.append(False)
-        print("-" * 40)
 
     # Summary
     passed = sum(results)
     total = len(results)
 
-    print(f"Test Summary: {passed}/{total} tests passed")
-
-    if passed == total:
-        print("[OK] All comprehensive port tests passed!")
-        return True
-    else:
-        print("[ERROR] Some tests failed")
-        return False
+    return passed == total
 
 
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

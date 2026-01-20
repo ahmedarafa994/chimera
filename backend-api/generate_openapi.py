@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Generate static OpenAPI specification file for Chimera API.
+"""Generate static OpenAPI specification file for Chimera API.
 
 This script generates a static openapi.json file from the FastAPI application
 for use in documentation, client generation, and API testing tools.
@@ -19,8 +18,7 @@ sys.setrecursionlimit(5000)
 
 
 def generate_openapi_spec():
-    """Generate and save OpenAPI specification to openapi.json"""
-
+    """Generate and save OpenAPI specification to openapi.json."""
     try:
         # Import app after setting recursion limit
         from app.main import app
@@ -29,9 +27,6 @@ def generate_openapi_spec():
         try:
             openapi_schema = app.openapi()
         except RecursionError:
-            print("✗ RecursionError: Schema has circular references", file=sys.stderr)
-            print("  Generating simplified schema without model validation...", file=sys.stderr)
-
             # Generate simplified schema
             openapi_schema = {
                 "openapi": "3.1.0",
@@ -48,7 +43,7 @@ def generate_openapi_spec():
                     "securitySchemes": {
                         "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-API-Key"},
                         "BearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
-                    }
+                    },
                 },
                 "tags": app.openapi_tags,
             }
@@ -75,18 +70,9 @@ def generate_openapi_spec():
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(openapi_schema, f, indent=2, ensure_ascii=False)
 
-        print(f"✓ OpenAPI specification generated: {output_path}")
-        print(f"  Title: {openapi_schema['info']['title']}")
-        print(f"  Version: {openapi_schema['info']['version']}")
-        print(f"  Endpoints: {len(openapi_schema.get('paths', {}))} paths")
-        print(
-            f"  Components: {len(openapi_schema.get('components', {}).get('schemas', {}))} schemas"
-        )
-
         return output_path
 
-    except Exception as e:
-        print(f"✗ Error generating OpenAPI spec: {e}", file=sys.stderr)
+    except Exception:
         import traceback
 
         traceback.print_exc()

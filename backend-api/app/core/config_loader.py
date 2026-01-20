@@ -1,5 +1,4 @@
-"""
-Configuration Loader
+"""Configuration Loader
 Provides utilities for loading and merging configuration from multiple sources.
 """
 
@@ -14,15 +13,14 @@ from app.core.logging import logger
 
 
 class ConfigurationLoader:
-    """
-    Loads configuration from multiple sources with priority:
+    """Loads configuration from multiple sources with priority:
     1. Environment variables (highest priority)
     2. .env file
     3. JSON/YAML configuration files
-    4. Default values (lowest priority)
+    4. Default values (lowest priority).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._config_cache: dict[str, Any] = {}
         self._watchers: list[callable] = []
 
@@ -61,8 +59,7 @@ class ConfigurationLoader:
         return env_config
 
     def load_from_file(self, path: str | Path) -> dict[str, Any]:
-        """
-        Load configuration from a JSON or YAML file.
+        """Load configuration from a JSON or YAML file.
         Supports environment variable interpolation using ${VAR_NAME} syntax.
         """
         path = Path(path)
@@ -89,15 +86,14 @@ class ConfigurationLoader:
             return {}
 
     def _interpolate_env_vars(self, config: Any) -> Any:
-        """
-        Recursively interpolate environment variables in configuration.
+        """Recursively interpolate environment variables in configuration.
         Supports ${VAR_NAME} and ${VAR_NAME:default} syntax.
         """
         if isinstance(config, str):
             return self._interpolate_string(config)
-        elif isinstance(config, dict):
+        if isinstance(config, dict):
             return {k: self._interpolate_env_vars(v) for k, v in config.items()}
-        elif isinstance(config, list):
+        if isinstance(config, list):
             return [self._interpolate_env_vars(item) for item in config]
         return config
 
@@ -115,8 +111,7 @@ class ConfigurationLoader:
         return re.sub(pattern, replace, value)
 
     def merge_configurations(self, *configs: dict[str, Any]) -> dict[str, Any]:
-        """
-        Merge multiple configurations with later configs taking precedence.
+        """Merge multiple configurations with later configs taking precedence.
         Performs deep merge for nested dictionaries.
         """
         result = {}
@@ -139,10 +134,11 @@ class ConfigurationLoader:
         return result
 
     def load_complete_configuration(
-        self, config_files: list[str | Path] | None = None, defaults: dict[str, Any] | None = None
+        self,
+        config_files: list[str | Path] | None = None,
+        defaults: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """
-        Load complete configuration from all sources.
+        """Load complete configuration from all sources.
 
         Priority (highest to lowest):
         1. Environment variables
@@ -170,9 +166,7 @@ class ConfigurationLoader:
         return self.merge_configurations(*configs_to_merge)
 
     def validate_configuration(self, config: dict[str, Any]) -> list[str]:
-        """
-        Validate configuration and return list of validation errors.
-        """
+        """Validate configuration and return list of validation errors."""
         from app.core.config_validator import ConfigValidator
 
         validator = ConfigValidator()

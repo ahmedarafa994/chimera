@@ -1,4 +1,4 @@
-"""Add jailbreak datasets and prompts
+"""Add jailbreak datasets and prompts.
 
 Revision ID: d1d2c3b4e5f6
 Revises: 7f25595d4099
@@ -37,7 +37,10 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_jailbreak_datasets_id"), "jailbreak_datasets", ["id"], unique=False)
     op.create_index(
-        op.f("ix_jailbreak_datasets_name"), "jailbreak_datasets", ["name"], unique=False
+        op.f("ix_jailbreak_datasets_name"),
+        "jailbreak_datasets",
+        ["name"],
+        unique=False,
     )
 
     op.create_table(
@@ -62,7 +65,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_jailbreak_prompts_dataset_id"), "jailbreak_prompts", ["dataset_id"], unique=False
+        op.f("ix_jailbreak_prompts_dataset_id"),
+        "jailbreak_prompts",
+        ["dataset_id"],
+        unique=False,
     )
 
     # add column to evasion_tasks (SQLite-safe batch alter)

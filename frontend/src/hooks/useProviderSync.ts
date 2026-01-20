@@ -351,6 +351,9 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 5;
 
+  // Use a ref to hold the connect function to allow recursive calling
+  const connectRef = useRef<(() => void) | null>(null);
+
   const connect = useCallback(() => {
     if (!enabled || wsRef.current?.readyState === WebSocket.OPEN) return;
 
@@ -422,8 +425,7 @@ export function useSyncWebSocket(options: UseSyncWebSocketOptions = {}) {
     }
   }, [enabled, onEvent, onConnectionChange, queryClient, reconnectAttempts]);
 
-  // Use a ref to hold the connect function to allow recursive calling
-  const connectRef = useRef(connect);
+  // Update the ref whenever connect changes
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);

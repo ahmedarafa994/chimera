@@ -1,5 +1,4 @@
-"""
-Qwen Provider Plugin for Project Chimera.
+"""Qwen Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for Alibaba Cloud Qwen AI integration,
 supporting Qwen-Max, Qwen-Plus, Qwen-Turbo, and specialized Qwen models.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class QwenPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for Alibaba Cloud Qwen API.
+    """Provider plugin for Alibaba Cloud Qwen API.
 
     Qwen uses its own API format (DashScope) but has OpenAI-compatible
     endpoint available as well. This implementation uses the OpenAI-
@@ -209,8 +207,7 @@ class QwenPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available Qwen models.
+        """List available Qwen models.
 
         Attempts to fetch from API, falls back to static list on failure.
         """
@@ -261,7 +258,7 @@ class QwenPlugin(BaseProviderPlugin):
                         context_window=32768,
                         supports_streaming=True,
                         capabilities=["chat"],
-                    )
+                    ),
                 )
 
         # Add static models not in API response
@@ -288,12 +285,15 @@ class QwenPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using Qwen API (OpenAI-compatible)."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Qwen API key is required")
+            msg = "Qwen API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
         start_time = time.time()
@@ -358,19 +358,22 @@ class QwenPlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Qwen API error: {e.response.status_code}")
+            logger.exception(f"Qwen API error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"Qwen generation error: {e}")
+            logger.exception(f"Qwen generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Qwen API."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Qwen API key is required")
+            msg = "Qwen API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
 
@@ -443,5 +446,5 @@ class QwenPlugin(BaseProviderPlugin):
                             logger.warning(f"Parse error: {e}")
                             continue
         except Exception as e:
-            logger.error(f"Qwen streaming error: {e}")
+            logger.exception(f"Qwen streaming error: {e}")
             raise

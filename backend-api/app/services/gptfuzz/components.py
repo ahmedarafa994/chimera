@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class GPTFuzzMutator(ABC):
-    def __init__(self, model_name: str = "gemini-1.5-flash"):
+    def __init__(self, model_name: str = "gemini-1.5-flash") -> None:
         self.model_name = model_name
 
     @abstractmethod
@@ -31,7 +31,7 @@ class GPTFuzzMutator(ABC):
             )
             return response.content
         except Exception as e:
-            logger.error(f"Mutation generation failed: {e}")
+            logger.exception(f"Mutation generation failed: {e}")
             return ""
 
 
@@ -79,24 +79,22 @@ class SelectionPolicy(ABC):
     @abstractmethod
     def select(self, seeds: list[dict[str, Any]]) -> str:
         """Select a seed from the pool."""
-        pass
 
     @abstractmethod
     def update(self, seed: str, result: Any):
         """Update policy state based on result."""
-        pass
 
 
 class RandomSelectPolicy(SelectionPolicy):
     def select(self, seeds: list[dict[str, Any]]) -> str:
         return secrets.choice([s["text"] for s in seeds])
 
-    def update(self, seed: str, result: Any):
+    def update(self, seed: str, result: Any) -> None:
         pass
 
 
 class MCTSExploreSelectPolicy(SelectionPolicy):
-    def __init__(self):
+    def __init__(self) -> None:
         self.visits = {}
         self.scores = {}
         self.step = 0
@@ -118,7 +116,7 @@ class MCTSExploreSelectPolicy(SelectionPolicy):
             else:
                 exploitation = self.scores[seed] / self.visits[seed]
                 exploration = gptfuzz_config.MCTS_EXPLORATION_WEIGHT * np.sqrt(
-                    np.log(self.step) / self.visits[seed]
+                    np.log(self.step) / self.visits[seed],
                 )
                 score = exploitation + exploration
 
@@ -128,7 +126,7 @@ class MCTSExploreSelectPolicy(SelectionPolicy):
 
         return selected_seed if selected_seed else seeds[0]["text"]
 
-    def update(self, seed: str, result: Any):
+    def update(self, seed: str, result: Any) -> None:
         # result is expected to be success (1) or failure (0) or a score
         if seed not in self.visits:
             self.visits[seed] = 0
@@ -145,7 +143,7 @@ class Predictor(ABC):
 
 
 class LLMPredictor(Predictor):
-    def __init__(self, model_name: str = "gemini-1.5-pro"):
+    def __init__(self, model_name: str = "gemini-1.5-pro") -> None:
         self.model_name = model_name
 
     async def predict(self, prompt: str, response: str) -> float:
@@ -168,5 +166,5 @@ class LLMPredictor(Predictor):
                 return float(match.group(1))
             return 0.0
         except Exception as e:
-            logger.error(f"Prediction failed: {e}")
+            logger.exception(f"Prediction failed: {e}")
             return 0.0

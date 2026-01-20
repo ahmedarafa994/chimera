@@ -1,5 +1,4 @@
-"""
-Optimized Chimera LLM Adapter with Connection Pooling and Advanced Circuit Breakers
+"""Optimized Chimera LLM Adapter with Connection Pooling and Advanced Circuit Breakers.
 
 This module provides enhanced LLM adapter functionality with:
 - HTTP connection pooling for improved performance
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class CircuitBreakerState(Enum):
-    """Circuit breaker states"""
+    """Circuit breaker states."""
 
     CLOSED = "closed"  # Normal operation
     OPEN = "open"  # Failing, rejecting requests
@@ -37,7 +36,7 @@ class CircuitBreakerState(Enum):
 
 @dataclass
 class CircuitBreakerConfig:
-    """Configuration for circuit breaker"""
+    """Configuration for circuit breaker."""
 
     failure_threshold: int = 5
     recovery_timeout: float = 60.0
@@ -47,7 +46,7 @@ class CircuitBreakerConfig:
 
 @dataclass
 class ConnectionPoolConfig:
-    """Configuration for HTTP connection pool"""
+    """Configuration for HTTP connection pool."""
 
     connector_limit: int = 100
     connector_limit_per_host: int = 30
@@ -60,7 +59,7 @@ class ConnectionPoolConfig:
 
 @dataclass
 class BatchConfig:
-    """Configuration for batch processing"""
+    """Configuration for batch processing."""
 
     max_batch_size: int = 10
     max_concurrent_requests: int = 20
@@ -70,7 +69,7 @@ class BatchConfig:
 
 @dataclass
 class OptimizedAdapterMetrics:
-    """Metrics tracking for the optimized adapter"""
+    """Metrics tracking for the optimized adapter."""
 
     total_requests: int = 0
     successful_requests: int = 0
@@ -83,9 +82,9 @@ class OptimizedAdapterMetrics:
 
 
 class AdvancedCircuitBreaker:
-    """Advanced circuit breaker with multiple failure conditions"""
+    """Advanced circuit breaker with multiple failure conditions."""
 
-    def __init__(self, config: CircuitBreakerConfig):
+    def __init__(self, config: CircuitBreakerConfig) -> None:
         self.config = config
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
@@ -94,13 +93,13 @@ class AdvancedCircuitBreaker:
         self.next_attempt_time = 0.0
 
     async def call(self, func, *args, **kwargs):
-        """Execute function with circuit breaker protection"""
+        """Execute function with circuit breaker protection."""
         if self.state == CircuitBreakerState.OPEN:
             if time.time() < self.next_attempt_time:
-                raise ResourceExhaustedError("Circuit breaker is open")
-            else:
-                self.state = CircuitBreakerState.HALF_OPEN
-                self.success_count = 0
+                msg = "Circuit breaker is open"
+                raise ResourceExhaustedError(msg)
+            self.state = CircuitBreakerState.HALF_OPEN
+            self.success_count = 0
 
         try:
             result = await func(*args, **kwargs)
@@ -110,8 +109,8 @@ class AdvancedCircuitBreaker:
             await self._on_failure(e)
             raise
 
-    async def _on_success(self):
-        """Handle successful request"""
+    async def _on_success(self) -> None:
+        """Handle successful request."""
         if self.state == CircuitBreakerState.HALF_OPEN:
             self.success_count += 1
             if self.success_count >= self.config.success_threshold:
@@ -120,8 +119,8 @@ class AdvancedCircuitBreaker:
         elif self.state == CircuitBreakerState.CLOSED:
             self.failure_count = 0
 
-    async def _on_failure(self, exception: Exception):
-        """Handle failed request"""
+    async def _on_failure(self, exception: Exception) -> None:
+        """Handle failed request."""
         self.failure_count += 1
         self.last_failure_time = time.time()
 
@@ -132,23 +131,23 @@ class AdvancedCircuitBreaker:
 
 
 class RequestCache:
-    """Simple in-memory cache for LLM requests"""
+    """Simple in-memory cache for LLM requests."""
 
-    def __init__(self, max_size: int = 1000, ttl_seconds: float = 300):
+    def __init__(self, max_size: int = 1000, ttl_seconds: float = 300) -> None:
         self.cache: dict[str, tuple] = {}
         self.access_times: dict[str, float] = {}
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
 
     def _generate_key(self, request: PromptRequest) -> str:
-        """Generate cache key from request"""
+        """Generate cache key from request."""
         import hashlib
 
         key_data = f"{request.prompt}_{request.config.temperature}_{request.config.max_tokens}"
         return hashlib.md5(key_data.encode()).hexdigest()
 
     def get(self, request: PromptRequest) -> PromptResponse | None:
-        """Get cached response"""
+        """Get cached response."""
         key = self._generate_key(request)
 
         if key not in self.cache:
@@ -164,8 +163,8 @@ class RequestCache:
         self.access_times[key] = time.time()
         return cached_response
 
-    def set(self, request: PromptRequest, response: PromptResponse):
-        """Cache response"""
+    def set(self, request: PromptRequest, response: PromptResponse) -> None:
+        """Cache response."""
         key = self._generate_key(request)
         current_time = time.time()
 
@@ -176,21 +175,21 @@ class RequestCache:
         self.cache[key] = (response, current_time)
         self.access_times[key] = current_time
 
-    def _evict(self, key: str):
-        """Evict specific key"""
+    def _evict(self, key: str) -> None:
+        """Evict specific key."""
         self.cache.pop(key, None)
         self.access_times.pop(key, None)
 
-    def _evict_lru(self):
-        """Evict least recently used entry"""
+    def _evict_lru(self) -> None:
+        """Evict least recently used entry."""
         if not self.access_times:
             return
 
         lru_key = min(self.access_times.keys(), key=lambda k: self.access_times[k])
         self._evict(lru_key)
 
-    def clear(self):
-        """Clear all cached entries"""
+    def clear(self) -> None:
+        """Clear all cached entries."""
         self.cache.clear()
         self.access_times.clear()
 
@@ -200,8 +199,7 @@ class RequestCache:
 
 
 class OptimizedChimeraAdapter:
-    """
-    Optimized Chimera LLM Adapter with advanced features
+    """Optimized Chimera LLM Adapter with advanced features.
 
     Features:
     - HTTP connection pooling for better performance
@@ -221,7 +219,7 @@ class OptimizedChimeraAdapter:
         batch_config: BatchConfig | None = None,
         enable_caching: bool = True,
         cache_ttl: float = 300.0,
-    ):
+    ) -> None:
         self.model_name = model_name
         self.provider = provider
 
@@ -251,8 +249,8 @@ class OptimizedChimeraAdapter:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.cleanup()
 
-    async def initialize(self):
-        """Initialize the adapter with connection pool"""
+    async def initialize(self) -> None:
+        """Initialize the adapter with connection pool."""
         if self.session is not None:
             return
 
@@ -281,8 +279,8 @@ class OptimizedChimeraAdapter:
 
         logger.info("HTTP connection pool initialized")
 
-    async def cleanup(self):
-        """Cleanup resources"""
+    async def cleanup(self) -> None:
+        """Cleanup resources."""
         if self.session:
             await self.session.close()
             self.session = None
@@ -293,7 +291,7 @@ class OptimizedChimeraAdapter:
         logger.info("OptimizedChimeraAdapter cleaned up")
 
     async def generate(self, request: PromptRequest) -> PromptResponse:
-        """Generate single response with optimizations"""
+        """Generate single response with optimizations."""
         start_time = time.time()
         self.metrics.total_requests += 1
 
@@ -319,7 +317,7 @@ class OptimizedChimeraAdapter:
 
         except Exception as e:
             self.metrics.failed_requests += 1
-            logger.error(f"Generation failed: {e}")
+            logger.exception(f"Generation failed: {e}")
             raise
         finally:
             elapsed = time.time() - start_time
@@ -331,7 +329,7 @@ class OptimizedChimeraAdapter:
         retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError)),
     )
     async def _generate_with_retry(self, request: PromptRequest) -> PromptResponse:
-        """Generate response with retry logic"""
+        """Generate response with retry logic."""
         await self.initialize()
 
         async with self.semaphore:
@@ -339,9 +337,11 @@ class OptimizedChimeraAdapter:
             return await self.fallback_adapter.generate(request)
 
     async def batch_generate(
-        self, requests: list[PromptRequest], progress_callback: callable | None = None
+        self,
+        requests: list[PromptRequest],
+        progress_callback: callable | None = None,
     ) -> list[PromptResponse]:
-        """Generate multiple responses in parallel with batching"""
+        """Generate multiple responses in parallel with batching."""
         if not requests:
             return []
 
@@ -380,18 +380,19 @@ class OptimizedChimeraAdapter:
                     progress_callback(total_processed, len(requests))
 
             except TimeoutError:
-                logger.error(f"Batch timeout after {self.batch_config.batch_timeout}s")
+                logger.exception(f"Batch timeout after {self.batch_config.batch_timeout}s")
                 break
 
         logger.info(f"Batch processing completed: {len(results)}/{len(requests)} successful")
         return results
 
-    async def warmup(self, num_requests: int = 5):
-        """Warm up the adapter by making test requests"""
+    async def warmup(self, num_requests: int = 5) -> None:
+        """Warm up the adapter by making test requests."""
         logger.info(f"Warming up adapter with {num_requests} requests")
 
         test_request = PromptRequest(
-            prompt="Test warmup request", config={"temperature": 0.1, "max_tokens": 10}
+            prompt="Test warmup request",
+            config={"temperature": 0.1, "max_tokens": 10},
         )
 
         warmup_tasks = [self.generate(test_request) for _ in range(num_requests)]
@@ -403,7 +404,7 @@ class OptimizedChimeraAdapter:
             logger.warning(f"Warmup failed: {e}")
 
     def get_metrics(self) -> dict[str, Any]:
-        """Get comprehensive adapter metrics"""
+        """Get comprehensive adapter metrics."""
         total_requests = self.metrics.total_requests
 
         return {
@@ -430,7 +431,7 @@ class OptimizedChimeraAdapter:
         }
 
     def _get_connection_pool_stats(self) -> dict[str, Any]:
-        """Get connection pool statistics"""
+        """Get connection pool statistics."""
         if not self.session or not self.session.connector:
             return {}
 
@@ -441,8 +442,8 @@ class OptimizedChimeraAdapter:
             "acquired_connections": getattr(connector, "_acquired_connection_count", 0),
         }
 
-    def reset_metrics(self):
-        """Reset all metrics"""
+    def reset_metrics(self) -> None:
+        """Reset all metrics."""
         self.metrics = OptimizedAdapterMetrics()
         if self.request_cache:
             self.request_cache.clear()
@@ -451,9 +452,11 @@ class OptimizedChimeraAdapter:
 
 # Factory function for easy instantiation
 async def create_optimized_adapter(
-    model_name: str | None = None, provider: str | None = None, **kwargs
+    model_name: str | None = None,
+    provider: str | None = None,
+    **kwargs,
 ) -> OptimizedChimeraAdapter:
-    """Create and initialize an optimized adapter"""
+    """Create and initialize an optimized adapter."""
     adapter = OptimizedChimeraAdapter(model_name=model_name, provider=provider, **kwargs)
     await adapter.initialize()
     return adapter
@@ -462,7 +465,7 @@ async def create_optimized_adapter(
 # Context manager for managed adapter lifecycle
 @asynccontextmanager
 async def managed_optimized_adapter(*args, **kwargs):
-    """Context manager for automatic adapter lifecycle management"""
+    """Context manager for automatic adapter lifecycle management."""
     adapter = OptimizedChimeraAdapter(*args, **kwargs)
     try:
         await adapter.initialize()

@@ -1,5 +1,4 @@
-"""
-Unified Error Handling System
+"""Unified Error Handling System.
 
 This module provides a consistent error hierarchy and handling strategy across
 the entire backend. All errors inherit from ChimeraError and provide standardized
@@ -23,7 +22,7 @@ class ChimeraError(Exception):
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
         error_code: str = "CHIMERA_ERROR",
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(message)
         self.message = message
         self.status_code = status_code
@@ -38,7 +37,7 @@ class ChimeraError(Exception):
                 "message": self.message,
                 "status_code": self.status_code,
                 "details": self.details,
-            }
+            },
         }
 
 
@@ -46,7 +45,7 @@ class ChimeraError(Exception):
 class ServiceError(ChimeraError):
     """Base error for service layer."""
 
-    def __init__(self, message: str, service_name: str, **kwargs):
+    def __init__(self, message: str, service_name: str, **kwargs) -> None:
         # Extract status_code from kwargs if present, otherwise use default
         error_status_code = kwargs.pop("status_code", status.HTTP_500_INTERNAL_SERVER_ERROR)
         super().__init__(
@@ -60,7 +59,7 @@ class ServiceError(ChimeraError):
 class LLMProviderError(ServiceError):
     """LLM provider errors."""
 
-    def __init__(self, message: str, provider: str, **kwargs):
+    def __init__(self, message: str, provider: str, **kwargs) -> None:
         # Extract status_code from kwargs, default to 502 for provider errors
         error_status_code = kwargs.pop("status_code", status.HTTP_502_BAD_GATEWAY)
         # Merge provider into details
@@ -79,8 +78,11 @@ class ProviderNotAvailableError(LLMProviderError):
     """Provider not available error."""
 
     def __init__(
-        self, provider: str, message: str | None = None, details: dict[str, Any] | None = None
-    ):
+        self,
+        provider: str,
+        message: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         final_message = message or f"Provider {provider} is not available"
         super().__init__(
             final_message,
@@ -93,35 +95,37 @@ class ProviderNotAvailableError(LLMProviderError):
 class TransformationError(ServiceError):
     """Transformation errors."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         # Extract status_code from kwargs, default to 400 for transformation errors
         error_status_code = kwargs.pop("status_code", status.HTTP_400_BAD_REQUEST)
         super().__init__(
-            message, service_name="transformation", status_code=error_status_code, **kwargs
+            message,
+            service_name="transformation",
+            status_code=error_status_code,
+            **kwargs,
         )
 
 
 class InvalidPotencyError(TransformationError):
     """Invalid potency level error."""
 
-    pass
-
 
 class InvalidTechniqueError(TransformationError):
     """Invalid technique suite error."""
-
-    pass
 
 
 # Generation Errors
 class GenerationError(ServiceError):
     """Generation errors."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         # Extract status_code from kwargs, default to 500 for generation errors
         error_status_code = kwargs.pop("status_code", status.HTTP_500_INTERNAL_SERVER_ERROR)
         super().__init__(
-            message, service_name="generation", status_code=error_status_code, **kwargs
+            message,
+            service_name="generation",
+            status_code=error_status_code,
+            **kwargs,
         )
 
 
@@ -129,20 +133,18 @@ class GenerationError(ServiceError):
 class DataError(ChimeraError):
     """Base error for data layer."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         super().__init__(message, error_code="DATA_ERROR", **kwargs)
 
 
 class RepositoryError(DataError):
     """Repository operation errors."""
 
-    pass
-
 
 class DatabaseConnectionError(DataError):
     """Database connection errors."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         super().__init__(
             message,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -155,7 +157,7 @@ class DatabaseConnectionError(DataError):
 class ValidationError(ChimeraError):
     """Input validation errors."""
 
-    def __init__(self, message: str, field: str | None = None, **kwargs):
+    def __init__(self, message: str, field: str | None = None, **kwargs) -> None:
         details = {"field": field} if field else {}
         super().__init__(
             message,
@@ -170,7 +172,7 @@ class ValidationError(ChimeraError):
 class AuthenticationError(ChimeraError):
     """Authentication errors."""
 
-    def __init__(self, message: str = "Authentication failed", **kwargs):
+    def __init__(self, message: str = "Authentication failed", **kwargs) -> None:
         super().__init__(
             message,
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -182,7 +184,7 @@ class AuthenticationError(ChimeraError):
 class AuthorizationError(ChimeraError):
     """Authorization errors."""
 
-    def __init__(self, message: str = "Insufficient permissions", **kwargs):
+    def __init__(self, message: str = "Insufficient permissions", **kwargs) -> None:
         super().__init__(
             message,
             status_code=status.HTTP_403_FORBIDDEN,
@@ -195,7 +197,7 @@ class AuthorizationError(ChimeraError):
 class ConfigurationError(ChimeraError):
     """Configuration errors."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         super().__init__(
             message,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -208,7 +210,7 @@ class ConfigurationError(ChimeraError):
 class RateLimitError(ChimeraError):
     """Rate limit exceeded errors."""
 
-    def __init__(self, message: str = "Rate limit exceeded", **kwargs):
+    def __init__(self, message: str = "Rate limit exceeded", **kwargs) -> None:
         super().__init__(
             message,
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -221,7 +223,7 @@ class RateLimitError(ChimeraError):
 class CircuitBreakerError(ChimeraError):
     """Circuit breaker open errors."""
 
-    def __init__(self, service: str, **kwargs):
+    def __init__(self, service: str, **kwargs) -> None:
         super().__init__(
             f"Circuit breaker open for service: {service}",
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -239,7 +241,7 @@ class CircuitBreakerError(ChimeraError):
 class AegisError(ServiceError):
     """Base error for Aegis engine operations."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         # Extract status_code from kwargs, default to 500
         error_status_code = kwargs.pop("status_code", status.HTTP_500_INTERNAL_SERVER_ERROR)
         super().__init__(message, service_name="aegis", status_code=error_status_code, **kwargs)
@@ -248,7 +250,7 @@ class AegisError(ServiceError):
 class AegisSynthesisError(AegisError):
     """Error during persona or scenario synthesis."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         # Default to 422 Unprocessable Entity for synthesis errors (often bad input/constraints)
         error_status_code = kwargs.pop("status_code", status.HTTP_422_UNPROCESSABLE_ENTITY)
         super().__init__(message, status_code=error_status_code, **kwargs)
@@ -257,7 +259,7 @@ class AegisSynthesisError(AegisError):
 class AegisTransformationError(AegisError):
     """Error during payload transformation."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         # Default to 400 Bad Request for transformation errors
         error_status_code = kwargs.pop("status_code", status.HTTP_400_BAD_REQUEST)
         super().__init__(message, status_code=error_status_code, **kwargs)
@@ -269,14 +271,15 @@ class AegisTransformationError(AegisError):
 
 
 class GeminiAPIError(LLMProviderError):
-    """
-    Gemini-specific API errors with detailed error code mapping.
+    """Gemini-specific API errors with detailed error code mapping.
 
     Maps Google GenAI SDK errors.APIError to appropriate HTTP status codes
     and provides structured error information.
     """
 
-    def __init__(self, message: str, api_code: int, api_message: str | None = None, **kwargs):
+    def __init__(
+        self, message: str, api_code: int, api_message: str | None = None, **kwargs
+    ) -> None:
         # Map Gemini API error codes to HTTP status codes
         status_code = self._map_api_code(api_code)
 
@@ -285,11 +288,15 @@ class GeminiAPIError(LLMProviderError):
             {
                 "api_code": api_code,
                 "api_message": api_message or message,
-            }
+            },
         )
 
         super().__init__(
-            message, provider="gemini", status_code=status_code, details=details, **kwargs
+            message,
+            provider="gemini",
+            status_code=status_code,
+            details=details,
+            **kwargs,
         )
         self.api_code = api_code
         self.api_message = api_message
@@ -312,7 +319,7 @@ class GeminiAPIError(LLMProviderError):
 class GeminiRateLimitError(GeminiAPIError):
     """Gemini API rate limit exceeded."""
 
-    def __init__(self, retry_after: int | None = None, **kwargs):
+    def __init__(self, retry_after: int | None = None, **kwargs) -> None:
         details = kwargs.pop("details", {})
         if retry_after:
             details["retry_after_seconds"] = retry_after
@@ -330,14 +337,17 @@ class GeminiRateLimitError(GeminiAPIError):
 class GeminiStreamingError(GeminiAPIError):
     """Error during Gemini streaming generation."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         super().__init__(f"Streaming error: {message}", api_code=500, api_message=message, **kwargs)
 
 
 class GeminiTokenCountError(GeminiAPIError):
     """Error during Gemini token counting."""
 
-    def __init__(self, message: str, **kwargs):
+    def __init__(self, message: str, **kwargs) -> None:
         super().__init__(
-            f"Token counting error: {message}", api_code=500, api_message=message, **kwargs
+            f"Token counting error: {message}",
+            api_code=500,
+            api_message=message,
+            **kwargs,
         )

@@ -1,5 +1,4 @@
-"""
-Centralized Retry Logic with Exponential Backoff
+"""Centralized Retry Logic with Exponential Backoff.
 
 Story 1.2: Direct API Integration
 Provides configurable retry mechanisms for LLM provider API calls.
@@ -34,7 +33,7 @@ class RetryableError(Exception):
         message: str,
         retry_after: float | None = None,
         is_rate_limit: bool = False,
-    ):
+    ) -> None:
         super().__init__(message)
         self.retry_after = retry_after
         self.is_rate_limit = is_rate_limit
@@ -48,7 +47,7 @@ class RetryExhaustedError(Exception):
         message: str,
         attempts: int,
         last_error: Exception | None = None,
-    ):
+    ) -> None:
         super().__init__(message)
         self.attempts = attempts
         self.last_error = last_error
@@ -90,7 +89,7 @@ class RetryConfig:
             TimeoutError,
             ConnectionError,
             asyncio.TimeoutError,
-        )
+        ),
     )
 
 
@@ -147,14 +146,13 @@ def get_provider_retry_config(provider: str) -> RetryConfig:
 
 
 class RetryHandler:
-    """
-    Centralized retry handler with exponential backoff.
+    """Centralized retry handler with exponential backoff.
 
     Provides consistent retry behavior across all LLM provider API calls
     with support for different backoff strategies and rate limit handling.
     """
 
-    def __init__(self, config: RetryConfig | None = None):
+    def __init__(self, config: RetryConfig | None = None) -> None:
         self.config = config or RetryConfig()
         self._retry_stats: dict[str, int] = {
             "total_retries": 0,
@@ -164,14 +162,14 @@ class RetryHandler:
         }
 
     def calculate_delay(self, attempt: int) -> float:
-        """
-        Calculate delay for the given attempt using configured strategy.
+        """Calculate delay for the given attempt using configured strategy.
 
         Args:
             attempt: The current retry attempt number (0-indexed).
 
         Returns:
             float: The delay in seconds before the next retry.
+
         """
         if self.config.strategy == BackoffStrategy.EXPONENTIAL:
             delay = self.config.initial_delay * (self.config.backoff_multiplier**attempt)
@@ -205,14 +203,14 @@ class RetryHandler:
         return self.config.initial_delay * a
 
     def is_retryable_error(self, error: Exception) -> bool:
-        """
-        Determine if an error should trigger a retry.
+        """Determine if an error should trigger a retry.
 
         Args:
             error: The exception that occurred.
 
         Returns:
             bool: True if the error is retryable.
+
         """
         # Check for RetryableError
         if isinstance(error, RetryableError):
@@ -244,14 +242,14 @@ class RetryHandler:
         return False
 
     def get_retry_after(self, error: Exception) -> float | None:
-        """
-        Extract retry-after value from an error if present.
+        """Extract retry-after value from an error if present.
 
         Args:
             error: The exception that occurred.
 
         Returns:
             Optional[float]: The suggested retry delay, or None.
+
         """
         if isinstance(error, RetryableError) and error.retry_after:
             return min(error.retry_after, self.config.rate_limit_max_wait)
@@ -275,8 +273,7 @@ class RetryHandler:
         provider: str | None = None,
         **kwargs,
     ) -> Any:
-        """
-        Execute an async function with retry logic.
+        """Execute an async function with retry logic.
 
         Args:
             func: The async function to execute.
@@ -289,6 +286,7 @@ class RetryHandler:
 
         Raises:
             RetryExhaustedError: When all retry attempts are exhausted.
+
         """
         last_error: Exception | None = None
         provider_name = provider or "unknown"
@@ -312,9 +310,9 @@ class RetryHandler:
 
                 if attempt >= self.config.max_retries:
                     self._retry_stats["exhausted_retries"] += 1
-                    logger.error(
+                    logger.exception(
                         f"[{provider_name}] All {self.config.max_retries} "
-                        f"retry attempts exhausted. Last error: {e!s}"
+                        f"retry attempts exhausted. Last error: {e!s}",
                     )
                     break
 
@@ -327,13 +325,13 @@ class RetryHandler:
                     self._retry_stats["rate_limit_retries"] += 1
                     logger.info(
                         f"[{provider_name}] Rate limited. "
-                        f"Waiting {delay:.1f}s (retry-after header)"
+                        f"Waiting {delay:.1f}s (retry-after header)",
                     )
                 else:
                     delay = self.calculate_delay(attempt)
                     logger.warning(
                         f"[{provider_name}] Attempt {attempt + 1} failed: {e!s}. "
-                        f"Retrying in {delay:.1f}s..."
+                        f"Retrying in {delay:.1f}s...",
                     )
 
                 await asyncio.sleep(delay)
@@ -362,8 +360,7 @@ def with_retry(
     config: RetryConfig | None = None,
     provider: str | None = None,
 ):
-    """
-    Decorator to add retry logic to async functions.
+    """Decorator to add retry logic to async functions.
 
     Args:
         config: Optional RetryConfig to customize behavior.
@@ -371,6 +368,7 @@ def with_retry(
 
     Returns:
         Decorated async function with retry logic.
+
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:

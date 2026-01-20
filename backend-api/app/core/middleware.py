@@ -1,5 +1,4 @@
-"""
-Middleware components for the application.
+"""Middleware components for the application.
 Includes CSRF protection and other security middleware.
 
 CSRF Protection Implementation:
@@ -21,8 +20,7 @@ from app.core.logging import logger
 
 
 class CSRFMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to protect against Cross-Site Request Forgery (CSRF) attacks.
+    """Middleware to protect against Cross-Site Request Forgery (CSRF) attacks.
 
     Implements the Double Submit Cookie pattern:
     1. Server sets a CSRF token in a cookie
@@ -53,7 +51,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         token_length: int = 32,
         exclude_paths: list[str] | None = None,
         enforce: bool = False,  # Set to True in production
-    ):
+    ) -> None:
         super().__init__(app)
         self.allowed_origins = allowed_origins or []
         self.cookie_name = cookie_name
@@ -80,8 +78,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         return any(path.startswith(excluded) for excluded in self.exclude_paths)
 
     def _validate_token(self, cookie_token: str | None, header_token: str | None) -> bool:
-        """
-        Validate that the CSRF token in the cookie matches the header.
+        """Validate that the CSRF token in the cookie matches the header.
         Uses constant-time comparison to prevent timing attacks.
         """
         if not cookie_token or not header_token:
@@ -123,32 +120,30 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             if self.enforce:
                 logger.warning(
                     f"CSRF validation failed for {request.method} {request.url.path}. "
-                    f"Cookie present: {bool(csrf_cookie)}, Header present: {bool(csrf_header)}"
+                    f"Cookie present: {bool(csrf_cookie)}, Header present: {bool(csrf_header)}",
                 )
                 return Response(
                     content='{"detail": "CSRF token missing or invalid"}',
                     status_code=403,
                     media_type="application/json",
                 )
-            else:
-                # Log but don't block in non-enforce mode
-                logger.debug(
-                    f"CSRF token not validated for {request.method} {request.url.path} "
-                    "(enforcement disabled)"
-                )
+            # Log but don't block in non-enforce mode
+            logger.debug(
+                f"CSRF token not validated for {request.method} {request.url.path} "
+                "(enforcement disabled)",
+            )
 
         return await call_next(request)
 
 
 class CSRFTokenManager:
-    """
-    Manager for CSRF token operations.
+    """Manager for CSRF token operations.
 
     Provides utilities for generating and validating CSRF tokens
     outside of the middleware context.
     """
 
-    def __init__(self, token_length: int = 32):
+    def __init__(self, token_length: int = 32) -> None:
         self.token_length = token_length
         self._tokens: dict[str, float] = {}  # token -> expiry timestamp
         self._max_tokens = 10000
@@ -170,7 +165,7 @@ class CSRFTokenManager:
             return False
         return True
 
-    def _cleanup_expired(self):
+    def _cleanup_expired(self) -> None:
         """Remove expired tokens."""
         now = time.time()
         expired = [t for t, exp in self._tokens.items() if exp < now]

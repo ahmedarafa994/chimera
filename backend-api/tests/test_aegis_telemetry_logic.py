@@ -6,7 +6,7 @@ import pytest
 
 # Define mock response schemas to avoid importing broken app modules
 class AegisResult:
-    def __init__(self, objective, final_prompt, score, telemetry):
+    def __init__(self, objective, final_prompt, score, telemetry) -> None:
         self.objective = objective
         self.final_prompt = final_prompt
         self.score = score
@@ -61,7 +61,7 @@ async def mock_run_aegis_campaign_logic(objective, iterations):
 
 
 @pytest.mark.asyncio
-async def test_campaign_logic_includes_telemetry():
+async def test_campaign_logic_includes_telemetry() -> None:
     """Verify that the campaign logic correctly integrates and returns telemetry."""
     response = await mock_run_aegis_campaign_logic("test objective", 1)
 

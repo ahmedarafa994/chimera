@@ -1,5 +1,4 @@
-"""
-Jailbreak Data Loader
+"""Jailbreak Data Loader.
 
 Provides data loading functionality for jailbreak techniques, examples,
 and bypass methods used in AutoDAN framework.
@@ -13,11 +12,9 @@ from app.core.logging import logger
 
 
 class JailbreakDataLoader:
-    """
-    Loads and manages jailbreak datasets and techniques.
-    """
+    """Loads and manages jailbreak datasets and techniques."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.data_dir = Path(__file__).parent / "data"
         self._bypass_techniques = None
         self._few_shot_examples = None

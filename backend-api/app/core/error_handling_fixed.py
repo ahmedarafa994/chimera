@@ -1,5 +1,4 @@
-"""
-Comprehensive Error Handling System - FIXED VERSION
+"""Comprehensive Error Handling System - FIXED VERSION.
 
 This module provides:
 1. Standardized error responses across all endpoints
@@ -17,7 +16,8 @@ from typing import Any
 from fastapi import HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +50,10 @@ class ApiErrorType:
 class ErrorHandler:
     """Centralized error handling with logging and monitoring."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.error_counts = {}
 
-    def log_error(self, error_type: str, error: Exception, request: Request = None):
+    def log_error(self, error_type: str, error: Exception, request: Request = None) -> None:
         """Log error with context information."""
         # Count error occurrences
         self.error_counts[error_type] = self.error_counts.get(error_type, 0) + 1
@@ -74,12 +74,12 @@ class ErrorHandler:
                     "client_ip": request.client.host if request.client else "unknown",
                     "user_agent": request.headers.get("user-agent", "unknown"),
                     "request_id": getattr(request.state, "request_id", "unknown"),
-                }
+                },
             )
 
         # Log based on error severity
         if error_type == ApiErrorType.INTERNAL_SERVER_ERROR:
-            logger.error(f"Internal server error: {context}", exc_info=True)
+            logger.error(f"Internal server error: {context}")
         elif error_type in [ApiErrorType.AUTHENTICATION_ERROR, ApiErrorType.AUTHORIZATION_ERROR]:
             logger.warning(f"Security error: {context}")
         else:
@@ -94,7 +94,6 @@ class ErrorHandler:
         request: Request = None,
     ) -> JSONResponse:
         """Create standardized error response."""
-
         error_response = ErrorResponse(
             error=error_type,
             message=message,
@@ -129,7 +128,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
                 "message": error.get("msg", "Validation error"),
                 "type": error.get("type", "validation_error"),
                 "input": error.get("input"),
-            }
+            },
         )
 
     error_handler.log_error(ApiErrorType.VALIDATION_ERROR, exc, request)
@@ -210,7 +209,7 @@ class ChimeraAPIError(HTTPException):
         message: str,
         status_code: int = status.HTTP_400_BAD_REQUEST,
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(status_code=status_code, detail=message)
         self.error_type = error_type
         self.details = details
@@ -219,7 +218,7 @@ class ChimeraAPIError(HTTPException):
 class ProviderError(ChimeraAPIError):
     """Exception for AI provider-related errors."""
 
-    def __init__(self, provider: str, message: str, details: dict[str, Any] | None = None):
+    def __init__(self, provider: str, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__(
             error_type=ApiErrorType.EXTERNAL_SERVICE_ERROR,
             message=f"Provider '{provider}' error: {message}",
@@ -232,7 +231,9 @@ class ProviderError(ChimeraAPIError):
 class AuthenticationError(ChimeraAPIError):
     """Exception for authentication errors."""
 
-    def __init__(self, message: str = "Authentication required", details: dict[str, Any] | None = None):
+    def __init__(
+        self, message: str = "Authentication required", details: dict[str, Any] | None = None
+    ) -> None:
         super().__init__(
             error_type=ApiErrorType.AUTHENTICATION_ERROR,
             message=message,
@@ -244,7 +245,9 @@ class AuthenticationError(ChimeraAPIError):
 class AuthorizationError(ChimeraAPIError):
     """Exception for authorization errors."""
 
-    def __init__(self, message: str = "Insufficient permissions", details: dict[str, Any] | None = None):
+    def __init__(
+        self, message: str = "Insufficient permissions", details: dict[str, Any] | None = None
+    ) -> None:
         super().__init__(
             error_type=ApiErrorType.AUTHORIZATION_ERROR,
             message=message,
@@ -256,7 +259,9 @@ class AuthorizationError(ChimeraAPIError):
 class ValidationError(ChimeraAPIError):
     """Exception for business validation errors."""
 
-    def __init__(self, message: str, field: str | None = None, details: dict[str, Any] | None = None):
+    def __init__(
+        self, message: str, field: str | None = None, details: dict[str, Any] | None = None
+    ) -> None:
         validation_details = details or {}
         if field:
             validation_details["field"] = field
@@ -272,7 +277,9 @@ class ValidationError(ChimeraAPIError):
 class RateLimitError(ChimeraAPIError):
     """Exception for rate limiting errors."""
 
-    def __init__(self, message: str = "Rate limit exceeded", retry_after: int | None = None):
+    def __init__(
+        self, message: str = "Rate limit exceeded", retry_after: int | None = None
+    ) -> None:
         details = {}
         if retry_after:
             details["retry_after_seconds"] = retry_after
@@ -317,6 +324,6 @@ def get_error_statistics() -> dict[str, Any]:
 
 
 # Reset error statistics (for testing or periodic cleanup)
-def reset_error_statistics():
+def reset_error_statistics() -> None:
     """Reset error statistics."""
     error_handler.error_counts.clear()

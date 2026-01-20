@@ -1,6 +1,4 @@
-"""
-Security utilities for API authentication
-"""
+"""Security utilities for API authentication."""
 
 import os
 
@@ -15,9 +13,7 @@ security = HTTPBearer(auto_error=False)
 
 
 def get_api_key(credentials: HTTPAuthorizationCredentials | None = None) -> str:
-    """
-    Validate and return API key from request
-    """
+    """Validate and return API key from request."""
     # If credentials provided via Bearer token
     if credentials:
         api_key = credentials.credentials

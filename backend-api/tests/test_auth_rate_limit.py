@@ -1,5 +1,4 @@
-"""
-Unit Tests for Auth Rate Limiting Middleware
+"""Unit Tests for Auth Rate Limiting Middleware.
 
 Tests for the authentication rate limiting middleware.
 SEC-TEST-001: Auth rate limiting unit tests.
@@ -57,7 +56,7 @@ def strict_config():
 class TestAuthRateLimitConfig:
     """Tests for AuthRateLimitConfig."""
 
-    def test_default_config(self):
+    def test_default_config(self) -> None:
         """Test default configuration values."""
         config = AuthRateLimitConfig()
 
@@ -68,7 +67,7 @@ class TestAuthRateLimitConfig:
         assert config.api_key_validation_per_minute == 20
         assert config.session_creation_per_minute == 30
 
-    def test_custom_config(self):
+    def test_custom_config(self) -> None:
         """Test custom configuration values."""
         config = AuthRateLimitConfig(
             auth_requests_per_minute=5,
@@ -82,7 +81,7 @@ class TestAuthRateLimitConfig:
 class TestAuthRateLimitMiddleware:
     """Tests for AuthRateLimitMiddleware."""
 
-    def test_non_auth_path_not_limited(self, app):
+    def test_non_auth_path_not_limited(self, app) -> None:
         """Test that non-auth paths are not rate limited."""
         app.add_middleware(AuthRateLimitMiddleware)
         client = TestClient(app)
@@ -92,7 +91,7 @@ class TestAuthRateLimitMiddleware:
             response = client.get("/api/v1/health")
             assert response.status_code == 200
 
-    def test_auth_path_rate_limited(self, app, strict_config):
+    def test_auth_path_rate_limited(self, app, strict_config) -> None:
         """Test that auth paths are rate limited."""
         app.add_middleware(AuthRateLimitMiddleware, config=strict_config)
         client = TestClient(app)
@@ -108,7 +107,7 @@ class TestAuthRateLimitMiddleware:
         # Rate limit may or may not be hit depending on timing
         assert response.status_code in (200, 429)
 
-    def test_options_request_not_limited(self, app, strict_config):
+    def test_options_request_not_limited(self, app, strict_config) -> None:
         """Test that OPTIONS requests are not rate limited."""
         app.add_middleware(AuthRateLimitMiddleware, config=strict_config)
         client = TestClient(app)
@@ -119,7 +118,7 @@ class TestAuthRateLimitMiddleware:
             # OPTIONS may return 405 if not configured, but not 429
             assert response.status_code != 429
 
-    def test_get_stats(self, app, strict_config):
+    def test_get_stats(self, app, strict_config) -> None:
         """Test getting rate limiter statistics."""
         middleware = AuthRateLimitMiddleware(app, config=strict_config)
 
@@ -134,7 +133,7 @@ class TestAuthRateLimitMiddleware:
 class TestAuthRateLimiterSingleton:
     """Tests for auth rate limiter singleton functions."""
 
-    def test_set_and_get_rate_limiter(self, app):
+    def test_set_and_get_rate_limiter(self, app) -> None:
         """Test setting and getting the rate limiter instance."""
         middleware = AuthRateLimitMiddleware(app)
         set_auth_rate_limiter(middleware)
@@ -142,7 +141,7 @@ class TestAuthRateLimiterSingleton:
         retrieved = get_auth_rate_limiter()
         assert retrieved is middleware
 
-    def test_get_rate_limiter_returns_none_when_not_set(self):
+    def test_get_rate_limiter_returns_none_when_not_set(self) -> None:
         """Test that get returns None when not set."""
         # Clear any existing instance
         if hasattr(get_auth_rate_limiter, "_instance"):
@@ -155,7 +154,7 @@ class TestAuthRateLimiterSingleton:
 class TestRateLimitHeaders:
     """Tests for rate limit response headers."""
 
-    def test_429_response_includes_retry_after(self, app, strict_config):
+    def test_429_response_includes_retry_after(self, app, strict_config) -> None:
         """Test that 429 responses include Retry-After header."""
         app.add_middleware(AuthRateLimitMiddleware, config=strict_config)
         client = TestClient(app)

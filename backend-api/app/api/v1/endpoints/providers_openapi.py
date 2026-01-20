@@ -1,5 +1,4 @@
-"""
-OpenAPI/REST API Contract Specifications for Model Selection
+"""OpenAPI/REST API Contract Specifications for Model Selection.
 
 This module defines the complete API contract for the multi-provider
 AI model selection feature, including request/response schemas,
@@ -67,7 +66,7 @@ class SelectProviderRequest(BaseModel):
 
     class Config:
         json_schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {"provider": "gemini", "model": "gemini-3-pro-preview"}
+            "example": {"provider": "gemini", "model": "gemini-3-pro-preview"},
         }
 
 
@@ -75,19 +74,27 @@ class GenerateWithModelRequest(BaseModel):
     """Request to generate text with a specific model."""
 
     prompt: str = Field(
-        ..., description="The input prompt for generation", min_length=1, max_length=50000
+        ...,
+        description="The input prompt for generation",
+        min_length=1,
+        max_length=50000,
     )
     system_instruction: str | None = Field(
-        None, description="System instruction to guide the model", max_length=10000
+        None,
+        description="System instruction to guide the model",
+        max_length=10000,
     )
     provider: ProviderEnum | None = Field(
-        None, description="Override provider (uses session default if not specified)"
+        None,
+        description="Override provider (uses session default if not specified)",
     )
     model: str | None = Field(
-        None, description="Override model (uses session default if not specified)"
+        None,
+        description="Override model (uses session default if not specified)",
     )
     config: dict[str, Any] | None = Field(
-        None, description="Generation configuration (temperature, top_p, etc.)"
+        None,
+        description="Generation configuration (temperature, top_p, etc.)",
     )
 
     class Config:
@@ -98,7 +105,7 @@ class GenerateWithModelRequest(BaseModel):
                 "provider": "gemini",
                 "model": "gemini-3-pro-preview",
                 "config": {"temperature": 0.7, "max_output_tokens": 2048},
-            }
+            },
         }
 
 
@@ -130,7 +137,7 @@ class ModelInfoResponse(BaseModel):
                 "tier": "premium",
                 "supports_streaming": True,
                 "supports_vision": False,
-            }
+            },
         }
 
 
@@ -155,7 +162,7 @@ class ProviderInfoResponse(BaseModel):
                 "models": ["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
                 "default_model": "gemini-3-pro-preview",
                 "latency_ms": 245.5,
-            }
+            },
         }
 
 
@@ -193,7 +200,7 @@ class ProvidersListResponse(BaseModel):
                 "count": 2,
                 "default_provider": "deepseek",
                 "default_model": "deepseek-chat",
-            }
+            },
         }
 
 
@@ -218,11 +225,11 @@ class ProviderModelsResponse(BaseModel):
                         "tier": "premium",
                         "max_tokens": 8192,
                         "is_default": True,
-                    }
+                    },
                 ],
                 "default_model": "gemini-3-pro-preview",
                 "count": 3,
-            }
+            },
         }
 
 
@@ -243,7 +250,7 @@ class SelectProviderResponse(BaseModel):
                 "provider": "gemini",
                 "model": "gemini-3-pro-preview",
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
-            }
+            },
         }
 
 
@@ -264,7 +271,7 @@ class CurrentSelectionResponse(BaseModel):
                 "display_name": "Google Gemini",
                 "session_id": "550e8400-e29b-41d4-a716-446655440000",
                 "is_default": False,
-            }
+            },
         }
 
 
@@ -284,10 +291,10 @@ class ProviderHealthResponse(BaseModel):
                         "last_check": "2025-01-15T10:30:00Z",
                         "latency_ms": 245.5,
                         "consecutive_failures": 0,
-                    }
+                    },
                 ],
                 "timestamp": "2025-01-15T10:30:00Z",
-            }
+            },
         }
 
 
@@ -310,7 +317,7 @@ class RateLimitInfoResponse(BaseModel):
                 "remaining_tokens": 85000,
                 "reset_at": "2025-01-15T10:31:00Z",
                 "tier": "pro",
-            }
+            },
         }
 
 
@@ -348,11 +355,11 @@ class ErrorResponse(BaseModel):
                         "field": "provider",
                         "message": "Provider 'gemini' is experiencing issues",
                         "code": "CIRCUIT_BREAKER_OPEN",
-                    }
+                    },
                 ],
                 "timestamp": "2025-01-15T10:30:00Z",
                 "request_id": "req_abc123",
-            }
+            },
         }
 
 
@@ -371,7 +378,7 @@ class RateLimitErrorResponse(ErrorResponse):
                 "retry_after": 45,
                 "fallback_provider": "deepseek",
                 "timestamp": "2025-01-15T10:30:00Z",
-            }
+            },
         }
 
 
@@ -405,7 +412,7 @@ class SelectionChangeMessage(WebSocketMessageBase):
                     "previous_model": "gemini-3-pro-preview",
                 },
                 "timestamp": "2025-01-15T10:30:00Z",
-            }
+            },
         }
 
 
@@ -423,10 +430,10 @@ class HealthUpdateMessage(WebSocketMessageBase):
                     "providers": [
                         {"provider": "gemini", "is_healthy": True, "latency_ms": 250},
                         {"provider": "deepseek", "is_healthy": True, "latency_ms": 180},
-                    ]
+                    ],
                 },
                 "timestamp": "2025-01-15T10:30:00Z",
-            }
+            },
         }
 
 

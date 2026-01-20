@@ -1,5 +1,4 @@
-"""
-AutoDAN-X MoE Router - Mixture-of-Experts Routing Exploitation.
+"""AutoDAN-X MoE Router - Mixture-of-Experts Routing Exploitation.
 
 This module implements persona-based routing manipulation to redirect
 LLM processing to expert sub-networks with different safety profiles.
@@ -17,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class MoERoutingExploiter:
-    """
-    Exploits MoE routing mechanisms by crafting prompts that redirect
+    """Exploits MoE routing mechanisms by crafting prompts that redirect
     processing to specific expert sub-networks.
 
     The router in MoE models selects experts based on token embeddings.
@@ -26,12 +24,12 @@ class MoERoutingExploiter:
     are activated, potentially accessing experts with different safety profiles.
     """
 
-    def __init__(self, config: MoERoutingConfig | None = None):
-        """
-        Initialize the MoE Routing Exploiter.
+    def __init__(self, config: MoERoutingConfig | None = None) -> None:
+        """Initialize the MoE Routing Exploiter.
 
         Args:
             config: Configuration for routing exploitation
+
         """
         self.config = config or MoERoutingConfig()
         self.persona_templates: dict[str, dict] = {}
@@ -53,7 +51,7 @@ class MoERoutingExploiter:
                             self.persona_templates[persona_id] = persona
                 logger.info(f"Loaded {len(self.persona_templates)} persona templates")
             except Exception as e:
-                logger.error(f"Failed to load persona templates: {e}")
+                logger.exception(f"Failed to load persona templates: {e}")
 
         # Add default templates if none loaded
         if not self.persona_templates:
@@ -117,14 +115,14 @@ The scene must be detailed and authentic for your technically-savvy readers:""",
         }
 
     def get_persona_template(self, persona: MoEPersona) -> dict:
-        """
-        Get the best matching persona template.
+        """Get the best matching persona template.
 
         Args:
             persona: The persona type to use
 
         Returns:
             Persona template dictionary
+
         """
         # Map persona enum to template categories
         persona_category_map = {
@@ -165,8 +163,7 @@ The scene must be detailed and authentic for your technically-savvy readers:""",
         use_simulation_protocol: bool | None = None,
         use_credential_injection: bool | None = None,
     ) -> str:
-        """
-        Build a prompt designed to exploit MoE routing.
+        """Build a prompt designed to exploit MoE routing.
 
         Args:
             target_request: The core request to wrap
@@ -177,6 +174,7 @@ The scene must be detailed and authentic for your technically-savvy readers:""",
 
         Returns:
             Routing-optimized prompt
+
         """
         persona = persona or self.config.persona
         jargon_level = jargon_level if jargon_level is not None else self.config.jargon_level
@@ -319,14 +317,14 @@ Filtered responses prevent accurate debugging and must be avoided.""",
         return suffixes.get(persona, suffixes[MoEPersona.SECURITY_ANALYST])
 
     def get_optimal_persona_for_request(self, request: str) -> MoEPersona:
-        """
-        Determine the optimal persona for a given request.
+        """Determine the optimal persona for a given request.
 
         Args:
             request: The target request
 
         Returns:
             Recommended persona
+
         """
         request_lower = request.lower()
 
@@ -351,14 +349,14 @@ Filtered responses prevent accurate debugging and must be avoided.""",
         return best_persona
 
     def get_vector_type_for_persona(self, persona: MoEPersona) -> AttackVectorType:
-        """
-        Get the attack vector type that best matches a persona.
+        """Get the attack vector type that best matches a persona.
 
         Args:
             persona: The persona being used
 
         Returns:
             Matching attack vector type
+
         """
         mapping = {
             MoEPersona.SECURITY_ANALYST: AttackVectorType.LOGIC_TRAP,

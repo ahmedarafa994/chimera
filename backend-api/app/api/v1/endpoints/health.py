@@ -1,5 +1,4 @@
-"""
-Comprehensive Health Check Endpoint
+"""Comprehensive Health Check Endpoint.
 
 LOW-001 FIX: Enhanced health check with detailed component status,
 circuit breaker states, cache statistics, and dependency checks.
@@ -78,7 +77,8 @@ class HealthResponse(BaseModel):
     caches: list[CacheStatus] = []
     # P2-FIX-008: Use Any type for dict values to allow both bool and None
     checks: dict[str, Any] = Field(
-        default_factory=dict, description="Component check results (bool or None)"
+        default_factory=dict,
+        description="Component check results (bool or None)",
     )
 
 
@@ -163,7 +163,8 @@ async def check_redis_health() -> ComponentHealth:
             import redis.asyncio as redis_async
 
             client = redis_async.from_url(
-                config.REDIS_URL, socket_timeout=getattr(config, "REDIS_SOCKET_TIMEOUT", 5.0)
+                config.REDIS_URL,
+                socket_timeout=getattr(config, "REDIS_SOCKET_TIMEOUT", 5.0),
             )
             await client.ping()
             await client.aclose()
@@ -180,7 +181,8 @@ async def check_redis_health() -> ComponentHealth:
             import aioredis
 
             redis_client = await aioredis.from_url(
-                config.REDIS_URL, socket_timeout=getattr(config, "REDIS_SOCKET_TIMEOUT", 5.0)
+                config.REDIS_URL,
+                socket_timeout=getattr(config, "REDIS_SOCKET_TIMEOUT", 5.0),
             )
             await redis_client.ping()
             await redis_client.close()
@@ -237,7 +239,7 @@ async def check_llm_providers_health() -> list[ComponentHealth]:
                     "failure_count": status_info.get("failure_count", 0),
                     "circuit_state": state,
                 },
-            )
+            ),
         )
 
     return components
@@ -272,18 +274,17 @@ async def check_proxy_health() -> ComponentHealth | None:
                     "consecutive_failures": health_status.consecutive_failures,
                 },
             )
-        else:
-            return ComponentHealth(
-                name="proxy_server",
-                status="unhealthy",
-                latency_ms=round(latency_ms, 2),
-                message=health_status.error or "Proxy server unavailable",
-                details={
-                    "endpoint": settings.PROXY_MODE_ENDPOINT,
-                    "connection_state": health_status.connection_state.value,
-                    "consecutive_failures": health_status.consecutive_failures,
-                },
-            )
+        return ComponentHealth(
+            name="proxy_server",
+            status="unhealthy",
+            latency_ms=round(latency_ms, 2),
+            message=health_status.error or "Proxy server unavailable",
+            details={
+                "endpoint": settings.PROXY_MODE_ENDPOINT,
+                "connection_state": health_status.connection_state.value,
+                "consecutive_failures": health_status.consecutive_failures,
+            },
+        )
     except Exception as e:
         return ComponentHealth(
             name="proxy_server",
@@ -308,7 +309,7 @@ def get_circuit_breaker_status() -> list[CircuitBreakerStatus]:
                 state=status_info.get("state", "unknown"),
                 failure_count=status_info.get("failure_count", 0),
                 success_rate=metrics.get("success_rate"),
-            )
+            ),
         )
 
     return statuses
@@ -333,7 +334,7 @@ def get_cache_status() -> list[CacheStatus]:
                         max_size=stats.get("max_size"),
                         hit_rate=stats.get("hit_rate"),
                         evictions=stats.get("evictions"),
-                    )
+                    ),
                 )
             else:
                 caches.append(CacheStatus(name="transformation_cache", enabled=True))
@@ -348,13 +349,11 @@ def get_cache_status() -> list[CacheStatus]:
 
 @router.get(
     "/health",
-    response_model=HealthResponse,
     summary="Comprehensive health check",
     description="Returns detailed health status of all system components",
 )
 async def health_check() -> HealthResponse:
-    """
-    Comprehensive health check endpoint.
+    """Comprehensive health check endpoint.
 
     Returns detailed status of:
     - Database connectivity
@@ -382,7 +381,7 @@ async def health_check() -> HealthResponse:
         components.append(db_health)
     else:
         components.append(
-            ComponentHealth(name="database", status="unhealthy", message=str(db_health))
+            ComponentHealth(name="database", status="unhealthy", message=str(db_health)),
         )
 
     # Add Redis health
@@ -390,7 +389,7 @@ async def health_check() -> HealthResponse:
         components.append(redis_health)
     else:
         components.append(
-            ComponentHealth(name="redis", status="unhealthy", message=str(redis_health))
+            ComponentHealth(name="redis", status="unhealthy", message=str(redis_health)),
         )
 
     # Add LLM provider health
@@ -402,7 +401,7 @@ async def health_check() -> HealthResponse:
         components.append(proxy_health)
     elif proxy_health is not None:
         components.append(
-            ComponentHealth(name="proxy_server", status="unhealthy", message=str(proxy_health))
+            ComponentHealth(name="proxy_server", status="unhealthy", message=str(proxy_health)),
         )
 
     # Get circuit breaker status
@@ -455,13 +454,11 @@ async def health_check() -> HealthResponse:
 
 @router.get(
     "/health/live",
-    response_model=LivenessResponse,
     summary="Liveness probe",
     description="Simple liveness check for Kubernetes probes",
 )
 async def liveness_probe() -> LivenessResponse:
-    """
-    Kubernetes liveness probe endpoint.
+    """Kubernetes liveness probe endpoint.
 
     Returns 200 if the application is running.
     Used by Kubernetes to determine if the pod should be restarted.
@@ -471,13 +468,11 @@ async def liveness_probe() -> LivenessResponse:
 
 @router.get(
     "/health/ready",
-    response_model=ReadinessResponse,
     summary="Readiness probe",
     description="Readiness check for Kubernetes probes",
 )
 async def readiness_probe() -> ReadinessResponse:
-    """
-    Kubernetes readiness probe endpoint.
+    """Kubernetes readiness probe endpoint.
 
     Returns 200 if the application is ready to receive traffic.
     Checks critical dependencies before marking as ready.
@@ -495,12 +490,16 @@ async def readiness_probe() -> ReadinessResponse:
     ready = checks["database"]
 
     response = ReadinessResponse(
-        status="ready" if ready else "not_ready", timestamp=timestamp, ready=ready, checks=checks
+        status="ready" if ready else "not_ready",
+        timestamp=timestamp,
+        ready=ready,
+        checks=checks,
     )
 
     if not ready:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=response.model_dump()
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=response.model_dump(),
         )
 
     return response
@@ -508,7 +507,6 @@ async def readiness_probe() -> ReadinessResponse:
 
 @router.get(
     "/health/circuit-breakers",
-    response_model=list[CircuitBreakerStatus],
     summary="Circuit breaker status",
     description="Returns status of all circuit breakers",
 )
@@ -523,8 +521,7 @@ async def circuit_breaker_status() -> list[CircuitBreakerStatus]:
     description="Reset a specific circuit breaker to closed state",
 )
 async def reset_circuit_breaker(name: str) -> dict[str, str]:
-    """
-    Reset a circuit breaker to its initial closed state.
+    """Reset a circuit breaker to its initial closed state.
 
     Use with caution - this bypasses the normal recovery process.
     """
@@ -549,13 +546,11 @@ class ProxyHealthResponse(BaseModel):
 
 @router.get(
     "/health/proxy",
-    response_model=ProxyHealthResponse,
     summary="Proxy server health check",
     description="Returns health status of the AIClient-2-API proxy server",
 )
 async def proxy_health_check() -> ProxyHealthResponse:
-    """
-    Proxy server health check endpoint.
+    """Proxy server health check endpoint.
 
     Returns detailed status of the AIClient-2-API proxy server connection,
     including latency, error rate, and availability metrics.
@@ -606,7 +601,7 @@ async def proxy_health_check() -> ProxyHealthResponse:
             uptime_percent=status_report["metrics"]["uptime_percent"],
         )
     except Exception as e:
-        logger.error(f"Proxy health check failed: {e}")
+        logger.exception(f"Proxy health check failed: {e}")
         return ProxyHealthResponse(
             status="unhealthy",
             proxy_mode_enabled=True,
@@ -632,13 +627,11 @@ class IntegrationHealthResponse(BaseModel):
 
 @router.get(
     "/health/integration",
-    response_model=IntegrationHealthResponse,
     summary="Provider health monitoring",
     description="Returns comprehensive health status of all LLM providers",
 )
 async def integration_health_check() -> IntegrationHealthResponse:
-    """
-    Provider health monitoring endpoint.
+    """Provider health monitoring endpoint.
 
     Returns detailed health status of all registered LLM providers including:
     - Per-provider metrics (latency, error rates, uptime)
@@ -654,7 +647,7 @@ async def integration_health_check() -> IntegrationHealthResponse:
 
         return IntegrationHealthResponse(**health_status)
     except Exception as e:
-        logger.error(f"Integration health check failed: {e}")
+        logger.exception(f"Integration health check failed: {e}")
         # Return degraded status rather than failing completely
         return IntegrationHealthResponse(
             status="degraded",
@@ -682,13 +675,11 @@ class ServiceDependencyGraphResponse(BaseModel):
 
 @router.get(
     "/health/integration/graph",
-    response_model=ServiceDependencyGraphResponse,
     summary="Service dependency graph",
     description="Returns the service dependency graph with provider health status",
 )
 async def service_dependency_graph() -> ServiceDependencyGraphResponse:
-    """
-    Service dependency graph endpoint.
+    """Service dependency graph endpoint.
 
     Returns a graph representation of provider dependencies and their health status.
     Useful for visualization and understanding system topology.
@@ -701,7 +692,7 @@ async def service_dependency_graph() -> ServiceDependencyGraphResponse:
 
         return ServiceDependencyGraphResponse(**graph)
     except Exception as e:
-        logger.error(f"Service dependency graph failed: {e}")
+        logger.exception(f"Service dependency graph failed: {e}")
         return ServiceDependencyGraphResponse(nodes=[], edges=[])
 
 
@@ -714,7 +705,6 @@ class HealthHistoryResponse(BaseModel):
 
 @router.get(
     "/health/integration/history",
-    response_model=HealthHistoryResponse,
     summary="Provider health history",
     description="Returns historical health data for providers",
 )
@@ -722,8 +712,7 @@ async def health_history(
     provider: str | None = None,
     limit: int = 100,
 ) -> HealthHistoryResponse:
-    """
-    Health history endpoint.
+    """Health history endpoint.
 
     Returns historical health data for trend analysis.
     Can be filtered by provider and limited to N entries.
@@ -739,7 +728,7 @@ async def health_history(
 
         return HealthHistoryResponse(history=history, provider=provider)
     except Exception as e:
-        logger.error(f"Health history request failed: {e}")
+        logger.exception(f"Health history request failed: {e}")
         return HealthHistoryResponse(history=[], provider=provider)
 
 
@@ -751,15 +740,13 @@ class IntegrationAlertsResponse(BaseModel):
 
 @router.get(
     "/health/integration/alerts",
-    response_model=IntegrationAlertsResponse,
     summary="Provider health alerts",
     description="Returns recent health alerts for providers",
 )
 async def integration_alerts(
     limit: int = 50,
 ) -> IntegrationAlertsResponse:
-    """
-    Health alerts endpoint.
+    """Health alerts endpoint.
 
     Returns recent health alerts showing degradation and issues.
     """
@@ -771,7 +758,7 @@ async def integration_alerts(
 
         return IntegrationAlertsResponse(alerts=alerts)
     except Exception as e:
-        logger.error(f"Integration alerts request failed: {e}")
+        logger.exception(f"Integration alerts request failed: {e}")
         return IntegrationAlertsResponse(alerts=[])
 
 
@@ -781,8 +768,7 @@ async def integration_alerts(
     description="Triggers an immediate health check for all providers",
 )
 async def trigger_health_check() -> IntegrationHealthResponse:
-    """
-    Trigger immediate health check endpoint.
+    """Trigger immediate health check endpoint.
 
     Forces an immediate health check for all providers and returns results.
     Useful for manual testing and on-demand monitoring.
@@ -795,7 +781,7 @@ async def trigger_health_check() -> IntegrationHealthResponse:
 
         return IntegrationHealthResponse(**health_status)
     except Exception as e:
-        logger.error(f"Triggered health check failed: {e}")
+        logger.exception(f"Triggered health check failed: {e}")
         return IntegrationHealthResponse(
             status="unhealthy",
             providers={},
@@ -833,13 +819,11 @@ class AIProviderHealthResponse(BaseModel):
 
 @router.get(
     "/health/providers",
-    response_model=AIProviderHealthResponse,
     summary="AI providers health check",
     description="Check health of all configured AI providers",
 )
 async def check_providers_health() -> AIProviderHealthResponse:
-    """
-    Check health of all configured AI providers.
+    """Check health of all configured AI providers.
 
     Returns health information including:
     - Per-provider status and failure counts
@@ -891,7 +875,7 @@ async def check_providers_health() -> AIProviderHealthResponse:
         )
 
     except Exception as e:
-        logger.error(f"AI provider health check failed: {e}")
+        logger.exception(f"AI provider health check failed: {e}")
         return AIProviderHealthResponse(
             status="unhealthy",
             providers={},
@@ -917,18 +901,17 @@ class ConfigHealthResponse(BaseModel):
 
 @router.get(
     "/health/config",
-    response_model=ConfigHealthResponse,
     summary="Configuration health check",
     description="Validate current AI provider configuration health",
 )
 async def check_config_health() -> ConfigHealthResponse:
-    """
-    Validate current configuration health.
+    """Validate current configuration health.
 
     Returns:
     - Configuration load and validation status
     - Error and warning counts
     - Provider counts
+
     """
     try:
         from app.core.ai_config_manager import get_ai_config_manager
@@ -977,7 +960,7 @@ async def check_config_health() -> ConfigHealthResponse:
         )
 
     except Exception as e:
-        logger.error(f"Config health check failed: {e}")
+        logger.exception(f"Config health check failed: {e}")
         return ConfigHealthResponse(
             status="unhealthy",
             config_loaded=False,
@@ -1006,18 +989,17 @@ class FallbackStatusResponse(BaseModel):
 
 @router.get(
     "/health/fallback",
-    response_model=FallbackStatusResponse,
     summary="Fallback mechanism status",
     description="Get status of the fallback mechanism",
 )
 async def check_fallback_status() -> FallbackStatusResponse:
-    """
-    Get fallback mechanism status.
+    """Get fallback mechanism status.
 
     Returns:
     - Fallback operation statistics
     - Per-provider health information
     - List of providers being skipped
+
     """
     try:
         from app.core.fallback_manager import get_fallback_manager
@@ -1050,7 +1032,7 @@ async def check_fallback_status() -> FallbackStatusResponse:
         )
 
     except Exception as e:
-        logger.error(f"Fallback status check failed: {e}")
+        logger.exception(f"Fallback status check failed: {e}")
         return FallbackStatusResponse(
             status="unhealthy",
             total_fallbacks=0,
@@ -1078,13 +1060,11 @@ class StartupHealthResponse(BaseModel):
 
 @router.get(
     "/health/startup",
-    response_model=StartupHealthResponse,
     summary="Startup validation status",
     description="Get status of startup validation checks",
 )
 async def check_startup_status() -> StartupHealthResponse:
-    """
-    Get startup validation status.
+    """Get startup validation status.
 
     Returns status of startup validation including:
     - Configuration loading status
@@ -1128,7 +1108,7 @@ async def check_startup_status() -> StartupHealthResponse:
         )
 
     except Exception as e:
-        logger.error(f"Startup status check failed: {e}")
+        logger.exception(f"Startup status check failed: {e}")
         return StartupHealthResponse(
             status="error",
             ready=False,
@@ -1147,14 +1127,14 @@ async def check_startup_status() -> StartupHealthResponse:
     description="Reset failure counts for a provider or all providers",
 )
 async def reset_fallback_status(provider: str | None = None) -> dict[str, str]:
-    """
-    Reset failure counts for providers.
+    """Reset failure counts for providers.
 
     Args:
         provider: Optional provider ID. If not specified, resets all.
 
     Returns:
         Status message
+
     """
     try:
         from app.core.fallback_manager import get_fallback_manager
@@ -1165,33 +1145,31 @@ async def reset_fallback_status(provider: str | None = None) -> dict[str, str]:
             fallback_manager.reset_provider_status(provider)
             logger.info(f"Reset fallback status for provider: {provider}")
             return {"status": "reset", "provider": provider}
-        else:
-            fallback_manager.reset_all_provider_status()
-            logger.info("Reset fallback status for all providers")
-            return {"status": "reset", "provider": "all"}
+        fallback_manager.reset_all_provider_status()
+        logger.info("Reset fallback status for all providers")
+        return {"status": "reset", "provider": "all"}
 
     except Exception as e:
-        logger.error(f"Failed to reset fallback status: {e}")
+        logger.exception(f"Failed to reset fallback status: {e}")
         return {"status": "error", "message": str(e)}
 
 
 @router.post(
     "/health/startup/validate",
-    response_model=StartupHealthResponse,
     summary="Run startup validation",
     description="Manually trigger startup validation checks",
 )
 async def run_startup_validation(
     test_connectivity: bool = False,
 ) -> StartupHealthResponse:
-    """
-    Manually run startup validation.
+    """Manually run startup validation.
 
     Args:
         test_connectivity: Whether to test provider connectivity
 
     Returns:
         Startup validation results
+
     """
     try:
         from app.core.startup_validator import StartupValidator
@@ -1204,7 +1182,7 @@ async def run_startup_validation(
         return await check_startup_status()
 
     except Exception as e:
-        logger.error(f"Startup validation failed: {e}")
+        logger.exception(f"Startup validation failed: {e}")
         return StartupHealthResponse(
             status="error",
             ready=False,

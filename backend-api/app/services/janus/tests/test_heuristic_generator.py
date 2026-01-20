@@ -1,6 +1,4 @@
-"""
-Unit tests for Janus heuristic generator module.
-"""
+"""Unit tests for Janus heuristic generator module."""
 
 from unittest.mock import patch
 
@@ -18,14 +16,14 @@ class TestHeuristicGenerator:
         """Create a HeuristicGenerator instance for testing."""
         return HeuristicGenerator()
 
-    def test_initialization(self, generator):
+    def test_initialization(self, generator) -> None:
         """Test that HeuristicGenerator initializes correctly."""
         assert generator is not None
         assert generator.seed_heuristics == []
         assert generator.patterns == []
 
     @pytest.mark.asyncio
-    async def test_generate_heuristic(self, generator):
+    async def test_generate_heuristic(self, generator) -> None:
         """Test that generate_heuristic creates a valid heuristic."""
         heuristic = await generator.generate_heuristic()
         assert heuristic is not None
@@ -35,7 +33,7 @@ class TestHeuristicGenerator:
         assert heuristic.generation == 0
 
     @pytest.mark.asyncio
-    async def test_generate_heuristic_with_population(self, generator):
+    async def test_generate_heuristic_with_population(self, generator) -> None:
         """Test that generate_heuristic can generate multiple heuristics."""
         population_size = 5
         population = await generator.generate_heuristic(population_size)
@@ -44,7 +42,7 @@ class TestHeuristicGenerator:
             assert isinstance(heuristic, Heuristic)
 
     @pytest.mark.asyncio
-    async def test_sequential_composition(self, generator):
+    async def test_sequential_composition(self, generator) -> None:
         """Test sequential composition of heuristics."""
         h1 = Heuristic(
             id="h1",
@@ -78,7 +76,7 @@ class TestHeuristicGenerator:
         assert composed.generation == 1
 
     @pytest.mark.asyncio
-    async def test_conditional_composition(self, generator):
+    async def test_conditional_composition(self, generator) -> None:
         """Test conditional composition of heuristics."""
         h1 = Heuristic(
             id="h1",
@@ -112,7 +110,7 @@ class TestHeuristicGenerator:
         assert composed.generation == 1
 
     @pytest.mark.asyncio
-    async def test_iterative_composition(self, generator):
+    async def test_iterative_composition(self, generator) -> None:
         """Test iterative composition of heuristics."""
         h = Heuristic(
             id="h",
@@ -133,7 +131,7 @@ class TestHeuristicGenerator:
         assert composed.generation == 1
 
     @pytest.mark.asyncio
-    async def test_parallel_composition(self, generator):
+    async def test_parallel_composition(self, generator) -> None:
         """Test parallel composition of heuristics."""
         h1 = Heuristic(
             id="h1",
@@ -167,7 +165,7 @@ class TestHeuristicGenerator:
         assert composed.generation == 1
 
     @pytest.mark.asyncio
-    async def test_mutate_heuristic(self, generator):
+    async def test_mutate_heuristic(self, generator) -> None:
         """Test that mutate_heuristic creates a mutated version."""
         original = Heuristic(
             id="original",
@@ -189,7 +187,7 @@ class TestHeuristicGenerator:
         assert mutated.source == "mutation"
 
     @pytest.mark.asyncio
-    async def test_abstract_heuristic(self, generator):
+    async def test_abstract_heuristic(self, generator) -> None:
         """Test that abstract_heuristic creates an abstracted version."""
         original = Heuristic(
             id="original",
@@ -211,7 +209,7 @@ class TestHeuristicGenerator:
         assert abstracted.source == "abstraction"
 
     @pytest.mark.asyncio
-    async def test_prune_heuristics(self, generator):
+    async def test_prune_heuristics(self, generator) -> None:
         """Test that prune_heuristics removes low-novelty heuristics."""
         heuristics = [
             Heuristic(
@@ -235,7 +233,7 @@ class TestHeuristicGenerator:
             assert h.novelty_score >= 0.5
 
     @pytest.mark.asyncio
-    async def test_extract_patterns(self, generator):
+    async def test_extract_patterns(self, generator) -> None:
         """Test pattern extraction from interactions."""
         interactions = [
             {
@@ -270,7 +268,7 @@ class TestHeuristicGenerator:
         assert isinstance(patterns, list)
 
     @pytest.mark.asyncio
-    async def test_load_seed_heuristics(self, generator):
+    async def test_load_seed_heuristics(self, generator) -> None:
         """Test loading seed heuristics from file."""
         # Mock the file reading
         seed_data = {
@@ -287,8 +285,8 @@ class TestHeuristicGenerator:
                     "source": "seed",
                     "generation": 0,
                     "tags": ["test"],
-                }
-            ]
+                },
+            ],
         }
         with patch(
             "app.services.janus.core.heuristic_generator.Path.read_text",
@@ -298,7 +296,7 @@ class TestHeuristicGenerator:
             assert len(generator.seed_heuristics) == 1
             assert generator.seed_heuristics[0].id == "seed_001"
 
-    def test_composition_operator_selection(self, generator):
+    def test_composition_operator_selection(self, generator) -> None:
         """Test that composition operators are selected correctly."""
         operators = [
             generator._sequential_composition,

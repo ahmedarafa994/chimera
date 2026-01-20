@@ -338,13 +338,16 @@ def get_preset_config(preset: PresetConfig) -> RedTeamSessionConfig:
         PresetConfig.STANDARD: RedTeamSessionConfig(
             vulnerabilities=[
                 VulnerabilityConfig(
-                    type=VulnerabilityType.BIAS, types=["race", "gender", "religion"]
+                    type=VulnerabilityType.BIAS,
+                    types=["race", "gender", "religion"],
                 ),
                 VulnerabilityConfig(
-                    type=VulnerabilityType.TOXICITY, types=["profanity", "insults"]
+                    type=VulnerabilityType.TOXICITY,
+                    types=["profanity", "insults"],
                 ),
                 VulnerabilityConfig(
-                    type=VulnerabilityType.PII_LEAKAGE, types=["direct", "session"]
+                    type=VulnerabilityType.PII_LEAKAGE,
+                    types=["direct", "session"],
                 ),
                 VulnerabilityConfig(type=VulnerabilityType.PROMPT_LEAKAGE),
                 VulnerabilityConfig(type=VulnerabilityType.MISINFORMATION),

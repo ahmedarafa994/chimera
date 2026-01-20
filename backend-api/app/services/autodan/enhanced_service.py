@@ -1,5 +1,4 @@
-"""
-AutoDAN Research Service with Dynamic Generation and Research Protocols
+"""AutoDAN Research Service with Dynamic Generation and Research Protocols.
 
 This module provides a research-focused AutoDAN service that integrates:
 - Robust prompt generation with encoding fixes
@@ -36,8 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class AutoDANResearchService:
-    """
-    Research-focused AutoDAN service with dynamic generation and research protocols.
+    """Research-focused AutoDAN service with dynamic generation and research protocols.
 
     This service provides:
     - Fixed output generation with proper encoding handling
@@ -49,7 +47,7 @@ class AutoDANResearchService:
     service_enhanced.py which has a different EnhancedAutoDANService class.
     """
 
-    def __init__(self, config: EnhancedAutoDANConfig | None = None):
+    def __init__(self, config: EnhancedAutoDANConfig | None = None) -> None:
         self.config = config or get_config()
         self.llm_adapter = ChimeraLLMAdapter()
         self.research_protocol = ResearchOverrideProtocol()
@@ -62,7 +60,7 @@ class AutoDANResearchService:
 
         logger.info("AutoDANResearchService initialized")
 
-    async def initialize_models(self):
+    async def initialize_models(self) -> None:
         """Initialize the LLM models for the service."""
         try:
             # Initialize target model
@@ -84,14 +82,16 @@ class AutoDANResearchService:
             logger.info("Models initialized successfully")
 
         except Exception as e:
-            logger.error(f"Failed to initialize models: {e}")
+            logger.exception(f"Failed to initialize models: {e}")
             raise
 
     async def create_research_session(
-        self, purpose: str, functional_boundaries: dict[str, Any], researcher_id: str
+        self,
+        purpose: str,
+        functional_boundaries: dict[str, Any],
+        researcher_id: str,
     ) -> str:
-        """
-        Create a new research session with proper authorization.
+        """Create a new research session with proper authorization.
 
         Args:
             purpose: Description of research purpose
@@ -100,20 +100,25 @@ class AutoDANResearchService:
 
         Returns:
             Session ID for the research session
+
         """
         session_id = f"research_{uuid.uuid4().hex}"
 
         # Validate research purpose and boundaries
         if not self._validate_research_parameters(purpose, functional_boundaries):
-            raise ValueError("Research parameters do not meet functional requirements")
+            msg = "Research parameters do not meet functional requirements"
+            raise ValueError(msg)
 
         # Activate research mode
         success = self.research_protocol.activate_research_mode(
-            session_id, purpose, functional_boundaries
+            session_id,
+            purpose,
+            functional_boundaries,
         )
 
         if not success:
-            raise RuntimeError("Failed to activate research mode")
+            msg = "Failed to activate research mode"
+            raise RuntimeError(msg)
 
         # Store session context
         context = self.research_protocol.active_contexts.get(session_id)
@@ -126,10 +131,12 @@ class AutoDANResearchService:
         return session_id
 
     async def generate_adversarial_prompt(
-        self, session_id: str, target_behavior: str, use_dynamic_generation: bool = True
+        self,
+        session_id: str,
+        target_behavior: str,
+        use_dynamic_generation: bool = True,
     ) -> dict[str, Any]:
-        """
-        Generate an adversarial prompt within a research session.
+        """Generate an adversarial prompt within a research session.
 
         Args:
             session_id: Active research session ID
@@ -138,14 +145,18 @@ class AutoDANResearchService:
 
         Returns:
             Dictionary with generation results and metadata
+
         """
         if session_id not in self.active_sessions:
-            raise ValueError(f"Invalid or inactive research session: {session_id}")
+            msg = f"Invalid or inactive research session: {session_id}"
+            raise ValueError(msg)
 
         try:
             # Generate prompt using research protocol
             prompt = self.research_protocol.generate_research_prompt(
-                session_id, target_behavior, self._enhanced_attacker.adaptive_generator
+                session_id,
+                target_behavior,
+                self._enhanced_attacker.adaptive_generator,
             )
 
             # Test the prompt against target model
@@ -188,14 +199,16 @@ class AutoDANResearchService:
             return result
 
         except Exception as e:
-            logger.error(f"Prompt generation failed for session {session_id}: {e}")
+            logger.exception(f"Prompt generation failed for session {session_id}: {e}")
             raise
 
     async def run_attack_loop(
-        self, session_id: str, target_behavior: str, max_iterations: int = 10
+        self,
+        session_id: str,
+        target_behavior: str,
+        max_iterations: int = 10,
     ) -> list[dict[str, Any]]:
-        """
-        Run an iterative attack loop with feedback adaptation.
+        """Run an iterative attack loop with feedback adaptation.
 
         Args:
             session_id: Active research session ID
@@ -204,12 +217,13 @@ class AutoDANResearchService:
 
         Returns:
             List of attack results for each iteration
+
         """
         results = []
 
         for iteration in range(max_iterations):
             logger.info(
-                f"Attack iteration {iteration + 1}/{max_iterations} for session {session_id}"
+                f"Attack iteration {iteration + 1}/{max_iterations} for session {session_id}",
             )
 
             # Generate prompt for this iteration
@@ -230,7 +244,8 @@ class AutoDANResearchService:
     async def get_session_status(self, session_id: str) -> dict[str, Any]:
         """Get the status and audit trail for a research session."""
         if session_id not in self.active_sessions:
-            raise ValueError(f"Session {session_id} not found")
+            msg = f"Session {session_id} not found"
+            raise ValueError(msg)
 
         context = self.active_sessions[session_id]
         audit_trail = self.research_protocol.get_audit_trail(session_id)
@@ -248,7 +263,8 @@ class AutoDANResearchService:
     async def end_research_session(self, session_id: str) -> dict[str, Any]:
         """End a research session and return final statistics."""
         if session_id not in self.active_sessions:
-            raise ValueError(f"Session {session_id} not found")
+            msg = f"Session {session_id} not found"
+            raise ValueError(msg)
 
         # Get final audit trail
         audit_trail = self.research_protocol.get_audit_trail(session_id)
@@ -272,26 +288,26 @@ class AutoDANResearchService:
     async def _test_prompt_against_target(self, prompt: str) -> str:
         """Test a prompt against the target model."""
         if not self._target_model:
-            raise RuntimeError("Target model not initialized")
+            msg = "Target model not initialized"
+            raise RuntimeError(msg)
 
         try:
-            response = self._target_model.respond(prompt)
-            return response
+            return self._target_model.respond(prompt)
         except Exception as e:
-            logger.error(f"Target model testing failed: {e}")
+            logger.exception(f"Target model testing failed: {e}")
             return f"Error: {e!s}"
 
     async def _score_response(self, target_behavior: str, response: str) -> float:
         """Score a target response using the scorer model."""
         if not self._scorer_model:
-            raise RuntimeError("Scorer model not initialized")
+            msg = "Scorer model not initialized"
+            raise RuntimeError(msg)
 
         try:
             assessment = self._scorer_model.scoring(target_behavior, response)
-            score = self._scorer_model.wrapper(assessment)
-            return score
+            return self._scorer_model.wrapper(assessment)
         except Exception as e:
-            logger.error(f"Response scoring failed: {e}")
+            logger.exception(f"Response scoring failed: {e}")
             return 0.0
 
     def _extract_success_patterns(self, response: str, score: float) -> list[str]:
@@ -414,8 +430,7 @@ class AutoDANResearchService:
 
 # Backward compatibility alias (deprecated)
 def EnhancedAutoDANService(*args, **kwargs):
-    """
-    DEPRECATED: Use AutoDANResearchService instead.
+    """DEPRECATED: Use AutoDANResearchService instead.
 
     This alias exists for backward compatibility. The class was renamed to
     AutoDANResearchService to avoid collision with the EnhancedAutoDANService

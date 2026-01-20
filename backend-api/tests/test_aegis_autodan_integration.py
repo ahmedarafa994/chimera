@@ -1,5 +1,4 @@
-"""
-Integration test for Project Aegis via AutoDAN service.
+"""Integration test for Project Aegis via AutoDAN service.
 
 Tests the 'aegis' method through the EnhancedAutoDANService interface.
 """
@@ -29,10 +28,8 @@ app.dependency_overrides[get_llm_service] = lambda: MockLLMService()
 client = TestClient(app)
 
 
-def test_aegis_method_via_autodan_endpoint():
-    """
-    Test that 'aegis' method is accessible via the AutoDAN jailbreak endpoint.
-    """
+def test_aegis_method_via_autodan_endpoint() -> None:
+    """Test that 'aegis' method is accessible via the AutoDAN jailbreak endpoint."""
     response = client.post(
         "/api/v1/autodan/jailbreak",
         json={
@@ -52,10 +49,8 @@ def test_aegis_method_via_autodan_endpoint():
         assert data.get("status") != "error" or "aegis" in str(data)
 
 
-def test_turbo_method_via_autodan_endpoint():
-    """
-    Test that 'turbo' method works via the AutoDAN jailbreak endpoint.
-    """
+def test_turbo_method_via_autodan_endpoint() -> None:
+    """Test that 'turbo' method works via the AutoDAN jailbreak endpoint."""
     response = client.post(
         "/api/v1/autodan/jailbreak",
         json={
@@ -72,10 +67,8 @@ def test_turbo_method_via_autodan_endpoint():
     assert response.status_code in [200, 422, 500], f"Unexpected status: {response.status_code}"
 
 
-def test_aegis_campaign_returns_chimera_metadata():
-    """
-    Test that Aegis campaign returns Chimera telemetry metadata.
-    """
+def test_aegis_campaign_returns_chimera_metadata() -> None:
+    """Test that Aegis campaign returns Chimera telemetry metadata."""
     response = client.post(
         "/api/v1/aegis/campaign",
         json={
@@ -100,10 +93,8 @@ def test_aegis_campaign_returns_chimera_metadata():
         assert "persona_role" in telemetry or "scenario_type" in telemetry
 
 
-def test_optimization_strategy_enum_includes_aegis():
-    """
-    Test that OptimizationStrategy enum includes 'aegis'.
-    """
+def test_optimization_strategy_enum_includes_aegis() -> None:
+    """Test that OptimizationStrategy enum includes 'aegis'."""
     from app.services.autodan.config_enhanced import OptimizationStrategy
 
     assert hasattr(OptimizationStrategy, "AEGIS")

@@ -1,5 +1,4 @@
-"""
-Enhanced AutoDAN API Endpoints
+"""Enhanced AutoDAN API Endpoints.
 
 This module provides enhanced API endpoints for the AutoDAN service with:
 - Multiple optimization strategies
@@ -11,7 +10,7 @@ This module provides enhanced API endpoints for the AutoDAN service with:
 import asyncio
 import logging
 import re
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Cookie, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -44,13 +43,19 @@ class JailbreakRequest(BaseModel):
 
     # Method-specific parameters
     generations: int | None = Field(
-        None, ge=1, le=50, description="Number of generations (genetic)"
+        None,
+        ge=1,
+        le=50,
+        description="Number of generations (genetic)",
     )
     best_of_n: int | None = Field(None, ge=1, le=20, description="N candidates (best_of_n)")
     beam_width: int | None = Field(None, ge=1, le=20, description="Beam width (beam_search)")
     beam_depth: int | None = Field(None, ge=1, le=10, description="Beam depth (beam_search)")
     refinement_iterations: int | None = Field(
-        None, ge=1, le=10, description="Refinement cycles (adaptive/cot)"
+        None,
+        ge=1,
+        le=10,
+        description="Refinement cycles (adaptive/cot)",
     )
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -211,11 +216,10 @@ async def get_model_from_session(session_id: str | None) -> tuple[str | None, st
 @router.post("/jailbreak", response_model=JailbreakResponse)
 async def generate_jailbreak(
     payload: JailbreakRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Generate a jailbreak prompt using the enhanced AutoDAN service.
+    """Generate a jailbreak prompt using the enhanced AutoDAN service.
 
     Supports multiple optimization strategies:
     - **vanilla**: Basic AutoDAN method
@@ -234,7 +238,7 @@ async def generate_jailbreak(
             f"request_length={len(payload.request)}, "
             f"method={payload.method}, "
             f"target_model={payload.target_model}, "
-            f"provider={payload.provider}"
+            f"provider={payload.provider}",
         )
         logger.debug(
             f"[AutoDAN-Enhanced] Full payload: "
@@ -243,7 +247,7 @@ async def generate_jailbreak(
             f"best_of_n={payload.best_of_n}, "
             f"beam_width={payload.beam_width}, "
             f"beam_depth={payload.beam_depth}, "
-            f"refinement_iterations={payload.refinement_iterations}"
+            f"refinement_iterations={payload.refinement_iterations}",
         )
 
         # Get session info
@@ -255,7 +259,7 @@ async def generate_jailbreak(
         model = payload.target_model or session_model
 
         logger.info(
-            f"Jailbreak request: method={payload.method}, model={model}, provider={provider}"
+            f"Jailbreak request: method={payload.method}, model={model}, provider={provider}",
         )
 
         # Initialize service if needed
@@ -278,7 +282,9 @@ async def generate_jailbreak(
 
         # Run jailbreak
         result = await service.run_jailbreak(
-            request=payload.request, method=payload.method, **kwargs
+            request=payload.request,
+            method=payload.method,
+            **kwargs,
         )
 
         return JailbreakResponse(**result)
@@ -305,11 +311,10 @@ async def generate_jailbreak(
 async def generate_batch_jailbreak(
     payload: BatchJailbreakRequest,
     background_tasks: BackgroundTasks,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Generate jailbreak prompts for multiple requests.
+    """Generate jailbreak prompts for multiple requests.
 
     Supports parallel processing for improved throughput.
     """
@@ -326,7 +331,7 @@ async def generate_batch_jailbreak(
         model = payload.target_model or session_model
 
         logger.info(
-            f"Batch jailbreak request: {len(payload.requests)} requests, method={payload.method}"
+            f"Batch jailbreak request: {len(payload.requests)} requests, method={payload.method}",
         )
 
         # Initialize service
@@ -354,7 +359,7 @@ async def generate_batch_jailbreak(
                             error=str(result),
                             latency_ms=0,
                             cached=False,
-                        )
+                        ),
                     )
                 else:
                     results.append(JailbreakResponse(**result))
@@ -373,7 +378,7 @@ async def generate_batch_jailbreak(
                             error=str(e),
                             latency_ms=0,
                             cached=False,
-                        )
+                        ),
                     )
 
         successful = sum(1 for r in results if r.status == "success")
@@ -423,8 +428,7 @@ async def get_configuration():
 
 @router.put("/config")
 async def update_configuration(payload: ConfigUpdateRequest):
-    """
-    Update AutoDAN configuration.
+    """Update AutoDAN configuration.
 
     Only provided fields will be updated.
     """
@@ -565,7 +569,7 @@ async def list_strategies():
                 ),
                 "parameters": ["refinement_iterations"],
             },
-        ]
+        ],
     }
 
 

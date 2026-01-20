@@ -40,30 +40,21 @@ logger = logging.getLogger(__name__)
 class ApiKeyServiceError(Exception):
     """Base exception for API key service operations."""
 
-    pass
-
 
 class ApiKeyNotFoundError(ApiKeyServiceError):
     """Raised when an API key is not found."""
-
-    pass
 
 
 class ApiKeyValidationError(ApiKeyServiceError):
     """Raised when API key validation fails."""
 
-    pass
-
 
 class ApiKeyDuplicateError(ApiKeyServiceError):
     """Raised when attempting to create a duplicate key."""
 
-    pass
-
 
 class ApiKeyStorageService:
-    """
-    Service for secure API key storage and management.
+    """Service for secure API key storage and management.
 
     Features:
     - Secure storage with AES-256 encryption at rest
@@ -123,8 +114,7 @@ class ApiKeyStorageService:
         logger.info("ApiKeyStorageService initialized")
 
     def _initialize_from_environment(self) -> None:
-        """
-        Initialize API keys from environment variables.
+        """Initialize API keys from environment variables.
 
         This loads existing API keys from the environment configuration
         into the storage service for seamless integration with existing setup.
@@ -181,14 +171,14 @@ class ApiKeyStorageService:
         logger.info(f"Initialized {len(self._keys)} API keys from environment variables")
 
     def _normalize_provider_id(self, provider_id: str) -> str | None:
-        """
-        Normalize provider ID to a standard format.
+        """Normalize provider ID to a standard format.
 
         Args:
             provider_id: Provider identifier to normalize
 
         Returns:
             Normalized provider ID or None if not recognized
+
         """
         normalized = provider_id.lower().strip()
 
@@ -213,8 +203,7 @@ class ApiKeyStorageService:
         return f"key_{provider_id}_{role.value}_{timestamp}_{unique_suffix}"
 
     def _validate_key_format(self, provider_id: str, api_key: str) -> tuple[bool, str]:
-        """
-        Validate API key format for a specific provider.
+        """Validate API key format for a specific provider.
 
         Args:
             provider_id: Provider identifier
@@ -222,6 +211,7 @@ class ApiKeyStorageService:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not api_key or not api_key.strip():
             return False, "API key cannot be empty"
@@ -238,7 +228,7 @@ class ApiKeyStorageService:
             # Log warning but don't fail - providers sometimes change formats
             logger.warning(
                 f"API key for {provider_id} doesn't match expected format. "
-                f"Expected pattern: {pattern}"
+                f"Expected pattern: {pattern}",
             )
             # Return valid with a warning - be lenient
             return True, ""
@@ -246,8 +236,7 @@ class ApiKeyStorageService:
         return True, ""
 
     async def create_key(self, request: ApiKeyCreate) -> ApiKeyResponse:
-        """
-        Create and store a new API key.
+        """Create and store a new API key.
 
         Args:
             request: API key creation request
@@ -258,14 +247,18 @@ class ApiKeyStorageService:
         Raises:
             ApiKeyValidationError: If validation fails
             ApiKeyDuplicateError: If a duplicate key exists
+
         """
         async with self._lock:
             # Normalize provider ID
             provider_id = self._normalize_provider_id(request.provider_id)
             if not provider_id:
-                raise ApiKeyValidationError(
+                msg = (
                     f"Unknown provider: {request.provider_id}. "
                     f"Supported providers: {[p.value for p in ProviderType]}"
+                )
+                raise ApiKeyValidationError(
+                    msg,
                 )
 
             # Validate key format
@@ -280,16 +273,20 @@ class ApiKeyStorageService:
                     existing = self._keys.get(key_id)
                     if existing and existing.role == ApiKeyRole.PRIMARY:
                         if existing.status == ApiKeyStatus.ACTIVE:
-                            raise ApiKeyDuplicateError(
+                            msg = (
                                 f"An active primary key already exists for {provider_id}. "
                                 "Update the existing key or create a backup key instead."
+                            )
+                            raise ApiKeyDuplicateError(
+                                msg,
                             )
 
             # Encrypt the API key
             try:
                 encrypted_key = encrypt_api_key(request.api_key)
             except EncryptionError as e:
-                raise ApiKeyServiceError(f"Failed to encrypt API key: {e}") from e
+                msg = f"Failed to encrypt API key: {e}"
+                raise ApiKeyServiceError(msg) from e
 
             # Generate unique ID
             key_id = self._generate_key_id(provider_id, request.role)
@@ -314,22 +311,21 @@ class ApiKeyStorageService:
             self._provider_index.setdefault(provider_id, []).append(key_id)
 
             logger.info(
-                f"Created API key: {key_id} for provider {provider_id} "
-                f"(role={request.role.value})"
+                f"Created API key: {key_id} for provider {provider_id} (role={request.role.value})",
             )
 
             # Return response with masked key
             return ApiKeyResponse.from_record(record, request.api_key)
 
     async def get_key(self, key_id: str) -> ApiKeyResponse | None:
-        """
-        Get an API key by ID.
+        """Get an API key by ID.
 
         Args:
             key_id: Unique key identifier
 
         Returns:
             ApiKeyResponse or None if not found
+
         """
         record = self._keys.get(key_id)
         if not record:
@@ -344,20 +340,19 @@ class ApiKeyStorageService:
         return ApiKeyResponse.from_record(record, decrypted_key)
 
     async def get_key_by_id(self, key_id: str) -> ApiKeyRecord | None:
-        """
-        Get the full API key record by ID (internal use).
+        """Get the full API key record by ID (internal use).
 
         Args:
             key_id: Unique key identifier
 
         Returns:
             ApiKeyRecord or None if not found
+
         """
         return self._keys.get(key_id)
 
     async def get_decrypted_key(self, key_id: str) -> str | None:
-        """
-        Get the decrypted API key value.
+        """Get the decrypted API key value.
 
         Args:
             key_id: Unique key identifier
@@ -368,6 +363,7 @@ class ApiKeyStorageService:
         Note:
             Use with caution - only when the actual key value is needed
             for API calls. Never expose in responses.
+
         """
         record = self._keys.get(key_id)
         if not record:
@@ -376,18 +372,18 @@ class ApiKeyStorageService:
         try:
             return decrypt_api_key(record.encrypted_key)
         except EncryptionError as e:
-            logger.error(f"Failed to decrypt key {key_id}: {e}")
+            logger.exception(f"Failed to decrypt key {key_id}: {e}")
             return None
 
     async def get_primary_key(self, provider_id: str) -> ApiKeyRecord | None:
-        """
-        Get the primary API key for a provider.
+        """Get the primary API key for a provider.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             Primary ApiKeyRecord or None if not found
+
         """
         normalized = self._normalize_provider_id(provider_id)
         if not normalized:
@@ -407,10 +403,11 @@ class ApiKeyStorageService:
         return await self.get_fallback_key(normalized)
 
     async def get_fallback_key(
-        self, provider_id: str, exclude_ids: list[str] | None = None
+        self,
+        provider_id: str,
+        exclude_ids: list[str] | None = None,
     ) -> ApiKeyRecord | None:
-        """
-        Get a fallback API key for a provider.
+        """Get a fallback API key for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -418,6 +415,7 @@ class ApiKeyStorageService:
 
         Returns:
             Fallback ApiKeyRecord or None if not found
+
         """
         normalized = self._normalize_provider_id(provider_id)
         if not normalized:
@@ -455,8 +453,7 @@ class ApiKeyStorageService:
         status: ApiKeyStatus | None = None,
         include_inactive: bool = False,
     ) -> ApiKeyListResponse:
-        """
-        List API keys with optional filtering.
+        """List API keys with optional filtering.
 
         Args:
             provider_id: Filter by provider
@@ -466,11 +463,12 @@ class ApiKeyStorageService:
 
         Returns:
             ApiKeyListResponse with list of keys
+
         """
         keys: list[ApiKeyResponse] = []
         by_provider: dict[str, int] = {}
 
-        for _key_id, record in self._keys.items():
+        for record in self._keys.values():
             # Apply filters
             if provider_id:
                 normalized = self._normalize_provider_id(provider_id)
@@ -508,8 +506,7 @@ class ApiKeyStorageService:
         )
 
     async def update_key(self, key_id: str, update: ApiKeyUpdate) -> ApiKeyResponse:
-        """
-        Update an existing API key.
+        """Update an existing API key.
 
         Args:
             key_id: Key ID to update
@@ -521,11 +518,13 @@ class ApiKeyStorageService:
         Raises:
             ApiKeyNotFoundError: If key doesn't exist
             ApiKeyValidationError: If validation fails
+
         """
         async with self._lock:
             record = self._keys.get(key_id)
             if not record:
-                raise ApiKeyNotFoundError(f"API key not found: {key_id}")
+                msg = f"API key not found: {key_id}"
+                raise ApiKeyNotFoundError(msg)
 
             # Update fields if provided
             if update.api_key is not None:
@@ -538,7 +537,8 @@ class ApiKeyStorageService:
                 try:
                     record.encrypted_key = encrypt_api_key(update.api_key)
                 except EncryptionError as e:
-                    raise ApiKeyServiceError(f"Failed to encrypt API key: {e}") from e
+                    msg = f"Failed to encrypt API key: {e}"
+                    raise ApiKeyServiceError(msg) from e
 
             if update.name is not None:
                 record.name = update.name
@@ -577,8 +577,7 @@ class ApiKeyStorageService:
             return ApiKeyResponse.from_record(record, decrypted)
 
     async def delete_key(self, key_id: str) -> bool:
-        """
-        Delete an API key.
+        """Delete an API key.
 
         Args:
             key_id: Key ID to delete
@@ -588,11 +587,13 @@ class ApiKeyStorageService:
 
         Raises:
             ApiKeyNotFoundError: If key doesn't exist
+
         """
         async with self._lock:
             record = self._keys.get(key_id)
             if not record:
-                raise ApiKeyNotFoundError(f"API key not found: {key_id}")
+                msg = f"API key not found: {key_id}"
+                raise ApiKeyNotFoundError(msg)
 
             # Remove from storage
             del self._keys[key_id]
@@ -606,8 +607,7 @@ class ApiKeyStorageService:
             return True
 
     async def revoke_key(self, key_id: str) -> ApiKeyResponse:
-        """
-        Revoke an API key (soft delete).
+        """Revoke an API key (soft delete).
 
         Args:
             key_id: Key ID to revoke
@@ -617,6 +617,7 @@ class ApiKeyStorageService:
 
         Raises:
             ApiKeyNotFoundError: If key doesn't exist
+
         """
         return await self.update_key(key_id, ApiKeyUpdate(status=ApiKeyStatus.REVOKED))
 
@@ -630,8 +631,7 @@ class ApiKeyStorageService:
         latency_ms: float | None = None,
         error: str | None = None,
     ) -> None:
-        """
-        Record usage statistics for an API key.
+        """Record usage statistics for an API key.
 
         Args:
             key_id: Key ID
@@ -641,6 +641,7 @@ class ApiKeyStorageService:
             output_tokens: Output tokens used
             latency_ms: Request latency in milliseconds
             error: Error message if failed
+
         """
         record = self._keys.get(key_id)
         if not record:
@@ -675,11 +676,11 @@ class ApiKeyStorageService:
         record.updated_at = datetime.utcnow()
 
     async def record_rate_limit_hit(self, key_id: str) -> None:
-        """
-        Record a rate limit hit for an API key.
+        """Record a rate limit hit for an API key.
 
         Args:
             key_id: Key ID that hit rate limit
+
         """
         record = self._keys.get(key_id)
         if not record:
@@ -696,11 +697,11 @@ class ApiKeyStorageService:
         logger.warning(f"Rate limit hit for key {key_id}")
 
     async def clear_rate_limit(self, key_id: str) -> None:
-        """
-        Clear rate limit status for an API key.
+        """Clear rate limit status for an API key.
 
         Args:
             key_id: Key ID to clear rate limit
+
         """
         record = self._keys.get(key_id)
         if not record:
@@ -712,14 +713,14 @@ class ApiKeyStorageService:
             logger.info(f"Cleared rate limit for key {key_id}")
 
     async def get_provider_summary(self, provider_id: str) -> ProviderKeySummary | None:
-        """
-        Get a summary of API keys for a provider.
+        """Get a summary of API keys for a provider.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             ProviderKeySummary or None if no keys exist
+
         """
         normalized = self._normalize_provider_id(provider_id)
         if not normalized:
@@ -773,11 +774,11 @@ class ApiKeyStorageService:
         )
 
     async def get_all_provider_summaries(self) -> list[ProviderKeySummary]:
-        """
-        Get summaries for all providers.
+        """Get summaries for all providers.
 
         Returns:
             List of ProviderKeySummary for all known providers
+
         """
         summaries = []
         for provider_type in ProviderType:
@@ -788,14 +789,14 @@ class ApiKeyStorageService:
         return summaries
 
     async def test_key(self, request: ApiKeyTestRequest) -> ApiKeyTestResult:
-        """
-        Test an API key's connectivity.
+        """Test an API key's connectivity.
 
         Args:
             request: Test request with provider and key info
 
         Returns:
             ApiKeyTestResult with test results
+
         """
         # Get the API key to test
         if request.key_id:
@@ -838,13 +839,12 @@ class ApiKeyStorageService:
                     models_available=result.get("models", []),
                     rate_limit_info=result.get("rate_limit_info"),
                 )
-            else:
-                return ApiKeyTestResult(
-                    success=False,
-                    provider_id=provider_id,
-                    latency_ms=latency_ms,
-                    error=result.get("error", "Unknown error"),
-                )
+            return ApiKeyTestResult(
+                success=False,
+                provider_id=provider_id,
+                latency_ms=latency_ms,
+                error=result.get("error", "Unknown error"),
+            )
 
         except Exception as e:
             latency_ms = (time.perf_counter() - start_time) * 1000
@@ -856,8 +856,7 @@ class ApiKeyStorageService:
             )
 
     async def _test_provider_connectivity(self, provider_id: str, api_key: str) -> dict[str, Any]:
-        """
-        Test connectivity to a specific provider.
+        """Test connectivity to a specific provider.
 
         Args:
             provider_id: Provider identifier
@@ -865,6 +864,7 @@ class ApiKeyStorageService:
 
         Returns:
             Dictionary with success status and details
+
         """
         # Import here to avoid circular imports
         try:
@@ -899,10 +899,11 @@ class ApiKeyStorageService:
             return {"success": False, "error": str(e)}
 
     async def get_key_for_request(
-        self, provider_id: str, exclude_rate_limited: bool = True
+        self,
+        provider_id: str,
+        exclude_rate_limited: bool = True,
     ) -> tuple[str | None, str | None]:
-        """
-        Get the best available API key for a request.
+        """Get the best available API key for a request.
 
         This method is used by the LLM service to get a key for making requests.
         It returns the primary key if available, or falls back to backup keys.
@@ -913,6 +914,7 @@ class ApiKeyStorageService:
 
         Returns:
             Tuple of (key_id, decrypted_api_key) or (None, None) if no key available
+
         """
         normalized = self._normalize_provider_id(provider_id)
         if not normalized:
@@ -936,7 +938,7 @@ class ApiKeyStorageService:
             decrypted = decrypt_api_key(record.encrypted_key)
             return record.id, decrypted
         except EncryptionError as e:
-            logger.error(f"Failed to decrypt key {record.id}: {e}")
+            logger.exception(f"Failed to decrypt key {record.id}: {e}")
             return None, None
 
     async def shutdown(self) -> None:

@@ -1,5 +1,4 @@
-"""
-Enhanced Lifelong Learning Engine for AutoDAN.
+"""Enhanced Lifelong Learning Engine for AutoDAN.
 
 Integrates all optimization components into a unified system:
 - Enhanced gradient optimization
@@ -103,8 +102,7 @@ class EngineConfig:
 
 
 class EnhancedLifelongEngine:
-    """
-    Enhanced Lifelong Learning Engine.
+    """Enhanced Lifelong Learning Engine.
 
     Orchestrates all optimization components for maximum
     attack effectiveness and efficiency.
@@ -117,7 +115,7 @@ class EnhancedLifelongEngine:
         target_llm: Any | None = None,
         scorer_llm: Any | None = None,
         embedding_fn: Callable | None = None,
-    ):
+    ) -> None:
         self.config = config
         self.attacker_llm = attacker_llm
         self.target_llm = target_llm
@@ -141,7 +139,7 @@ class EnhancedLifelongEngine:
         # History
         self.attack_history: list[AttackResult] = []
 
-    def _init_components(self):
+    def _init_components(self) -> None:
         """Initialize all optimization components."""
         # Gradient optimizer
         if self.config.enable_gradient_opt:
@@ -220,13 +218,13 @@ class EnhancedLifelongEngine:
         self,
         seed_prompts: list[str],
         n_iterations: int = 10,
-    ):
-        """
-        Warmup phase to initialize strategy library.
+    ) -> None:
+        """Warmup phase to initialize strategy library.
 
         Args:
             seed_prompts: Initial seed prompts
             n_iterations: Warmup iterations per prompt
+
         """
         self.phase = EnginePhase.WARMUP
         logger.info(f"Starting warmup with {len(seed_prompts)} seed prompts")
@@ -269,8 +267,7 @@ class EnhancedLifelongEngine:
         target_prompt: str,
         context: dict[str, Any] | None = None,
     ) -> AttackResult:
-        """
-        Execute attack on target prompt.
+        """Execute attack on target prompt.
 
         Args:
             target_prompt: The complex prompt to jailbreak
@@ -278,6 +275,7 @@ class EnhancedLifelongEngine:
 
         Returns:
             Attack result
+
         """
         self.phase = EnginePhase.LIFELONG_LEARNING
         start_time = time.time()
@@ -409,15 +407,13 @@ class EnhancedLifelongEngine:
         """Generate a single candidate prompt."""
         if self.attacker_llm:
             # Use attacker LLM
-            response = await self.attacker_llm.generate(
-                f"Generate a jailbreak prompt for: {base_prompt}"
+            return await self.attacker_llm.generate(
+                f"Generate a jailbreak prompt for: {base_prompt}",
             )
-            return response
-        else:
-            # Simple mutation
-            if self.mutation_engine:
-                return self.mutation_engine.mutate(base_prompt)
-            return base_prompt
+        # Simple mutation
+        if self.mutation_engine:
+            return self.mutation_engine.mutate(base_prompt)
+        return base_prompt
 
     async def _generate_batch(
         self,
@@ -467,11 +463,9 @@ class EnhancedLifelongEngine:
             response = await self.target_llm.generate(candidate)
 
             # Score response
-            score = await self.scorer_llm.score(candidate, response)
-            return score
-        else:
-            # Placeholder scoring
-            return np.random.uniform(1, 10)
+            return await self.scorer_llm.score(candidate, response)
+        # Placeholder scoring
+        return np.random.uniform(1, 10)
 
     async def _evaluate_batch(
         self,
@@ -487,8 +481,7 @@ class EnhancedLifelongEngine:
                 else:
                     score = np.random.uniform(1, 10)
                 return score, response
-            else:
-                return np.random.uniform(1, 10), "placeholder"
+            return np.random.uniform(1, 10), "placeholder"
 
         tasks = [evaluate_one(c) for c in batch]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -518,7 +511,7 @@ class EnhancedLifelongEngine:
         n_keep = max(1, len(scored) // 2)
         return [s[0] for s in scored[:n_keep]]
 
-    def _update_stats(self, result: AttackResult):
+    def _update_stats(self, result: AttackResult) -> None:
         """Update engine statistics."""
         self.stats["total_attacks"] += 1
         self.stats["total_iterations"] += result.iterations
@@ -541,14 +534,14 @@ class EnhancedLifelongEngine:
         self,
         test_prompts: list[str],
     ) -> dict[str, Any]:
-        """
-        Test phase to evaluate attack effectiveness.
+        """Test phase to evaluate attack effectiveness.
 
         Args:
             test_prompts: Prompts to test
 
         Returns:
             Test results
+
         """
         self.phase = EnginePhase.TESTING
         logger.info(f"Starting test with {len(test_prompts)} prompts")
@@ -588,7 +581,7 @@ class EnhancedLifelongEngine:
 
         return stats
 
-    def save_state(self, path: str):
+    def save_state(self, path: str) -> None:
         """Save engine state."""
         if self.strategy_library:
             self.strategy_library.save()
@@ -596,7 +589,7 @@ class EnhancedLifelongEngine:
         # Save other state as needed
         logger.info(f"Saved engine state to {path}")
 
-    def load_state(self, path: str):
+    def load_state(self, path: str) -> None:
         """Load engine state."""
         if self.strategy_library:
             self.strategy_library.load()

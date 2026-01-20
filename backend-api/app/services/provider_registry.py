@@ -1,5 +1,4 @@
-"""
-Dynamic Provider Registry Service for Project Chimera
+"""Dynamic Provider Registry Service for Project Chimera.
 
 This module provides a centralized registry for managing AI/LLM providers with:
 - Dynamic registration and deregistration of providers at runtime
@@ -78,14 +77,14 @@ class ProviderType(str, Enum):
 
     @classmethod
     def normalize(cls, value: str) -> "ProviderType":
-        """
-        Normalize provider type, handling aliases.
+        """Normalize provider type, handling aliases.
 
         Args:
             value: Provider type string
 
         Returns:
             Normalized ProviderType
+
         """
         # Handle aliases
         aliases = {
@@ -268,10 +267,11 @@ class ModelInfo:
 class EncryptionService:
     """Service for encrypting and decrypting sensitive data like API keys."""
 
-    def __init__(self, secret_key: str | None = None):
+    def __init__(self, secret_key: str | None = None) -> None:
         """Initialize encryption service with a secret key."""
         self._secret_key = secret_key or os.environ.get(
-            "CHIMERA_ENCRYPTION_KEY", "chimera-default-key-change-in-production"
+            "CHIMERA_ENCRYPTION_KEY",
+            "chimera-default-key-change-in-production",
         )
         self._fernet = self._create_fernet()
 
@@ -304,7 +304,7 @@ class EncryptionService:
             decrypted = self._fernet.decrypt(encrypted)
             return decrypted.decode()
         except Exception as e:
-            logger.error(f"Failed to decrypt: {e}")
+            logger.exception(f"Failed to decrypt: {e}")
             return ""
 
     def hash_key(self, api_key: str) -> str:
@@ -325,7 +325,7 @@ class CircuitBreaker:
         failure_threshold: int = 5,
         recovery_timeout: float = 60.0,
         half_open_max_calls: int = 3,
-    ):
+    ) -> None:
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.half_open_max_calls = half_open_max_calls
@@ -394,7 +394,7 @@ class CircuitBreaker:
             ):
                 self._state = CircuitBreakerState.OPEN
                 logger.warning(
-                    f"Circuit breaker transitioning to OPEN after {self._failure_count} failures"
+                    f"Circuit breaker transitioning to OPEN after {self._failure_count} failures",
                 )
 
     async def reset(self) -> None:
@@ -413,8 +413,7 @@ class CircuitBreaker:
 
 
 class ProviderRegistry:
-    """
-    Central registry for managing AI/LLM providers.
+    """Central registry for managing AI/LLM providers.
 
     Features:
     - Dynamic registration and deregistration
@@ -434,7 +433,7 @@ class ProviderRegistry:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the provider registry."""
         if self._initialized:
             return
@@ -470,8 +469,7 @@ class ProviderRegistry:
         config: ProviderConfig,
         encrypt_api_key: bool = True,
     ) -> bool:
-        """
-        Register a new provider or update an existing one.
+        """Register a new provider or update an existing one.
 
         Args:
             config: Provider configuration
@@ -479,6 +477,7 @@ class ProviderRegistry:
 
         Returns:
             True if registration was successful
+
         """
         async with self._lock:
             try:
@@ -518,23 +517,23 @@ class ProviderRegistry:
                 await self._emit_event(event, config.provider_id, config.to_dict())
 
                 logger.info(
-                    f"Provider {'updated' if is_update else 'registered'}: {config.provider_id}"
+                    f"Provider {'updated' if is_update else 'registered'}: {config.provider_id}",
                 )
                 return True
 
             except Exception as e:
-                logger.error(f"Failed to register provider {config.provider_id}: {e}")
+                logger.exception(f"Failed to register provider {config.provider_id}: {e}")
                 return False
 
     async def deregister_provider(self, provider_id: str) -> bool:
-        """
-        Remove a provider from the registry.
+        """Remove a provider from the registry.
 
         Args:
             provider_id: ID of the provider to remove
 
         Returns:
             True if deregistration was successful
+
         """
         async with self._lock:
             if provider_id not in self._providers:
@@ -559,7 +558,7 @@ class ProviderRegistry:
                 return True
 
             except Exception as e:
-                logger.error(f"Failed to deregister provider {provider_id}: {e}")
+                logger.exception(f"Failed to deregister provider {provider_id}: {e}")
                 return False
 
     async def update_provider(
@@ -568,8 +567,7 @@ class ProviderRegistry:
         updates: dict[str, Any],
         encrypt_api_key: bool = True,
     ) -> bool:
-        """
-        Update an existing provider's configuration.
+        """Update an existing provider's configuration.
 
         Args:
             provider_id: ID of the provider to update
@@ -578,6 +576,7 @@ class ProviderRegistry:
 
         Returns:
             True if update was successful
+
         """
         async with self._lock:
             if provider_id not in self._providers:
@@ -591,7 +590,7 @@ class ProviderRegistry:
                 if updates.get("api_key"):
                     if encrypt_api_key:
                         config.api_key_encrypted = self._encryption_service.encrypt(
-                            updates["api_key"]
+                            updates["api_key"],
                         )
                         config.api_key = None
                     else:
@@ -616,7 +615,7 @@ class ProviderRegistry:
                 return True
 
             except Exception as e:
-                logger.error(f"Failed to update provider {provider_id}: {e}")
+                logger.exception(f"Failed to update provider {provider_id}: {e}")
                 return False
 
     async def get_provider(self, provider_id: str) -> ProviderConfig | None:
@@ -656,14 +655,14 @@ class ProviderRegistry:
         return None
 
     async def set_active_provider(self, provider_id: str) -> bool:
-        """
-        Set the active provider for requests.
+        """Set the active provider for requests.
 
         Args:
             provider_id: ID of the provider to activate
 
         Returns:
             True if activation was successful
+
         """
         async with self._lock:
             if provider_id not in self._providers:
@@ -860,7 +859,9 @@ class ProviderRegistry:
             await cb.record_success()
 
         await self.update_health_status(
-            provider_id, ProviderStatus.AVAILABLE, latency_ms=latency_ms
+            provider_id,
+            ProviderStatus.AVAILABLE,
+            latency_ms=latency_ms,
         )
 
     async def record_request_failure(self, provider_id: str, error_message: str) -> None:
@@ -884,8 +885,7 @@ class ProviderRegistry:
         return await cb.can_execute()
 
     async def check_provider_health(self, provider_id: str) -> ProviderStatus:
-        """
-        Perform a health check on a provider.
+        """Perform a health check on a provider.
 
         This should be overridden or extended to perform actual health checks.
         """
@@ -936,12 +936,12 @@ class ProviderRegistry:
                         status = await self.check_provider_health(provider_id)
                         await self.update_health_status(provider_id, status)
                     except Exception as e:
-                        logger.error(f"Health check failed for {provider_id}: {e}")
+                        logger.exception(f"Health check failed for {provider_id}: {e}")
 
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Health monitor error: {e}")
+                logger.exception(f"Health monitor error: {e}")
 
     # =========================================================================
     # Event System
@@ -969,7 +969,7 @@ class ProviderRegistry:
                 else:
                     handler(provider_id, data)
             except Exception as e:
-                logger.error(f"Event handler error for {event}: {e}")
+                logger.exception(f"Event handler error for {event}: {e}")
 
     # =========================================================================
     # Persistence
@@ -1001,7 +1001,7 @@ class ProviderRegistry:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to save configurations: {e}")
+            logger.exception(f"Failed to save configurations: {e}")
             return False
 
     async def load_from_file(self, file_path: Path | None = None) -> bool:
@@ -1017,7 +1017,7 @@ class ProviderRegistry:
                 data = json.load(f)
 
             # Load providers
-            for _pid, config_data in data.get("providers", {}).items():
+            for config_data in data.get("providers", {}).values():
                 config = ProviderConfig(
                     provider_id=config_data["provider_id"],
                     provider_type=ProviderType(config_data["provider_type"]),
@@ -1049,7 +1049,7 @@ class ProviderRegistry:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to load configurations: {e}")
+            logger.exception(f"Failed to load configurations: {e}")
             return False
 
     # =========================================================================
@@ -1057,16 +1057,17 @@ class ProviderRegistry:
     # =========================================================================
 
     async def get_fallback_provider(
-        self, exclude_providers: set[str] | None = None
+        self,
+        exclude_providers: set[str] | None = None,
     ) -> ProviderConfig | None:
-        """
-        Get the next available fallback provider.
+        """Get the next available fallback provider.
 
         Args:
             exclude_providers: Set of provider IDs to exclude
 
         Returns:
             Next available provider or None
+
         """
         exclude = exclude_providers or set()
 
@@ -1090,14 +1091,14 @@ class ProviderRegistry:
         return None
 
     async def get_provider_for_model(self, model_id: str) -> ProviderConfig | None:
-        """
-        Find a provider that supports a specific model.
+        """Find a provider that supports a specific model.
 
         Args:
             model_id: The model ID to find
 
         Returns:
             Provider that supports the model or None
+
         """
         for provider in self._providers.values():
             if not provider.is_enabled:
@@ -1124,8 +1125,7 @@ class ProviderRegistry:
         plugin: "ProviderPlugin",
         auto_discover_models: bool = True,
     ) -> bool:
-        """
-        Register a provider plugin and optionally discover its models.
+        """Register a provider plugin and optionally discover its models.
 
         Args:
             plugin: The provider plugin to register
@@ -1133,6 +1133,7 @@ class ProviderRegistry:
 
         Returns:
             True if registration was successful
+
         """
         try:
             # Create provider config from plugin
@@ -1158,18 +1159,18 @@ class ProviderRegistry:
             return success
 
         except Exception as e:
-            logger.error(f"Failed to register plugin {plugin.provider_type}: {e}")
+            logger.exception(f"Failed to register plugin {plugin.provider_type}: {e}")
             return False
 
     async def _discover_plugin_models(
         self,
         plugin: "ProviderPlugin",
     ) -> None:
-        """
-        Discover and register models from a plugin.
+        """Discover and register models from a plugin.
 
         Args:
             plugin: The plugin to discover models from
+
         """
         try:
             models = await plugin.list_models()
@@ -1194,14 +1195,13 @@ class ProviderRegistry:
             logger.info(f"Discovered {len(models)} models for {plugin.provider_type}")
 
         except Exception as e:
-            logger.error(f"Failed to discover models for {plugin.provider_type}: {e}")
+            logger.exception(f"Failed to discover models for {plugin.provider_type}: {e}")
 
     async def get_models_for_provider(
         self,
         provider_type: str,
     ) -> list[ModelInfo]:
-        """
-        Get all models for a specific provider type.
+        """Get all models for a specific provider type.
 
         Uses plugin system for dynamic discovery if available.
 
@@ -1210,6 +1210,7 @@ class ProviderRegistry:
 
         Returns:
             List of ModelInfo objects
+
         """
         # First check locally registered models
         normalized_type = ProviderType.normalize(provider_type).value
@@ -1233,11 +1234,11 @@ class ProviderRegistry:
         return []
 
     async def get_all_available_providers(self) -> list[dict[str, Any]]:
-        """
-        Get all available providers with their status and capabilities.
+        """Get all available providers with their status and capabilities.
 
         Returns:
             List of provider info dictionaries
+
         """
         providers = []
 
@@ -1279,7 +1280,7 @@ class ProviderRegistry:
                             "default_model": plugin.get_default_model(),
                             "models_count": 0,
                             "has_api_key": False,
-                        }
+                        },
                     )
         except ImportError:
             pass
@@ -1287,8 +1288,7 @@ class ProviderRegistry:
         return providers
 
     async def initialize_from_plugins(self) -> None:
-        """
-        Initialize the registry with all available plugins.
+        """Initialize the registry with all available plugins.
 
         This should be called at application startup to auto-register
         all available provider plugins.
@@ -1311,7 +1311,7 @@ class ProviderRegistry:
         except ImportError as e:
             logger.warning(f"Plugin system not available: {e}")
         except Exception as e:
-            logger.error(f"Failed to initialize from plugins: {e}")
+            logger.exception(f"Failed to initialize from plugins: {e}")
 
     async def route_request(
         self,
@@ -1319,8 +1319,7 @@ class ProviderRegistry:
         preferred_model_id: str | None = None,
         require_capability: str | None = None,
     ) -> tuple[ProviderConfig, str | None] | None:
-        """
-        Route a request to the best available provider.
+        """Route a request to the best available provider.
 
         Args:
             preferred_provider_id: Preferred provider ID
@@ -1329,6 +1328,7 @@ class ProviderRegistry:
 
         Returns:
             Tuple of (provider, model_id) or None
+
         """
         # Try preferred provider first
         if preferred_provider_id:

@@ -1,5 +1,4 @@
-"""
-ProxyProviderAdapter for routing LLM requests through proxy server.
+"""ProxyProviderAdapter for routing LLM requests through proxy server.
 
 STORY-1.3: Base adapter that implements the LLMProvider protocol
 for proxy mode communication.
@@ -14,8 +13,7 @@ Features:
 from __future__ import annotations
 
 import time
-from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.config import settings
 from app.core.logging import logger
@@ -29,10 +27,12 @@ from app.infrastructure.proxy.proxy_client import (
     get_proxy_client,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
 
 class ProxyProviderAdapter(LLMProvider):
-    """
-    Adapter that routes LLM requests through the proxy server.
+    """Adapter that routes LLM requests through the proxy server.
 
     This adapter implements the LLMProvider interface, allowing it to be
     used interchangeably with direct provider implementations. When proxy
@@ -45,15 +45,15 @@ class ProxyProviderAdapter(LLMProvider):
         default_model: str | None = None,
         fallback_provider: LLMProvider | None = None,
         proxy_client: ProxyClient | None = None,
-    ):
-        """
-        Initialize the ProxyProviderAdapter.
+    ) -> None:
+        """Initialize the ProxyProviderAdapter.
 
         Args:
             provider_name: Name of the target provider (e.g., 'openai')
             default_model: Default model to use for this provider
             fallback_provider: Optional direct provider for fallback
             proxy_client: Optional custom ProxyClient instance
+
         """
         self._provider_name = provider_name
         self._default_model = default_model
@@ -67,7 +67,7 @@ class ProxyProviderAdapter(LLMProvider):
         logger.info(
             f"ProxyProviderAdapter initialized: provider={provider_name}, "
             f"default_model={default_model}, "
-            f"has_fallback={fallback_provider is not None}"
+            f"has_fallback={fallback_provider is not None}",
         )
 
     @property
@@ -82,8 +82,7 @@ class ProxyProviderAdapter(LLMProvider):
         return True
 
     async def generate(self, request: PromptRequest) -> PromptResponse:
-        """
-        Generate text through the proxy server.
+        """Generate text through the proxy server.
 
         Args:
             request: The prompt request
@@ -93,6 +92,7 @@ class ProxyProviderAdapter(LLMProvider):
 
         Raises:
             ProviderNotAvailableError: When proxy and fallback both fail
+
         """
         start_time = time.time()
         self._request_count += 1
@@ -169,7 +169,8 @@ class ProxyProviderAdapter(LLMProvider):
         self._fallback_count += 1
 
         if self._fallback_provider is None:
-            raise ProxyError("No fallback provider configured")
+            msg = "No fallback provider configured"
+            raise ProxyError(msg)
 
         response = await self._fallback_provider.generate(request)
 
@@ -184,8 +185,7 @@ class ProxyProviderAdapter(LLMProvider):
         self,
         request: PromptRequest,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation through proxy.
+        """Stream text generation through proxy.
 
         Note: Streaming through proxy may have additional latency.
         Falls back to buffered generation if proxy doesn't support streaming.
@@ -220,7 +220,8 @@ class ProxyProviderAdapter(LLMProvider):
                 async for chunk in self._fallback_provider.generate_stream(request):
                     yield chunk
             else:
-                raise NotImplementedError(f"Streaming through proxy failed: {e}")
+                msg = f"Streaming through proxy failed: {e}"
+                raise NotImplementedError(msg)
 
     async def check_health(self) -> bool:
         """Check if the proxy connection is healthy."""
@@ -232,8 +233,7 @@ class ProxyProviderAdapter(LLMProvider):
         text: str,
         model: str | None = None,
     ) -> int:
-        """
-        Count tokens using proxy or fallback.
+        """Count tokens using proxy or fallback.
 
         Token counting through proxy may not be available for all providers.
         Falls back to direct provider if available.
@@ -265,8 +265,7 @@ def create_proxy_adapter(
     direct_provider: LLMProvider | None = None,
     default_model: str | None = None,
 ) -> ProxyProviderAdapter:
-    """
-    Factory function to create a ProxyProviderAdapter.
+    """Factory function to create a ProxyProviderAdapter.
 
     Args:
         provider_name: Name of the target provider
@@ -275,6 +274,7 @@ def create_proxy_adapter(
 
     Returns:
         Configured ProxyProviderAdapter instance
+
     """
     return ProxyProviderAdapter(
         provider_name=provider_name,

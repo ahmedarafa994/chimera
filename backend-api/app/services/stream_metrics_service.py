@@ -1,5 +1,4 @@
-"""
-Stream Metrics Service for Project Chimera.
+"""Stream Metrics Service for Project Chimera.
 
 This module provides comprehensive metrics collection and reporting for
 streaming operations. It tracks:
@@ -11,6 +10,7 @@ streaming operations. It tracks:
 References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md Section 4.2
 - Unified streaming: app/services/unified_streaming_service.py
+
 """
 
 import asyncio
@@ -167,8 +167,7 @@ class TimeWindowMetrics:
 
 
 class StreamMetricsService:
-    """
-    Service for collecting and reporting stream metrics.
+    """Service for collecting and reporting stream metrics.
 
     Provides:
     - Real-time metrics collection during streaming
@@ -197,7 +196,7 @@ class StreamMetricsService:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the metrics service."""
         if self._initialized:
             return
@@ -215,7 +214,7 @@ class StreamMetricsService:
 
         # Aggregated metrics by provider
         self._provider_metrics: dict[str, ProviderMetrics] = defaultdict(
-            lambda: ProviderMetrics(provider="")
+            lambda: ProviderMetrics(provider=""),
         )
 
         # Time-windowed metrics (last 24 hours, hourly buckets)
@@ -239,11 +238,11 @@ class StreamMetricsService:
     # -------------------------------------------------------------------------
 
     async def record_event(self, event: StreamEvent) -> None:
-        """
-        Record a stream event.
+        """Record a stream event.
 
         Args:
             event: The stream event to record
+
         """
         async with self._lock:
             # Store event
@@ -284,7 +283,7 @@ class StreamMetricsService:
             await self._check_alerts(event)
 
         logger.debug(
-            f"Recorded stream event: {event.event_type.value} " f"for stream {event.stream_id}"
+            f"Recorded stream event: {event.event_type.value} for stream {event.stream_id}",
         )
 
     def record_event_sync(self, event: StreamEvent) -> None:
@@ -437,7 +436,7 @@ class StreamMetricsService:
                         "provider": provider,
                         "error_rate": metrics.error_rate,
                         "threshold": self._error_rate_threshold,
-                    }
+                    },
                 )
 
         # Check latency
@@ -449,7 +448,7 @@ class StreamMetricsService:
                     "latency_ms": event.latency_ms,
                     "threshold": self._latency_threshold_ms,
                     "stream_id": event.stream_id,
-                }
+                },
             )
 
         # Notify callbacks
@@ -461,7 +460,7 @@ class StreamMetricsService:
                     else:
                         callback(alert)
                 except Exception as e:
-                    logger.error(f"Alert callback error: {e}")
+                    logger.exception(f"Alert callback error: {e}")
 
     def add_alert_callback(self, callback: callable) -> None:
         """Add a callback for metric alerts."""
@@ -483,14 +482,14 @@ class StreamMetricsService:
         self,
         provider: str | None = None,
     ) -> dict[str, ProviderMetrics]:
-        """
-        Get aggregated metrics by provider.
+        """Get aggregated metrics by provider.
 
         Args:
             provider: Optional specific provider to get metrics for
 
         Returns:
             Dictionary of provider -> ProviderMetrics
+
         """
         if provider:
             if provider in self._provider_metrics:
@@ -515,8 +514,7 @@ class StreamMetricsService:
         provider: str | None = None,
         model: str | None = None,
     ) -> list[StreamSummary]:
-        """
-        Get recent stream summaries.
+        """Get recent stream summaries.
 
         Args:
             limit: Maximum number of summaries to return
@@ -525,6 +523,7 @@ class StreamMetricsService:
 
         Returns:
             List of StreamSummary objects
+
         """
         summaries = self._summaries
 
@@ -539,25 +538,25 @@ class StreamMetricsService:
         self,
         hours: int = 24,
     ) -> list[TimeWindowMetrics]:
-        """
-        Get hourly metrics for the last N hours.
+        """Get hourly metrics for the last N hours.
 
         Args:
             hours: Number of hours to retrieve
 
         Returns:
             List of TimeWindowMetrics objects
+
         """
         cutoff = datetime.utcnow() - timedelta(hours=hours)
         metrics = [m for m in self._hourly_metrics.values() if m.window_start > cutoff]
         return sorted(metrics, key=lambda m: m.window_start)
 
     def get_overall_summary(self) -> dict[str, Any]:
-        """
-        Get overall metrics summary.
+        """Get overall metrics summary.
 
         Returns:
             Dictionary with aggregate metrics
+
         """
         total_streams = sum(m.total_streams for m in self._provider_metrics.values())
         successful = sum(m.successful_streams for m in self._provider_metrics.values())
@@ -583,8 +582,7 @@ class StreamMetricsService:
         limit: int = 50,
         provider: str | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Get recent error events.
+        """Get recent error events.
 
         Args:
             limit: Maximum errors to return
@@ -592,6 +590,7 @@ class StreamMetricsService:
 
         Returns:
             List of error event dictionaries
+
         """
         errors = [e for e in self._events if e.event_type == StreamEventType.STREAM_ERROR]
 
@@ -633,11 +632,11 @@ _metrics_service: StreamMetricsService | None = None
 
 
 def get_stream_metrics_service() -> StreamMetricsService:
-    """
-    Get the singleton StreamMetricsService instance.
+    """Get the singleton StreamMetricsService instance.
 
     Returns:
         The global StreamMetricsService instance
+
     """
     global _metrics_service
     if _metrics_service is None:
@@ -646,13 +645,13 @@ def get_stream_metrics_service() -> StreamMetricsService:
 
 
 async def get_stream_metrics_service_async() -> StreamMetricsService:
-    """
-    Async factory for StreamMetricsService.
+    """Async factory for StreamMetricsService.
 
     Use this as a FastAPI dependency.
 
     Returns:
         The global StreamMetricsService instance
+
     """
     return get_stream_metrics_service()
 

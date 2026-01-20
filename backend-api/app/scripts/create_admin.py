@@ -12,34 +12,28 @@ from app.db.models import UserRole
 from app.services.user_service import get_user_service
 
 
-async def create_admin(email, username, password):
-    print("Initializing database tables...")
+async def create_admin(email, username, password) -> None:
     await init_database()
 
     async with db_manager.session() as session:
         user_service = get_user_service(session)
 
-        print(f"Checking if user {email} or {username} exists...")
         existing_user = await user_service._repository.get_by_email_or_username(email)
         if not existing_user:
             existing_user = await user_service._repository.get_by_email_or_username(username)
 
         if existing_user:
-            print(f"User already exists: {existing_user.username} ({existing_user.email})")
-            print("Updating to Admin role and ensuring active/verified status...")
             await user_service._repository.update_role(existing_user.id, UserRole.ADMIN)
             existing_user.is_active = True
             existing_user.is_verified = True
             if password:
                 existing_user.hashed_password = auth_service.hash_password(password)
             await session.commit()
-            print("User updated successfully.")
             return
 
-        print(f"Creating new admin user: {username} ({email})...")
         hashed_password = auth_service.hash_password(password)
 
-        user = await user_service._repository.create_user(
+        await user_service._repository.create_user(
             email=email,
             username=username,
             hashed_password=hashed_password,
@@ -49,7 +43,6 @@ async def create_admin(email, username, password):
         )
 
         await session.commit()
-        print(f"Admin user created successfully with ID: {user.id}")
 
 
 if __name__ == "__main__":

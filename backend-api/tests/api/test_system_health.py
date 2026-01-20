@@ -1,10 +1,11 @@
 """Tests for system health endpoint."""
+
 import pytest
 from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_system_health_endpoint(client: AsyncClient):
+async def test_system_health_endpoint(client: AsyncClient) -> None:
     """Test system health endpoint returns correct structure."""
     response = await client.get("/api/v1/system-health")
 
@@ -31,7 +32,7 @@ async def test_system_health_endpoint(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_system_health_status_values(client: AsyncClient):
+async def test_system_health_status_values(client: AsyncClient) -> None:
     """Test system health status has valid values."""
     response = await client.get("/api/v1/system-health")
 
@@ -42,5 +43,5 @@ async def test_system_health_status_values(client: AsyncClient):
     assert data["status"] in ["healthy", "degraded"]
 
     # Service statuses should be valid
-    for _, status in data["services"].items():
+    for status in data["services"].values():
         assert status in ["connected", "disconnected", "available", "unavailable"]

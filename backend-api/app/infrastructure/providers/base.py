@@ -1,5 +1,4 @@
-"""
-Base Provider Implementation for Direct API Integration
+"""Base Provider Implementation for Direct API Integration.
 
 Story 1.2: Direct API Integration
 Provides common functionality for all LLM provider implementations.
@@ -28,8 +27,7 @@ from app.domain.models import PromptRequest, PromptResponse, StreamChunk
 
 
 class BaseProvider(LLMProvider, ABC):
-    """
-    Base implementation for LLM providers.
+    """Base implementation for LLM providers.
 
     Provides common functionality including:
     - Input validation and sanitization
@@ -38,13 +36,13 @@ class BaseProvider(LLMProvider, ABC):
     - Logging and metrics
     """
 
-    def __init__(self, provider_name: str, config: Settings | None = None):
-        """
-        Initialize the base provider.
+    def __init__(self, provider_name: str, config: Settings | None = None) -> None:
+        """Initialize the base provider.
 
         Args:
             provider_name: The name of the provider (e.g., 'google', 'openai').
             config: Optional configuration settings.
+
         """
         self.provider_name = provider_name.lower()
         self.config = config or get_settings()
@@ -62,16 +60,15 @@ class BaseProvider(LLMProvider, ABC):
 
     @abstractmethod
     def _initialize_client(self, api_key: str) -> Any:
-        """
-        Initialize the provider-specific client.
+        """Initialize the provider-specific client.
 
         Args:
             api_key: The API key for authentication.
 
         Returns:
             The initialized client instance.
+
         """
-        pass
 
     @abstractmethod
     async def _generate_impl(
@@ -80,8 +77,7 @@ class BaseProvider(LLMProvider, ABC):
         request: PromptRequest,
         model_name: str,
     ) -> PromptResponse:
-        """
-        Provider-specific implementation of text generation.
+        """Provider-specific implementation of text generation.
 
         Args:
             client: The initialized client instance.
@@ -90,55 +86,52 @@ class BaseProvider(LLMProvider, ABC):
 
         Returns:
             The generated response.
+
         """
-        pass
 
     @abstractmethod
     async def _check_health_impl(self, client: Any) -> bool:
-        """
-        Provider-specific health check implementation.
+        """Provider-specific health check implementation.
 
         Args:
             client: The initialized client instance.
 
         Returns:
             True if the provider is healthy.
+
         """
-        pass
 
     @abstractmethod
     def _get_default_model(self) -> str:
-        """
-        Get the default model name for this provider.
+        """Get the default model name for this provider.
 
         Returns:
             The default model name.
+
         """
-        pass
 
     @abstractmethod
     def _get_api_key(self) -> str | None:
-        """
-        Get the API key for this provider from configuration.
+        """Get the API key for this provider from configuration.
 
         Returns:
             The API key, or None if not configured.
+
         """
-        pass
 
     # =========================================================================
     # Common Validation Methods
     # =========================================================================
 
     def validate_api_key(self, api_key: str) -> bool:
-        """
-        Validate API key format.
+        """Validate API key format.
 
         Args:
             api_key: The API key to validate.
 
         Returns:
             True if the API key format is valid.
+
         """
         if not api_key or not isinstance(api_key, str):
             return False
@@ -155,8 +148,7 @@ class BaseProvider(LLMProvider, ABC):
         return True
 
     def sanitize_prompt(self, prompt: str, max_length: int = 50000) -> str:
-        """
-        Sanitize user input to prevent injection attacks.
+        """Sanitize user input to prevent injection attacks.
 
         Args:
             prompt: The input prompt to sanitize.
@@ -167,9 +159,11 @@ class BaseProvider(LLMProvider, ABC):
 
         Raises:
             AppError: If the prompt is invalid.
+
         """
         if not prompt:
-            raise AppError("Prompt cannot be empty", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt cannot be empty"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         # Remove potential code injection patterns
         prompt = re.sub(r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL)
@@ -179,40 +173,42 @@ class BaseProvider(LLMProvider, ABC):
         # Limit prompt length
         if len(prompt) > max_length:
             logger.warning(
-                f"[{self.provider_name}] Prompt truncated from {len(prompt)} to {max_length} characters"
+                f"[{self.provider_name}] Prompt truncated from {len(prompt)} to {max_length} characters",
             )
             prompt = prompt[:max_length]
 
         return prompt.strip()
 
     def validate_request(self, request: PromptRequest) -> None:
-        """
-        Validate the prompt request.
+        """Validate the prompt request.
 
         Args:
             request: The request to validate.
 
         Raises:
             AppError: If the request is invalid.
+
         """
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         # Validate API key override if provided
         if request.api_key and not self.validate_api_key(request.api_key):
-            raise AppError("Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Invalid API key format"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         # Validate model name if provided
         if request.model and not re.match(r"^[a-zA-Z0-9\-_\.]+$", request.model):
-            raise AppError("Invalid model name format", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Invalid model name format"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
     # =========================================================================
     # Client Management
     # =========================================================================
 
     def _get_client(self, api_key_override: str | None = None) -> Any:
-        """
-        Get or create a client instance.
+        """Get or create a client instance.
 
         Args:
             api_key_override: Optional API key override.
@@ -222,18 +218,21 @@ class BaseProvider(LLMProvider, ABC):
 
         Raises:
             AppError: If client initialization fails.
+
         """
         api_key = api_key_override or self._get_api_key()
 
         if not api_key:
+            msg = f"{self.provider_name.title()} API key not configured"
             raise AppError(
-                f"{self.provider_name.title()} API key not configured",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         if not self.validate_api_key(api_key):
+            msg = "Invalid API key format"
             raise AppError(
-                "Invalid API key format",
+                msg,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -251,8 +250,9 @@ class BaseProvider(LLMProvider, ABC):
             return client
         except Exception as e:
             logger.error(f"[{self.provider_name}] Client initialization failed: {e}")
+            msg = f"Failed to initialize {self.provider_name} client"
             raise AppError(
-                f"Failed to initialize {self.provider_name} client",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from e
 
@@ -261,21 +261,21 @@ class BaseProvider(LLMProvider, ABC):
     # =========================================================================
 
     def _record_request_start(self) -> float:
-        """
-        Record the start of a request.
+        """Record the start of a request.
 
         Returns:
             The start timestamp.
+
         """
         self._metrics["requests_total"] += 1
         return time.time()
 
     def _record_request_success(self, start_time: float) -> None:
-        """
-        Record a successful request.
+        """Record a successful request.
 
         Args:
             start_time: The request start timestamp.
+
         """
         latency_ms = (time.time() - start_time) * 1000
         self._metrics["requests_success"] += 1
@@ -291,12 +291,12 @@ class BaseProvider(LLMProvider, ABC):
         logger.debug(f"[{self.provider_name}] Request completed in {latency_ms:.1f}ms")
 
     def _record_request_failure(self, start_time: float, error: Exception) -> None:
-        """
-        Record a failed request.
+        """Record a failed request.
 
         Args:
             start_time: The request start timestamp.
             error: The exception that occurred.
+
         """
         latency_ms = (time.time() - start_time) * 1000
         self._metrics["requests_failed"] += 1
@@ -307,11 +307,11 @@ class BaseProvider(LLMProvider, ABC):
         )
 
     def get_metrics(self) -> dict[str, Any]:
-        """
-        Get provider metrics.
+        """Get provider metrics.
 
         Returns:
             Dictionary containing provider metrics.
+
         """
         total_requests = self._metrics["requests_total"]
         success_rate = (
@@ -332,8 +332,7 @@ class BaseProvider(LLMProvider, ABC):
     # =========================================================================
 
     async def generate(self, request: PromptRequest) -> PromptResponse:
-        """
-        Generate text using the provider's API.
+        """Generate text using the provider's API.
 
         Args:
             request: The prompt request.
@@ -343,6 +342,7 @@ class BaseProvider(LLMProvider, ABC):
 
         Raises:
             AppError: If generation fails.
+
         """
         start_time = self._record_request_start()
 
@@ -370,17 +370,18 @@ class BaseProvider(LLMProvider, ABC):
             raise
         except Exception as e:
             self._record_request_failure(start_time, e)
+            msg = f"{self.provider_name.title()} generation failed: {e}"
             raise AppError(
-                f"{self.provider_name.title()} generation failed: {e}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             ) from e
 
     async def check_health(self) -> bool:
-        """
-        Check if the provider is available.
+        """Check if the provider is available.
 
         Returns:
             True if the provider is healthy.
+
         """
         try:
             api_key = self._get_api_key()
@@ -396,8 +397,7 @@ class BaseProvider(LLMProvider, ABC):
             return False
 
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation (default implementation raises NotImplementedError).
+        """Stream text generation (default implementation raises NotImplementedError).
 
         Subclasses should override this method to provide streaming support.
 
@@ -409,12 +409,13 @@ class BaseProvider(LLMProvider, ABC):
 
         Raises:
             NotImplementedError: If streaming is not supported.
+
         """
-        raise NotImplementedError(f"Streaming not supported by {self.provider_name} provider")
+        msg = f"Streaming not supported by {self.provider_name} provider"
+        raise NotImplementedError(msg)
 
     async def count_tokens(self, text: str, model: str | None = None) -> int:
-        """
-        Count tokens in text (default implementation raises NotImplementedError).
+        """Count tokens in text (default implementation raises NotImplementedError).
 
         Subclasses should override this method to provide token counting.
 
@@ -427,8 +428,10 @@ class BaseProvider(LLMProvider, ABC):
 
         Raises:
             NotImplementedError: If token counting is not supported.
+
         """
-        raise NotImplementedError(f"Token counting not supported by {self.provider_name} provider")
+        msg = f"Token counting not supported by {self.provider_name} provider"
+        raise NotImplementedError(msg)
 
 
 # ============================================================================
@@ -437,14 +440,14 @@ class BaseProvider(LLMProvider, ABC):
 
 
 def map_http_status_code(status_code: int) -> int:
-    """
-    Map provider API status codes to appropriate HTTP status codes.
+    """Map provider API status codes to appropriate HTTP status codes.
 
     Args:
         status_code: The provider's API status code.
 
     Returns:
         The appropriate HTTP status code.
+
     """
     mapping = {
         400: status.HTTP_400_BAD_REQUEST,
@@ -460,14 +463,14 @@ def map_http_status_code(status_code: int) -> int:
 
 
 def is_retryable_error(error: Exception) -> bool:
-    """
-    Determine if an error should trigger a retry.
+    """Determine if an error should trigger a retry.
 
     Args:
         error: The exception that occurred.
 
     Returns:
         True if the error is retryable.
+
     """
     error_str = str(error).lower()
 
@@ -484,14 +487,14 @@ def is_retryable_error(error: Exception) -> bool:
 
 
 def is_rate_limit_error(error: Exception) -> bool:
-    """
-    Determine if an error is due to rate limiting.
+    """Determine if an error is due to rate limiting.
 
     Args:
         error: The exception that occurred.
 
     Returns:
         True if the error is due to rate limiting.
+
     """
     error_str = str(error).lower()
     return "rate limit" in error_str or "429" in error_str

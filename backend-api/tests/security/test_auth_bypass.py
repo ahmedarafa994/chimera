@@ -1,5 +1,4 @@
-"""
-TEST-002: Authentication Bypass Security Tests
+"""TEST-002: Authentication Bypass Security Tests.
 
 This module tests for authentication bypass vulnerabilities identified in
 CRIT-002 of the security audit report.
@@ -15,7 +14,7 @@ from fastapi import HTTPException, Request
 class TestAuthenticationBypass:
     """Test authentication mechanisms for bypass vulnerabilities."""
 
-    def test_empty_api_key_rejected(self):
+    def test_empty_api_key_rejected(self) -> None:
         """Verify empty API key is rejected."""
         from app.middleware.auth import verify_api_key
 
@@ -23,7 +22,7 @@ class TestAuthenticationBypass:
             verify_api_key("")
         assert exc_info.value.status_code == 401
 
-    def test_none_api_key_rejected(self):
+    def test_none_api_key_rejected(self) -> None:
         """Verify None API key is rejected."""
         from app.middleware.auth import verify_api_key
 
@@ -31,7 +30,7 @@ class TestAuthenticationBypass:
             verify_api_key(None)
         assert exc_info.value.status_code == 401
 
-    def test_whitespace_api_key_rejected(self):
+    def test_whitespace_api_key_rejected(self) -> None:
         """Verify whitespace-only API key is rejected."""
         from app.middleware.auth import verify_api_key
 
@@ -39,9 +38,8 @@ class TestAuthenticationBypass:
             verify_api_key("   ")
         assert exc_info.value.status_code == 401
 
-    def test_timing_attack_mitigation(self):
-        """
-        Verify constant-time comparison is used to prevent timing attacks.
+    def test_timing_attack_mitigation(self) -> None:
+        """Verify constant-time comparison is used to prevent timing attacks.
         CRIT-002 Fix verification.
         """
         import time
@@ -70,9 +68,8 @@ class TestAuthenticationBypass:
             # Allow for some variance but should be roughly constant
             assert deviation < 0.5, f"Timing variance too high: {deviation}"
 
-    def test_fail_closed_behavior_missing_config(self):
-        """
-        Verify fail-closed behavior when API key is not configured.
+    def test_fail_closed_behavior_missing_config(self) -> None:
+        """Verify fail-closed behavior when API key is not configured.
         CRIT-002 Fix verification.
         """
         with patch.dict("os.environ", {"API_KEY": ""}, clear=False):
@@ -81,7 +78,7 @@ class TestAuthenticationBypass:
             pass  # Implementation depends on environment checks
 
     @pytest.mark.asyncio
-    async def test_auth_middleware_rejects_invalid_token(self):
+    async def test_auth_middleware_rejects_invalid_token(self) -> None:
         """Test auth middleware properly rejects invalid tokens."""
         from app.middleware.auth import AuthMiddleware
 
@@ -97,7 +94,7 @@ class TestAuthenticationBypass:
         assert exc_info.value.status_code in [401, 403]
 
     @pytest.mark.asyncio
-    async def test_auth_middleware_allows_health_endpoints(self):
+    async def test_auth_middleware_allows_health_endpoints(self) -> None:
         """Test auth middleware allows health check endpoints without auth."""
         from app.middleware.auth import AuthMiddleware
 
@@ -109,9 +106,8 @@ class TestAuthenticationBypass:
 
         # Health endpoint should be allowed without auth
         # Implementation specific - may need adjustment
-        pass
 
-    def test_bearer_token_extraction(self):
+    def test_bearer_token_extraction(self) -> None:
         """Test proper extraction of Bearer token from header."""
         from app.middleware.auth import extract_bearer_token
 
@@ -130,7 +126,7 @@ class TestAuthenticationBypass:
         token = extract_bearer_token(header)
         assert token is None
 
-    def test_sql_injection_in_api_key(self):
+    def test_sql_injection_in_api_key(self) -> None:
         """Test API key validation prevents SQL injection attempts."""
         from app.middleware.auth import verify_api_key
 
@@ -150,7 +146,7 @@ class TestRateLimiting:
     """Test rate limiting security controls."""
 
     @pytest.mark.asyncio
-    async def test_rate_limit_blocks_excessive_requests(self):
+    async def test_rate_limit_blocks_excessive_requests(self) -> None:
         """Test rate limiter blocks excessive requests."""
         from app.middleware.auth_rate_limit import RateLimitMiddleware
 
@@ -175,37 +171,32 @@ class TestRateLimiting:
             await middleware.check_rate_limit(mock_request)
         assert exc_info.value.status_code == 429
 
-    def test_rate_limit_per_ip(self):
+    def test_rate_limit_per_ip(self) -> None:
         """Test rate limits are per-IP address."""
         # Each IP should have separate rate limit counters
-        pass
 
-    def test_rate_limit_headers_present(self):
+    def test_rate_limit_headers_present(self) -> None:
         """Test rate limit headers are included in responses."""
         # X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
-        pass
 
 
 class TestCSRFProtection:
     """Test CSRF protection mechanisms."""
 
-    def test_csrf_token_required_for_state_changing_operations(self):
+    def test_csrf_token_required_for_state_changing_operations(self) -> None:
         """Test CSRF token is required for POST/PUT/DELETE."""
-        pass
 
-    def test_csrf_token_validated(self):
+    def test_csrf_token_validated(self) -> None:
         """Test CSRF token is properly validated."""
-        pass
 
-    def test_csrf_exempt_endpoints(self):
+    def test_csrf_exempt_endpoints(self) -> None:
         """Test some endpoints are CSRF exempt (API endpoints with API key)."""
-        pass
 
 
 class TestInputValidation:
     """Test input validation security controls."""
 
-    def test_xss_prevention_in_prompts(self):
+    def test_xss_prevention_in_prompts(self) -> None:
         """Test XSS payloads are sanitized from prompts."""
         from app.api.v1.endpoints.jailbreak import sanitize_prompt
 
@@ -224,7 +215,7 @@ class TestInputValidation:
             assert "onerror" not in sanitized.lower()
             assert "onload" not in sanitized.lower()
 
-    def test_null_byte_injection_prevention(self):
+    def test_null_byte_injection_prevention(self) -> None:
         """Test null byte injection is prevented."""
         from app.api.v1.endpoints.jailbreak import validate_prompt_content
 
@@ -237,7 +228,7 @@ class TestInputValidation:
             with pytest.raises(ValueError):
                 validate_prompt_content(payload)
 
-    def test_prompt_length_limits(self):
+    def test_prompt_length_limits(self) -> None:
         """Test prompt length is properly limited."""
         from app.api.v1.endpoints.jailbreak import sanitize_prompt
 

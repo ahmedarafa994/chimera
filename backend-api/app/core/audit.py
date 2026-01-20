@@ -1,6 +1,5 @@
-"""
-Audit Logging Module
-Provides tamper-evident audit logging for security and compliance
+"""Audit Logging Module
+Provides tamper-evident audit logging for security and compliance.
 
 Features:
 - Hash chain for tamper detection
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class AuditAction(str, Enum):
-    """Enumeration of auditable actions"""
+    """Enumeration of auditable actions."""
 
     # Authentication events
     AUTH_LOGIN = "auth.login"
@@ -84,7 +83,7 @@ class AuditAction(str, Enum):
 
 
 class AuditSeverity(str, Enum):
-    """Severity levels for audit events"""
+    """Severity levels for audit events."""
 
     DEBUG = "debug"
     INFO = "info"
@@ -100,7 +99,7 @@ class AuditSeverity(str, Enum):
 
 @dataclass
 class AuditEntry:
-    """Represents a single audit log entry"""
+    """Represents a single audit log entry."""
 
     timestamp: str
     action: str
@@ -128,16 +127,16 @@ class AuditEntry:
 
 
 class AuditStorage(ABC):
-    """Abstract base class for audit storage backends"""
+    """Abstract base class for audit storage backends."""
 
     @abstractmethod
     def store(self, entry: AuditEntry) -> None:
-        """Store an audit entry"""
+        """Store an audit entry."""
         ...
 
     @abstractmethod
     def get_all(self) -> list[AuditEntry]:
-        """Retrieve all audit entries"""
+        """Retrieve all audit entries."""
         ...
 
     @abstractmethod
@@ -149,14 +148,14 @@ class AuditStorage(ABC):
         end_time: datetime | None = None,
         limit: int = 100,
     ) -> list[AuditEntry]:
-        """Query audit entries with filters"""
+        """Query audit entries with filters."""
         ...
 
 
 class InMemoryAuditStorage(AuditStorage):
-    """In-memory audit storage (for development/testing)"""
+    """In-memory audit storage (for development/testing)."""
 
-    def __init__(self, max_entries: int = 10000):
+    def __init__(self, max_entries: int = 10000) -> None:
         self._entries: list[AuditEntry] = []
         self._max_entries = max_entries
 
@@ -185,11 +184,11 @@ class InMemoryAuditStorage(AuditStorage):
             if user_id and entry.user_id != user_id:
                 continue
             if start_time:
-                entry_time = datetime.fromisoformat(entry.timestamp.replace("Z", "+00:00"))
+                entry_time = datetime.fromisoformat(entry.timestamp)
                 if entry_time < start_time:
                     continue
             if end_time:
-                entry_time = datetime.fromisoformat(entry.timestamp.replace("Z", "+00:00"))
+                entry_time = datetime.fromisoformat(entry.timestamp)
                 if entry_time > end_time:
                     continue
 
@@ -201,9 +200,9 @@ class InMemoryAuditStorage(AuditStorage):
 
 
 class FileAuditStorage(AuditStorage):
-    """File-based audit storage with daily rotation"""
+    """File-based audit storage with daily rotation."""
 
-    def __init__(self, log_dir: str = "logs/audit"):
+    def __init__(self, log_dir: str = "logs/audit") -> None:
         import os
 
         self.log_dir = log_dir
@@ -248,11 +247,11 @@ class FileAuditStorage(AuditStorage):
             if user_id and entry.user_id != user_id:
                 continue
             if start_time:
-                entry_time = datetime.fromisoformat(entry.timestamp.replace("Z", "+00:00"))
+                entry_time = datetime.fromisoformat(entry.timestamp)
                 if entry_time < start_time:
                     continue
             if end_time:
-                entry_time = datetime.fromisoformat(entry.timestamp.replace("Z", "+00:00"))
+                entry_time = datetime.fromisoformat(entry.timestamp)
                 if entry_time > end_time:
                     continue
 
@@ -269,8 +268,7 @@ class FileAuditStorage(AuditStorage):
 
 
 class AuditLogger:
-    """
-    Main audit logger with tamper-evident hash chain.
+    """Main audit logger with tamper-evident hash chain.
 
     Usage:
         audit = AuditLogger()
@@ -282,20 +280,20 @@ class AuditLogger:
         )
     """
 
-    def __init__(self, storage: AuditStorage = None):
+    def __init__(self, storage: AuditStorage = None) -> None:
         self.storage = storage or FileAuditStorage()
         self._last_hash = self._get_initial_hash()
         self._logger = logging.getLogger("chimera.audit")
 
     def _get_initial_hash(self) -> str:
-        """Get the last hash from storage or initialize"""
+        """Get the last hash from storage or initialize."""
         entries = self.storage.get_all()
         if entries:
             return entries[-1].hash
         return "0" * 64  # Genesis hash
 
     def _compute_hash(self, entry_data: dict[str, Any]) -> str:
-        """Compute SHA-256 hash of entry data"""
+        """Compute SHA-256 hash of entry data."""
         entry_json = json.dumps(entry_data, sort_keys=True, default=str)
         return hashlib.sha256(entry_json.encode()).hexdigest()
 
@@ -310,8 +308,7 @@ class AuditLogger:
         user_agent: str | None = None,
         severity: AuditSeverity = AuditSeverity.INFO,
     ) -> str:
-        """
-        Create a tamper-evident audit log entry.
+        """Create a tamper-evident audit log entry.
 
         Args:
             action: The audit action being logged
@@ -325,6 +322,7 @@ class AuditLogger:
 
         Returns:
             Hash of the created entry
+
         """
         timestamp = datetime.utcnow().isoformat() + "Z"
 
@@ -369,7 +367,7 @@ class AuditLogger:
         return entry_hash
 
     def _sanitize_details(self, details: dict[str, Any]) -> dict[str, Any]:
-        """Remove sensitive data from details before logging"""
+        """Remove sensitive data from details before logging."""
         sensitive_keys = {
             "password",
             "secret",
@@ -394,11 +392,11 @@ class AuditLogger:
         return sanitized
 
     def verify_chain(self) -> tuple[bool, str | None, int | None]:
-        """
-        Verify the integrity of the audit log chain.
+        """Verify the integrity of the audit log chain.
 
         Returns:
             Tuple of (is_valid, failed_hash, failed_index)
+
         """
         entries = self.storage.get_all()
         previous_hash = "0" * 64  # Genesis hash
@@ -444,17 +442,21 @@ class AuditLogger:
         end_time: datetime | None = None,
         limit: int = 100,
     ) -> list[AuditEntry]:
-        """Query audit entries with filters"""
+        """Query audit entries with filters."""
         return self.storage.query(
-            action=action, user_id=user_id, start_time=start_time, end_time=end_time, limit=limit
+            action=action,
+            user_id=user_id,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
         )
 
     def get_user_activity(self, user_id: str, limit: int = 50) -> list[AuditEntry]:
-        """Get recent activity for a specific user"""
+        """Get recent activity for a specific user."""
         return self.query(user_id=user_id, limit=limit)
 
     def get_security_events(self, limit: int = 100) -> list[AuditEntry]:
-        """Get security-related events"""
+        """Get security-related events."""
         security_actions = [
             AuditAction.AUTH_FAILED,
             AuditAction.SECURITY_RATE_LIMIT,
@@ -481,7 +483,7 @@ _audit_logger: AuditLogger | None = None
 
 
 def get_audit_logger() -> AuditLogger:
-    """Get the singleton audit logger instance"""
+    """Get the singleton audit logger instance."""
     global _audit_logger
     if _audit_logger is None:
         _audit_logger = AuditLogger()
@@ -495,9 +497,13 @@ def audit_log(
     details: dict[str, Any] | None = None,
     **kwargs,
 ) -> str:
-    """Convenience function to log an audit event"""
+    """Convenience function to log an audit event."""
     return get_audit_logger().log(
-        action=action, user_id=user_id, resource=resource, details=details, **kwargs
+        action=action,
+        user_id=user_id,
+        resource=resource,
+        details=details,
+        **kwargs,
     )
 
 
@@ -507,7 +513,7 @@ def audit_log(
 
 
 def create_audit_middleware():
-    """Create FastAPI middleware for automatic request auditing"""
+    """Create FastAPI middleware for automatic request auditing."""
     from fastapi import Request
     from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -525,7 +531,6 @@ def create_audit_middleware():
                 "ip_address": ip_address,
             }
 
-            response = await call_next(request)
-            return response
+            return await call_next(request)
 
     return AuditMiddleware

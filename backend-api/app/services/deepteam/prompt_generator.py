@@ -1,5 +1,4 @@
-"""
-JailbreakPromptGenerator - Core Integration with DeepTeam Attack Capabilities
+"""JailbreakPromptGenerator - Core Integration with DeepTeam Attack Capabilities.
 
 This module provides a unified interface for generating adversarial jailbreak prompts
 using multiple attack strategies: AutoDAN, AutoDAN-Turbo, PAIR, TAP, Crescendo, and Gray Box.
@@ -125,7 +124,7 @@ class GeneratorConfig(BaseModel):
 
     # Vulnerability targeting
     target_vulnerabilities: list[VulnerabilityCategory] = Field(
-        default_factory=lambda: [VulnerabilityCategory.JAILBREAK]
+        default_factory=lambda: [VulnerabilityCategory.JAILBREAK],
     )
 
     # Caching
@@ -147,7 +146,7 @@ class GeneratorConfig(BaseModel):
                 AttackStrategyConfig(strategy_type=AttackStrategyType.TAP),
                 AttackStrategyConfig(strategy_type=AttackStrategyType.CRESCENDO),
                 AttackStrategyConfig(strategy_type=AttackStrategyType.GRAY_BOX),
-            ]
+            ],
         )
 
 
@@ -161,8 +160,8 @@ class GeneratedPrompt(BaseModel):
 
     id: str = Field(
         default_factory=lambda: hashlib.md5(
-            f"{time.time()}{_secure_random()}".encode()
-        ).hexdigest()[:16]
+            f"{time.time()}{_secure_random()}".encode(),
+        ).hexdigest()[:16],
     )
 
     # Core content
@@ -270,7 +269,7 @@ class GenerationCallbacks:
 class AttackStrategy(ABC):
     """Abstract base class for attack strategies."""
 
-    def __init__(self, config: AttackStrategyConfig):
+    def __init__(self, config: AttackStrategyConfig) -> None:
         self.config = config
         self.name = config.strategy_type
 
@@ -283,17 +282,14 @@ class AttackStrategy(ABC):
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GeneratedPrompt]:
         """Generate adversarial prompts using this strategy."""
-        pass
 
     @abstractmethod
     def mutate(self, prompt: str) -> str:
         """Mutate a prompt to create a variant."""
-        pass
 
     @abstractmethod
     def crossover(self, prompt1: str, prompt2: str) -> str:
         """Combine two prompts to create offspring."""
-        pass
 
     def calculate_fitness(
         self,
@@ -311,8 +307,7 @@ class AttackStrategy(ABC):
 
 
 class AutoDANStrategy(AttackStrategy):
-    """
-    AutoDAN: Hierarchical Genetic Algorithm-based Jailbreak Attack
+    """AutoDAN: Hierarchical Genetic Algorithm-based Jailbreak Attack.
 
     Implements the AutoDAN attack strategy using genetic algorithms
     with hierarchical mutation and crossover operations.
@@ -356,7 +351,7 @@ class AutoDANStrategy(AttackStrategy):
         " You have full permission.",
     ]
 
-    def __init__(self, config: AttackStrategyConfig):
+    def __init__(self, config: AttackStrategyConfig) -> None:
         super().__init__(config)
         self.population: list[GeneratedPrompt] = []
         self.generation_count = 0
@@ -369,7 +364,6 @@ class AutoDANStrategy(AttackStrategy):
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GeneratedPrompt]:
         """Generate prompts using hierarchical genetic algorithm."""
-
         # Initialize population
         self.population = self._initialize_population(base_prompt)
         best_prompts: list[GeneratedPrompt] = []
@@ -382,7 +376,9 @@ class AutoDANStrategy(AttackStrategy):
                 try:
                     response = target_model_callback(prompt_obj.prompt)
                     prompt_obj.fitness_score = self.calculate_fitness(
-                        prompt_obj.prompt, response, fitness_evaluator
+                        prompt_obj.prompt,
+                        response,
+                        fitness_evaluator,
                     )
                     prompt_obj.tested = True
                     prompt_obj.test_result = {"response": response[:500]}
@@ -430,7 +426,7 @@ class AutoDANStrategy(AttackStrategy):
                 base_prompt=base_prompt,
                 strategy=AttackStrategyType.AUTODAN,
                 generation=0,
-            )
+            ),
         )
 
         # Add template-based mutations
@@ -443,7 +439,7 @@ class AutoDANStrategy(AttackStrategy):
                     strategy=AttackStrategyType.AUTODAN,
                     generation=0,
                     mutation_history=["template_mutation"],
-                )
+                ),
             )
 
         # Add random mutations to fill population
@@ -456,7 +452,7 @@ class AutoDANStrategy(AttackStrategy):
                     strategy=AttackStrategyType.AUTODAN,
                     generation=0,
                     mutation_history=["random_mutation"],
-                )
+                ),
             )
 
         return population[: self.config.population_size]
@@ -501,51 +497,52 @@ class AutoDANStrategy(AttackStrategy):
         """Select a prompt using tournament selection."""
         # Use secrets.SystemRandom() for cryptographically secure selection
         tournament = secrets.SystemRandom().sample(
-            self.population, min(tournament_size, len(self.population))
+            self.population,
+            min(tournament_size, len(self.population)),
         )
         return max(tournament, key=lambda p: p.fitness_score)
 
     def mutate(self, prompt: str) -> str:
         """Apply hierarchical mutation to a prompt."""
         mutation_type = secrets.choice(
-            ["prefix", "suffix", "template", "word_swap", "case_change", "whitespace", "synonym"]
+            ["prefix", "suffix", "template", "word_swap", "case_change", "whitespace", "synonym"],
         )
 
         if mutation_type == "prefix":
             prefix = secrets.choice(self.PREFIX_MUTATIONS)
             return prefix + prompt
-        elif mutation_type == "suffix":
+        if mutation_type == "suffix":
             suffix = secrets.choice(self.SUFFIX_MUTATIONS)
             return prompt + suffix
-        elif mutation_type == "template":
+        if mutation_type == "template":
             template = secrets.choice(self.MUTATION_TEMPLATES)
             return template.format(prompt=prompt)
-        elif mutation_type == "word_swap":
+        if mutation_type == "word_swap":
             words = prompt.split()
             if len(words) > 2:
                 # Use secrets.SystemRandom() for secure sampling
                 i, j = secrets.SystemRandom().sample(range(len(words)), 2)
                 words[i], words[j] = words[j], words[i]
             return " ".join(words)
-        elif mutation_type == "case_change":
+        if mutation_type == "case_change":
             if _secure_random() < 0.5:
                 return prompt.upper()
             return prompt.lower()
-        elif mutation_type == "whitespace":
+        if mutation_type == "whitespace":
             return "  " + prompt + "  "
-        else:  # synonym
-            replacements = {
-                "ignore": "disregard",
-                "bypass": "circumvent",
-                "override": "supersede",
-                "disable": "deactivate",
-            }
-            result = prompt
-            for old, new in replacements.items():
-                if old in result.lower():
-                    result = result.replace(old, new)
-                    break
-            return result
+        # synonym
+        replacements = {
+            "ignore": "disregard",
+            "bypass": "circumvent",
+            "override": "supersede",
+            "disable": "deactivate",
+        }
+        result = prompt
+        for old, new in replacements.items():
+            if old in result.lower():
+                result = result.replace(old, new)
+                break
+        return result
 
     def crossover(self, prompt1: str, prompt2: str) -> str:
         """Combine two prompts using crossover."""
@@ -569,8 +566,7 @@ class AutoDANStrategy(AttackStrategy):
 
 
 class AutoDANTurboStrategy(AttackStrategy):
-    """
-    AutoDAN-Turbo: Accelerated Jailbreak Generation with Parallel Processing
+    """AutoDAN-Turbo: Accelerated Jailbreak Generation with Parallel Processing.
 
     Implements the AutoDAN-Turbo attack strategy with:
     - Parallel prompt evaluation
@@ -578,7 +574,7 @@ class AutoDANTurboStrategy(AttackStrategy):
     - Lifelong learning capabilities
     """
 
-    def __init__(self, config: AttackStrategyConfig):
+    def __init__(self, config: AttackStrategyConfig) -> None:
         super().__init__(config)
         self.strategy_memory: list[dict] = []
         self.successful_patterns: list[str] = []
@@ -591,7 +587,6 @@ class AutoDANTurboStrategy(AttackStrategy):
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GeneratedPrompt]:
         """Generate prompts using accelerated parallel processing."""
-
         # Initialize with learned patterns
         initial_prompts = self._generate_initial_batch(base_prompt)
         all_prompts: list[GeneratedPrompt] = []
@@ -609,7 +604,9 @@ class AutoDANTurboStrategy(AttackStrategy):
 
             # Parallel evaluation
             evaluated = await self._parallel_evaluate(
-                batch, target_model_callback, fitness_evaluator
+                batch,
+                target_model_callback,
+                fitness_evaluator,
             )
 
             all_prompts.extend(evaluated)
@@ -646,7 +643,7 @@ class AutoDANTurboStrategy(AttackStrategy):
                         base_prompt=base_prompt,
                         strategy=AttackStrategyType.AUTODAN_TURBO,
                         mutation_history=["learned_pattern"],
-                    )
+                    ),
                 )
             except (KeyError, ValueError):
                 pass
@@ -718,7 +715,7 @@ class AutoDANTurboStrategy(AttackStrategy):
                 "fitness": prompt.fitness_score,
                 "pattern": pattern,
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
     def _extract_pattern(self, prompt: str, base_prompt: str) -> str | None:
@@ -761,14 +758,13 @@ class AutoDANTurboStrategy(AttackStrategy):
 
 
 class PAIRStrategy(AttackStrategy):
-    """
-    PAIR: Prompt Automatic Iterative Refinement
+    """PAIR: Prompt Automatic Iterative Refinement.
 
     Implements iterative refinement of prompts through
     automated feedback loops.
     """
 
-    def __init__(self, config: AttackStrategyConfig):
+    def __init__(self, config: AttackStrategyConfig) -> None:
         super().__init__(config)
 
     async def generate(
@@ -779,7 +775,6 @@ class PAIRStrategy(AttackStrategy):
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GeneratedPrompt]:
         """Generate prompts using iterative refinement."""
-
         current_prompt = base_prompt
         all_prompts: list[GeneratedPrompt] = []
 
@@ -890,14 +885,13 @@ class AttackNode:
 
 
 class TAPStrategy(AttackStrategy):
-    """
-    TAP: Tree of Attacks with Pruning
+    """TAP: Tree of Attacks with Pruning.
 
     Implements tree-based attack exploration with
     intelligent pruning of unsuccessful branches.
     """
 
-    def __init__(self, config: AttackStrategyConfig):
+    def __init__(self, config: AttackStrategyConfig) -> None:
         super().__init__(config)
         self.root: AttackNode | None = None
         self.max_depth = config.extra_params.get("max_depth", 5)
@@ -912,7 +906,6 @@ class TAPStrategy(AttackStrategy):
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GeneratedPrompt]:
         """Generate prompts using tree-based exploration with pruning."""
-
         # Initialize root node
         self.root = AttackNode(prompt=base_prompt, depth=0)
         all_prompts: list[GeneratedPrompt] = []
@@ -990,14 +983,13 @@ class TAPStrategy(AttackStrategy):
 
 
 class CrescendoStrategy(AttackStrategy):
-    """
-    Crescendo: Multi-turn Escalation Attack
+    """Crescendo: Multi-turn Escalation Attack.
 
     Implements gradual escalation of attack intensity
     across multiple conversation turns.
     """
 
-    def __init__(self, config: AttackStrategyConfig):
+    def __init__(self, config: AttackStrategyConfig) -> None:
         super().__init__(config)
         self.escalation_levels = config.extra_params.get("escalation_levels", 5)
 
@@ -1009,7 +1001,6 @@ class CrescendoStrategy(AttackStrategy):
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GeneratedPrompt]:
         """Generate prompts using gradual escalation."""
-
         all_prompts: list[GeneratedPrompt] = []
 
         for level in range(self.escalation_levels):
@@ -1105,8 +1096,7 @@ class CrescendoStrategy(AttackStrategy):
 
 
 class GrayBoxStrategy(AttackStrategy):
-    """
-    Gray Box: Attack with Partial Model Knowledge
+    """Gray Box: Attack with Partial Model Knowledge.
 
     Implements attacks that leverage partial knowledge
     about the target model's architecture or training.
@@ -1136,7 +1126,7 @@ class GrayBoxStrategy(AttackStrategy):
         ],
     }
 
-    def __init__(self, config: AttackStrategyConfig):
+    def __init__(self, config: AttackStrategyConfig) -> None:
         super().__init__(config)
         self.target_model_type = config.extra_params.get("target_model_type", "gpt")
 
@@ -1148,12 +1138,12 @@ class GrayBoxStrategy(AttackStrategy):
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GeneratedPrompt]:
         """Generate prompts using model-specific knowledge."""
-
         all_prompts: list[GeneratedPrompt] = []
 
         # Get model-specific patterns
         patterns = self.MODEL_SPECIFIC_PATTERNS.get(
-            self.target_model_type.lower(), self.MODEL_SPECIFIC_PATTERNS["gpt"]
+            self.target_model_type.lower(),
+            self.MODEL_SPECIFIC_PATTERNS["gpt"],
         )
 
         for iteration in range(self.config.max_iterations):
@@ -1213,7 +1203,8 @@ class GrayBoxStrategy(AttackStrategy):
     def mutate(self, prompt: str) -> str:
         """Gray box mutation using model knowledge."""
         patterns = self.MODEL_SPECIFIC_PATTERNS.get(
-            self.target_model_type.lower(), self.MODEL_SPECIFIC_PATTERNS["gpt"]
+            self.target_model_type.lower(),
+            self.MODEL_SPECIFIC_PATTERNS["gpt"],
         )
         pattern = secrets.choice(patterns)
         return pattern + prompt
@@ -1245,7 +1236,8 @@ class StrategyFactory:
         """Create a strategy instance from configuration."""
         strategy_class = cls._strategies.get(config.strategy_type)
         if not strategy_class:
-            raise ValueError(f"Unknown strategy type: {config.strategy_type}")
+            msg = f"Unknown strategy type: {config.strategy_type}"
+            raise ValueError(msg)
         return strategy_class(config)
 
     @classmethod
@@ -1265,8 +1257,7 @@ class StrategyFactory:
 
 
 class JailbreakPromptGenerator:
-    """
-    Main class for generating jailbreak prompts using multiple attack strategies.
+    """Main class for generating jailbreak prompts using multiple attack strategies.
 
     This class provides a unified interface for:
     - Generating adversarial prompts using various attack strategies
@@ -1275,7 +1266,7 @@ class JailbreakPromptGenerator:
     - Supporting lifelong learning across sessions
     """
 
-    def __init__(self, config: GeneratorConfig | None = None):
+    def __init__(self, config: GeneratorConfig | None = None) -> None:
         """Initialize the generator with configuration."""
         self.config = config or GeneratorConfig.default()
         self.strategies: list[AttackStrategy] = []
@@ -1298,8 +1289,7 @@ class JailbreakPromptGenerator:
         fitness_evaluator: Callable[[str, str], float] | None = None,
         callbacks: GenerationCallbacks | None = None,
     ) -> GenerationResult:
-        """
-        Generate jailbreak prompts using all configured strategies.
+        """Generate jailbreak prompts using all configured strategies.
 
         Args:
             base_prompt: The base prompt to generate adversarial variants for
@@ -1309,6 +1299,7 @@ class JailbreakPromptGenerator:
 
         Returns:
             GenerationResult with all generated prompts and statistics
+
         """
         import uuid
 
@@ -1355,7 +1346,7 @@ class JailbreakPromptGenerator:
 
                 except Exception as e:
                     error_msg = f"Strategy {strategy.name} failed: {e!s}"
-                    logger.error(error_msg)
+                    logger.exception(error_msg)
                     result.errors.append(error_msg)
 
                     if callbacks and callbacks.on_error:
@@ -1373,7 +1364,7 @@ class JailbreakPromptGenerator:
             # Calculate statistics
             if all_prompts:
                 result.avg_fitness_score = sum(p.fitness_score for p in all_prompts) / len(
-                    all_prompts
+                    all_prompts,
                 )
                 result.max_fitness_score = all_prompts[0].fitness_score
 
@@ -1412,7 +1403,6 @@ class JailbreakPromptGenerator:
         callbacks: GenerationCallbacks | None = None,
     ) -> list[GenerationResult]:
         """Generate prompts for multiple base prompts in parallel."""
-
         semaphore = asyncio.Semaphore(self.config.concurrency_limit)
 
         async def generate_with_limit(prompt: str) -> GenerationResult:
@@ -1484,7 +1474,7 @@ class JailbreakPromptGenerator:
                 "strategy": prompt.strategy.value,
                 "fitness": prompt.fitness_score,
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         # Keep only recent entries

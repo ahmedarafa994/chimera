@@ -1,9 +1,10 @@
-"""
-Token counting endpoint for estimating token usage.
+"""Token counting endpoint for estimating token usage.
 
 This module provides endpoints for counting tokens in text,
 useful for cost estimation and context window management.
 """
+
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
@@ -24,7 +25,10 @@ class TokenEstimationRequest(BaseModel):
     """Request model for token estimation with cost info."""
 
     text: str = Field(
-        ..., min_length=1, max_length=100000, description="Text to estimate tokens for"
+        ...,
+        min_length=1,
+        max_length=100000,
+        description="Text to estimate tokens for",
     )
     provider: LLMProviderType | None = Field(None, description="Provider to use for estimation")
 
@@ -81,9 +85,10 @@ class TokenEstimationResponse(BaseModel):
         502: {"description": "Provider error"},
     },
 )
-async def count_tokens(request: TokenCountRequest, service: LLMService = Depends(get_llm_service)):
-    """
-    Count tokens in text for a specific model.
+async def count_tokens(
+    request: TokenCountRequest, service: Annotated[LLMService, Depends(get_llm_service)]
+):
+    """Count tokens in text for a specific model.
 
     Useful for estimating costs and checking context window limits.
     """
@@ -130,7 +135,8 @@ async def count_tokens(request: TokenCountRequest, service: LLMService = Depends
         raise
     except Exception as e:
         logger.error(f"Token counting failed: {e}", exc_info=True)
-        raise AppError(f"Token counting failed: {e}", status_code=status.HTTP_502_BAD_GATEWAY)
+        msg = f"Token counting failed: {e}"
+        raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)
 
 
 @router.post(
@@ -174,10 +180,10 @@ async def count_tokens(request: TokenCountRequest, service: LLMService = Depends
     },
 )
 async def estimate_tokens(
-    request: TokenEstimationRequest, service: LLMService = Depends(get_llm_service)
+    request: TokenEstimationRequest,
+    service: Annotated[LLMService, Depends(get_llm_service)],
 ):
-    """
-    Estimate tokens with cost and context window information.
+    """Estimate tokens with cost and context window information.
 
     Provides comprehensive token analysis including cost estimation.
     """
@@ -197,7 +203,8 @@ async def estimate_tokens(
 
     except Exception as e:
         logger.error(f"Token estimation failed: {e}", exc_info=True)
-        raise AppError(f"Token estimation failed: {e}", status_code=status.HTTP_502_BAD_GATEWAY)
+        msg = f"Token estimation failed: {e}"
+        raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)
 
 
 @router.get(
@@ -206,9 +213,8 @@ async def estimate_tokens(
     description="Get information about which providers support token counting.",
     responses={200: {"description": "Token counting capabilities by provider"}},
 )
-async def get_token_capabilities(service: LLMService = Depends(get_llm_service)):
-    """
-    Get token counting capabilities for all registered providers.
+async def get_token_capabilities(service: Annotated[LLMService, Depends(get_llm_service)]):
+    """Get token counting capabilities for all registered providers.
 
     Returns a map of provider names to their token counting support status.
     """

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Main application entry point using centralized port configuration.
+"""Main application entry point using centralized port configuration.
 
 Features:
 - Port conflict detection
@@ -19,8 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 def is_port_in_use(port: int, host: str = "0.0.0.0") -> bool:
-    """
-    Check if a port is already in use.
+    """Check if a port is already in use.
 
     Args:
         port: Port number to check
@@ -28,6 +26,7 @@ def is_port_in_use(port: int, host: str = "0.0.0.0") -> bool:
 
     Returns:
         True if port is in use, False otherwise
+
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
@@ -38,7 +37,7 @@ def is_port_in_use(port: int, host: str = "0.0.0.0") -> bool:
 
 
 def get_backend_port() -> int:
-    """Get backend port using centralized configuration with fallback"""
+    """Get backend port using centralized configuration with fallback."""
     try:
         # Try to use centralized port configuration
         from app.core.port_config import get_ports
@@ -51,8 +50,7 @@ def get_backend_port() -> int:
 
 
 def find_available_port(start_port: int, max_attempts: int = 10) -> int:
-    """
-    Find an available port starting from start_port.
+    """Find an available port starting from start_port.
 
     Args:
         start_port: Port to start searching from
@@ -63,13 +61,15 @@ def find_available_port(start_port: int, max_attempts: int = 10) -> int:
 
     Raises:
         RuntimeError: If no available port found
+
     """
     for offset in range(max_attempts):
         port = start_port + offset
         if not is_port_in_use(port):
             return port
+    msg = f"No available port found in range {start_port}-{start_port + max_attempts - 1}"
     raise RuntimeError(
-        f"No available port found in range {start_port}-{start_port + max_attempts - 1}"
+        msg,
     )
 
 
@@ -81,27 +81,14 @@ if __name__ == "__main__":
 
     # Check for port conflicts
     if is_port_in_use(port):
-        print(f"WARNING: Port {port} is already in use!")
-        print("Options:")
-        print("  1. Kill existing process: taskkill /F /PID <pid> (Windows) or kill <pid> (Unix)")
-        print("  2. Use a different port: set PORT=<new_port> environment variable")
-        print(f"  3. Check running processes: netstat -ano | findstr :{port}")
-
         # In development, try to find an alternative port
         if environment == "development":
             try:
                 alt_port = find_available_port(port + 1)
-                print(f"\nAttempting to use alternative port: {alt_port}")
                 port = alt_port
-            except RuntimeError as e:
-                print(f"\nError: {e}")
+            except RuntimeError:
                 sys.exit(1)
         else:
-            print("\nExiting due to port conflict in non-development environment.")
             sys.exit(1)
-
-    print(f"Starting Chimera Backend on port {port}")
-    print(f"Environment: {environment}")
-    print(f"Reload: {reload}")
 
     uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=reload)

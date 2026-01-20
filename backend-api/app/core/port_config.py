@@ -1,5 +1,4 @@
-"""
-Centralized Port Configuration System for Chimera Backend
+"""Centralized Port Configuration System for Chimera Backend
 Provides a single source of truth for all port assignments to prevent conflicts
 and ensure consistent port usage across the entire application.
 """
@@ -11,7 +10,7 @@ from pydantic import BaseModel
 
 
 class PortAssignment(BaseModel):
-    """Port assignment configuration with validation"""
+    """Port assignment configuration with validation."""
 
     service_name: str
     port: int
@@ -22,7 +21,7 @@ class PortAssignment(BaseModel):
 
 
 class PortConfig:
-    """Centralized port configuration manager"""
+    """Centralized port configuration manager."""
 
     # Standard port assignments (ClassVar to avoid Pydantic field requirement)
     STANDARD_PORTS: ClassVar[dict[str, PortAssignment]] = {
@@ -95,13 +94,13 @@ class PortConfig:
         ),
     }
 
-    def __init__(self):
-        """Initialize port configuration with environment overrides"""
+    def __init__(self) -> None:
+        """Initialize port configuration with environment overrides."""
         self._ports = self.STANDARD_PORTS.copy()
         self._validate_and_override_ports()
 
-    def _validate_and_override_ports(self):
-        """Validate port assignments and apply environment overrides"""
+    def _validate_and_override_ports(self) -> None:
+        """Validate port assignments and apply environment overrides."""
         # Check for port conflicts
         used_ports = set()
         conflicts = []
@@ -119,48 +118,50 @@ class PortConfig:
             # Check for conflicts
             if port_assignment.port in used_ports:
                 conflicts.append(
-                    f"Port {port_assignment.port} conflict: {service_name} vs {self._get_service_by_port(port_assignment.port)}"
+                    f"Port {port_assignment.port} conflict: {service_name} vs {self._get_service_by_port(port_assignment.port)}",
                 )
             else:
                 used_ports.add(port_assignment.port)
 
         if conflicts:
-            raise ValueError(f"Port conflicts detected: {', '.join(conflicts)}")
+            msg = f"Port conflicts detected: {', '.join(conflicts)}"
+            raise ValueError(msg)
 
     def _get_service_by_port(self, port: int) -> str:
-        """Find service name by port number"""
+        """Find service name by port number."""
         for service_name, assignment in self._ports.items():
             if assignment.port == port:
                 return service_name
         return "unknown"
 
     def get_port(self, service_name: str) -> int:
-        """Get port for a specific service"""
+        """Get port for a specific service."""
         if service_name not in self._ports:
+            msg = f"Unknown service: {service_name}. Available services: {list(self._ports.keys())}"
             raise ValueError(
-                f"Unknown service: {service_name}. Available services: {list(self._ports.keys())}"
+                msg,
             )
 
         return self._ports[service_name].port
 
     def get_all_assignments(self) -> dict[str, int]:
-        """Get all port assignments as a simple dictionary"""
+        """Get all port assignments as a simple dictionary."""
         return {service: assignment.port for service, assignment in self._ports.items()}
 
     def validate_port_available(self, port: int) -> bool:
-        """Check if a port is available and not assigned to another service"""
+        """Check if a port is available and not assigned to another service."""
         return all(assignment.port != port for assignment in self._ports.values())
 
     def get_primary_port(self) -> int:
-        """Get the primary backend API port"""
+        """Get the primary backend API port."""
         return self.get_port("backend_api")
 
     def get_test_server_port(self) -> int:
-        """Get the test server port (avoids conflicts with primary services)"""
+        """Get the test server port (avoids conflicts with primary services)."""
         return self.get_port("test_server")
 
     def get_service_info(self, service_name: str) -> PortAssignment:
-        """Get full port assignment information for a service"""
+        """Get full port assignment information for a service."""
         return self._ports[service_name]
 
 
@@ -169,29 +170,28 @@ port_config = PortConfig()
 
 
 def get_ports() -> PortConfig:
-    """Get the global port configuration instance"""
+    """Get the global port configuration instance."""
     return port_config
 
 
 def get_backend_port() -> int:
-    """Convenience function for backward compatibility"""
+    """Convenience function for backward compatibility."""
     return port_config.get_primary_port()
 
 
 def get_test_server_port() -> int:
-    """Convenience function for test server port"""
+    """Convenience function for test server port."""
     return port_config.get_test_server_port()
 
 
 # Environment variable validation
-def validate_environment_ports():
-    """Validate that environment variables don't cause conflicts"""
+def validate_environment_ports() -> bool | None:
+    """Validate that environment variables don't cause conflicts."""
     try:
         # This will raise an exception if there are conflicts
         PortConfig()
         return True
-    except ValueError as e:
-        print(f"Port configuration error: {e}")
+    except ValueError:
         return False
 
 

@@ -1,5 +1,4 @@
-"""
-AutoDAN Advanced Optimization Framework
+"""AutoDAN Advanced Optimization Framework.
 
 A comprehensive framework for optimizing adversarial prompt generation
 using genetic algorithms, gradient-based methods, and multi-objective optimization.
@@ -28,6 +27,7 @@ References:
 - AutoDAN-Turbo: A Lifelong Agent for Strategy Self-Exploration (Liu et al., 2024)
 - GCG: Universal and Transferable Adversarial Attacks (Zou et al., 2023)
 - HarmBench: A Standardized Evaluation Framework (Mazeika et al., 2024)
+
 """
 
 from .config import (  # Configuration classes; Enumerations; Utility functions

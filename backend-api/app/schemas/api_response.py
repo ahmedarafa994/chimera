@@ -1,6 +1,5 @@
-"""
-Standardized API Response Schemas
-Consistent response structures for frontend integration
+"""Standardized API Response Schemas
+Consistent response structures for frontend integration.
 """
 
 from datetime import datetime
@@ -12,7 +11,7 @@ T = TypeVar("T")
 
 
 class APIResponse(BaseModel, Generic[T]):
-    """Standard API response wrapper"""
+    """Standard API response wrapper."""
 
     data: T
     status: int = Field(default=200, description="HTTP status code")
@@ -28,12 +27,12 @@ class APIResponse(BaseModel, Generic[T]):
                 "message": "Success",
                 "request_id": "req_123456789",
                 "timestamp": "2025-12-20T02:50:00Z",
-            }
+            },
         }
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
-    """Paginated response wrapper"""
+    """Paginated response wrapper."""
 
     items: list[T]
     total: int = Field(ge=0, description="Total number of items")
@@ -43,22 +42,30 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
     class Config:
         json_schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {"items": [], "total": 100, "page": 1, "page_size": 20, "total_pages": 5}
+            "example": {"items": [], "total": 100, "page": 1, "page_size": 20, "total_pages": 5},
         }
 
     @classmethod
     def create(
-        cls, items: list[T], total: int, page: int, page_size: int
+        cls,
+        items: list[T],
+        total: int,
+        page: int,
+        page_size: int,
     ) -> "PaginatedResponse[T]":
-        """Create paginated response with calculated total_pages"""
+        """Create paginated response with calculated total_pages."""
         total_pages = (total + page_size - 1) // page_size if page_size > 0 else 0
         return cls(
-            items=items, total=total, page=page, page_size=page_size, total_pages=total_pages
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
         )
 
 
 class ErrorDetail(BaseModel):
-    """Error detail for validation errors"""
+    """Error detail for validation errors."""
 
     field: str = Field(description="Field that caused the error")
     message: str = Field(description="Error message")
@@ -66,7 +73,7 @@ class ErrorDetail(BaseModel):
 
 
 class APIError(BaseModel):
-    """Standard API error response"""
+    """Standard API error response."""
 
     message: str = Field(description="Error message")
     code: str = Field(description="Error code")
@@ -82,16 +89,16 @@ class APIError(BaseModel):
                 "code": "VALIDATION_ERROR",
                 "status": 422,
                 "details": [
-                    {"field": "email", "message": "Invalid email format", "code": "INVALID_FORMAT"}
+                    {"field": "email", "message": "Invalid email format", "code": "INVALID_FORMAT"},
                 ],
                 "request_id": "req_123456789",
                 "timestamp": "2025-12-20T02:50:00Z",
-            }
+            },
         }
 
 
 class HealthResponse(BaseModel):
-    """Health check response"""
+    """Health check response."""
 
     status: str = Field(description="Overall health status")
     version: str = Field(description="API version")
@@ -101,7 +108,7 @@ class HealthResponse(BaseModel):
 
 
 class WebSocketMessage(BaseModel):
-    """WebSocket message format"""
+    """WebSocket message format."""
 
     type: str = Field(description="Message type: ping, pong, data, error, control")
     payload: Any = Field(description="Message payload")
@@ -110,7 +117,7 @@ class WebSocketMessage(BaseModel):
 
 
 class StreamEvent(BaseModel):
-    """Streaming event format"""
+    """Streaming event format."""
 
     event: str = Field(description="Event type: start, chunk, end, error")
     data: Any = Field(description="Event data")
@@ -154,9 +161,11 @@ class ErrorCodes:
 
 
 def create_success_response(
-    data: Any, message: str | None = None, request_id: str | None = None
+    data: Any,
+    message: str | None = None,
+    request_id: str | None = None,
 ) -> dict:
-    """Helper to create success response dict"""
+    """Helper to create success response dict."""
     return {
         "data": data,
         "status": 200,
@@ -173,7 +182,7 @@ def create_error_response(
     details: list[dict] | None = None,
     request_id: str | None = None,
 ) -> dict:
-    """Helper to create error response dict"""
+    """Helper to create error response dict."""
     return {
         "message": message,
         "code": code,

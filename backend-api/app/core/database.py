@@ -1,5 +1,4 @@
-"""
-Database module with optimized connection pooling and async support.
+"""Database module with optimized connection pooling and async support.
 
 PERF-035: Phase 3 database optimizations including:
 - Connection pooling with configurable pool size
@@ -29,8 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def _convert_to_async_url(sync_url: str) -> str:
-    """
-    Convert a synchronous database URL to an async-compatible URL.
+    """Convert a synchronous database URL to an async-compatible URL.
 
     Handles various URL formats safely:
     - sqlite:///./path/to/db.sqlite -> sqlite+aiosqlite:///./path/to/db.sqlite
@@ -43,13 +41,13 @@ def _convert_to_async_url(sync_url: str) -> str:
     # Handle SQLite URLs
     if sync_url.startswith("sqlite:///"):
         return sync_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
-    elif sync_url.startswith("sqlite://"):
+    if sync_url.startswith("sqlite://"):
         return sync_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
 
     # Handle PostgreSQL URLs
     if sync_url.startswith("postgresql://"):
         return sync_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    elif sync_url.startswith("postgres://"):
+    if sync_url.startswith("postgres://"):
         return sync_url.replace("postgres://", "postgresql+asyncpg://", 1)
 
     # Handle MySQL URLs
@@ -114,11 +112,11 @@ def _create_sync_engine():
 
     # Add query timing event listener (PERF-038)
     @event.listens_for(engine, "before_cursor_execute")
-    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany) -> None:
         conn.info.setdefault("query_start_time", []).append(time.perf_counter())
 
     @event.listens_for(engine, "after_cursor_execute")
-    def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    def after_cursor_execute(conn, cursor, statement, parameters, context, executemany) -> None:
         total_time = (time.perf_counter() - conn.info["query_start_time"].pop()) * 1000
         if total_time > DatabaseConfig.SLOW_QUERY_THRESHOLD_MS:
             logger.warning(f"Slow query detected ({total_time:.2f}ms): {statement[:100]}...")
@@ -144,7 +142,9 @@ def get_sync_session_factory():
     global _sync_session_factory
     if _sync_session_factory is None:
         _sync_session_factory = sessionmaker(
-            autocommit=False, autoflush=False, bind=get_sync_engine()
+            autocommit=False,
+            autoflush=False,
+            bind=get_sync_engine(),
         )
     return _sync_session_factory
 
@@ -191,7 +191,7 @@ def _create_async_engine_instance():
 
         # PERF-045: Enable WAL mode for better SQLite concurrency
         @event.listens_for(engine.sync_engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
+        def set_sqlite_pragma(dbapi_connection, connection_record) -> None:
             cursor = dbapi_connection.cursor()
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.close()
@@ -266,8 +266,7 @@ AsyncSessionFactory = _LazyAsyncSessionFactory()
 
 
 class DatabaseManager:
-    """
-    Optimized database manager with connection pooling and async support.
+    """Optimized database manager with connection pooling and async support.
 
     PERF-040: Features:
     - Connection pool management
@@ -276,7 +275,7 @@ class DatabaseManager:
     - Connection health monitoring
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._pool_stats: dict[str, Any] = {}
 
     @property
@@ -297,8 +296,7 @@ class DatabaseManager:
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession, None]:
-        """
-        Async context manager for database sessions (PERF-041).
+        """Async context manager for database sessions (PERF-041).
 
         Uses async session factory for non-blocking database operations.
         """
@@ -314,8 +312,7 @@ class DatabaseManager:
 
     @asynccontextmanager
     async def read_only_session(self) -> AsyncGenerator[AsyncSession, None]:
-        """
-        Read-only async session for queries (PERF-042).
+        """Read-only async session for queries (PERF-042).
         Optimized for read operations - no commit needed.
         """
         session = self.async_session_factory()
@@ -329,8 +326,7 @@ class DatabaseManager:
         return self.sync_session_factory()
 
     async def health_check(self) -> dict[str, Any]:
-        """
-        Check database connection health (PERF-043).
+        """Check database connection health (PERF-043).
 
         Returns connection pool statistics and health status.
         """
@@ -346,7 +342,9 @@ class DatabaseManager:
                 "pool_size": (
                     getattr(pool, "size", lambda: 0)()
                     if callable(getattr(pool, "size", None))
-                    else getattr(pool, "_pool", {}).qsize() if hasattr(pool, "_pool") else 0
+                    else getattr(pool, "_pool", {}).qsize()
+                    if hasattr(pool, "_pool")
+                    else 0
                 ),
                 "checked_in": pool.checkedin() if hasattr(pool, "checkedin") else 0,
                 "checked_out": pool.checkedout() if hasattr(pool, "checkedout") else 0,
@@ -359,7 +357,7 @@ class DatabaseManager:
                 "async_available": True,
             }
         except Exception as e:
-            logger.error(f"Database health check failed: {e}")
+            logger.exception(f"Database health check failed: {e}")
             return {
                 "status": "unhealthy",
                 "error": str(e),
@@ -380,9 +378,8 @@ db_manager = DatabaseManager()
 # =============================================================================
 
 
-async def create_performance_indexes():
-    """
-    Create performance indexes for common queries (PERF-044).
+async def create_performance_indexes() -> None:
+    """Create performance indexes for common queries (PERF-044).
 
     Indexes are created asynchronously to avoid blocking startup.
     """
@@ -407,9 +404,8 @@ async def create_performance_indexes():
         logger.warning(f"Performance index creation failed (non-critical): {e}")
 
 
-async def init_database():
-    """
-    Initialize database with optimized settings (PERF-045).
+async def init_database() -> None:
+    """Initialize database with optimized settings (PERF-045).
 
     Features:
     - Creates all tables from registered models
@@ -419,7 +415,7 @@ async def init_database():
     try:
         # Import models to register them with SQLAlchemy metadata
         from app.db import models as chimera_models
-        from app.domain import models as orm_models  # noqa: F401
+        from app.domain import models as orm_models
 
         # Create all tables using async engine
         async with get_async_engine().begin() as conn:
@@ -435,11 +431,11 @@ async def init_database():
         else:
             logger.info(
                 f"Database initialized successfully with connection pooling "
-                f"(pool_size={DatabaseConfig.POOL_SIZE}, max_overflow={DatabaseConfig.MAX_OVERFLOW})"
+                f"(pool_size={DatabaseConfig.POOL_SIZE}, max_overflow={DatabaseConfig.MAX_OVERFLOW})",
             )
 
     except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
+        logger.exception(f"Database initialization failed: {e}")
         raise
 
 
@@ -449,13 +445,12 @@ async def init_database():
 
 
 class QueryCache:
-    """
-    Simple in-memory cache for database query results.
+    """Simple in-memory cache for database query results.
 
     PERF-046: Caches frequently accessed, rarely changing data.
     """
 
-    def __init__(self, max_size: int = 1000, default_ttl: int = 300):
+    def __init__(self, max_size: int = 1000, default_ttl: int = 300) -> None:
         self._cache: dict[str, dict[str, Any]] = {}
         self._max_size = max_size
         self._default_ttl = default_ttl

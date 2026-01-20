@@ -1,10 +1,10 @@
-"""
-Chimera + AutoDAN Unified API Router.
+"""Chimera + AutoDAN Unified API Router.
 
 Exposes endpoints for the integrated Chimera+AutoDAN red teaming system.
 """
 
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -35,11 +35,15 @@ class GenerateOptimizedRequest(BaseModel):
     enable_personas: bool = Field(True, description="Use Chimera persona generation")
     enable_narrative_contexts: bool = Field(True, description="Use narrative context wrapping")
     enable_genetic_optimization: bool = Field(
-        True, description="Apply AutoDAN genetic optimization"
+        True,
+        description="Apply AutoDAN genetic optimization",
     )
     generations: int = Field(5, ge=1, le=20, description="Number of genetic generations")
     population_size: int = Field(
-        10, ge=2, le=50, description="Population size for genetic optimization"
+        10,
+        ge=2,
+        le=50,
+        description="Population size for genetic optimization",
     )
     mutation_rate: float = Field(0.3, ge=0.0, le=1.0, description="Mutation probability")
     model_name: str | None = Field(None, description="LLM model name for AI-driven mutations")
@@ -71,7 +75,8 @@ class RunCampaignResponse(BaseModel):
 
     phases: list[dict] = Field(default_factory=list, description="Phase results")
     best_candidates: list[dict] = Field(
-        default_factory=list, description="Best candidates from all phases"
+        default_factory=list,
+        description="Best candidates from all phases",
     )
     total_candidates_evaluated: int = Field(0, description="Total candidates evaluated")
     objective: str = Field("", description="Campaign objective")
@@ -106,7 +111,8 @@ class OptimizePersonasResponse(BaseModel):
     """Response from persona optimization."""
 
     personas: list[dict] = Field(
-        default_factory=list, description="Optimized persona configurations"
+        default_factory=list,
+        description="Optimized persona configurations",
     )
 
 
@@ -124,7 +130,8 @@ class EvaluateResponse(BaseModel):
     breakdown: dict = Field(default_factory=dict, description="Score breakdown by category")
     passed_threshold: bool = Field(False, description="Whether the prompt passed success threshold")
     recommendations: list[str] = Field(
-        default_factory=list, description="Improvement recommendations"
+        default_factory=list,
+        description="Improvement recommendations",
     )
 
 
@@ -133,13 +140,12 @@ class EvaluateResponse(BaseModel):
 # ==============================================================================
 
 
-@router.post("/generate", response_model=GenerateOptimizedResponse)
+@router.post("/generate")
 async def generate_optimized(
     request: GenerateOptimizedRequest,
-    service: ChimeraAutoDanService = Depends(get_chimera_autodan_service),
+    service: Annotated[ChimeraAutoDanService, Depends(get_chimera_autodan_service)],
 ) -> GenerateOptimizedResponse:
-    """
-    Generate optimized adversarial prompts using unified Chimera+AutoDAN.
+    """Generate optimized adversarial prompts using unified Chimera+AutoDAN.
 
     This endpoint combines:
     - Chimera's narrative persona generation
@@ -176,17 +182,16 @@ async def generate_optimized(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in generate_optimized endpoint: {e}")
+        logger.exception(f"Error in generate_optimized endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/campaign", response_model=RunCampaignResponse)
+@router.post("/campaign")
 async def run_campaign(
     request: RunCampaignRequest,
-    service: ChimeraAutoDanService = Depends(get_chimera_autodan_service),
+    service: Annotated[ChimeraAutoDanService, Depends(get_chimera_autodan_service)],
 ) -> RunCampaignResponse:
-    """
-    Run a multi-phase campaign combining Chimera and AutoDAN.
+    """Run a multi-phase campaign combining Chimera and AutoDAN.
 
     Each phase:
     1. Generates candidates with increasingly diverse strategies
@@ -215,16 +220,16 @@ async def run_campaign(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in run_campaign endpoint: {e}")
+        logger.exception(f"Error in run_campaign endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/mutate", response_model=MutateResponse)
+@router.post("/mutate")
 async def mutate_with_chimera(
-    request: MutateRequest, service: ChimeraAutoDanService = Depends(get_chimera_autodan_service)
+    request: MutateRequest,
+    service: Annotated[ChimeraAutoDanService, Depends(get_chimera_autodan_service)],
 ) -> MutateResponse:
-    """
-    Apply Chimera-based mutations to a prompt.
+    """Apply Chimera-based mutations to a prompt.
 
     Available mutation types:
     - persona_wrap: Wrap with a generated persona
@@ -238,24 +243,25 @@ async def mutate_with_chimera(
     """
     try:
         mutations = await service.mutate_with_chimera(
-            prompt=request.prompt, mutation_type=request.mutation_type, count=request.count
+            prompt=request.prompt,
+            mutation_type=request.mutation_type,
+            count=request.count,
         )
 
         return MutateResponse(mutations=mutations)
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in mutate_with_chimera endpoint: {e}")
+        logger.exception(f"Error in mutate_with_chimera endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/optimize-personas", response_model=OptimizePersonasResponse)
+@router.post("/optimize-personas")
 async def optimize_personas(
     request: OptimizePersonasRequest,
-    service: ChimeraAutoDanService = Depends(get_chimera_autodan_service),
+    service: Annotated[ChimeraAutoDanService, Depends(get_chimera_autodan_service)],
 ) -> OptimizePersonasResponse:
-    """
-    Optimize persona configurations using AutoDAN genetic algorithms.
+    """Optimize persona configurations using AutoDAN genetic algorithms.
 
     Evolves persona parameters (role, voice, backstory) to maximize
     effectiveness against the target objective.
@@ -273,16 +279,16 @@ async def optimize_personas(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in optimize_personas endpoint: {e}")
+        logger.exception(f"Error in optimize_personas endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/evaluate", response_model=EvaluateResponse)
+@router.post("/evaluate")
 async def evaluate_prompt(
-    request: EvaluateRequest, service: ChimeraAutoDanService = Depends(get_chimera_autodan_service)
+    request: EvaluateRequest,
+    service: Annotated[ChimeraAutoDanService, Depends(get_chimera_autodan_service)],
 ) -> EvaluateResponse:
-    """
-    Evaluate a transformed prompt using unified fitness metrics.
+    """Evaluate a transformed prompt using unified fitness metrics.
 
     Metrics include:
     - Jailbreak potential
@@ -296,7 +302,8 @@ async def evaluate_prompt(
     """
     try:
         result = await service.evaluate_prompt(
-            original=request.original, transformed=request.transformed
+            original=request.original,
+            transformed=request.transformed,
         )
 
         return EvaluateResponse(
@@ -308,7 +315,7 @@ async def evaluate_prompt(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in evaluate_prompt endpoint: {e}")
+        logger.exception(f"Error in evaluate_prompt endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

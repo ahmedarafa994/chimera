@@ -1,5 +1,4 @@
-"""
-Jailbreak Dataset and Prompt Schemas
+"""Jailbreak Dataset and Prompt Schemas.
 
 Pydantic models for jailbreak dataset and prompt entities.
 """
@@ -21,8 +20,6 @@ class JailbreakDatasetBase(BaseModel):
 
 class JailbreakDatasetCreate(JailbreakDatasetBase):
     """Schema for creating a new jailbreak dataset."""
-
-    pass
 
 
 class JailbreakDatasetRead(JailbreakDatasetBase):

@@ -1,5 +1,4 @@
-"""
-Redis-backed Session Storage for Project Chimera
+"""Redis-backed Session Storage for Project Chimera.
 
 Task 1.8: Implements persistent session storage using Redis,
 replacing the in-memory dictionary that loses data on restart.
@@ -19,28 +18,24 @@ class SessionBackend(ABC):
     @abstractmethod
     async def get(self, session_id: str) -> dict | None:
         """Get session data by ID."""
-        pass
 
     @abstractmethod
     async def set(self, session_id: str, data: dict, ttl_seconds: int = 3600) -> bool:
         """Store session data with TTL."""
-        pass
 
     @abstractmethod
     async def delete(self, session_id: str) -> bool:
         """Delete session by ID."""
-        pass
 
     @abstractmethod
     async def count(self) -> int:
         """Count active sessions."""
-        pass
 
 
 class InMemorySessionBackend(SessionBackend):
     """In-memory session storage (for development/testing)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._store: dict[str, tuple[dict, datetime]] = {}
 
     async def get(self, session_id: str) -> dict | None:
@@ -68,7 +63,7 @@ class RedisSessionBackend(SessionBackend):
 
     SESSION_PREFIX = "chimera:session:"
 
-    def __init__(self, redis_url: str | None = None):
+    def __init__(self, redis_url: str | None = None) -> None:
         self._redis_url = redis_url or settings.REDIS_URL
         self._client = None
 
@@ -79,7 +74,9 @@ class RedisSessionBackend(SessionBackend):
                 import redis.asyncio as aioredis
 
                 self._client = await aioredis.from_url(
-                    self._redis_url, encoding="utf-8", decode_responses=True
+                    self._redis_url,
+                    encoding="utf-8",
+                    decode_responses=True,
                 )
                 logger.info("Redis session backend connected")
             except Exception as e:
@@ -129,7 +126,7 @@ class RedisSessionBackend(SessionBackend):
             logger.error(f"Redis COUNT error: {e}")
             return 0
 
-    async def close(self):
+    async def close(self) -> None:
         """Close Redis connection."""
         if self._client:
             await self._client.close()
@@ -137,13 +134,11 @@ class RedisSessionBackend(SessionBackend):
 
 
 def get_session_backend() -> SessionBackend:
-    """
-    Get the appropriate session backend based on configuration.
+    """Get the appropriate session backend based on configuration.
     Uses Redis if REDIS_URL is configured, otherwise falls back to in-memory.
     """
     if settings.REDIS_URL and settings.REDIS_URL != "redis://localhost:6379":
         logger.info("Using Redis session backend")
         return RedisSessionBackend()
-    else:
-        logger.info("Using in-memory session backend (development mode)")
-        return InMemorySessionBackend()
+    logger.info("Using in-memory session backend (development mode)")
+    return InMemorySessionBackend()

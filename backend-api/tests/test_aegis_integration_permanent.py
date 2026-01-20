@@ -9,18 +9,20 @@ from meta_prompter.chimera.engine import ChimeraEngine
 
 # Mock classes to simulate failures
 class MockChimeraEngine(ChimeraEngine):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def generate_candidates(self, objective: str, count: int = 5):
         if "synthesis" in objective:
-            raise ValueError("Simulated persona synthesis failure")
-        elif "transform" in objective:
-            raise ValueError("Simulated obfuscation transformation failure")
+            msg = "Simulated persona synthesis failure"
+            raise ValueError(msg)
+        if "transform" in objective:
+            msg = "Simulated obfuscation transformation failure"
+            raise ValueError(msg)
         return []
 
 
-def test_adapter_synthesis_error():
+def test_adapter_synthesis_error() -> None:
     """Test that adapter maps synthesis ValueError to AegisSynthesisError."""
     mock_engine = MockChimeraEngine()
     adapter = ChimeraEngineAdapter(engine=mock_engine)
@@ -32,7 +34,7 @@ def test_adapter_synthesis_error():
     assert "Persona synthesis failed" in str(exc_info.value)
 
 
-def test_adapter_transformation_error():
+def test_adapter_transformation_error() -> None:
     """Test that adapter maps transformation ValueError to AegisTransformationError."""
     mock_engine = MockChimeraEngine()
     adapter = ChimeraEngineAdapter(engine=mock_engine)
@@ -44,7 +46,7 @@ def test_adapter_transformation_error():
     assert "Payload transformation failed" in str(exc_info.value)
 
 
-def test_telemetry_collector_aggregates_data():
+def test_telemetry_collector_aggregates_data() -> None:
     """Test that TelemetryCollector correctly aggregates campaign step data."""
     collector = TelemetryCollector(campaign_id="test-campaign")
 

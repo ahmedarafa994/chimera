@@ -1,5 +1,4 @@
-"""
-AI Provider Configuration Settings
+"""AI Provider Configuration Settings.
 
 Pydantic models for type-safe AI provider configuration management.
 Provides validation, serialization, and hot-reload support.
@@ -68,13 +67,19 @@ class RateLimitConfig(BaseModel):
     """Rate limiting configuration for a provider."""
 
     requests_per_minute: int | None = Field(
-        default=60, ge=1, description="Maximum requests per minute"
+        default=60,
+        ge=1,
+        description="Maximum requests per minute",
     )
     tokens_per_minute: int | None = Field(
-        default=100000, ge=1, description="Maximum tokens per minute"
+        default=100000,
+        ge=1,
+        description="Maximum tokens per minute",
     )
     requests_per_day: int | None = Field(
-        default=None, ge=1, description="Maximum requests per day (null for unlimited)"
+        default=None,
+        ge=1,
+        description="Maximum requests per day (null for unlimited)",
     )
 
     model_config = ConfigDict(frozen=True)
@@ -90,13 +95,22 @@ class CircuitBreakerConfig(BaseModel):
 
     enabled: bool = Field(default=True, description="Whether circuit breaker is enabled")
     failure_threshold: int = Field(
-        default=5, ge=1, le=50, description="Number of failures before opening circuit"
+        default=5,
+        ge=1,
+        le=50,
+        description="Number of failures before opening circuit",
     )
     recovery_timeout_seconds: int = Field(
-        default=60, ge=10, le=600, description="Time in seconds before attempting recovery"
+        default=60,
+        ge=10,
+        le=600,
+        description="Time in seconds before attempting recovery",
     )
     half_open_max_requests: int = Field(
-        default=3, ge=1, le=10, description="Max requests to allow in half-open state"
+        default=3,
+        ge=1,
+        le=10,
+        description="Max requests to allow in half-open state",
     )
 
     model_config = ConfigDict(frozen=True)
@@ -111,16 +125,24 @@ class ModelPricingConfig(BaseModel):
     """Pricing information for a model (per 1K tokens)."""
 
     input_cost_per_1k: float = Field(
-        default=0.0, ge=0.0, description="Cost per 1K input tokens in USD"
+        default=0.0,
+        ge=0.0,
+        description="Cost per 1K input tokens in USD",
     )
     output_cost_per_1k: float = Field(
-        default=0.0, ge=0.0, description="Cost per 1K output tokens in USD"
+        default=0.0,
+        ge=0.0,
+        description="Cost per 1K output tokens in USD",
     )
     cached_input_cost_per_1k: float | None = Field(
-        default=None, ge=0.0, description="Cost per 1K cached input tokens (if supported)"
+        default=None,
+        ge=0.0,
+        description="Cost per 1K cached input tokens (if supported)",
     )
     reasoning_cost_per_1k: float | None = Field(
-        default=None, ge=0.0, description="Cost per 1K reasoning tokens (for o1-like models)"
+        default=None,
+        ge=0.0,
+        description="Cost per 1K reasoning tokens (for o1-like models)",
     )
 
     model_config = ConfigDict(frozen=True)
@@ -160,35 +182,44 @@ class ModelConfig(BaseModel):
 
     # Context and token limits
     context_length: int = Field(
-        default=4096, ge=1, description="Maximum context window size in tokens"
+        default=4096,
+        ge=1,
+        description="Maximum context window size in tokens",
     )
     max_output_tokens: int = Field(
-        default=4096, ge=1, description="Maximum output tokens per request"
+        default=4096,
+        ge=1,
+        description="Maximum output tokens per request",
     )
 
     # Capabilities
     supports_streaming: bool = Field(
-        default=True, description="Whether model supports streaming responses"
+        default=True,
+        description="Whether model supports streaming responses",
     )
     supports_vision: bool = Field(default=False, description="Whether model supports image inputs")
     supports_function_calling: bool = Field(
-        default=False, description="Whether model supports function/tool calling"
+        default=False,
+        description="Whether model supports function/tool calling",
     )
 
     # Classification
     is_default: bool = Field(
-        default=False, description="Whether this is the default model for the provider"
+        default=False,
+        description="Whether this is the default model for the provider",
     )
     tier: ModelTier = Field(default=ModelTier.STANDARD, description="Model pricing/capability tier")
 
     # Pricing
     pricing: ModelPricingConfig | None = Field(
-        default=None, description="Token pricing information"
+        default=None,
+        description="Token pricing information",
     )
 
     # Additional metadata
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional model-specific metadata"
+        default_factory=dict,
+        description="Additional model-specific metadata",
     )
 
     model_config = ConfigDict(protected_namespaces=(), frozen=True)
@@ -203,25 +234,32 @@ class ProviderCapabilities(BaseModel):
     """Capability flags for a provider."""
 
     supports_streaming: bool = Field(
-        default=True, description="Whether provider supports streaming responses"
+        default=True,
+        description="Whether provider supports streaming responses",
     )
     supports_vision: bool = Field(
-        default=False, description="Whether provider supports image inputs"
+        default=False,
+        description="Whether provider supports image inputs",
     )
     supports_function_calling: bool = Field(
-        default=False, description="Whether provider supports function/tool calling"
+        default=False,
+        description="Whether provider supports function/tool calling",
     )
     supports_json_mode: bool = Field(
-        default=False, description="Whether provider supports JSON output mode"
+        default=False,
+        description="Whether provider supports JSON output mode",
     )
     supports_system_prompt: bool = Field(
-        default=True, description="Whether provider supports system prompts"
+        default=True,
+        description="Whether provider supports system prompts",
     )
     supports_token_counting: bool = Field(
-        default=False, description="Whether provider supports token counting API"
+        default=False,
+        description="Whether provider supports token counting API",
     )
     supports_embeddings: bool = Field(
-        default=False, description="Whether provider supports embeddings API"
+        default=False,
+        description="Whether provider supports embeddings API",
     )
 
     model_config = ConfigDict(frozen=True)
@@ -238,18 +276,23 @@ class ProviderAPIConfig(BaseModel):
     base_url: str = Field(..., description="Base URL for API requests")
     key_env_var: str = Field(..., description="Environment variable name for API key")
     timeout_seconds: int = Field(
-        default=120, ge=5, le=600, description="Request timeout in seconds"
+        default=120,
+        ge=5,
+        le=600,
+        description="Request timeout in seconds",
     )
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts")
     custom_headers: dict[str, str] = Field(
-        default_factory=dict, description="Additional headers to include in requests"
+        default_factory=dict,
+        description="Additional headers to include in requests",
     )
 
     @field_validator("base_url")
     @classmethod
     def validate_base_url(cls, v: str) -> str:
         if not v.startswith(("http://", "https://")):
-            raise ValueError("base_url must start with http:// or https://")
+            msg = "base_url must start with http:// or https://"
+            raise ValueError(msg)
         return v.rstrip("/")
 
     model_config = ConfigDict(frozen=True)
@@ -281,28 +324,34 @@ class ProviderConfig(BaseModel):
         description="Priority for failover ordering (higher = tried first)",
     )
     failover_chain: list[str] = Field(
-        default_factory=list, description="Ordered list of provider IDs for failover"
+        default_factory=list,
+        description="Ordered list of provider IDs for failover",
     )
 
     # Capabilities and limits
     capabilities: ProviderCapabilities = Field(
-        default_factory=ProviderCapabilities, description="Provider capability flags"
+        default_factory=ProviderCapabilities,
+        description="Provider capability flags",
     )
     circuit_breaker: CircuitBreakerConfig = Field(
-        default_factory=CircuitBreakerConfig, description="Circuit breaker configuration"
+        default_factory=CircuitBreakerConfig,
+        description="Circuit breaker configuration",
     )
     rate_limits: RateLimitConfig = Field(
-        default_factory=RateLimitConfig, description="Rate limiting configuration"
+        default_factory=RateLimitConfig,
+        description="Rate limiting configuration",
     )
 
     # Models
     models: dict[str, ModelConfig] = Field(
-        default_factory=dict, description="Available models for this provider"
+        default_factory=dict,
+        description="Available models for this provider",
     )
 
     # Metadata
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional provider-specific metadata"
+        default_factory=dict,
+        description="Additional provider-specific metadata",
     )
 
     model_config = ConfigDict(protected_namespaces=(), frozen=True)
@@ -343,13 +392,19 @@ class CostTrackingConfig(BaseModel):
 
     enabled: bool = Field(default=True, description="Whether cost tracking is enabled")
     daily_budget_usd: float | None = Field(
-        default=None, ge=0.0, description="Daily budget limit in USD"
+        default=None,
+        ge=0.0,
+        description="Daily budget limit in USD",
     )
     alert_threshold_percent: int = Field(
-        default=80, ge=0, le=100, description="Percentage of budget to trigger alerts"
+        default=80,
+        ge=0,
+        le=100,
+        description="Percentage of budget to trigger alerts",
     )
     hard_limit_enabled: bool = Field(
-        default=False, description="Whether to enforce hard budget limits"
+        default=False,
+        description="Whether to enforce hard budget limits",
     )
 
     model_config = ConfigDict(frozen=True)
@@ -365,10 +420,14 @@ class GlobalRateLimitConfig(BaseModel):
 
     enabled: bool = Field(default=True, description="Whether rate limiting is enabled")
     default_requests_per_minute: int = Field(
-        default=60, ge=1, description="Default requests per minute"
+        default=60,
+        ge=1,
+        description="Default requests per minute",
     )
     default_tokens_per_minute: int = Field(
-        default=100000, ge=1, description="Default tokens per minute"
+        default=100000,
+        ge=1,
+        description="Default tokens per minute",
     )
 
     model_config = ConfigDict(frozen=True)
@@ -386,15 +445,22 @@ class GlobalConfig(BaseModel):
     default_model: str = Field(default="gemini-2.0-flash-exp", description="Default model ID")
     failover_enabled: bool = Field(default=True, description="Enable automatic provider failover")
     max_failover_attempts: int = Field(
-        default=3, ge=1, le=10, description="Maximum failover attempts"
+        default=3,
+        ge=1,
+        le=10,
+        description="Maximum failover attempts",
     )
     health_check_interval: int = Field(
-        default=60, ge=10, le=600, description="Health check interval in seconds"
+        default=60,
+        ge=10,
+        le=600,
+        description="Health check interval in seconds",
     )
     cache_enabled: bool = Field(default=True, description="Enable response caching")
     cache_ttl_seconds: int = Field(default=300, ge=0, le=3600, description="Cache TTL in seconds")
     cost_tracking: CostTrackingConfig = Field(
-        default_factory=CostTrackingConfig, description="Cost tracking configuration"
+        default_factory=CostTrackingConfig,
+        description="Cost tracking configuration",
     )
     rate_limiting: GlobalRateLimitConfig = Field(
         default_factory=GlobalRateLimitConfig,
@@ -425,8 +491,7 @@ class FailoverChainConfig(BaseModel):
 
 
 class AIProvidersConfig(BaseModel):
-    """
-    Root configuration binding for the AI provider system.
+    """Root configuration binding for the AI provider system.
 
     This is the top-level configuration model that loads from providers.yaml
     and provides access to all provider configurations.
@@ -444,7 +509,8 @@ class AIProvidersConfig(BaseModel):
 
     # Provider configurations
     providers: dict[str, ProviderConfig] = Field(
-        default_factory=dict, description="Provider configurations keyed by provider ID"
+        default_factory=dict,
+        description="Provider configurations keyed by provider ID",
     )
 
     # Aliases
@@ -452,7 +518,8 @@ class AIProvidersConfig(BaseModel):
 
     # Named failover chains
     failover_chains: dict[str, FailoverChainConfig] = Field(
-        default_factory=dict, description="Named failover chain configurations"
+        default_factory=dict,
+        description="Named failover chain configurations",
     )
 
     # Metadata
@@ -466,9 +533,9 @@ class AIProvidersConfig(BaseModel):
         """Validate configuration consistency."""
         # Validate default provider exists
         if self.providers and self.global_config.default_provider not in self.providers:
+            msg = f"Default provider '{self.global_config.default_provider}' not found in providers"
             raise ValueError(
-                f"Default provider '{self.global_config.default_provider}' "
-                "not found in providers"
+                msg,
             )
 
         # Validate failover chains reference valid providers
@@ -476,9 +543,12 @@ class AIProvidersConfig(BaseModel):
             for failover_id in provider.failover_chain:
                 resolved_id = self.aliases.get(failover_id, failover_id)
                 if resolved_id not in self.providers:
-                    raise ValueError(
+                    msg = (
                         f"Failover provider '{failover_id}' in "
                         f"'{provider.provider_id}' chain not found"
+                    )
+                    raise ValueError(
+                        msg,
                     )
 
         # Validate named failover chains
@@ -486,8 +556,9 @@ class AIProvidersConfig(BaseModel):
             for provider_id in chain.providers:
                 resolved_id = self.aliases.get(provider_id, provider_id)
                 if resolved_id not in self.providers:
+                    msg = f"Provider '{provider_id}' in failover chain '{chain_name}' not found"
                     raise ValueError(
-                        f"Provider '{provider_id}' in failover chain " f"'{chain_name}' not found"
+                        msg,
                     )
 
         return self
@@ -558,7 +629,10 @@ class AIProvidersConfig(BaseModel):
             return 0.0
 
         return model.pricing.calculate_cost(
-            input_tokens, output_tokens, reasoning_tokens, cached_tokens
+            input_tokens,
+            output_tokens,
+            reasoning_tokens,
+            cached_tokens,
         )
 
 
@@ -573,10 +647,12 @@ class ConfigSnapshot(BaseModel):
     version: int = Field(..., description="Snapshot version number")
     config: AIProvidersConfig = Field(..., description="Configuration snapshot")
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Snapshot creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Snapshot creation timestamp",
     )
     created_by: str | None = Field(
-        default=None, description="User/process that created the snapshot"
+        default=None,
+        description="User/process that created the snapshot",
     )
     description: str | None = Field(default=None, description="Description of changes")
 

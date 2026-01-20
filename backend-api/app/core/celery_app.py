@@ -6,7 +6,9 @@ from app.core.config import settings
 
 # Ensure Redis URL is set, otherwise default to localhost
 redis_url = getattr(
-    settings, "CELERY_BROKER_URL", os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    settings,
+    "CELERY_BROKER_URL",
+    os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
 )
 result_backend = getattr(
     settings,

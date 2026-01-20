@@ -1,5 +1,4 @@
-"""
-AutoDAN-X - Advanced Adversarial Prompt Engineering System
+"""AutoDAN-X - Advanced Adversarial Prompt Engineering System.
 
 This module implements the AutoDAN-X system with:
 - MoE Routing Exploitation: Persona-based expert routing

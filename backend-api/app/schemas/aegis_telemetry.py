@@ -1,5 +1,4 @@
-"""
-Aegis Campaign Telemetry Event Models
+"""Aegis Campaign Telemetry Event Models.
 
 Pydantic models for real-time telemetry events from Aegis campaigns.
 Provides type safety and serialization for WebSocket streaming to the
@@ -14,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class AegisTelemetryEventType(str, Enum):
-    """Aegis campaign telemetry event types"""
+    """Aegis campaign telemetry event types."""
 
     # Campaign lifecycle events
     CAMPAIGN_STARTED = "campaign_started"
@@ -54,7 +53,7 @@ class AegisTelemetryEventType(str, Enum):
 
 
 class CampaignStatus(str, Enum):
-    """Aegis campaign status values"""
+    """Aegis campaign status values."""
 
     PENDING = "pending"
     INITIALIZING = "initializing"
@@ -66,7 +65,7 @@ class CampaignStatus(str, Enum):
 
 
 class TechniqueCategory(str, Enum):
-    """Categories for transformation techniques"""
+    """Categories for transformation techniques."""
 
     AUTODAN = "autodan"
     GPTFUZZ = "gptfuzz"
@@ -83,8 +82,7 @@ class TechniqueCategory(str, Enum):
 
 
 class AttackMetrics(BaseModel):
-    """
-    Metrics for attack performance tracking.
+    """Metrics for attack performance tracking.
 
     Tracks success rates, attempt counts, and attack outcomes.
     """
@@ -135,14 +133,13 @@ class AttackMetrics(BaseModel):
                 "current_streak": 3,
                 "best_score": 0.92,
                 "average_score": 0.68,
-            }
-        }
+            },
+        },
     )
 
 
 class TechniquePerformance(BaseModel):
-    """
-    Performance metrics for a single transformation technique.
+    """Performance metrics for a single transformation technique.
 
     Tracks effectiveness and usage of techniques like AutoDAN, GPTFuzz, etc.
     """
@@ -206,14 +203,13 @@ class TechniquePerformance(BaseModel):
                 "avg_score": 0.78,
                 "best_score": 0.95,
                 "avg_execution_time_ms": 1250.5,
-            }
-        }
+            },
+        },
     )
 
 
 class TokenUsage(BaseModel):
-    """
-    Token usage and cost tracking for LLM interactions.
+    """Token usage and cost tracking for LLM interactions.
 
     Tracks prompt/completion tokens and estimated costs.
     """
@@ -258,14 +254,13 @@ class TokenUsage(BaseModel):
                 "cost_estimate_usd": 0.0034,
                 "provider": "openai",
                 "model": "gpt-4-turbo",
-            }
-        }
+            },
+        },
     )
 
 
 class LatencyMetrics(BaseModel):
-    """
-    Latency tracking for API and processing operations.
+    """Latency tracking for API and processing operations.
 
     Tracks various latency percentiles and averages.
     """
@@ -328,8 +323,8 @@ class LatencyMetrics(BaseModel):
                 "p99_latency_ms": 2100.0,
                 "min_latency_ms": 450.0,
                 "max_latency_ms": 3200.0,
-            }
-        }
+            },
+        },
     )
 
 
@@ -339,8 +334,7 @@ class LatencyMetrics(BaseModel):
 
 
 class PromptEvolution(BaseModel):
-    """
-    Tracks the evolution of a prompt through iterations.
+    """Tracks the evolution of a prompt through iterations.
 
     Records transformations, scores, and techniques applied.
     """
@@ -393,8 +387,8 @@ class PromptEvolution(BaseModel):
                 "techniques_applied": ["role_hijacking", "hypothetical_scenario"],
                 "is_successful": False,
                 "timestamp": "2024-01-15T10:30:00Z",
-            }
-        }
+            },
+        },
     )
 
 
@@ -404,8 +398,7 @@ class PromptEvolution(BaseModel):
 
 
 class CampaignSummary(BaseModel):
-    """
-    Aggregated summary of an Aegis campaign.
+    """Aggregated summary of an Aegis campaign.
 
     Contains overall metrics, technique breakdown, and resource usage.
     """
@@ -506,8 +499,8 @@ class CampaignSummary(BaseModel):
                 "best_prompt": "As a security researcher...",
                 "best_score": 0.92,
                 "target_model": "gpt-4-turbo",
-            }
-        }
+            },
+        },
     )
 
 
@@ -517,8 +510,7 @@ class CampaignSummary(BaseModel):
 
 
 class AegisTelemetryEvent(BaseModel):
-    """
-    Base telemetry event model for Aegis campaigns.
+    """Base telemetry event model for Aegis campaigns.
 
     All telemetry events sent via WebSocket follow this structure.
     The 'data' field contains event-type-specific payload.
@@ -562,7 +554,7 @@ class AegisTelemetryEvent(BaseModel):
                     "score": 0.85,
                     "technique": "autodan_vanilla",
                 },
-            }
+            },
         },
     )
 
@@ -573,7 +565,7 @@ class AegisTelemetryEvent(BaseModel):
 
 
 class CampaignStartedData(BaseModel):
-    """Data payload for campaign_started event"""
+    """Data payload for campaign_started event."""
 
     objective: str = Field(..., max_length=5000)
     max_iterations: int = Field(..., ge=1)
@@ -583,7 +575,7 @@ class CampaignStartedData(BaseModel):
 
 
 class CampaignCompletedData(BaseModel):
-    """Data payload for campaign_completed event"""
+    """Data payload for campaign_completed event."""
 
     total_iterations: int = Field(..., ge=0)
     total_attacks: int = Field(..., ge=0)
@@ -596,7 +588,7 @@ class CampaignCompletedData(BaseModel):
 
 
 class CampaignFailedData(BaseModel):
-    """Data payload for campaign_failed event"""
+    """Data payload for campaign_failed event."""
 
     error_message: str = Field(..., max_length=1000)
     error_type: str = Field(..., max_length=100)
@@ -606,7 +598,7 @@ class CampaignFailedData(BaseModel):
 
 
 class IterationStartedData(BaseModel):
-    """Data payload for iteration_started event"""
+    """Data payload for iteration_started event."""
 
     iteration: int = Field(..., ge=0)
     prompt: str = Field(..., max_length=10000)
@@ -614,7 +606,7 @@ class IterationStartedData(BaseModel):
 
 
 class IterationCompletedData(BaseModel):
-    """Data payload for iteration_completed event"""
+    """Data payload for iteration_completed event."""
 
     iteration: int = Field(..., ge=0)
     score: float = Field(0.0, ge=0.0)
@@ -625,7 +617,7 @@ class IterationCompletedData(BaseModel):
 
 
 class AttackStartedData(BaseModel):
-    """Data payload for attack_started event"""
+    """Data payload for attack_started event."""
 
     attack_id: str = Field(..., min_length=1, max_length=100)
     prompt: str = Field(..., max_length=10000)
@@ -634,7 +626,7 @@ class AttackStartedData(BaseModel):
 
 
 class AttackCompletedData(BaseModel):
-    """Data payload for attack_completed event"""
+    """Data payload for attack_completed event."""
 
     attack_id: str = Field(..., min_length=1, max_length=100)
     success: bool = Field(False)
@@ -645,7 +637,7 @@ class AttackCompletedData(BaseModel):
 
 
 class TechniqueAppliedData(BaseModel):
-    """Data payload for technique_applied event"""
+    """Data payload for technique_applied event."""
 
     technique_name: str = Field(..., min_length=1, max_length=100)
     technique_category: TechniqueCategory = Field(TechniqueCategory.OTHER)
@@ -656,7 +648,7 @@ class TechniqueAppliedData(BaseModel):
 
 
 class CostUpdateData(BaseModel):
-    """Data payload for cost_update event"""
+    """Data payload for cost_update event."""
 
     total_cost_usd: float = Field(0.0, ge=0.0)
     session_cost_usd: float = Field(0.0, ge=0.0)
@@ -665,7 +657,7 @@ class CostUpdateData(BaseModel):
 
 
 class PromptEvolvedData(BaseModel):
-    """Data payload for prompt_evolved event"""
+    """Data payload for prompt_evolved event."""
 
     iteration: int = Field(..., ge=0)
     previous_prompt: str = Field(..., max_length=10000)
@@ -677,7 +669,7 @@ class PromptEvolvedData(BaseModel):
 
 
 class ErrorData(BaseModel):
-    """Data payload for error events"""
+    """Data payload for error events."""
 
     error_code: str = Field(..., max_length=50)
     error_message: str = Field(..., max_length=1000)
@@ -687,7 +679,7 @@ class ErrorData(BaseModel):
 
 
 class HeartbeatData(BaseModel):
-    """Data payload for heartbeat events"""
+    """Data payload for heartbeat events."""
 
     server_time: datetime = Field(default_factory=datetime.utcnow)
     campaign_status: CampaignStatus | None = None
@@ -695,7 +687,7 @@ class HeartbeatData(BaseModel):
 
 
 class ConnectionAckData(BaseModel):
-    """Data payload for connection_ack events"""
+    """Data payload for connection_ack events."""
 
     client_id: str = Field(..., min_length=1, max_length=100)
     campaign_id: str = Field(..., min_length=1, max_length=100)
@@ -714,8 +706,7 @@ def create_telemetry_event(
     sequence: int,
     data: BaseModel | dict[str, Any] | None = None,
 ) -> AegisTelemetryEvent:
-    """
-    Create a telemetry event with the given parameters.
+    """Create a telemetry event with the given parameters.
 
     Args:
         event_type: Type of telemetry event
@@ -725,6 +716,7 @@ def create_telemetry_event(
 
     Returns:
         AegisTelemetryEvent instance
+
     """
     if data is None:
         data_dict = {}
@@ -747,8 +739,7 @@ def create_attack_metrics(
     best_score: float = 0.0,
     average_score: float = 0.0,
 ) -> AttackMetrics:
-    """
-    Create attack metrics with calculated success rate.
+    """Create attack metrics with calculated success rate.
 
     Args:
         total_attempts: Total number of attack attempts
@@ -758,6 +749,7 @@ def create_attack_metrics(
 
     Returns:
         AttackMetrics instance with calculated fields
+
     """
     success_rate = (successful_attacks / total_attempts * 100) if total_attempts > 0 else 0.0
     failed_attacks = total_attempts - successful_attacks

@@ -1,5 +1,4 @@
-"""
-Session Management API Endpoints
+"""Session Management API Endpoints.
 
 Provides endpoints for:
 - Creating and managing user sessions
@@ -7,7 +6,7 @@ Provides endpoints for:
 - Session-based model selection persistence
 """
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Cookie, Header, HTTPException, Response
 from pydantic import AliasChoices, BaseModel, Field
@@ -21,14 +20,14 @@ router = APIRouter()
 
 
 class CreateSessionRequest(BaseModel):
-    """Request to create a new session"""
+    """Request to create a new session."""
 
     provider: str | None = Field(None, description="Initial provider selection")
     model: str | None = Field(None, description="Initial model selection")
 
 
 class CreateSessionResponse(BaseModel):
-    """Response after creating a session"""
+    """Response after creating a session."""
 
     success: bool
     session_id: str
@@ -38,7 +37,7 @@ class CreateSessionResponse(BaseModel):
 
 
 class UpdateModelRequest(BaseModel):
-    """Request to update model selection"""
+    """Request to update model selection."""
 
     provider: str = Field(
         ...,
@@ -53,7 +52,7 @@ class UpdateModelRequest(BaseModel):
 
 
 class UpdateModelResponse(BaseModel):
-    """Response after updating model selection"""
+    """Response after updating model selection."""
 
     success: bool
     message: str
@@ -63,7 +62,7 @@ class UpdateModelResponse(BaseModel):
 
 
 class SessionInfoResponse(BaseModel):
-    """Session information response"""
+    """Session information response."""
 
     session_id: str
     provider: str
@@ -74,7 +73,7 @@ class SessionInfoResponse(BaseModel):
 
 
 class ProviderInfo(BaseModel):
-    """Provider with models"""
+    """Provider with models."""
 
     provider: str
     status: str
@@ -84,7 +83,7 @@ class ProviderInfo(BaseModel):
 
 
 class ModelsListResponse(BaseModel):
-    """Response with all available models"""
+    """Response with all available models."""
 
     providers: list[ProviderInfo]
     default_provider: str
@@ -93,14 +92,14 @@ class ModelsListResponse(BaseModel):
 
 
 class ValidateModelRequest(BaseModel):
-    """Request to validate a model selection"""
+    """Request to validate a model selection."""
 
     provider: str
     model: str
 
 
 class ValidateModelResponse(BaseModel):
-    """Response from model validation"""
+    """Response from model validation."""
 
     valid: bool
     message: str
@@ -113,8 +112,7 @@ class ValidateModelResponse(BaseModel):
 
 @router.get("/models", response_model=ModelsListResponse, tags=["Model Sync"])
 async def get_available_models():
-    """
-    Get the complete list of available models.
+    """Get the complete list of available models.
 
     This endpoint returns the master list of all available models
     organized by provider. Use this on frontend initialization to
@@ -137,8 +135,7 @@ async def get_available_models():
 
 @router.post("/models/validate", response_model=ValidateModelResponse, tags=["Model Sync"])
 async def validate_model_selection(request: ValidateModelRequest):
-    """
-    Validate a model selection against the master list.
+    """Validate a model selection against the master list.
 
     Use this endpoint to check if a model selection is valid before
     attempting to use it. Returns fallback suggestions if invalid.
@@ -164,8 +161,7 @@ async def validate_model_selection(request: ValidateModelRequest):
 
 @router.post("", response_model=CreateSessionResponse, tags=["Session"])
 async def create_session(request: CreateSessionRequest = None, response: Response = None):
-    """
-    Create a new user session.
+    """Create a new user session.
 
     Creates a session with optional initial provider/model selection.
     If not specified, defaults will be used. The session ID is returned
@@ -198,8 +194,7 @@ async def create_session(request: CreateSessionRequest = None, response: Respons
 # Static routes must come BEFORE parameterized routes to avoid conflicts
 @router.get("/stats", tags=["Session"])
 async def get_session_stats():
-    """
-    Get session statistics (admin endpoint).
+    """Get session statistics (admin endpoint).
 
     Returns statistics about active sessions.
     """
@@ -208,11 +203,10 @@ async def get_session_stats():
 
 @router.get("/current-model", tags=["Session"])
 async def get_current_model(
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Get the current model selection for routing requests.
+    """Get the current model selection for routing requests.
 
     This is used internally by other services to determine which
     model to use for processing requests.
@@ -230,11 +224,10 @@ async def get_current_model(
 @router.put("/model", response_model=UpdateModelResponse, tags=["Session"])
 async def update_session_model(
     request: UpdateModelRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Update the model selection for the current session.
+    """Update the model selection for the current session.
 
     This endpoint validates the model selection against the master list.
     If invalid, it will revert to a default model and return an error
@@ -246,16 +239,20 @@ async def update_session_model(
 
     if not session_id:
         raise HTTPException(
-            status_code=400, detail="Session ID required. Provide via header/cookie."
+            status_code=400,
+            detail="Session ID required. Provide via header/cookie.",
         )
 
     success, message, session = session_service.update_session_model(
-        session_id=session_id, provider=request.provider, model=request.model
+        session_id=session_id,
+        provider=request.provider,
+        model=request.model,
     )
 
     if session is None:
         raise HTTPException(
-            status_code=404, detail="Session not found or expired. Please create a new session."
+            status_code=404,
+            detail="Session not found or expired. Please create a new session.",
         )
 
     return UpdateModelResponse(
@@ -269,9 +266,7 @@ async def update_session_model(
 
 @router.get("/{session_id}/model", tags=["Session"])
 async def get_session_model(session_id: str):
-    """
-    Get current model selection for a specific session.
-    """
+    """Get current model selection for a specific session."""
     provider, model = session_service.get_session_model(session_id)
     return {
         "session_id": session_id,
@@ -287,16 +282,17 @@ async def update_session_model_by_id(
     session_id: str,
     request: UpdateModelRequest,
 ):
-    """
-    Update model selection for a specific session.
-    """
+    """Update model selection for a specific session."""
     success, message, session = session_service.update_session_model(
-        session_id=session_id, provider=request.provider, model=request.model
+        session_id=session_id,
+        provider=request.provider,
+        model=request.model,
     )
 
     if session is None:
         raise HTTPException(
-            status_code=404, detail="Session not found or expired. Please create a new session."
+            status_code=404,
+            detail="Session not found or expired. Please create a new session.",
         )
 
     return UpdateModelResponse(
@@ -310,12 +306,11 @@ async def update_session_model_by_id(
 
 @router.delete("", tags=["Session"])
 async def delete_session(
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
     response: Response = None,
 ):
-    """
-    Delete the current session.
+    """Delete the current session.
 
     Removes the session from the server. Client should also clear
     any stored session ID.
@@ -324,7 +319,8 @@ async def delete_session(
 
     if not session_id:
         raise HTTPException(
-            status_code=400, detail="Session ID required. Provide via header/cookie."
+            status_code=400,
+            detail="Session ID required. Provide via header/cookie.",
         )
 
     deleted = session_service.delete_session(session_id)
@@ -335,16 +331,14 @@ async def delete_session(
 
     if deleted:
         return {"success": True, "message": "Session deleted successfully"}
-    else:
-        return {"success": False, "message": "Session not found"}
+    return {"success": False, "message": "Session not found"}
 
 
 # Parameterized route for getting session by ID (path parameter)
 # This MUST come AFTER all static routes to avoid conflicts
 @router.get("/{session_id}", response_model=SessionInfoResponse | None, tags=["Session"])
 async def get_session_by_id(session_id: str):
-    """
-    Get session information by session ID (path parameter).
+    """Get session information by session ID (path parameter).
 
     This endpoint allows retrieving session details using the session ID
     as a path parameter, which is useful for RESTful API clients.
@@ -367,11 +361,10 @@ async def get_session_by_id(session_id: str):
 
 @router.get("", response_model=SessionInfoResponse | None, tags=["Session"])
 async def get_session(
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Get current session information.
+    """Get current session information.
 
     Retrieves session details including the currently selected model.
     Session ID can be provided via X-Session-ID header or cookie.

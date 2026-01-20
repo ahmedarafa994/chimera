@@ -1,10 +1,8 @@
+import contextlib
+
 import requests
 
 url = "http://localhost:8001/api/v1/providers"
 
-try:
+with contextlib.suppress(Exception):
     response = requests.get(url)
-    print(f"Status Code: {response.status_code}")
-    print(f"Response: {response.text}")
-except Exception as e:
-    print(f"Error: {e}")

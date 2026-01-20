@@ -1,5 +1,4 @@
-"""
-Database Schema Management
+"""Database Schema Management.
 
 Story 1.3: Configuration Persistence System
 Defines tables and handles schema migrations for configuration persistence.
@@ -21,24 +20,22 @@ class SchemaError(Exception):
 
 
 class DatabaseSchema:
-    """
-    Manages database schema creation and migrations.
+    """Manages database schema creation and migrations.
 
     Provides idempotent schema setup with version tracking.
     """
 
-    def __init__(self, db: DatabaseConnection):
-        """
-        Initialize schema manager.
+    def __init__(self, db: DatabaseConnection) -> None:
+        """Initialize schema manager.
 
         Args:
             db: Database connection instance.
+
         """
         self._db = db
 
     async def initialize(self) -> None:
-        """
-        Initialize database schema.
+        """Initialize database schema.
 
         Creates all tables if they don't exist and applies migrations.
         """
@@ -51,7 +48,8 @@ class DatabaseSchema:
 
             logger.info(f"Schema initialized at version {CURRENT_SCHEMA_VERSION}")
         except Exception as e:
-            raise SchemaError(f"Schema initialization failed: {e}") from e
+            msg = f"Schema initialization failed: {e}"
+            raise SchemaError(msg) from e
 
     async def _create_version_table(self) -> None:
         """Create schema version tracking table."""
@@ -62,7 +60,7 @@ class DatabaseSchema:
                 version INTEGER NOT NULL DEFAULT 0,
                 updated_at TEXT NOT NULL
             )
-        """
+        """,
         )
 
         # Insert initial version if not exists
@@ -86,11 +84,11 @@ class DatabaseSchema:
         )
 
     async def _apply_migrations(self, from_version: int) -> None:
-        """
-        Apply schema migrations.
+        """Apply schema migrations.
 
         Args:
             from_version: Starting schema version.
+
         """
         migrations = [
             self._migration_v1,
@@ -116,21 +114,21 @@ class DatabaseSchema:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
-        """
+        """,
         )
 
         await self._db.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_provider_configs_type
             ON provider_configs(provider_type)
-        """
+        """,
         )
 
         await self._db.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_provider_configs_default
             ON provider_configs(is_default)
-        """
+        """,
         )
 
         # API keys table with encryption flag
@@ -147,21 +145,21 @@ class DatabaseSchema:
                 last_used_at TEXT,
                 UNIQUE(provider_type, key_name)
             )
-        """
+        """,
         )
 
         await self._db.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_api_keys_provider
             ON api_keys(provider_type)
-        """
+        """,
         )
 
         await self._db.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_api_keys_active
             ON api_keys(is_active)
-        """
+        """,
         )
 
         # Configuration cache metadata table
@@ -173,14 +171,13 @@ class DatabaseSchema:
                 expires_at TEXT,
                 created_at TEXT NOT NULL
             )
-        """
+        """,
         )
 
         logger.info("Migration v1 applied: created core tables")
 
     async def drop_all_tables(self) -> None:
-        """
-        Drop all tables (for testing/reset).
+        """Drop all tables (for testing/reset).
 
         Warning: This is destructive and should only be used in testing.
         """
@@ -202,14 +199,14 @@ _schema_manager: DatabaseSchema | None = None
 
 
 async def get_schema_manager(db: DatabaseConnection) -> DatabaseSchema:
-    """
-    Get or create schema manager instance.
+    """Get or create schema manager instance.
 
     Args:
         db: Database connection instance.
 
     Returns:
         DatabaseSchema singleton instance.
+
     """
     global _schema_manager
     if _schema_manager is None:
@@ -218,11 +215,11 @@ async def get_schema_manager(db: DatabaseConnection) -> DatabaseSchema:
 
 
 async def initialize_schema(db: DatabaseConnection) -> None:
-    """
-    Initialize database schema.
+    """Initialize database schema.
 
     Args:
         db: Database connection instance.
+
     """
     schema = await get_schema_manager(db)
     await schema.initialize()

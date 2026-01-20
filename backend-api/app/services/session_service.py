@@ -1,5 +1,4 @@
-"""
-Session Management Service for Model Synchronization
+"""Session Management Service for Model Synchronization.
 
 This service manages user sessions and model selection, serving as the
 single source of truth for model availability and validation.
@@ -26,7 +25,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class ModelInfo:
-    """Canonical model information"""
+    """Canonical model information."""
 
     id: str  # Canonical identifier
     name: str  # Display name
@@ -41,7 +40,7 @@ class ModelInfo:
 
 @dataclass
 class UserSession:
-    """User session with model configuration"""
+    """User session with model configuration."""
 
     session_id: str
     created_at: datetime
@@ -52,18 +51,17 @@ class UserSession:
     request_count: int = 0
 
     def is_expired(self, ttl_minutes: int = 60) -> bool:
-        """Check if session has expired"""
+        """Check if session has expired."""
         return datetime.utcnow() - self.last_activity > timedelta(minutes=ttl_minutes)
 
-    def touch(self):
-        """Update last activity timestamp"""
+    def touch(self) -> None:
+        """Update last activity timestamp."""
         self.last_activity = datetime.utcnow()
         self.request_count += 1
 
 
 class SessionService:
-    """
-    Manages user sessions and model synchronization.
+    """Manages user sessions and model synchronization.
 
     This service is the single source of truth for:
     - Available models and their canonical identifiers
@@ -82,7 +80,7 @@ class SessionService:
     SESSION_TTL_SECONDS = 60 * 60  # 1 hour in seconds for Redis
     MAX_SESSIONS = 10000
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._master_model_list: dict[str, list[ModelInfo]] = {}
         # Dynamic defaults from configuration
         self._default_provider = settings.AI_PROVIDER
@@ -95,13 +93,11 @@ class SessionService:
         self._initialize_backend()
         self._initialize_global_selection_state()
         logger.info(
-            f"SessionService initialized. "
-            f"Default: {self._default_provider}/{self._default_model}"
+            f"SessionService initialized. Default: {self._default_provider}/{self._default_model}",
         )
 
-    def _initialize_global_selection_state(self):
-        """
-        Initialize connection to GlobalModelSelectionState.
+    def _initialize_global_selection_state(self) -> None:
+        """Initialize connection to GlobalModelSelectionState.
 
         UNIFIED-PROVIDER: Enables synchronization between session
         selections and the global selection state.
@@ -114,12 +110,12 @@ class SessionService:
         except Exception as e:
             logger.warning(
                 f"Failed to connect to GlobalModelSelectionState: {e}. "
-                "Session selections will not sync globally."
+                "Session selections will not sync globally.",
             )
             self._global_selection_state = None
 
-    def _initialize_backend(self):
-        """Initialize the session storage backend (Redis or in-memory)"""
+    def _initialize_backend(self) -> None:
+        """Initialize the session storage backend (Redis or in-memory)."""
         try:
             if settings.REDIS_URL and settings.REDIS_URL != "redis://localhost:6379":
                 self._backend = RedisSessionBackend(settings.REDIS_URL)
@@ -134,8 +130,8 @@ class SessionService:
             self._backend = InMemorySessionBackend()
             self._use_redis = False
 
-    def _initialize_master_list(self):
-        """Initialize the master model list from configuration"""
+    def _initialize_master_list(self) -> None:
+        """Initialize the master model list from configuration."""
         provider_models = settings.get_provider_models()
 
         # Define model metadata
@@ -240,8 +236,7 @@ class SessionService:
                 self._master_model_list[provider].append(model_info)
 
     def get_master_model_list(self) -> dict[str, list[dict[str, Any]]]:
-        """
-        Get the complete master model list with canonical identifiers.
+        """Get the complete master model list with canonical identifiers.
         This is the single source of truth for available models.
         """
         result = {}
@@ -263,7 +258,7 @@ class SessionService:
         return result
 
     def get_providers_with_models(self) -> list[dict[str, Any]]:
-        """Get list of providers with their available models"""
+        """Get list of providers with their available models."""
         providers = []
         for provider, models in self._master_model_list.items():
             default_model = next((m for m in models if m.is_default), models[0] if models else None)
@@ -277,16 +272,16 @@ class SessionService:
                         {"id": m.id, "name": m.name, "tier": m.tier, "is_default": m.is_default}
                         for m in models
                     ],
-                }
+                },
             )
         return providers
 
     def validate_model(self, provider: str, model_id: str) -> tuple[bool, str, str | None]:
-        """
-        Validate a model selection against the master list.
+        """Validate a model selection against the master list.
 
         Returns:
             tuple: (is_valid, message, fallback_model_id)
+
         """
         # Check if provider exists
         if provider not in self._master_model_list:
@@ -302,7 +297,8 @@ class SessionService:
 
         if model_id not in model_ids:
             default_for_provider = next(
-                (m.id for m in provider_models if m.is_default), model_ids[0] if model_ids else None
+                (m.id for m in provider_models if m.is_default),
+                model_ids[0] if model_ids else None,
             )
             return (
                 False,
@@ -313,7 +309,7 @@ class SessionService:
         return (True, "Model validated successfully", None)
 
     def get_default_model(self, provider: str | None = None) -> tuple[str, str]:
-        """Get the default model for a provider or the global default"""
+        """Get the default model for a provider or the global default."""
         if provider and provider in self._master_model_list:
             models = self._master_model_list[provider]
             default = next((m for m in models if m.is_default), models[0] if models else None)
@@ -324,7 +320,8 @@ class SessionService:
     def set_default_model(self, provider: str, model: str | None = None) -> tuple[str, str]:
         """Update the global default provider/model."""
         if not provider:
-            raise ValueError("Provider is required")
+            msg = "Provider is required"
+            raise ValueError(msg)
 
         if model is None:
             provider, model = self.get_default_model(provider)
@@ -341,7 +338,7 @@ class SessionService:
     # Session Management Methods
 
     def _session_to_dict(self, session: UserSession) -> dict:
-        """Convert a UserSession to a dictionary for storage"""
+        """Convert a UserSession to a dictionary for storage."""
         return {
             "session_id": session.session_id,
             "created_at": session.created_at.isoformat(),
@@ -353,7 +350,7 @@ class SessionService:
         }
 
     def _dict_to_session(self, data: dict) -> UserSession:
-        """Convert a dictionary back to a UserSession"""
+        """Convert a dictionary back to a UserSession."""
         return UserSession(
             session_id=data["session_id"],
             created_at=datetime.fromisoformat(data["created_at"]),
@@ -364,8 +361,8 @@ class SessionService:
             request_count=data.get("request_count", 0),
         )
 
-    async def _persist_session(self, session: UserSession):
-        """Persist session to backend storage"""
+    async def _persist_session(self, session: UserSession) -> None:
+        """Persist session to backend storage."""
         if self._backend:
             try:
                 await self._backend.set(
@@ -377,7 +374,7 @@ class SessionService:
                 logger.error(f"Failed to persist session to backend: {e}")
 
     async def _load_session_from_backend(self, session_id: str) -> UserSession | None:
-        """Load session from backend storage"""
+        """Load session from backend storage."""
         if self._backend:
             try:
                 data = await self._backend.get(session_id)
@@ -388,7 +385,7 @@ class SessionService:
         return None
 
     def create_session(self, provider: str | None = None, model: str | None = None) -> UserSession:
-        """Create a new user session"""
+        """Create a new user session."""
         # Clean up expired sessions periodically
         self._cleanup_expired_sessions()
 
@@ -443,13 +440,13 @@ class SessionService:
         return session
 
     def get_session(self, session_id: str) -> UserSession | None:
-        """Get a session by ID (checks memory cache first, then backend)"""
+        """Get a session by ID (checks memory cache first, then backend)."""
         # Check memory cache first
         session = self._sessions.get(session_id)
         if session and not session.is_expired(self.SESSION_TTL_MINUTES):
             session.touch()
             return session
-        elif session:
+        if session:
             # Session expired, remove it
             del self._sessions[session_id]
             logger.info(f"Session {session_id} expired and removed from cache")
@@ -464,26 +461,25 @@ class SessionService:
                     # Can't await in sync context, return None
                     # The async version should be used instead
                     return None
-                else:
-                    session = loop.run_until_complete(self._load_session_from_backend(session_id))
-                    if session and not session.is_expired(self.SESSION_TTL_MINUTES):
-                        # Cache it in memory
-                        self._sessions[session_id] = session
-                        session.touch()
-                        return session
+                session = loop.run_until_complete(self._load_session_from_backend(session_id))
+                if session and not session.is_expired(self.SESSION_TTL_MINUTES):
+                    # Cache it in memory
+                    self._sessions[session_id] = session
+                    session.touch()
+                    return session
             except RuntimeError:
                 pass
 
         return None
 
     async def get_session_async(self, session_id: str) -> UserSession | None:
-        """Async version of get_session for use in async contexts"""
+        """Async version of get_session for use in async contexts."""
         # Check memory cache first
         session = self._sessions.get(session_id)
         if session and not session.is_expired(self.SESSION_TTL_MINUTES):
             session.touch()
             return session
-        elif session:
+        if session:
             del self._sessions[session_id]
 
         # Try to load from backend
@@ -499,13 +495,16 @@ class SessionService:
         return None
 
     async def update_session_model(
-        self, session_id: str, provider: str, model: str
+        self,
+        session_id: str,
+        provider: str,
+        model: str,
     ) -> tuple[bool, str, UserSession | None]:
-        """
-        Update the model selection for a session.
+        """Update the model selection for a session.
 
         Returns:
             tuple: (success, message, updated_session)
+
         """
         session = self.get_session(session_id)
         if not session:
@@ -545,8 +544,7 @@ class SessionService:
         provider: str,
         model: str,
     ) -> None:
-        """
-        Sync session selection to GlobalModelSelectionState.
+        """Sync session selection to GlobalModelSelectionState.
 
         UNIFIED-PROVIDER: Ensures that session-level selections are
         propagated to the global state for cross-service consistency.
@@ -555,6 +553,7 @@ class SessionService:
             session_id: The session ID
             provider: Selected provider
             model: Selected model
+
         """
         if not self._global_selection_state:
             return
@@ -575,7 +574,7 @@ class SessionService:
             )
 
             logger.debug(
-                f"Synced session {session_id} selection to global state: " f"{provider}/{model}"
+                f"Synced session {session_id} selection to global state: {provider}/{model}",
             )
         except Exception as e:
             logger.warning(f"Failed to sync session selection to global state: {e}")
@@ -584,8 +583,7 @@ class SessionService:
         self,
         session_id: str,
     ) -> tuple[str, str] | None:
-        """
-        Load session selection and set it as the current request context.
+        """Load session selection and set it as the current request context.
 
         UNIFIED-PROVIDER: Call this at the start of request processing
         to ensure the session's provider/model selection is used.
@@ -595,6 +593,7 @@ class SessionService:
 
         Returns:
             tuple[str, str] | None: The (provider, model) tuple if found
+
         """
         session = await self.get_session_async(session_id)
         if not session:
@@ -618,8 +617,7 @@ class SessionService:
                 self._global_selection_state.set_request_context(context)
 
                 logger.debug(
-                    f"Loaded session {session_id} selection to request "
-                    f"context: {provider}/{model}"
+                    f"Loaded session {session_id} selection to request context: {provider}/{model}",
                 )
             except Exception as e:
                 logger.warning(f"Failed to set request context from session: {e}")
@@ -627,31 +625,31 @@ class SessionService:
         return (provider, model)
 
     def get_global_selection_state(self) -> "GlobalModelSelectionState | None":
-        """
-        Get the GlobalModelSelectionState instance.
+        """Get the GlobalModelSelectionState instance.
 
         Returns:
             The global selection state or None if not initialized
+
         """
         return self._global_selection_state
 
     def get_session_model(self, session_id: str) -> tuple[str, str]:
-        """Get the current model selection for a session"""
+        """Get the current model selection for a session."""
         session = self.get_session(session_id)
         if session:
             return (session.selected_provider, session.selected_model)
         return self.get_default_model()
 
     def delete_session(self, session_id: str) -> bool:
-        """Delete a session"""
+        """Delete a session."""
         if session_id in self._sessions:
             del self._sessions[session_id]
             logger.info(f"Session {session_id} deleted")
             return True
         return False
 
-    def _cleanup_expired_sessions(self):
-        """Remove expired sessions"""
+    def _cleanup_expired_sessions(self) -> None:
+        """Remove expired sessions."""
         if len(self._sessions) < self.MAX_SESSIONS // 2:
             return  # Only cleanup when approaching limit
 
@@ -668,7 +666,7 @@ class SessionService:
             logger.info(f"Cleaned up {len(expired)} expired sessions")
 
     def get_session_stats(self) -> dict[str, Any]:
-        """Get session statistics"""
+        """Get session statistics."""
         active_sessions = sum(
             1 for s in self._sessions.values() if not s.is_expired(self.SESSION_TTL_MINUTES)
         )
@@ -686,5 +684,5 @@ session_service = SessionService()
 
 
 def get_session_service() -> SessionService:
-    """Get the session service singleton"""
+    """Get the session service singleton."""
     return session_service

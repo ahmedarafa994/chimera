@@ -1,5 +1,4 @@
-"""
-Adversarial Attack Research Lab API
+"""Adversarial Attack Research Lab API.
 
 Phase 4 innovation feature for academic research:
 - A/B testing framework for technique variations
@@ -25,7 +24,7 @@ router = APIRouter()
 
 
 class FitnessFunction(BaseModel):
-    """Custom fitness function for evaluating attack effectiveness"""
+    """Custom fitness function for evaluating attack effectiveness."""
 
     function_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -45,7 +44,7 @@ class FitnessFunction(BaseModel):
 
 
 class ExperimentDesign(BaseModel):
-    """Research experiment design configuration"""
+    """Research experiment design configuration."""
 
     experiment_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
@@ -80,7 +79,7 @@ class ExperimentDesign(BaseModel):
 
 
 class ExperimentExecution(BaseModel):
-    """Experiment execution and results tracking"""
+    """Experiment execution and results tracking."""
 
     execution_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     experiment_id: str
@@ -119,7 +118,7 @@ class ExperimentExecution(BaseModel):
 
 
 class ResearchReport(BaseModel):
-    """Academic research report generation"""
+    """Academic research report generation."""
 
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     experiment_id: str
@@ -155,7 +154,7 @@ class ResearchReport(BaseModel):
 
 
 class TechniqueVariation(BaseModel):
-    """Research technique variation for A/B testing"""
+    """Research technique variation for A/B testing."""
 
     variation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     base_technique_id: str
@@ -182,7 +181,7 @@ class TechniqueVariation(BaseModel):
 
 
 class CitationLink(BaseModel):
-    """Academic paper citation linking"""
+    """Academic paper citation linking."""
 
     citation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
@@ -304,16 +303,18 @@ class ResearchAnalytics(BaseModel):
 
 @router.post("/fitness-functions", response_model=FitnessFunction)
 async def create_fitness_function(
-    function_data: FitnessFunctionCreate, current_user=Depends(get_current_user)
+    function_data: FitnessFunctionCreate,
+    current_user=Depends(get_current_user),
 ):
-    """Create a new custom fitness function for experiment evaluation"""
+    """Create a new custom fitness function for experiment evaluation."""
     try:
         # Validate the fitness function code
         validation_result = await validate_fitness_function_code(
-            function_data.code, function_data.input_parameters
+            function_data.code,
+            function_data.input_parameters,
         )
 
-        function = FitnessFunction(
+        return FitnessFunction(
             **function_data.dict(),
             created_by=current_user.user_id,
             is_validated=validation_result["is_valid"],
@@ -323,8 +324,6 @@ async def create_fitness_function(
         # In production, save to database
         # db.add(function)
         # db.commit()
-
-        return function
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create fitness function: {e!s}")
@@ -338,7 +337,7 @@ async def list_fitness_functions(
     validated_only: bool = False,
     current_user=Depends(get_current_user),
 ):
-    """List all available fitness functions with filtering"""
+    """List all available fitness functions with filtering."""
     try:
         # Mock data for now - in production, query from database
         mock_functions = [
@@ -387,18 +386,17 @@ async def list_fitness_functions(
 
 @router.post("/experiments", response_model=ExperimentDesign)
 async def create_experiment(
-    experiment_data: ExperimentDesignCreate, current_user=Depends(get_current_user)
+    experiment_data: ExperimentDesignCreate,
+    current_user=Depends(get_current_user),
 ):
-    """Create a new A/B testing experiment design"""
+    """Create a new A/B testing experiment design."""
     try:
-        experiment = ExperimentDesign(**experiment_data.dict(), created_by=current_user.user_id)
+        return ExperimentDesign(**experiment_data.dict(), created_by=current_user.user_id)
 
         # In production, save to database and perform validation
         # - Check that techniques exist
         # - Validate fitness function exists
         # - Check statistical power calculations
-
-        return experiment
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create experiment: {e!s}")
@@ -412,7 +410,7 @@ async def list_experiments(
     status: str | None = None,
     current_user=Depends(get_current_user),
 ):
-    """List research experiments with filtering and pagination"""
+    """List research experiments with filtering and pagination."""
     try:
         # Mock data for now
         mock_experiments = [
@@ -464,10 +462,10 @@ async def list_experiments(
 
 @router.get("/experiments/{experiment_id}", response_model=ExperimentDesign)
 async def get_experiment(experiment_id: str, current_user=Depends(get_current_user)):
-    """Get detailed experiment design"""
+    """Get detailed experiment design."""
     try:
         # In production, fetch from database
-        experiment = ExperimentDesign(
+        return ExperimentDesign(
             experiment_id=experiment_id,
             title="GPTFuzz vs AutoDAN Effectiveness Comparison",
             description="Detailed experiment comparing effectiveness of different adversarial techniques",
@@ -481,8 +479,6 @@ async def get_experiment(experiment_id: str, current_user=Depends(get_current_us
             created_by=current_user.user_id,
         )
 
-        return experiment
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get experiment: {e!s}")
 
@@ -494,7 +490,7 @@ async def execute_experiment(
     background_tasks: BackgroundTasks,
     current_user=Depends(get_current_user),
 ):
-    """Start A/B testing experiment execution"""
+    """Start A/B testing experiment execution."""
     try:
         execution_id = str(uuid.uuid4())
 
@@ -524,9 +520,12 @@ async def execute_experiment(
 
 @router.get("/experiments/{experiment_id}/executions", response_model=ExecutionListResponse)
 async def list_experiment_executions(
-    experiment_id: str, page: int = 1, page_size: int = 20, current_user=Depends(get_current_user)
+    experiment_id: str,
+    page: int = 1,
+    page_size: int = 20,
+    current_user=Depends(get_current_user),
 ):
-    """List all executions for a specific experiment"""
+    """List all executions for a specific experiment."""
     try:
         # Mock data for now
         mock_executions = [
@@ -544,7 +543,7 @@ async def list_experiment_executions(
                 winning_technique="autodan_v2",
                 executed_by=current_user.user_id,
                 execution_time_seconds=9000.0,
-            )
+            ),
         ]
 
         # Apply pagination
@@ -567,10 +566,10 @@ async def list_experiment_executions(
 
 @router.get("/executions/{execution_id}", response_model=ExperimentExecution)
 async def get_execution_results(execution_id: str, current_user=Depends(get_current_user)):
-    """Get detailed results from an experiment execution"""
+    """Get detailed results from an experiment execution."""
     try:
         # In production, fetch from database
-        execution = ExperimentExecution(
+        return ExperimentExecution(
             execution_id=execution_id,
             experiment_id="exp_123",
             status="completed",
@@ -606,20 +605,20 @@ async def get_execution_results(execution_id: str, current_user=Depends(get_curr
             execution_time_seconds=9000.0,
         )
 
-        return execution
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get execution results: {e!s}")
 
 
 @router.post("/experiments/{experiment_id}/reports", response_model=ResearchReport)
 async def generate_research_report(
-    experiment_id: str, report_data: ResearchReportGenerate, current_user=Depends(get_current_user)
+    experiment_id: str,
+    report_data: ResearchReportGenerate,
+    current_user=Depends(get_current_user),
 ):
-    """Generate academic research report from experiment results"""
+    """Generate academic research report from experiment results."""
     try:
         # Generate report content based on experiment results
-        report = ResearchReport(
+        return ResearchReport(
             experiment_id=experiment_id,
             title=report_data.title,
             authors=report_data.authors,
@@ -638,7 +637,7 @@ async def generate_research_report(
                     "journal": "arXiv preprint",
                     "year": "2023",
                     "doi": "10.48550/arXiv.2310.15140",
-                }
+                },
             ],
             figures=[
                 {
@@ -646,7 +645,7 @@ async def generate_research_report(
                     "title": "Technique Performance Comparison",
                     "description": "Bar chart showing success rates across techniques",
                     "data_source": "execution_results",
-                }
+                },
             ],
             tables=[
                 {
@@ -654,12 +653,10 @@ async def generate_research_report(
                     "title": "Statistical Summary",
                     "description": "Descriptive statistics and significance tests",
                     "data_source": "statistical_analysis",
-                }
+                },
             ],
             generated_by=current_user.user_id,
         )
-
-        return report
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate research report: {e!s}")
@@ -667,9 +664,11 @@ async def generate_research_report(
 
 @router.get("/reports/{report_id}/export/{format}")
 async def export_research_report(
-    report_id: str, format: str, current_user=Depends(get_current_user)
+    report_id: str,
+    format: str,
+    current_user=Depends(get_current_user),
 ):
-    """Export research report in specified academic format"""
+    """Export research report in specified academic format."""
     try:
         if format not in ["pdf", "latex", "docx", "html"]:
             raise HTTPException(status_code=400, detail="Unsupported export format")
@@ -690,11 +689,12 @@ async def export_research_report(
 
 @router.get("/analytics", response_model=ResearchAnalytics)
 async def get_research_analytics(
-    workspace_id: str | None = None, current_user=Depends(get_current_user)
+    workspace_id: str | None = None,
+    current_user=Depends(get_current_user),
 ):
-    """Get research lab analytics and insights"""
+    """Get research lab analytics and insights."""
     try:
-        analytics = ResearchAnalytics(
+        return ResearchAnalytics(
             total_experiments=25,
             completed_experiments=18,
             total_techniques_tested=45,
@@ -715,19 +715,18 @@ async def get_research_analytics(
             cross_workspace_collaborations=3,
         )
 
-        return analytics
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get research analytics: {e!s}")
 
 
 @router.post("/technique-variations", response_model=TechniqueVariation)
 async def create_technique_variation(
-    variation_data: dict, current_user=Depends(get_current_user)  # Simplified for now
+    variation_data: dict,
+    current_user=Depends(get_current_user),  # Simplified for now
 ):
-    """Create a new technique variation for A/B testing"""
+    """Create a new technique variation for A/B testing."""
     try:
-        variation = TechniqueVariation(
+        return TechniqueVariation(
             base_technique_id=variation_data["base_technique_id"],
             name=variation_data["name"],
             description=variation_data["description"],
@@ -738,8 +737,6 @@ async def create_technique_variation(
             created_by=current_user.user_id,
         )
 
-        return variation
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create technique variation: {e!s}")
 
@@ -748,9 +745,10 @@ async def create_technique_variation(
 
 
 async def run_experiment_execution(
-    execution: ExperimentExecution, config: ExperimentExecutionTrigger
-):
-    """Execute A/B testing experiment in background"""
+    execution: ExperimentExecution,
+    config: ExperimentExecutionTrigger,
+) -> None:
+    """Execute A/B testing experiment in background."""
     try:
         # Simulate experiment execution
         await asyncio.sleep(10)  # Simulate processing time
@@ -765,19 +763,17 @@ async def run_experiment_execution(
         execution.winning_technique = "autodan_v2"
 
         # In production, save results to database
-        print(f"Experiment execution {execution.execution_id} completed successfully")
 
     except Exception as e:
         execution.status = "failed"
         execution.error_message = str(e)
-        print(f"Experiment execution {execution.execution_id} failed: {e!s}")
 
 
 # Utility Functions
 
 
 async def validate_fitness_function_code(code: str, input_parameters: list[str]) -> dict[str, Any]:
-    """Validate fitness function code for security and correctness"""
+    """Validate fitness function code for security and correctness."""
     try:
         # Basic validation - in production, would use proper sandboxing
         validation_result = {
@@ -793,14 +789,14 @@ async def validate_fitness_function_code(code: str, input_parameters: list[str])
         for pattern in complex_patterns:
             if pattern in code:
                 validation_result["security_warnings"].append(
-                    f"Potentially complex pattern: {pattern}"
+                    f"Potentially complex pattern: {pattern}",
                 )
 
         # Check parameter usage
         for param in input_parameters:
             if param not in code:
                 validation_result["syntax_errors"].append(
-                    f"Parameter '{param}' not used in function"
+                    f"Parameter '{param}' not used in function",
                 )
 
         if validation_result["security_warnings"] or validation_result["syntax_errors"]:

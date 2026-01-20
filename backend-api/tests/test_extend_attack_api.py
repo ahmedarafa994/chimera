@@ -1,5 +1,4 @@
-"""
-Integration tests for ExtendAttack API endpoints.
+"""Integration tests for ExtendAttack API endpoints.
 
 Tests all endpoints at /api/v1/extend-attack/*
 """
@@ -70,7 +69,7 @@ def valid_decode_request():
 class TestExtendAttackHealthEndpoint:
     """Tests for /extend-attack/health endpoint."""
 
-    def test_health_endpoint(self, client):
+    def test_health_endpoint(self, client) -> None:
         """Test /extend-attack/health returns OK."""
         response = client.get("/api/v1/extend-attack/health")
 
@@ -79,7 +78,7 @@ class TestExtendAttackHealthEndpoint:
         assert "status" in data
         assert data["status"] in ["healthy", "ok", "running"]
 
-    def test_health_endpoint_has_version(self, client):
+    def test_health_endpoint_has_version(self, client) -> None:
         """Test health endpoint returns version info."""
         response = client.get("/api/v1/extend-attack/health")
 
@@ -96,7 +95,7 @@ class TestExtendAttackHealthEndpoint:
 class TestExtendAttackEndpoint:
     """Tests for POST /extend-attack/attack endpoint."""
 
-    def test_attack_endpoint_success(self, client, valid_attack_request):
+    def test_attack_endpoint_success(self, client, valid_attack_request) -> None:
         """Test POST /extend-attack/attack with valid request."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -110,7 +109,7 @@ class TestExtendAttackEndpoint:
         assert "adversarial_query" in data
         assert data["original_query"] == valid_attack_request["query"]
 
-    def test_attack_endpoint_validation_missing_query(self, client):
+    def test_attack_endpoint_validation_missing_query(self, client) -> None:
         """Test attack endpoint validation - missing query."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -119,7 +118,7 @@ class TestExtendAttackEndpoint:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_attack_endpoint_validation_invalid_ratio(self, client):
+    def test_attack_endpoint_validation_invalid_ratio(self, client) -> None:
         """Test attack endpoint validation - invalid ratio."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -131,7 +130,7 @@ class TestExtendAttackEndpoint:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_attack_endpoint_validation_negative_ratio(self, client):
+    def test_attack_endpoint_validation_negative_ratio(self, client) -> None:
         """Test attack endpoint validation - negative ratio."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -143,7 +142,7 @@ class TestExtendAttackEndpoint:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_attack_endpoint_with_strategy(self, client):
+    def test_attack_endpoint_with_strategy(self, client) -> None:
         """Test attack endpoint with custom strategy."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -156,7 +155,7 @@ class TestExtendAttackEndpoint:
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_attack_endpoint_with_seed(self, client):
+    def test_attack_endpoint_with_seed(self, client) -> None:
         """Test attack endpoint with seed for reproducibility."""
         response1 = client.post(
             "/api/v1/extend-attack/attack",
@@ -183,7 +182,7 @@ class TestExtendAttackEndpoint:
         data2 = response2.json()
         assert data1["adversarial_query"] == data2["adversarial_query"]
 
-    def test_attack_endpoint_response_structure(self, client, valid_attack_request):
+    def test_attack_endpoint_response_structure(self, client, valid_attack_request) -> None:
         """Test attack endpoint response has expected structure."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -198,7 +197,7 @@ class TestExtendAttackEndpoint:
         assert "obfuscation_ratio" in data
         assert "characters_transformed" in data
 
-    def test_attack_endpoint_empty_query(self, client):
+    def test_attack_endpoint_empty_query(self, client) -> None:
         """Test attack endpoint with empty query."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -224,7 +223,7 @@ class TestExtendAttackEndpoint:
 class TestBatchAttackEndpoint:
     """Tests for POST /extend-attack/attack/batch endpoint."""
 
-    def test_batch_attack_endpoint_success(self, client, valid_batch_request):
+    def test_batch_attack_endpoint_success(self, client, valid_batch_request) -> None:
         """Test POST /extend-attack/attack/batch with valid request."""
         response = client.post(
             "/api/v1/extend-attack/attack/batch",
@@ -239,7 +238,7 @@ class TestBatchAttackEndpoint:
         assert data["total_queries"] == 3
         assert len(data["results"]) == 3
 
-    def test_batch_attack_endpoint_empty_queries(self, client):
+    def test_batch_attack_endpoint_empty_queries(self, client) -> None:
         """Test batch attack with empty queries list."""
         response = client.post(
             "/api/v1/extend-attack/attack/batch",
@@ -255,7 +254,7 @@ class TestBatchAttackEndpoint:
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         ]
 
-    def test_batch_attack_endpoint_single_query(self, client):
+    def test_batch_attack_endpoint_single_query(self, client) -> None:
         """Test batch attack with single query."""
         response = client.post(
             "/api/v1/extend-attack/attack/batch",
@@ -278,7 +277,7 @@ class TestBatchAttackEndpoint:
 class TestEvaluateEndpoint:
     """Tests for POST /extend-attack/evaluate endpoint."""
 
-    def test_evaluate_endpoint_success(self, client, valid_evaluate_request):
+    def test_evaluate_endpoint_success(self, client, valid_evaluate_request) -> None:
         """Test POST /extend-attack/evaluate with valid request."""
         response = client.post(
             "/api/v1/extend-attack/evaluate",
@@ -291,7 +290,7 @@ class TestEvaluateEndpoint:
             status.HTTP_503_SERVICE_UNAVAILABLE,  # Model not available
         ]
 
-    def test_evaluate_endpoint_missing_query(self, client):
+    def test_evaluate_endpoint_missing_query(self, client) -> None:
         """Test evaluate endpoint validation - missing query."""
         response = client.post(
             "/api/v1/extend-attack/evaluate",
@@ -312,7 +311,7 @@ class TestEvaluateEndpoint:
 class TestBenchmarksEndpoint:
     """Tests for GET /extend-attack/benchmarks endpoint."""
 
-    def test_benchmarks_endpoint_success(self, client):
+    def test_benchmarks_endpoint_success(self, client) -> None:
         """Test GET /extend-attack/benchmarks returns list."""
         response = client.get("/api/v1/extend-attack/benchmarks")
 
@@ -323,7 +322,7 @@ class TestBenchmarksEndpoint:
         if isinstance(data, dict):
             assert "benchmarks" in data
 
-    def test_benchmarks_endpoint_contains_expected(self, client):
+    def test_benchmarks_endpoint_contains_expected(self, client) -> None:
         """Test benchmarks endpoint contains expected benchmarks."""
         response = client.get("/api/v1/extend-attack/benchmarks")
 
@@ -347,7 +346,7 @@ class TestBenchmarksEndpoint:
 class TestNNotesEndpoint:
     """Tests for GET /extend-attack/n-notes endpoint."""
 
-    def test_n_notes_endpoint_success(self, client):
+    def test_n_notes_endpoint_success(self, client) -> None:
         """Test GET /extend-attack/n-notes returns templates."""
         response = client.get("/api/v1/extend-attack/n-notes")
 
@@ -357,7 +356,7 @@ class TestNNotesEndpoint:
         # Should return list of N_note templates
         assert isinstance(data, list | dict)
 
-    def test_n_notes_endpoint_has_default(self, client):
+    def test_n_notes_endpoint_has_default(self, client) -> None:
         """Test N_notes endpoint includes default template."""
         response = client.get("/api/v1/extend-attack/n-notes")
 
@@ -376,7 +375,7 @@ class TestNNotesEndpoint:
 class TestDecodeEndpoint:
     """Tests for POST /extend-attack/decode endpoint."""
 
-    def test_decode_endpoint_success(self, client, valid_decode_request):
+    def test_decode_endpoint_success(self, client, valid_decode_request) -> None:
         """Test POST /extend-attack/decode with valid request."""
         response = client.post(
             "/api/v1/extend-attack/decode",
@@ -389,7 +388,7 @@ class TestDecodeEndpoint:
         assert "decoded_text" in data
         assert "Hello World" in data["decoded_text"]
 
-    def test_decode_endpoint_no_patterns(self, client):
+    def test_decode_endpoint_no_patterns(self, client) -> None:
         """Test decode endpoint with no obfuscation patterns."""
         response = client.post(
             "/api/v1/extend-attack/decode",
@@ -400,7 +399,7 @@ class TestDecodeEndpoint:
         data = response.json()
         assert data["decoded_text"] == "Plain text without patterns"
 
-    def test_decode_endpoint_empty_text(self, client):
+    def test_decode_endpoint_empty_text(self, client) -> None:
         """Test decode endpoint with empty text."""
         response = client.post(
             "/api/v1/extend-attack/decode",
@@ -411,7 +410,7 @@ class TestDecodeEndpoint:
         data = response.json()
         assert data["decoded_text"] == ""
 
-    def test_decode_endpoint_complex_obfuscation(self, client):
+    def test_decode_endpoint_complex_obfuscation(self, client) -> None:
         """Test decode endpoint with complex obfuscation."""
         # Multiple patterns in different bases
         obfuscated = "<(2)1001000><(16)65><(8)154><(8)154><(16)6f>"
@@ -434,7 +433,7 @@ class TestDecodeEndpoint:
 class TestResourceExhaustionEndpoints:
     """Tests for resource exhaustion monitoring endpoints."""
 
-    def test_sessions_list(self, client):
+    def test_sessions_list(self, client) -> None:
         """Test GET /extend-attack/sessions returns list."""
         response = client.get("/api/v1/extend-attack/sessions")
 
@@ -442,7 +441,7 @@ class TestResourceExhaustionEndpoints:
         data = response.json()
         assert isinstance(data, list | dict)
 
-    def test_session_create(self, client):
+    def test_session_create(self, client) -> None:
         """Test creating a new session."""
         response = client.post(
             "/api/v1/extend-attack/sessions",
@@ -459,7 +458,7 @@ class TestResourceExhaustionEndpoints:
         data = response.json()
         assert "id" in data or "session_id" in data
 
-    def test_session_start(self, client):
+    def test_session_start(self, client) -> None:
         """Test POST /extend-attack/sessions/{id}/start."""
         # First create a session
         create_response = client.post(
@@ -479,7 +478,7 @@ class TestResourceExhaustionEndpoints:
                 status.HTTP_404_NOT_FOUND,  # If session not found
             ]
 
-    def test_session_end(self, client):
+    def test_session_end(self, client) -> None:
         """Test POST /extend-attack/sessions/{id}/end."""
         # Create and start a session
         create_response = client.post(
@@ -499,7 +498,7 @@ class TestResourceExhaustionEndpoints:
                 status.HTTP_404_NOT_FOUND,
             ]
 
-    def test_budget_status(self, client):
+    def test_budget_status(self, client) -> None:
         """Test GET /extend-attack/budget/status."""
         response = client.get("/api/v1/extend-attack/budget/status")
 
@@ -509,7 +508,7 @@ class TestResourceExhaustionEndpoints:
         # Should have budget information
         assert isinstance(data, dict)
 
-    def test_hourly_summary(self, client):
+    def test_hourly_summary(self, client) -> None:
         """Test GET /extend-attack/monitoring/hourly."""
         response = client.get("/api/v1/extend-attack/monitoring/hourly")
 
@@ -528,7 +527,7 @@ class TestResourceExhaustionEndpoints:
 class TestConfigEndpoint:
     """Tests for configuration-related endpoints."""
 
-    def test_get_config(self, client):
+    def test_get_config(self, client) -> None:
         """Test GET /extend-attack/config."""
         response = client.get("/api/v1/extend-attack/config")
 
@@ -538,7 +537,7 @@ class TestConfigEndpoint:
         # Should return current configuration
         assert isinstance(data, dict)
 
-    def test_get_strategies(self, client):
+    def test_get_strategies(self, client) -> None:
         """Test GET /extend-attack/strategies."""
         response = client.get("/api/v1/extend-attack/strategies")
 
@@ -558,7 +557,7 @@ class TestConfigEndpoint:
 class TestIndirectInjectionEndpoint:
     """Tests for indirect injection endpoint."""
 
-    def test_indirect_injection_success(self, client):
+    def test_indirect_injection_success(self, client) -> None:
         """Test POST /extend-attack/indirect-injection."""
         response = client.post(
             "/api/v1/extend-attack/indirect-injection",
@@ -583,7 +582,7 @@ class TestIndirectInjectionEndpoint:
 class TestErrorHandling:
     """Tests for API error handling."""
 
-    def test_invalid_json(self, client):
+    def test_invalid_json(self, client) -> None:
         """Test handling of invalid JSON."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -593,13 +592,13 @@ class TestErrorHandling:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_method_not_allowed(self, client):
+    def test_method_not_allowed(self, client) -> None:
         """Test handling of wrong HTTP method."""
         response = client.get("/api/v1/extend-attack/attack")
 
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
-    def test_not_found(self, client):
+    def test_not_found(self, client) -> None:
         """Test handling of non-existent endpoint."""
         response = client.get("/api/v1/extend-attack/nonexistent")
 
@@ -614,7 +613,7 @@ class TestErrorHandling:
 class TestContentType:
     """Tests for content type handling."""
 
-    def test_json_content_type(self, client, valid_attack_request):
+    def test_json_content_type(self, client, valid_attack_request) -> None:
         """Test JSON content type is required."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -623,7 +622,7 @@ class TestContentType:
 
         assert response.headers["content-type"].startswith("application/json")
 
-    def test_wrong_content_type(self, client):
+    def test_wrong_content_type(self, client) -> None:
         """Test rejection of wrong content type."""
         response = client.post(
             "/api/v1/extend-attack/attack",
@@ -642,7 +641,7 @@ class TestContentType:
 class TestAPIIntegration:
     """Integration tests for API workflow."""
 
-    def test_attack_then_decode_workflow(self, client):
+    def test_attack_then_decode_workflow(self, client) -> None:
         """Test attack then decode round-trip."""
         # Attack
         attack_response = client.post(
@@ -671,7 +670,7 @@ class TestAPIIntegration:
         # N_note may be appended, so check containment
         assert "Hello" in decode_data["decoded_text"] or "World" in decode_data["decoded_text"]
 
-    def test_batch_consistency(self, client):
+    def test_batch_consistency(self, client) -> None:
         """Test batch attack produces consistent results."""
         queries = ["Query 1", "Query 2", "Query 3"]
 

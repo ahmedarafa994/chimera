@@ -1,5 +1,4 @@
-"""
-Router Integration Patch for Health Monitoring Endpoints
+"""Router Integration Patch for Health Monitoring Endpoints.
 
 This patch adds the health monitoring endpoints to the existing v1 router
 without breaking the current system. Simply add this code to router.py.

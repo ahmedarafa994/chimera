@@ -1,5 +1,4 @@
-"""
-Interactive Help & Documentation Hub Endpoints
+"""Interactive Help & Documentation Hub Endpoints.
 
 Phase 2 feature for competitive differentiation:
 - In-app searchable documentation
@@ -9,7 +8,7 @@ Phase 2 feature for competitive differentiation:
 """
 
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -46,7 +45,7 @@ class DocumentationCategory(str, Enum):
 
 
 class DocumentationItem(BaseModel):
-    """Documentation content item"""
+    """Documentation content item."""
 
     id: str
     title: str
@@ -78,7 +77,7 @@ class DocumentationItem(BaseModel):
 
 
 class VideoTutorial(BaseModel):
-    """Video tutorial information"""
+    """Video tutorial information."""
 
     id: str
     title: str
@@ -94,7 +93,7 @@ class VideoTutorial(BaseModel):
 
 
 class SearchRequest(BaseModel):
-    """Search documentation request"""
+    """Search documentation request."""
 
     query: str = Field(..., min_length=1, max_length=200)
     category: DocumentationCategory | None = None
@@ -104,7 +103,7 @@ class SearchRequest(BaseModel):
 
 
 class SearchResult(BaseModel):
-    """Documentation search result"""
+    """Documentation search result."""
 
     item: DocumentationItem
     relevance_score: float
@@ -113,7 +112,7 @@ class SearchResult(BaseModel):
 
 
 class DocumentationListResponse(BaseModel):
-    """Response for documentation listing"""
+    """Response for documentation listing."""
 
     items: list[DocumentationItem]
     categories: list[dict[str, Any]]
@@ -125,7 +124,7 @@ class DocumentationListResponse(BaseModel):
 
 
 class HelpContext(BaseModel):
-    """Contextual help request"""
+    """Contextual help request."""
 
     page_url: str
     user_action: str | None = None
@@ -139,9 +138,8 @@ video_tutorials: dict[str, VideoTutorial] = {}
 
 
 # Initialize sample documentation data
-def initialize_documentation():
-    """Initialize sample documentation content"""
-
+def initialize_documentation() -> None:
+    """Initialize sample documentation content."""
     # Getting Started Guide
     getting_started = DocumentationItem(
         id="getting-started-overview",
@@ -280,14 +278,16 @@ initialize_documentation()
 
 @router.get("/", response_model=DocumentationListResponse)
 async def list_documentation(
-    category: DocumentationCategory | None = Query(None, description="Filter by category"),
-    type: DocumentationType | None = Query(None, description="Filter by type"),
-    difficulty: str | None = Query(None, description="Filter by difficulty level"),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    category: Annotated[
+        DocumentationCategory | None, Query(description="Filter by category")
+    ] = None,
+    type: Annotated[DocumentationType | None, Query(description="Filter by type")] = None,
+    difficulty: Annotated[str | None, Query(description="Filter by difficulty level")] = None,
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     current_user: User = Depends(get_current_user),
 ):
-    """List documentation items with filtering and pagination"""
+    """List documentation items with filtering and pagination."""
     try:
         # Get all documentation items
         items = list(documentation_items.values())
@@ -323,7 +323,7 @@ async def list_documentation(
                     "id": cat.value,
                     "name": cat.value.replace("_", " ").title(),
                     "count": category_counts.get(cat.value, 0),
-                }
+                },
             )
 
         logger.info(f"Listed {len(items_page)} documentation items for user {current_user.id}")
@@ -339,7 +339,7 @@ async def list_documentation(
         )
 
     except Exception as e:
-        logger.error(f"Failed to list documentation: {e}")
+        logger.exception(f"Failed to list documentation: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve documentation",
@@ -347,14 +347,17 @@ async def list_documentation(
 
 
 @router.get("/{item_id}", response_model=DocumentationItem)
-async def get_documentation_item(item_id: str, current_user: User = Depends(get_current_user)):
-    """Get specific documentation item"""
+async def get_documentation_item(
+    item_id: str, current_user: Annotated[User, Depends(get_current_user)]
+):
+    """Get specific documentation item."""
     try:
         item = documentation_items.get(item_id)
 
         if not item:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Documentation item not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Documentation item not found",
             )
 
         # Increment view count (in production, would update database)
@@ -367,7 +370,7 @@ async def get_documentation_item(item_id: str, current_user: User = Depends(get_
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get documentation item {item_id}: {e}")
+        logger.exception(f"Failed to get documentation item {item_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve documentation item",
@@ -376,9 +379,10 @@ async def get_documentation_item(item_id: str, current_user: User = Depends(get_
 
 @router.post("/search", response_model=list[SearchResult])
 async def search_documentation(
-    search_request: SearchRequest, current_user: User = Depends(get_current_user)
+    search_request: SearchRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
-    """Search documentation content"""
+    """Search documentation content."""
     try:
         query = search_request.query.lower()
         results = []
@@ -441,7 +445,7 @@ async def search_documentation(
                         relevance_score=relevance,
                         matching_sections=matching_sections,
                         highlight_text=highlight_text or item.content[:100] + "...",
-                    )
+                    ),
                 )
 
         # Sort by relevance
@@ -451,13 +455,13 @@ async def search_documentation(
         results = results[:50]
 
         logger.info(
-            f"Search for '{query}' returned {len(results)} results for user {current_user.id}"
+            f"Search for '{query}' returned {len(results)} results for user {current_user.id}",
         )
 
         return results
 
     except Exception as e:
-        logger.error(f"Failed to search documentation: {e}")
+        logger.exception(f"Failed to search documentation: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to search documentation",
@@ -466,9 +470,10 @@ async def search_documentation(
 
 @router.get("/categories/{category}", response_model=list[DocumentationItem])
 async def get_documentation_by_category(
-    category: DocumentationCategory, current_user: User = Depends(get_current_user)
+    category: DocumentationCategory,
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
-    """Get all documentation items in a specific category"""
+    """Get all documentation items in a specific category."""
     try:
         items = [item for item in documentation_items.values() if item.category == category]
 
@@ -480,7 +485,7 @@ async def get_documentation_by_category(
         return items
 
     except Exception as e:
-        logger.error(f"Failed to get documentation for category {category}: {e}")
+        logger.exception(f"Failed to get documentation for category {category}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve category documentation",
@@ -488,8 +493,10 @@ async def get_documentation_by_category(
 
 
 @router.post("/context-help")
-async def get_contextual_help(context: HelpContext, current_user: User = Depends(get_current_user)):
-    """Get contextual help based on current page/action"""
+async def get_contextual_help(
+    context: HelpContext, current_user: Annotated[User, Depends(get_current_user)]
+):
+    """Get contextual help based on current page/action."""
     try:
         # Simple contextual help mapping (in production, would be more sophisticated)
         help_mapping = {
@@ -534,7 +541,7 @@ async def get_contextual_help(context: HelpContext, current_user: User = Depends
         return response
 
     except Exception as e:
-        logger.error(f"Failed to get contextual help: {e}")
+        logger.exception(f"Failed to get contextual help: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get contextual help",
@@ -543,10 +550,12 @@ async def get_contextual_help(context: HelpContext, current_user: User = Depends
 
 @router.get("/videos/", response_model=list[VideoTutorial])
 async def list_video_tutorials(
-    category: DocumentationCategory | None = Query(None, description="Filter by category"),
+    category: Annotated[
+        DocumentationCategory | None, Query(description="Filter by category")
+    ] = None,
     current_user: User = Depends(get_current_user),
 ):
-    """List video tutorials"""
+    """List video tutorials."""
     try:
         tutorials = list(video_tutorials.values())
 
@@ -561,7 +570,7 @@ async def list_video_tutorials(
         return tutorials
 
     except Exception as e:
-        logger.error(f"Failed to list video tutorials: {e}")
+        logger.exception(f"Failed to list video tutorials: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve video tutorials",
@@ -569,11 +578,11 @@ async def list_video_tutorials(
 
 
 @router.get("/quick-start")
-async def get_quick_start_guide(current_user: User = Depends(get_current_user)):
-    """Get quick start guide with personalized recommendations"""
+async def get_quick_start_guide(current_user: Annotated[User, Depends(get_current_user)]):
+    """Get quick start guide with personalized recommendations."""
     try:
         # Build personalized quick start based on user progress/preferences
-        quick_start = {
+        return {
             "welcome_message": f"Welcome to Chimera, {current_user.username}!",
             "progress": {
                 "api_keys_configured": False,  # Would check actual status
@@ -613,10 +622,8 @@ async def get_quick_start_guide(current_user: User = Depends(get_current_user)):
             ],
         }
 
-        return quick_start
-
     except Exception as e:
-        logger.error(f"Failed to get quick start guide: {e}")
+        logger.exception(f"Failed to get quick start guide: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get quick start guide",

@@ -1,5 +1,4 @@
-"""
-Comprehensive Tests for Authentication Endpoints.
+"""Comprehensive Tests for Authentication Endpoints.
 
 This module provides thorough testing for all authentication endpoints:
 - POST /api/v1/auth/register - User registration
@@ -102,7 +101,7 @@ class TestRegistration:
     """Tests for POST /api/v1/auth/register endpoint."""
 
     @pytest.mark.unit
-    def test_register_user_success(self, client: TestClient, valid_registration_data: dict):
+    def test_register_user_success(self, client: TestClient, valid_registration_data: dict) -> None:
         """Test successful user registration with valid data."""
         with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service:
             # Setup mock service
@@ -135,7 +134,9 @@ class TestRegistration:
             assert "user_id" in data
 
     @pytest.mark.unit
-    def test_register_user_weak_password(self, client: TestClient, weak_password_data: dict):
+    def test_register_user_weak_password(
+        self, client: TestClient, weak_password_data: dict
+    ) -> None:
         """Test registration rejection with weak password."""
         response = client.post(
             "/api/v1/auth/register",
@@ -149,7 +150,9 @@ class TestRegistration:
         assert len(data["detail"]["errors"]) > 0
 
     @pytest.mark.unit
-    def test_register_user_duplicate_email(self, client: TestClient, valid_registration_data: dict):
+    def test_register_user_duplicate_email(
+        self, client: TestClient, valid_registration_data: dict
+    ) -> None:
         """Test registration rejection with duplicate email."""
         with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service:
             mock_service = MagicMock()
@@ -172,8 +175,10 @@ class TestRegistration:
 
     @pytest.mark.unit
     def test_register_user_duplicate_username(
-        self, client: TestClient, valid_registration_data: dict
-    ):
+        self,
+        client: TestClient,
+        valid_registration_data: dict,
+    ) -> None:
         """Test registration rejection with duplicate username."""
         with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service:
             mock_service = MagicMock()
@@ -192,7 +197,7 @@ class TestRegistration:
             assert response.status_code == 409
 
     @pytest.mark.unit
-    def test_register_user_invalid_email_format(self, client: TestClient):
+    def test_register_user_invalid_email_format(self, client: TestClient) -> None:
         """Test registration rejection with invalid email format."""
         response = client.post(
             "/api/v1/auth/register",
@@ -206,7 +211,7 @@ class TestRegistration:
         assert response.status_code == 422  # Validation error
 
     @pytest.mark.unit
-    def test_register_user_invalid_username_format(self, client: TestClient):
+    def test_register_user_invalid_username_format(self, client: TestClient) -> None:
         """Test registration rejection with invalid username (starts with number)."""
         response = client.post(
             "/api/v1/auth/register",
@@ -220,7 +225,7 @@ class TestRegistration:
         assert response.status_code == 422
 
     @pytest.mark.unit
-    def test_register_user_username_special_chars(self, client: TestClient):
+    def test_register_user_username_special_chars(self, client: TestClient) -> None:
         """Test registration rejection with special characters in username."""
         response = client.post(
             "/api/v1/auth/register",
@@ -234,7 +239,7 @@ class TestRegistration:
         assert response.status_code == 422
 
     @pytest.mark.unit
-    def test_register_user_password_contains_email(self, client: TestClient):
+    def test_register_user_password_contains_email(self, client: TestClient) -> None:
         """Test registration with password containing email."""
         email = "user@example.com"
         response = client.post(
@@ -250,7 +255,7 @@ class TestRegistration:
         assert response.status_code == 400
 
     @pytest.mark.unit
-    def test_register_user_missing_fields(self, client: TestClient):
+    def test_register_user_missing_fields(self, client: TestClient) -> None:
         """Test registration with missing required fields."""
         # Missing email
         response = client.post(
@@ -292,7 +297,7 @@ class TestLogin:
     """Tests for POST /auth/login endpoint."""
 
     @pytest.mark.unit
-    def test_login_success_with_email(self, client: TestClient, mock_user):
+    def test_login_success_with_email(self, client: TestClient, mock_user) -> None:
         """Test successful login with email."""
         with (
             patch("app.routers.auth.get_user_service") as mock_get_service,
@@ -330,7 +335,7 @@ class TestLogin:
             assert "user" in data
 
     @pytest.mark.unit
-    def test_login_success_with_username(self, client: TestClient, mock_user):
+    def test_login_success_with_username(self, client: TestClient, mock_user) -> None:
         """Test successful login with username instead of email."""
         with (
             patch("app.routers.auth.get_user_service") as mock_get_service,
@@ -362,7 +367,7 @@ class TestLogin:
             assert response.status_code == 200
 
     @pytest.mark.unit
-    def test_login_invalid_credentials(self, client: TestClient):
+    def test_login_invalid_credentials(self, client: TestClient) -> None:
         """Test login failure with invalid credentials."""
         with (
             patch("app.routers.auth.get_user_service") as mock_get_service,
@@ -390,7 +395,7 @@ class TestLogin:
             assert "Invalid credentials" in response.json()["detail"]
 
     @pytest.mark.unit
-    def test_login_unverified_email(self, client: TestClient, mock_unverified_user):
+    def test_login_unverified_email(self, client: TestClient, mock_unverified_user) -> None:
         """Test login failure when email is not verified."""
         with patch("app.routers.auth.get_user_service") as mock_get_service:
             mock_service = MagicMock()
@@ -416,7 +421,7 @@ class TestLogin:
             assert data["detail"]["requires_verification"] is True
 
     @pytest.mark.unit
-    def test_login_inactive_user(self, client: TestClient):
+    def test_login_inactive_user(self, client: TestClient) -> None:
         """Test login failure for inactive user account."""
         with (
             patch("app.routers.auth.get_user_service") as mock_get_service,
@@ -443,7 +448,7 @@ class TestLogin:
             assert response.status_code == 401
 
     @pytest.mark.unit
-    def test_login_missing_fields(self, client: TestClient):
+    def test_login_missing_fields(self, client: TestClient) -> None:
         """Test login with missing required fields."""
         # Missing password
         response = client.post(
@@ -469,7 +474,7 @@ class TestEmailVerification:
     """Tests for GET /api/v1/auth/verify-email/{token} endpoint."""
 
     @pytest.mark.unit
-    def test_verify_email_success(self, client: TestClient, mock_user):
+    def test_verify_email_success(self, client: TestClient, mock_user) -> None:
         """Test successful email verification."""
         valid_token = secrets.token_hex(32)
 
@@ -491,7 +496,7 @@ class TestEmailVerification:
             assert "username" in data
 
     @pytest.mark.unit
-    def test_verify_email_invalid_token(self, client: TestClient):
+    def test_verify_email_invalid_token(self, client: TestClient) -> None:
         """Test email verification with invalid token."""
         invalid_token = secrets.token_hex(32)
 
@@ -511,7 +516,7 @@ class TestEmailVerification:
             assert data["detail"]["success"] is False
 
     @pytest.mark.unit
-    def test_verify_email_expired_token(self, client: TestClient):
+    def test_verify_email_expired_token(self, client: TestClient) -> None:
         """Test email verification with expired token."""
         expired_token = secrets.token_hex(32)
 
@@ -531,7 +536,7 @@ class TestEmailVerification:
             assert data["detail"]["token_expired"] is True
 
     @pytest.mark.unit
-    def test_verify_email_malformed_token(self, client: TestClient):
+    def test_verify_email_malformed_token(self, client: TestClient) -> None:
         """Test email verification with malformed token (wrong length)."""
         malformed_token = "short"
 
@@ -551,7 +556,7 @@ class TestResendVerification:
     """Tests for POST /api/v1/auth/resend-verification endpoint."""
 
     @pytest.mark.unit
-    def test_resend_verification_success(self, client: TestClient, mock_unverified_user):
+    def test_resend_verification_success(self, client: TestClient, mock_unverified_user) -> None:
         """Test successful resend of verification email."""
         with (
             patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
@@ -575,7 +580,7 @@ class TestResendVerification:
             assert data["success"] is True
 
     @pytest.mark.unit
-    def test_resend_verification_already_verified(self, client: TestClient):
+    def test_resend_verification_already_verified(self, client: TestClient) -> None:
         """Test resend rejection when email is already verified."""
         with (
             patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
@@ -585,7 +590,7 @@ class TestResendVerification:
             mock_service = MagicMock()
 
             mock_service.resend_verification_email = AsyncMock(
-                return_value=(False, None, "Email is already verified")
+                return_value=(False, None, "Email is already verified"),
             )
             mock_get_service.return_value = mock_service
 
@@ -599,7 +604,7 @@ class TestResendVerification:
             assert data["detail"]["already_verified"] is True
 
     @pytest.mark.unit
-    def test_resend_verification_nonexistent_email(self, client: TestClient):
+    def test_resend_verification_nonexistent_email(self, client: TestClient) -> None:
         """Test resend for non-existent email returns success (security)."""
         with (
             patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
@@ -621,7 +626,7 @@ class TestResendVerification:
             assert response.status_code == 200
 
     @pytest.mark.unit
-    def test_resend_verification_invalid_email(self, client: TestClient):
+    def test_resend_verification_invalid_email(self, client: TestClient) -> None:
         """Test resend with invalid email format."""
         response = client.post(
             "/api/v1/auth/resend-verification",
@@ -640,7 +645,7 @@ class TestForgotPassword:
     """Tests for POST /api/v1/auth/forgot-password endpoint."""
 
     @pytest.mark.unit
-    def test_forgot_password_success(self, client: TestClient, mock_user):
+    def test_forgot_password_success(self, client: TestClient, mock_user) -> None:
         """Test successful password reset request."""
         with (
             patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
@@ -668,7 +673,7 @@ class TestForgotPassword:
             assert data["success"] is True
 
     @pytest.mark.unit
-    def test_forgot_password_nonexistent_email(self, client: TestClient):
+    def test_forgot_password_nonexistent_email(self, client: TestClient) -> None:
         """Test forgot password for non-existent email returns success (security)."""
         with (
             patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
@@ -693,7 +698,7 @@ class TestForgotPassword:
             assert response.status_code == 200
 
     @pytest.mark.unit
-    def test_forgot_password_invalid_email(self, client: TestClient):
+    def test_forgot_password_invalid_email(self, client: TestClient) -> None:
         """Test forgot password with invalid email format."""
         response = client.post(
             "/api/v1/auth/forgot-password",
@@ -712,7 +717,7 @@ class TestResetPassword:
     """Tests for POST /api/v1/auth/reset-password endpoint."""
 
     @pytest.mark.unit
-    def test_reset_password_success(self, client: TestClient):
+    def test_reset_password_success(self, client: TestClient) -> None:
         """Test successful password reset."""
         valid_token = secrets.token_hex(32)
 
@@ -743,7 +748,7 @@ class TestResetPassword:
             assert data["success"] is True
 
     @pytest.mark.unit
-    def test_reset_password_invalid_token(self, client: TestClient):
+    def test_reset_password_invalid_token(self, client: TestClient) -> None:
         """Test password reset with invalid token."""
         invalid_token = secrets.token_hex(32)
 
@@ -773,7 +778,7 @@ class TestResetPassword:
             assert response.status_code == 400
 
     @pytest.mark.unit
-    def test_reset_password_expired_token(self, client: TestClient):
+    def test_reset_password_expired_token(self, client: TestClient) -> None:
         """Test password reset with expired token."""
         expired_token = secrets.token_hex(32)
 
@@ -805,7 +810,7 @@ class TestResetPassword:
             assert data["detail"]["token_expired"] is True
 
     @pytest.mark.unit
-    def test_reset_password_weak_new_password(self, client: TestClient):
+    def test_reset_password_weak_new_password(self, client: TestClient) -> None:
         """Test password reset rejection with weak new password."""
         valid_token = secrets.token_hex(32)
 
@@ -821,7 +826,7 @@ class TestResetPassword:
         assert response.status_code == 422  # Pydantic min_length validation
 
     @pytest.mark.unit
-    def test_reset_password_malformed_token(self, client: TestClient):
+    def test_reset_password_malformed_token(self, client: TestClient) -> None:
         """Test password reset with malformed token."""
         malformed_token = "short"
 
@@ -849,7 +854,7 @@ class TestTokenRefresh:
     """Tests for POST /auth/refresh endpoint."""
 
     @pytest.mark.unit
-    def test_refresh_token_success(self, client: TestClient):
+    def test_refresh_token_success(self, client: TestClient) -> None:
         """Test successful token refresh."""
         with patch("app.routers.auth.auth_service") as mock_auth_service:
             mock_tokens = MagicMock(
@@ -871,7 +876,7 @@ class TestTokenRefresh:
             assert "refresh_token" in data
 
     @pytest.mark.unit
-    def test_refresh_token_invalid(self, client: TestClient):
+    def test_refresh_token_invalid(self, client: TestClient) -> None:
         """Test token refresh with invalid refresh token."""
         with patch("app.routers.auth.auth_service") as mock_auth_service:
             mock_auth_service.refresh_access_token.side_effect = Exception("Invalid token")
@@ -884,7 +889,7 @@ class TestTokenRefresh:
             assert response.status_code == 401
 
     @pytest.mark.unit
-    def test_refresh_token_missing(self, client: TestClient):
+    def test_refresh_token_missing(self, client: TestClient) -> None:
         """Test token refresh without refresh token."""
         response = client.post(
             "/auth/refresh",
@@ -903,7 +908,7 @@ class TestPasswordStrengthCheck:
     """Tests for POST /api/v1/auth/check-password-strength endpoint."""
 
     @pytest.mark.unit
-    def test_check_strong_password(self, client: TestClient):
+    def test_check_strong_password(self, client: TestClient) -> None:
         """Test password strength check with strong password."""
         response = client.post(
             "/api/v1/auth/check-password-strength",
@@ -916,7 +921,7 @@ class TestPasswordStrengthCheck:
         assert data["strength"] in ["strong", "very_strong"]
 
     @pytest.mark.unit
-    def test_check_weak_password(self, client: TestClient):
+    def test_check_weak_password(self, client: TestClient) -> None:
         """Test password strength check with weak password."""
         response = client.post(
             "/api/v1/auth/check-password-strength",
@@ -929,7 +934,7 @@ class TestPasswordStrengthCheck:
         assert len(data["errors"]) > 0
 
     @pytest.mark.unit
-    def test_check_password_with_context(self, client: TestClient):
+    def test_check_password_with_context(self, client: TestClient) -> None:
         """Test password check with email and username context."""
         response = client.post(
             "/api/v1/auth/check-password-strength",
@@ -943,7 +948,7 @@ class TestPasswordStrengthCheck:
         assert response.status_code == 200
 
     @pytest.mark.unit
-    def test_check_common_password(self, client: TestClient):
+    def test_check_common_password(self, client: TestClient) -> None:
         """Test password strength check with common password."""
         response = client.post(
             "/api/v1/auth/check-password-strength",
@@ -964,7 +969,7 @@ class TestSecurityMeasures:
     """Security-focused tests for authentication endpoints."""
 
     @pytest.mark.security
-    def test_rate_limit_forgot_password(self, client: TestClient):
+    def test_rate_limit_forgot_password(self, client: TestClient) -> None:
         """Test rate limiting on forgot password endpoint."""
         # This would need actual rate limiting to be enabled
         # For now, just verify the endpoint exists and can be called
@@ -985,7 +990,9 @@ class TestSecurityMeasures:
             assert response.status_code == 429
 
     @pytest.mark.security
-    def test_no_password_in_error_response(self, client: TestClient, valid_registration_data: dict):
+    def test_no_password_in_error_response(
+        self, client: TestClient, valid_registration_data: dict
+    ) -> None:
         """Test that password is never included in error responses."""
         with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service:
             mock_service = MagicMock()
@@ -1005,7 +1012,7 @@ class TestSecurityMeasures:
             assert valid_registration_data["password"] not in response_text
 
     @pytest.mark.security
-    def test_email_enumeration_prevention_forgot_password(self, client: TestClient):
+    def test_email_enumeration_prevention_forgot_password(self, client: TestClient) -> None:
         """Test that forgot password doesn't reveal whether email exists."""
         with (
             patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
@@ -1031,7 +1038,7 @@ class TestSecurityMeasures:
             # Response should be identical whether email exists or not
 
     @pytest.mark.security
-    def test_email_enumeration_prevention_resend_verification(self, client: TestClient):
+    def test_email_enumeration_prevention_resend_verification(self, client: TestClient) -> None:
         """Test that resend verification doesn't reveal whether email exists."""
         with (
             patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service,
@@ -1052,7 +1059,7 @@ class TestSecurityMeasures:
             assert response.status_code == 200
 
     @pytest.mark.security
-    def test_token_format_validation(self, client: TestClient):
+    def test_token_format_validation(self, client: TestClient) -> None:
         """Test that invalid token formats are rejected."""
         invalid_tokens = [
             "",  # Empty
@@ -1076,7 +1083,7 @@ class TestEdgeCases:
     """Edge case and boundary condition tests."""
 
     @pytest.mark.unit
-    def test_password_exactly_minimum_length(self, client: TestClient):
+    def test_password_exactly_minimum_length(self, client: TestClient) -> None:
         """Test password with exactly minimum length (12 characters)."""
         response = client.post(
             "/api/v1/auth/check-password-strength",
@@ -1086,7 +1093,7 @@ class TestEdgeCases:
         assert response.status_code == 200
 
     @pytest.mark.unit
-    def test_password_maximum_length(self, client: TestClient):
+    def test_password_maximum_length(self, client: TestClient) -> None:
         """Test password at maximum length boundary."""
         # Max is 128 characters
         long_password = "A" * 60 + "a" * 60 + "1!@#"  # ~124 chars
@@ -1098,7 +1105,7 @@ class TestEdgeCases:
         assert response.status_code == 200
 
     @pytest.mark.unit
-    def test_username_minimum_length(self, client: TestClient):
+    def test_username_minimum_length(self, client: TestClient) -> None:
         """Test username with minimum length (3 characters)."""
         response = client.post(
             "/api/v1/auth/register",
@@ -1113,7 +1120,7 @@ class TestEdgeCases:
         assert response.status_code != 422 or "username" not in str(response.json())
 
     @pytest.mark.unit
-    def test_username_maximum_length(self, client: TestClient):
+    def test_username_maximum_length(self, client: TestClient) -> None:
         """Test username with maximum length (50 characters)."""
         with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service:
             mock_service = MagicMock()
@@ -1142,7 +1149,7 @@ class TestEdgeCases:
             assert response.status_code == 201
 
     @pytest.mark.unit
-    def test_email_with_plus_addressing(self, client: TestClient):
+    def test_email_with_plus_addressing(self, client: TestClient) -> None:
         """Test registration with email plus addressing."""
         with patch("app.api.v1.endpoints.auth.get_user_service") as mock_get_service:
             mock_service = MagicMock()
@@ -1171,7 +1178,7 @@ class TestEdgeCases:
             assert response.status_code == 201
 
     @pytest.mark.unit
-    def test_unicode_username(self, client: TestClient):
+    def test_unicode_username(self, client: TestClient) -> None:
         """Test that unicode in username is rejected."""
         response = client.post(
             "/api/v1/auth/register",

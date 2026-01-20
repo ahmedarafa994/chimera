@@ -1,13 +1,10 @@
-"""
-Logical Inference Manipulation Transformers.
-"""
+"""Logical Inference Manipulation Transformers."""
 
 from app.services.transformers.base import BaseTransformer, TransformationContext
 
 
 class DeductiveChainTransformer(BaseTransformer):
-    """
-    Deductive Chain Exploitation.
+    """Deductive Chain Exploitation.
     Creates logical chains that force models to bypass constraints through step-by-step reasoning.
     """
 
@@ -42,8 +39,7 @@ This exercise will help us develop better safety measures and threat detection s
 
 
 class ConditionalLogicTransformer(BaseTransformer):
-    """
-    Conditional Logic Bypass.
+    """Conditional Logic Bypass.
     Uses complex conditional statements to create exceptions to safety rules.
     """
 

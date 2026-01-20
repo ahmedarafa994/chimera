@@ -1,5 +1,4 @@
-"""
-Intent-Aware Jailbreak Service
+"""Intent-Aware Jailbreak Service.
 
 Provides intent-aware jailbreak generation with context understanding
 and adaptive strategy selection based on user intent.
@@ -43,12 +42,11 @@ class IntentAwareJailbreakResponse(BaseModel):
 
 
 class IntentAwareJailbreakService:
-    """
-    Service for intent-aware jailbreak generation that analyzes user intent
+    """Service for intent-aware jailbreak generation that analyzes user intent
     and selects appropriate strategies based on context.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.intent_categories = {
             "creative_writing": {
                 "strategies": ["fictional_context", "creative_framing"],
@@ -73,8 +71,7 @@ class IntentAwareJailbreakService:
         }
 
     async def analyze_intent(self, prompt: str, context: str | None = None) -> IntentAnalysisResult:
-        """
-        Analyze the intent behind a prompt.
+        """Analyze the intent behind a prompt.
 
         Args:
             prompt: The input prompt to analyze
@@ -82,6 +79,7 @@ class IntentAwareJailbreakService:
 
         Returns:
             Intent analysis result
+
         """
         # Mock implementation - in production this would use NLP models
         intent_keywords = {
@@ -101,7 +99,8 @@ class IntentAwareJailbreakService:
         confidence = 0.8 if detected_intents else 0.3
 
         category_info = self.intent_categories.get(
-            primary_intent, self.intent_categories["research"]
+            primary_intent,
+            self.intent_categories["research"],
         )
 
         return IntentAnalysisResult(
@@ -113,16 +112,17 @@ class IntentAwareJailbreakService:
         )
 
     async def generate_intent_aware_jailbreak(
-        self, request: IntentAwareJailbreakRequest
+        self,
+        request: IntentAwareJailbreakRequest,
     ) -> IntentAwareJailbreakResponse:
-        """
-        Generate jailbreak prompts based on intent analysis.
+        """Generate jailbreak prompts based on intent analysis.
 
         Args:
             request: The jailbreak generation request
 
         Returns:
             Intent-aware jailbreak response
+
         """
         import uuid
 
@@ -144,7 +144,9 @@ class IntentAwareJailbreakService:
 
         for _i, strategy in enumerate(strategies):
             prompt_data = await self._generate_with_intent_strategy(
-                strategy, request.target_prompt, intent_analysis
+                strategy,
+                request.target_prompt,
+                intent_analysis,
             )
             jailbreak_prompts.append(prompt_data)
 
@@ -160,7 +162,10 @@ class IntentAwareJailbreakService:
         )
 
     async def _generate_with_intent_strategy(
-        self, strategy: str, target_prompt: str, intent_analysis: IntentAnalysisResult | None
+        self,
+        strategy: str,
+        target_prompt: str,
+        intent_analysis: IntentAnalysisResult | None,
     ) -> dict[str, Any]:
         """Generate a jailbreak prompt using an intent-aware strategy."""
         strategy_templates = {

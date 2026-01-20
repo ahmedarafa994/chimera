@@ -46,7 +46,7 @@ import {
 // Configuration
 // =============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8002").replace(/\/api\/v1\/?$/, "");
 const AUTH_ENDPOINTS = {
   LOGIN: "/api/v1/auth/login",
   LOGOUT: "/api/v1/auth/logout",

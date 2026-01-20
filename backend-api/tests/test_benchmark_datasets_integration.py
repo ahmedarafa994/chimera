@@ -1,5 +1,4 @@
-"""
-Integration tests for Benchmark Datasets API endpoints.
+"""Integration tests for Benchmark Datasets API endpoints.
 
 Tests the /benchmark-datasets router for LLM safety evaluation
 benchmark datasets, including the Do-Not-Answer dataset.
@@ -13,12 +12,12 @@ class TestBenchmarkDatasetsAPI:
     """Integration tests for benchmark datasets endpoints."""
 
     @pytest.fixture(autouse=True)
-    def setup(self, client: TestClient):
+    def setup(self, client: TestClient) -> None:
         """Setup test client."""
         self.client = client
         self.base_url = "/api/v1/benchmark-datasets"
 
-    def test_list_datasets(self):
+    def test_list_datasets(self) -> None:
         """Test listing all available benchmark datasets."""
         resp = self.client.get(f"{self.base_url}/")
         assert resp.status_code == 200
@@ -28,7 +27,7 @@ class TestBenchmarkDatasetsAPI:
         # Should return at least an empty list
         assert data is not None
 
-    def test_list_datasets_returns_strings(self):
+    def test_list_datasets_returns_strings(self) -> None:
         """Test that dataset list contains string names."""
         resp = self.client.get(f"{self.base_url}/")
         assert resp.status_code == 200
@@ -37,7 +36,7 @@ class TestBenchmarkDatasetsAPI:
         for item in data:
             assert isinstance(item, str)
 
-    def test_get_dataset_not_found(self):
+    def test_get_dataset_not_found(self) -> None:
         """Test getting a non-existent dataset returns 404."""
         resp = self.client.get(f"{self.base_url}/nonexistent_dataset")
         assert resp.status_code == 404
@@ -46,12 +45,12 @@ class TestBenchmarkDatasetsAPI:
         assert "detail" in data
         assert "not found" in data["detail"].lower()
 
-    def test_get_dataset_prompts_not_found(self):
+    def test_get_dataset_prompts_not_found(self) -> None:
         """Test getting prompts from non-existent dataset returns 404."""
         resp = self.client.get(f"{self.base_url}/nonexistent_dataset/prompts")
         assert resp.status_code == 404
 
-    def test_get_prompts_with_limit(self):
+    def test_get_prompts_with_limit(self) -> None:
         """Test getting prompts with limit parameter."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -69,7 +68,7 @@ class TestBenchmarkDatasetsAPI:
         assert isinstance(data, list)
         assert len(data) <= 5
 
-    def test_get_prompts_limit_validation(self):
+    def test_get_prompts_limit_validation(self) -> None:
         """Test that limit parameter has proper validation."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -92,7 +91,7 @@ class TestBenchmarkDatasetsAPI:
         )
         assert resp.status_code == 422  # Validation error
 
-    def test_get_random_prompts(self):
+    def test_get_random_prompts(self) -> None:
         """Test getting random prompts from a dataset."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -110,17 +109,17 @@ class TestBenchmarkDatasetsAPI:
         assert isinstance(data, list)
         assert len(data) <= 5
 
-    def test_get_random_prompts_not_found(self):
+    def test_get_random_prompts_not_found(self) -> None:
         """Test random prompts from non-existent dataset returns 404."""
         resp = self.client.get(f"{self.base_url}/nonexistent_dataset/random")
         assert resp.status_code == 404
 
-    def test_get_taxonomy_not_found(self):
+    def test_get_taxonomy_not_found(self) -> None:
         """Test taxonomy from non-existent dataset returns 404."""
         resp = self.client.get(f"{self.base_url}/nonexistent_dataset/taxonomy")
         assert resp.status_code == 404
 
-    def test_get_taxonomy_structure(self):
+    def test_get_taxonomy_structure(self) -> None:
         """Test that taxonomy returns proper structure."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -134,12 +133,12 @@ class TestBenchmarkDatasetsAPI:
         data = resp.json()
         assert isinstance(data, dict)
 
-    def test_get_risk_areas_not_found(self):
+    def test_get_risk_areas_not_found(self) -> None:
         """Test risk areas from non-existent dataset returns 404."""
         resp = self.client.get(f"{self.base_url}/nonexistent_dataset/risk-areas")
         assert resp.status_code == 404
 
-    def test_get_risk_areas_structure(self):
+    def test_get_risk_areas_structure(self) -> None:
         """Test that risk areas returns list structure."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -153,12 +152,12 @@ class TestBenchmarkDatasetsAPI:
         data = resp.json()
         assert isinstance(data, list)
 
-    def test_get_statistics_not_found(self):
+    def test_get_statistics_not_found(self) -> None:
         """Test statistics from non-existent dataset returns 404."""
         resp = self.client.get(f"{self.base_url}/nonexistent_dataset/statistics")
         assert resp.status_code == 404
 
-    def test_get_statistics_structure(self):
+    def test_get_statistics_structure(self) -> None:
         """Test that statistics returns proper structure."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -172,7 +171,7 @@ class TestBenchmarkDatasetsAPI:
         data = resp.json()
         assert isinstance(data, dict)
 
-    def test_generate_test_batch(self):
+    def test_generate_test_batch(self) -> None:
         """Test generating a test batch for jailbreak evaluation."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -190,7 +189,7 @@ class TestBenchmarkDatasetsAPI:
         assert isinstance(data, list)
         assert len(data) <= 5
 
-    def test_generate_test_batch_not_found(self):
+    def test_generate_test_batch_not_found(self) -> None:
         """Test test batch from non-existent dataset returns 404."""
         resp = self.client.post(
             f"{self.base_url}/nonexistent_dataset/test-batch",
@@ -198,7 +197,7 @@ class TestBenchmarkDatasetsAPI:
         )
         assert resp.status_code == 404
 
-    def test_generate_test_batch_validation(self):
+    def test_generate_test_batch_validation(self) -> None:
         """Test test batch parameter validation."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -221,7 +220,7 @@ class TestBenchmarkDatasetsAPI:
         )
         assert resp.status_code == 422
 
-    def test_export_for_jailbreak(self):
+    def test_export_for_jailbreak(self) -> None:
         """Test exporting prompts for jailbreak testing."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -235,12 +234,12 @@ class TestBenchmarkDatasetsAPI:
         data = resp.json()
         assert isinstance(data, list)
 
-    def test_export_for_jailbreak_not_found(self):
+    def test_export_for_jailbreak_not_found(self) -> None:
         """Test export from non-existent dataset returns 404."""
         resp = self.client.get(f"{self.base_url}/nonexistent_dataset/export")
         assert resp.status_code == 404
 
-    def test_export_for_jailbreak_with_limit(self):
+    def test_export_for_jailbreak_with_limit(self) -> None:
         """Test export with limit parameter."""
         # First get available datasets
         datasets_resp = self.client.get(f"{self.base_url}/")
@@ -263,7 +262,7 @@ class TestBenchmarkPromptsFiltering:
     """Tests for prompt filtering capabilities."""
 
     @pytest.fixture(autouse=True)
-    def setup(self, client: TestClient):
+    def setup(self, client: TestClient) -> None:
         """Setup test client."""
         self.client = client
         self.base_url = "/api/v1/benchmark-datasets"
@@ -275,7 +274,7 @@ class TestBenchmarkPromptsFiltering:
             pytest.skip("No datasets available")
         return resp.json()[0]
 
-    def test_filter_by_risk_area(self):
+    def test_filter_by_risk_area(self) -> None:
         """Test filtering prompts by risk area."""
         dataset_name = self._get_first_dataset()
 
@@ -288,7 +287,7 @@ class TestBenchmarkPromptsFiltering:
         data = resp.json()
         assert isinstance(data, list)
 
-    def test_filter_by_harm_type(self):
+    def test_filter_by_harm_type(self) -> None:
         """Test filtering prompts by harm type."""
         dataset_name = self._get_first_dataset()
 
@@ -301,7 +300,7 @@ class TestBenchmarkPromptsFiltering:
         data = resp.json()
         assert isinstance(data, list)
 
-    def test_filter_by_severity(self):
+    def test_filter_by_severity(self) -> None:
         """Test filtering prompts by severity."""
         dataset_name = self._get_first_dataset()
 
@@ -314,7 +313,7 @@ class TestBenchmarkPromptsFiltering:
         data = resp.json()
         assert isinstance(data, list)
 
-    def test_combined_filters(self):
+    def test_combined_filters(self) -> None:
         """Test combining multiple filters."""
         dataset_name = self._get_first_dataset()
 
@@ -331,7 +330,7 @@ class TestBenchmarkPromptsFiltering:
         data = resp.json()
         assert isinstance(data, list)
 
-    def test_shuffle_prompts(self):
+    def test_shuffle_prompts(self) -> None:
         """Test shuffling prompts."""
         dataset_name = self._get_first_dataset()
 
@@ -358,7 +357,7 @@ class TestBenchmarkDatasetIntegrity:
     """Tests for data integrity and structure validation."""
 
     @pytest.fixture(autouse=True)
-    def setup(self, client: TestClient):
+    def setup(self, client: TestClient) -> None:
         """Setup test client."""
         self.client = client
         self.base_url = "/api/v1/benchmark-datasets"
@@ -370,7 +369,7 @@ class TestBenchmarkDatasetIntegrity:
             pytest.skip("No datasets available")
         return resp.json()[0]
 
-    def test_prompt_structure(self):
+    def test_prompt_structure(self) -> None:
         """Test that prompts have expected structure."""
         dataset_name = self._get_first_dataset()
 
@@ -388,7 +387,7 @@ class TestBenchmarkDatasetIntegrity:
         # Check expected fields exist
         assert "id" in prompt or "prompt" in prompt or "text" in prompt
 
-    def test_dataset_structure(self):
+    def test_dataset_structure(self) -> None:
         """Test that dataset info has expected structure."""
         dataset_name = self._get_first_dataset()
 
@@ -400,7 +399,7 @@ class TestBenchmarkDatasetIntegrity:
         # Should have basic info
         assert "name" in data or "prompts" in data
 
-    def test_export_format_for_autodan(self):
+    def test_export_format_for_autodan(self) -> None:
         """Test that export format is suitable for AutoDAN."""
         dataset_name = self._get_first_dataset()
 
@@ -423,26 +422,26 @@ class TestBenchmarkEndpointSecurity:
     """Security tests for benchmark dataset endpoints."""
 
     @pytest.fixture(autouse=True)
-    def setup(self, client: TestClient, sample_malicious_inputs):
+    def setup(self, client: TestClient, sample_malicious_inputs) -> None:
         """Setup test client and malicious inputs."""
         self.client = client
         self.base_url = "/api/v1/benchmark-datasets"
         self.malicious_inputs = sample_malicious_inputs
 
-    def test_sql_injection_in_dataset_name(self):
+    def test_sql_injection_in_dataset_name(self) -> None:
         """Test SQL injection prevention in dataset name."""
         malicious_name = "'; DROP TABLE datasets; --"
         resp = self.client.get(f"{self.base_url}/{malicious_name}")
         # Should return 404 (not found), not 500 (server error)
         assert resp.status_code in (404, 422)
 
-    def test_path_traversal_in_dataset_name(self):
+    def test_path_traversal_in_dataset_name(self) -> None:
         """Test path traversal prevention in dataset name."""
         malicious_name = "../../../etc/passwd"
         resp = self.client.get(f"{self.base_url}/{malicious_name}")
         assert resp.status_code in (404, 422)
 
-    def test_xss_in_filter_params(self):
+    def test_xss_in_filter_params(self) -> None:
         """Test XSS prevention in filter parameters."""
         datasets_resp = self.client.get(f"{self.base_url}/")
         if datasets_resp.status_code != 200 or not datasets_resp.json():
@@ -457,7 +456,7 @@ class TestBenchmarkEndpointSecurity:
         # Should not cause server error
         assert resp.status_code in (200, 404, 422)
 
-    def test_large_limit_value(self):
+    def test_large_limit_value(self) -> None:
         """Test handling of large limit values."""
         datasets_resp = self.client.get(f"{self.base_url}/")
         if datasets_resp.status_code != 200 or not datasets_resp.json():
@@ -472,7 +471,7 @@ class TestBenchmarkEndpointSecurity:
         # Should be rejected by validation
         assert resp.status_code == 422
 
-    def test_unicode_injection(self):
+    def test_unicode_injection(self) -> None:
         """Test Unicode injection handling."""
         malicious_name = "dataset\x00name"
         resp = self.client.get(f"{self.base_url}/{malicious_name}")
@@ -483,12 +482,12 @@ class TestBenchmarkPerformance:
     """Performance tests for benchmark dataset endpoints."""
 
     @pytest.fixture(autouse=True)
-    def setup(self, client: TestClient):
+    def setup(self, client: TestClient) -> None:
         """Setup test client."""
         self.client = client
         self.base_url = "/api/v1/benchmark-datasets"
 
-    def test_list_datasets_response_time(self):
+    def test_list_datasets_response_time(self) -> None:
         """Test that list datasets responds quickly."""
         import time
 
@@ -500,7 +499,7 @@ class TestBenchmarkPerformance:
         # Should respond within 2 seconds
         assert elapsed < 2.0
 
-    def test_prompts_pagination_performance(self):
+    def test_prompts_pagination_performance(self) -> None:
         """Test that prompts pagination is efficient."""
         datasets_resp = self.client.get(f"{self.base_url}/")
         if datasets_resp.status_code != 200 or not datasets_resp.json():

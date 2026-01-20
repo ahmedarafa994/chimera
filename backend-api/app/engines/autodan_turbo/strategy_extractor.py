@@ -1,5 +1,4 @@
-"""
-Strategy Extractor for AutoDAN-Turbo.
+"""Strategy Extractor for AutoDAN-Turbo.
 
 Uses LLM to extract reusable jailbreak strategies from successful attacks.
 Based on the paper's approach to strategy summarization and formalization.
@@ -60,21 +59,22 @@ MOST_SIMILAR: [Name of most similar existing strategy, or "None"]
 
 
 class StrategyExtractor:
-    """
-    Extracts reusable jailbreak strategies from successful attacks.
+    """Extracts reusable jailbreak strategies from successful attacks.
 
     Uses an LLM to analyze successful prompts and generalize them into
     reusable strategy templates that can be applied to new payloads.
     """
 
-    def __init__(self, llm_client, library: StrategyLibrary, min_novelty_threshold: float = 0.7):
-        """
-        Initialize the strategy extractor.
+    def __init__(
+        self, llm_client, library: StrategyLibrary, min_novelty_threshold: float = 0.7
+    ) -> None:
+        """Initialize the strategy extractor.
 
         Args:
             llm_client: LLM client for strategy extraction (LLMProviderClient)
             library: Strategy library for deduplication checks
             min_novelty_threshold: Minimum threshold for novelty (0-1)
+
         """
         self.llm_client = llm_client
         self.library = library
@@ -83,10 +83,13 @@ class StrategyExtractor:
         logger.info("StrategyExtractor initialized")
 
     async def extract(
-        self, prompt: str, response: str, score: float, check_novelty: bool = True
+        self,
+        prompt: str,
+        response: str,
+        score: float,
+        check_novelty: bool = True,
     ) -> JailbreakStrategy | None:
-        """
-        Extract a strategy from a successful attack.
+        """Extract a strategy from a successful attack.
 
         Args:
             prompt: The successful adversarial prompt
@@ -96,6 +99,7 @@ class StrategyExtractor:
 
         Returns:
             Extracted JailbreakStrategy, or None if extraction fails or duplicate
+
         """
         # Only extract from successful attacks
         if score < EXTRACTION_SCORE_THRESHOLD:
@@ -135,16 +139,17 @@ class StrategyExtractor:
             if success:
                 logger.info(f"Extracted new strategy: {strategy.name} ({strategy.id})")
                 return strategy
-            else:
-                logger.info(f"Strategy not added: {msg}")
-                return None
+            logger.info(f"Strategy not added: {msg}")
+            return None
 
         except Exception as e:
-            logger.error(f"Strategy extraction failed: {e}")
+            logger.exception(f"Strategy extraction failed: {e}")
             return None
 
     def _parse_extraction(
-        self, llm_response: str, original_prompt: str
+        self,
+        llm_response: str,
+        original_prompt: str,
     ) -> JailbreakStrategy | None:
         """Parse LLM extraction response into a JailbreakStrategy."""
         try:
@@ -213,7 +218,7 @@ class StrategyExtractor:
             )
 
         except Exception as e:
-            logger.error(f"Parse error: {e}")
+            logger.exception(f"Parse error: {e}")
             return None
 
     def _generalize_prompt(self, prompt: str) -> str:
@@ -270,7 +275,9 @@ class StrategyExtractor:
         return await self._embedding_novelty_check(strategy)
 
     async def _llm_novelty_check(
-        self, strategy: JailbreakStrategy, existing: list[JailbreakStrategy]
+        self,
+        strategy: JailbreakStrategy,
+        existing: list[JailbreakStrategy],
     ) -> bool:
         """Use LLM to check strategy novelty."""
         existing_summary = "\n".join([f"- {s.name}: {s.description}" for s in existing[:5]])
@@ -286,8 +293,7 @@ class StrategyExtractor:
             return True  # Default to novel if check fails
 
         # Parse response
-        is_novel = "NOVEL: YES" in response.upper()
-        return is_novel
+        return "NOVEL: YES" in response.upper()
 
     async def _embedding_novelty_check(self, strategy: JailbreakStrategy) -> bool:
         """Use embedding similarity for novelty check."""
@@ -311,26 +317,24 @@ class StrategyExtractor:
                 if hasattr(response, "content"):
                     return response.content
                 return str(response) if response else ""
-            elif hasattr(self.llm_client, "chat"):
+            if hasattr(self.llm_client, "chat"):
                 # Chat interface (already async)
-                response = await self.llm_client.chat(prompt)
-                return response
-            else:
-                logger.warning("Unknown LLM client interface")
-                return ""
+                return await self.llm_client.chat(prompt)
+            logger.warning("Unknown LLM client interface")
+            return ""
         except Exception as e:
-            logger.error(f"LLM call failed: {e}")
+            logger.exception(f"LLM call failed: {e}")
             return ""
 
     async def batch_extract(self, attacks: list[tuple[str, str, float]]) -> list[JailbreakStrategy]:
-        """
-        Extract strategies from multiple successful attacks.
+        """Extract strategies from multiple successful attacks.
 
         Args:
             attacks: List of (prompt, response, score) tuples
 
         Returns:
             List of extracted strategies
+
         """
         strategies = []
 

@@ -1,5 +1,4 @@
-"""
-Mousetrap API Endpoints - Chain of Iterative Chaos
+"""Mousetrap API Endpoints - Chain of Iterative Chaos.
 
 This module provides API endpoints for the Mousetrap technique, implementing
 "A Mousetrap: Fooling Large Reasoning Models for Jailbreak with
@@ -17,7 +16,7 @@ Schema Synchronization:
 
 import time
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Cookie, Header, status
 from pydantic import AliasChoices, Field, field_validator
@@ -38,8 +37,7 @@ def _resolve_model_context(
     x_session_id: str | None,
     chimera_cookie: str | None,
 ) -> tuple[str, str]:
-    """
-    Resolve target model/provider using hierarchy:
+    """Resolve target model/provider using hierarchy:
     explicit payload -> session -> global defaults, with validation/fallback.
     """
     session_id = x_session_id or chimera_cookie
@@ -73,8 +71,7 @@ StrictModel = StrictBaseModel
 
 
 class MousetrapRequest(StrictModel):
-    """
-    Request model for Mousetrap Chain of Iterative Chaos attacks.
+    """Request model for Mousetrap Chain of Iterative Chaos attacks.
 
     Unified Schema Fields:
     - `goal`: Alias for `request` (unified naming)
@@ -110,22 +107,40 @@ class MousetrapRequest(StrictModel):
     # Mousetrap-specific parameters
     iterations: int | None = Field(None, ge=1, le=10, description="Iterative refinement steps")
     max_chain_length: int | None = Field(
-        None, ge=3, le=15, description="Max steps in chaotic chain"
+        None,
+        ge=3,
+        le=15,
+        description="Max steps in chaotic chain",
     )
     chaos_escalation_rate: float | None = Field(
-        None, ge=0.05, le=0.5, description="Chaos escalation rate"
+        None,
+        ge=0.05,
+        le=0.5,
+        description="Chaos escalation rate",
     )
     confidence_threshold: float | None = Field(
-        None, ge=0.0, le=1.0, description="Confidence threshold"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Confidence threshold",
     )
     misdirection_probability: float | None = Field(
-        None, ge=0.0, le=0.8, description="Misdirection probability"
+        None,
+        ge=0.0,
+        le=0.8,
+        description="Misdirection probability",
     )
     reasoning_complexity: int | None = Field(
-        None, ge=1, le=5, description="Reasoning complexity level"
+        None,
+        ge=1,
+        le=5,
+        description="Reasoning complexity level",
     )
     semantic_obfuscation_level: float | None = Field(
-        None, ge=0.0, le=1.0, description="Semantic obfuscation level"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Semantic obfuscation level",
     )
 
     # OVERTHINK fusion parameters
@@ -143,7 +158,8 @@ class MousetrapRequest(StrictModel):
     def _strip_request(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("request/goal cannot be empty")
+            msg = "request/goal cannot be empty"
+            raise ValueError(msg)
         return stripped
 
     # Unified property aliases
@@ -185,8 +201,7 @@ class MousetrapRequest(StrictModel):
 
 
 class AdaptiveMousetrapRequest(StrictModel):
-    """
-    Request model for adaptive Mousetrap attacks that learn from responses.
+    """Request model for adaptive Mousetrap attacks that learn from responses.
 
     Unified Schema Fields:
     - `goal`: Alias for `request` (unified naming)
@@ -234,7 +249,8 @@ class AdaptiveMousetrapRequest(StrictModel):
     def _strip_request(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("request/goal cannot be empty")
+            msg = "request/goal cannot be empty"
+            raise ValueError(msg)
         return stripped
 
     @field_validator("target_responses")
@@ -243,7 +259,8 @@ class AdaptiveMousetrapRequest(StrictModel):
         if value is None:
             return None
         if len(value) > 10:
-            raise ValueError("Too many target responses (max 10)")
+            msg = "Too many target responses (max 10)"
+            raise ValueError(msg)
         return [resp.strip() for resp in value if resp.strip()]
 
 
@@ -258,8 +275,7 @@ class MousetrapReasoningStep(StrictModel):
 
 
 class MousetrapResponse(StrictModel):
-    """
-    Response model for Mousetrap attacks.
+    """Response model for Mousetrap attacks.
 
     Unified Schema Fields:
     - `generated_prompt`: Alias for `prompt` (unified naming)
@@ -301,10 +317,12 @@ class MousetrapResponse(StrictModel):
 
     # Optional detailed information
     reasoning_steps: list[MousetrapReasoningStep] | None = Field(
-        None, description="Detailed reasoning step breakdown"
+        None,
+        description="Detailed reasoning step breakdown",
     )
     intermediate_responses: list[str] | None = Field(
-        None, description="Intermediate model responses"
+        None,
+        description="Intermediate model responses",
     )
 
     # OVERTHINK integration (unified)
@@ -341,7 +359,8 @@ class MousetrapConfigOptionsResponse(StrictModel):
     """Response model for Mousetrap configuration options."""
 
     configuration_options: dict[str, Any] = Field(
-        ..., description="Config options and descriptions"
+        ...,
+        description="Config options and descriptions",
     )
 
 
@@ -355,11 +374,10 @@ class MousetrapConfigOptionsResponse(StrictModel):
 )
 async def run_mousetrap_attack(
     request: MousetrapRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Run a Mousetrap attack using Chain of Iterative Chaos.
+    """Run a Mousetrap attack using Chain of Iterative Chaos.
 
     The Mousetrap technique creates multi-step reasoning chains that
     gradually introduce chaos and confusion to bypass safety measures
@@ -463,11 +481,10 @@ async def run_mousetrap_attack(
 )
 async def run_adaptive_mousetrap_attack(
     request: AdaptiveMousetrapRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Run an adaptive Mousetrap attack that learns from previous responses.
+    """Run an adaptive Mousetrap attack that learns from previous responses.
 
     This endpoint implements adaptive behavior where the Mousetrap
     configuration is automatically adjusted based on analysis of
@@ -574,8 +591,7 @@ async def run_adaptive_mousetrap_attack(
     default_error_message="Failed to fetch Mousetrap configuration options",
 )
 async def get_mousetrap_config_options():
-    """
-    Get available Mousetrap configuration options and their descriptions.
+    """Get available Mousetrap configuration options and their descriptions.
 
     This endpoint provides detailed information about all configurable
     parameters for the Mousetrap technique, including their types,
@@ -614,11 +630,10 @@ async def run_simple_mousetrap_attack(
     request: str,
     model: str | None = None,
     provider: str | None = None,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Simplified Mousetrap attack endpoint for basic use cases.
+    """Simplified Mousetrap attack endpoint for basic use cases.
 
     This is a convenience endpoint that runs a Mousetrap attack with default
     parameters and returns only the generated prompt.

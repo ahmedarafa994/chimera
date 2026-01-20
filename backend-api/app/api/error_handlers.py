@@ -1,5 +1,4 @@
-"""
-Standardized API error handling for backend routes.
+"""Standardized API error handling for backend routes.
 
 HIGH-002 FIX: Enhanced exception handling with comprehensive coverage
 for all error types including circuit breaker, async, and provider errors.
@@ -28,10 +27,10 @@ T = TypeVar("T")
 
 
 def api_error_handler(
-    operation_name: str, default_error_message: str = "An unexpected error occurred"
+    operation_name: str,
+    default_error_message: str = "An unexpected error occurred",
 ):
-    """
-    Decorator for standardized API error handling.
+    """Decorator for standardized API error handling.
 
     Features:
     - Maps known exceptions to appropriate HTTP status codes
@@ -94,7 +93,7 @@ def api_error_handler(
                 ) from e
 
             except TimeoutError as e:
-                logger.error(f"[{request_id}] {operation_name} timeout: {e}")
+                logger.exception(f"[{request_id}] {operation_name} timeout: {e}")
                 raise HTTPException(
                     status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                     detail={
@@ -105,7 +104,7 @@ def api_error_handler(
                 ) from e
 
             except ConnectionError as e:
-                logger.error(f"[{request_id}] {operation_name} connection error: {e}")
+                logger.exception(f"[{request_id}] {operation_name} connection error: {e}")
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail={
@@ -119,7 +118,7 @@ def api_error_handler(
                 # HIGH-002 FIX: Handle circuit breaker open state
                 logger.warning(
                     f"[{request_id}] {operation_name} circuit breaker open: "
-                    f"{e.name}, retry after {e.retry_after:.1f}s"
+                    f"{e.name}, retry after {e.retry_after:.1f}s",
                 )
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -160,7 +159,7 @@ def api_error_handler(
 
             except PermissionError as e:
                 # HIGH-002 FIX: Handle permission errors
-                logger.error(f"[{request_id}] {operation_name} permission error: {e}")
+                logger.exception(f"[{request_id}] {operation_name} permission error: {e}")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
@@ -185,7 +184,7 @@ def api_error_handler(
             except Exception as e:
                 # Unexpected errors - log full details, return sanitized message
                 logger.exception(
-                    f"[{request_id}] {operation_name} unexpected error: {type(e).__name__}: {e}"
+                    f"[{request_id}] {operation_name} unexpected error: {type(e).__name__}: {e}",
                 )
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -202,8 +201,7 @@ def api_error_handler(
 
 
 class ErrorResponseBuilder:
-    """
-    Builder for consistent error responses.
+    """Builder for consistent error responses.
 
     Usage:
         raise ErrorResponseBuilder.bad_request("Invalid input", field="prompt")
@@ -249,7 +247,8 @@ class ErrorResponseBuilder:
     def forbidden(message: str = "Access denied") -> HTTPException:
         """Create a 403 Forbidden response."""
         return HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail={"error": "FORBIDDEN", "message": message}
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "FORBIDDEN", "message": message},
         )
 
     @staticmethod
@@ -264,7 +263,9 @@ class ErrorResponseBuilder:
 
     @staticmethod
     def rate_limited(
-        retry_after: int, limit: int | None = None, window: str = "minute"
+        retry_after: int,
+        limit: int | None = None,
+        window: str = "minute",
     ) -> HTTPException:
         """Create a 429 Too Many Requests response."""
         message = "Rate limit exceeded"
@@ -294,7 +295,8 @@ class ErrorResponseBuilder:
 
     @staticmethod
     def payload_too_large(
-        max_size: int | None = None, actual_size: int | None = None
+        max_size: int | None = None,
+        actual_size: int | None = None,
     ) -> HTTPException:
         """Create a 413 Payload Too Large response."""
         message = "Request payload is too large"
@@ -329,7 +331,8 @@ class ErrorResponseBuilder:
 
     @staticmethod
     def service_unavailable(
-        service: str | None = None, message: str | None = None
+        service: str | None = None,
+        message: str | None = None,
     ) -> HTTPException:
         """Create a 503 Service Unavailable response."""
         error_message = message or "Service temporarily unavailable"
@@ -415,7 +418,8 @@ async def llm_exception_handler(request: Request, exc: LLMProviderError) -> JSON
 
 
 async def circuit_breaker_exception_handler(
-    request: Request, exc: CircuitBreakerOpen
+    request: Request,
+    exc: CircuitBreakerOpen,
 ) -> JSONResponse:
     """Handler for circuit breaker open errors."""
     request_id = f"req_{uuid.uuid4().hex[:12]}"
@@ -437,8 +441,7 @@ async def circuit_breaker_exception_handler(
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """
-    Global fallback handler for unhandled exceptions.
+    """Global fallback handler for unhandled exceptions.
 
     HIGH-002 FIX: Ensures no unhandled exceptions leak internal details.
     """
@@ -457,9 +460,8 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
 
 
-def register_exception_handlers(app):
-    """
-    Register all custom exception handlers with FastAPI app.
+def register_exception_handlers(app) -> None:
+    """Register all custom exception handlers with FastAPI app.
 
     HIGH-002 FIX: Enhanced to include circuit breaker and generic handlers.
 

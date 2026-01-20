@@ -1,5 +1,4 @@
-"""
-Admin Endpoints for Feature Flag and System Management
+"""Admin Endpoints for Feature Flag and System Management.
 
 Provides administrative controls for:
 - Feature flag management
@@ -14,7 +13,7 @@ Part of Phase 7: Admin User Management.
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -80,7 +79,6 @@ async def verify_admin_api_key(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
     """Verify API key for admin endpoints using timing-safe comparison."""
-
     if not credentials or not settings.CHIMERA_API_KEY:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -104,11 +102,10 @@ async def verify_admin_api_key(
 
 @router.get("/feature-flags", response_model=TechniqueListResponse)
 async def list_feature_flags(
-    _api_key: str = Depends(verify_admin_api_key),
-    flags: FeatureFlagService = Depends(get_feature_flags),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    flags: Annotated[FeatureFlagService, Depends(get_feature_flags)],
 ):
-    """
-    List all technique configurations with their feature flags.
+    """List all technique configurations with their feature flags.
 
     Returns all techniques with their enabled status, risk levels,
     and approval requirements.
@@ -124,7 +121,7 @@ async def list_feature_flags(
                     "risk_level": config.get("risk_level", "unknown"),
                     "requires_approval": config.get("requires_approval", False),
                     "description": config.get("description", ""),
-                }
+                },
             )
 
     # Also include disabled techniques
@@ -141,7 +138,7 @@ async def list_feature_flags(
                     "risk_level": config.get("risk_level", "unknown"),
                     "requires_approval": config.get("requires_approval", False),
                     "description": config.get("description", ""),
-                }
+                },
             )
 
     return TechniqueListResponse(techniques=techniques, total_count=len(techniques))
@@ -149,11 +146,10 @@ async def list_feature_flags(
 
 @router.get("/feature-flags/stats", response_model=FeatureFlagStatsResponse)
 async def get_feature_flag_stats(
-    _api_key: str = Depends(verify_admin_api_key),
-    flags: FeatureFlagService = Depends(get_feature_flags),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    flags: Annotated[FeatureFlagService, Depends(get_feature_flags)],
 ):
-    """
-    Get statistics about feature flag configuration.
+    """Get statistics about feature flag configuration.
 
     Returns counts by risk level, enabled/disabled status,
     and approval requirements.
@@ -165,11 +161,10 @@ async def get_feature_flag_stats(
 @router.post("/feature-flags/toggle", response_model=TechniqueToggleResponse)
 async def toggle_feature_flag(
     request: TechniqueToggleRequest,
-    _api_key: str = Depends(verify_admin_api_key),
-    flags: FeatureFlagService = Depends(get_feature_flags),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    flags: Annotated[FeatureFlagService, Depends(get_feature_flags)],
 ):
-    """
-    Toggle a technique's enabled status.
+    """Toggle a technique's enabled status.
 
     Note: This is a runtime change and does NOT persist to disk.
     For permanent changes, modify techniques.yaml directly.
@@ -194,11 +189,10 @@ async def toggle_feature_flag(
 
 @router.post("/feature-flags/reload")
 async def reload_feature_flags(
-    _api_key: str = Depends(verify_admin_api_key),
-    flags: FeatureFlagService = Depends(get_feature_flags),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    flags: Annotated[FeatureFlagService, Depends(get_feature_flags)],
 ):
-    """
-    Reload feature flag configuration from disk.
+    """Reload feature flag configuration from disk.
 
     Use this after modifying techniques.yaml to apply changes
     without restarting the server.
@@ -223,17 +217,16 @@ async def reload_feature_flags(
 @router.get("/feature-flags/{technique_name}")
 async def get_technique_details(
     technique_name: str,
-    _api_key: str = Depends(verify_admin_api_key),
-    flags: FeatureFlagService = Depends(get_feature_flags),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    flags: Annotated[FeatureFlagService, Depends(get_feature_flags)],
 ):
-    """
-    Get detailed configuration for a specific technique.
-    """
+    """Get detailed configuration for a specific technique."""
     config = flags.get_technique_config(technique_name)
 
     if config is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Technique '{technique_name}' not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Technique '{technique_name}' not found",
         )
 
     return {"name": technique_name, **config}
@@ -262,8 +255,8 @@ class TenantResponse(BaseModel):
 
 @router.get("/tenants")
 async def list_tenants(
-    _api_key: str = Depends(verify_admin_api_key),
-    tenants: TenantService = Depends(get_tenant_service),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    tenants: Annotated[TenantService, Depends(get_tenant_service)],
 ):
     """List all tenants."""
     tenant_list = tenants.list_tenants()
@@ -286,8 +279,8 @@ async def list_tenants(
 @router.post("/tenants", response_model=TenantResponse)
 async def create_tenant(
     request: CreateTenantRequest,
-    _api_key: str = Depends(verify_admin_api_key),
-    tenants: TenantService = Depends(get_tenant_service),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    tenants: Annotated[TenantService, Depends(get_tenant_service)],
 ):
     """Create a new tenant."""
     try:
@@ -297,7 +290,10 @@ async def create_tenant(
 
     try:
         tenant = tenants.create_tenant(
-            tenant_id=request.tenant_id, name=request.name, tier=tier, api_key=request.api_key
+            tenant_id=request.tenant_id,
+            name=request.name,
+            tier=tier,
+            api_key=request.api_key,
         )
         return TenantResponse(
             tenant_id=tenant.tenant_id,
@@ -314,8 +310,8 @@ async def create_tenant(
 @router.get("/tenants/{tenant_id}")
 async def get_tenant(
     tenant_id: str,
-    _api_key: str = Depends(verify_admin_api_key),
-    tenants: TenantService = Depends(get_tenant_service),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    tenants: Annotated[TenantService, Depends(get_tenant_service)],
 ):
     """Get tenant details."""
     tenant = tenants.get_tenant(tenant_id)
@@ -339,22 +335,23 @@ async def get_tenant(
 @router.delete("/tenants/{tenant_id}")
 async def delete_tenant(
     tenant_id: str,
-    _api_key: str = Depends(verify_admin_api_key),
-    tenants: TenantService = Depends(get_tenant_service),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    tenants: Annotated[TenantService, Depends(get_tenant_service)],
 ):
     """Delete a tenant."""
     success = tenants.delete_tenant(tenant_id)
     if not success:
         raise HTTPException(
-            status_code=404, detail=f"Tenant not found or cannot delete: {tenant_id}"
+            status_code=404,
+            detail=f"Tenant not found or cannot delete: {tenant_id}",
         )
     return {"success": True, "message": f"Tenant {tenant_id} deleted"}
 
 
 @router.get("/tenants/stats/summary")
 async def get_tenant_statistics(
-    _api_key: str = Depends(verify_admin_api_key),
-    tenants: TenantService = Depends(get_tenant_service),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    tenants: Annotated[TenantService, Depends(get_tenant_service)],
 ):
     """Get tenant statistics."""
     return tenants.get_statistics()
@@ -367,8 +364,8 @@ async def get_tenant_statistics(
 
 @router.get("/usage/global")
 async def get_global_usage(
-    _api_key: str = Depends(verify_admin_api_key),
-    tracker: UsageTracker = Depends(get_usage_tracker),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    tracker: Annotated[UsageTracker, Depends(get_usage_tracker)],
 ):
     """Get global usage statistics."""
     return tracker.get_global_statistics()
@@ -415,9 +412,9 @@ async def get_top_techniques(
 @router.get("/usage/quota/{tenant_id}")
 async def check_tenant_quota(
     tenant_id: str,
-    _api_key: str = Depends(verify_admin_api_key),
-    tenants: TenantService = Depends(get_tenant_service),
-    tracker: UsageTracker = Depends(get_usage_tracker),
+    _api_key: Annotated[str, Depends(verify_admin_api_key)],
+    tenants: Annotated[TenantService, Depends(get_tenant_service)],
+    tracker: Annotated[UsageTracker, Depends(get_usage_tracker)],
 ):
     """Check quota status for a tenant."""
     tenant = tenants.get_tenant(tenant_id)
@@ -469,7 +466,7 @@ class AdminUserResponse(BaseModel):
                 "created_at": "2024-01-15T10:30:00Z",
                 "updated_at": "2024-01-20T14:45:00Z",
                 "last_login": "2024-01-25T09:00:00Z",
-            }
+            },
         }
 
 
@@ -499,14 +496,14 @@ class AdminUserListResponse(BaseModel):
                         "created_at": "2024-01-01T00:00:00Z",
                         "updated_at": None,
                         "last_login": "2024-01-25T10:00:00Z",
-                    }
+                    },
                 ],
                 "total": 25,
                 "page": 1,
                 "page_size": 20,
                 "has_more": True,
                 "filters": {"role": "admin", "is_active": True},
-            }
+            },
         }
 
 
@@ -545,7 +542,7 @@ class AdminUpdateUserRequest(BaseModel):
             "example": {
                 "role": "researcher",
                 "username": "new_username",
-            }
+            },
         }
 
 
@@ -570,7 +567,7 @@ class AdminUserDetailResponse(BaseModel):
                     "updated_at": "2024-01-20T14:45:00Z",
                     "last_login": "2024-01-25T09:00:00Z",
                 },
-            }
+            },
         }
 
 
@@ -642,7 +639,8 @@ class AdminInviteUserRequest(BaseModel):
         valid_roles = ["admin", "researcher", "viewer"]
         v_lower = v.lower()
         if v_lower not in valid_roles:
-            raise ValueError(f"Invalid role: {v}. Valid roles are: {', '.join(valid_roles)}")
+            msg = f"Invalid role: {v}. Valid roles are: {', '.join(valid_roles)}"
+            raise ValueError(msg)
         return v_lower
 
     @field_validator("username")
@@ -655,8 +653,9 @@ class AdminInviteUserRequest(BaseModel):
         import re
 
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", v):
+            msg = "Username must start with a letter and contain only letters, numbers, underscores, or hyphens"
             raise ValueError(
-                "Username must start with a letter and contain only letters, numbers, underscores, or hyphens"
+                msg,
             )
         return v
 
@@ -666,7 +665,7 @@ class AdminInviteUserRequest(BaseModel):
                 "email": "researcher@example.com",
                 "role": "researcher",
                 "username": "new_researcher",
-            }
+            },
         }
 
 
@@ -691,7 +690,7 @@ class AdminInviteUserResponse(BaseModel):
                 "role": "researcher",
                 "invitation_expires_at": "2024-01-25T10:00:00Z",
                 "username": "newuser",
-            }
+            },
         }
 
 
@@ -708,7 +707,7 @@ class AdminInviteUserErrorResponse(BaseModel):
                 "success": False,
                 "error": "Email is already registered",
                 "email": "existing@example.com",
-            }
+            },
         }
 
 
@@ -718,8 +717,7 @@ class AdminInviteUserErrorResponse(BaseModel):
 
 
 async def get_db_session() -> AsyncSession:
-    """
-    Get an async database session for admin endpoints.
+    """Get an async database session for admin endpoints.
 
     Yields a session and ensures proper cleanup.
     """
@@ -739,8 +737,7 @@ async def _get_admin_user(
     current_user: TokenPayload,
     session: AsyncSession,
 ) -> User:
-    """
-    Get the authenticated admin user from the JWT token.
+    """Get the authenticated admin user from the JWT token.
 
     Args:
         current_user: Token payload from JWT authentication
@@ -751,6 +748,7 @@ async def _get_admin_user(
 
     Raises:
         HTTPException: If user not found, is API client, or not admin
+
     """
     # Check if this is an API client (not a database user)
     if current_user.type == "api_key" or current_user.sub == "api_client":
@@ -791,7 +789,7 @@ async def _get_admin_user(
     # Check admin role
     if user.role != UserRole.ADMIN:
         admin_logger.warning(
-            f"Non-admin user {user_id} attempted to access admin endpoint (role: {user.role})"
+            f"Non-admin user {user_id} attempted to access admin endpoint (role: {user.role})",
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -802,8 +800,7 @@ async def _get_admin_user(
 
 
 def _user_to_admin_response(user: User) -> AdminUserResponse:
-    """
-    Convert a User model to an AdminUserResponse.
+    """Convert a User model to an AdminUserResponse.
 
     Sanitizes user data by excluding sensitive fields like password hash.
 
@@ -812,6 +809,7 @@ def _user_to_admin_response(user: User) -> AdminUserResponse:
 
     Returns:
         AdminUserResponse with safe user data
+
     """
     return AdminUserResponse(
         id=user.id,
@@ -834,7 +832,6 @@ def _user_to_admin_response(user: User) -> AdminUserResponse:
 @router.get(
     "/users",
     status_code=status.HTTP_200_OK,
-    response_model=AdminUserListResponse,
     summary="List all users (Admin only)",
     description="""
 List all users in the system with pagination, filtering, and search capabilities.
@@ -898,32 +895,27 @@ List all users in the system with pagination, filtering, and search capabilities
 )
 async def list_users(
     request: Request,
-    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
-    page_size: int = Query(20, ge=1, le=100, description="Number of results per page"),
-    role: str | None = Query(
-        None,
-        description="Filter by role: admin, researcher, viewer",
-        examples=["admin", "researcher", "viewer"],
-    ),
-    is_active: bool | None = Query(
-        None,
-        description="Filter by active status",
-    ),
-    is_verified: bool | None = Query(
-        None,
-        description="Filter by verification status",
-    ),
-    search: str | None = Query(
-        None,
-        min_length=1,
-        max_length=100,
-        description="Search by email or username (partial match)",
-    ),
+    page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Number of results per page")] = 20,
+    role: Annotated[
+        str | None,
+        Query(
+            description="Filter by role: admin, researcher, viewer",
+            examples=["admin", "researcher", "viewer"],
+        ),
+    ] = None,
+    is_active: Annotated[bool | None, Query(description="Filter by active status")] = None,
+    is_verified: Annotated[bool | None, Query(description="Filter by verification status")] = None,
+    search: Annotated[
+        str | None,
+        Query(
+            min_length=1, max_length=100, description="Search by email or username (partial match)"
+        ),
+    ] = None,
     current_user: TokenPayload = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session),
 ) -> AdminUserListResponse:
-    """
-    List all users with pagination, filtering, and search.
+    """List all users with pagination, filtering, and search.
 
     Admin-only endpoint. Returns a paginated list of users.
     """
@@ -1002,7 +994,7 @@ async def list_users(
 
     admin_logger.info(
         f"Admin {admin_user.id} listed users: page={page}, total={total}, "
-        f"filters={applied_filters}"
+        f"filters={applied_filters}",
     )
 
     return AdminUserListResponse(
@@ -1019,7 +1011,6 @@ async def list_users(
 @router.get(
     "/users/{user_id}",
     status_code=status.HTTP_200_OK,
-    response_model=AdminUserDetailResponse,
     summary="Get user details (Admin only)",
     description="""
 Get detailed information about a specific user.
@@ -1053,11 +1044,10 @@ Get detailed information about a specific user.
 async def get_user_details(
     request: Request,
     user_id: int,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AdminUserDetailResponse:
-    """
-    Get detailed information about a specific user.
+    """Get detailed information about a specific user.
 
     Admin-only endpoint for viewing user details.
     """
@@ -1109,7 +1099,6 @@ async def get_user_details(
 @router.put(
     "/users/{user_id}",
     status_code=status.HTTP_200_OK,
-    response_model=AdminUserUpdateResponse,
     summary="Update user (Admin only)",
     description="""
 Update a user's role, username, or status.
@@ -1161,11 +1150,10 @@ async def update_user(
     request: Request,
     user_id: int,
     update_request: AdminUpdateUserRequest,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AdminUserUpdateResponse:
-    """
-    Update a user's role, username, or status.
+    """Update a user's role, username, or status.
 
     Admin-only endpoint for modifying user accounts.
     """
@@ -1188,7 +1176,7 @@ async def update_user(
 
     if not target_user:
         admin_logger.warning(
-            f"Admin {admin_user.id} attempted to update non-existent user {user_id}"
+            f"Admin {admin_user.id} attempted to update non-existent user {user_id}",
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1200,7 +1188,7 @@ async def update_user(
         target_role = update_request.role.lower()
         if target_role != "admin":
             admin_logger.warning(
-                f"Admin {admin_user.id} attempted to demote themselves from admin role"
+                f"Admin {admin_user.id} attempted to demote themselves from admin role",
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -1299,7 +1287,7 @@ async def update_user(
     )
 
     admin_logger.info(
-        f"Admin {admin_user.id} updated user {user_id} ({target_user.email}): changes={changes}"
+        f"Admin {admin_user.id} updated user {user_id} ({target_user.email}): changes={changes}",
     )
 
     return AdminUserUpdateResponse(
@@ -1313,7 +1301,6 @@ async def update_user(
 @router.delete(
     "/users/{user_id}",
     status_code=status.HTTP_200_OK,
-    response_model=AdminUserDeleteResponse,
     summary="Delete user (Admin only)",
     description="""
 Permanently delete a user account.
@@ -1356,11 +1343,10 @@ Permanently delete a user account.
 async def delete_user(
     request: Request,
     user_id: int,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AdminUserDeleteResponse:
-    """
-    Permanently delete a user account.
+    """Permanently delete a user account.
 
     Admin-only endpoint. This action is irreversible.
     """
@@ -1391,7 +1377,7 @@ async def delete_user(
 
     if not target_user:
         admin_logger.warning(
-            f"Admin {admin_user.id} attempted to delete non-existent user {user_id}"
+            f"Admin {admin_user.id} attempted to delete non-existent user {user_id}",
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1438,7 +1424,6 @@ async def delete_user(
 @router.post(
     "/users/{user_id}/activate",
     status_code=status.HTTP_200_OK,
-    response_model=AdminUserActivateResponse,
     summary="Activate user (Admin only)",
     description="""
 Activate a deactivated user account.
@@ -1475,11 +1460,10 @@ Activate a deactivated user account.
 async def activate_user(
     request: Request,
     user_id: int,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AdminUserActivateResponse:
-    """
-    Activate a deactivated user account.
+    """Activate a deactivated user account.
 
     Admin-only endpoint for restoring user access.
     """
@@ -1502,7 +1486,7 @@ async def activate_user(
 
     if not target_user:
         admin_logger.warning(
-            f"Admin {admin_user.id} attempted to activate non-existent user {user_id}"
+            f"Admin {admin_user.id} attempted to activate non-existent user {user_id}",
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1556,7 +1540,6 @@ async def activate_user(
 @router.post(
     "/users/{user_id}/deactivate",
     status_code=status.HTTP_200_OK,
-    response_model=AdminUserActivateResponse,
     summary="Deactivate user (Admin only)",
     description="""
 Deactivate a user account.
@@ -1598,11 +1581,10 @@ Deactivate a user account.
 async def deactivate_user(
     request: Request,
     user_id: int,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AdminUserActivateResponse:
-    """
-    Deactivate a user account.
+    """Deactivate a user account.
 
     Admin-only endpoint for suspending user access.
     """
@@ -1633,7 +1615,7 @@ async def deactivate_user(
 
     if not target_user:
         admin_logger.warning(
-            f"Admin {admin_user.id} attempted to deactivate non-existent user {user_id}"
+            f"Admin {admin_user.id} attempted to deactivate non-existent user {user_id}",
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1698,14 +1680,14 @@ async def _send_invitation_email(
     role: str,
     invitation_token: str,
 ) -> None:
-    """
-    Background task to send invitation email.
+    """Background task to send invitation email.
 
     Args:
         email: Recipient email address
         inviter_name: Name of the admin who sent the invitation
         role: Role being assigned to the invited user
         invitation_token: Invitation token for the accept link
+
     """
     try:
         email_service = get_email_service()
@@ -1728,7 +1710,6 @@ async def _send_invitation_email(
 @router.post(
     "/users/invite",
     status_code=status.HTTP_201_CREATED,
-    response_model=AdminInviteUserResponse,
     summary="Invite new user (Admin only)",
     description="""
 Invite a new user to the system with a specific role.
@@ -1779,11 +1760,10 @@ async def invite_user(
     request: Request,
     invite_request: AdminInviteUserRequest,
     background_tasks: BackgroundTasks,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AdminInviteUserResponse:
-    """
-    Invite a new user to the system with a specific role.
+    """Invite a new user to the system with a specific role.
 
     Admin-only endpoint for user invitations.
     """
@@ -1798,7 +1778,7 @@ async def invite_user(
     existing_user = await user_repo.get_by_email(invite_request.email)
     if existing_user:
         admin_logger.warning(
-            f"Admin {admin_user.id} attempted to invite already registered email: {invite_request.email}"
+            f"Admin {admin_user.id} attempted to invite already registered email: {invite_request.email}",
         )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -1882,7 +1862,7 @@ async def invite_user(
     )
 
     admin_logger.info(
-        f"Admin {admin_user.id} invited user {new_user.email} as {invite_request.role} (user_id={new_user.id})"
+        f"Admin {admin_user.id} invited user {new_user.email} as {invite_request.role} (user_id={new_user.id})",
     )
 
     # Send invitation email in background

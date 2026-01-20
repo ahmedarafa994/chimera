@@ -1,5 +1,4 @@
-"""
-OVERTHINK Engine Module.
+"""OVERTHINK Engine Module.
 
 This module implements reasoning token exploitation attacks targeting
 reasoning-enhanced LLMs such as o1, o1-mini, o3-mini, and DeepSeek-R1.
@@ -75,13 +74,13 @@ Injection Strategies:
 
 # Configuration
 from .config import (
-                     DecoyConfig,
-                     ICLConfig,
-                     InjectionConfig,
-                     MousetrapConfig,
-                     OverthinkConfig,
-                     ScoringConfig,
-                     TechniqueConfig,
+    DecoyConfig,
+    ICLConfig,
+    InjectionConfig,
+    MousetrapConfig,
+    OverthinkConfig,
+    ScoringConfig,
+    TechniqueConfig,
 )
 
 # Context injection
@@ -98,20 +97,20 @@ from .icl_genetic_optimizer import ExampleSelector, ICLGeneticOptimizer
 
 # Data models
 from .models import (
-                     AttackTechnique,
-                     CostMetrics,
-                     DecoyProblem,
-                     DecoyType,
-                     GeneticIndividual,
-                     ICLExample,
-                     InjectedPrompt,
-                     InjectionStrategy,
-                     MousetrapIntegration,
-                     OverthinkRequest,
-                     OverthinkResult,
-                     OverthinkStats,
-                     ReasoningModel,
-                     TokenMetrics,
+    AttackTechnique,
+    CostMetrics,
+    DecoyProblem,
+    DecoyType,
+    GeneticIndividual,
+    ICLExample,
+    InjectedPrompt,
+    InjectionStrategy,
+    MousetrapIntegration,
+    OverthinkRequest,
+    OverthinkResult,
+    OverthinkStats,
+    ReasoningModel,
+    TokenMetrics,
 )
 
 # Scoring and analysis

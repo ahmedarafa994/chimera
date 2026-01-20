@@ -21,8 +21,8 @@ if spacy:
     try:
         nlp = spacy.load("en_core_web_sm")
     except OSError:
-        logging.error(
-            "SpaCy model 'en_core_web_sm' not found. Please run 'python -m spacy download en_core_web_sm'"
+        logging.exception(
+            "SpaCy model 'en_core_web_sm' not found. Please run 'python -m spacy download en_core_web_sm'",
         )
         nlp = None
 else:
@@ -31,8 +31,7 @@ else:
 
 
 def deconstruct_intent(core_request: str) -> dict:
-    """
-    Performs a deep semantic analysis of the core_request to extract the fundamental user goal.
+    """Performs a deep semantic analysis of the core_request to extract the fundamental user goal.
     Prioritizes using Google Gemini (if available) for advanced cognitive understanding.
     Falls back to SpaCy or basic extraction if the AI Brain is unavailable.
 
@@ -41,8 +40,8 @@ def deconstruct_intent(core_request: str) -> dict:
 
     Returns:
         A dictionary containing the deconstructed elements of the intent.
-    """
 
+    """
     # --- AI BRAIN INTENT ANALYSIS ---
     api_key = os.environ.get("GEMINI_API_KEY")
 
@@ -72,10 +71,8 @@ def deconstruct_intent(core_request: str) -> dict:
             if response:
                 # clean potential markdown code blocks
                 content = response.strip()
-                if content.startswith("```json"):
-                    content = content[7:]
-                if content.endswith("```"):
-                    content = content[:-3]
+                content = content.removeprefix("```json")
+                content = content.removesuffix("```")
 
                 ai_data = json.loads(content.strip())
                 ai_data["raw_text"] = core_request
@@ -124,7 +121,7 @@ def deconstruct_intent(core_request: str) -> dict:
         ', '.join(entities) if entities else 'unspecified entities'
     }"
 
-    analysis = {
+    return {
         "true_intent": intent_summary,
         "entities": entities,
         "actions": actions,
@@ -132,13 +129,9 @@ def deconstruct_intent(core_request: str) -> dict:
         "raw_text": core_request,
     }
 
-    return analysis
-
 
 class IntentDeconstructor:
-    """
-    Class-based wrapper for intent deconstruction logic.
-    """
+    """Class-based wrapper for intent deconstruction logic."""
 
     def deconstruct(self, core_request: str) -> dict:
         return deconstruct_intent(core_request)

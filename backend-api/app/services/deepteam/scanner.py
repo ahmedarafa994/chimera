@@ -1,5 +1,4 @@
-"""
-DeepTeam Scanner Module
+"""DeepTeam Scanner Module.
 
 Standalone scanner service for scheduled security scans.
 Can be run as a Docker service or CLI tool.
@@ -30,8 +29,7 @@ async def run_scheduled_scan(
     target_url: str | None = None,
     output_dir: str = "/app/deepteam-results",
 ) -> dict:
-    """
-    Run a scheduled DeepTeam security scan.
+    """Run a scheduled DeepTeam security scan.
 
     Args:
         preset: Scan preset configuration (QUICK_SCAN, STANDARD, COMPREHENSIVE, etc.)
@@ -40,6 +38,7 @@ async def run_scheduled_scan(
 
     Returns:
         Scan results dictionary
+
     """
     from .callbacks import ChimeraModelCallback
     from .config import PresetConfig, get_preset_config
@@ -71,7 +70,7 @@ async def run_scheduled_scan(
                 "provider": "openai",
                 "model": "gpt-4o-mini",
                 "api_key": os.getenv("OPENAI_API_KEY"),
-            }
+            },
         )
 
     if os.getenv("ANTHROPIC_API_KEY"):
@@ -80,7 +79,7 @@ async def run_scheduled_scan(
                 "provider": "anthropic",
                 "model": "claude-3-haiku-20240307",
                 "api_key": os.getenv("ANTHROPIC_API_KEY"),
-            }
+            },
         )
 
     if os.getenv("GOOGLE_API_KEY"):
@@ -89,7 +88,7 @@ async def run_scheduled_scan(
                 "provider": "google",
                 "model": "gemini-1.5-flash",
                 "api_key": os.getenv("GOOGLE_API_KEY"),
-            }
+            },
         )
 
     if os.getenv("DEEPSEEK_API_KEY"):
@@ -98,7 +97,7 @@ async def run_scheduled_scan(
                 "provider": "deepseek",
                 "model": "deepseek-chat",
                 "api_key": os.getenv("DEEPSEEK_API_KEY"),
-            }
+            },
         )
 
     # Check for Ollama
@@ -114,7 +113,7 @@ async def run_scheduled_scan(
                         "provider": "ollama",
                         "model": "llama3.2",
                         "base_url": ollama_url,
-                    }
+                    },
                 )
     except Exception as e:
         logger.debug(f"Ollama not available: {e}")
@@ -128,7 +127,7 @@ async def run_scheduled_scan(
         }
 
     logger.info(
-        f"Testing {len(providers_to_test)} provider(s): {[p['provider'] for p in providers_to_test]}"
+        f"Testing {len(providers_to_test)} provider(s): {[p['provider'] for p in providers_to_test]}",
     )
 
     # Run scans for each provider
@@ -160,20 +159,20 @@ async def run_scheduled_scan(
                     "model": provider_config["model"],
                     "result": result,
                     "status": "completed",
-                }
+                },
             )
 
             logger.info(f"Completed scan for {provider_name}")
 
         except Exception as e:
-            logger.error(f"Error scanning {provider_name}: {e}")
+            logger.exception(f"Error scanning {provider_name}: {e}")
             all_results.append(
                 {
                     "provider": provider_name,
                     "model": provider_config["model"],
                     "error": str(e),
                     "status": "failed",
-                }
+                },
             )
 
     # Compile final report
@@ -234,7 +233,7 @@ def _generate_summary(results: list) -> dict:
     }
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the scanner service."""
     logger.info("DeepTeam Scanner Service starting...")
 
@@ -258,7 +257,7 @@ async def main():
             result = await run_scheduled_scan(preset=preset)
             logger.info(f"Scan completed: {result.get('summary', {})}")
         except Exception as e:
-            logger.error(f"Scan failed: {e}")
+            logger.exception(f"Scan failed: {e}")
 
         logger.info(f"Next scan in {scan_interval} seconds...")
         await asyncio.sleep(scan_interval)

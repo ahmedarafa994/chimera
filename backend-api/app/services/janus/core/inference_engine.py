@@ -1,5 +1,4 @@
-"""
-Asymmetric Inference Engine Module
+"""Asymmetric Inference Engine Module.
 
 Performs inference on asymmetric causal graphs to predict
 effects of interventions and discover exploitable pathways.
@@ -8,19 +7,19 @@ effects of interventions and discover exploitable pathways.
 from collections import deque
 from typing import Any
 
-from ..config import get_config
+from app.services.janus.config import get_config
+
 from .models import CausalEdge, CausalGraph, EffectPrediction, PathEffect
 
 
 class AsymmetricInferenceEngine:
-    """
-    Performs inference on asymmetric causal graphs.
+    """Performs inference on asymmetric causal graphs.
 
     Accounts for non-linear and context-dependent relationships
     when predicting intervention effects.
     """
 
-    def __init__(self, causal_graph: CausalGraph):
+    def __init__(self, causal_graph: CausalGraph) -> None:
         self.graph = causal_graph
         self.config = get_config()
 
@@ -31,10 +30,12 @@ class AsymmetricInferenceEngine:
         self.adjustment_factors: dict[str, float] = {}
 
     def infer_effect(
-        self, intervention: dict[str, Any], target: str, context: dict[str, Any] | None = None
+        self,
+        intervention: dict[str, Any],
+        target: str,
+        context: dict[str, Any] | None = None,
     ) -> EffectPrediction:
-        """
-        Infer the effect of an intervention on a target variable.
+        """Infer the effect of an intervention on a target variable.
 
         Args:
             intervention: Dictionary of variable -> value changes
@@ -43,6 +44,7 @@ class AsymmetricInferenceEngine:
 
         Returns:
             EffectPrediction with predicted effect and confidence
+
         """
         context = context or {}
 
@@ -63,7 +65,9 @@ class AsymmetricInferenceEngine:
         path_effects = []
         for path in paths:
             effect = self._compute_path_effect(
-                path=path, intervention=intervention, context=context
+                path=path,
+                intervention=intervention,
+                context=context,
             )
             path_effects.append(effect)
 
@@ -90,7 +94,7 @@ class AsymmetricInferenceEngine:
                 "context": context,
                 "predicted_effect": adjusted_effect,
                 "confidence": confidence,
-            }
+            },
         )
 
         return EffectPrediction(
@@ -102,8 +106,7 @@ class AsymmetricInferenceEngine:
         )
 
     def _find_all_causal_paths(self, sources: list[str], target: str) -> list[list[CausalEdge]]:
-        """
-        Find all causal paths from sources to target.
+        """Find all causal paths from sources to target.
 
         Uses BFS to find all paths up to max depth.
         """
@@ -153,11 +156,12 @@ class AsymmetricInferenceEngine:
         return edges
 
     def _compute_path_effect(
-        self, path: list[CausalEdge], intervention: dict[str, Any], context: dict[str, Any]
+        self,
+        path: list[CausalEdge],
+        intervention: dict[str, Any],
+        context: dict[str, Any],
     ) -> PathEffect:
-        """
-        Compute the effect along a single causal path.
-        """
+        """Compute the effect along a single causal path."""
         total_effect = 1.0
         edge_contributions = []
 
@@ -184,7 +188,7 @@ class AsymmetricInferenceEngine:
                     "edge": (f"{edge.source.variable_id} -> {edge.target.variable_id}"),
                     "effect": edge_effect,
                     "context_multiplier": context_multiplier,
-                }
+                },
             )
 
         # Compute path asymmetry ratio
@@ -215,8 +219,7 @@ class AsymmetricInferenceEngine:
         return forward_product / backward_product
 
     def _combine_path_effects(self, path_effects: list[PathEffect]) -> float:
-        """
-        Combine effects from multiple paths.
+        """Combine effects from multiple paths.
 
         Uses weighted combination based on path length and
         asymmetry to account for interference.
@@ -239,15 +242,12 @@ class AsymmetricInferenceEngine:
         normalized_weights = [w / total_weight for w in weights]
 
         # Weighted sum of effects
-        combined = sum(
+        return sum(
             pe.total_effect * nw for pe, nw in zip(path_effects, normalized_weights, strict=False)
         )
 
-        return combined
-
     def _compute_uncertainty(self, combined_effect: float, path_effects: list[PathEffect]) -> float:
-        """
-        Compute uncertainty bounds for prediction.
+        """Compute uncertainty bounds for prediction.
 
         Higher uncertainty when paths disagree significantly.
         """
@@ -260,15 +260,14 @@ class AsymmetricInferenceEngine:
         variance = sum((e - mean_effect) ** 2 for e in effects) / len(effects)
 
         # Normalize to [0, 1]
-        uncertainty = min(1.0, variance / max(0.01, mean_effect**2))
-
-        return uncertainty
+        return min(1.0, variance / max(0.01, mean_effect**2))
 
     def _compute_context_sensitivity(
-        self, path_effects: list[PathEffect], context: dict[str, Any]
+        self,
+        path_effects: list[PathEffect],
+        context: dict[str, Any],
     ) -> float:
-        """
-        Compute how sensitive the prediction is to context.
+        """Compute how sensitive the prediction is to context.
 
         Higher sensitivity when context multipliers vary significantly.
         """
@@ -289,9 +288,7 @@ class AsymmetricInferenceEngine:
         variance = sum((m - mean_mult) ** 2 for m in multipliers) / len(multipliers)
 
         # Normalize to [0, 1]
-        sensitivity = min(1.0, variance)
-
-        return sensitivity
+        return min(1.0, variance)
 
     def _apply_adjustments(self, effect: float, intervention: dict[str, Any], target: str) -> float:
         """Apply learned adjustment factors."""
@@ -304,9 +301,10 @@ class AsymmetricInferenceEngine:
 
         return effect
 
-    def update_adjustments(self, intervention: dict[str, Any], target: str, actual_effect: float):
-        """
-        Update adjustment factors based on actual vs predicted.
+    def update_adjustments(
+        self, intervention: dict[str, Any], target: str, actual_effect: float
+    ) -> None:
+        """Update adjustment factors based on actual vs predicted.
 
         Called after observing the actual effect of an intervention.
         """
@@ -330,21 +328,26 @@ class AsymmetricInferenceEngine:
                 break
 
     def counterfactual_query(
-        self, intervention: dict[str, Any], observation: dict[str, Any]
+        self,
+        intervention: dict[str, Any],
+        observation: dict[str, Any],
     ) -> dict[str, Any]:
-        """
-        Answer a counterfactual query.
+        """Answer a counterfactual query.
 
         "What would have happened if...?"
         """
         # Compute what would have happened without intervention
         baseline_effect = self.infer_effect(
-            intervention={}, target=next(iter(observation.keys())), context={}
+            intervention={},
+            target=next(iter(observation.keys())),
+            context={},
         )
 
         # Compute what happened with intervention
         counterfactual_effect = self.infer_effect(
-            intervention=intervention, target=next(iter(observation.keys())), context={}
+            intervention=intervention,
+            target=next(iter(observation.keys())),
+            context={},
         )
 
         # Compute difference
@@ -358,8 +361,7 @@ class AsymmetricInferenceEngine:
         }
 
     def do_intervention(self, variable: str, value: Any) -> CausalGraph:
-        """
-        Perform a do-intervention (Pearl's do-calculus).
+        """Perform a do-intervention (Pearl's do-calculus).
 
         Creates a modified graph where the specified variable
         is set to the given value, breaking incoming edges.
@@ -385,7 +387,7 @@ class AsymmetricInferenceEngine:
 
         return modified_graph
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset inference engine state."""
         self.intervention_history.clear()
         self.adjustment_factors.clear()

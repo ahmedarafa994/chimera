@@ -1,5 +1,4 @@
-"""
-Redis-Based Selection Cache for Provider/Model Selections.
+"""Redis-Based Selection Cache for Provider/Model Selections.
 
 Provides fast caching for selection lookups with:
 - TTL-based expiration
@@ -10,6 +9,7 @@ Provides fast caching for selection lookups with:
 References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md
 - Persistence service: app/services/session_selection_persistence.py
+
 """
 
 import asyncio
@@ -35,8 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class CachedSelection(BaseModel):
-    """
-    Cached selection data structure.
+    """Cached selection data structure.
 
     Optimized for Redis storage with minimal footprint.
     """
@@ -108,8 +107,7 @@ class SelectionChangeEvent(BaseModel):
 
 
 class SelectionCache:
-    """
-    Redis-based cache for fast selection lookups.
+    """Redis-based cache for fast selection lookups.
 
     Features:
     - TTL-based expiration
@@ -132,12 +130,12 @@ class SelectionCache:
     # Default TTL (1 hour)
     DEFAULT_TTL = 3600
 
-    def __init__(self, redis_url: str | None = None):
-        """
-        Initialize the selection cache.
+    def __init__(self, redis_url: str | None = None) -> None:
+        """Initialize the selection cache.
 
         Args:
             redis_url: Redis connection URL (defaults to settings)
+
         """
         self._redis_url = redis_url or getattr(settings, "REDIS_URL", "redis://localhost:6379")
         self._client: Redis | None = None
@@ -147,11 +145,11 @@ class SelectionCache:
         self._use_local_fallback = False
 
     async def initialize(self) -> bool:
-        """
-        Initialize Redis connection.
+        """Initialize Redis connection.
 
         Returns:
             True if Redis connected, False if using local fallback
+
         """
         if self._initialized:
             return not self._use_local_fallback
@@ -202,14 +200,14 @@ class SelectionCache:
         return f"{self.CACHE_PREFIX}{session_id}"
 
     async def get(self, session_id: str) -> CachedSelection | None:
-        """
-        Get cached selection for a session.
+        """Get cached selection for a session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             CachedSelection if found, None otherwise
+
         """
         if not self._initialized:
             await self.initialize()
@@ -231,7 +229,7 @@ class SelectionCache:
             return None
 
         except Exception as e:
-            logger.error(f"Cache GET error: {e}")
+            logger.exception(f"Cache GET error: {e}")
             return self._local_cache.get(session_id)
 
     async def set(
@@ -240,8 +238,7 @@ class SelectionCache:
         selection: CachedSelection,
         ttl: int = DEFAULT_TTL,
     ) -> bool:
-        """
-        Set cached selection for a session.
+        """Set cached selection for a session.
 
         Args:
             session_id: Session identifier
@@ -250,6 +247,7 @@ class SelectionCache:
 
         Returns:
             True if cached successfully
+
         """
         if not self._initialized:
             await self.initialize()
@@ -273,18 +271,18 @@ class SelectionCache:
             return True
 
         except Exception as e:
-            logger.error(f"Cache SET error: {e}")
+            logger.exception(f"Cache SET error: {e}")
             return True  # Local cache succeeded
 
     async def delete(self, session_id: str) -> bool:
-        """
-        Delete cached selection for a session.
+        """Delete cached selection for a session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             True if deleted
+
         """
         if not self._initialized:
             await self.initialize()
@@ -301,7 +299,7 @@ class SelectionCache:
             return True
 
         except Exception as e:
-            logger.error(f"Cache DELETE error: {e}")
+            logger.exception(f"Cache DELETE error: {e}")
             return True
 
     async def exists(self, session_id: str) -> bool:
@@ -317,7 +315,7 @@ class SelectionCache:
             return await self._client.exists(key) > 0
 
         except Exception as e:
-            logger.error(f"Cache EXISTS error: {e}")
+            logger.exception(f"Cache EXISTS error: {e}")
             return session_id in self._local_cache
 
     # -------------------------------------------------------------------------
@@ -330,8 +328,7 @@ class SelectionCache:
         factory: callable,
         ttl: int = DEFAULT_TTL,
     ) -> CachedSelection:
-        """
-        Get cached selection or create using factory.
+        """Get cached selection or create using factory.
 
         Atomic operation that prevents cache stampede.
 
@@ -342,6 +339,7 @@ class SelectionCache:
 
         Returns:
             CachedSelection (cached or newly created)
+
         """
         # Try to get existing
         cached = await self.get(session_id)
@@ -364,8 +362,7 @@ class SelectionCache:
         session_id: str,
         expected_version: int,
     ) -> tuple[bool, int]:
-        """
-        Atomically increment version if it matches expected.
+        """Atomically increment version if it matches expected.
 
         For optimistic concurrency control.
 
@@ -375,6 +372,7 @@ class SelectionCache:
 
         Returns:
             Tuple of (success, new_version)
+
         """
         cached = await self.get(session_id)
         if not cached:
@@ -398,8 +396,7 @@ class SelectionCache:
         selection: CachedSelection,
         old_selection: CachedSelection | None = None,
     ) -> bool:
-        """
-        Publish selection change notification.
+        """Publish selection change notification.
 
         Args:
             session_id: Session identifier
@@ -408,6 +405,7 @@ class SelectionCache:
 
         Returns:
             True if published successfully
+
         """
         if self._use_local_fallback:
             return False
@@ -429,26 +427,26 @@ class SelectionCache:
 
             logger.debug(
                 f"Published selection change: {session_id} -> "
-                f"{selection.provider}/{selection.model}"
+                f"{selection.provider}/{selection.model}",
             )
             return True
 
         except Exception as e:
-            logger.error(f"Publish error: {e}")
+            logger.exception(f"Publish error: {e}")
             return False
 
     async def subscribe_changes(
         self,
         session_id: str | None = None,
     ) -> AsyncIterator[SelectionChangeEvent]:
-        """
-        Subscribe to selection change notifications.
+        """Subscribe to selection change notifications.
 
         Args:
             session_id: Optional filter for specific session
 
         Yields:
             SelectionChangeEvent for each change
+
         """
         if self._use_local_fallback:
             logger.warning("Pub/sub not available in local fallback mode")
@@ -470,11 +468,11 @@ class SelectionCache:
                         yield event
 
                     except Exception as e:
-                        logger.error(f"Error parsing change event: {e}")
+                        logger.exception(f"Error parsing change event: {e}")
                         continue
 
         except Exception as e:
-            logger.error(f"Subscribe error: {e}")
+            logger.exception(f"Subscribe error: {e}")
 
     # -------------------------------------------------------------------------
     # Bulk Operations
@@ -484,14 +482,14 @@ class SelectionCache:
         self,
         session_ids: list[str],
     ) -> dict[str, CachedSelection | None]:
-        """
-        Get multiple cached selections.
+        """Get multiple cached selections.
 
         Args:
             session_ids: List of session identifiers
 
         Returns:
             Dictionary mapping session_id to CachedSelection
+
         """
         if not self._initialized:
             await self.initialize()
@@ -516,17 +514,17 @@ class SelectionCache:
             return results
 
         except Exception as e:
-            logger.error(f"Cache MGET error: {e}")
+            logger.exception(f"Cache MGET error: {e}")
             for sid in session_ids:
                 results[sid] = self._local_cache.get(sid)
             return results
 
     async def clear_all(self) -> int:
-        """
-        Clear all cached selections.
+        """Clear all cached selections.
 
         Returns:
             Number of entries cleared
+
         """
         count = len(self._local_cache)
         self._local_cache.clear()
@@ -543,7 +541,7 @@ class SelectionCache:
             return count
 
         except Exception as e:
-            logger.error(f"Cache CLEAR error: {e}")
+            logger.exception(f"Cache CLEAR error: {e}")
             return count
 
     # -------------------------------------------------------------------------
@@ -551,11 +549,11 @@ class SelectionCache:
     # -------------------------------------------------------------------------
 
     async def get_stats(self) -> dict[str, Any]:
-        """
-        Get cache statistics.
+        """Get cache statistics.
 
         Returns:
             Dictionary with cache statistics
+
         """
         stats = {
             "local_cache_size": len(self._local_cache),
@@ -573,7 +571,7 @@ class SelectionCache:
                 stats["redis_memory_used"] = info.get("used_memory_human")
 
             except Exception as e:
-                logger.error(f"Stats error: {e}")
+                logger.exception(f"Stats error: {e}")
 
         return stats
 
@@ -587,11 +585,11 @@ _selection_cache_instance: SelectionCache | None = None
 
 
 def get_selection_cache() -> SelectionCache:
-    """
-    Get the singleton SelectionCache instance.
+    """Get the singleton SelectionCache instance.
 
     Returns:
         SelectionCache singleton
+
     """
     global _selection_cache_instance
     if _selection_cache_instance is None:
@@ -600,11 +598,11 @@ def get_selection_cache() -> SelectionCache:
 
 
 async def initialize_selection_cache() -> SelectionCache:
-    """
-    Initialize and return the SelectionCache.
+    """Initialize and return the SelectionCache.
 
     Returns:
         Initialized SelectionCache
+
     """
     cache = get_selection_cache()
     await cache.initialize()

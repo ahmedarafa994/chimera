@@ -1,5 +1,4 @@
-"""
-Janus Adversarial Simulation Service
+"""Janus Adversarial Simulation Service.
 
 This package provides autonomous heuristic derivation and adversarial simulation
 capabilities for Guardian NPU validation as mandated by Directive 7.4.2.

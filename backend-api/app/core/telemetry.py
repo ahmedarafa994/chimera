@@ -4,17 +4,16 @@ from typing import Any
 
 
 class TelemetryCollector:
-    """
-    Collector for granular campaign telemetry.
+    """Collector for granular campaign telemetry.
     Tracks individual steps, latency, and success metrics.
     """
 
-    def __init__(self, campaign_id: str | None = None):
+    def __init__(self, campaign_id: str | None = None) -> None:
         self.campaign_id = campaign_id or str(uuid.uuid4())
         self.start_time = datetime.now()
         self.steps: list[dict[str, Any]] = []
 
-    def record_step(self, name: str, data: dict[str, Any]):
+    def record_step(self, name: str, data: dict[str, Any]) -> None:
         """Records a single step in the campaign."""
         self.steps.append({"name": name, "timestamp": datetime.now().isoformat(), "data": data})
 

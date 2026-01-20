@@ -1,5 +1,4 @@
-"""
-Advanced Database Query Optimizer for Chimera AI System
+"""Advanced Database Query Optimizer for Chimera AI System.
 
 Comprehensive query optimization with:
 - Automatic index recommendations
@@ -51,8 +50,7 @@ class QueryOptimizationSuggestion:
 
 
 class DatabaseQueryOptimizer:
-    """
-    Advanced database query optimizer with intelligent recommendations.
+    """Advanced database query optimizer with intelligent recommendations.
 
     Features:
     - Automatic index analysis and recommendations
@@ -62,25 +60,25 @@ class DatabaseQueryOptimizer:
     - LLM provider-specific optimizations
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.index_recommendations: list[IndexRecommendation] = []
         self.query_optimizations: list[QueryOptimizationSuggestion] = []
 
         # Common patterns for different database systems
         self.db_patterns = {
             "postgresql": {
-                "json_operations": r"JSON_EXTRACT|->|->>"
+                "json_operations": r"JSON_EXTRACT|->|->>",
                 # Add more PostgreSQL-specific patterns
             },
             "sqlite": {"like_operations": r'LIKE\s+[\'"][%_]', "json_operations": r"JSON_EXTRACT"},
         }
 
     async def analyze_and_optimize(self) -> dict[str, Any]:
-        """
-        Perform comprehensive database optimization analysis.
+        """Perform comprehensive database optimization analysis.
 
         Returns:
             Dictionary with optimization recommendations and metrics
+
         """
         logger.info("Starting comprehensive database optimization analysis")
 
@@ -95,7 +93,7 @@ class DatabaseQueryOptimizer:
 
         # Analyze N+1 patterns
         n_plus_one_analysis = await self._analyze_n_plus_one_patterns(
-            performance_report["n_plus_one_patterns"]
+            performance_report["n_plus_one_patterns"],
         )
 
         # Analyze connection pool
@@ -110,7 +108,7 @@ class DatabaseQueryOptimizer:
                 "total_recommendations": len(self.index_recommendations)
                 + len(self.query_optimizations),
                 "high_priority_items": len(
-                    [r for r in self.index_recommendations if r.estimated_improvement == "HIGH"]
+                    [r for r in self.index_recommendations if r.estimated_improvement == "HIGH"],
                 )
                 + len([q for q in self.query_optimizations if q.estimated_improvement == "HIGH"]),
                 "estimated_performance_gain": self._calculate_overall_improvement(),
@@ -146,7 +144,7 @@ class DatabaseQueryOptimizer:
                 }
 
         except Exception as e:
-            logger.error(f"Index analysis failed: {e}")
+            logger.exception(f"Index analysis failed: {e}")
             return {"error": str(e)}
 
     async def _get_table_list(self, session: AsyncSession) -> list[str]:
@@ -159,15 +157,15 @@ class DatabaseQueryOptimizer:
                 SELECT name FROM sqlite_master
                 WHERE type='table' AND name NOT LIKE 'sqlite_%'
                 ORDER BY name
-            """
-                )
+            """,
+                ),
             )
             return [row[0] for row in result.fetchall()]
         except Exception as e:
             logger.warning(f"Could not get table list: {e}")
             return ["llm_models", "evasion_tasks", "jailbreak_datasets", "jailbreak_prompts"]
 
-    async def _analyze_table_indexes(self, session: AsyncSession, table_name: str):
+    async def _analyze_table_indexes(self, session: AsyncSession, table_name: str) -> None:
         """Analyze indexes needed for a specific table."""
         # Get query patterns that use this table
         table_queries = [
@@ -194,7 +192,7 @@ class DatabaseQueryOptimizer:
                         reason=f"Frequent WHERE clause usage ({metrics.execution_count} executions)",
                         estimated_improvement="HIGH" if metrics.avg_time_ms > 100 else "MEDIUM",
                         query_patterns=[metrics.query_sql[:100]],
-                    )
+                    ),
                 )
 
             # Recommend indexes for ORDER BY columns
@@ -206,7 +204,7 @@ class DatabaseQueryOptimizer:
                         reason="ORDER BY performance optimization",
                         estimated_improvement="MEDIUM",
                         query_patterns=[metrics.query_sql[:100]],
-                    )
+                    ),
                 )
 
             # Recommend covering indexes for frequent SELECT patterns
@@ -223,7 +221,7 @@ class DatabaseQueryOptimizer:
                             reason="Covering index for frequent query pattern",
                             estimated_improvement="HIGH",
                             query_patterns=[metrics.query_sql[:100]],
-                        )
+                        ),
                     )
 
     def _extract_where_columns(self, query: str) -> list[str]:
@@ -297,7 +295,8 @@ class DatabaseQueryOptimizer:
         return columns
 
     async def _analyze_slow_queries(
-        self, slow_queries: list[dict]
+        self,
+        slow_queries: list[dict],
     ) -> list[QueryOptimizationSuggestion]:
         """Analyze slow queries and suggest optimizations."""
         suggestions = []
@@ -314,7 +313,9 @@ class DatabaseQueryOptimizer:
         return suggestions
 
     def _generate_query_optimizations(
-        self, query: str, avg_time_ms: float
+        self,
+        query: str,
+        avg_time_ms: float,
     ) -> list[QueryOptimizationSuggestion]:
         """Generate specific optimization suggestions for a query."""
         suggestions = []
@@ -333,13 +334,16 @@ class DatabaseQueryOptimizer:
                     description="Add LIMIT clause to prevent large result sets",
                     estimated_improvement="HIGH",
                     confidence=0.9,
-                )
+                ),
             )
 
         # Suggest EXISTS instead of IN for subqueries
         if "IN (SELECT" in query_upper:
             suggested_query = re.sub(
-                r"IN \(SELECT", "EXISTS (SELECT 1 FROM", query, flags=re.IGNORECASE
+                r"IN \(SELECT",
+                "EXISTS (SELECT 1 FROM",
+                query,
+                flags=re.IGNORECASE,
             )
             suggestions.append(
                 QueryOptimizationSuggestion(
@@ -350,7 +354,7 @@ class DatabaseQueryOptimizer:
                     description="Use EXISTS instead of IN with subquery for better performance",
                     estimated_improvement="MEDIUM",
                     confidence=0.8,
-                )
+                ),
             )
 
         # Suggest JOIN instead of WHERE with multiple tables
@@ -364,7 +368,7 @@ class DatabaseQueryOptimizer:
                     description="Replace implicit JOINs with explicit JOIN syntax",
                     estimated_improvement="MEDIUM",
                     confidence=0.7,
-                )
+                ),
             )
 
         return suggestions
@@ -387,7 +391,9 @@ class DatabaseQueryOptimizer:
         }
 
     def _generate_n_plus_one_resolutions(
-        self, query: str, occurrences: int
+        self,
+        query: str,
+        occurrences: int,
     ) -> list[dict[str, Any]]:
         """Generate resolution strategies for N+1 query patterns."""
         strategies = []
@@ -401,7 +407,7 @@ class DatabaseQueryOptimizer:
                     "implementation": "Use relationship.load() or selectinload() in SQLAlchemy",
                     "estimated_savings_ms": occurrences * 5,  # Rough estimate
                     "confidence": 0.9,
-                }
+                },
             )
 
         # Strategy 2: Eager loading with JOIN
@@ -412,7 +418,7 @@ class DatabaseQueryOptimizer:
                 "implementation": "Use joinedload() or selectinload() in SQLAlchemy ORM",
                 "estimated_savings_ms": occurrences * 3,
                 "confidence": 0.8,
-            }
+            },
         )
 
         # Strategy 3: Caching
@@ -424,7 +430,7 @@ class DatabaseQueryOptimizer:
                     "implementation": "Add Redis caching layer with appropriate TTL",
                     "estimated_savings_ms": occurrences * 8,  # Higher savings for cache hits
                     "confidence": 0.7,
-                }
+                },
             )
 
         return strategies
@@ -448,7 +454,7 @@ class DatabaseQueryOptimizer:
                         "current_size": size,
                         "suggested_size": int(size * 1.5),
                         "reason": f"Peak usage ({peak_usage}) near pool limit ({size})",
-                    }
+                    },
                 )
 
             # Check for underutilization
@@ -460,7 +466,7 @@ class DatabaseQueryOptimizer:
                         "current_size": size,
                         "suggested_size": max(3, int(size * 0.7)),
                         "reason": f"Low peak usage ({peak_usage}) suggests overprovisioning",
-                    }
+                    },
                 )
 
         return {"total_pools_analyzed": len(pool_data), "recommendations": recommendations}
@@ -485,9 +491,9 @@ class DatabaseQueryOptimizer:
                         "type": "cache_llm_configurations",
                         "description": "Cache LLM provider configurations to reduce database lookups",
                         "implementation": "Implement Redis cache with 5-minute TTL for provider configs",
-                        "estimated_impact": f"Reduce {total_executions} DB queries to ~{total_executions//50} per hour",
+                        "estimated_impact": f"Reduce {total_executions} DB queries to ~{total_executions // 50} per hour",
                         "priority": "HIGH",
-                    }
+                    },
                 )
 
         # Analyze jailbreak research patterns
@@ -502,7 +508,7 @@ class DatabaseQueryOptimizer:
                         "implementation": "Use bulk insert/update operations for experiment results",
                         "estimated_impact": "Reduce individual operations by 70%",
                         "priority": "MEDIUM",
-                    }
+                    },
                 )
 
         return optimizations
@@ -559,20 +565,19 @@ class DatabaseQueryOptimizer:
     def _calculate_overall_improvement(self) -> str:
         """Calculate estimated overall performance improvement."""
         high_impact_count = len(
-            [r for r in self.index_recommendations if r.estimated_improvement == "HIGH"]
+            [r for r in self.index_recommendations if r.estimated_improvement == "HIGH"],
         )
         high_impact_count += len(
-            [q for q in self.query_optimizations if q.estimated_improvement == "HIGH"]
+            [q for q in self.query_optimizations if q.estimated_improvement == "HIGH"],
         )
 
         if high_impact_count >= 5:
             return "30-50% performance improvement expected"
-        elif high_impact_count >= 3:
+        if high_impact_count >= 3:
             return "20-30% performance improvement expected"
-        elif high_impact_count >= 1:
+        if high_impact_count >= 1:
             return "10-20% performance improvement expected"
-        else:
-            return "5-10% performance improvement expected"
+        return "5-10% performance improvement expected"
 
     def _index_to_dict(self, idx: IndexRecommendation) -> dict[str, Any]:
         """Convert IndexRecommendation to dictionary."""

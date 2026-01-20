@@ -1,0 +1,112 @@
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:85: UserWarning: Field name "avg_rating" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:85: UserWarning: Field name "total_ratings" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+K:\MUZIK\chimera\backend-api\app\schemas\prompt_library.py:85: UserWarning: Field name "effectiveness_score" in "TemplateDetailResponse" shadows an attribute in parent "PromptTemplate"
+  class TemplateDetailResponse(PromptTemplate):
+2026-01-20 02:11:09,429 - app.core.connection_pool - INFO - ConnectionPoolManager initialized
+2026-01-20 02:11:09,494 - app.core.ai_config_manager - INFO - AIConfigManager initialized
+2026-01-20 02:11:09,494 - app.core.service_registry - INFO - Registered service: ai_config_manager
+2026-01-20 02:11:09,495 - app.services.provider_management_service - INFO - ProviderManagementService initialized
+2026-01-20 02:11:09,608 - app.core.auth - WARNING - JWT_SECRET not set - using generated key (not for production!)
+2026-01-20 02:11:09,609 - app.core.auth - INFO - REDIS_URL not set - using in-memory token revocation (OK for development)
+2026-01-20 02:11:09,950 - chimera - INFO - llm_service singleton created: instance_id=1827756324384, module=app.services.llm_service
+2026-01-20 02:11:10,618 - faiss.loader - INFO - Loading faiss with AVX512 support.
+2026-01-20 02:11:10,620 - faiss.loader - INFO - Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-01-20 02:11:10,622 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2026-01-20 02:11:10,657 - faiss.loader - INFO - Successfully loaded faiss with AVX2 support.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+    uvicorn.main()
+    ~~~~~~~~~~~~^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\click\core.py", line 1442, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\click\core.py", line 1363, in main
+    rv = self.invoke(ctx)
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\click\core.py", line 1226, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\click\core.py", line 794, in invoke
+    return callback(*args, **kwargs)
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\uvicorn\main.py", line 418, in main
+    run(
+    ~~~^
+        app,
+        ^^^^
+    ...<45 lines>...
+        h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\uvicorn\main.py", line 587, in run
+    server.run()
+    ~~~~~~~~~~^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\uvicorn\server.py", line 62, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\uvicorn\server.py", line 69, in serve
+    config.load()
+    ~~~~~~~~~~~^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\uvicorn\config.py", line 458, in load
+    self.loaded_app = import_from_string(self.app)
+                      ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\uvicorn\importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "C:\Users\Mohamed Arafa\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "K:\MUZIK\chimera\backend-api\app\main.py", line 41, in <module>
+    from app.api.api_routes import router as api_router
+  File "K:\MUZIK\chimera\backend-api\app\api\api_routes.py", line 25, in <module>
+    from app.api.v1.router import api_router as v1_router
+  File "K:\MUZIK\chimera\backend-api\app\api\v1\router.py", line 9, in <module>
+    from app.api.v1.endpoints import (
+    ...<18 lines>...
+    )
+  File "K:\MUZIK\chimera\backend-api\app\api\v1\endpoints\chat.py", line 7, in <module>
+    from app.core.deps import get_llm_service
+  File "K:\MUZIK\chimera\backend-api\app\core\deps.py", line 5, in <module>
+    from app.services.transformation_service import TransformationEngine
+  File "K:\MUZIK\chimera\backend-api\app\services\transformation_service.py", line 25, in <module>
+    from app.services.autodan.service import autodan_service
+  File "K:\MUZIK\chimera\backend-api\app\services\autodan\service.py", line 29, in <module>
+    from .pipeline_autodan_reasoning import AutoDANReasoning
+  File "K:\MUZIK\chimera\backend-api\app\services\autodan\pipeline_autodan_reasoning.py", line 12, in <module>
+    from .pipeline import AutoDANTurbo
+  File "K:\MUZIK\chimera\backend-api\app\services\autodan\pipeline.py", line 3, in <module>
+    import wandb
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\wandb\__init__.py", line 27, in <module>
+    from wandb import sdk as wandb_sdk
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\wandb\sdk\__init__.py", line 25, in <module>
+    from .artifacts.artifact import Artifact
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\wandb\sdk\artifacts\artifact.py", line 45, in <module>
+    from wandb import data_types, env, util
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\wandb\data_types.py", line 32, in <module>
+    from .sdk.data_types import _dtypes
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\wandb\sdk\data_types\_dtypes.py", line 393, in <module>
+    NumberType.types.append(np.float_)
+                            ^^^^^^^^^
+  File "K:\MUZIK\chimera\.venv\Lib\site-packages\numpy\__init__.py", line 791, in __getattr__
+    raise AttributeError(
+    ...<3 lines>...
+    )
+AttributeError: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.

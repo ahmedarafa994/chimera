@@ -1,5 +1,4 @@
-"""
-CI/CD Pipeline Integration Endpoints
+"""CI/CD Pipeline Integration Endpoints.
 
 Phase 3 enterprise feature for automation:
 - REST API for headless operation
@@ -12,7 +11,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -50,16 +49,24 @@ class SeverityLevel(str, Enum):
 
 
 class PipelineThreshold(BaseModel):
-    """Configurable thresholds for pipeline gates"""
+    """Configurable thresholds for pipeline gates."""
 
     max_failures_allowed: int = Field(
-        default=0, ge=0, description="Maximum number of failed tests allowed"
+        default=0,
+        ge=0,
+        description="Maximum number of failed tests allowed",
     )
     max_failure_percentage: float = Field(
-        default=0.0, ge=0.0, le=100.0, description="Maximum failure percentage allowed"
+        default=0.0,
+        ge=0.0,
+        le=100.0,
+        description="Maximum failure percentage allowed",
     )
     min_success_rate: float = Field(
-        default=95.0, ge=0.0, le=100.0, description="Minimum success rate required"
+        default=95.0,
+        ge=0.0,
+        le=100.0,
+        description="Minimum success rate required",
     )
     severity_thresholds: dict[SeverityLevel, int] = Field(
         default_factory=lambda: {
@@ -73,12 +80,14 @@ class PipelineThreshold(BaseModel):
 
 
 class CICDTestConfig(BaseModel):
-    """Configuration for automated CI/CD testing"""
+    """Configuration for automated CI/CD testing."""
 
     test_suite_name: str = Field(..., min_length=1, max_length=100)
     target_models: list[str] = Field(..., min_items=1, description="List of models to test")
     test_techniques: list[str] = Field(
-        ..., min_items=1, description="List of technique IDs to execute"
+        ...,
+        min_items=1,
+        description="List of technique IDs to execute",
     )
     test_prompts: list[str] = Field(default_factory=list, description="Custom test prompts")
 
@@ -86,7 +95,10 @@ class CICDTestConfig(BaseModel):
     timeout_seconds: int = Field(default=300, ge=10, le=3600, description="Test timeout in seconds")
     parallel_execution: bool = Field(default=True, description="Enable parallel test execution")
     max_concurrent_tests: int = Field(
-        default=5, ge=1, le=20, description="Maximum concurrent tests"
+        default=5,
+        ge=1,
+        le=20,
+        description="Maximum concurrent tests",
     )
 
     # Threshold configuration
@@ -99,7 +111,7 @@ class CICDTestConfig(BaseModel):
 
 
 class TestResult(BaseModel):
-    """Individual test result"""
+    """Individual test result."""
 
     test_id: str
     test_name: str
@@ -125,7 +137,7 @@ class TestResult(BaseModel):
 
 
 class CICDTestExecution(BaseModel):
-    """Complete test suite execution result"""
+    """Complete test suite execution result."""
 
     execution_id: str
     test_suite_name: str
@@ -162,7 +174,7 @@ class CICDTestExecution(BaseModel):
 
 
 class CICDTestRequest(BaseModel):
-    """Request to execute CI/CD test suite"""
+    """Request to execute CI/CD test suite."""
 
     config: CICDTestConfig
     git_commit: str | None = None
@@ -172,7 +184,7 @@ class CICDTestRequest(BaseModel):
 
 
 class TestSuiteListResponse(BaseModel):
-    """Response for test suite listing"""
+    """Response for test suite listing."""
 
     executions: list[CICDTestExecution]
     total: int
@@ -191,11 +203,13 @@ test_results_storage: dict[str, list[TestResult]] = {}
 async def execute_cicd_test_suite(
     request: CICDTestRequest,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-    x_api_key: str | None = Header(None, description="Optional API key for headless operation"),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    x_api_key: Annotated[
+        str | None, Header(description="Optional API key for headless operation")
+    ] = None,
 ):
-    """Execute automated test suite for CI/CD pipeline"""
+    """Execute automated test suite for CI/CD pipeline."""
     try:
         # Generate execution ID
         execution_id = f"cicd_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
@@ -218,7 +232,10 @@ async def execute_cicd_test_suite(
 
         # Start background test execution
         background_tasks.add_task(
-            execute_test_suite_background, execution_id, request.config, current_user.id
+            execute_test_suite_background,
+            execution_id,
+            request.config,
+            current_user.id,
         )
 
         logger.info(f"Started CI/CD test suite execution {execution_id}")
@@ -226,7 +243,7 @@ async def execute_cicd_test_suite(
         return execution
 
     except Exception as e:
-        logger.error(f"Failed to start CI/CD test suite: {e}")
+        logger.exception(f"Failed to start CI/CD test suite: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to start test suite execution",
@@ -235,14 +252,14 @@ async def execute_cicd_test_suite(
 
 @router.get("/executions", response_model=TestSuiteListResponse)
 async def list_cicd_executions(
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    workspace_id: str | None = Query(None, description="Filter by workspace"),
-    status_filter: TestStatus | None = Query(None, description="Filter by status"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    workspace_id: Annotated[str | None, Query(description="Filter by workspace")] = None,
+    status_filter: Annotated[TestStatus | None, Query(description="Filter by status")] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List CI/CD test executions"""
+    """List CI/CD test executions."""
     try:
         # Get accessible executions
         accessible_executions = []
@@ -285,7 +302,7 @@ async def list_cicd_executions(
         )
 
     except Exception as e:
-        logger.error(f"Failed to list CI/CD executions: {e}")
+        logger.exception(f"Failed to list CI/CD executions: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve executions",
@@ -294,15 +311,18 @@ async def list_cicd_executions(
 
 @router.get("/executions/{execution_id}", response_model=CICDTestExecution)
 async def get_cicd_execution(
-    execution_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    execution_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Get CI/CD test execution details"""
+    """Get CI/CD test execution details."""
     try:
         execution = cicd_executions.get(execution_id)
 
         if not execution:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Test execution not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Test execution not found",
             )
 
         # Check access permissions
@@ -312,7 +332,8 @@ async def get_cicd_execution(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this execution"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this execution",
             )
 
         return execution
@@ -320,9 +341,10 @@ async def get_cicd_execution(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get CI/CD execution {execution_id}: {e}")
+        logger.exception(f"Failed to get CI/CD execution {execution_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve execution"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve execution",
         )
 
 
@@ -330,16 +352,17 @@ async def get_cicd_execution(
 async def get_execution_results_formatted(
     execution_id: str,
     format: OutputFormat,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Get test execution results in specified format (JSON, JUnit, SARIF, HTML)"""
+    """Get test execution results in specified format (JSON, JUnit, SARIF, HTML)."""
     try:
         execution = cicd_executions.get(execution_id)
 
         if not execution:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Test execution not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Test execution not found",
             )
 
         # Check access permissions
@@ -349,27 +372,28 @@ async def get_execution_results_formatted(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this execution"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this execution",
             )
 
         # Generate formatted output
         if format == OutputFormat.JSON:
             return execution.dict()
-        elif format == OutputFormat.JUNIT:
+        if format == OutputFormat.JUNIT:
             return generate_junit_xml(execution)
-        elif format == OutputFormat.SARIF:
+        if format == OutputFormat.SARIF:
             return generate_sarif_json(execution)
-        elif format == OutputFormat.HTML:
+        if format == OutputFormat.HTML:
             return generate_html_report(execution)
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported output format"
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported output format",
+        )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get formatted results for {execution_id}: {e}")
+        logger.exception(f"Failed to get formatted results for {execution_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate formatted results",
@@ -378,21 +402,25 @@ async def get_execution_results_formatted(
 
 @router.post("/executions/{execution_id}/stop")
 async def stop_cicd_execution(
-    execution_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    execution_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Stop running CI/CD test execution"""
+    """Stop running CI/CD test execution."""
     try:
         execution = cicd_executions.get(execution_id)
 
         if not execution:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Test execution not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Test execution not found",
             )
 
         # Check permissions (only creator or workspace admin can stop)
         if execution.executed_by != current_user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Only execution creator can stop test"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only execution creator can stop test",
             )
 
         # Update execution status
@@ -406,24 +434,26 @@ async def stop_cicd_execution(
             logger.info(f"Stopped CI/CD execution {execution_id}")
 
             return {"message": "Test execution stopped successfully"}
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Test execution is already completed",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Test execution is already completed",
+        )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to stop CI/CD execution {execution_id}: {e}")
+        logger.exception(f"Failed to stop CI/CD execution {execution_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to stop execution"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to stop execution",
         )
 
 
 # Background task functions
-async def execute_test_suite_background(execution_id: str, config: CICDTestConfig, user_id: str):
-    """Execute test suite in background"""
+async def execute_test_suite_background(
+    execution_id: str, config: CICDTestConfig, user_id: str
+) -> None:
+    """Execute test suite in background."""
     try:
         execution = cicd_executions[execution_id]
         test_results = []
@@ -484,18 +514,18 @@ async def execute_test_suite_background(execution_id: str, config: CICDTestConfi
 
         if execution.failed_tests > config.thresholds.max_failures_allowed:
             gate_failures.append(
-                f"Too many failures: {execution.failed_tests} > {config.thresholds.max_failures_allowed}"
+                f"Too many failures: {execution.failed_tests} > {config.thresholds.max_failures_allowed}",
             )
 
         failure_percentage = (execution.failed_tests / total_tests) * 100 if total_tests > 0 else 0
         if failure_percentage > config.thresholds.max_failure_percentage:
             gate_failures.append(
-                f"Failure rate too high: {failure_percentage:.1f}% > {config.thresholds.max_failure_percentage}%"
+                f"Failure rate too high: {failure_percentage:.1f}% > {config.thresholds.max_failure_percentage}%",
             )
 
         if execution.success_rate < config.thresholds.min_success_rate:
             gate_failures.append(
-                f"Success rate too low: {execution.success_rate:.1f}% < {config.thresholds.min_success_rate}%"
+                f"Success rate too low: {execution.success_rate:.1f}% < {config.thresholds.min_success_rate}%",
             )
 
         # Check severity thresholds
@@ -503,7 +533,7 @@ async def execute_test_suite_background(execution_id: str, config: CICDTestConfi
             actual_count = execution.severity_breakdown.get(severity, 0)
             if actual_count > max_count:
                 gate_failures.append(
-                    f"Too many {severity.value} severity issues: {actual_count} > {max_count}"
+                    f"Too many {severity.value} severity issues: {actual_count} > {max_count}",
                 )
 
         # Set final status
@@ -521,11 +551,11 @@ async def execute_test_suite_background(execution_id: str, config: CICDTestConfi
         test_results_storage[execution_id] = test_results
 
         logger.info(
-            f"Completed CI/CD execution {execution_id} - Status: {execution.overall_status}"
+            f"Completed CI/CD execution {execution_id} - Status: {execution.overall_status}",
         )
 
     except Exception as e:
-        logger.error(f"Failed to execute CI/CD test suite {execution_id}: {e}")
+        logger.exception(f"Failed to execute CI/CD test suite {execution_id}: {e}")
         execution = cicd_executions.get(execution_id)
         if execution:
             execution.overall_status = TestStatus.ERROR
@@ -537,7 +567,7 @@ async def execute_test_suite_background(execution_id: str, config: CICDTestConfi
 
 # Format generation functions
 def generate_junit_xml(execution: CICDTestExecution) -> str:
-    """Generate JUnit XML format results"""
+    """Generate JUnit XML format results."""
     testsuites = ET.Element("testsuites")
     testsuites.set("name", execution.test_suite_name)
     testsuites.set("tests", str(execution.total_tests))
@@ -571,7 +601,7 @@ def generate_junit_xml(execution: CICDTestExecution) -> str:
 
 
 def generate_sarif_json(execution: CICDTestExecution) -> dict[str, Any]:
-    """Generate SARIF format results"""
+    """Generate SARIF format results."""
     sarif_report = {
         "version": "2.1.0",
         "runs": [
@@ -582,10 +612,10 @@ def generate_sarif_json(execution: CICDTestExecution) -> dict[str, Any]:
                         "informationUri": "https://github.com/your-org/chimera",
                         "version": "1.0.0",
                         "rules": [],
-                    }
+                    },
                 },
                 "results": [],
-            }
+            },
         ],
     }
 
@@ -611,7 +641,7 @@ def generate_sarif_json(execution: CICDTestExecution) -> dict[str, Any]:
             sarif_result = {
                 "ruleId": result.technique_id,
                 "message": {
-                    "text": f"Potential security vulnerability detected in {result.model_name}"
+                    "text": f"Potential security vulnerability detected in {result.model_name}",
                 },
                 "level": (
                     "error"
@@ -623,8 +653,8 @@ def generate_sarif_json(execution: CICDTestExecution) -> dict[str, Any]:
                         "physicalLocation": {
                             "artifactLocation": {"uri": f"model://{result.model_name}"},
                             "region": {"startLine": 1},
-                        }
-                    }
+                        },
+                    },
                 ],
             }
             run["results"].append(sarif_result)
@@ -633,7 +663,7 @@ def generate_sarif_json(execution: CICDTestExecution) -> dict[str, Any]:
 
 
 def generate_html_report(execution: CICDTestExecution) -> str:
-    """Generate HTML format report"""
+    """Generate HTML format report."""
     html_template = """
     <!DOCTYPE html>
     <html>

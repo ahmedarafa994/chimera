@@ -1,5 +1,4 @@
-"""
-Provider Plugin Protocol
+"""Provider Plugin Protocol.
 
 Standardized interface that all AI provider implementations must follow.
 This protocol enables consistent integration of all providers (OpenAI, Anthropic,
@@ -32,7 +31,7 @@ from pydantic import BaseModel
 
 
 class ProviderCapabilities(BaseModel):
-    """Provider capability flags"""
+    """Provider capability flags."""
 
     supports_streaming: bool = True
     supports_vision: bool = False
@@ -47,7 +46,7 @@ class ProviderCapabilities(BaseModel):
 
 
 class Model(BaseModel):
-    """Model information"""
+    """Model information."""
 
     id: str
     provider_id: str
@@ -58,7 +57,7 @@ class Model(BaseModel):
 
 
 class CompletionRequest(BaseModel):
-    """Unified completion request format"""
+    """Unified completion request format."""
 
     model: str
     messages: list[dict[str, str]]
@@ -70,7 +69,7 @@ class CompletionRequest(BaseModel):
 
 
 class Choice(BaseModel):
-    """Completion choice"""
+    """Completion choice."""
 
     index: int
     message: dict[str, str]
@@ -78,7 +77,7 @@ class Choice(BaseModel):
 
 
 class Usage(BaseModel):
-    """Token usage information"""
+    """Token usage information."""
 
     prompt_tokens: int
     completion_tokens: int
@@ -86,7 +85,7 @@ class Usage(BaseModel):
 
 
 class CompletionResponse(BaseModel):
-    """Unified completion response format"""
+    """Unified completion response format."""
 
     id: str
     provider: str
@@ -97,7 +96,7 @@ class CompletionResponse(BaseModel):
 
 
 class StreamChunk(BaseModel):
-    """Streaming response chunk"""
+    """Streaming response chunk."""
 
     id: str
     provider: str
@@ -107,7 +106,7 @@ class StreamChunk(BaseModel):
 
 
 class NormalizedError(BaseModel):
-    """Standardized error response"""
+    """Standardized error response."""
 
     code: str
     message: str
@@ -119,8 +118,7 @@ class NormalizedError(BaseModel):
 
 
 class IProviderPlugin(ABC):
-    """
-    Interface that all provider plugins must implement.
+    """Interface that all provider plugins must implement.
 
     This protocol ensures consistent behavior across all AI providers,
     enabling the unified selection system to work seamlessly.
@@ -128,34 +126,31 @@ class IProviderPlugin(ABC):
 
     @abstractmethod
     def get_provider_id(self) -> str:
-        """
-        Get the canonical provider ID.
+        """Get the canonical provider ID.
 
         Returns:
             Provider ID (e.g., "openai", "anthropic", "google")
 
         Example:
             return "openai"
+
         """
-        pass
 
     @abstractmethod
     def get_display_name(self) -> str:
-        """
-        Get the user-facing provider display name.
+        """Get the user-facing provider display name.
 
         Returns:
             Display name (e.g., "OpenAI", "Google AI (Gemini)")
 
         Example:
             return "OpenAI"
+
         """
-        pass
 
     @abstractmethod
     def get_capabilities(self) -> ProviderCapabilities:
-        """
-        Get provider capabilities and limits.
+        """Get provider capabilities and limits.
 
         Returns:
             ProviderCapabilities object
@@ -166,13 +161,12 @@ class IProviderPlugin(ABC):
                 supports_vision=True,
                 max_context_length=128000
             )
+
         """
-        pass
 
     @abstractmethod
     async def validate_config(self, api_key: str, config: dict[str, Any] | None = None) -> bool:
-        """
-        Validate provider configuration and API key.
+        """Validate provider configuration and API key.
 
         Args:
             api_key: API key to validate
@@ -188,13 +182,12 @@ class IProviderPlugin(ABC):
                 return True
             except:
                 return False
+
         """
-        pass
 
     @abstractmethod
     async def get_available_models(self, api_key: str | None = None) -> list[Model]:
-        """
-        Get list of available models for this provider.
+        """Get list of available models for this provider.
 
         Args:
             api_key: Optional API key for fetching live models
@@ -207,13 +200,12 @@ class IProviderPlugin(ABC):
                 Model(id="gpt-4o", provider_id="openai", display_name="GPT-4o"),
                 Model(id="gpt-4-turbo", provider_id="openai", display_name="GPT-4 Turbo")
             ]
+
         """
-        pass
 
     @abstractmethod
     async def create_client(self, api_key: str, config: dict[str, Any] | None = None) -> Any:
-        """
-        Create a provider-specific client instance.
+        """Create a provider-specific client instance.
 
         Args:
             api_key: API key for authentication
@@ -224,15 +216,16 @@ class IProviderPlugin(ABC):
 
         Example:
             return OpenAI(api_key=api_key, base_url=config.get("base_url"))
+
         """
-        pass
 
     @abstractmethod
     async def handle_completion(
-        self, client: Any, request: CompletionRequest
+        self,
+        client: Any,
+        request: CompletionRequest,
     ) -> CompletionResponse:
-        """
-        Handle a completion request.
+        """Handle a completion request.
 
         Args:
             client: Provider client (from create_client)
@@ -248,15 +241,16 @@ class IProviderPlugin(ABC):
                 temperature=request.temperature
             )
             return self.normalize_response(response)
+
         """
-        pass
 
     @abstractmethod
     async def handle_streaming(
-        self, client: Any, request: CompletionRequest
+        self,
+        client: Any,
+        request: CompletionRequest,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Handle a streaming completion request.
+        """Handle a streaming completion request.
 
         Args:
             client: Provider client (from create_client)
@@ -273,13 +267,12 @@ class IProviderPlugin(ABC):
             )
             async for chunk in stream:
                 yield self.normalize_chunk(chunk)
+
         """
-        pass
 
     @abstractmethod
     def normalize_error(self, error: Exception) -> NormalizedError:
-        """
-        Convert provider-specific error to standardized format.
+        """Convert provider-specific error to standardized format.
 
         Args:
             error: Provider-specific exception
@@ -297,13 +290,12 @@ class IProviderPlugin(ABC):
                 is_retryable=is_retryable,
                 user_message="Rate limit exceeded. Please try again later."
             )
+
         """
-        pass
 
     @abstractmethod
     def is_retryable(self, error: Exception) -> bool:
-        """
-        Determine if an error is retryable.
+        """Determine if an error is retryable.
 
         Args:
             error: Exception to check
@@ -316,13 +308,12 @@ class IProviderPlugin(ABC):
             return ("rate_limit" in error_str or
                     "timeout" in error_str or
                     "503" in error_str)
+
         """
-        pass
 
     @abstractmethod
     def normalize_response(self, response: Any) -> CompletionResponse:
-        """
-        Convert provider-specific response to standard format.
+        """Convert provider-specific response to standard format.
 
         Args:
             response: Provider-specific response object
@@ -347,19 +338,18 @@ class IProviderPlugin(ABC):
                 ),
                 created_at=response.created
             )
+
         """
-        pass
 
 
 class BaseProviderPlugin(IProviderPlugin):
-    """
-    Base class providing common functionality for provider plugins.
+    """Base class providing common functionality for provider plugins.
 
     Subclasses should override abstract methods but can use the
     utility methods provided here.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._capabilities: ProviderCapabilities | None = None
 
     def _get_error_code(self, error: Exception) -> str:
@@ -368,18 +358,17 @@ class BaseProviderPlugin(IProviderPlugin):
 
         if "rate_limit" in error_str or "429" in error_str:
             return "RATE_LIMIT"
-        elif "unauthorized" in error_str or "401" in error_str:
+        if "unauthorized" in error_str or "401" in error_str:
             return "UNAUTHORIZED"
-        elif "forbidden" in error_str or "403" in error_str:
+        if "forbidden" in error_str or "403" in error_str:
             return "FORBIDDEN"
-        elif "not_found" in error_str or "404" in error_str:
+        if "not_found" in error_str or "404" in error_str:
             return "NOT_FOUND"
-        elif "timeout" in error_str:
+        if "timeout" in error_str:
             return "TIMEOUT"
-        elif "503" in error_str:
+        if "503" in error_str:
             return "SERVICE_UNAVAILABLE"
-        else:
-            return "API_ERROR"
+        return "API_ERROR"
 
     def _get_user_friendly_message(self, error: Exception) -> str:
         """Helper to generate user-friendly error message."""

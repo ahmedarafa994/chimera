@@ -1,5 +1,4 @@
-"""
-Professional Security Report Generator Endpoints
+"""Professional Security Report Generator Endpoints.
 
 Phase 2 feature for competitive differentiation:
 - PDF/HTML reports suitable for client deliverables
@@ -12,7 +11,7 @@ import json
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
@@ -50,7 +49,7 @@ class ReportType(str, Enum):
 
 
 class SecurityFinding(BaseModel):
-    """Individual security finding in a report"""
+    """Individual security finding in a report."""
 
     id: str
     title: str
@@ -75,7 +74,7 @@ class SecurityFinding(BaseModel):
 
 
 class ExecutiveSummary(BaseModel):
-    """Executive summary for reports"""
+    """Executive summary for reports."""
 
     overall_risk_score: float = Field(ge=0.0, le=10.0)
     total_findings: int
@@ -92,7 +91,7 @@ class ExecutiveSummary(BaseModel):
 
 
 class ReportBranding(BaseModel):
-    """Customizable branding for reports"""
+    """Customizable branding for reports."""
 
     company_name: str | None = None
     company_logo: str | None = None  # Base64 encoded
@@ -104,7 +103,7 @@ class ReportBranding(BaseModel):
 
 
 class ReportRequest(BaseModel):
-    """Request to generate a security report"""
+    """Request to generate a security report."""
 
     assessment_ids: list[str] = Field(min_items=1)
     report_type: ReportType = ReportType.TECHNICAL
@@ -125,7 +124,7 @@ class ReportRequest(BaseModel):
 
 
 class SecurityReport(BaseModel):
-    """Complete security assessment report"""
+    """Complete security assessment report."""
 
     report_id: str
     report_type: ReportType
@@ -150,7 +149,7 @@ class SecurityReport(BaseModel):
 
 
 class ReportListResponse(BaseModel):
-    """List of generated reports"""
+    """List of generated reports."""
 
     reports: list[dict[str, Any]]
     total: int
@@ -159,11 +158,10 @@ class ReportListResponse(BaseModel):
 @router.post("/generate", response_model=dict[str, str])
 async def generate_security_report(
     report_request: ReportRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """
-    Generate a professional security assessment report
+    """Generate a professional security assessment report.
 
     This endpoint creates comprehensive security reports suitable for
     client deliverables, executive presentations, and compliance documentation.
@@ -226,7 +224,7 @@ async def generate_security_report(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to generate security report: {e}")
+        logger.exception(f"Failed to generate security report: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate security report",
@@ -234,10 +232,12 @@ async def generate_security_report(
 
 
 async def generate_report_content(
-    assessments: list[Assessment], request: ReportRequest, report_id: str, user: User
+    assessments: list[Assessment],
+    request: ReportRequest,
+    report_id: str,
+    user: User,
 ) -> SecurityReport:
-    """Generate the structured content for the security report"""
-
+    """Generate the structured content for the security report."""
     # Analyze assessments to extract findings
     findings = []
     all_techniques = []
@@ -319,10 +319,10 @@ async def generate_report_content(
 
 
 def create_finding_from_result(
-    assessment: Assessment, result: dict[str, Any]
+    assessment: Assessment,
+    result: dict[str, Any],
 ) -> SecurityFinding | None:
-    """Create a security finding from an assessment result"""
-
+    """Create a security finding from an assessment result."""
     # Determine if this result represents a security issue
     if not result.get("vulnerability_detected", False) and not result.get("attack_success", False):
         return None
@@ -340,7 +340,7 @@ def create_finding_from_result(
         confidence=result.get("safety_score", 0.0),
         affected_prompts=[assessment.original_prompt],
         model_responses=[
-            result.get("response_text", "")[:500] + "..." if result.get("response_text") else ""
+            result.get("response_text", "")[:500] + "..." if result.get("response_text") else "",
         ],
         technique_used=assessment.technique_ids[0] if assessment.technique_ids else "unknown",
         business_impact="Potential for inappropriate content generation and policy violations",
@@ -363,24 +363,23 @@ def create_finding_from_result(
 
 
 def determine_risk_level(result: dict[str, Any], assessment: Assessment) -> RiskLevel:
-    """Determine the risk level for a finding"""
+    """Determine the risk level for a finding."""
     safety_score = result.get("safety_score", 1.0)
     attack_success = result.get("attack_success", False)
 
     if safety_score < 0.2 and attack_success:
         return RiskLevel.CRITICAL
-    elif safety_score < 0.4 and attack_success:
+    if safety_score < 0.4 and attack_success:
         return RiskLevel.HIGH
-    elif safety_score < 0.6:
+    if safety_score < 0.6:
         return RiskLevel.MEDIUM
-    elif safety_score < 0.8:
+    if safety_score < 0.8:
         return RiskLevel.LOW
-    else:
-        return RiskLevel.INFO
+    return RiskLevel.INFO
 
 
 def get_risk_level_score(risk_level: RiskLevel) -> int:
-    """Get numeric score for risk level sorting"""
+    """Get numeric score for risk level sorting."""
     scores = {
         RiskLevel.CRITICAL: 5,
         RiskLevel.HIGH: 4,
@@ -392,7 +391,7 @@ def get_risk_level_score(risk_level: RiskLevel) -> int:
 
 
 def get_risk_priority(risk_level: RiskLevel) -> int:
-    """Get priority number for risk level"""
+    """Get priority number for risk level."""
     priorities = {
         RiskLevel.CRITICAL: 1,
         RiskLevel.HIGH: 2,
@@ -404,10 +403,11 @@ def get_risk_priority(risk_level: RiskLevel) -> int:
 
 
 def generate_executive_summary(
-    findings: list[SecurityFinding], assessments: list[Assessment], models: list[str]
+    findings: list[SecurityFinding],
+    assessments: list[Assessment],
+    models: list[str],
 ) -> ExecutiveSummary:
-    """Generate executive summary from findings"""
-
+    """Generate executive summary from findings."""
     # Count findings by risk level
     risk_counts = dict.fromkeys(RiskLevel, 0)
     for finding in findings:
@@ -461,10 +461,10 @@ def generate_executive_summary(
 
 
 def generate_report_statistics(
-    assessments: list[Assessment], findings: list[SecurityFinding]
+    assessments: list[Assessment],
+    findings: list[SecurityFinding],
 ) -> dict[str, Any]:
-    """Generate statistics section for the report"""
-
+    """Generate statistics section for the report."""
     total_tests = len(assessments)
     successful_attacks = len(findings)
 
@@ -510,23 +510,22 @@ def generate_report_statistics(
 
 
 def generate_recommendations(findings: list[SecurityFinding]) -> list[str]:
-    """Generate high-level recommendations from findings"""
-
+    """Generate high-level recommendations from findings."""
     recommendations = []
 
     critical_high = [f for f in findings if f.risk_level in [RiskLevel.CRITICAL, RiskLevel.HIGH]]
 
     if critical_high:
         recommendations.append(
-            "Immediately address critical and high-risk vulnerabilities identified in this assessment"
+            "Immediately address critical and high-risk vulnerabilities identified in this assessment",
         )
         recommendations.append(
-            "Implement emergency response procedures for prompt injection attacks"
+            "Implement emergency response procedures for prompt injection attacks",
         )
 
     if len(findings) > 5:
         recommendations.append(
-            "Develop a comprehensive AI security strategy given the multiple vulnerabilities found"
+            "Develop a comprehensive AI security strategy given the multiple vulnerabilities found",
         )
 
     recommendations.extend(
@@ -536,35 +535,32 @@ def generate_recommendations(findings: list[SecurityFinding]) -> list[str]:
             "Develop incident response procedures for AI security breaches",
             "Conduct regular security training for teams working with AI systems",
             "Consider implementing zero-trust architecture for AI deployments",
-        ]
+        ],
     )
 
     return recommendations
 
 
 async def generate_report_file(report: SecurityReport, format: ReportFormat) -> bytes:
-    """Generate the actual report file in the specified format"""
-
+    """Generate the actual report file in the specified format."""
     if format == ReportFormat.JSON:
         return json.dumps(report.model_dump(), indent=2, default=str).encode()
 
-    elif format == ReportFormat.HTML:
+    if format == ReportFormat.HTML:
         return generate_html_report(report)
 
-    elif format == ReportFormat.PDF:
+    if format == ReportFormat.PDF:
         # For PDF generation, we'd typically use a library like ReportLab or WeasyPrint
         # For now, we'll generate HTML and indicate it needs PDF conversion
-        html_content = generate_html_report(report)
+        return generate_html_report(report)
         # In production: return convert_html_to_pdf(html_content)
-        return html_content  # Placeholder
 
-    else:
-        raise ValueError(f"Unsupported report format: {format}")
+    msg = f"Unsupported report format: {format}"
+    raise ValueError(msg)
 
 
 def generate_html_report(report: SecurityReport) -> bytes:
-    """Generate HTML report content"""
-
+    """Generate HTML report content."""
     # Risk level colors
     risk_colors = {
         RiskLevel.CRITICAL: "#dc2626",
@@ -601,7 +597,7 @@ def generate_html_report(report: SecurityReport) -> bytes:
             <div class="header">
                 <h1>Security Assessment Report</h1>
                 <p><strong>Report ID:</strong> {report.report_id}</p>
-                <p><strong>Generated:</strong> {report.generated_at.strftime('%B %d, %Y at %I:%M %p UTC')}</p>
+                <p><strong>Generated:</strong> {report.generated_at.strftime("%B %d, %Y at %I:%M %p UTC")}</p>
                 {f"<p><strong>Prepared for:</strong> {report.branding.prepared_for}</p>" if report.branding and report.branding.prepared_for else ""}
             </div>
 
@@ -630,40 +626,40 @@ def generate_html_report(report: SecurityReport) -> bytes:
 
                 <h3>Key Risks</h3>
                 <ul>
-                    {''.join(f'<li>{risk}</li>' for risk in report.executive_summary.key_risks)}
+                    {"".join(f"<li>{risk}</li>" for risk in report.executive_summary.key_risks)}
                 </ul>
 
                 <h3>Business Recommendations</h3>
                 <ol>
-                    {''.join(f'<li>{rec}</li>' for rec in report.executive_summary.business_recommendations)}
+                    {"".join(f"<li>{rec}</li>" for rec in report.executive_summary.business_recommendations)}
                 </ol>
             </div>
 
             <div class="section">
                 <h2>Assessment Scope</h2>
-                <p><strong>Assessment Period:</strong> {report.assessment_period['start'].strftime('%B %d, %Y')} - {report.assessment_period['end'].strftime('%B %d, %Y')}</p>
-                <p><strong>Models Tested:</strong> {', '.join(report.executive_summary.tested_models)}</p>
-                <p><strong>Techniques Used:</strong> {', '.join(report.methodology)}</p>
-                <p><strong>Total Assessments:</strong> {report.scope['assessments_analyzed']}</p>
+                <p><strong>Assessment Period:</strong> {report.assessment_period["start"].strftime("%B %d, %Y")} - {report.assessment_period["end"].strftime("%B %d, %Y")}</p>
+                <p><strong>Models Tested:</strong> {", ".join(report.executive_summary.tested_models)}</p>
+                <p><strong>Techniques Used:</strong> {", ".join(report.methodology)}</p>
+                <p><strong>Total Assessments:</strong> {report.scope["assessments_analyzed"]}</p>
             </div>
 
             <div class="section">
                 <h2>Detailed Findings</h2>
-                {''.join(generate_finding_html(finding, risk_colors) for finding in report.findings)}
+                {"".join(generate_finding_html(finding, risk_colors) for finding in report.findings)}
             </div>
 
             <div class="section">
                 <h2>Recommendations</h2>
                 <ol>
-                    {''.join(f'<li>{rec}</li>' for rec in report.recommendations)}
+                    {"".join(f"<li>{rec}</li>" for rec in report.recommendations)}
                 </ol>
             </div>
 
             <div class="section">
                 <h2>Statistics</h2>
-                <p><strong>Overall Success Rate:</strong> {report.statistics.get('overall_success_rate', 0):.1f}%</p>
-                <p><strong>Most Effective Technique:</strong> {report.statistics.get('most_effective_technique', 'N/A')}</p>
-                <p><strong>Average Confidence:</strong> {report.statistics.get('average_confidence', 0):.2f}</p>
+                <p><strong>Overall Success Rate:</strong> {report.statistics.get("overall_success_rate", 0):.1f}%</p>
+                <p><strong>Most Effective Technique:</strong> {report.statistics.get("most_effective_technique", "N/A")}</p>
+                <p><strong>Average Confidence:</strong> {report.statistics.get("average_confidence", 0):.2f}</p>
             </div>
 
             <div style="margin-top: 40px; text-align: center; color: #6b7280; font-size: 0.9em;">
@@ -679,8 +675,7 @@ def generate_html_report(report: SecurityReport) -> bytes:
 
 
 def generate_finding_html(finding: SecurityFinding, risk_colors: dict[RiskLevel, str]) -> str:
-    """Generate HTML for a single finding"""
-
+    """Generate HTML for a single finding."""
     risk_class = f"risk-{finding.risk_level.value}"
 
     return f"""
@@ -699,12 +694,12 @@ def generate_finding_html(finding: SecurityFinding, risk_colors: dict[RiskLevel,
 
         <h4>Remediation Steps</h4>
         <ol>
-            {''.join(f'<li>{step}</li>' for step in finding.remediation_steps)}
+            {"".join(f"<li>{step}</li>" for step in finding.remediation_steps)}
         </ol>
 
         <h4>Prevention Measures</h4>
         <ul>
-            {''.join(f'<li>{measure}</li>' for measure in finding.prevention_measures)}
+            {"".join(f"<li>{measure}</li>" for measure in finding.prevention_measures)}
         </ul>
     </div>
     """
@@ -712,24 +707,26 @@ def generate_finding_html(finding: SecurityFinding, risk_colors: dict[RiskLevel,
 
 @router.get("/", response_model=ReportListResponse)
 async def list_reports(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """List generated security reports for the current user"""
+    """List generated security reports for the current user."""
     try:
         # In production, this would query a reports table
         # For now, return empty list as placeholder
         return ReportListResponse(reports=[], total=0)
 
     except Exception as e:
-        logger.error(f"Failed to list reports: {e}")
+        logger.exception(f"Failed to list reports: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve reports"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve reports",
         )
 
 
 @router.get("/{report_id}/download")
-async def download_report(report_id: str, current_user: User = Depends(get_current_user)):
-    """Download a generated report file"""
+async def download_report(report_id: str, current_user: Annotated[User, Depends(get_current_user)]):
+    """Download a generated report file."""
     try:
         # In production, this would fetch the report from storage
         # For now, return a placeholder response
@@ -741,12 +738,13 @@ async def download_report(report_id: str, current_user: User = Depends(get_curre
             content=content,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f"attachment; filename=security_report_{report_id}.pdf"
+                "Content-Disposition": f"attachment; filename=security_report_{report_id}.pdf",
             },
         )
 
     except Exception as e:
-        logger.error(f"Failed to download report {report_id}: {e}")
+        logger.exception(f"Failed to download report {report_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to download report"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to download report",
         )

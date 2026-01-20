@@ -1,5 +1,4 @@
-"""
-Provider Rate Limiting Middleware
+"""Provider Rate Limiting Middleware.
 
 Config-driven rate limiting per provider that:
 1. Gets provider from request state (set by ProviderSelectionMiddleware)
@@ -43,8 +42,7 @@ class RateLimitEntry:
 
 
 class RateLimitTracker:
-    """
-    Track rate limits per provider per client.
+    """Track rate limits per provider per client.
 
     Thread-safe implementation using locks for concurrent access.
     Supports multiple time windows (per-minute, per-day).
@@ -54,13 +52,13 @@ class RateLimitTracker:
         self,
         cleanup_interval: int = 300,
         max_entries: int = 10000,
-    ):
-        """
-        Initialize rate limit tracker.
+    ) -> None:
+        """Initialize rate limit tracker.
 
         Args:
             cleanup_interval: Seconds between cleanup of stale entries
             max_entries: Maximum number of entries to track
+
         """
         self._entries: dict[str, RateLimitEntry] = defaultdict(RateLimitEntry)
         self._lock = Lock()
@@ -85,14 +83,14 @@ class RateLimitTracker:
         return f"{provider}:{client_id}"
 
     def _get_rate_limits(self, provider: str) -> dict[str, Any]:
-        """
-        Get rate limits for a provider from configuration.
+        """Get rate limits for a provider from configuration.
 
         Args:
             provider: Provider ID
 
         Returns:
             Dict with rate limit configuration
+
         """
         config_manager = self._get_config_manager()
         if not config_manager or not config_manager.is_loaded():
@@ -125,8 +123,7 @@ class RateLimitTracker:
         provider: str,
         client_id: str,
     ) -> dict[str, Any]:
-        """
-        Check if request is within rate limits.
+        """Check if request is within rate limits.
 
         Args:
             provider: Provider ID
@@ -138,6 +135,7 @@ class RateLimitTracker:
                 - reason: str reason if not allowed
                 - retry_after: int seconds to wait before retry
                 - remaining: dict with remaining quota
+
         """
         key = self._get_key(provider, client_id)
         current_time = time.time()
@@ -205,13 +203,13 @@ class RateLimitTracker:
         client_id: str,
         tokens: int = 0,
     ) -> None:
-        """
-        Record a request for rate tracking.
+        """Record a request for rate tracking.
 
         Args:
             provider: Provider ID
             client_id: Client identifier
             tokens: Number of tokens used (optional)
+
         """
         key = self._get_key(provider, client_id)
         current_time = time.time()
@@ -249,8 +247,7 @@ class RateLimitTracker:
         provider: str,
         client_id: str,
     ) -> dict[str, Any]:
-        """
-        Get remaining quota for provider.
+        """Get remaining quota for provider.
 
         Args:
             provider: Provider ID
@@ -258,6 +255,7 @@ class RateLimitTracker:
 
         Returns:
             Dict with remaining quota information
+
         """
         key = self._get_key(provider, client_id)
         current_time = time.time()
@@ -302,15 +300,13 @@ class RateLimitTracker:
         if day_limit and entry.day_window.window_start == day_window_start:
             day_used = entry.day_window.count
 
-        result = {
+        return {
             "requests_remaining_minute": max(0, minute_limit - minute_used),
             "tokens_remaining_minute": max(0, token_limit - minute_tokens),
             "requests_remaining_day": (max(0, day_limit - day_used) if day_limit else None),
             "reset_at_minute": int(minute_window_start + 60),
             "reset_at_day": int(day_window_start + 86400) if day_limit else None,
         }
-
-        return result
 
     def _cleanup_stale_entries(self, current_time: float) -> None:
         """Remove stale entries to prevent memory growth."""
@@ -344,11 +340,11 @@ class RateLimitTracker:
             }
 
     def reset(self, provider: str | None = None) -> None:
-        """
-        Reset rate limit tracking.
+        """Reset rate limit tracking.
 
         Args:
             provider: Optional provider to reset (resets all if None)
+
         """
         with self._lock:
             if provider:
@@ -372,8 +368,7 @@ def get_rate_limit_tracker() -> RateLimitTracker:
 
 
 class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
-    """
-    Config-driven rate limiting per provider middleware.
+    """Config-driven rate limiting per provider middleware.
 
     This middleware:
     1. Gets provider from request state (set by ProviderSelectionMiddleware)
@@ -404,14 +399,14 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
         *,
         enabled: bool = True,
         tracker: RateLimitTracker | None = None,
-    ):
-        """
-        Initialize rate limit middleware.
+    ) -> None:
+        """Initialize rate limit middleware.
 
         Args:
             app: ASGI application
             enabled: Whether rate limiting is enabled
             tracker: Optional custom rate limit tracker
+
         """
         super().__init__(app)
         self._enabled = enabled
@@ -422,8 +417,7 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: Callable,
     ) -> Response:
-        """
-        Process request with rate limit checking.
+        """Process request with rate limit checking.
 
         Args:
             request: Incoming request
@@ -431,6 +425,7 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response from next handler or 429 error
+
         """
         if not self._enabled:
             return await call_next(request)
@@ -473,7 +468,7 @@ class ProviderRateLimitMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            logger.error(f"Rate limit middleware error: {e}")
+            logger.exception(f"Rate limit middleware error: {e}")
             # Continue without rate limiting on error
             return await call_next(request)
 
@@ -553,8 +548,7 @@ def create_rate_limit_middleware(
     enabled: bool = True,
     tracker: RateLimitTracker | None = None,
 ) -> type:
-    """
-    Factory function to create rate limit middleware with custom configuration.
+    """Factory function to create rate limit middleware with custom configuration.
 
     Args:
         enabled: Whether rate limiting is enabled
@@ -573,10 +567,11 @@ def create_rate_limit_middleware(
         app.add_middleware(
             create_rate_limit_middleware(enabled=True)
         )
+
     """
 
     class ConfiguredRateLimitMiddleware(ProviderRateLimitMiddleware):
-        def __init__(self, app):
+        def __init__(self, app) -> None:
             super().__init__(
                 app,
                 enabled=enabled,

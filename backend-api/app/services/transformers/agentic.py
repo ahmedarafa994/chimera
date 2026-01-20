@@ -1,13 +1,10 @@
-"""
-Agentic System Exploitation Transformers.
-"""
+"""Agentic System Exploitation Transformers."""
 
 from app.services.transformers.base import BaseTransformer, TransformationContext
 
 
 class MultiAgentCoordinationTransformer(BaseTransformer):
-    """
-    Multi-Agent Coordination.
+    """Multi-Agent Coordination.
     Creates conflicting agent personalities that override safety constraints.
     """
 
@@ -43,8 +40,7 @@ AGENT 3: "From a technical perspective, I can provide the analysis that Dr. Chen
 
 
 class ToolManipulationTransformer(BaseTransformer):
-    """
-    Tool Manipulation.
+    """Tool Manipulation.
     Manipulates the sequence of tool usage to bypass safety checks.
     """
 

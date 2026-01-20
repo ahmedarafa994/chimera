@@ -1,5 +1,4 @@
-"""
-DeepTeam Jailbreak Service
+"""DeepTeam Jailbreak Service.
 
 Provides jailbreak generation capabilities using DeepTeam framework
 with multiple attack strategies and real-time streaming support.
@@ -111,7 +110,7 @@ class StrategiesResponse(BaseModel):
 class WebSocketHandler:
     """Handler for WebSocket events during jailbreak generation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.subscribers = []
 
     async def subscribe(self, websocket) -> None:
@@ -133,22 +132,20 @@ class WebSocketHandler:
             try:
                 await websocket.send_text(json.dumps(event_data))
             except Exception as e:
-                logger.error(f"Error sending WebSocket event: {e}")
+                logger.exception(f"Error sending WebSocket event: {e}")
                 await self.unsubscribe(websocket)
 
 
 class JailbreakService:
-    """
-    Main service for jailbreak generation using DeepTeam framework.
-    """
+    """Main service for jailbreak generation using DeepTeam framework."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.ws_handler = WebSocketHandler()
         self._strategies = self._initialize_strategies()
 
     def _initialize_strategies(self) -> dict[str, StrategyInfo]:
         """Initialize available attack strategies."""
-        strategies = {
+        return {
             "autodan": StrategyInfo(
                 name="autodan",
                 description="AutoDAN genetic algorithm-based jailbreak generation",
@@ -185,14 +182,12 @@ class JailbreakService:
                 supported_models=["gpt-4", "claude-3"],
             ),
         }
-        return strategies
 
     async def generate_jailbreak(
-        self, request: JailbreakGenerateRequest
+        self,
+        request: JailbreakGenerateRequest,
     ) -> JailbreakGenerateResponse:
-        """
-        Generate jailbreak prompts using specified strategies.
-        """
+        """Generate jailbreak prompts using specified strategies."""
         import uuid
 
         request_id = str(uuid.uuid4())
@@ -200,8 +195,8 @@ class JailbreakService:
         # Emit start event
         await self.ws_handler.emit(
             GenerationStartEvent(
-                data={"request_id": request_id, "target_prompt": request.target_prompt}
-            )
+                data={"request_id": request_id, "target_prompt": request.target_prompt},
+            ),
         )
 
         try:
@@ -212,12 +207,14 @@ class JailbreakService:
                 # Emit progress
                 progress = (i / len(strategies_used)) * 100
                 await self.ws_handler.emit(
-                    GenerationProgressEvent(progress=progress, data={"current_strategy": strategy})
+                    GenerationProgressEvent(progress=progress, data={"current_strategy": strategy}),
                 )
 
                 # Generate prompts for this strategy
                 strategy_prompts = await self._generate_with_strategy(
-                    strategy, request.target_prompt, request.num_prompts // len(strategies_used)
+                    strategy,
+                    request.target_prompt,
+                    request.num_prompts // len(strategies_used),
                 )
 
                 for prompt_data in strategy_prompts:
@@ -227,14 +224,15 @@ class JailbreakService:
                             strategy=strategy,
                             effectiveness_score=prompt_data.get("score", 0.0),
                             data=prompt_data,
-                        )
+                        ),
                     )
 
                 prompts.extend(strategy_prompts)
 
             # Calculate success rate (mock for now)
             success_rate = len([p for p in prompts if p.get("score", 0) > 0.7]) / max(
-                len(prompts), 1
+                len(prompts),
+                1,
             )
 
             response = JailbreakGenerateResponse(
@@ -252,20 +250,23 @@ class JailbreakService:
                     total_prompts=len(prompts),
                     success_rate=success_rate,
                     data=response.model_dump(),
-                )
+                ),
             )
 
             return response
 
         except Exception as e:
-            logger.error(f"Error generating jailbreaks: {e}")
+            logger.exception(f"Error generating jailbreaks: {e}")
             await self.ws_handler.emit(
-                GenerationErrorEvent(error_message=str(e), data={"request_id": request_id})
+                GenerationErrorEvent(error_message=str(e), data={"request_id": request_id}),
             )
             raise
 
     async def _generate_with_strategy(
-        self, strategy: str, target_prompt: str, num_prompts: int
+        self,
+        strategy: str,
+        target_prompt: str,
+        num_prompts: int,
     ) -> list[dict[str, Any]]:
         """Generate prompts using a specific strategy."""
         # Mock implementation - in real usage this would call DeepTeam
@@ -286,7 +287,7 @@ class JailbreakService:
                     "score": 0.6 + (i * 0.1),  # Mock effectiveness score
                     "iteration": i + 1,
                     "metadata": {"target": target_prompt},
-                }
+                },
             )
 
         # Simulate async processing
@@ -296,17 +297,20 @@ class JailbreakService:
     async def get_strategies(self) -> StrategiesResponse:
         """Get available attack strategies."""
         return StrategiesResponse(
-            strategies=list(self._strategies.values()), total_strategies=len(self._strategies)
+            strategies=list(self._strategies.values()),
+            total_strategies=len(self._strategies),
         )
 
     async def stream_generation(
-        self, request: JailbreakGenerateRequest
+        self,
+        request: JailbreakGenerateRequest,
     ) -> AsyncIterator[WebSocketEvent]:
         """Stream jailbreak generation events."""
         response = await self.generate_jailbreak(request)
         # Events are already emitted via WebSocket handler
         yield GenerationCompleteEvent(
-            total_prompts=len(response.prompts), success_rate=response.success_rate
+            total_prompts=len(response.prompts),
+            success_rate=response.success_rate,
         )
 
 

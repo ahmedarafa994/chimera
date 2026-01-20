@@ -1,0 +1,35 @@
+[
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 75,
+      "row": 19
+    },
+    "filename": "K:\\MUZIK\\chimera\\backend-api\\app\\core\\error_handling_fixed.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import logging\r\nimport traceback\r\nfrom datetime import datetime\r\nfrom typing import Any\r\n\r\nfrom fastapi import HTTPException, Request, status\r\nfrom fastapi.exceptions import RequestValidationError\r\nfrom fastapi.responses import JSONResponse\r\nfrom pydantic import BaseModel\r\nfrom pydantic import ValidationError as PydanticValidationError\r\n\r\n",
+          "end_location": {
+            "column": 1,
+            "row": 21
+          },
+          "location": {
+            "column": 1,
+            "row": 11
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 11
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "noqa_row": 11,
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  }
+]

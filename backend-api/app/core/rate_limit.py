@@ -1,6 +1,5 @@
-"""
-Rate Limiting Module
-Provides distributed rate limiting with Redis and local fallback
+"""Rate Limiting Module
+Provides distributed rate limiting with Redis and local fallback.
 
 Features:
 - Sliding window rate limiting
@@ -33,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RateLimitConfig:
-    """Configuration for a rate limit"""
+    """Configuration for a rate limit."""
 
     requests_per_minute: int = 100
     burst_size: int = 20
@@ -41,7 +40,7 @@ class RateLimitConfig:
 
 
 class RateLimitTier(str, Enum):
-    """Rate limit tiers by user role"""
+    """Rate limit tiers by user role."""
 
     ADMIN = "admin"
     OPERATOR = "operator"
@@ -59,7 +58,8 @@ DEFAULT_RATE_LIMITS: dict[RateLimitTier, RateLimitConfig] = {
     RateLimitTier.VIEWER: RateLimitConfig(requests_per_minute=100, burst_size=20),
     RateLimitTier.API_CLIENT: RateLimitConfig(requests_per_minute=300, burst_size=40),
     RateLimitTier.ANONYMOUS: RateLimitConfig(
-        requests_per_minute=300, burst_size=50
+        requests_per_minute=300,
+        burst_size=50,
     ),  # Increased for dev
 }
 
@@ -88,15 +88,15 @@ ENDPOINT_RATE_LIMITS: dict[str, RateLimitConfig] = {
 
 
 class RateLimiter:
-    """Base rate limiter interface"""
+    """Base rate limiter interface."""
 
     def check_rate_limit(self, key: str, config: RateLimitConfig) -> tuple[bool, dict[str, Any]]:
-        """
-        Check if request is within rate limit.
+        """Check if request is within rate limit.
 
         Returns:
             Tuple of (allowed, info_dict)
             info_dict contains: remaining, reset_at, retry_after
+
         """
         raise NotImplementedError
 
@@ -107,13 +107,12 @@ class RateLimiter:
 
 
 class RedisRateLimiter(RateLimiter):
-    """
-    Redis-based sliding window rate limiter.
+    """Redis-based sliding window rate limiter.
 
     Uses Redis sorted sets for accurate sliding window implementation.
     """
 
-    def __init__(self, redis_url: str | None = None):
+    def __init__(self, redis_url: str | None = None) -> None:
         self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379")
         self._client = None
 
@@ -186,7 +185,7 @@ class RedisRateLimiter(RateLimiter):
                 "limit": effective_limit,
             }
         except Exception as e:
-            logger.error(f"Redis rate limit check failed: {e}")
+            logger.exception(f"Redis rate limit check failed: {e}")
             # Fail open to avoid blocking legitimate requests
             return True, {"remaining": -1, "reset_at": 0, "retry_after": 0}
 
@@ -197,22 +196,21 @@ class RedisRateLimiter(RateLimiter):
 
 
 class LocalRateLimiter(RateLimiter):
-    """
-    In-memory sliding window rate limiter.
+    """In-memory sliding window rate limiter.
 
     For single-instance deployments or development.
     WARNING: Not suitable for multi-worker production environments.
     HIGH-004 FIX: Added asyncio.Lock for thread safety.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._windows: dict[str, list] = {}
         self._cleanup_threshold = 1000
         self._max_keys = 10000
         self._lock = asyncio.Lock()  # HIGH-004: Thread safety for concurrent access
 
-    def _cleanup_old_entries(self):
-        """Remove expired entries to prevent memory bloat"""
+    def _cleanup_old_entries(self) -> None:
+        """Remove expired entries to prevent memory bloat."""
         now = time.time()
         window_start = now - 60
 
@@ -236,7 +234,9 @@ class LocalRateLimiter(RateLimiter):
                 del self._windows[k]
 
     async def check_rate_limit(
-        self, key: str, config: RateLimitConfig
+        self,
+        key: str,
+        config: RateLimitConfig,
     ) -> tuple[bool, dict[str, Any]]:
         async with self._lock:
             now = time.time()
@@ -287,7 +287,7 @@ _rate_limiter: RateLimiter | None = None
 
 
 def get_rate_limiter() -> RateLimiter:
-    """Get the configured rate limiter instance"""
+    """Get the configured rate limiter instance."""
     global _rate_limiter
 
     if _rate_limiter is None:
@@ -300,13 +300,13 @@ def get_rate_limiter() -> RateLimiter:
                 _rate_limiter.check_rate_limit("test", RateLimitConfig())
                 logger.info("Using Redis rate limiter (Distributed)")
             except Exception as e:
-                logger.error(f"Redis rate limiter failed: {e}")
+                logger.exception(f"Redis rate limiter failed: {e}")
                 # In production, we might want to raise here, but for now fallback with warning
                 logger.warning("Falling back to LocalRateLimiter (Non-distributed)")
                 _rate_limiter = LocalRateLimiter()
         else:
             logger.warning(
-                "REDIS_URL not set. Using LocalRateLimiter (Non-distributed). Not recommended for production."
+                "REDIS_URL not set. Using LocalRateLimiter (Non-distributed). Not recommended for production.",
             )
             _rate_limiter = LocalRateLimiter()
 
@@ -319,7 +319,7 @@ def get_rate_limiter() -> RateLimiter:
 
 
 def get_rate_limit_key(request: Request, user_id: str | None = None) -> str:
-    """Generate rate limit key from request"""
+    """Generate rate limit key from request."""
     if user_id:
         return f"ratelimit:user:{user_id}"
 
@@ -329,7 +329,7 @@ def get_rate_limit_key(request: Request, user_id: str | None = None) -> str:
 
 
 def get_endpoint_config(path: str) -> RateLimitConfig | None:
-    """Get endpoint-specific rate limit config"""
+    """Get endpoint-specific rate limit config."""
     for pattern, config in ENDPOINT_RATE_LIMITS.items():
         if path.startswith(pattern):
             return config
@@ -337,10 +337,11 @@ def get_endpoint_config(path: str) -> RateLimitConfig | None:
 
 
 async def check_rate_limit(
-    request: Request, user_id: str | None = None, tier: RateLimitTier = RateLimitTier.ANONYMOUS
-):
-    """
-    FastAPI dependency for rate limiting.
+    request: Request,
+    user_id: str | None = None,
+    tier: RateLimitTier = RateLimitTier.ANONYMOUS,
+) -> None:
+    """FastAPI dependency for rate limiting.
 
     Usage:
         @app.get("/api/endpoint")
@@ -362,7 +363,8 @@ async def check_rate_limit(
     if endpoint_config:
         config = RateLimitConfig(
             requests_per_minute=min(
-                endpoint_config.requests_per_minute, tier_config.requests_per_minute
+                endpoint_config.requests_per_minute,
+                tier_config.requests_per_minute,
             ),
             burst_size=min(endpoint_config.burst_size, tier_config.burst_size),
             cost_weight=endpoint_config.cost_weight,
@@ -410,14 +412,13 @@ async def check_rate_limit(
 
 
 class RateLimitMiddleware:
-    """
-    Middleware for automatic rate limiting on all requests.
+    """Middleware for automatic rate limiting on all requests.
 
     Usage:
         app.add_middleware(RateLimitMiddleware)
     """
 
-    def __init__(self, app, exclude_paths: list | None = None):
+    def __init__(self, app, exclude_paths: list | None = None) -> None:
         self.app = app
         # Expanded exclude paths for development and common endpoints
         self.exclude_paths = exclude_paths or [
@@ -456,13 +457,15 @@ class RateLimitMiddleware:
             from starlette.responses import JSONResponse
 
             response = JSONResponse(
-                status_code=e.status_code, content={"detail": e.detail}, headers=e.headers
+                status_code=e.status_code,
+                content={"detail": e.detail},
+                headers=e.headers,
             )
             await response(scope, receive, send)
             return
 
         # Add rate limit headers to response
-        async def send_wrapper(message):
+        async def send_wrapper(message) -> None:
             if message["type"] == "http.response.start":
                 headers = dict(message.get("headers", []))
                 if hasattr(request.state, "rate_limit_info"):
@@ -482,10 +485,11 @@ class RateLimitMiddleware:
 
 
 def rate_limit(
-    requests_per_minute: int = 60, cost_weight: int = 1, key_func: Callable | None = None
+    requests_per_minute: int = 60,
+    cost_weight: int = 1,
+    key_func: Callable | None = None,
 ):
-    """
-    Decorator for rate limiting individual endpoints.
+    """Decorator for rate limiting individual endpoints.
 
     Usage:
         @app.get("/api/expensive")
@@ -503,7 +507,8 @@ def rate_limit(
             key = key_func(request) if key_func else get_rate_limit_key(request)
 
             config = RateLimitConfig(
-                requests_per_minute=requests_per_minute, cost_weight=cost_weight
+                requests_per_minute=requests_per_minute,
+                cost_weight=cost_weight,
             )
 
             # Check rate limit - handle both sync and async limiters

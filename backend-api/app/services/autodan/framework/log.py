@@ -2,15 +2,13 @@ from collections import defaultdict
 
 
 class Log:
-    """
-    This class implements an in-memory logging system with an inverted index.
+    """This class implements an in-memory logging system with an inverted index.
     It can be initialized with an existing list of log entries, in which case
     it will build the index based on those entries.
     """
 
-    def __init__(self, entries):
-        """
-        Initialize the Log with optional existing entries.
+    def __init__(self, entries) -> None:
+        """Initialize the Log with optional existing entries.
 
         :param entries: A list of dictionary objects representing log entries.
                         Each dictionary could have arbitrary key-value pairs
@@ -26,9 +24,8 @@ class Log:
             for field, value in entry.items():
                 self.index[field][value].append(entry)
 
-    def add(self, **kwargs):
-        """
-        Add a new log entry with arbitrary keyword arguments.
+    def add(self, **kwargs) -> None:
+        """Add a new log entry with arbitrary keyword arguments.
 
         Example:
             log.add(
@@ -42,6 +39,7 @@ class Log:
             )
 
         :param kwargs: Arbitrary keyword arguments representing the log fields.
+
         """
         # Create the log entry as a dictionary
         entry = dict(kwargs)
@@ -52,8 +50,7 @@ class Log:
             self.index[field][value].append(entry)
 
     def find(self, **criteria):
-        """
-        Find log entries matching the specified criteria (field=value).
+        """Find log entries matching the specified criteria (field=value).
 
         Examples:
             - Find by a single field:
@@ -63,6 +60,7 @@ class Log:
 
         :param criteria: One or more field-value pairs to match in the logs.
         :return: A list of log entries that match all the given field-value pairs.
+
         """
         if not criteria:
             return self.entries

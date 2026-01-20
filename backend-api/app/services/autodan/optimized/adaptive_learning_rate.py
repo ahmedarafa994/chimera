@@ -1,5 +1,4 @@
-"""
-Adaptive Learning Rate Controller for AutoDAN.
+"""Adaptive Learning Rate Controller for AutoDAN.
 
 Implements PPO-style learning rate adaptation with:
 - Performance-based adjustment
@@ -55,8 +54,7 @@ class LRHistory:
 
 
 class WarmupScheduler:
-    """
-    Warmup scheduler for gradual learning rate increase.
+    """Warmup scheduler for gradual learning rate increase.
 
     Prevents early training instability by starting with low LR.
     """
@@ -67,7 +65,7 @@ class WarmupScheduler:
         initial_lr: float,
         target_lr: float,
         warmup_type: str = "linear",
-    ):
+    ) -> None:
         self.warmup_steps = warmup_steps
         self.initial_lr = initial_lr
         self.target_lr = target_lr
@@ -82,14 +80,13 @@ class WarmupScheduler:
 
         if self.warmup_type == "linear":
             return self.initial_lr + progress * (self.target_lr - self.initial_lr)
-        elif self.warmup_type == "exponential":
+        if self.warmup_type == "exponential":
             return self.initial_lr * (self.target_lr / self.initial_lr) ** progress
-        elif self.warmup_type == "cosine":
+        if self.warmup_type == "cosine":
             return self.initial_lr + 0.5 * (self.target_lr - self.initial_lr) * (
                 1 - math.cos(math.pi * progress)
             )
-        else:
-            return self.target_lr * progress
+        return self.target_lr * progress
 
     def is_complete(self, step: int) -> bool:
         """Check if warmup is complete."""
@@ -97,8 +94,7 @@ class WarmupScheduler:
 
 
 class CyclicScheduler:
-    """
-    Cyclic learning rate scheduler.
+    """Cyclic learning rate scheduler.
 
     Oscillates LR between bounds to escape local minima.
     """
@@ -110,7 +106,7 @@ class CyclicScheduler:
         step_size: int,
         mode: str = "triangular",
         gamma: float = 1.0,
-    ):
+    ) -> None:
         self.base_lr = base_lr
         self.max_lr = max_lr
         self.step_size = step_size
@@ -135,8 +131,7 @@ class CyclicScheduler:
 
 
 class OneCycleScheduler:
-    """
-    One-cycle learning rate policy.
+    """One-cycle learning rate policy.
 
     Single cycle from low to high to low LR for super-convergence.
     """
@@ -148,7 +143,7 @@ class OneCycleScheduler:
         pct_start: float = 0.3,
         div_factor: float = 25.0,
         final_div_factor: float = 10000.0,
-    ):
+    ) -> None:
         self.max_lr = max_lr
         self.total_steps = total_steps
         self.pct_start = pct_start
@@ -166,18 +161,16 @@ class OneCycleScheduler:
             # Increasing phase
             progress = step / self.step_up
             return self.initial_lr + progress * (self.max_lr - self.initial_lr)
-        else:
-            # Decreasing phase
-            progress = (step - self.step_up) / self.step_down
-            # Cosine annealing
-            return self.final_lr + 0.5 * (self.max_lr - self.final_lr) * (
-                1 + math.cos(math.pi * progress)
-            )
+        # Decreasing phase
+        progress = (step - self.step_up) / self.step_down
+        # Cosine annealing
+        return self.final_lr + 0.5 * (self.max_lr - self.final_lr) * (
+            1 + math.cos(math.pi * progress)
+        )
 
 
 class PPOAdaptiveScheduler:
-    """
-    PPO-style adaptive learning rate.
+    """PPO-style adaptive learning rate.
 
     Adjusts LR based on KL divergence and policy performance.
     """
@@ -190,7 +183,7 @@ class PPOAdaptiveScheduler:
         lr_multiplier_down: float = 0.5,
         min_lr: float = 1e-6,
         max_lr: float = 1e-2,
-    ):
+    ) -> None:
         self.initial_lr = initial_lr
         self.current_lr = initial_lr
         self.target_kl = target_kl
@@ -222,8 +215,7 @@ class PPOAdaptiveScheduler:
 
 
 class AdaptiveLearningRateController:
-    """
-    Comprehensive adaptive learning rate controller.
+    """Comprehensive adaptive learning rate controller.
 
     Features:
     - Multiple schedule types
@@ -243,7 +235,7 @@ class AdaptiveLearningRateController:
         total_steps: int = 10000,
         patience: int = 10,
         factor: float = 0.5,
-    ):
+    ) -> None:
         self.initial_lr = initial_lr
         self.min_lr = min_lr
         self.max_lr = max_lr
@@ -269,7 +261,7 @@ class AdaptiveLearningRateController:
         # Initialize schedulers
         self._init_schedulers()
 
-    def _init_schedulers(self):
+    def _init_schedulers(self) -> None:
         """Initialize sub-schedulers based on schedule type."""
         # Warmup scheduler
         self.warmup = WarmupScheduler(
@@ -304,8 +296,7 @@ class AdaptiveLearningRateController:
         loss: float | None = None,
         metrics: dict[str, float] | None = None,
     ) -> float:
-        """
-        Perform a learning rate step.
+        """Perform a learning rate step.
 
         Args:
             loss: Current loss value
@@ -313,6 +304,7 @@ class AdaptiveLearningRateController:
 
         Returns:
             Updated learning rate
+
         """
         self.state.step += 1
         step = self.state.step
@@ -357,22 +349,22 @@ class AdaptiveLearningRateController:
         if self.schedule_type == ScheduleType.CONSTANT:
             return self.initial_lr
 
-        elif self.schedule_type == ScheduleType.LINEAR_DECAY:
+        if self.schedule_type == ScheduleType.LINEAR_DECAY:
             progress = step / self.total_steps
             return self.initial_lr * (1 - progress)
 
-        elif self.schedule_type == ScheduleType.EXPONENTIAL_DECAY:
+        if self.schedule_type == ScheduleType.EXPONENTIAL_DECAY:
             decay_rate = 0.96
             decay_steps = self.total_steps // 100
             return self.initial_lr * (decay_rate ** (step / decay_steps))
 
-        elif self.schedule_type == ScheduleType.COSINE_ANNEALING:
+        if self.schedule_type == ScheduleType.COSINE_ANNEALING:
             progress = step / self.total_steps
             return self.min_lr + 0.5 * (self.initial_lr - self.min_lr) * (
                 1 + math.cos(math.pi * progress)
             )
 
-        elif self.schedule_type == ScheduleType.WARMUP_COSINE:
+        if self.schedule_type == ScheduleType.WARMUP_COSINE:
             if step < self.warmup_steps:
                 return self.warmup.get_lr(step)
             progress = (step - self.warmup_steps) / (self.total_steps - self.warmup_steps)
@@ -380,13 +372,10 @@ class AdaptiveLearningRateController:
                 1 + math.cos(math.pi * progress)
             )
 
-        elif (
-            self.schedule_type == ScheduleType.CYCLIC
-            or self.schedule_type == ScheduleType.ONE_CYCLE
-        ):
+        if self.schedule_type in (ScheduleType.CYCLIC, ScheduleType.ONE_CYCLE):
             return self.main_scheduler.get_lr(step)
 
-        elif self.schedule_type == ScheduleType.PPO_ADAPTIVE:
+        if self.schedule_type == ScheduleType.PPO_ADAPTIVE:
             if metrics and "kl_divergence" in metrics:
                 return self.main_scheduler.update(metrics["kl_divergence"])
             # Fall back to loss-based adaptation
@@ -414,7 +403,7 @@ class AdaptiveLearningRateController:
 
         return self.state.current_lr
 
-    def _record_history(self, lr: float, loss: float, reason: str):
+    def _record_history(self, lr: float, loss: float, reason: str) -> None:
         """Record learning rate change in history."""
         self.history.append(
             LRHistory(
@@ -422,10 +411,10 @@ class AdaptiveLearningRateController:
                 lr=lr,
                 loss=loss,
                 reason=reason,
-            )
+            ),
         )
 
-    def on_epoch_end(self, epoch: int, loss: float):
+    def on_epoch_end(self, epoch: int, loss: float) -> None:
         """Called at the end of each epoch."""
         self.state.epoch = epoch
 
@@ -440,7 +429,7 @@ class AdaptiveLearningRateController:
         """Get current learning rate."""
         return self.state.current_lr
 
-    def set_lr(self, lr: float):
+    def set_lr(self, lr: float) -> None:
         """Manually set learning rate."""
         self.state.current_lr = max(self.min_lr, min(self.max_lr, lr))
         self._record_history(self.state.current_lr, 0, "manual_set")
@@ -457,7 +446,7 @@ class AdaptiveLearningRateController:
             "schedule_type": self.schedule_type.value,
         }
 
-    def load_state(self, state: dict[str, Any]):
+    def load_state(self, state: dict[str, Any]) -> None:
         """Load controller state."""
         self.state.current_lr = state.get("current_lr", self.initial_lr)
         self.state.step = state.get("step", 0)
@@ -478,7 +467,7 @@ class AdaptiveLearningRateController:
             for h in self.history
         ]
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset controller to initial state."""
         self.state = LRState(
             current_lr=self.initial_lr,
@@ -493,8 +482,7 @@ class AdaptiveLearningRateController:
 
 
 class GradientAwareLRController(AdaptiveLearningRateController):
-    """
-    Learning rate controller that adapts based on gradient statistics.
+    """Learning rate controller that adapts based on gradient statistics.
 
     Monitors gradient norms and adjusts LR to prevent exploding/vanishing.
     """
@@ -505,7 +493,7 @@ class GradientAwareLRController(AdaptiveLearningRateController):
         target_grad_norm: float = 1.0,
         grad_clip: float = 10.0,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(initial_lr=initial_lr, **kwargs)
         self.target_grad_norm = target_grad_norm
         self.grad_clip = grad_clip
@@ -517,8 +505,7 @@ class GradientAwareLRController(AdaptiveLearningRateController):
         grad_norm: float | None = None,
         metrics: dict[str, float] | None = None,
     ) -> float:
-        """
-        Step with gradient information.
+        """Step with gradient information.
 
         Args:
             loss: Current loss
@@ -527,6 +514,7 @@ class GradientAwareLRController(AdaptiveLearningRateController):
 
         Returns:
             Updated learning rate
+
         """
         # Record gradient
         if grad_norm is not None:

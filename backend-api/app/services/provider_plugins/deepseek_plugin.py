@@ -1,5 +1,4 @@
-"""
-DeepSeek Provider Plugin for Project Chimera.
+"""DeepSeek Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for DeepSeek AI integration,
 supporting DeepSeek Chat, DeepSeek Coder, and DeepSeek Reasoner models.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class DeepSeekPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for DeepSeek AI API.
+    """Provider plugin for DeepSeek AI API.
 
     DeepSeek uses an OpenAI-compatible API format.
     Supports DeepSeek Chat, Coder, and Reasoner models.
@@ -123,8 +121,7 @@ class DeepSeekPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available DeepSeek models.
+        """List available DeepSeek models.
 
         Attempts to fetch from API, falls back to static list on failure.
         """
@@ -172,7 +169,7 @@ class DeepSeekPlugin(BaseProviderPlugin):
                         context_window=128000,
                         supports_streaming=True,
                         capabilities=["chat"],
-                    )
+                    ),
                 )
 
         # Add any static models not in API response
@@ -199,12 +196,15 @@ class DeepSeekPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using DeepSeek API (OpenAI-compatible)."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("DeepSeek API key is required")
+            msg = "DeepSeek API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
         start_time = time.time()
@@ -269,19 +269,22 @@ class DeepSeekPlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"DeepSeek API error: {e.response.status_code}")
+            logger.exception(f"DeepSeek API error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"DeepSeek generation error: {e}")
+            logger.exception(f"DeepSeek generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from DeepSeek API."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("DeepSeek API key is required")
+            msg = "DeepSeek API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
 
@@ -354,5 +357,5 @@ class DeepSeekPlugin(BaseProviderPlugin):
                             logger.warning(f"Parse error: {e}")
                             continue
         except Exception as e:
-            logger.error(f"DeepSeek streaming error: {e}")
+            logger.exception(f"DeepSeek streaming error: {e}")
             raise

@@ -1,5 +1,4 @@
-"""
-Configuration Validation Framework
+"""Configuration Validation Framework.
 
 Comprehensive validation system for Chimera configuration files including:
 - JSON Schema validation
@@ -72,8 +71,7 @@ class ConfigurationAnalysis(BaseModel):
 
 
 class ConfigurationValidator:
-    """
-    Main configuration validation engine.
+    """Main configuration validation engine.
 
     Validates configuration files against schemas, security rules,
     and environment-specific requirements.
@@ -108,16 +106,16 @@ class ConfigurationValidator:
         "REPLACE_",
     ]
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path) -> None:
         self.project_root = Path(project_root)
         self.analysis = ConfigurationAnalysis()
 
     def analyze_project(self) -> ConfigurationAnalysis:
-        """
-        Perform comprehensive configuration analysis.
+        """Perform comprehensive configuration analysis.
 
         Returns:
             ConfigurationAnalysis with all findings
+
         """
         # 1. Discover configuration files
         self.analysis.config_files = self._find_config_files()
@@ -179,7 +177,7 @@ class ConfigurationValidator:
                         "type": config_type,
                         "environment": self._detect_environment(file_path),
                         "size": file_path.stat().st_size,
-                    }
+                    },
                 )
 
         return config_files
@@ -190,11 +188,11 @@ class ConfigurationValidator:
 
         if "production" in name_lower or "prod" in name_lower:
             return "production"
-        elif "staging" in name_lower or "stage" in name_lower:
+        if "staging" in name_lower or "stage" in name_lower:
             return "staging"
-        elif "development" in name_lower or "dev" in name_lower:
+        if "development" in name_lower or "dev" in name_lower:
             return "development"
-        elif "test" in name_lower:
+        if "test" in name_lower:
             return "test"
 
         return None
@@ -226,7 +224,7 @@ class ConfigurationValidator:
                                     path=config_file["path"],
                                     rule="no_exposed_secrets",
                                     remediation="Move secrets to environment variables or secret management system",
-                                )
+                                ),
                             )
 
                 # Check for weak security configurations
@@ -240,7 +238,7 @@ class ConfigurationValidator:
                         message=f"Failed to analyze file: {e}",
                         path=config_file["path"],
                         rule="file_read_error",
-                    )
+                    ),
                 )
 
     def _looks_like_real_secret(self, value: str) -> bool:
@@ -283,7 +281,7 @@ class ConfigurationValidator:
                         path=file_path,
                         rule="weak_security_config",
                         remediation="Review security settings for production environments",
-                    )
+                    ),
                 )
 
     def _validate_environment_files(self) -> None:
@@ -326,7 +324,7 @@ class ConfigurationValidator:
                             path=config_file["path"],
                             rule="required_env_vars",
                             remediation=f"Add missing variables to {config_file['path']}",
-                        )
+                        ),
                     )
 
                 # Check for CHANGE_ME placeholders in production
@@ -341,7 +339,7 @@ class ConfigurationValidator:
                                     path=config_file["path"],
                                     rule="no_placeholders_in_prod",
                                     remediation=f"Set a real value for {key}",
-                                )
+                                ),
                             )
 
             except Exception as e:
@@ -352,7 +350,7 @@ class ConfigurationValidator:
                         message=f"Failed to parse env file: {e}",
                         path=config_file["path"],
                         rule="env_parse_error",
-                    )
+                    ),
                 )
 
     def _parse_env_file(self, file_path: Path) -> dict[str, str]:
@@ -424,7 +422,7 @@ class ConfigurationValidator:
                                 path=file_info["path"],
                                 rule="env_consistency",
                                 remediation="Ensure all environments have consistent variable names",
-                            )
+                            ),
                         )
 
     def _validate_structured_configs(self) -> None:
@@ -457,7 +455,7 @@ class ConfigurationValidator:
                         path=config_file["path"],
                         rule="valid_syntax",
                         remediation="Fix syntax errors in configuration file",
-                    )
+                    ),
                 )
                 self.analysis.failed_checks += 1
 
@@ -482,7 +480,7 @@ class ConfigurationValidator:
                             path=config_file["path"],
                             rule="file_permissions",
                             remediation=f"chmod 600 {config_file['path']}",
-                        )
+                        ),
                     )
 
     def generate_report(self) -> str:
@@ -510,7 +508,7 @@ class ConfigurationValidator:
                 [
                     "❌ CRITICAL ISSUES FOUND",
                     "-" * 80,
-                ]
+                ],
             )
             for issue in self.analysis.issues:
                 if issue.severity == Severity.CRITICAL:
@@ -521,7 +519,7 @@ class ConfigurationValidator:
                             f"  Rule: {issue.rule}",
                             f"  Fix: {issue.remediation or 'See documentation'}",
                             "",
-                        ]
+                        ],
                     )
 
         if any(issue.severity == Severity.HIGH for issue in self.analysis.issues):
@@ -529,7 +527,7 @@ class ConfigurationValidator:
                 [
                     "⚠️  HIGH SEVERITY ISSUES",
                     "-" * 80,
-                ]
+                ],
             )
             for issue in self.analysis.issues:
                 if issue.severity == Severity.HIGH:
@@ -539,7 +537,7 @@ class ConfigurationValidator:
                             f"  File: {issue.path}",
                             f"  Rule: {issue.rule}",
                             "",
-                        ]
+                        ],
                     )
 
         lines.extend(
@@ -547,7 +545,7 @@ class ConfigurationValidator:
                 "=" * 80,
                 "END OF REPORT",
                 "=" * 80,
-            ]
+            ],
         )
 
         return "\n".join(lines)
@@ -555,14 +553,14 @@ class ConfigurationValidator:
 
 # Convenience function for CLI usage
 def validate_project_configuration(project_root: str) -> tuple[bool, str]:
-    """
-    Validate project configuration and return results.
+    """Validate project configuration and return results.
 
     Args:
         project_root: Path to project root directory
 
     Returns:
         Tuple of (success: bool, report: str)
+
     """
     validator = ConfigurationValidator(Path(project_root))
     analysis = validator.analyze_project()
@@ -579,5 +577,4 @@ if __name__ == "__main__":
     project_path = sys.argv[1] if len(sys.argv) > 1 else "."
     success, report = validate_project_configuration(project_path)
 
-    print(report)
     sys.exit(0 if success else 1)

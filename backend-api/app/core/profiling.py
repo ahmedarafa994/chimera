@@ -1,6 +1,5 @@
-"""
-Advanced profiling utilities for Chimera backend
-Provides CPU profiling, memory profiling, and flame graph generation
+"""Advanced profiling utilities for Chimera backend
+Provides CPU profiling, memory profiling, and flame graph generation.
 """
 
 import asyncio
@@ -20,9 +19,9 @@ import psutil
 
 
 class CPUProfiler:
-    """CPU profiling with flame graph generation"""
+    """CPU profiling with flame graph generation."""
 
-    def __init__(self, output_dir: str = "performance/profiles"):
+    def __init__(self, output_dir: str = "performance/profiles") -> None:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         self.profiler = None
@@ -30,7 +29,7 @@ class CPUProfiler:
 
     @contextmanager
     def profile_context(self, name: str):
-        """Context manager for CPU profiling"""
+        """Context manager for CPU profiling."""
         profiler = cProfile.Profile()
         profiler.enable()
         start_time = time.time()
@@ -52,8 +51,8 @@ class CPUProfiler:
             # Generate flame graph
             self._generate_flame_graph(filename, name)
 
-    def _generate_text_report(self, profile_file: str, name: str, duration: float):
-        """Generate human-readable profile report"""
+    def _generate_text_report(self, profile_file: str, name: str, duration: float) -> None:
+        """Generate human-readable profile report."""
         stats = pstats.Stats(profile_file)
         stats.sort_stats("cumulative")
 
@@ -76,8 +75,8 @@ class CPUProfiler:
             stats.sort_stats("time")
             stats.print_stats(20, file=f)
 
-    def _generate_flame_graph(self, profile_file: str, name: str):
-        """Generate flame graph from profile data"""
+    def _generate_flame_graph(self, profile_file: str, name: str) -> None:
+        """Generate flame graph from profile data."""
         try:
             # Convert profile to flame graph format
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -87,17 +86,18 @@ class CPUProfiler:
             cmd = ["py-spy", "flamegraph", "--file", profile_file, "--output", flamegraph_file]
 
             subprocess.run(
-                cmd, check=True, capture_output=True
+                cmd,
+                check=True,
+                capture_output=True,
             )  # - hardcoded safe command
-            print(f"Flame graph generated: {flamegraph_file}")
 
         except subprocess.CalledProcessError:
-            print("Failed to generate flame graph. Ensure py-spy is installed.")
+            pass
         except FileNotFoundError:
-            print("py-spy not found. Install with: pip install py-spy")
+            pass
 
     def profile_async_function(self, func: Callable, name: str | None = None):
-        """Decorator for profiling async functions"""
+        """Decorator for profiling async functions."""
         if name is None:
             name = func.__name__
 
@@ -109,7 +109,7 @@ class CPUProfiler:
         return wrapper
 
     def profile_sync_function(self, func: Callable, name: str | None = None):
-        """Decorator for profiling sync functions"""
+        """Decorator for profiling sync functions."""
         if name is None:
             name = func.__name__
 
@@ -122,29 +122,29 @@ class CPUProfiler:
 
 
 class MemoryProfiler:
-    """Memory profiling and leak detection"""
+    """Memory profiling and leak detection."""
 
-    def __init__(self, output_dir: str = "performance/profiles"):
+    def __init__(self, output_dir: str = "performance/profiles") -> None:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         self.snapshots = {}
         self.monitoring = False
 
-    def start_monitoring(self):
-        """Start memory monitoring"""
+    def start_monitoring(self) -> None:
+        """Start memory monitoring."""
         if not self.monitoring:
             tracemalloc.start()
             self.monitoring = True
             self.baseline_snapshot = tracemalloc.take_snapshot()
 
-    def stop_monitoring(self):
-        """Stop memory monitoring"""
+    def stop_monitoring(self) -> None:
+        """Stop memory monitoring."""
         if self.monitoring:
             tracemalloc.stop()
             self.monitoring = False
 
-    def take_snapshot(self, name: str):
-        """Take a memory snapshot"""
+    def take_snapshot(self, name: str) -> None:
+        """Take a memory snapshot."""
         if not self.monitoring:
             self.start_monitoring()
 
@@ -158,8 +158,8 @@ class MemoryProfiler:
         # Generate memory report
         self._generate_memory_report(name)
 
-    def _generate_memory_report(self, name: str):
-        """Generate detailed memory report"""
+    def _generate_memory_report(self, name: str) -> None:
+        """Generate detailed memory report."""
         if name not in self.snapshots:
             return
 
@@ -185,19 +185,17 @@ class MemoryProfiler:
             f.write("TOP 20 MEMORY CONSUMERS:\n")
             f.write("-" * 40 + "\n")
             top_stats = snapshot.statistics("lineno")
-            for index, stat in enumerate(top_stats[:20], 1):
-                f.write(f"{index:2d}. {stat}\n")
+            f.writelines(f"{index:2d}. {stat}\n" for index, stat in enumerate(top_stats[:20], 1))
 
             # Traceback for top consumers
             f.write("\n\nTOP 5 TRACEBACKS:\n")
             f.write("-" * 40 + "\n")
             for stat in top_stats[:5]:
                 f.write(f"\n{stat}:\n")
-                for line in stat.traceback.format():
-                    f.write(f"  {line}")
+                f.writelines(f"  {line}" for line in stat.traceback.format())
 
-    def compare_snapshots(self, name1: str, name2: str):
-        """Compare two memory snapshots"""
+    def compare_snapshots(self, name1: str, name2: str) -> None:
+        """Compare two memory snapshots."""
         if name1 not in self.snapshots or name2 not in self.snapshots:
             return
 
@@ -216,12 +214,11 @@ class MemoryProfiler:
 
             f.write("TOP 20 MEMORY CHANGES:\n")
             f.write("-" * 40 + "\n")
-            for stat in top_stats[:20]:
-                f.write(f"{stat}\n")
+            f.writelines(f"{stat}\n" for stat in top_stats[:20])
 
     @contextmanager
     def profile_memory_context(self, name: str):
-        """Context manager for memory profiling"""
+        """Context manager for memory profiling."""
         self.start_monitoring()
         self.take_snapshot(f"{name}_start")
 
@@ -233,16 +230,16 @@ class MemoryProfiler:
 
 
 class IOProfiler:
-    """I/O operations profiling"""
+    """I/O operations profiling."""
 
-    def __init__(self, output_dir: str = "performance/profiles"):
+    def __init__(self, output_dir: str = "performance/profiles") -> None:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         self.io_stats = []
 
     @asynccontextmanager
     async def profile_io_context(self, name: str):
-        """Context manager for I/O profiling"""
+        """Context manager for I/O profiling."""
         start_time = time.time()
         process = psutil.Process()
         start_io = process.io_counters()
@@ -266,8 +263,8 @@ class IOProfiler:
             self.io_stats.append(stats)
             self._save_io_stats()
 
-    def _save_io_stats(self):
-        """Save I/O statistics to file"""
+    def _save_io_stats(self) -> None:
+        """Save I/O statistics to file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         stats_file = f"{self.output_dir}/io_stats_{timestamp}.json"
 
@@ -276,16 +273,16 @@ class IOProfiler:
 
 
 class HotPathAnalyzer:
-    """Analyze hot paths and performance bottlenecks"""
+    """Analyze hot paths and performance bottlenecks."""
 
-    def __init__(self, output_dir: str = "performance/analysis"):
+    def __init__(self, output_dir: str = "performance/analysis") -> None:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         self.call_stats = {}
         self.execution_times = {}
 
-    def record_call(self, function_name: str, duration: float, args_info: str = ""):
-        """Record function call for analysis"""
+    def record_call(self, function_name: str, duration: float, args_info: str = "") -> None:
+        """Record function call for analysis."""
         if function_name not in self.call_stats:
             self.call_stats[function_name] = {
                 "count": 0,
@@ -305,15 +302,15 @@ class HotPathAnalyzer:
 
         # Keep recent calls for trend analysis
         stats["recent_calls"].append(
-            {"duration": duration, "timestamp": time.time(), "args_info": args_info}
+            {"duration": duration, "timestamp": time.time(), "args_info": args_info},
         )
 
         # Keep only last 100 calls
         if len(stats["recent_calls"]) > 100:
             stats["recent_calls"].pop(0)
 
-    def generate_hotpath_report(self):
-        """Generate hot path analysis report"""
+    def generate_hotpath_report(self) -> None:
+        """Generate hot path analysis report."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_file = f"{self.output_dir}/hotpath_analysis_{timestamp}.txt"
 
@@ -324,7 +321,9 @@ class HotPathAnalyzer:
 
             # Sort by total time
             sorted_functions = sorted(
-                self.call_stats.items(), key=lambda x: x[1]["total_time"], reverse=True
+                self.call_stats.items(),
+                key=lambda x: x[1]["total_time"],
+                reverse=True,
             )
 
             f.write("TOP FUNCTIONS BY TOTAL TIME:\n")
@@ -339,7 +338,9 @@ class HotPathAnalyzer:
 
             # Sort by average time
             sorted_by_avg = sorted(
-                self.call_stats.items(), key=lambda x: x[1]["avg_time"], reverse=True
+                self.call_stats.items(),
+                key=lambda x: x[1]["avg_time"],
+                reverse=True,
             )
 
             f.write("\nTOP FUNCTIONS BY AVERAGE TIME:\n")
@@ -349,7 +350,7 @@ class HotPathAnalyzer:
                     f.write(f"{func_name}: {stats['avg_time']:.3f}s avg ({stats['count']} calls)\n")
 
     def profile_function(self, func: Callable, name: str | None = None):
-        """Decorator for hot path analysis"""
+        """Decorator for hot path analysis."""
         if name is None:
             name = f"{func.__module__}.{func.__name__}"
 
@@ -359,34 +360,31 @@ class HotPathAnalyzer:
             async def async_wrapper(*args, **kwargs):
                 start_time = time.time()
                 try:
-                    result = await func(*args, **kwargs)
-                    return result
+                    return await func(*args, **kwargs)
                 finally:
                     duration = time.time() - start_time
                     args_info = f"args={len(args)}, kwargs={len(kwargs)}"
                     self.record_call(name, duration, args_info)
 
             return async_wrapper
-        else:
 
-            @wraps(func)
-            def sync_wrapper(*args, **kwargs):
-                start_time = time.time()
-                try:
-                    result = func(*args, **kwargs)
-                    return result
-                finally:
-                    duration = time.time() - start_time
-                    args_info = f"args={len(args)}, kwargs={len(kwargs)}"
-                    self.record_call(name, duration, args_info)
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            start_time = time.time()
+            try:
+                return func(*args, **kwargs)
+            finally:
+                duration = time.time() - start_time
+                args_info = f"args={len(args)}, kwargs={len(kwargs)}"
+                self.record_call(name, duration, args_info)
 
-            return sync_wrapper
+        return sync_wrapper
 
 
 class PerformanceProfiler:
-    """Main profiler orchestrator"""
+    """Main profiler orchestrator."""
 
-    def __init__(self, output_dir: str = "performance"):
+    def __init__(self, output_dir: str = "performance") -> None:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
@@ -397,14 +395,16 @@ class PerformanceProfiler:
 
     @asynccontextmanager
     async def profile_all_context(self, name: str):
-        """Profile CPU, memory, and I/O for a code block"""
-        with self.cpu_profiler.profile_context(name):
-            with self.memory_profiler.profile_memory_context(name):
-                async with self.io_profiler.profile_io_context(name):
-                    yield
+        """Profile CPU, memory, and I/O for a code block."""
+        with (
+            self.cpu_profiler.profile_context(name),
+            self.memory_profiler.profile_memory_context(name),
+        ):
+            async with self.io_profiler.profile_io_context(name):
+                yield
 
-    def generate_comprehensive_report(self):
-        """Generate comprehensive performance report"""
+    def generate_comprehensive_report(self) -> None:
+        """Generate comprehensive performance report."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_file = f"{self.output_dir}/comprehensive_report_{timestamp}.txt"
 

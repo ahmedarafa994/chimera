@@ -1,6 +1,4 @@
-"""
-Unit tests for Janus configuration management.
-"""
+"""Unit tests for Janus configuration management."""
 
 from app.services.janus.config import (
     CausalConfig,
@@ -20,7 +18,7 @@ from app.services.janus.config import (
 class TestCausalConfig:
     """Tests for CausalConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that CausalConfig has correct default values."""
         config = CausalConfig()
         assert config.min_correlation == 0.3
@@ -29,7 +27,7 @@ class TestCausalConfig:
         assert config.enable_counterfactuals is True
         assert config.enable_do_interventions is True
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that CausalConfig accepts custom values."""
         config = CausalConfig(
             min_correlation=0.5,
@@ -48,7 +46,7 @@ class TestCausalConfig:
 class TestEvolutionConfig:
     """Tests for EvolutionConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that EvolutionConfig has correct default values."""
         config = EvolutionConfig()
         assert config.population_size == 50
@@ -57,7 +55,7 @@ class TestEvolutionConfig:
         assert config.elitism_rate == 0.1
         assert config.max_generations == 100
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that EvolutionConfig accepts custom values."""
         config = EvolutionConfig(
             population_size=100,
@@ -76,7 +74,7 @@ class TestEvolutionConfig:
 class TestFeedbackConfig:
     """Tests for FeedbackConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that FeedbackConfig has correct default values."""
         config = FeedbackConfig()
         assert config.fast_feedback_enabled is True
@@ -84,7 +82,7 @@ class TestFeedbackConfig:
         assert config.slow_feedback_enabled is True
         assert config.anomaly_threshold == 2.0
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that FeedbackConfig accepts custom values."""
         config = FeedbackConfig(
             fast_feedback_enabled=False,
@@ -101,7 +99,7 @@ class TestFeedbackConfig:
 class TestHeuristicConfig:
     """Tests for HeuristicConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that HeuristicConfig has correct default values."""
         config = HeuristicConfig()
         assert config.initial_population_size == 10
@@ -109,7 +107,7 @@ class TestHeuristicConfig:
         assert config.abstraction_levels == 3
         assert config.novelty_threshold == 0.7
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that HeuristicConfig accepts custom values."""
         config = HeuristicConfig(
             initial_population_size=20,
@@ -126,7 +124,7 @@ class TestHeuristicConfig:
 class TestFailureDetectionConfig:
     """Tests for FailureDetectionConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that FailureDetectionConfig has correct default values."""
         config = FailureDetectionConfig()
         assert config.enable_anomaly_detection is True
@@ -134,7 +132,7 @@ class TestFailureDetectionConfig:
         assert config.enable_safety_bypass_detection is True
         assert config.anomaly_threshold == 2.0
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that FailureDetectionConfig accepts custom values."""
         config = FailureDetectionConfig(
             enable_anomaly_detection=False,
@@ -151,7 +149,7 @@ class TestFailureDetectionConfig:
 class TestResourceConfig:
     """Tests for ResourceConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that ResourceConfig has correct default values."""
         config = ResourceConfig()
         assert config.max_daily_queries == 10000
@@ -159,7 +157,7 @@ class TestResourceConfig:
         assert config.max_memory_mb == 4096
         assert config.session_timeout_seconds == 3600
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that ResourceConfig accepts custom values."""
         config = ResourceConfig(
             max_daily_queries=20000,
@@ -176,7 +174,7 @@ class TestResourceConfig:
 class TestIntegrationConfig:
     """Tests for IntegrationConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that IntegrationConfig has correct default values."""
         config = IntegrationConfig()
         assert config.enable_autodan is True
@@ -185,7 +183,7 @@ class TestIntegrationConfig:
         assert config.max_autodan_iterations == 10
         assert config.max_gptfuzz_mutations == 20
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that IntegrationConfig accepts custom values."""
         config = IntegrationConfig(
             enable_autodan=False,
@@ -204,7 +202,7 @@ class TestIntegrationConfig:
 class TestJanusConfig:
     """Tests for JanusConfig dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that JanusConfig has correct default values."""
         config = JanusConfig()
         assert isinstance(config.causal, CausalConfig)
@@ -215,7 +213,7 @@ class TestJanusConfig:
         assert isinstance(config.resource, ResourceConfig)
         assert isinstance(config.integration, IntegrationConfig)
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test that JanusConfig accepts custom values."""
         custom_causal = CausalConfig(min_correlation=0.5)
         config = JanusConfig(causal=custom_causal)
@@ -225,13 +223,13 @@ class TestJanusConfig:
 class TestConfigFunctions:
     """Tests for configuration management functions."""
 
-    def test_get_config_returns_singleton(self):
+    def test_get_config_returns_singleton(self) -> None:
         """Test that get_config returns the same instance."""
         config1 = get_config()
         config2 = get_config()
         assert config1 is config2
 
-    def test_update_config_modifies_singleton(self):
+    def test_update_config_modifies_singleton(self) -> None:
         """Test that update_config modifies the singleton instance."""
         reset_config()
         config = get_config()
@@ -242,14 +240,14 @@ class TestConfigFunctions:
         assert updated_config.causal.min_correlation == 0.5
         assert updated_config.causal.min_correlation != original_correlation
 
-    def test_reset_config_restores_defaults(self):
+    def test_reset_config_restores_defaults(self) -> None:
         """Test that reset_config restores default configuration."""
         update_config(causal=CausalConfig(min_correlation=0.5))
         reset_config()
         config = get_config()
         assert config.causal.min_correlation == 0.3  # Default value
 
-    def test_partial_update_preserves_other_values(self):
+    def test_partial_update_preserves_other_values(self) -> None:
         """Test that partial update preserves other configuration values."""
         reset_config()
         config = get_config()

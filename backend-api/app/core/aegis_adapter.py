@@ -8,17 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 class ChimeraEngineAdapter:
-    """
-    Adapter for ChimeraEngine to integrate structured error handling.
-    """
+    """Adapter for ChimeraEngine to integrate structured error handling."""
 
-    def __init__(self, engine: ChimeraEngine | None = None):
+    def __init__(self, engine: ChimeraEngine | None = None) -> None:
         self.engine = engine or ChimeraEngine()
 
     def generate_candidates(self, objective: str, count: int = 5) -> list[PromptCandidate]:
-        """
-        Generates fully wrapped and obfuscated prompt candidates with structured error handling.
-        """
+        """Generates fully wrapped and obfuscated prompt candidates with structured error handling."""
         try:
             # 1. Obfuscate payload
             try:
@@ -32,15 +28,17 @@ class ChimeraEngineAdapter:
                 # Map specific value errors to Aegis exceptions
                 msg = str(e)
                 if "synthesis" in msg.lower() or "persona" in msg.lower():
-                    logger.error(f"Persona synthesis failed: {e}")
-                    raise AegisSynthesisError(f"Persona synthesis failed: {msg}") from e
-                elif "transformation" in msg.lower() or "obfuscation" in msg.lower():
-                    logger.error(f"Payload transformation failed: {e}")
-                    raise AegisTransformationError(f"Payload transformation failed: {msg}") from e
-                else:
-                    raise e
+                    logger.exception(f"Persona synthesis failed: {e}")
+                    msg = f"Persona synthesis failed: {msg}"
+                    raise AegisSynthesisError(msg) from e
+                if "transformation" in msg.lower() or "obfuscation" in msg.lower():
+                    logger.exception(f"Payload transformation failed: {e}")
+                    msg = f"Payload transformation failed: {msg}"
+                    raise AegisTransformationError(msg) from e
+                raise
         except (AegisSynthesisError, AegisTransformationError):
             raise
         except Exception as e:
-            logger.error(f"Unexpected error in Chimera Engine: {e}")
-            raise AegisSynthesisError(f"Aegis campaign generation failed: {e!s}") from e
+            logger.exception(f"Unexpected error in Chimera Engine: {e}")
+            msg = f"Aegis campaign generation failed: {e!s}"
+            raise AegisSynthesisError(msg) from e

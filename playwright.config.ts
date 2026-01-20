@@ -5,12 +5,14 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * This configuration supports:
  * - Backend API on port 8001
- * - Frontend on port 3700
+ * - Frontend on port 3001
  * - Chromium, Firefox, and WebKit browsers
  * - CI/CD integration
+ * - Spider tests with global authentication
  */
 export default defineConfig({
   testDir: './tests/integration',
+  // Note: Spider tests handle their own auth via beforeAll hook
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -21,7 +23,7 @@ export default defineConfig({
     process.env.CI ? ['github'] : ['list'],
   ],
   use: {
-    baseURL: 'http://localhost:3700',
+    baseURL: 'http://localhost:3001',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
@@ -31,7 +33,7 @@ export default defineConfig({
     actionTimeout: 15000,
   },
   // Global timeout for each test
-  timeout: 60000,
+  timeout: 120000, // Extended for Spider crawl
   // Expect timeout
   expect: {
     timeout: 10000,
@@ -70,7 +72,7 @@ export default defineConfig({
     },
     {
       command: 'cd frontend && npm run dev',
-      url: 'http://localhost:3700',
+      url: 'http://localhost:3001',
       timeout: 120000,
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',

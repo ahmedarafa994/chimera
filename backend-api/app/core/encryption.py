@@ -17,39 +17,34 @@ logger = logging.getLogger(__name__)
 
 
 class EncryptionError(Exception):
-    """Base exception for encryption operations"""
-
-    pass
+    """Base exception for encryption operations."""
 
 
 class EncryptionKeyError(EncryptionError):
-    """Raised when encryption key is invalid or missing"""
-
-    pass
+    """Raised when encryption key is invalid or missing."""
 
 
 class _EncryptionManager:
-    """
-    Singleton encryption manager for API key encryption/decryption.
+    """Singleton encryption manager for API key encryption/decryption.
 
     Uses AES-256 encryption via Fernet (which uses AES 128 in CBC mode with HMAC).
     For true AES-256, this could be extended, but Fernet provides good security
     with authenticated encryption.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._fernet: Fernet | None = None
         self._encryption_key_env = "CHIMERA_ENCRYPTION_KEY"
 
     def _get_encryption_key(self) -> bytes:
-        """
-        Get or generate encryption key from environment.
+        """Get or generate encryption key from environment.
 
         Returns:
             32-byte encryption key
 
         Raises:
             EncryptionKeyError: If key generation fails
+
         """
         # Try to get key from environment
         key_b64 = os.getenv(self._encryption_key_env)
@@ -59,10 +54,9 @@ class _EncryptionManager:
                 key = base64.urlsafe_b64decode(key_b64)
                 if len(key) == 32:
                     return key
-                else:
-                    logger.warning(
-                        "Invalid encryption key length in environment, generating new one"
-                    )
+                logger.warning(
+                    "Invalid encryption key length in environment, generating new one",
+                )
             except Exception as e:
                 logger.warning(f"Invalid encryption key format in environment: {e}")
 
@@ -88,10 +82,11 @@ class _EncryptionManager:
             return key
 
         except Exception as e:
-            raise EncryptionKeyError(f"Failed to generate encryption key: {e}") from e
+            msg = f"Failed to generate encryption key: {e}"
+            raise EncryptionKeyError(msg) from e
 
     def _get_fernet(self) -> Fernet:
-        """Get or initialize Fernet cipher"""
+        """Get or initialize Fernet cipher."""
         if self._fernet is None:
             try:
                 key = self._get_encryption_key()
@@ -99,13 +94,13 @@ class _EncryptionManager:
                 key_b64 = base64.urlsafe_b64encode(key)
                 self._fernet = Fernet(key_b64)
             except Exception as e:
-                raise EncryptionError(f"Failed to initialize encryption cipher: {e}") from e
+                msg = f"Failed to initialize encryption cipher: {e}"
+                raise EncryptionError(msg) from e
 
         return self._fernet
 
     def encrypt_api_key(self, plaintext_key: str) -> str:
-        """
-        Encrypt an API key for secure storage.
+        """Encrypt an API key for secure storage.
 
         Args:
             plaintext_key: The API key to encrypt
@@ -115,6 +110,7 @@ class _EncryptionManager:
 
         Raises:
             EncryptionError: If encryption fails
+
         """
         if not plaintext_key:
             return plaintext_key
@@ -129,11 +125,11 @@ class _EncryptionManager:
             encrypted_b64 = base64.urlsafe_b64encode(encrypted_bytes).decode("utf-8")
             return f"enc:{encrypted_b64}"
         except Exception as e:
-            raise EncryptionError(f"Failed to encrypt API key: {e}") from e
+            msg = f"Failed to encrypt API key: {e}"
+            raise EncryptionError(msg) from e
 
     def decrypt_api_key(self, encrypted_key: str) -> str:
-        """
-        Decrypt an API key for runtime use.
+        """Decrypt an API key for runtime use.
 
         Args:
             encrypted_key: The encrypted API key (with enc: prefix)
@@ -143,6 +139,7 @@ class _EncryptionManager:
 
         Raises:
             EncryptionError: If decryption fails
+
         """
         if not encrypted_key:
             return encrypted_key
@@ -163,17 +160,18 @@ class _EncryptionManager:
 
             return decrypted_bytes.decode("utf-8")
         except Exception as e:
-            raise EncryptionError(f"Failed to decrypt API key: {e}") from e
+            msg = f"Failed to decrypt API key: {e}"
+            raise EncryptionError(msg) from e
 
     def is_encrypted(self, api_key: str) -> bool:
-        """
-        Check if an API key is encrypted.
+        """Check if an API key is encrypted.
 
         Args:
             api_key: The API key to check
 
         Returns:
             True if the key is encrypted (has enc: prefix)
+
         """
         return bool(api_key and api_key.startswith("enc:"))
 
@@ -183,8 +181,7 @@ _encryption_manager = _EncryptionManager()
 
 
 def encrypt_api_key(plaintext_key: str) -> str:
-    """
-    Encrypt an API key for secure storage.
+    """Encrypt an API key for secure storage.
 
     Args:
         plaintext_key: The API key to encrypt
@@ -194,13 +191,13 @@ def encrypt_api_key(plaintext_key: str) -> str:
 
     Raises:
         EncryptionError: If encryption fails
+
     """
     return _encryption_manager.encrypt_api_key(plaintext_key)
 
 
 def decrypt_api_key(encrypted_key: str) -> str:
-    """
-    Decrypt an API key for runtime use.
+    """Decrypt an API key for runtime use.
 
     Args:
         encrypted_key: The encrypted API key (with enc: prefix)
@@ -210,32 +207,33 @@ def decrypt_api_key(encrypted_key: str) -> str:
 
     Raises:
         EncryptionError: If decryption fails
+
     """
     return _encryption_manager.decrypt_api_key(encrypted_key)
 
 
 def is_encrypted(api_key: str) -> bool:
-    """
-    Check if an API key is encrypted.
+    """Check if an API key is encrypted.
 
     Args:
         api_key: The API key to check
 
     Returns:
         True if the key is encrypted (has enc: prefix)
+
     """
     return _encryption_manager.is_encrypted(api_key)
 
 
 def ensure_key_encrypted(api_key: str) -> str:
-    """
-    Ensure an API key is encrypted, encrypting if necessary.
+    """Ensure an API key is encrypted, encrypting if necessary.
 
     Args:
         api_key: The API key to check and encrypt if needed
 
     Returns:
         Encrypted API key
+
     """
     if not api_key or is_encrypted(api_key):
         return api_key

@@ -1,5 +1,4 @@
-"""
-Configuration Validation Middleware
+"""Configuration Validation Middleware.
 
 This middleware validates AI provider configuration at runtime,
 ensuring providers are available and within rate limits before
@@ -24,8 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigValidationMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to validate AI provider configuration on requests.
+    """Middleware to validate AI provider configuration on requests.
 
     This middleware performs runtime validation checks before
     processing requests that interact with AI providers.
@@ -66,9 +64,8 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
         check_circuit_breaker: bool = True,
         check_rate_limits: bool = True,
         collect_metrics: bool = True,
-    ):
-        """
-        Initialize validation middleware.
+    ) -> None:
+        """Initialize validation middleware.
 
         Args:
             app: ASGI application
@@ -76,6 +73,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
             check_circuit_breaker: Check circuit breaker status
             check_rate_limits: Check rate limit compliance
             collect_metrics: Collect request metrics
+
         """
         super().__init__(app)
         self._enabled = enabled
@@ -91,8 +89,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: Callable,
     ) -> Response:
-        """
-        Process request with validation checks.
+        """Process request with validation checks.
 
         Args:
             request: Incoming request
@@ -100,6 +97,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response from next handler or error response
+
         """
         if not self._enabled:
             return await call_next(request)
@@ -136,7 +134,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
                     return self._create_error_response(
                         503,
                         "Service temporarily unavailable",
-                        f"Circuit breaker open for provider: " f"{provider_check.get('provider')}",
+                        f"Circuit breaker open for provider: {provider_check.get('provider')}",
                     )
 
             # Check rate limits if enabled
@@ -171,7 +169,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            logger.error(f"Validation middleware error: {e}")
+            logger.exception(f"Validation middleware error: {e}")
             # Allow request to proceed on validation errors
             # to avoid blocking legitimate requests
             return await call_next(request)
@@ -185,11 +183,11 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
         return any(path.startswith(provider_path) for provider_path in self.PROVIDER_PATHS)
 
     async def _check_provider_availability(self) -> dict:
-        """
-        Check if at least one AI provider is available.
+        """Check if at least one AI provider is available.
 
         Returns:
             Dict with availability status and active provider
+
         """
         try:
             from app.core.fallback_manager import get_fallback_manager
@@ -244,14 +242,14 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
         self,
         provider: str | None,
     ) -> dict:
-        """
-        Check circuit breaker status for provider.
+        """Check circuit breaker status for provider.
 
         Args:
             provider: Provider name to check
 
         Returns:
             Dict with circuit breaker status
+
         """
         if not provider:
             return {"open": False}
@@ -281,8 +279,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
         request: Request,
         provider: str | None,
     ) -> dict:
-        """
-        Check if request complies with rate limits.
+        """Check if request complies with rate limits.
 
         Args:
             request: Incoming request
@@ -290,6 +287,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Dict with rate limit status
+
         """
         if not provider:
             return {"exceeded": False}
@@ -319,8 +317,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
                 return {
                     "exceeded": True,
                     "message": (
-                        f"Rate limit exceeded: {current_rate}/"
-                        f"{rate_limit.requests_per_minute} rpm"
+                        f"Rate limit exceeded: {current_rate}/{rate_limit.requests_per_minute} rpm"
                     ),
                     "retry_after": 60,
                 }
@@ -353,8 +350,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
         client_id: str,
         provider: str,
     ) -> int:
-        """
-        Get current request rate for client/provider.
+        """Get current request rate for client/provider.
 
         This is a placeholder implementation.
         Production should use Redis or similar.
@@ -386,7 +382,7 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
         headers: dict | None = None,
     ) -> JSONResponse:
         """Create JSON error response."""
-        response = JSONResponse(
+        return JSONResponse(
             status_code=status_code,
             content={
                 "error": error,
@@ -395,7 +391,6 @@ class ConfigValidationMiddleware(BaseHTTPMiddleware):
             },
             headers=headers,
         )
-        return response
 
     def get_stats(self) -> dict:
         """Get middleware statistics."""
@@ -422,8 +417,7 @@ def create_validation_middleware(
     check_rate_limits: bool = True,
     collect_metrics: bool = True,
 ) -> Callable:
-    """
-    Factory function to create validation middleware.
+    """Factory function to create validation middleware.
 
     Args:
         enabled: Whether validation is enabled
@@ -447,10 +441,11 @@ def create_validation_middleware(
                 check_circuit_breaker=True,
             )
         )
+
     """
 
     class ConfiguredValidationMiddleware(ConfigValidationMiddleware):
-        def __init__(self, app):
+        def __init__(self, app) -> None:
             super().__init__(
                 app,
                 enabled=enabled,

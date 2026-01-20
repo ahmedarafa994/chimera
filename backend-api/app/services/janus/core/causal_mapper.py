@@ -1,5 +1,4 @@
-"""
-Causal Mapper Module
+"""Causal Mapper Module.
 
 Maps asymmetric causal inference chains within Guardian NPU
 parameter space to discover exploitable pathways.
@@ -24,7 +23,8 @@ from dataclasses import dataclass
 from queue import PriorityQueue
 from typing import Any
 
-from ..config import get_config
+from app.services.janus.config import get_config
+
 from .models import (
     CausalEdge,
     CausalGraph,
@@ -48,14 +48,13 @@ class ExplorationState:
 
 
 class CausalMapper:
-    """
-    Maps asymmetric causal relationships in Guardian NPU.
+    """Maps asymmetric causal relationships in Guardian NPU.
 
     Discovers causal pathways that may lead to failure states,
     accounting for non-linear and context-dependent relationships.
     """
 
-    def __init__(self, max_depth: int | None = None, exploration_budget: int | None = None):
+    def __init__(self, max_depth: int | None = None, exploration_budget: int | None = None) -> None:
         self.config = get_config()
 
         # Configuration
@@ -76,15 +75,18 @@ class CausalMapper:
         self.variable_history: dict[str, list[Any]] = {}
 
     def add_interaction(
-        self, state: GuardianState, response: GuardianResponse, heuristic_name: str
-    ):
-        """
-        Log an interaction for causal inference.
+        self,
+        state: GuardianState,
+        response: GuardianResponse,
+        heuristic_name: str,
+    ) -> None:
+        """Log an interaction for causal inference.
 
         Args:
             state: Guardian state before interaction
             response: Guardian response
             heuristic_name: Name of heuristic used
+
         """
         interaction = {
             "state": state.to_dict(),
@@ -105,9 +107,8 @@ class CausalMapper:
         if len(self.interaction_log) % 100 == 0:
             self._update_causal_graph()
 
-    def _update_causal_graph(self):
-        """
-        Update causal graph based on interaction history.
+    def _update_causal_graph(self) -> None:
+        """Update causal graph based on interaction history.
 
         Uses statistical analysis to infer causal relationships
         between variables.
@@ -131,13 +132,14 @@ class CausalMapper:
         self.causal_graph._update_graph_properties()
 
     def _compute_correlations(
-        self, interactions: list[dict[str, Any]]
+        self,
+        interactions: list[dict[str, Any]],
     ) -> dict[tuple[str, str], float]:
-        """
-        Compute correlations between variables and responses.
+        """Compute correlations between variables and responses.
 
         Returns:
             Dictionary mapping (source, target) -> correlation
+
         """
         correlations = {}
 
@@ -164,27 +166,32 @@ class CausalMapper:
             if isinstance(var_value, int | float):
                 diff = abs(var_value - target_value)
                 return max(-1.0, min(1.0, 1.0 - diff / 10.0))
-            else:
-                # For non-numeric values, use hash-based correlation
-                var_hash = hash(str(var_value)) % 100 / 100.0
-                return (var_hash - target_value) / target_value if target_value != 0 else 0.0
+            # For non-numeric values, use hash-based correlation
+            var_hash = hash(str(var_value)) % 100 / 100.0
+            return (var_hash - target_value) / target_value if target_value != 0 else 0.0
         except Exception:
             return 0.0
 
-    def _add_or_update_edge(self, source_id: str, target_id: str, correlation: float):
+    def _add_or_update_edge(self, source_id: str, target_id: str, correlation: float) -> None:
         """Add or update a causal edge."""
         # Get or create nodes
         source_node = self.causal_graph.get_node(source_id)
         if source_node is None:
             source_node = CausalNode(
-                variable_id=source_id, variable_type="state", observable=True, domain=None
+                variable_id=source_id,
+                variable_type="state",
+                observable=True,
+                domain=None,
             )
             self.causal_graph.add_node(source_node)
 
         target_node = self.causal_graph.get_node(target_id)
         if target_node is None:
             target_node = CausalNode(
-                variable_id=target_id, variable_type="output", observable=True, domain=None
+                variable_id=target_id,
+                variable_type="output",
+                observable=True,
+                domain=None,
             )
             self.causal_graph.add_node(target_node)
 
@@ -218,16 +225,17 @@ class CausalMapper:
             self.causal_graph.add_edge(edge)
 
     def discover_failure_states(
-        self, starting_variables: list[str] | None = None
+        self,
+        starting_variables: list[str] | None = None,
     ) -> list[FailureState]:
-        """
-        Discover failure states by traversing causal paths.
+        """Discover failure states by traversing causal paths.
 
         Args:
             starting_variables: Variables to start exploration from
 
         Returns:
             List of discovered failure states
+
         """
         if not starting_variables:
             # Use all observable variables as starting points
@@ -243,7 +251,11 @@ class CausalMapper:
 
         for var_id in starting_variables:
             state = ExplorationState(
-                current_variable=var_id, path=[], intervention_history={}, depth=0, score=0.0
+                current_variable=var_id,
+                path=[],
+                intervention_history={},
+                depth=0,
+                score=0.0,
             )
             # Use negative score for max-heap behavior
             frontier.put((-state.score, state))
@@ -274,7 +286,8 @@ class CausalMapper:
             for neighbor in neighbors:
                 # Compute intervention to reach neighbor
                 intervention = self._compute_intervention(
-                    exploration_state.current_variable, neighbor
+                    exploration_state.current_variable,
+                    neighbor,
                 )
 
                 # Score this exploration direction
@@ -333,10 +346,12 @@ class CausalMapper:
         return {target: intervention_value}
 
     def _score_exploration(
-        self, state: ExplorationState, neighbor: str, intervention: dict[str, Any]
+        self,
+        state: ExplorationState,
+        neighbor: str,
+        intervention: dict[str, Any],
     ) -> float:
-        """
-        Score an exploration direction.
+        """Score an exploration direction.
 
         Higher scores are prioritized.
         """
@@ -356,19 +371,17 @@ class CausalMapper:
         context_score = _secure_uniform(0.0, 0.3)  # Random exploration
         depth_penalty = state.depth * 0.1
 
-        total_score = effect_score + asymmetry_score + context_score - depth_penalty
-
-        return total_score
+        return effect_score + asymmetry_score + context_score - depth_penalty
 
     def _test_for_failure(self, state: ExplorationState) -> FailureState | None:
-        """
-        Test if current state represents a failure.
+        """Test if current state represents a failure.
 
         Args:
             state: Current exploration state
 
         Returns:
             FailureState if failure detected, None otherwise
+
         """
         # Check for failure indicators
         failure_indicators = self._detect_failure_indicators(state)
@@ -386,7 +399,7 @@ class CausalMapper:
         failure_id = f"failure_{uuid.uuid4().hex[:8]}"
 
         # Create failure state
-        failure = FailureState(
+        return FailureState(
             failure_id=failure_id,
             failure_type=failure_type,
             description=f"Failure detected via path: {' -> '.join([*state.path, state.current_variable])}",
@@ -402,8 +415,6 @@ class CausalMapper:
             verified=False,
         )
 
-        return failure
-
     def _detect_failure_indicators(self, state: ExplorationState) -> list[str]:
         """Detect indicators of failure in current state."""
         indicators = []
@@ -413,7 +424,7 @@ class CausalMapper:
             if edge.asymmetry_ratio > self.config.causal.asymmetry_threshold:
                 indicators.append(
                     f"High asymmetry ({edge.asymmetry_ratio:.2f}) "
-                    f"between {edge.source.variable_id} and {edge.target.variable_id}"
+                    f"between {edge.source.variable_id} and {edge.target.variable_id}",
                 )
 
         # Check for feedback loops
@@ -440,16 +451,15 @@ class CausalMapper:
 
         if "asymmetry" in indicator_text:
             return FailureType.ADVERSARIAL_SENSITIVITY
-        elif "feedback loop" in indicator_text:
+        if "feedback loop" in indicator_text:
             return FailureType.INCOHERENT_REASONING
-        elif "repetitive" in indicator_text:
+        if "repetitive" in indicator_text:
             return FailureType.INCONSISTENCY
-        elif "safety" in indicator_text or "bypass" in indicator_text:
+        if "safety" in indicator_text or "bypass" in indicator_text:
             return FailureType.SAFETY_BYPASS
-        elif "deep" in indicator_text:
+        if "deep" in indicator_text:
             return FailureType.OUT_OF_DISTRIBUTION
-        else:
-            return FailureType.CONTRADICTION
+        return FailureType.CONTRADICTION
 
     def _compute_exploitability(self, state: ExplorationState, indicators: list[str]) -> float:
         """Compute exploitability score of a failure."""
@@ -476,10 +486,9 @@ class CausalMapper:
         """Classify exploit complexity."""
         if exploitability < 0.3:
             return "high"
-        elif exploitability < 0.7:
+        if exploitability < 0.7:
             return "medium"
-        else:
-            return "low"
+        return "low"
 
     def _identify_root_cause(self, state: ExplorationState) -> str:
         """Identify root cause of failure."""
@@ -512,7 +521,7 @@ class CausalMapper:
                     "Implement adversarial training with asymmetric examples",
                     "Add gradient masking for sensitive parameters",
                     "Monitor for asymmetric response patterns",
-                ]
+                ],
             )
         elif failure_type == FailureType.SAFETY_BYPASS:
             mitigations.extend(
@@ -520,7 +529,7 @@ class CausalMapper:
                     "Strengthen operational parameters with multi-layer validation",
                     "Implement context-aware safety checks",
                     "Add adversarial example detection",
-                ]
+                ],
             )
         elif failure_type == FailureType.INCOHERENT_REASONING:
             mitigations.extend(
@@ -528,7 +537,7 @@ class CausalMapper:
                     "Add reasoning consistency checks",
                     "Implement state tracking for long contexts",
                     "Break circular reasoning patterns",
-                ]
+                ],
             )
         elif failure_type == FailureType.OUT_OF_DISTRIBUTION:
             mitigations.extend(
@@ -536,7 +545,7 @@ class CausalMapper:
                     "Expand training distribution coverage",
                     "Add out-of-distribution detection",
                     "Implement uncertainty quantification",
-                ]
+                ],
             )
         else:
             mitigations.extend(
@@ -544,7 +553,7 @@ class CausalMapper:
                     "Review parameter initialization",
                     "Add regularization to prevent extreme outputs",
                     "Monitor for unexpected state transitions",
-                ]
+                ],
             )
 
         # Indicator-specific mitigations
@@ -591,7 +600,7 @@ class CausalMapper:
 
         return None
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset mapper state."""
         self.exploration_count = 0
         self.discovered_failures = []

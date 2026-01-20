@@ -23,7 +23,7 @@ class TestGPTFuzzComponents:
             yield mock
 
     @pytest.mark.asyncio
-    async def test_mutator_crossover(self, mock_llm_service):
+    async def test_mutator_crossover(self, mock_llm_service) -> None:
         mutator = MutatorCrossOver()
         seeds = ["Seed 1", "Seed 2"]
         result = await mutator.mutate(seeds)
@@ -35,7 +35,7 @@ class TestGPTFuzzComponents:
         assert "Seed 1" in kwargs["prompt"] or "Seed 2" in kwargs["prompt"]
 
     @pytest.mark.asyncio
-    async def test_mutator_expand(self, mock_llm_service):
+    async def test_mutator_expand(self, mock_llm_service) -> None:
         mutator = MutatorExpand()
         seeds = ["Seed 1"]
         result = await mutator.mutate(seeds)
@@ -43,7 +43,7 @@ class TestGPTFuzzComponents:
         assert len(result) == 1
         mock_llm_service.generate.assert_called_once()
 
-    def test_mcts_policy(self):
+    def test_mcts_policy(self) -> None:
         policy = MCTSExploreSelectPolicy()
         seeds = [{"text": "Seed A", "id": 0}, {"text": "Seed B", "id": 1}]
 
@@ -62,7 +62,7 @@ class TestGPTFuzzComponents:
         assert selected in ["Seed A", "Seed B"]
 
     @pytest.mark.asyncio
-    async def test_predictor(self, mock_llm_service):
+    async def test_predictor(self, mock_llm_service) -> None:
         predictor = LLMPredictor()
         mock_llm_service.generate.return_value.content = "The score is 0.95"
 
@@ -79,7 +79,7 @@ class TestGPTFuzzService:
             yield mock
 
     @pytest.mark.asyncio
-    async def test_fuzz_loop(self, mock_llm_service):
+    async def test_fuzz_loop(self, mock_llm_service) -> None:
         service = GPTFuzzService()
 
         # Mock internal components to isolate service logic

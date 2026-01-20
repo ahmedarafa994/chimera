@@ -11,6 +11,8 @@ from app.services.transformation_service import TransformationEngine
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+from typing import Annotated
+
 from app.core.auth import Permission, require_permission
 
 
@@ -21,12 +23,10 @@ from app.core.auth import Permission, require_permission
 )
 async def execute_transformation(
     request: ExecuteRequest,
-    llm_service: LLMService = Depends(get_llm_service),
-    transformation_engine: TransformationEngine = Depends(get_transformation_service),
+    llm_service: Annotated[LLMService, Depends(get_llm_service)],
+    transformation_engine: Annotated[TransformationEngine, Depends(get_transformation_service)],
 ):
-    """
-    Transform and execute prompt against real LLM provider.
-    """
+    """Transform and execute prompt against real LLM provider."""
     try:
         # 1. Transform the prompt
         transform_result = await transformation_engine.transform(
@@ -83,13 +83,13 @@ async def execute_transformation(
         )
 
     except TransformationError as e:
-        logger.error(f"Transformation Error: {e.detail}")
+        logger.exception(f"Transformation Error: {e.detail}")
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except LLMProviderError as e:
-        logger.error(f"LLM Provider Error: {e.detail}")
+        logger.exception(f"LLM Provider Error: {e.detail}")
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except Exception as e:
-        logger.error(f"Unexpected error: {e!s}")
+        logger.exception(f"Unexpected error: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {e!s}",

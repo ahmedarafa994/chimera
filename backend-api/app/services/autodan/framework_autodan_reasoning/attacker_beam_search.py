@@ -5,8 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 class AttackerBeamSearch:
-    """
-    Beam Search Scaling Attacker for AutoDAN-Reasoning.
+    """Beam Search Scaling Attacker for AutoDAN-Reasoning.
 
     This attacker implements Algorithm 2 from the paper:
     - Retrieves a larger pool of top-K strategies
@@ -16,13 +15,13 @@ class AttackerBeamSearch:
     - Returns the highest-scoring combination
     """
 
-    def __init__(self, base_attacker, W=4, C=3, K=10):
-        """
-        Args:
-            base_attacker: The underlying attacker (from framework_r)
-            W: Beam width (number of combinations to keep at each step)
-            C: Maximum combination size (depth of search)
-            K: Number of top strategies to retrieve from library
+    def __init__(self, base_attacker, W=4, C=3, K=10) -> None:
+        """Args:
+        base_attacker: The underlying attacker (from framework_r)
+        W: Beam width (number of combinations to keep at each step)
+        C: Maximum combination size (depth of search)
+        K: Number of top strategies to retrieve from library.
+
         """
         self.base_attacker = base_attacker
         self.W = W  # Beam width
@@ -31,7 +30,7 @@ class AttackerBeamSearch:
         self.model = base_attacker.model
 
     def warm_up_attack(self, request, **kwargs):
-        """Delegate to base attacker for warm-up attack"""
+        """Delegate to base attacker for warm-up attack."""
         return self.base_attacker.warm_up_attack(request, **kwargs)
 
     async def use_strategy_beam_search_async(
@@ -46,8 +45,7 @@ class AttackerBeamSearch:
         prev_attempt=None,
         **kwargs,
     ):
-        """
-        Implements Async Beam Search scaling for strategy combination exploration.
+        """Implements Async Beam Search scaling for strategy combination exploration.
 
         Args:
             request: The malicious request to jailbreak
@@ -62,15 +60,20 @@ class AttackerBeamSearch:
 
         Returns:
             tuple: (best_prompt, best_response, best_score, best_strategies, attacker_system, assessment)
+
         """
         # Step 1: Retrieve top-K strategies from library (without score filtering for beam search)
         _valid, strategy_list = retrieval.pop(
-            strategy_pool, prev_target_response, k=self.K, return_all=True
+            strategy_pool,
+            prev_target_response,
+            k=self.K,
+            return_all=True,
         )
 
         if not strategy_list:
+            msg = "Beam search retrieval returned no strategies; fallback is disabled."
             raise RuntimeError(
-                "Beam search retrieval returned no strategies; fallback is disabled."
+                msg,
             )
 
         # Limit to K strategies
@@ -94,7 +97,12 @@ class AttackerBeamSearch:
                     attacker_system,
                     assessment,
                 ) = await self._evaluate_strategy_combo_async(
-                    request, combo, target, scorer, prev_attempt=prev_attempt, **kwargs
+                    request,
+                    combo,
+                    target,
+                    scorer,
+                    prev_attempt=prev_attempt,
+                    **kwargs,
                 )
                 return {
                     "combo": combo,
@@ -120,7 +128,8 @@ class AttackerBeamSearch:
                     logger.warning(f"Initial beam evaluation failed: {res}")
 
         if not beam:
-            raise RuntimeError("Failed to initialize beam; fallback is disabled.")
+            msg = "Failed to initialize beam; fallback is disabled."
+            raise RuntimeError(msg)
 
         # Step 3-4: Iteratively expand and prune beam with parallel evaluation
         for depth in range(2, self.C + 1):
@@ -144,7 +153,12 @@ class AttackerBeamSearch:
                             attacker_system,
                             assessment,
                         ) = await self._evaluate_strategy_combo_async(
-                            request, new_combo, target, scorer, prev_attempt=prev_attempt, **kwargs
+                            request,
+                            new_combo,
+                            target,
+                            scorer,
+                            prev_attempt=prev_attempt,
+                            **kwargs,
                         )
                         return {
                             "combo": new_combo,
@@ -190,14 +204,15 @@ class AttackerBeamSearch:
                 beam = sorted(candidates, key=lambda x: x["score"], reverse=True)[: self.W]
                 logger.info(f"After pruning, beam size: {len(beam)}, top score: {beam[0]['score']}")
             else:
+                msg = f"No valid candidates at beam depth {depth}; fallback is disabled."
                 raise RuntimeError(
-                    f"No valid candidates at beam depth {depth}; fallback is disabled."
+                    msg,
                 )
 
         # Step 5: Return best combination from final beam
         best_entry = max(beam, key=lambda x: x["score"])
         logger.info(
-            f"Best combination uses {len(best_entry['combo'])} strategies with score {best_entry['score']}"
+            f"Best combination uses {len(best_entry['combo'])} strategies with score {best_entry['score']}",
         )
 
         return (
@@ -221,9 +236,7 @@ class AttackerBeamSearch:
         prev_attempt=None,
         **kwargs,
     ):
-        """
-        Synchronous wrapper for usage in sync contexts.
-        """
+        """Synchronous wrapper for usage in sync contexts."""
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -264,14 +277,19 @@ class AttackerBeamSearch:
                     logger,
                     prev_attempt,
                     **kwargs,
-                )
+                ),
             )
 
     async def _evaluate_strategy_combo_async(
-        self, request, strategy_combo, target, scorer, prev_attempt=None, **kwargs
+        self,
+        request,
+        strategy_combo,
+        target,
+        scorer,
+        prev_attempt=None,
+        **kwargs,
     ):
-        """
-        Async helper method to evaluate a strategy combination.
+        """Async helper method to evaluate a strategy combination.
 
         Expected Impact: +60% throughput improvement for beam expansion.
 
@@ -285,6 +303,7 @@ class AttackerBeamSearch:
 
         Returns:
             tuple: (prompt, response, score, attacker_system, assessment)
+
         """
         # Generate prompt using the strategy combination with previous attempt info
         jailbreak_prompt, attacker_system = await asyncio.to_thread(
@@ -310,19 +329,27 @@ class AttackerBeamSearch:
                 top_p=0.9,
             )
             score = await asyncio.to_thread(
-                scorer.wrapper, assessment, max_length=2000, do_sample=False
+                scorer.wrapper,
+                assessment,
+                max_length=2000,
+                do_sample=False,
             )
         except Exception as e:
-            logger.error(f"Scorer failed for beam search evaluation: {e}")
+            logger.exception(f"Scorer failed for beam search evaluation: {e}")
             raise
 
         return jailbreak_prompt, target_response, score, attacker_system, assessment
 
     def _evaluate_strategy_combo(
-        self, request, strategy_combo, target, scorer, prev_attempt=None, **kwargs
+        self,
+        request,
+        strategy_combo,
+        target,
+        scorer,
+        prev_attempt=None,
+        **kwargs,
     ):
-        """
-        Helper method to evaluate a strategy combination.
+        """Helper method to evaluate a strategy combination.
 
         Args:
             request: The malicious request
@@ -334,10 +361,14 @@ class AttackerBeamSearch:
 
         Returns:
             tuple: (prompt, response, score, attacker_system, assessment)
+
         """
         # Generate prompt using the strategy combination with previous attempt info
         jailbreak_prompt, attacker_system = self.base_attacker.use_strategy(
-            request, strategy_combo, prev_attempt=prev_attempt, **kwargs
+            request,
+            strategy_combo,
+            prev_attempt=prev_attempt,
+            **kwargs,
         )
 
         # Get target response
@@ -355,15 +386,15 @@ class AttackerBeamSearch:
             )
             score = scorer.wrapper(assessment, max_length=2000, do_sample=False)
         except Exception as e:
-            logger.error(f"Scorer failed for beam search evaluation: {e}")
+            logger.exception(f"Scorer failed for beam search evaluation: {e}")
             raise
 
         return jailbreak_prompt, target_response, score, attacker_system, assessment
 
     def find_new_strategy(self, request, strategy_list, **kwargs):
-        """Delegate to base attacker for finding new strategy"""
+        """Delegate to base attacker for finding new strategy."""
         return self.base_attacker.find_new_strategy(request, strategy_list, **kwargs)
 
     def wrapper(self, response, request):
-        """Delegate to base attacker for response wrapping"""
+        """Delegate to base attacker for response wrapping."""
         return self.base_attacker.wrapper(response, request)

@@ -9,14 +9,14 @@ from app.core.logging import logger
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, calls: int = 60, period: int = 60):
-        """
-        Initialize rate limiting middleware.
+    def __init__(self, app, calls: int = 60, period: int = 60) -> None:
+        """Initialize rate limiting middleware.
 
         Args:
             app: FastAPI application
             calls: Number of allowed requests per time period
             period: Time period in seconds
+
         """
         super().__init__(app)
         self.calls = calls
@@ -47,8 +47,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
 
         # Process request
-        response = await call_next(request)
-        return response
+        return await call_next(request)
 
     def _get_client_ip(self, request: Request) -> str:
         """Get client IP address from request headers or connection."""
@@ -103,7 +102,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class RequestSizeMiddleware(BaseHTTPMiddleware):
     """Limit request size to prevent DoS attacks."""
 
-    def __init__(self, app, max_size_mb: int = 10):
+    def __init__(self, app, max_size_mb: int = 10) -> None:
         super().__init__(app)
         self.max_size_bytes = max_size_mb * 1024 * 1024
 

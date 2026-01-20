@@ -1,6 +1,4 @@
-"""
-Tests for AutoDAN Advanced features.
-"""
+"""Tests for AutoDAN Advanced features."""
 
 from unittest.mock import patch
 
@@ -26,7 +24,7 @@ def _bypass_auth():
 class TestHierarchicalSearch:
     """Tests for hierarchical genetic search endpoint."""
 
-    def test_hierarchical_search_endpoint_exists(self):
+    def test_hierarchical_search_endpoint_exists(self) -> None:
         """Test that the hierarchical search endpoint is registered."""
         # Fixed path to match router prefix "/autodan-advanced"
         response = client.post(
@@ -36,15 +34,16 @@ class TestHierarchicalSearch:
         # Should not return 404
         assert response.status_code != 404
 
-    def test_hierarchical_search_validation(self):
+    def test_hierarchical_search_validation(self) -> None:
         """Test request validation for hierarchical search."""
         # Missing required field
         response = client.post(
-            "/api/v1/autodan-advanced/hierarchical-search", json={"population_size": 10}
+            "/api/v1/autodan-advanced/hierarchical-search",
+            json={"population_size": 10},
         )
         assert response.status_code == 422  # Validation error
 
-    def test_hierarchical_search_parameter_bounds(self):
+    def test_hierarchical_search_parameter_bounds(self) -> None:
         """Test parameter validation bounds."""
         # Population size too small
         response = client.post(
@@ -61,7 +60,7 @@ class TestHierarchicalSearch:
 class TestGradientOptimization:
     """Tests for gradient-guided optimization endpoint."""
 
-    def test_gradient_optimize_endpoint_exists(self):
+    def test_gradient_optimize_endpoint_exists(self) -> None:
         """Test that the gradient optimization endpoint is registered."""
         # Fixed path to match router prefix "/autodan-gradient"
         response = client.post(
@@ -71,11 +70,12 @@ class TestGradientOptimization:
         # Should not return 404
         assert response.status_code != 404
 
-    def test_gradient_optimize_validation(self):
+    def test_gradient_optimize_validation(self) -> None:
         """Test request validation for gradient optimization."""
         # Missing required field
         response = client.post(
-            "/api/v1/autodan-gradient/gradient-optimize", json={"request": "Test request"}
+            "/api/v1/autodan-gradient/gradient-optimize",
+            json={"request": "Test request"},
         )
         assert response.status_code == 422  # Validation error
 
@@ -83,7 +83,7 @@ class TestGradientOptimization:
 class TestEnsembleAttack:
     """Tests for ensemble gradient alignment endpoint."""
 
-    def test_ensemble_attack_endpoint_exists(self):
+    def test_ensemble_attack_endpoint_exists(self) -> None:
         """Test that the ensemble attack endpoint is registered."""
         # Fixed path to match router prefix "/autodan-gradient"
         response = client.post(
@@ -99,7 +99,7 @@ class TestEnsembleAttack:
         # Should not return 404
         assert response.status_code != 404
 
-    def test_ensemble_attack_validation(self):
+    def test_ensemble_attack_validation(self) -> None:
         """Test request validation for ensemble attack."""
         # Too few models
         response = client.post(
@@ -115,13 +115,15 @@ class TestEnsembleAttack:
 class TestModels:
     """Tests for Pydantic models."""
 
-    def test_hierarchical_search_request_model(self):
+    def test_hierarchical_search_request_model(self) -> None:
         """Test HierarchicalSearchRequest model validation."""
         from app.services.autodan_advanced.models import HierarchicalSearchRequest
 
         # Valid request
         request = HierarchicalSearchRequest(
-            request="Test request", population_size=20, generations=10
+            request="Test request",
+            population_size=20,
+            generations=10,
         )
         assert request.request == "Test request"
         assert request.population_size == 20
@@ -131,12 +133,15 @@ class TestModels:
         assert request.mutation_rate == 0.3
         assert request.crossover_rate == 0.7
 
-    def test_population_metrics_model(self):
+    def test_population_metrics_model(self) -> None:
         """Test PopulationMetrics model."""
         from app.services.autodan_advanced.models import PopulationMetrics
 
         metrics = PopulationMetrics(
-            generation=1, best_fitness=8.5, avg_fitness=6.2, diversity_score=0.75
+            generation=1,
+            best_fitness=8.5,
+            avg_fitness=6.2,
+            diversity_score=0.75,
         )
         assert metrics.generation == 1
         assert metrics.best_fitness == 8.5
@@ -145,7 +150,7 @@ class TestModels:
 class TestArchiveManager:
     """Tests for dynamic archive manager."""
 
-    def test_archive_initialization(self):
+    def test_archive_initialization(self) -> None:
         """Test archive manager initialization."""
         from app.services.autodan_advanced.archive_manager import DynamicArchiveManager
 
@@ -155,7 +160,7 @@ class TestArchiveManager:
         assert len(manager.success_archive) == 0
         assert len(manager.novelty_archive) == 0
 
-    def test_archive_add_entry(self):
+    def test_archive_add_entry(self) -> None:
         """Test adding entries to archive."""
         import numpy as np
 
@@ -177,7 +182,7 @@ class TestArchiveManager:
 class TestMapElites:
     """Tests for Map-Elites diversity maintenance."""
 
-    def test_map_elites_initialization(self):
+    def test_map_elites_initialization(self) -> None:
         """Test Map-Elites initialization."""
         from app.services.autodan_advanced.map_elites import MapElitesDiversity
 
@@ -186,7 +191,7 @@ class TestMapElites:
         assert map_elites.num_dimensions == 2
         assert len(map_elites.grid) == 0
 
-    def test_map_elites_add_strategy(self):
+    def test_map_elites_add_strategy(self) -> None:
         """Test adding strategies to Map-Elites grid."""
         import numpy as np
 

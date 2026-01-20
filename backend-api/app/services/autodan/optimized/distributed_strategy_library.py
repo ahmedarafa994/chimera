@@ -1,5 +1,4 @@
-"""
-Distributed Strategy Library with FAISS Integration.
+"""Distributed Strategy Library with FAISS Integration.
 
 Implements efficient strategy storage and retrieval using:
 - FAISS for fast similarity search
@@ -57,8 +56,7 @@ class SearchResult:
 
 
 class FAISSIndex:
-    """
-    FAISS-based vector index for strategy embeddings.
+    """FAISS-based vector index for strategy embeddings.
 
     Supports multiple index types for different performance/accuracy tradeoffs.
     """
@@ -71,7 +69,7 @@ class FAISSIndex:
         m: int = 32,  # For HNSW
         ef_construction: int = 200,  # For HNSW
         ef_search: int = 50,  # For HNSW
-    ):
+    ) -> None:
         self.dimension = dimension
         self.index_type = index_type
         self.nlist = nlist
@@ -91,7 +89,7 @@ class FAISSIndex:
         # Thread safety
         self.lock = threading.RLock()
 
-    def _create_index(self):
+    def _create_index(self) -> None:
         """Create FAISS index based on type."""
         try:
             import faiss
@@ -123,17 +121,17 @@ class FAISSIndex:
             logger.warning("FAISS not available, using numpy fallback")
             self.index = None
 
-    def _ensure_index(self):
+    def _ensure_index(self) -> None:
         """Ensure index is created."""
         if self.index is None:
             self._create_index()
 
-    def train(self, embeddings: np.ndarray):
-        """
-        Train index on embeddings (required for some index types).
+    def train(self, embeddings: np.ndarray) -> None:
+        """Train index on embeddings (required for some index types).
 
         Args:
             embeddings: Training embeddings (n_samples, dimension)
+
         """
         self._ensure_index()
 
@@ -150,13 +148,13 @@ class FAISSIndex:
                     self.is_trained = True
                     logger.info(f"Trained index on {len(embeddings)} vectors")
 
-    def add(self, id: str, embedding: np.ndarray):
-        """
-        Add embedding to index.
+    def add(self, id: str, embedding: np.ndarray) -> None:
+        """Add embedding to index.
 
         Args:
             id: Strategy ID
             embedding: Embedding vector
+
         """
         self._ensure_index()
 
@@ -181,8 +179,7 @@ class FAISSIndex:
         query: np.ndarray,
         k: int = 10,
     ) -> list[tuple[str, float]]:
-        """
-        Search for similar embeddings.
+        """Search for similar embeddings.
 
         Args:
             query: Query embedding
@@ -190,6 +187,7 @@ class FAISSIndex:
 
         Returns:
             List of (id, similarity) tuples
+
         """
         self._ensure_index()
 
@@ -213,7 +211,7 @@ class FAISSIndex:
 
             return []
 
-    def remove(self, id: str):
+    def remove(self, id: str) -> None:
         """Remove embedding from index (marks as deleted)."""
         with self.lock:
             if id in self.id_to_idx:
@@ -222,7 +220,7 @@ class FAISSIndex:
                 idx = self.id_to_idx.pop(id)
                 self.idx_to_id.pop(idx, None)
 
-    def save(self, path: str):
+    def save(self, path: str) -> None:
         """Save index to file."""
         self._ensure_index()
 
@@ -245,7 +243,7 @@ class FAISSIndex:
                 if faiss:
                     faiss.write_index(self.index, f"{path}.faiss")
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
         """Load index from file."""
         with self.lock:
             # Load mappings
@@ -278,8 +276,7 @@ class FAISSIndex:
 
 
 class HierarchicalCluster:
-    """
-    Hierarchical clustering for strategy organization.
+    """Hierarchical clustering for strategy organization.
 
     Groups similar strategies for efficient browsing and retrieval.
     """
@@ -288,7 +285,7 @@ class HierarchicalCluster:
         self,
         n_clusters: int = 10,
         min_cluster_size: int = 5,
-    ):
+    ) -> None:
         self.n_clusters = n_clusters
         self.min_cluster_size = min_cluster_size
 
@@ -299,12 +296,12 @@ class HierarchicalCluster:
         # Cluster centroids
         self.centroids: dict[int, np.ndarray] = {}
 
-    def fit(self, strategies: list[Strategy]):
-        """
-        Fit clustering on strategies.
+    def fit(self, strategies: list[Strategy]) -> None:
+        """Fit clustering on strategies.
 
         Args:
             strategies: List of strategies with embeddings
+
         """
         if len(strategies) < self.n_clusters:
             # Not enough for clustering
@@ -388,8 +385,7 @@ class HierarchicalCluster:
 
 
 class DistributedStrategyLibrary:
-    """
-    Distributed strategy library with FAISS integration.
+    """Distributed strategy library with FAISS integration.
 
     Provides efficient storage, retrieval, and management of
     jailbreak strategies across distributed systems.
@@ -402,7 +398,7 @@ class DistributedStrategyLibrary:
         storage_path: str | None = None,
         enable_clustering: bool = True,
         n_clusters: int = 10,
-    ):
+    ) -> None:
         self.dimension = dimension
         self.storage_path = storage_path
         self.enable_clustering = enable_clustering
@@ -440,8 +436,7 @@ class DistributedStrategyLibrary:
         score: float = 0.0,
         metadata: dict[str, Any] | None = None,
     ) -> Strategy:
-        """
-        Add a new strategy to the library.
+        """Add a new strategy to the library.
 
         Args:
             content: Strategy content/prompt
@@ -451,6 +446,7 @@ class DistributedStrategyLibrary:
 
         Returns:
             Created strategy
+
         """
         # Generate ID
         strategy_id = self._generate_id(content)
@@ -487,8 +483,7 @@ class DistributedStrategyLibrary:
         min_score: float = 0.0,
         filter_metadata: dict[str, Any] | None = None,
     ) -> list[SearchResult]:
-        """
-        Search for similar strategies.
+        """Search for similar strategies.
 
         Args:
             query_embedding: Query embedding
@@ -498,6 +493,7 @@ class DistributedStrategyLibrary:
 
         Returns:
             List of search results
+
         """
         start_time = time.time()
 
@@ -527,7 +523,7 @@ class DistributedStrategyLibrary:
                         strategy=strategy,
                         similarity=similarity,
                         rank=len(search_results),
-                    )
+                    ),
                 )
 
                 if len(search_results) >= k:
@@ -549,7 +545,7 @@ class DistributedStrategyLibrary:
         strategy_id: str,
         score: float | None = None,
         metadata: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Update strategy score or metadata."""
         with self.lock:
             if strategy_id in self.strategies:
@@ -565,7 +561,7 @@ class DistributedStrategyLibrary:
         self,
         strategy_id: str,
         success: bool,
-    ):
+    ) -> None:
         """Record strategy usage and update success rate."""
         with self.lock:
             if strategy_id in self.strategies:
@@ -578,7 +574,7 @@ class DistributedStrategyLibrary:
                     strategy.success_rate * (1 - alpha) + (1.0 if success else 0.0) * alpha
                 )
 
-    def remove_strategy(self, strategy_id: str):
+    def remove_strategy(self, strategy_id: str) -> None:
         """Remove strategy from library."""
         with self.lock:
             if strategy_id in self.strategies:
@@ -591,8 +587,7 @@ class DistributedStrategyLibrary:
         n: int = 10,
         by: str = "score",
     ) -> list[Strategy]:
-        """
-        Get top strategies by metric.
+        """Get top strategies by metric.
 
         Args:
             n: Number of strategies
@@ -600,6 +595,7 @@ class DistributedStrategyLibrary:
 
         Returns:
             List of top strategies
+
         """
         with self.lock:
             strategies = list(self.strategies.values())
@@ -627,7 +623,7 @@ class DistributedStrategyLibrary:
 
             return [self.strategies[sid] for sid in strategy_ids if sid in self.strategies]
 
-    def rebuild_clusters(self):
+    def rebuild_clusters(self) -> None:
         """Rebuild hierarchical clusters."""
         if self.clustering is None:
             return
@@ -637,7 +633,7 @@ class DistributedStrategyLibrary:
             if strategies:
                 self.clustering.fit(strategies)
 
-    def save(self):
+    def save(self) -> None:
         """Save library to storage."""
         if self.storage_path is None:
             return
@@ -665,7 +661,7 @@ class DistributedStrategyLibrary:
 
             logger.info(f"Saved {len(self.strategies)} strategies to {self.storage_path}")
 
-    def load(self):
+    def load(self) -> None:
         """Load library from storage."""
         if self.storage_path is None:
             return

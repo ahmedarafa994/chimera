@@ -1,5 +1,4 @@
-"""
-SSE Streaming endpoint for real-time text generation.
+"""SSE Streaming endpoint for real-time text generation.
 
 This module provides SSE streaming for LLM text generation,
 enabling real-time token-by-token responses to clients.
@@ -19,6 +18,7 @@ import asyncio
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -61,7 +61,7 @@ class StreamingError(Exception):
         error_code: str,
         status_code: int = 500,
         stream_id: str | None = None,
-    ):
+    ) -> None:
         super().__init__(message)
         self.message = message
         self.error_code = error_code
@@ -72,7 +72,7 @@ class StreamingError(Exception):
 class ProviderNotAvailableError(StreamingError):
     """Raised when the resolved provider is not available."""
 
-    def __init__(self, provider: str, stream_id: str | None = None):
+    def __init__(self, provider: str, stream_id: str | None = None) -> None:
         super().__init__(
             message=f"Provider '{provider}' is not available or not configured",
             error_code="PROVIDER_NOT_AVAILABLE",
@@ -90,7 +90,7 @@ class ModelNotFoundError(StreamingError):
         model: str,
         provider: str,
         stream_id: str | None = None,
-    ):
+    ) -> None:
         super().__init__(
             message=f"Model '{model}' not found for provider '{provider}'",
             error_code="MODEL_NOT_FOUND",
@@ -109,7 +109,7 @@ class RateLimitExceededError(StreamingError):
         provider: str,
         retry_after: int | None = None,
         stream_id: str | None = None,
-    ):
+    ) -> None:
         super().__init__(
             message=f"Rate limit exceeded for provider '{provider}'",
             error_code="RATE_LIMIT_EXCEEDED",
@@ -127,7 +127,7 @@ class StreamInterruptedError(StreamingError):
         self,
         reason: str,
         stream_id: str | None = None,
-    ):
+    ) -> None:
         super().__init__(
             message=f"Stream interrupted: {reason}",
             error_code="STREAM_INTERRUPTED",
@@ -207,10 +207,10 @@ async def get_formatter() -> StreamResponseFormatter:
 
 
 async def _stream_generator(
-    request: PromptRequest, service: LLMService
+    request: PromptRequest,
+    service: LLMService,
 ) -> AsyncGenerator[str, None]:
-    """
-    Generate SSE events from streaming response.
+    """Generate SSE events from streaming response.
 
     Yields SSE-formatted events with JSON data containing:
     - text: The generated text chunk
@@ -249,10 +249,10 @@ async def _stream_generator(
 
 
 async def _raw_stream_generator(
-    request: PromptRequest, service: LLMService
+    request: PromptRequest,
+    service: LLMService,
 ) -> AsyncGenerator[str, None]:
-    """
-    Generate raw text chunks without SSE formatting.
+    """Generate raw text chunks without SSE formatting.
 
     Useful for direct text streaming to UI without JSON parsing overhead.
     """
@@ -284,8 +284,7 @@ async def _unified_stream_generator(
     formatter: StreamResponseFormatter,
     stream_format: StreamFormat = StreamFormat.SSE,
 ) -> AsyncGenerator[str, None]:
-    """
-    Generate streaming response using unified provider/model selection.
+    """Generate streaming response using unified provider/model selection.
 
     Uses the UnifiedStreamingService to resolve provider/model from the
     selection hierarchy and maintain consistency during streaming.
@@ -361,9 +360,7 @@ async def _unified_chat_stream_generator(
     formatter: StreamResponseFormatter,
     stream_format: StreamFormat = StreamFormat.SSE,
 ) -> AsyncGenerator[str, None]:
-    """
-    Generate chat streaming response using unified provider/model selection.
-    """
+    """Generate chat streaming response using unified provider/model selection."""
     stream_id = ""
     total_chunks = 0
 
@@ -462,10 +459,9 @@ async def _unified_chat_stream_generator(
 )
 async def stream_generate_legacy(
     request: PromptRequest,
-    service: LLMService = Depends(get_llm_service),
+    service: Annotated[LLMService, Depends(get_llm_service)],
 ):
-    """
-    Stream text generation using Server-Sent Events (SSE).
+    """Stream text generation using Server-Sent Events (SSE).
     Legacy endpoint for backward compatibility.
     """
     return StreamingResponse(
@@ -502,7 +498,7 @@ async def stream_generate_legacy(
 )
 async def stream_generate_raw(
     request: PromptRequest,
-    service: LLMService = Depends(get_llm_service),
+    service: Annotated[LLMService, Depends(get_llm_service)],
 ):
     """Stream raw text chunks (no JSON wrapping). Legacy endpoint."""
     return StreamingResponse(
@@ -567,17 +563,15 @@ async def stream_generate_raw(
 )
 async def stream_generate(
     request: StreamGenerateRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-Id"),
-    x_user_id: str | None = Header(None, alias="X-User-Id"),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-Id")] = None,
+    x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
     streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
     resolution_service: ProviderResolutionService = Depends(
-        lambda: get_provider_resolution_service()
+        lambda: get_provider_resolution_service(),
     ),
     formatter: StreamResponseFormatter = Depends(get_formatter),
 ):
-    """
-    Stream text generation using unified provider/model selection.
-    """
+    """Stream text generation using unified provider/model selection."""
     # Generate stream ID upfront for tracing
     stream_id = f"stream_{uuid.uuid4().hex[:12]}"
     datetime.utcnow()
@@ -704,17 +698,15 @@ async def stream_generate(
 )
 async def stream_chat(
     request: StreamChatRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-Id"),
-    x_user_id: str | None = Header(None, alias="X-User-Id"),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-Id")] = None,
+    x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
     streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
     resolution_service: ProviderResolutionService = Depends(
-        lambda: get_provider_resolution_service()
+        lambda: get_provider_resolution_service(),
     ),
     formatter: StreamResponseFormatter = Depends(get_formatter),
 ):
-    """
-    Stream chat completion using unified provider/model selection.
-    """
+    """Stream chat completion using unified provider/model selection."""
     # Generate stream ID upfront for tracing
     stream_id = f"stream_{uuid.uuid4().hex[:12]}"
     datetime.utcnow()
@@ -827,11 +819,11 @@ async def stream_chat(
 )
 async def stream_generate_jsonl(
     request: StreamGenerateRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-Id"),
-    x_user_id: str | None = Header(None, alias="X-User-Id"),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-Id")] = None,
+    x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
     streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
     resolution_service: ProviderResolutionService = Depends(
-        lambda: get_provider_resolution_service()
+        lambda: get_provider_resolution_service(),
     ),
     formatter: StreamResponseFormatter = Depends(get_formatter),
 ):
@@ -906,8 +898,7 @@ async def _validate_provider_available(
     provider: str,
     streaming_service: UnifiedStreamingService,
 ) -> bool:
-    """
-    Validate that a provider is available for streaming.
+    """Validate that a provider is available for streaming.
 
     Checks:
     - Provider plugin exists
@@ -916,6 +907,7 @@ async def _validate_provider_available(
 
     Returns:
         True if provider is available, False otherwise
+
     """
     try:
         from app.services.provider_plugins import get_plugin
@@ -953,7 +945,7 @@ async def _validate_provider_available(
     responses={200: {"description": "List of active streams"}},
 )
 async def get_active_streams(
-    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
+    streaming_service: Annotated[UnifiedStreamingService, Depends(get_streaming_service)],
 ):
     """Get all currently active streaming sessions."""
     return {
@@ -969,7 +961,7 @@ async def get_active_streams(
     responses={200: {"description": "Streaming metrics summary"}},
 )
 async def get_stream_metrics(
-    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
+    streaming_service: Annotated[UnifiedStreamingService, Depends(get_streaming_service)],
 ):
     """Get streaming performance metrics."""
     return streaming_service.get_metrics_summary()
@@ -1003,7 +995,7 @@ async def get_recent_stream_metrics(
 )
 async def cancel_stream(
     stream_id: str,
-    streaming_service: UnifiedStreamingService = Depends(get_streaming_service),
+    streaming_service: Annotated[UnifiedStreamingService, Depends(get_streaming_service)],
 ):
     """Cancel an active stream by ID."""
     cancelled = await streaming_service.cancel_stream(stream_id)
@@ -1027,11 +1019,9 @@ async def cancel_stream(
     responses={200: {"description": "Streaming capabilities by provider"}},
 )
 async def get_streaming_capabilities(
-    service: LLMService = Depends(get_llm_service),
+    service: Annotated[LLMService, Depends(get_llm_service)],
 ):
-    """
-    Get streaming capabilities for all registered providers.
-    """
+    """Get streaming capabilities for all registered providers."""
     providers = service.get_available_providers()
     capabilities = {}
 

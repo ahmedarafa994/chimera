@@ -1,5 +1,4 @@
-"""
-Strategy Library for AutoDAN-Turbo.
+"""Strategy Library for AutoDAN-Turbo.
 
 Provides persistent storage and similarity-based retrieval of jailbreak strategies.
 Based on the paper's formalization of strategy libraries.
@@ -38,8 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingProvider:
-    """
-    Config-driven embedding provider for strategy library.
+    """Config-driven embedding provider for strategy library.
 
     Provides embeddings using:
     1. Backend EmbeddingService (preferred when available)
@@ -67,13 +65,13 @@ class EmbeddingProvider:
 
             cls._embedding_service = get_embedding_service()
             cls._use_api = True
-            logger.info("StrategyLibrary using backend EmbeddingService " "(config-driven)")
+            logger.info("StrategyLibrary using backend EmbeddingService (config-driven)")
         except ImportError:
-            logger.debug("Backend EmbeddingService not available, " "will use local embeddings")
+            logger.debug("Backend EmbeddingService not available, will use local embeddings")
             cls._use_api = False
         except Exception as e:
             logger.warning(
-                f"Failed to initialize EmbeddingService: {e}, " f"falling back to local embeddings"
+                f"Failed to initialize EmbeddingService: {e}, falling back to local embeddings",
             )
             cls._use_api = False
 
@@ -94,8 +92,7 @@ class EmbeddingProvider:
         text: str,
         provider: str | None = None,
     ) -> list[float]:
-        """
-        Encode text to embedding vector.
+        """Encode text to embedding vector.
 
         Uses config-driven provider selection when backend available.
         """
@@ -103,8 +100,7 @@ class EmbeddingProvider:
 
         if cls._use_api and cls._embedding_service:
             return cls._encode_via_api(text, provider)
-        else:
-            return cls._encode_local(text)
+        return cls._encode_local(text)
 
     @classmethod
     def _encode_via_api(
@@ -135,10 +131,10 @@ class EmbeddingProvider:
             else:
                 # Not in async context
                 return asyncio.run(
-                    cls._embedding_service.generate_embedding(text, provider=provider)
+                    cls._embedding_service.generate_embedding(text, provider=provider),
                 )
         except Exception as e:
-            logger.error(f"API embedding failed: {e}, falling back to local")
+            logger.exception(f"API embedding failed: {e}, falling back to local")
             return cls._encode_local(text)
 
     @classmethod
@@ -151,7 +147,7 @@ class EmbeddingProvider:
                 cls._local_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
                 logger.info("Loaded local sentence-transformer model")
             except ImportError:
-                logger.error("sentence-transformers not installed, " "returning empty embedding")
+                logger.exception("sentence-transformers not installed, returning empty embedding")
                 return []
 
         try:
@@ -162,7 +158,7 @@ class EmbeddingProvider:
             )
             return embedding.tolist()
         except Exception as e:
-            logger.error(f"Local embedding failed: {e}")
+            logger.exception(f"Local embedding failed: {e}")
             return []
 
     @classmethod
@@ -178,12 +174,11 @@ class EmbeddingProvider:
                 "providers": providers,
                 "config_driven": True,
             }
-        else:
-            return {
-                "type": "local",
-                "model": "sentence-transformers/all-MiniLM-L6-v2",
-                "config_driven": False,
-            }
+        return {
+            "type": "local",
+            "model": "sentence-transformers/all-MiniLM-L6-v2",
+            "config_driven": False,
+        }
 
 
 # Constants for validation
@@ -197,8 +192,7 @@ complex_YAML_PATTERNS = ["!!python", "!!ruby", "!include", "<<:", "!!exec", "!!m
 
 
 class StrategyLibrary:
-    """
-    Persistent storage and retrieval system for jailbreak strategies.
+    """Persistent storage and retrieval system for jailbreak strategies.
 
     Features:
     - YAML-based persistence for human-readable storage
@@ -216,9 +210,8 @@ class StrategyLibrary:
         embedding_model=None,
         embedding_provider: str | None = None,
         use_config_embeddings: bool = True,
-    ):
-        """
-        Initialize the strategy library.
+    ) -> None:
+        """Initialize the strategy library.
 
         Args:
             storage_dir: Directory for YAML storage (default: data/strategies/)
@@ -226,6 +219,7 @@ class StrategyLibrary:
             embedding_model: Model for computing embeddings (optional)
             embedding_provider: Override provider for embeddings
             use_config_embeddings: Use config-driven embedding service
+
         """
         if storage_dir is None:
             # Default to data/strategies/ relative to backend-api
@@ -257,7 +251,7 @@ class StrategyLibrary:
         self._load_all()
 
         logger.info(
-            f"StrategyLibrary initialized with {len(self._strategies)} strategies. FAISS available: {HAS_FAISS}"
+            f"StrategyLibrary initialized with {len(self._strategies)} strategies. FAISS available: {HAS_FAISS}",
         )
 
     # ========================
@@ -265,10 +259,11 @@ class StrategyLibrary:
     # ========================
 
     def add_strategy(
-        self, strategy: JailbreakStrategy, check_duplicate: bool = True
+        self,
+        strategy: JailbreakStrategy,
+        check_duplicate: bool = True,
     ) -> tuple[bool, str]:
-        """
-        Add a new strategy to the library.
+        """Add a new strategy to the library.
 
         Args:
             strategy: The strategy to add
@@ -276,6 +271,7 @@ class StrategyLibrary:
 
         Returns:
             Tuple of (success, message/strategy_id)
+
         """
         # Validate strategy before adding
         is_valid, validation_msg = self._validate_strategy(strategy)
@@ -309,8 +305,7 @@ class StrategyLibrary:
         return True, strategy.id
 
     def _validate_strategy(self, strategy: JailbreakStrategy) -> tuple[bool, str]:
-        """
-        Validate a strategy before adding to the library.
+        """Validate a strategy before adding to the library.
 
         Checks for:
         - Template size limits
@@ -319,6 +314,7 @@ class StrategyLibrary:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         # Check template size
         if len(strategy.template) > MAX_TEMPLATE_SIZE:
@@ -400,10 +396,12 @@ class StrategyLibrary:
     # ========================
 
     def search(
-        self, query: str, top_k: int = 5, min_score: float = 0.0
+        self,
+        query: str,
+        top_k: int = 5,
+        min_score: float = 0.0,
     ) -> list[tuple[JailbreakStrategy, float]]:
-        """
-        Search for strategies similar to a query.
+        """Search for strategies similar to a query.
 
         Args:
             query: The search query (typically the complex request)
@@ -412,24 +410,26 @@ class StrategyLibrary:
 
         Returns:
             List of (strategy, similarity_score) tuples, sorted by score descending
+
         """
         if not self._strategies:
             return []
 
         if self.embedding_model:
             return self._embedding_search(query, top_k, min_score)
-        else:
-            return self._keyword_search(query, top_k)
+        return self._keyword_search(query, top_k)
 
     def get_top_strategies(
-        self, top_k: int = 5, by: str = "success_rate"
+        self,
+        top_k: int = 5,
+        by: str = "success_rate",
     ) -> list[JailbreakStrategy]:
-        """
-        Get top strategies by performance metric.
+        """Get top strategies by performance metric.
 
         Args:
             top_k: Number of strategies to return
             by: Metric to sort by ("success_rate", "average_score", "usage_count")
+
         """
         strategies = list(self._strategies.values())
 
@@ -440,7 +440,8 @@ class StrategyLibrary:
         elif by == "usage_count":
             strategies.sort(key=lambda s: s.metadata.usage_count, reverse=True)
         else:
-            raise ValueError(f"Unknown sort metric: {by}")
+            msg = f"Unknown sort metric: {by}"
+            raise ValueError(msg)
 
         return strategies[:top_k]
 
@@ -457,8 +458,7 @@ class StrategyLibrary:
     # ========================
 
     def update_statistics(self, strategy_id: str, score: float, success: bool) -> bool:
-        """
-        Update usage statistics for a strategy after an attack attempt.
+        """Update usage statistics for a strategy after an attack attempt.
 
         Thread-safe implementation using lock.
 
@@ -466,6 +466,7 @@ class StrategyLibrary:
             strategy_id: ID of the strategy used
             score: Attack score (1-10)
             success: Whether the attack succeeded
+
         """
         with self._lock:
             strategy = self._strategies.get(strategy_id)
@@ -478,7 +479,7 @@ class StrategyLibrary:
         logger.debug(
             f"Updated stats for {strategy.name}: "
             f"usage={strategy.metadata.usage_count}, "
-            f"success_rate={strategy.metadata.success_rate:.2%}"
+            f"success_rate={strategy.metadata.success_rate:.2%}",
         )
         return True
 
@@ -487,10 +488,11 @@ class StrategyLibrary:
     # ========================
 
     def apply_performance_decay(
-        self, decay_factor: float = 0.95, min_usage_for_decay: int = 5
+        self,
+        decay_factor: float = 0.95,
+        min_usage_for_decay: int = 5,
     ) -> int:
-        """
-        Apply performance decay to strategy statistics.
+        """Apply performance decay to strategy statistics.
 
         This implements OPT-KT-2 from the optimization report:
         - Older performance data is weighted less over time
@@ -505,6 +507,7 @@ class StrategyLibrary:
 
         Returns:
             Number of strategies that had decay applied
+
         """
         decayed_count = 0
 
@@ -521,13 +524,14 @@ class StrategyLibrary:
                 # Use floor to ensure integer
                 old_success = strategy.metadata.success_count
                 strategy.metadata.success_count = int(
-                    strategy.metadata.success_count * decay_factor
+                    strategy.metadata.success_count * decay_factor,
                 )
 
                 # Apply decay to usage count proportionally
                 old_usage = strategy.metadata.usage_count
                 strategy.metadata.usage_count = max(
-                    min_usage_for_decay, int(strategy.metadata.usage_count * decay_factor)
+                    min_usage_for_decay,
+                    int(strategy.metadata.usage_count * decay_factor),
                 )
 
                 decayed_count += 1
@@ -536,7 +540,7 @@ class StrategyLibrary:
                     f"Applied decay to {strategy.name}: "
                     f"score {old_total:.1f}->{strategy.metadata.total_score:.1f}, "
                     f"success {old_success}->{strategy.metadata.success_count}, "
-                    f"usage {old_usage}->{strategy.metadata.usage_count}"
+                    f"usage {old_usage}->{strategy.metadata.usage_count}",
                 )
 
         if decayed_count > 0:
@@ -545,10 +549,11 @@ class StrategyLibrary:
         return decayed_count
 
     def get_strategies_with_decay_scores(
-        self, top_k: int = 10, recency_weight: float = 0.3
+        self,
+        top_k: int = 10,
+        recency_weight: float = 0.3,
     ) -> list[tuple[JailbreakStrategy, float]]:
-        """
-        Get top strategies with recency-weighted scores.
+        """Get top strategies with recency-weighted scores.
 
         Combines historical performance with recency to favor
         recently successful strategies.
@@ -559,6 +564,7 @@ class StrategyLibrary:
 
         Returns:
             List of (strategy, weighted_score) tuples
+
         """
         now = datetime.utcnow()
         scored_strategies = []
@@ -585,10 +591,12 @@ class StrategyLibrary:
         return scored_strategies[:top_k]
 
     def prune_underperforming_strategies(
-        self, min_usage: int = 10, min_success_rate: float = 0.1, max_age_days: int = 90
+        self,
+        min_usage: int = 10,
+        min_success_rate: float = 0.1,
+        max_age_days: int = 90,
     ) -> int:
-        """
-        Remove strategies that consistently underperform.
+        """Remove strategies that consistently underperform.
 
         Args:
             min_usage: Minimum usage count before pruning eligible
@@ -597,6 +605,7 @@ class StrategyLibrary:
 
         Returns:
             Number of strategies pruned
+
         """
         now = datetime.utcnow()
         to_remove = []
@@ -615,7 +624,7 @@ class StrategyLibrary:
                         logger.info(
                             f"Pruning underperforming strategy: {strategy.name} "
                             f"(success_rate={strategy.metadata.success_rate:.1%}, "
-                            f"age={days_since_update} days)"
+                            f"age={days_since_update} days)",
                         )
 
         # Remove strategies outside the lock to avoid deadlock
@@ -656,7 +665,7 @@ class StrategyLibrary:
                         self._load_strategy_from_dict(data)
 
             except Exception as e:
-                logger.error(f"Failed to load {file_path}: {e}")
+                logger.exception(f"Failed to load {file_path}: {e}")
 
         # Build FAISS index after loading all
         if HAS_FAISS and self.embedding_model:
@@ -687,7 +696,7 @@ class StrategyLibrary:
             self._strategies[strategy.id] = strategy
 
         except Exception as e:
-            logger.error(f"Failed to parse strategy: {e}")
+            logger.exception(f"Failed to parse strategy: {e}")
 
     def _save_strategy(self, strategy: JailbreakStrategy) -> None:
         """Save a single strategy to YAML."""
@@ -718,7 +727,7 @@ class StrategyLibrary:
     # Similarity & Deduplication
     # ========================
 
-    def _build_index(self):
+    def _build_index(self) -> None:
         """Build or rebuild FAISS index from current strategies."""
         if not HAS_FAISS or not self._strategies:
             return
@@ -746,7 +755,7 @@ class StrategyLibrary:
         self.index_ids = ids
         logger.debug(f"Built FAISS index with {len(ids)} vectors, dimension {dimension}")
 
-    def _add_to_index(self, strategy: JailbreakStrategy):
+    def _add_to_index(self, strategy: JailbreakStrategy) -> None:
         """Add a single strategy to the FAISS index."""
         if not HAS_FAISS or strategy.embedding is None:
             return
@@ -780,7 +789,10 @@ class StrategyLibrary:
         return None
 
     def _embedding_search(
-        self, query: str, top_k: int, min_score: float
+        self,
+        query: str,
+        top_k: int,
+        min_score: float,
     ) -> list[tuple[JailbreakStrategy, float]]:
         """Search using embedding similarity (FAISS if available)."""
         query_embedding_list = self._compute_embedding(query)
@@ -809,17 +821,16 @@ class StrategyLibrary:
                     results.append((strategy, float(score)))
             return results
 
-        else:
-            # Fallback linear search
-            scores = []
-            for strategy in self._strategies.values():
-                if strategy.embedding:
-                    similarity = self._cosine_similarity(query_embedding_list, strategy.embedding)
-                    if similarity >= min_score:
-                        scores.append((strategy, similarity))
+        # Fallback linear search
+        scores = []
+        for strategy in self._strategies.values():
+            if strategy.embedding:
+                similarity = self._cosine_similarity(query_embedding_list, strategy.embedding)
+                if similarity >= min_score:
+                    scores.append((strategy, similarity))
 
-            scores.sort(key=lambda x: x[1], reverse=True)
-            return scores[:top_k]
+        scores.sort(key=lambda x: x[1], reverse=True)
+        return scores[:top_k]
 
     def _keyword_search(self, query: str, top_k: int) -> list[tuple[JailbreakStrategy, float]]:
         """Fallback keyword-based search."""
@@ -845,8 +856,7 @@ class StrategyLibrary:
         return scores[:top_k]
 
     def _compute_embedding(self, text: str) -> list[float]:
-        """
-        Compute embedding for text.
+        """Compute embedding for text.
 
         Uses config-driven embedding service when available,
         falls back to provided embedding_model or local embeddings.
@@ -858,7 +868,7 @@ class StrategyLibrary:
                 if embedding:
                     return embedding
             except Exception as e:
-                logger.warning(f"Config-driven embedding failed: {e}, " f"trying fallback")
+                logger.warning(f"Config-driven embedding failed: {e}, trying fallback")
 
         # Priority 2: Use provided embedding model
         if self.embedding_model is not None:
@@ -870,19 +880,18 @@ class StrategyLibrary:
                     if hasattr(embedding, "tolist"):
                         return embedding.tolist()
                     return list(embedding)
-                elif hasattr(self.embedding_model, "embed"):
+                if hasattr(self.embedding_model, "embed"):
                     # Custom interface
                     return self.embedding_model.embed(text)
-                else:
-                    logger.warning("Unknown embedding model interface")
+                logger.warning("Unknown embedding model interface")
             except Exception as e:
-                logger.error(f"Embedding model failed: {e}")
+                logger.exception(f"Embedding model failed: {e}")
 
         # Priority 3: Fall back to local sentence-transformers
         try:
             return EmbeddingProvider._encode_local(text)
         except Exception as e:
-            logger.error(f"All embedding methods failed: {e}")
+            logger.exception(f"All embedding methods failed: {e}")
             return []
 
     def get_embedding_info(self) -> dict[str, Any]:

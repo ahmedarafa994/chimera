@@ -1,5 +1,4 @@
-"""
-Configuration Validation Package
+"""Configuration Validation Package.
 
 Provides comprehensive validation for Chimera configuration files.
 
@@ -16,11 +15,11 @@ Usage:
 """
 
 from .validator import (
-                        ConfigurationAnalysis,
-                        ConfigurationValidator,
-                        Severity,
-                        ValidationIssue,
-                        validate_project_configuration,
+    ConfigurationAnalysis,
+    ConfigurationValidator,
+    Severity,
+    ValidationIssue,
+    validate_project_configuration,
 )
 
 __all__ = [

@@ -1,5 +1,4 @@
-"""
-CSRF Token API Endpoint
+"""CSRF Token API Endpoint.
 
 Provides endpoint for generating CSRF tokens for frontend use.
 SEC-002: CSRF protection endpoint implementation.
@@ -22,8 +21,7 @@ class CSRFTokenResponse(BaseModel):
 
 @router.get("/token", response_model=CSRFTokenResponse)
 async def get_csrf_token(response: Response):
-    """
-    Generate a new CSRF token.
+    """Generate a new CSRF token.
 
     This endpoint should be called by the frontend on initial page load
     to obtain a CSRF token for subsequent state-changing requests.
@@ -55,8 +53,7 @@ async def get_csrf_token(response: Response):
 
 @router.post("/validate")
 async def validate_csrf_token(token: str):
-    """
-    Validate a CSRF token.
+    """Validate a CSRF token.
 
     This endpoint can be used to check if a token is still valid
     before making a state-changing request.

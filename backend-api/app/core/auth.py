@@ -1,6 +1,5 @@
-"""
-Authentication and RBAC Module
-Production-grade authentication with JWT and Role-Based Access Control
+"""Authentication and RBAC Module
+Production-grade authentication with JWT and Role-Based Access Control.
 """
 
 import hashlib
@@ -9,16 +8,14 @@ import os
 import secrets
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-
-if TYPE_CHECKING:
-    pass
+from starlette.concurrency import run_in_threadpool
 
 # Redis for production token revocation persistence
 try:
@@ -37,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class Role(str, Enum):
-    """User roles with hierarchical permissions"""
+    """User roles with hierarchical permissions."""
 
     ADMIN = "admin"  # Full system access
     RESEARCHER = "researcher"  # Create/edit campaigns, execute jailbreaks (no user management)
@@ -48,7 +45,7 @@ class Role(str, Enum):
 
 
 class Permission(str, Enum):
-    """Granular permissions for access control"""
+    """Granular permissions for access control."""
 
     # Read permissions
     READ_PROMPTS = "read:prompts"
@@ -135,7 +132,7 @@ ROLE_PERMISSIONS: dict[Role, list[Permission]] = {
 
 
 class TokenPayload(BaseModel):
-    """JWT token payload"""
+    """JWT token payload."""
 
     sub: str  # User ID
     role: str
@@ -163,12 +160,12 @@ class TokenResponse(BaseModel):
                 "token_type": "Bearer",
                 "expires_in": 3600,
                 "refresh_expires_in": 604800,
-            }
+            },
         }
 
 
 class UserCredentials(BaseModel):
-    """User login credentials"""
+    """User login credentials."""
 
     username: str
     password: str
@@ -187,9 +184,9 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 class AuthConfig:
-    """Authentication configuration"""
+    """Authentication configuration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.secret_key = os.getenv("JWT_SECRET")
         if not self.secret_key:
             self.secret_key = secrets.token_urlsafe(64)
@@ -209,20 +206,19 @@ auth_config = AuthConfig()
 
 
 class AuthService:
-    """
-    Authentication service with JWT and API key support.
+    """Authentication service with JWT and API key support.
 
     Token revocation is persisted to Redis in production for durability
     across server restarts. Falls back to in-memory storage in development.
     """
 
-    def __init__(self, config: AuthConfig = None):
+    def __init__(self, config: AuthConfig = None) -> None:
         self.config = config or auth_config
         self._revoked_tokens: set = set()  # Fallback for development
         self._redis_client = None
         self._init_redis()
 
-    def _init_redis(self):
+    def _init_redis(self) -> None:
         """Initialize Redis connection for token revocation persistence."""
         if not REDIS_AVAILABLE:
             logger.warning("Redis package not installed - using in-memory token revocation")
@@ -247,26 +243,42 @@ class AuthService:
     # -------------------------------------------------------------------------
 
     def hash_password(self, password: str) -> str:
-        """Hash a password using bcrypt"""
+        """Hash a password using bcrypt/Argon2."""
         return pwd_context.hash(password)
 
+    async def hash_password_async(self, password: str) -> str:
+        """Hash a password using bcrypt/Argon2 (async wrapper).
+
+        Offloads the CPU-intensive hashing to a threadpool to avoid blocking
+        the main asyncio event loop.
+        """
+        return await run_in_threadpool(self.hash_password, password)
+
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        """Verify a password against a hash"""
+        """Verify a password against a hash."""
         return pwd_context.verify(plain_password, hashed_password)
+
+    async def verify_password_async(self, plain_password: str, hashed_password: str) -> bool:
+        """Verify a password against a hash (async wrapper).
+
+        Offloads the CPU-intensive verification to a threadpool to avoid blocking
+        the main asyncio event loop.
+        """
+        return await run_in_threadpool(self.verify_password, plain_password, hashed_password)
 
     # -------------------------------------------------------------------------
     # API Key Operations
     # -------------------------------------------------------------------------
 
     def verify_api_key(self, api_key: str) -> bool:
-        """
-        Verify an API key using timing-safe comparison.
+        """Verify an API key using timing-safe comparison.
 
         Args:
             api_key: The API key to verify
 
         Returns:
             True if valid, False otherwise
+
         """
         valid_key = os.getenv("CHIMERA_API_KEY")
         if not valid_key:
@@ -277,12 +289,11 @@ class AuthService:
         return secrets.compare_digest(api_key, valid_key)
 
     def generate_api_key(self) -> str:
-        """Generate a new secure API key"""
+        """Generate a new secure API key."""
         return secrets.token_urlsafe(32)
 
     def hash_api_key(self, api_key: str) -> str:
-        """
-        Hash an API key for database lookup.
+        """Hash an API key for database lookup.
 
         Uses SHA-256 to match the hashing used when storing user API keys.
 
@@ -291,6 +302,7 @@ class AuthService:
 
         Returns:
             SHA-256 hex digest of the API key
+
         """
         return hashlib.sha256(api_key.encode()).hexdigest()
 
@@ -299,10 +311,12 @@ class AuthService:
     # -------------------------------------------------------------------------
 
     def create_access_token(
-        self, user_id: str, role: Role, additional_claims: dict[str, Any] | None = None
+        self,
+        user_id: str,
+        role: Role,
+        additional_claims: dict[str, Any] | None = None,
     ) -> str:
-        """
-        Create a JWT access token.
+        """Create a JWT access token.
 
         Args:
             user_id: The user's unique identifier
@@ -311,6 +325,7 @@ class AuthService:
 
         Returns:
             Encoded JWT token
+
         """
         now = datetime.utcnow()
         permissions = [p.value for p in ROLE_PERMISSIONS.get(role, [])]
@@ -331,7 +346,7 @@ class AuthService:
         return jwt.encode(payload, self.config.secret_key, algorithm=self.config.algorithm)
 
     def create_refresh_token(self, user_id: str, role: Role) -> str:
-        """Create a JWT refresh token"""
+        """Create a JWT refresh token."""
         now = datetime.utcnow()
 
         payload = {
@@ -346,7 +361,7 @@ class AuthService:
         return jwt.encode(payload, self.config.secret_key, algorithm=self.config.algorithm)
 
     def create_tokens(self, user_id: str, role: Role) -> TokenResponse:
-        """Create both access and refresh tokens"""
+        """Create both access and refresh tokens."""
         access_token = self.create_access_token(user_id, role)
         refresh_token = self.create_refresh_token(user_id, role)
 
@@ -359,8 +374,7 @@ class AuthService:
         )
 
     def decode_token(self, token: str) -> TokenPayload:
-        """
-        Decode and validate a JWT token.
+        """Decode and validate a JWT token.
 
         Args:
             token: The JWT token to decode
@@ -370,6 +384,7 @@ class AuthService:
 
         Raises:
             HTTPException: If token is invalid or expired
+
         """
         try:
             payload = jwt.decode(token, self.config.secret_key, algorithms=[self.config.algorithm])
@@ -377,18 +392,21 @@ class AuthService:
             # Check if token is revoked
             if self._is_token_revoked(payload.get("jti")):
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked"
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has been revoked",
                 )
 
             return TokenPayload(**payload)
 
         except jwt.ExpiredSignatureError:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired",
             )
         except JWTError as e:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {e!s}"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token: {e!s}",
             )
 
     def _is_token_revoked(self, jti: str) -> bool:
@@ -401,29 +419,29 @@ class AuthService:
             try:
                 return self._redis_client.exists(f"revoked_token:{jti}") > 0
             except Exception as e:
-                logger.error(f"Redis check failed, falling back to memory: {e}")
+                logger.exception(f"Redis check failed, falling back to memory: {e}")
 
         # Fallback to in-memory check
         return jti in self._revoked_tokens
 
-    def revoke_token(self, jti: str, expires_in_seconds: int = 86400):
-        """
-        Revoke a token by its JTI.
+    def revoke_token(self, jti: str, expires_in_seconds: int = 86400) -> None:
+        """Revoke a token by its JTI.
 
         Args:
             jti: The JWT ID to revoke
             expires_in_seconds: How long to keep the revocation (default: 24h)
+
         """
         # Store in Redis with automatic expiration (production)
         if self._redis_client:
             try:
                 self._redis_client.setex(f"revoked_token:{jti}", expires_in_seconds, "1")
                 logger.info(
-                    f"Token {jti[:8]}... revoked in Redis (expires in {expires_in_seconds}s)"
+                    f"Token {jti[:8]}... revoked in Redis (expires in {expires_in_seconds}s)",
                 )
                 return
             except Exception as e:
-                logger.error(f"Redis revocation failed, using memory: {e}")
+                logger.exception(f"Redis revocation failed, using memory: {e}")
 
         # Fallback to in-memory (development)
         self._revoked_tokens.add(jti)
@@ -431,12 +449,13 @@ class AuthService:
         # Note: In-memory revocations are lost on restart
 
     def refresh_access_token(self, refresh_token: str) -> TokenResponse:
-        """Create a new access token using a refresh token"""
+        """Create a new access token using a refresh token."""
         payload = self.decode_token(refresh_token)
 
         if payload.type != "refresh":
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token type"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid token type",
             )
 
         role = Role(payload.role)
@@ -453,14 +472,14 @@ auth_service = AuthService()
 
 
 async def get_api_key(api_key: str = Security(api_key_header)) -> str | None:
-    """Extract API key from header"""
+    """Extract API key from header."""
     return api_key
 
 
 async def get_token(
     credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
 ) -> str | None:
-    """Extract JWT token from Authorization header"""
+    """Extract JWT token from Authorization header."""
     if credentials:
         return credentials.credentials
     return None
@@ -475,14 +494,14 @@ def _is_jwt_format(token: str) -> bool:
 
 
 def _get_role_from_user_role(user_role: str) -> Role:
-    """
-    Map a user role string to a Role enum.
+    """Map a user role string to a Role enum.
 
     Args:
         user_role: Role string from database (admin, researcher, viewer)
 
     Returns:
         Role enum value
+
     """
     role_mapping = {
         "admin": Role.ADMIN,
@@ -497,8 +516,7 @@ async def get_current_user(
     api_key: str = Depends(get_api_key),
     token: str = Depends(get_token),
 ) -> TokenPayload:
-    """
-    Get current authenticated user from API key or JWT token.
+    """Get current authenticated user from API key or JWT token.
 
     Supports multiple authentication methods in order of priority:
     1. JWT Bearer token - for full user authentication
@@ -585,8 +603,7 @@ async def get_current_user(
 
 
 def require_permission(permission: Permission):
-    """
-    Dependency to require a specific permission.
+    """Dependency to require a specific permission.
 
     Usage:
         @app.get("/admin/users")
@@ -606,8 +623,7 @@ def require_permission(permission: Permission):
 
 
 def require_role(role: Role):
-    """
-    Dependency to require a specific role.
+    """Dependency to require a specific role.
 
     Usage:
         @app.get("/admin/system")
@@ -618,7 +634,8 @@ def require_role(role: Role):
     async def role_checker(user: TokenPayload = Depends(get_current_user)) -> TokenPayload:
         if user.role != role.value:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail=f"Role denied: {role.value} required"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role denied: {role.value} required",
             )
         return user
 
@@ -626,9 +643,7 @@ def require_role(role: Role):
 
 
 def require_any_role(roles: list[Role]):
-    """
-    Dependency to require any of the specified roles.
-    """
+    """Dependency to require any of the specified roles."""
 
     async def role_checker(user: TokenPayload = Depends(get_current_user)) -> TokenPayload:
         if user.role not in [r.value for r in roles]:
@@ -647,27 +662,31 @@ def require_any_role(roles: list[Role]):
 
 
 class AuditLogger:
-    """Simple audit logger for security events"""
+    """Simple audit logger for security events."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger("audit")
 
     def log_authentication(
-        self, user_id: str, success: bool, method: str, ip_address: str | None = None
-    ):
-        """Log authentication attempt"""
+        self,
+        user_id: str,
+        success: bool,
+        method: str,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log authentication attempt."""
         self.logger.info(f"AUTH: user={user_id} success={success} method={method} ip={ip_address}")
 
-    def log_authorization(self, user_id: str, resource: str, action: str, allowed: bool):
-        """Log authorization decision"""
+    def log_authorization(self, user_id: str, resource: str, action: str, allowed: bool) -> None:
+        """Log authorization decision."""
         self.logger.info(
-            f"AUTHZ: user={user_id} resource={resource} action={action} allowed={allowed}"
+            f"AUTHZ: user={user_id} resource={resource} action={action} allowed={allowed}",
         )
 
-    def log_api_access(self, user_id: str, endpoint: str, method: str, status_code: int):
-        """Log API access"""
+    def log_api_access(self, user_id: str, endpoint: str, method: str, status_code: int) -> None:
+        """Log API access."""
         self.logger.info(
-            f"API: user={user_id} endpoint={endpoint} method={method} status={status_code}"
+            f"API: user={user_id} endpoint={endpoint} method={method} status={status_code}",
         )
 
 

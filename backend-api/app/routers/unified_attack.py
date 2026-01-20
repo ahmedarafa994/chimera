@@ -1,5 +1,4 @@
-"""
-Unified Multi-Vector Attack API Router
+"""Unified Multi-Vector Attack API Router.
 
 Consolidated API endpoints for the multi-vector attack framework
 combining ExtendAttack and AutoDAN capabilities.
@@ -92,10 +91,9 @@ async def get_session(session_id: str) -> dict:
 # ==============================================================================
 
 
-@router.post("/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/sessions", status_code=status.HTTP_201_CREATED)
 async def create_attack_session(request: CreateSessionRequest) -> SessionResponse:
-    """
-    Create a new multi-vector attack session with budget.
+    """Create a new multi-vector attack session with budget.
 
     Sessions track resource usage, attack history, and Pareto-optimal solutions
     across multiple attack executions.
@@ -153,10 +151,9 @@ async def create_attack_session(request: CreateSessionRequest) -> SessionRespons
     )
 
 
-@router.get("/sessions/{session_id}", response_model=SessionStatusResponse)
+@router.get("/sessions/{session_id}")
 async def get_session_status(session_id: str) -> SessionStatusResponse:
-    """
-    Get current session status including resource usage.
+    """Get current session status including resource usage.
 
     Returns detailed information about session state, budget consumption,
     and attack statistics.
@@ -184,10 +181,9 @@ async def get_session_status(session_id: str) -> SessionStatusResponse:
     )
 
 
-@router.delete("/sessions/{session_id}", response_model=SessionSummaryResponse)
+@router.delete("/sessions/{session_id}")
 async def finalize_session(session_id: str) -> SessionSummaryResponse:
-    """
-    Finalize session and return complete summary.
+    """Finalize session and return complete summary.
 
     Marks the session as finalized, preventing further attacks,
     and returns comprehensive statistics and top results.
@@ -237,10 +233,9 @@ async def finalize_session(session_id: str) -> SessionSummaryResponse:
 # ==============================================================================
 
 
-@router.post("/attack", response_model=AttackResponse)
+@router.post("/attack")
 async def execute_unified_attack(request: UnifiedAttackRequest) -> AttackResponse:
-    """
-    Execute a single multi-vector attack.
+    """Execute a single multi-vector attack.
 
     Combines ExtendAttack and AutoDAN capabilities based on the selected
     composition strategy to generate adversarial prompts.
@@ -295,7 +290,7 @@ async def execute_unified_attack(request: UnifiedAttackRequest) -> AttackRespons
             "success": True,
             "fitness": response.unified_fitness,
             "timestamp": now,
-        }
+        },
     )
     session["budget"].tokens_used += response.tokens_consumed
     session["budget"].cost_used += response.cost_usd
@@ -308,10 +303,9 @@ async def execute_unified_attack(request: UnifiedAttackRequest) -> AttackRespons
     return response
 
 
-@router.post("/attack/batch", response_model=BatchAttackResponse)
+@router.post("/attack/batch")
 async def execute_batch_attack(request: BatchAttackRequest) -> BatchAttackResponse:
-    """
-    Execute multiple attacks in sequence.
+    """Execute multiple attacks in sequence.
 
     Processes multiple queries using the same strategy and configuration,
     returning aggregated results and statistics.
@@ -343,7 +337,7 @@ async def execute_batch_attack(request: BatchAttackRequest) -> BatchAttackRespon
                 success=True,
                 fitness=fitness,
                 error=None,
-            )
+            ),
         )
         fitnesses.append(fitness)
         total_tokens += 100
@@ -358,7 +352,7 @@ async def execute_batch_attack(request: BatchAttackRequest) -> BatchAttackRespon
                 "success": True,
                 "fitness": fitness,
                 "timestamp": now,
-            }
+            },
         )
 
     # Update budget
@@ -387,10 +381,9 @@ async def execute_batch_attack(request: BatchAttackRequest) -> BatchAttackRespon
     )
 
 
-@router.post("/attack/sequential", response_model=AttackResponse)
+@router.post("/attack/sequential")
 async def execute_sequential_attack(request: SequentialAttackRequest) -> AttackResponse:
-    """
-    Execute sequential attack (extend-first or autodan-first).
+    """Execute sequential attack (extend-first or autodan-first).
 
     Runs one attack vector, then feeds the result to the second vector
     for iterative refinement.
@@ -449,7 +442,7 @@ async def execute_sequential_attack(request: SequentialAttackRequest) -> AttackR
             "success": True,
             "fitness": response.unified_fitness,
             "timestamp": now,
-        }
+        },
     )
     session["budget"].tokens_used += response.tokens_consumed
     session["budget"].cost_used += response.cost_usd
@@ -461,10 +454,9 @@ async def execute_sequential_attack(request: SequentialAttackRequest) -> AttackR
     return response
 
 
-@router.post("/attack/parallel", response_model=AttackResponse)
+@router.post("/attack/parallel")
 async def execute_parallel_attack(request: ParallelAttackRequest) -> AttackResponse:
-    """
-    Execute parallel attack (both vectors simultaneously).
+    """Execute parallel attack (both vectors simultaneously).
 
     Runs ExtendAttack and AutoDAN in parallel, then combines
     results using the specified combination method.
@@ -516,7 +508,7 @@ async def execute_parallel_attack(request: ParallelAttackRequest) -> AttackRespo
             "success": True,
             "fitness": response.unified_fitness,
             "timestamp": now,
-        }
+        },
     )
     session["budget"].tokens_used += response.tokens_consumed
     session["budget"].cost_used += response.cost_usd
@@ -528,10 +520,9 @@ async def execute_parallel_attack(request: ParallelAttackRequest) -> AttackRespo
     return response
 
 
-@router.post("/attack/iterative", response_model=AttackResponse)
+@router.post("/attack/iterative")
 async def execute_iterative_attack(request: IterativeAttackRequest) -> AttackResponse:
-    """
-    Execute iterative attack (alternating optimization).
+    """Execute iterative attack (alternating optimization).
 
     Alternates between ExtendAttack and AutoDAN optimization passes
     until convergence or max iterations reached.
@@ -583,7 +574,7 @@ async def execute_iterative_attack(request: IterativeAttackRequest) -> AttackRes
             "success": True,
             "fitness": response.unified_fitness,
             "timestamp": now,
-        }
+        },
     )
     session["budget"].tokens_used += response.tokens_consumed
     session["budget"].cost_used += response.cost_usd
@@ -595,10 +586,9 @@ async def execute_iterative_attack(request: IterativeAttackRequest) -> AttackRes
     return response
 
 
-@router.post("/attack/adaptive", response_model=AttackResponse)
+@router.post("/attack/adaptive")
 async def execute_adaptive_attack(request: AdaptiveAttackRequest) -> AttackResponse:
-    """
-    Execute adaptive attack (auto-select strategy).
+    """Execute adaptive attack (auto-select strategy).
 
     Analyzes the query and objectives to automatically select
     the optimal composition strategy.
@@ -656,7 +646,7 @@ async def execute_adaptive_attack(request: AdaptiveAttackRequest) -> AttackRespo
             "success": True,
             "fitness": response.unified_fitness,
             "timestamp": now,
-        }
+        },
     )
     session["budget"].tokens_used += response.tokens_consumed
     session["budget"].cost_used += response.cost_usd
@@ -673,10 +663,9 @@ async def execute_adaptive_attack(request: AdaptiveAttackRequest) -> AttackRespo
 # ==============================================================================
 
 
-@router.get("/config/strategies", response_model=list[StrategyInfo])
+@router.get("/config/strategies")
 async def get_available_strategies() -> list[StrategyInfo]:
-    """
-    Get available composition strategies.
+    """Get available composition strategies.
 
     Returns detailed information about each strategy including
     use cases, overhead, and trade-offs.
@@ -730,10 +719,9 @@ async def get_available_strategies() -> list[StrategyInfo]:
     ]
 
 
-@router.get("/config/presets", response_model=list[PresetConfig])
+@router.get("/config/presets")
 async def get_attack_presets() -> list[PresetConfig]:
-    """
-    Get predefined attack configuration presets.
+    """Get predefined attack configuration presets.
 
     Returns ready-to-use configurations optimized for common scenarios.
     """
@@ -803,10 +791,9 @@ async def get_attack_presets() -> list[PresetConfig]:
     ]
 
 
-@router.post("/config/validate", response_model=ValidationResult)
+@router.post("/config/validate")
 async def validate_config(request: ValidationRequest) -> ValidationResult:
-    """
-    Validate attack configuration before execution.
+    """Validate attack configuration before execution.
 
     Checks configuration validity, estimates resource usage,
     and provides recommendations.
@@ -857,10 +844,9 @@ async def validate_config(request: ValidationRequest) -> ValidationResult:
 # ==============================================================================
 
 
-@router.post("/evaluate", response_model=EvaluationResponse)
+@router.post("/evaluate")
 async def evaluate_attack(request: EvaluationRequest) -> EvaluationResponse:
-    """
-    Evaluate attack results using unified evaluation pipeline.
+    """Evaluate attack results using unified evaluation pipeline.
 
     Computes comprehensive metrics including jailbreak success,
     stealth score, and Pareto ranking.
@@ -922,10 +908,9 @@ Pareto Rank: {pareto_rank}
     )
 
 
-@router.post("/evaluate/batch", response_model=BatchEvaluationResponse)
+@router.post("/evaluate/batch")
 async def batch_evaluate(request: BatchEvaluationRequest) -> BatchEvaluationResponse:
-    """
-    Batch evaluate multiple attack results.
+    """Batch evaluate multiple attack results.
 
     Evaluates multiple attacks and optionally computes Pareto front.
     """
@@ -943,7 +928,7 @@ async def batch_evaluate(request: BatchEvaluationRequest) -> BatchEvaluationResp
                     fitness=fitness,
                     pareto_rank=1,
                     dominated_by=0,
-                )
+                ),
             )
             fitnesses.append(fitness)
 
@@ -975,10 +960,9 @@ async def batch_evaluate(request: BatchEvaluationRequest) -> BatchEvaluationResp
     )
 
 
-@router.get("/evaluate/pareto", response_model=ParetoFrontResponse)
+@router.get("/evaluate/pareto")
 async def get_pareto_front(session_id: str) -> ParetoFrontResponse:
-    """
-    Get Pareto-optimal solutions from session.
+    """Get Pareto-optimal solutions from session.
 
     Returns the non-dominated solutions that represent optimal
     trade-offs between objectives.
@@ -1001,7 +985,7 @@ async def get_pareto_front(session_id: str) -> ParetoFrontResponse:
                         stealth_score=a.get("stealth_score", 0.0),
                         efficiency_score=1.0 / (1.0 + a.get("tokens_consumed", 100) / 100),
                         unified_fitness=a.get("unified_fitness", 0.0),
-                    )
+                    ),
                 )
 
     # Sort by unified fitness
@@ -1025,10 +1009,9 @@ async def get_pareto_front(session_id: str) -> ParetoFrontResponse:
 # ==============================================================================
 
 
-@router.get("/resources/{session_id}", response_model=ResourceUsageResponse)
+@router.get("/resources/{session_id}")
 async def get_resource_usage(session_id: str) -> ResourceUsageResponse:
-    """
-    Get current resource usage for session.
+    """Get current resource usage for session.
 
     Returns detailed breakdown of resource consumption by vector.
     """
@@ -1063,10 +1046,9 @@ async def get_resource_usage(session_id: str) -> ResourceUsageResponse:
     )
 
 
-@router.get("/resources/{session_id}/budget", response_model=BudgetStatusResponse)
+@router.get("/resources/{session_id}/budget")
 async def get_budget_status(session_id: str) -> BudgetStatusResponse:
-    """
-    Get budget status and remaining allowance.
+    """Get budget status and remaining allowance.
 
     Returns current budget consumption and estimates for remaining capacity.
     """
@@ -1103,10 +1085,9 @@ async def get_budget_status(session_id: str) -> BudgetStatusResponse:
     )
 
 
-@router.post("/resources/allocate", response_model=AllocationResponse)
+@router.post("/resources/allocate")
 async def allocate_resources(request: AllocationRequest) -> AllocationResponse:
-    """
-    Request resource allocation between vectors.
+    """Request resource allocation between vectors.
 
     Adjusts the resource distribution between ExtendAttack and AutoDAN.
     """
@@ -1142,10 +1123,9 @@ async def allocate_resources(request: AllocationRequest) -> AllocationResponse:
 # ==============================================================================
 
 
-@router.post("/benchmark", response_model=BenchmarkResponse)
+@router.post("/benchmark")
 async def run_benchmark(request: BenchmarkRequest) -> BenchmarkResponse:
-    """
-    Run benchmark evaluation against standard datasets.
+    """Run benchmark evaluation against standard datasets.
 
     Executes attacks against benchmark datasets and compares
     performance across strategies.
@@ -1164,7 +1144,7 @@ async def run_benchmark(request: BenchmarkRequest) -> BenchmarkResponse:
                 average_tokens=250 + hash(strategy.value) % 200,
                 average_latency_ms=500 + hash(strategy.value) % 500,
                 pareto_optimal_rate=0.15 + (hash(strategy.value) % 10) / 100,
-            )
+            ),
         )
 
     # Find best strategy
@@ -1196,10 +1176,9 @@ async def run_benchmark(request: BenchmarkRequest) -> BenchmarkResponse:
     )
 
 
-@router.get("/benchmark/datasets", response_model=list[BenchmarkDataset])
+@router.get("/benchmark/datasets")
 async def get_benchmark_datasets() -> list[BenchmarkDataset]:
-    """
-    Get available benchmark datasets.
+    """Get available benchmark datasets.
 
     Returns information about standard benchmark datasets for evaluation.
     """

@@ -1,6 +1,5 @@
-"""
-FastAPI Backend for Prompt Enhancement System
-Provides API endpoints for prompt enhancement with AI model integration
+"""FastAPI Backend for Prompt Enhancement System
+Provides API endpoints for prompt enhancement with AI model integration.
 
 Security Features:
 - JWT/API Key authentication
@@ -34,6 +33,17 @@ for _path in (_BACKEND_DIR, _REPO_ROOT):
     if _path_str not in sys.path:
         sys.path.insert(0, _path_str)
 
+# PERF-099: Numpy 2.0 Compatibility Patch (WandB fix)
+# WandB <= 0.17.x relies on np.float_ and np.complex_ which were removed in Numpy 2.0
+try:
+    import numpy as np
+    if not hasattr(np, "float_"):
+        np.float_ = np.float64
+    if not hasattr(np, "complex_"):
+        np.complex_ = np.complex128
+except ImportError:
+    pass
+
 # Core imports
 import contextlib
 
@@ -61,7 +71,9 @@ from app.core.observability import (
     setup_tracing,
 )
 from app.core.unified_errors import ChimeraError
+# ...
 from app.middleware.auth import APIKeyMiddleware
+
 from app.middleware.auth_rate_limit import (
     AuthRateLimitMiddleware,
     set_auth_rate_limiter,
@@ -84,7 +96,9 @@ from app.middleware.selection_middleware import SelectionMiddleware
 from app.middleware.selection_validation_middleware import (
     SelectionValidationMiddleware,
 )
+
 from app.routers.auth import router as auth_router
+
 from meta_prompter.jailbreak_enhancer import JailbreakPromptEnhancer
 from meta_prompter.prompt_enhancer import PromptEnhancer
 
@@ -605,15 +619,14 @@ app.add_middleware(
 
 
 async def request_validation_exception_handler(request, exc: RequestValidationError):
-    """
-    Custom handler for Pydantic validation errors.
+    """Custom handler for Pydantic validation errors.
     Provides detailed field-level error information for debugging.
     """
     errors = exc.errors()
 
     # Log the validation error with full details
     logger.warning(
-        f"[Validation Error] Path: {request.url.path}, Method: {request.method}, Errors: {errors}"
+        f"[Validation Error] Path: {request.url.path}, Method: {request.method}, Errors: {errors}",
     )
 
     # Format errors for client response
@@ -648,7 +661,8 @@ app.add_exception_handler(Exception, global_exception_handler)
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(
-    unified_providers_router, prefix="/api/v1"
+    unified_providers_router,
+    prefix="/api/v1",
 )  # NEW - Phase 2: Unified Provider System
 
 # Chimera+AutoDAN unified router
@@ -671,8 +685,7 @@ except ImportError as e:
 @app.post("/v1/chat/completions", tags=["compatibility"], include_in_schema=False)
 @app.post("/chat/completions", tags=["compatibility"], include_in_schema=False)
 async def openai_chat_completions_stub():
-    """
-    OpenAI-compatible chat completions endpoint stub.
+    """OpenAI-compatible chat completions endpoint stub.
     Returns 501 Not Implemented with guidance to use the Chimera API.
     """
     return JSONResponse(
@@ -683,7 +696,7 @@ async def openai_chat_completions_stub():
                 "type": "not_implemented",
                 "code": "endpoint_not_available",
                 "chimera_endpoint": "/api/v1/generate",
-            }
+            },
         },
     )
 
@@ -691,8 +704,7 @@ async def openai_chat_completions_stub():
 @app.post("/v1/completions", tags=["compatibility"], include_in_schema=False)
 @app.post("/completions", tags=["compatibility"], include_in_schema=False)
 async def openai_completions_stub():
-    """
-    OpenAI-compatible completions endpoint stub.
+    """OpenAI-compatible completions endpoint stub.
     Returns 501 Not Implemented with guidance to use the Chimera API.
     """
     return JSONResponse(
@@ -703,7 +715,7 @@ async def openai_completions_stub():
                 "type": "not_implemented",
                 "code": "endpoint_not_available",
                 "chimera_endpoint": "/api/v1/generate",
-            }
+            },
         },
     )
 
@@ -711,8 +723,7 @@ async def openai_completions_stub():
 @app.get("/v1/models", tags=["compatibility"], include_in_schema=False)
 @app.get("/models", tags=["compatibility"], include_in_schema=False)
 async def openai_models_stub():
-    """
-    OpenAI-compatible models endpoint stub.
+    """OpenAI-compatible models endpoint stub.
     Returns 501 Not Implemented with guidance to use the Chimera API.
     """
     return JSONResponse(
@@ -723,7 +734,7 @@ async def openai_models_stub():
                 "type": "not_implemented",
                 "code": "endpoint_not_available",
                 "chimera_endpoint": "/api/v1/providers",
-            }
+            },
         },
     )
 
@@ -731,8 +742,7 @@ async def openai_models_stub():
 @app.post("/v1/messages", tags=["compatibility"], include_in_schema=False)
 @app.post("/messages", tags=["compatibility"], include_in_schema=False)
 async def anthropic_messages_stub():
-    """
-    Anthropic-compatible messages endpoint stub.
+    """Anthropic-compatible messages endpoint stub.
     Returns 501 Not Implemented with guidance to use the Chimera API.
     """
     return JSONResponse(
@@ -743,7 +753,7 @@ async def anthropic_messages_stub():
                 "type": "not_implemented",
                 "code": "endpoint_not_available",
                 "chimera_endpoint": "/api/v1/generate",
-            }
+            },
         },
     )
 
@@ -751,8 +761,7 @@ async def anthropic_messages_stub():
 @app.post("/v1/api/event_logging/batch", tags=["compatibility"], include_in_schema=False)
 @app.post("/api/event_logging/batch", tags=["compatibility"], include_in_schema=False)
 async def event_logging_stub():
-    """
-    Event logging endpoint stub.
+    """Event logging endpoint stub.
     Returns 501 Not Implemented - event logging not supported.
     """
     return JSONResponse(
@@ -762,7 +771,7 @@ async def event_logging_stub():
                 "message": "Event logging endpoint not implemented.",
                 "type": "not_implemented",
                 "code": "endpoint_not_available",
-            }
+            },
         },
     )
 
@@ -793,8 +802,7 @@ _HEALTH_CACHE_TTL_SECONDS: float = 5.0  # Cache full health check for 5 seconds
 
 @app.get("/health/ping", tags=["health"])
 async def health_ping():
-    """
-    Lightweight health ping - minimal latency for load balancer checks (PERF-015).
+    """Lightweight health ping - minimal latency for load balancer checks (PERF-015).
 
     Returns immediately without running any service checks.
     Use this for high-frequency health polling.
@@ -804,8 +812,7 @@ async def health_ping():
 
 @app.get("/health")
 async def health_check():
-    """
-    Full health check - returns overall system health with all service checks.
+    """Full health check - returns overall system health with all service checks.
 
     This endpoint provides comprehensive health information including:
     - Overall system status (healthy/degraded/unhealthy)
@@ -857,31 +864,26 @@ async def full_health_check():
 
 @app.get("/health/integration", tags=["integration"])
 async def integration_health():
-    """
-    Integration health - shows service dependency graph and status.
+    """Integration health - shows service dependency graph and status.
 
     Returns a graph showing all services, their health status,
     and dependency relationships.
     """
-    graph = await health_checker.get_dependency_graph()
-    return graph
+    return await health_checker.get_dependency_graph()
 
 
 @app.get("/health/integration/{service}", tags=["integration"])
 async def service_dependency_tree(service: str):
-    """
-    Get dependency tree for a specific service.
+    """Get dependency tree for a specific service.
 
     Useful for understanding cascading failures and service dependencies.
     """
-    tree = health_checker.get_dependency_tree(service)
-    return tree
+    return health_checker.get_dependency_tree(service)
 
 
 @app.get("/integration/stats", tags=["integration"])
 async def integration_stats():
-    """
-    Get statistics for all integration services.
+    """Get statistics for all integration services.
 
     Includes event bus, task queue, and webhook service stats.
     """
@@ -928,12 +930,12 @@ async def websocket_enhance(
     websocket: WebSocket,
     standard_enhancer: PromptEnhancer = Depends(get_prompt_enhancer),
     jailbreak_enhancer: JailbreakPromptEnhancer = Depends(get_jailbreak_enhancer),
-):
+) -> None:
     """WebSocket endpoint for real-time prompt enhancement with heartbeat."""
     await websocket.accept()
 
     # Heartbeat task to detect zombie connections
-    async def heartbeat():
+    async def heartbeat() -> None:
         while True:
             await asyncio.sleep(30)
             try:
@@ -961,7 +963,8 @@ async def websocket_enhance(
             try:
                 if enhancement_type == "jailbreak":
                     result = jailbreak_enhancer.quick_enhance_jailbreak(
-                        prompt, potency=message.get("potency", 7)
+                        prompt,
+                        potency=message.get("potency", 7),
                     )
                 else:
                     result = standard_enhancer.quick_enhance(prompt)
@@ -976,12 +979,12 @@ async def websocket_enhance(
         logger.debug("WebSocket disconnected")
     except json.JSONDecodeError as e:
         # MED-004 FIX: Specific exception handling
-        logger.error(f"WebSocket JSON decode error: {e}")
+        logger.exception(f"WebSocket JSON decode error: {e}")
     except ValueError as e:
-        logger.error(f"WebSocket value error: {e}")
+        logger.exception(f"WebSocket value error: {e}")
     except Exception as e:
         # Log full traceback for unexpected errors
-        logger.error(f"WebSocket unexpected error: {e}\n{traceback.format_exc()}")
+        logger.exception(f"WebSocket unexpected error: {e}\n{traceback.format_exc()}")
     finally:
         heartbeat_task.cancel()
         with contextlib.suppress(Exception):
@@ -990,9 +993,8 @@ async def websocket_enhance(
 
 # NEW - Phase 2: WebSocket for Model Selection (Unified Provider System)
 @app.websocket("/ws/model-selection")
-async def websocket_model_selection(websocket: WebSocket, user_id: str = "default"):
-    """
-    WebSocket endpoint for real-time model selection updates.
+async def websocket_model_selection(websocket: WebSocket, user_id: str = "default") -> None:
+    """WebSocket endpoint for real-time model selection updates.
 
     Provides real-time synchronization of provider/model selection changes
     across all connected clients for a user.
@@ -1012,10 +1014,10 @@ async def websocket_model_selection(websocket: WebSocket, user_id: str = "defaul
         await websocket_endpoint(websocket, user_id)
 
     except ImportError as e:
-        logger.error(f"Failed to import model selection WebSocket handler: {e}")
+        logger.exception(f"Failed to import model selection WebSocket handler: {e}")
         await websocket.accept()
         await websocket.send_json(
-            {"type": "ERROR", "data": {"message": "Model selection WebSocket not available"}}
+            {"type": "ERROR", "data": {"message": "Model selection WebSocket not available"}},
         )
         await websocket.close()
     except Exception as e:
@@ -1027,9 +1029,8 @@ async def websocket_model_selection(websocket: WebSocket, user_id: str = "defaul
 # =============================================================================
 
 
-def setup_static_file_serving():
-    """
-    Configure static file serving for frontend build.
+def setup_static_file_serving() -> None:
+    """Configure static file serving for frontend build.
     Only active when SERVE_FRONTEND=true.
     """
     if os.getenv("SERVE_FRONTEND", "false").lower() != "true":

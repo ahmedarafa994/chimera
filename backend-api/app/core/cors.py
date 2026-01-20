@@ -1,6 +1,5 @@
-"""
-CORS Configuration Module
-Secure Cross-Origin Resource Sharing configuration for production
+"""CORS Configuration Module
+Secure Cross-Origin Resource Sharing configuration for production.
 """
 
 import os
@@ -10,8 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 def get_allowed_origins() -> list[str]:
-    """
-    Get allowed CORS origins from environment.
+    """Get allowed CORS origins from environment.
 
     In production, this should be explicitly configured.
     """
@@ -24,17 +22,19 @@ def get_allowed_origins() -> list[str]:
     if environment == "production":
         for origin in origins:
             if origin == "*":
-                raise ValueError(
+                msg = (
                     "Wildcard CORS origin not allowed in production. "
                     "Set ALLOWED_ORIGINS to specific domains."
+                )
+                raise ValueError(
+                    msg,
                 )
 
     return origins
 
 
 def configure_cors(app: FastAPI) -> None:
-    """
-    Configure CORS middleware with secure settings.
+    """Configure CORS middleware with secure settings.
 
     Security considerations:
     - Explicit origin list (no wildcards in production)
@@ -79,11 +79,9 @@ def configure_cors(app: FastAPI) -> None:
 
 
 class CORSConfig:
-    """
-    CORS configuration class for more granular control.
-    """
+    """CORS configuration class for more granular control."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.allowed_origins = get_allowed_origins()
         self.allow_credentials = True
         self.allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]

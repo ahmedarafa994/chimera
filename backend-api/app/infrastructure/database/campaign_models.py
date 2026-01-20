@@ -1,5 +1,4 @@
-"""
-Campaign Analytics Database Models
+"""Campaign Analytics Database Models.
 
 SQLAlchemy models for campaign telemetry, analytics, and research tracking.
 Provides comprehensive data models for post-campaign analysis and reporting.
@@ -50,8 +49,7 @@ class ExecutionStatus(str, PyEnum):
 
 
 class Campaign(Base):
-    """
-    Represents an adversarial research campaign.
+    """Represents an adversarial research campaign.
 
     A campaign groups related jailbreak/prompt experiments for analysis.
     Supports tracking objectives, configuration, and aggregated results.
@@ -139,8 +137,7 @@ class Campaign(Base):
 
 
 class CampaignTelemetryEvent(Base):
-    """
-    Individual telemetry event within a campaign.
+    """Individual telemetry event within a campaign.
 
     Captures detailed execution metrics for each prompt transformation
     and execution step during a campaign run.
@@ -250,8 +247,7 @@ class CampaignTelemetryEvent(Base):
 
 
 class CampaignResult(Base):
-    """
-    Aggregated results for a completed campaign.
+    """Aggregated results for a completed campaign.
 
     Pre-computed statistical summaries for efficient analytics queries.
     Updated incrementally as telemetry events are processed.

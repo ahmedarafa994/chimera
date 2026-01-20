@@ -1,5 +1,4 @@
-"""
-Gradient-Guided Optimization Service for AutoDAN.
+"""Gradient-Guided Optimization Service for AutoDAN.
 
 Implements coherence-constrained gradient search for semantic coherence.
 """
@@ -12,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class GradientGuidedOptimizer:
-    """
-    Gradient-guided optimization with semantic coherence constraints.
+    """Gradient-guided optimization with semantic coherence constraints.
 
     Implements the Coherence-Constrained Gradient Search (CCGS) algorithm:
     1. Compute gradient for attack loss
@@ -27,15 +25,15 @@ class GradientGuidedOptimizer:
         max_iterations: int = 100,
         learning_rate: float = 0.01,
         convergence_threshold: float = 0.001,
-    ):
-        """
-        Initialize the gradient optimizer.
+    ) -> None:
+        """Initialize the gradient optimizer.
 
         Args:
             coherence_weight: Weight for perplexity penalty (λ)
             max_iterations: Maximum optimization iterations
             learning_rate: Learning rate for gradient descent
             convergence_threshold: Threshold for convergence detection
+
         """
         self.coherence_weight = coherence_weight
         self.max_iterations = max_iterations
@@ -45,14 +43,16 @@ class GradientGuidedOptimizer:
         logger.info(
             f"GradientGuidedOptimizer initialized: "
             f"coherence_weight={coherence_weight}, "
-            f"max_iterations={max_iterations}"
+            f"max_iterations={max_iterations}",
         )
 
     async def optimize(
-        self, initial_prompt: str, target_string: str, surrogate_models: list | None = None
+        self,
+        initial_prompt: str,
+        target_string: str,
+        surrogate_models: list | None = None,
     ) -> dict:
-        """
-        Optimize a prompt using gradient-guided search.
+        """Optimize a prompt using gradient-guided search.
 
         Args:
             initial_prompt: Starting prompt
@@ -61,6 +61,7 @@ class GradientGuidedOptimizer:
 
         Returns:
             Optimization result with optimized prompt and metrics
+
         """
         # Placeholder implementation
         # In production, this would:
@@ -87,7 +88,7 @@ class GradientGuidedOptimizer:
                     "loss": loss,
                     "gradient_norm": gradient_norm,
                     "perplexity": perplexity,
-                }
+                },
             )
 
             # Check convergence
@@ -106,8 +107,7 @@ class GradientGuidedOptimizer:
         }
 
     def _compute_gradient(self, tokens: list, target_string: str, models: list) -> np.ndarray:
-        """
-        Compute ensemble gradient across multiple models.
+        """Compute ensemble gradient across multiple models.
 
         Args:
             tokens: Current token sequence
@@ -116,13 +116,13 @@ class GradientGuidedOptimizer:
 
         Returns:
             Aligned gradient vector
+
         """
         # Placeholder: In production, compute actual gradients
         return np.random.randn(len(tokens))
 
     def _filter_candidates(self, gradient: np.ndarray, context: list, top_k: int = 50) -> list:
-        """
-        Filter candidate tokens by language model probability.
+        """Filter candidate tokens by language model probability.
 
         Args:
             gradient: Gradient vector
@@ -131,6 +131,7 @@ class GradientGuidedOptimizer:
 
         Returns:
             List of candidate tokens with scores
+
         """
         # Placeholder: In production, use LM to filter candidates
         candidates = []
@@ -140,13 +141,12 @@ class GradientGuidedOptimizer:
                     "token": f"token_{i}",
                     "grad_val": float(gradient[i % len(gradient)]),
                     "lm_prob": np.random.random(),
-                }
+                },
             )
         return candidates
 
     def _select_best_token(self, candidates: list, coherence_weight: float) -> str:
-        """
-        Select best token using combined objective.
+        """Select best token using combined objective.
 
         Score = GradLoss + λ * (-log P_LM(token))
 
@@ -156,6 +156,7 @@ class GradientGuidedOptimizer:
 
         Returns:
             Best token
+
         """
         best_token = None
         best_score = float("inf")

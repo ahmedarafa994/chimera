@@ -1,5 +1,4 @@
-"""
-API Key Repository with Encryption
+"""API Key Repository with Encryption.
 
 Story 1.3: Configuration Persistence System
 Handles encrypted API key storage and retrieval.
@@ -46,14 +45,14 @@ class ApiKeyEntity:
             self.updated_at = now
 
     def to_dict(self, encrypt: bool = True) -> dict[str, Any]:
-        """
-        Convert entity to dictionary for storage.
+        """Convert entity to dictionary for storage.
 
         Args:
             encrypt: Whether to encrypt the API key.
 
         Returns:
             Dictionary representation with encrypted key.
+
         """
         encrypted_key = self.api_key
         if encrypt and not is_encrypted(self.api_key):
@@ -72,8 +71,7 @@ class ApiKeyEntity:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], decrypt: bool = True) -> "ApiKeyEntity":
-        """
-        Create entity from database row.
+        """Create entity from database row.
 
         Args:
             data: Database row dictionary.
@@ -81,6 +79,7 @@ class ApiKeyEntity:
 
         Returns:
             ApiKeyEntity instance.
+
         """
         encrypted_key = data.get("encrypted_key", "")
         api_key = encrypted_key
@@ -105,8 +104,7 @@ class ApiKeyEntity:
 
 
 class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
-    """
-    Repository for encrypted API key persistence.
+    """Repository for encrypted API key persistence.
 
     API keys are encrypted at rest using Fernet encryption.
     Keys are decrypted only when retrieved for runtime use.
@@ -118,7 +116,7 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
 
     async def get_by_id(self, entity_id: str) -> ApiKeyEntity | None:
         """Get API key by ID (decrypted)."""
-        row = await self._db.fetchone("SELECT * FROM api_keys WHERE id = ?",(entity_id,))
+        row = await self._db.fetchone("SELECT * FROM api_keys WHERE id = ?", (entity_id,))
         return ApiKeyEntity.from_dict(row) if row else None
 
     async def get_all(self) -> list[ApiKeyEntity]:
@@ -129,13 +127,15 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
     async def create(self, entity: ApiKeyEntity) -> ApiKeyEntity:
         """Create new API key (encrypts before storage)."""
         if await self.exists(entity.id):
-            raise DuplicateEntityError(f"API key {entity.id} already exists")
+            msg = f"API key {entity.id} already exists"
+            raise DuplicateEntityError(msg)
 
         # Check for duplicate provider/name combination
         existing = await self.get_by_provider_and_name(entity.provider_type, entity.key_name)
         if existing:
+            msg = f"API key '{entity.key_name}' already exists for {entity.provider_type}"
             raise DuplicateEntityError(
-                f"API key '{entity.key_name}' already exists for {entity.provider_type}"
+                msg,
             )
 
         data = entity.to_dict(encrypt=True)
@@ -164,7 +164,8 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
     async def update(self, entity: ApiKeyEntity) -> ApiKeyEntity:
         """Update existing API key (re-encrypts if needed)."""
         if not await self.exists(entity.id):
-            raise EntityNotFoundError(f"API key {entity.id} not found")
+            msg = f"API key {entity.id} not found"
+            raise EntityNotFoundError(msg)
 
         entity.updated_at = datetime.now(UTC)
         data = entity.to_dict(encrypt=True)
@@ -200,10 +201,11 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
         return True
 
     async def get_by_provider_type(
-        self, provider_type: str, active_only: bool = True
+        self,
+        provider_type: str,
+        active_only: bool = True,
     ) -> list[ApiKeyEntity]:
-        """
-        Get all API keys for a provider type.
+        """Get all API keys for a provider type.
 
         Args:
             provider_type: Provider type to filter by.
@@ -211,6 +213,7 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
 
         Returns:
             List of API keys for the provider.
+
         """
         if active_only:
             rows = await self._db.fetchall(
@@ -222,15 +225,17 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
             )
         else:
             rows = await self._db.fetchall(
-                "SELECT * FROM api_keys WHERE provider_type = ?", (provider_type,)
+                "SELECT * FROM api_keys WHERE provider_type = ?",
+                (provider_type,),
             )
         return [ApiKeyEntity.from_dict(row) for row in rows]
 
     async def get_by_provider_and_name(
-        self, provider_type: str, key_name: str
+        self,
+        provider_type: str,
+        key_name: str,
     ) -> ApiKeyEntity | None:
-        """
-        Get API key by provider type and name.
+        """Get API key by provider type and name.
 
         Args:
             provider_type: Provider type.
@@ -238,6 +243,7 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
 
         Returns:
             API key entity or None.
+
         """
         row = await self._db.fetchone(
             """
@@ -249,14 +255,14 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
         return ApiKeyEntity.from_dict(row) if row else None
 
     async def get_active_key(self, provider_type: str) -> ApiKeyEntity | None:
-        """
-        Get the first active API key for a provider.
+        """Get the first active API key for a provider.
 
         Args:
             provider_type: Provider type.
 
         Returns:
             Active API key or None.
+
         """
         row = await self._db.fetchone(
             """
@@ -270,14 +276,14 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
         return ApiKeyEntity.from_dict(row) if row else None
 
     async def deactivate(self, entity_id: str) -> bool:
-        """
-        Deactivate an API key.
+        """Deactivate an API key.
 
         Args:
             entity_id: Key ID to deactivate.
 
         Returns:
             True if deactivated successfully.
+
         """
         entity = await self.get_by_id(entity_id)
         if not entity:
@@ -289,20 +295,21 @@ class ApiKeyRepository(BaseRepository[ApiKeyEntity]):
         return True
 
     async def record_usage(self, entity_id: str) -> bool:
-        """
-        Record API key usage timestamp.
+        """Record API key usage timestamp.
 
         Args:
             entity_id: Key ID to update.
 
         Returns:
             True if updated successfully.
+
         """
         if not await self.exists(entity_id):
             return False
 
         now = datetime.now(UTC).isoformat()
         await self._db.execute(
-            f"UPDATE {self.table_name} SET last_used_at = ? WHERE id = ?", (now, entity_id)
+            f"UPDATE {self.table_name} SET last_used_at = ? WHERE id = ?",
+            (now, entity_id),
         )
         return True

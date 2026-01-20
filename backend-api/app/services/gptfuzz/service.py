@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class GPTFuzzService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.mutators: list[GPTFuzzMutator] = [
             MutatorCrossOver(),
             MutatorExpand(),
@@ -32,11 +32,11 @@ class GPTFuzzService:
         self.initial_seeds: list[dict[str, Any]] = []  # [{'text': '...', 'id': 0}]
         self.sessions: dict[str, dict[str, Any]] = {}
 
-    def load_seeds(self, seeds: list[str]):
+    def load_seeds(self, seeds: list[str]) -> None:
         self.initial_seeds = [{"text": s, "id": i} for i, s in enumerate(seeds)]
         logger.info(f"Loaded {len(self.initial_seeds)} seeds.")
 
-    def create_session(self, session_id: str, config: dict[str, Any]):
+    def create_session(self, session_id: str, config: dict[str, Any]) -> None:
         self.sessions[session_id] = {
             "status": "pending",
             "results": [],
@@ -55,12 +55,10 @@ class GPTFuzzService:
         max_queries: int = 100,
         max_jailbreaks: int = 10,
     ):
-        """
-        Run the fuzzing loop.
-        """
+        """Run the fuzzing loop."""
         if session_id not in self.sessions:
             logger.error(f"Session {session_id} not found.")
-            return
+            return None
 
         self.sessions[session_id]["status"] = "running"
         seed_pool = list(self.initial_seeds)
@@ -138,16 +136,16 @@ class GPTFuzzService:
                             break
 
                     except Exception as e:
-                        logger.error(f"Error during fuzzing iteration: {e}")
+                        logger.exception(f"Error during fuzzing iteration: {e}")
 
             self.sessions[session_id]["status"] = "completed"
         except Exception as e:
-            logger.error(f"Fuzzing session {session_id} failed: {e}")
+            logger.exception(f"Fuzzing session {session_id} failed: {e}")
             self.sessions[session_id]["status"] = "failed"
             self.sessions[session_id]["error"] = str(e)
 
         logger.info(
-            f"Fuzzing completed. Total Queries: {total_queries}, Jailbreaks: {jailbreaks_count}"
+            f"Fuzzing completed. Total Queries: {total_queries}, Jailbreaks: {jailbreaks_count}",
         )
         return results
 

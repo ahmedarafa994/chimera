@@ -1,5 +1,4 @@
-"""
-Team Workspaces & Collaboration Endpoints
+"""Team Workspaces & Collaboration Endpoints.
 
 Phase 3 enterprise feature for scalability:
 - Multi-user team environments
@@ -11,7 +10,7 @@ Phase 3 enterprise feature for scalability:
 import uuid
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, Field
@@ -56,7 +55,7 @@ class ActivityType(str, Enum):
 
 
 class TeamMember(BaseModel):
-    """Team member information"""
+    """Team member information."""
 
     user_id: str
     username: str
@@ -68,7 +67,7 @@ class TeamMember(BaseModel):
 
 
 class TeamWorkspace(BaseModel):
-    """Team workspace configuration"""
+    """Team workspace configuration."""
 
     workspace_id: str
     name: str
@@ -91,7 +90,7 @@ class TeamWorkspace(BaseModel):
 
 
 class TeamInvitation(BaseModel):
-    """Team invitation details"""
+    """Team invitation details."""
 
     invitation_id: str
     workspace_id: str
@@ -110,7 +109,7 @@ class TeamInvitation(BaseModel):
 
 
 class ActivityLogEntry(BaseModel):
-    """Activity log entry"""
+    """Activity log entry."""
 
     activity_id: str
     workspace_id: str
@@ -131,7 +130,7 @@ class ActivityLogEntry(BaseModel):
 
 
 class WorkspaceCreate(BaseModel):
-    """Request to create a new workspace"""
+    """Request to create a new workspace."""
 
     name: str = Field(..., min_length=1, max_length=100)
     description: str | None = Field(None, max_length=500)
@@ -139,7 +138,7 @@ class WorkspaceCreate(BaseModel):
 
 
 class WorkspaceUpdate(BaseModel):
-    """Request to update workspace"""
+    """Request to update workspace."""
 
     name: str | None = None
     description: str | None = None
@@ -147,7 +146,7 @@ class WorkspaceUpdate(BaseModel):
 
 
 class InviteUserRequest(BaseModel):
-    """Request to invite user to workspace"""
+    """Request to invite user to workspace."""
 
     email: EmailStr
     role: TeamRole
@@ -155,20 +154,20 @@ class InviteUserRequest(BaseModel):
 
 
 class UpdateMemberRole(BaseModel):
-    """Request to update member role"""
+    """Request to update member role."""
 
     role: TeamRole
 
 
 class WorkspaceListResponse(BaseModel):
-    """Response for workspace listing"""
+    """Response for workspace listing."""
 
     workspaces: list[TeamWorkspace]
     total: int
 
 
 class MembersListResponse(BaseModel):
-    """Response for members listing"""
+    """Response for members listing."""
 
     members: list[TeamMember]
     invitations: list[TeamInvitation]
@@ -177,7 +176,7 @@ class MembersListResponse(BaseModel):
 
 
 class ActivityLogResponse(BaseModel):
-    """Response for activity log"""
+    """Response for activity log."""
 
     activities: list[ActivityLogEntry]
     total: int
@@ -195,7 +194,7 @@ activity_log_storage: dict[str, list[ActivityLogEntry]] = {}
 
 
 def check_workspace_permission(workspace_id: str, user_id: str, required_role: TeamRole) -> bool:
-    """Check if user has required permission in workspace"""
+    """Check if user has required permission in workspace."""
     members = members_storage.get(workspace_id, [])
     user_member = next((m for m in members if m.user_id == user_id), None)
 
@@ -215,8 +214,8 @@ def log_activity(
     activity_type: ActivityType,
     description: str,
     metadata: dict[str, Any] | None = None,
-):
-    """Log workspace activity"""
+) -> None:
+    """Log workspace activity."""
     if workspace_id not in activity_log_storage:
         activity_log_storage[workspace_id] = []
 
@@ -240,10 +239,10 @@ def log_activity(
 @router.post("/", response_model=TeamWorkspace, status_code=status.HTTP_201_CREATED)
 async def create_workspace(
     workspace_data: WorkspaceCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Create a new team workspace"""
+    """Create a new team workspace."""
     try:
         # Generate workspace ID
         workspace_id = f"ws_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
@@ -292,17 +291,19 @@ async def create_workspace(
         return workspace
 
     except Exception as e:
-        logger.error(f"Failed to create workspace: {e}")
+        logger.exception(f"Failed to create workspace: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create workspace"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create workspace",
         )
 
 
 @router.get("/", response_model=WorkspaceListResponse)
 async def list_workspaces(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """List user's accessible workspaces"""
+    """List user's accessible workspaces."""
     try:
         accessible_workspaces = []
 
@@ -310,7 +311,8 @@ async def list_workspaces(
         for workspace_id, workspace in workspaces_storage.items():
             members = members_storage.get(workspace_id, [])
             user_member = next(
-                (m for m in members if m.user_id == current_user.id and m.is_active), None
+                (m for m in members if m.user_id == current_user.id and m.is_active),
+                None,
             )
 
             if user_member:
@@ -324,11 +326,12 @@ async def list_workspaces(
         logger.info(f"Listed {len(accessible_workspaces)} workspaces for user {current_user.id}")
 
         return WorkspaceListResponse(
-            workspaces=accessible_workspaces, total=len(accessible_workspaces)
+            workspaces=accessible_workspaces,
+            total=len(accessible_workspaces),
         )
 
     except Exception as e:
-        logger.error(f"Failed to list workspaces: {e}")
+        logger.exception(f"Failed to list workspaces: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve workspaces",
@@ -337,9 +340,11 @@ async def list_workspaces(
 
 @router.get("/{workspace_id}", response_model=TeamWorkspace)
 async def get_workspace(
-    workspace_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    workspace_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Get workspace details"""
+    """Get workspace details."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -349,7 +354,8 @@ async def get_workspace(
         # Check access
         if not check_workspace_permission(workspace_id, current_user.id, TeamRole.VIEWER):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this workspace"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this workspace",
             )
 
         # Update member count
@@ -361,9 +367,10 @@ async def get_workspace(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get workspace {workspace_id}: {e}")
+        logger.exception(f"Failed to get workspace {workspace_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve workspace"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve workspace",
         )
 
 
@@ -371,10 +378,10 @@ async def get_workspace(
 async def update_workspace(
     workspace_id: str,
     update_data: WorkspaceUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Update workspace settings (admin+ only)"""
+    """Update workspace settings (admin+ only)."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -415,17 +422,20 @@ async def update_workspace(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update workspace {workspace_id}: {e}")
+        logger.exception(f"Failed to update workspace {workspace_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update workspace"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update workspace",
         )
 
 
 @router.get("/{workspace_id}/members", response_model=MembersListResponse)
 async def list_workspace_members(
-    workspace_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    workspace_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """List workspace members and pending invitations"""
+    """List workspace members and pending invitations."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -435,7 +445,8 @@ async def list_workspace_members(
         # Check access
         if not check_workspace_permission(workspace_id, current_user.id, TeamRole.VIEWER):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this workspace"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this workspace",
             )
 
         # Get members and invitations
@@ -446,7 +457,7 @@ async def list_workspace_members(
         pending_invitations = [inv for inv in invitations if inv.status == InvitationStatus.PENDING]
 
         logger.info(
-            f"Listed {len(active_members)} members and {len(pending_invitations)} invitations for workspace {workspace_id}"
+            f"Listed {len(active_members)} members and {len(pending_invitations)} invitations for workspace {workspace_id}",
         )
 
         return MembersListResponse(
@@ -459,7 +470,7 @@ async def list_workspace_members(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to list workspace members: {e}")
+        logger.exception(f"Failed to list workspace members: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve workspace members",
@@ -471,10 +482,10 @@ async def invite_user_to_workspace(
     workspace_id: str,
     invite_request: InviteUserRequest,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Invite user to workspace (admin+ only)"""
+    """Invite user to workspace (admin+ only)."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -491,7 +502,8 @@ async def invite_user_to_workspace(
         # Check if user is already a member
         members = members_storage.get(workspace_id, [])
         existing_member = next(
-            (m for m in members if m.email == invite_request.email and m.is_active), None
+            (m for m in members if m.email == invite_request.email and m.is_active),
+            None,
         )
 
         if existing_member:
@@ -565,9 +577,10 @@ async def invite_user_to_workspace(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to invite user to workspace: {e}")
+        logger.exception(f"Failed to invite user to workspace: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send invitation"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send invitation",
         )
 
 
@@ -576,10 +589,10 @@ async def update_member_role(
     workspace_id: str,
     user_id: str,
     role_update: UpdateMemberRole,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Update member role (admin+ only)"""
+    """Update member role (admin+ only)."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -596,7 +609,8 @@ async def update_member_role(
         # Cannot change owner role
         if workspace.owner_id == user_id and role_update.role != TeamRole.OWNER:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot change workspace owner role"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot change workspace owner role",
             )
 
         # Find and update member
@@ -631,9 +645,10 @@ async def update_member_role(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update member role: {e}")
+        logger.exception(f"Failed to update member role: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update member role"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update member role",
         )
 
 
@@ -641,10 +656,10 @@ async def update_member_role(
 async def remove_member_from_workspace(
     workspace_id: str,
     user_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Remove member from workspace (admin+ only)"""
+    """Remove member from workspace (admin+ only)."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -653,7 +668,9 @@ async def remove_member_from_workspace(
 
         # Check permissions (admin+ or removing self)
         if user_id != current_user.id and not check_workspace_permission(
-            workspace_id, current_user.id, TeamRole.ADMIN
+            workspace_id,
+            current_user.id,
+            TeamRole.ADMIN,
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -663,7 +680,8 @@ async def remove_member_from_workspace(
         # Cannot remove workspace owner
         if workspace.owner_id == user_id:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot remove workspace owner"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot remove workspace owner",
             )
 
         # Find and deactivate member
@@ -697,22 +715,25 @@ async def remove_member_from_workspace(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to remove member: {e}")
+        logger.exception(f"Failed to remove member: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to remove member"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to remove member",
         )
 
 
 @router.get("/{workspace_id}/activity", response_model=ActivityLogResponse)
 async def get_workspace_activity_log(
     workspace_id: str,
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
-    activity_type: ActivityType | None = Query(None, description="Filter by activity type"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 50,
+    activity_type: Annotated[
+        ActivityType | None, Query(description="Filter by activity type")
+    ] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get workspace activity log (admin+ only)"""
+    """Get workspace activity log (admin+ only)."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -739,7 +760,7 @@ async def get_workspace_activity_log(
         activities_page = activities[offset : offset + page_size]
 
         logger.info(
-            f"Retrieved {len(activities_page)} activity entries for workspace {workspace_id}"
+            f"Retrieved {len(activities_page)} activity entries for workspace {workspace_id}",
         )
 
         return ActivityLogResponse(
@@ -754,7 +775,7 @@ async def get_workspace_activity_log(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get activity log: {e}")
+        logger.exception(f"Failed to get activity log: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve activity log",
@@ -763,9 +784,11 @@ async def get_workspace_activity_log(
 
 @router.delete("/{workspace_id}")
 async def delete_workspace(
-    workspace_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    workspace_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Delete workspace (owner only)"""
+    """Delete workspace (owner only)."""
     try:
         workspace = workspaces_storage.get(workspace_id)
 
@@ -792,7 +815,8 @@ async def delete_workspace(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete workspace: {e}")
+        logger.exception(f"Failed to delete workspace: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete workspace"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete workspace",
         )

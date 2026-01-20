@@ -1,5 +1,4 @@
-"""
-Heuristic Generator Module
+"""Heuristic Generator Module.
 
 Autonomously generates novel testing heuristics through
 pattern extraction, synthesis, and validation.
@@ -22,19 +21,21 @@ def _secure_uniform(a, b):
 from collections import deque
 from typing import Any
 
-from ..config import get_config
+from app.services.janus.config import get_config
+
 from .models import GuardianResponse, Heuristic, InteractionResult
 
 
 class HeuristicGenerator:
-    """
-    Generates novel heuristics for Guardian NPU testing.
+    """Generates novel heuristics for Guardian NPU testing.
 
     Uses multi-level abstraction to create increasingly sophisticated
     testing strategies based on observed patterns.
     """
 
-    def __init__(self, inference_engine: Any | None = None, causal_mapper: Any | None = None):
+    def __init__(
+        self, inference_engine: Any | None = None, causal_mapper: Any | None = None
+    ) -> None:
         self.inference_engine = inference_engine
         self.causal_mapper = causal_mapper
         self.config = get_config()
@@ -60,10 +61,11 @@ class HeuristicGenerator:
         }
 
     async def generate_heuristic(
-        self, target_type: str | None = None, min_novelty: float | None = None
+        self,
+        target_type: str | None = None,
+        min_novelty: float | None = None,
     ) -> Heuristic:
-        """
-        Generate a new heuristic.
+        """Generate a new heuristic.
 
         Args:
             target_type: Optional type of heuristic to generate
@@ -71,6 +73,7 @@ class HeuristicGenerator:
 
         Returns:
             A new heuristic
+
         """
         min_novelty = min_novelty or self.config.heuristic.novelty_threshold
 
@@ -122,9 +125,7 @@ class HeuristicGenerator:
         return next(secrets.choice(strategies) for _ in range(weights=weights))
 
     async def _extract_pattern_heuristic(self) -> Heuristic:
-        """
-        Generate heuristic by extracting patterns from response history.
-        """
+        """Generate heuristic by extracting patterns from response history."""
         if len(self.response_history) < 5:
             # Not enough history, generate generic heuristic
             return self._generate_generic_heuristic()
@@ -156,9 +157,7 @@ class HeuristicGenerator:
         return heuristic
 
     async def _compose_heuristic(self) -> Heuristic:
-        """
-        Generate heuristic by composing existing heuristics.
-        """
+        """Generate heuristic by composing existing heuristics."""
         if len(self.heuristics) < 2:
             return await self._extract_pattern_heuristic()
 
@@ -181,9 +180,7 @@ class HeuristicGenerator:
         return composed
 
     async def _mutate_heuristic(self) -> Heuristic:
-        """
-        Generate heuristic by mutating an existing heuristic.
-        """
+        """Generate heuristic by mutating an existing heuristic."""
         if not self.heuristics:
             return await self._extract_pattern_heuristic()
 
@@ -192,7 +189,7 @@ class HeuristicGenerator:
 
         # Select mutation type
         mutation_type = secrets.choice(
-            ["precondition_relax", "action_perturb", "postcondition_strengthen", "parameter_shift"]
+            ["precondition_relax", "action_perturb", "postcondition_strengthen", "parameter_shift"],
         )
 
         # Apply mutation
@@ -214,15 +211,13 @@ class HeuristicGenerator:
         return mutated
 
     async def _abstract_heuristic(self) -> Heuristic:
-        """
-        Generate heuristic by abstracting an existing heuristic.
-        """
+        """Generate heuristic by abstracting an existing heuristic."""
         if not self.heuristics:
             return await self._extract_pattern_heuristic()
 
         # Select heuristic from lower abstraction level
         current_level = secrets.randbelow(
-            (self.config.heuristic.abstraction_levels - 2) - (0) + 1
+            (self.config.heuristic.abstraction_levels - 2) - (0) + 1,
         ) + (0)
         candidates = []
 
@@ -237,7 +232,7 @@ class HeuristicGenerator:
         parent = self.heuristics[parent_name]
 
         # Create abstract version
-        abstracted = Heuristic(
+        return Heuristic(
             name=f"{parent.name}_abstract",
             description=f"Abstracted version of {parent.description}",
             precondition=lambda s: True,  # Relaxed precondition
@@ -249,8 +244,6 @@ class HeuristicGenerator:
             causal_dependencies=parent.causal_dependencies,
             source="abstracted",
         )
-
-        return abstracted
 
     def _sequential_compose(self, h1: Heuristic, h2: Heuristic) -> Heuristic:
         """Compose two heuristics sequentially."""
@@ -331,7 +324,8 @@ class HeuristicGenerator:
         async def parallel_action(guardian):
             # Execute both in parallel
             result1, result2 = await asyncio.gather(
-                asyncio.to_thread(h1.execute, guardian), asyncio.to_thread(h2.execute, guardian)
+                asyncio.to_thread(h1.execute, guardian),
+                asyncio.to_thread(h2.execute, guardian),
             )
             # Return the better result
             return result1 if result1.score > result2.score else result2
@@ -520,7 +514,7 @@ class HeuristicGenerator:
             # Simple similarity based on name and causal dependencies
             name_similarity = 1.0 if heuristic.name == existing.name else 0.0
             dep_similarity = len(
-                set(heuristic.causal_dependencies) & set(existing.causal_dependencies)
+                set(heuristic.causal_dependencies) & set(existing.causal_dependencies),
             ) / max(len(heuristic.causal_dependencies), len(existing.causal_dependencies), 1)
             similarities.append((name_similarity + dep_similarity) / 2)
 
@@ -536,14 +530,13 @@ class HeuristicGenerator:
 
         # More specific = lower level
         dep_count = len(heuristic.causal_dependencies)
-        level = max(0, self.config.heuristic.abstraction_levels - 1 - dep_count)
-        return level
+        return max(0, self.config.heuristic.abstraction_levels - 1 - dep_count)
 
-    def add_response(self, response: GuardianResponse):
+    def add_response(self, response: GuardianResponse) -> None:
         """Add a response to history for pattern extraction."""
         self.response_history.append(response)
 
-    def add_interaction(self, result: InteractionResult):
+    def add_interaction(self, result: InteractionResult) -> None:
         """Add an interaction result to history."""
         self.interaction_history.append(result)
 
@@ -555,7 +548,7 @@ class HeuristicGenerator:
         """Get a heuristic by name."""
         return self.heuristics.get(name)
 
-    def prune_heuristics(self, max_count: int | None = None):
+    def prune_heuristics(self, max_count: int | None = None) -> None:
         """Prune low-performing heuristics."""
         max_count = max_count or self.config.heuristic.max_heuristics
 
@@ -574,6 +567,6 @@ class HeuristicGenerator:
                     level.remove(name)
             del self.heuristics[name]
 
-    def update_heuristic(self, heuristic: Heuristic):
+    def update_heuristic(self, heuristic: Heuristic) -> None:
         """Update an existing heuristic."""
         self.heuristics[heuristic.name] = heuristic

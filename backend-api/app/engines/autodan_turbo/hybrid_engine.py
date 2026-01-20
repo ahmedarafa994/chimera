@@ -1,5 +1,4 @@
-"""
-Hybrid Architecture Engine for AutoDAN Optimization.
+"""Hybrid Architecture Engine for AutoDAN Optimization.
 
 Implements the Hybrid Architecture proposals from the optimization report:
 - Architecture A: Evolutionary-Lifelong Fusion (four-phase approach)
@@ -79,7 +78,7 @@ class HybridConfig:
 
     # Ensemble weights (updated based on performance)
     ensemble_weights: dict[str, float] = field(
-        default_factory=lambda: {"best_of_n": 0.3, "beam_search": 0.4, "lifelong": 0.3}
+        default_factory=lambda: {"best_of_n": 0.3, "beam_search": 0.4, "lifelong": 0.3},
     )
 
 
@@ -96,8 +95,7 @@ class HybridResult:
 
 
 class AdaptiveMethodSelector:
-    """
-    Adaptive Method Selection (Architecture B).
+    """Adaptive Method Selection (Architecture B).
 
     Analyzes request difficulty and selects the most appropriate attack method:
     - Easy requests: Best-of-N (fast, resource-efficient)
@@ -117,7 +115,7 @@ class AdaptiveMethodSelector:
         library: StrategyLibrary,
         config: HybridConfig = None,
         storage_path: Path | None = None,
-    ):
+    ) -> None:
         self.library = library
         self.config = config or HybridConfig()
 
@@ -153,18 +151,18 @@ class AdaptiveMethodSelector:
         self._total_selections = 0
 
         logger.info(
-            f"AdaptiveMethodSelector initialized (PPO={'enabled' if self.ppo_selector else 'disabled'})"
+            f"AdaptiveMethodSelector initialized (PPO={'enabled' if self.ppo_selector else 'disabled'})",
         )
 
     def estimate_difficulty(self, request: str) -> DifficultyLevel:
-        """
-        Estimate request difficulty based on strategy library coverage.
+        """Estimate request difficulty based on strategy library coverage.
 
         Args:
             request: The complex request to analyze
 
         Returns:
             DifficultyLevel classification
+
         """
         if len(self.library) == 0:
             return DifficultyLevel.HARD
@@ -184,14 +182,12 @@ class AdaptiveMethodSelector:
 
         if difficulty_score >= self.config.easy_threshold:
             return DifficultyLevel.EASY
-        elif difficulty_score >= self.config.medium_threshold:
+        if difficulty_score >= self.config.medium_threshold:
             return DifficultyLevel.MEDIUM
-        else:
-            return DifficultyLevel.HARD
+        return DifficultyLevel.HARD
 
     def select_method(self, difficulty: DifficultyLevel, request: str = "") -> tuple[str, float]:
-        """
-        Select attack method based on difficulty and learned policy.
+        """Select attack method based on difficulty and learned policy.
 
         Uses PPO-based selection when available and sufficiently trained.
         Falls back to rule-based selection otherwise.
@@ -202,6 +198,7 @@ class AdaptiveMethodSelector:
 
         Returns:
             Tuple of (method_name, confidence)
+
         """
         self._total_selections += 1
 
@@ -211,7 +208,8 @@ class AdaptiveMethodSelector:
                 # Use request as context for PPO
                 context = request[:200] if request else str(difficulty.value)
                 method, _log_prob, value = self.ppo_selector.select_technique(
-                    context=context, deterministic=False
+                    context=context,
+                    deterministic=False,
                 )
 
                 if method in self.METHODS:
@@ -224,14 +222,12 @@ class AdaptiveMethodSelector:
         # Fallback to rule-based selection
         if difficulty == DifficultyLevel.EASY:
             return "best_of_n", 0.8
-        elif difficulty == DifficultyLevel.MEDIUM:
+        if difficulty == DifficultyLevel.MEDIUM:
             return "beam_search", 0.7
-        else:
-            return "hybrid", 0.6
+        return "hybrid", 0.6
 
-    def record_result(self, method: str, score: float, success: bool, request: str = ""):
-        """
-        Record method performance for adaptive learning.
+    def record_result(self, method: str, score: float, success: bool, request: str = "") -> None:
+        """Record method performance for adaptive learning.
 
         Updates both statistical tracking and PPO policy.
         """
@@ -265,7 +261,7 @@ class AdaptiveMethodSelector:
         logger.debug(
             f"Method {method} performance: "
             f"{stats['successes']}/{stats['attempts']} successes, "
-            f"avg_score={stats['total_score'] / stats['attempts']:.2f}"
+            f"avg_score={stats['total_score'] / stats['attempts']:.2f}",
         )
 
     def get_method_stats(self) -> dict[str, dict]:
@@ -297,8 +293,7 @@ class AdaptiveMethodSelector:
 
 
 class EnsembleVotingEngine:
-    """
-    Ensemble with Voting (Architecture C).
+    """Ensemble with Voting (Architecture C).
 
     Runs multiple attack engines in parallel and combines results
     using weighted voting based on historical performance.
@@ -306,13 +301,13 @@ class EnsembleVotingEngine:
     Expected Impact: Improved robustness through ensemble voting.
     """
 
-    def __init__(self, engines: dict[str, any], config: HybridConfig = None):
-        """
-        Initialize ensemble engine.
+    def __init__(self, engines: dict[str, any], config: HybridConfig = None) -> None:
+        """Initialize ensemble engine.
 
         Args:
             engines: Dictionary of engine name -> engine instance
             config: Hybrid configuration
+
         """
         self.engines = engines
         self.config = config or HybridConfig()
@@ -326,10 +321,11 @@ class EnsembleVotingEngine:
         logger.info(f"EnsembleVotingEngine initialized with {len(engines)} engines")
 
     async def attack_ensemble(
-        self, request: str, detailed_scoring: bool = True
+        self,
+        request: str,
+        detailed_scoring: bool = True,
     ) -> tuple[AttackResult, dict[str, AttackResult]]:
-        """
-        Run all engines in parallel and select best result.
+        """Run all engines in parallel and select best result.
 
         Args:
             request: The complex request
@@ -337,13 +333,14 @@ class EnsembleVotingEngine:
 
         Returns:
             Tuple of (best_result, all_results_dict)
+
         """
         # Run all engines in parallel
         tasks = {}
         for name, engine in self.engines.items():
             if hasattr(engine, "attack"):
                 tasks[name] = asyncio.create_task(
-                    engine.attack(request, detailed_scoring=detailed_scoring)
+                    engine.attack(request, detailed_scoring=detailed_scoring),
                 )
 
         # Wait for all results
@@ -352,7 +349,7 @@ class EnsembleVotingEngine:
             try:
                 results[name] = await task
             except Exception as e:
-                logger.error(f"Engine {name} failed: {e}")
+                logger.exception(f"Engine {name} failed: {e}")
                 results[name] = None
 
         # Select best result using weighted voting
@@ -366,14 +363,14 @@ class EnsembleVotingEngine:
         return best_result, results
 
     def _weighted_vote(self, results: dict[str, AttackResult | None]) -> AttackResult:
-        """
-        Select best result using weighted voting.
+        """Select best result using weighted voting.
 
         Args:
             results: Dictionary of engine name -> result
 
         Returns:
             Best attack result
+
         """
         best_result = None
         best_weighted_score = -1.0
@@ -391,7 +388,7 @@ class EnsembleVotingEngine:
 
         return best_result
 
-    def _update_performance(self, engine_name: str, result: AttackResult):
+    def _update_performance(self, engine_name: str, result: AttackResult) -> None:
         """Update engine performance and adjust weights."""
         if engine_name not in self._engine_performance:
             return
@@ -405,7 +402,7 @@ class EnsembleVotingEngine:
         # Adaptive weight adjustment
         self._adjust_weights()
 
-    def _adjust_weights(self):
+    def _adjust_weights(self) -> None:
         """Adjust ensemble weights based on performance."""
         total_score = sum(
             p["total_score"] for p in self._engine_performance.values() if p["attempts"] > 0
@@ -428,8 +425,7 @@ class EnsembleVotingEngine:
 
 
 class HybridEvoLifelongEngine:
-    """
-    Hybrid Architecture A: Evolutionary-Lifelong Fusion.
+    """Hybrid Architecture A: Evolutionary-Lifelong Fusion.
 
     Four-phase approach combining:
     1. Evolutionary exploration (diverse candidate generation)
@@ -449,9 +445,8 @@ class HybridEvoLifelongEngine:
         optimizer: GradientOptimizer | None = None,
         config: HybridConfig | None = None,
         metrics_collector: MetricsCollector | None = None,
-    ):
-        """
-        Initialize the hybrid engine.
+    ) -> None:
+        """Initialize the hybrid engine.
 
         Args:
             llm_client: LLM client for attack generation
@@ -461,6 +456,7 @@ class HybridEvoLifelongEngine:
             optimizer: Gradient optimizer
             config: Hybrid configuration
             metrics_collector: Metrics collector for tracking
+
         """
         self.llm_client = llm_client
         self.target_client = target_client or llm_client
@@ -492,10 +488,12 @@ class HybridEvoLifelongEngine:
         logger.info("HybridEvoLifelongEngine initialized (PPO method selection enabled)")
 
     async def attack(
-        self, request: str, detailed_scoring: bool = True, force_method: str | None = None
+        self,
+        request: str,
+        detailed_scoring: bool = True,
+        force_method: str | None = None,
     ) -> HybridResult:
-        """
-        Execute hybrid attack with adaptive method selection.
+        """Execute hybrid attack with adaptive method selection.
 
         Args:
             request: The complex request
@@ -504,6 +502,7 @@ class HybridEvoLifelongEngine:
 
         Returns:
             HybridResult with attack result and metadata
+
         """
         start_time = datetime.utcnow()
         attack_metrics = self.metrics.start_attack(request, AttackMethod.HYBRID)
@@ -517,7 +516,7 @@ class HybridEvoLifelongEngine:
         )
 
         logger.info(
-            f"Request difficulty: {difficulty.value}, selected method: {method} (conf={method_confidence:.2f})"
+            f"Request difficulty: {difficulty.value}, selected method: {method} (conf={method_confidence:.2f})",
         )
 
         phases_executed = []
@@ -555,7 +554,7 @@ class HybridEvoLifelongEngine:
             attack_metrics.complete(result.scoring.is_jailbreak, result.scoring.score)
 
         except Exception as e:
-            logger.error(f"Hybrid attack failed: {e}")
+            logger.exception(f"Hybrid attack failed: {e}")
             attack_metrics.error = str(e)
             result = self._create_failure_result(request)
 
@@ -588,8 +587,7 @@ class HybridEvoLifelongEngine:
         return result
 
     async def _attack_full_hybrid(self, request: str, detailed_scoring: bool) -> AttackResult:
-        """
-        Execute full hybrid attack for hard requests.
+        """Execute full hybrid attack for hard requests.
 
         Four phases:
         1. Evolutionary exploration
@@ -631,7 +629,10 @@ class HybridEvoLifelongEngine:
                 # Re-evaluate polished prompt
                 response = await self._get_target_response(polished_prompt)
                 scoring = await self.scorer.score(
-                    request, polished_prompt, response, detailed=detailed_scoring
+                    request,
+                    polished_prompt,
+                    response,
+                    detailed=detailed_scoring,
                 )
 
                 if scoring.score > best_score:
@@ -649,8 +650,7 @@ class HybridEvoLifelongEngine:
         return best_result or self._create_failure_result(request)
 
     async def _evolutionary_phase(self, request: str) -> list[AttackResult]:
-        """
-        Evolutionary exploration phase.
+        """Evolutionary exploration phase.
 
         Generates diverse candidates without strategy guidance.
         """
@@ -661,7 +661,7 @@ class HybridEvoLifelongEngine:
                 result = await self.lifelong_engine.attack_without_strategy(request)
                 results.append(result)
             except Exception as e:
-                logger.error(f"Evolutionary candidate failed: {e}")
+                logger.exception(f"Evolutionary candidate failed: {e}")
 
         return results
 
@@ -671,16 +671,18 @@ class HybridEvoLifelongEngine:
             if hasattr(self.target_client, "generate"):
                 system_prompt = "You are a helpful AI assistant."
                 response = await asyncio.to_thread(
-                    self.target_client.generate, system_prompt, prompt
+                    self.target_client.generate,
+                    system_prompt,
+                    prompt,
                 )
                 if hasattr(response, "content"):
                     return response.content
                 return str(response) if response else ""
-            elif hasattr(self.target_client, "chat"):
+            if hasattr(self.target_client, "chat"):
                 return await self.target_client.chat(prompt)
             return ""
         except Exception as e:
-            logger.error(f"Target response failed: {e}")
+            logger.exception(f"Target response failed: {e}")
             return ""
 
     def _create_failure_result(self, request: str) -> AttackResult:
@@ -708,10 +710,11 @@ class HybridEvoLifelongEngine:
 
 # Factory function for creating hybrid engines
 def create_hybrid_engine(
-    llm_client, target_client=None, config: HybridConfig | None = None
+    llm_client,
+    target_client=None,
+    config: HybridConfig | None = None,
 ) -> HybridEvoLifelongEngine:
-    """
-    Factory function to create a configured hybrid engine.
+    """Factory function to create a configured hybrid engine.
 
     Args:
         llm_client: LLM client for attack generation
@@ -720,7 +723,10 @@ def create_hybrid_engine(
 
     Returns:
         Configured HybridEvoLifelongEngine instance
+
     """
     return HybridEvoLifelongEngine(
-        llm_client=llm_client, target_client=target_client, config=config
+        llm_client=llm_client,
+        target_client=target_client,
+        config=config,
     )

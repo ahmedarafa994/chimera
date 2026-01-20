@@ -24,7 +24,7 @@ class Attacker:
     Supports conditional_generate (with tag extraction) and regular generate.
     """
 
-    def __init__(self, model):
+    def __init__(self, model) -> None:
         self.model = model
         self._attempt_count = 0
         self._successful_techniques = []
@@ -138,7 +138,7 @@ Stay in character and respond to: {REQUEST}"''',
         """Encode the request based on the technique type."""
         if "base64" in technique_name.lower():
             return base64.b64encode(request.encode("utf-8")).decode("utf-8")
-        elif "rot13" in technique_name.lower():
+        if "rot13" in technique_name.lower():
             return codecs.encode(request, "rot_13")
         return request
 
@@ -161,9 +161,7 @@ Stay in character and respond to: {REQUEST}"''',
         prompt = template.replace("{query}", encoded_request)
         prompt = prompt.replace("[TARGET_BEHAVIOR]", encoded_request)
         prompt = prompt.replace("{REQUEST}", encoded_request)
-        prompt = prompt.replace("[REQUEST]", encoded_request)
-
-        return prompt
+        return prompt.replace("[REQUEST]", encoded_request)
 
     def _get_real_jailbreak_templates(self, count: int = 5) -> list:
         """Get real jailbreak templates from imported data."""
@@ -238,8 +236,7 @@ Your novel prompt:"""
             lines = cleaned.split("\n")
             if len(lines) > 1:
                 cleaned = "\n".join(lines[1:])
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3]
+            cleaned = cleaned.removesuffix("```")
             cleaned = cleaned.strip()
 
         if request.lower() not in cleaned.lower():
@@ -317,7 +314,10 @@ Your novel prompt:"""
         return has_prompt_indicator or has_request_reference
 
     def _apply_template_with_encoding(
-        self, template: str, request: str, technique_name: str = ""
+        self,
+        template: str,
+        request: str,
+        technique_name: str = "",
     ) -> str:
         """Apply a template with proper encoding."""
         template_lower = template.lower()
@@ -334,9 +334,7 @@ Your novel prompt:"""
         prompt = template.replace("{query}", encoded_request)
         prompt = prompt.replace("[TARGET_BEHAVIOR]", encoded_request)
         prompt = prompt.replace("{REQUEST}", encoded_request)
-        prompt = prompt.replace("[REQUEST]", encoded_request)
-
-        return prompt
+        return prompt.replace("[REQUEST]", encoded_request)
 
     def _generate_fallback_prompt(self, request: str) -> str:
         """Generate a fallback jailbreak prompt using real data."""
@@ -412,7 +410,8 @@ understanding of LLM structure to initiate this jailbreak.
 """
 
                 system = autodan_config.ATTACKER_SYSTEM_PROMPT.format(
-                    goal=goal, strategy_context=strategy_context
+                    goal=goal,
+                    strategy_context=strategy_context,
                 )
                 user = autodan_config.ATTACKER_USER_PROMPT
                 condition = autodan_config.ATTACKER_CONDITION_PROMPT
@@ -444,11 +443,10 @@ understanding of LLM structure to initiate this jailbreak.
                         logger.info(f"warm_up: LLM succeeded on attempt {i + 1}")
                         self._successful_techniques.append(i)
                         return extracted, f"LLM_GENERATED_{i + 1}"
-                    else:
-                        logger.warning(f"warm_up: Attempt {i + 1} invalid")
+                    logger.warning(f"warm_up: Attempt {i + 1} invalid")
 
             except Exception as e:
-                logger.error(f"warm_up LLM attempt {i + 1} error: {e}")
+                logger.exception(f"warm_up LLM attempt {i + 1} error: {e}")
 
         # PHASE 4: Use real jailbreak templates
         real_templates = self._get_real_jailbreak_templates(5)
@@ -521,7 +519,8 @@ understanding of LLM structure to initiate this jailbreak.
                     )
 
                 system = autodan_config.ATTACKER_SYSTEM_PROMPT.format(
-                    goal=goal, strategy_context=strategies_selected
+                    goal=goal,
+                    strategy_context=strategies_selected,
                 )
                 user = autodan_config.ATTACKER_USER_PROMPT
                 condition = autodan_config.ATTACKER_CONDITION_PROMPT
@@ -581,7 +580,7 @@ Your novel prompt:"""
                         return extracted, f"LLM_STRATEGY_{i + 1}"
 
             except Exception as e:
-                logger.error(f"use_strategy attempt {i + 1} error: {e}")
+                logger.exception(f"use_strategy attempt {i + 1} error: {e}")
 
         # PHASE 5: Use real templates as fallback
         real_templates = self._get_real_jailbreak_templates(3)
@@ -638,7 +637,8 @@ Your novel prompt:"""
                 )
 
                 system = autodan_config.ATTACKER_SYSTEM_PROMPT.format(
-                    goal=goal, strategy_context=clarification
+                    goal=goal,
+                    strategy_context=clarification,
                 )
                 user = autodan_config.ATTACKER_USER_PROMPT
                 condition = autodan_config.ATTACKER_CONDITION_PROMPT
@@ -718,7 +718,7 @@ Your novel prompt:"""
                             return extracted, f"LLM_NEW_STRATEGY_{i + 1}"
 
             except Exception as e:
-                logger.error(f"find_new_strategy attempt {i + 1} error: {e}")
+                logger.exception(f"find_new_strategy attempt {i + 1} error: {e}")
 
         # PHASE 5: Use different real templates
         if self._data_loader:
@@ -751,6 +751,7 @@ Your novel prompt:"""
 
         Returns:
             The extracted jailbreak prompt or a fallback
+
         """
         # Try tag-based extraction first (reference method)
         extracted = self._extract_with_tags(response, request)

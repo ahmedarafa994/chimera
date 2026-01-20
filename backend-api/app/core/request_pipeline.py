@@ -1,5 +1,4 @@
-"""
-Request Pipeline Manager
+"""Request Pipeline Manager.
 
 Unified request pipeline management for AI operations.
 Provides a structured way to:
@@ -33,8 +32,7 @@ class PipelineStageStatus(Enum):
 
 @dataclass
 class PipelineStage:
-    """
-    Represents a stage in the request pipeline.
+    """Represents a stage in the request pipeline.
 
     Attributes:
         name: Unique name for the stage
@@ -43,6 +41,7 @@ class PipelineStage:
         enabled: Whether the stage is enabled
         required: Whether stage failure should stop pipeline
         timeout_seconds: Optional timeout for stage execution
+
     """
 
     name: str
@@ -80,8 +79,7 @@ class StageResult:
 
 @dataclass
 class AIRequestContext:
-    """
-    Context passed through the AI request pipeline.
+    """Context passed through the AI request pipeline.
 
     This object accumulates state as it passes through pipeline stages,
     allowing stages to access and modify shared context.
@@ -177,8 +175,7 @@ class AIRequestContext:
 
 
 class RequestPipeline:
-    """
-    Manages request processing pipeline.
+    """Manages request processing pipeline.
 
     The pipeline executes stages in order, passing context through each stage.
     Stages can modify the context, add results, and trigger early termination.
@@ -205,14 +202,15 @@ class RequestPipeline:
         ))
 
         result = await pipeline.execute(request, context)
+
     """
 
-    def __init__(self, name: str = "default"):
-        """
-        Initialize request pipeline.
+    def __init__(self, name: str = "default") -> None:
+        """Initialize request pipeline.
 
         Args:
             name: Pipeline name for logging and identification
+
         """
         self._name = name
         self._stages: list[PipelineStage] = []
@@ -224,42 +222,45 @@ class RequestPipeline:
         return self._name
 
     def add_stage(self, stage: PipelineStage) -> None:
-        """
-        Add a stage to the pipeline.
+        """Add a stage to the pipeline.
 
         Args:
             stage: Pipeline stage to add
 
         Raises:
             ValueError: If stage name already exists or pipeline is locked
+
         """
         if self._lock_stages:
-            raise ValueError("Pipeline stages are locked")
+            msg = "Pipeline stages are locked"
+            raise ValueError(msg)
 
         # Check for duplicate names
         for existing in self._stages:
             if existing.name == stage.name:
-                raise ValueError(f"Stage '{stage.name}' already exists")
+                msg = f"Stage '{stage.name}' already exists"
+                raise ValueError(msg)
 
         self._stages.append(stage)
         self._stages.sort()  # Sort by order
 
         logger.debug(
-            f"Added stage '{stage.name}' to pipeline '{self._name}' " f"at order {stage.order}"
+            f"Added stage '{stage.name}' to pipeline '{self._name}' at order {stage.order}",
         )
 
     def remove_stage(self, name: str) -> bool:
-        """
-        Remove a stage from the pipeline.
+        """Remove a stage from the pipeline.
 
         Args:
             name: Name of stage to remove
 
         Returns:
             True if stage was removed, False if not found
+
         """
         if self._lock_stages:
-            raise ValueError("Pipeline stages are locked")
+            msg = "Pipeline stages are locked"
+            raise ValueError(msg)
 
         for i, stage in enumerate(self._stages):
             if stage.name == name:
@@ -298,8 +299,7 @@ class RequestPipeline:
         request: Any,
         context: AIRequestContext | None = None,
     ) -> dict[str, Any]:
-        """
-        Execute all pipeline stages in order.
+        """Execute all pipeline stages in order.
 
         Args:
             request: Request object to process
@@ -311,12 +311,13 @@ class RequestPipeline:
                 - context: AIRequestContext dict
                 - result: Final stage output
                 - error: Error message if failed
+
         """
         if context is None:
             context = AIRequestContext()
 
         logger.debug(
-            f"Starting pipeline '{self._name}' execution, " f"request_id={context.request_id}"
+            f"Starting pipeline '{self._name}' execution, request_id={context.request_id}",
         )
 
         result = None
@@ -329,7 +330,7 @@ class RequestPipeline:
                         stage_name=stage.name,
                         status=PipelineStageStatus.SKIPPED,
                         duration_ms=0,
-                    )
+                    ),
                 )
                 continue
 
@@ -349,7 +350,7 @@ class RequestPipeline:
                         status=PipelineStageStatus.COMPLETED,
                         duration_ms=duration_ms,
                         output=stage_output,
-                    )
+                    ),
                 )
 
                 # Store last successful output as result
@@ -368,13 +369,13 @@ class RequestPipeline:
                         status=PipelineStageStatus.FAILED,
                         duration_ms=duration_ms,
                         error=error_msg,
-                    )
+                    ),
                 )
 
                 context.add_error(f"Stage '{stage.name}' failed: {error_msg}")
 
                 logger.warning(
-                    f"Stage '{stage.name}' failed after {duration_ms:.2f}ms: " f"{error_msg}"
+                    f"Stage '{stage.name}' failed after {duration_ms:.2f}ms: {error_msg}",
                 )
 
                 if stage.required:
@@ -391,11 +392,11 @@ class RequestPipeline:
         }
 
     def get_pipeline_status(self) -> dict[str, Any]:
-        """
-        Get status of all pipeline stages.
+        """Get status of all pipeline stages.
 
         Returns:
             Dict with pipeline status information
+
         """
         return {
             "name": self._name,
@@ -422,8 +423,7 @@ class RequestPipeline:
 
 
 class PipelineRegistry:
-    """
-    Registry for managing multiple pipelines.
+    """Registry for managing multiple pipelines.
 
     Provides centralized access to named pipelines.
     """
@@ -444,16 +444,17 @@ class PipelineRegistry:
         pipeline: RequestPipeline,
         overwrite: bool = False,
     ) -> None:
-        """
-        Register a pipeline.
+        """Register a pipeline.
 
         Args:
             name: Pipeline name
             pipeline: Pipeline instance
             overwrite: Whether to overwrite existing pipeline
+
         """
         if name in self._pipelines and not overwrite:
-            raise ValueError(f"Pipeline '{name}' already registered")
+            msg = f"Pipeline '{name}' already registered"
+            raise ValueError(msg)
 
         self._pipelines[name] = pipeline
         logger.info(f"Registered pipeline: {name}")
@@ -481,8 +482,7 @@ def get_pipeline_registry() -> PipelineRegistry:
 
 
 def create_default_ai_pipeline() -> RequestPipeline:
-    """
-    Create the default AI request pipeline.
+    """Create the default AI request pipeline.
 
     Returns a pipeline with standard stages for AI operations:
     1. Validation (order=10)
@@ -500,7 +500,6 @@ def create_default_ai_pipeline() -> RequestPipeline:
     async def validation_stage(request: Any, context: AIRequestContext) -> None:
         """Validate the incoming request."""
         # Validation logic would go here
-        pass
 
     async def provider_selection_stage(
         request: Any,
@@ -509,7 +508,6 @@ def create_default_ai_pipeline() -> RequestPipeline:
         """Select provider and model."""
         # Provider selection logic would go here
         # This would integrate with ProviderSelectionMiddleware
-        pass
 
     async def rate_limit_stage(
         request: Any,
@@ -517,7 +515,6 @@ def create_default_ai_pipeline() -> RequestPipeline:
     ) -> None:
         """Check rate limits."""
         # Rate limit checking would go here
-        pass
 
     async def fallback_setup_stage(
         request: Any,
@@ -525,7 +522,6 @@ def create_default_ai_pipeline() -> RequestPipeline:
     ) -> None:
         """Setup fallback chain."""
         # Fallback chain setup would go here
-        pass
 
     async def cost_tracking_stage(
         request: Any,
@@ -533,7 +529,6 @@ def create_default_ai_pipeline() -> RequestPipeline:
     ) -> None:
         """Track costs after execution."""
         # Cost tracking would go here
-        pass
 
     # Add stages
     pipeline.add_stage(
@@ -542,7 +537,7 @@ def create_default_ai_pipeline() -> RequestPipeline:
             handler=validation_stage,
             order=10,
             required=True,
-        )
+        ),
     )
 
     pipeline.add_stage(
@@ -551,7 +546,7 @@ def create_default_ai_pipeline() -> RequestPipeline:
             handler=provider_selection_stage,
             order=20,
             required=True,
-        )
+        ),
     )
 
     pipeline.add_stage(
@@ -560,7 +555,7 @@ def create_default_ai_pipeline() -> RequestPipeline:
             handler=rate_limit_stage,
             order=30,
             required=False,  # Don't fail on rate limit check errors
-        )
+        ),
     )
 
     pipeline.add_stage(
@@ -569,7 +564,7 @@ def create_default_ai_pipeline() -> RequestPipeline:
             handler=fallback_setup_stage,
             order=40,
             required=False,
-        )
+        ),
     )
 
     pipeline.add_stage(
@@ -578,15 +573,14 @@ def create_default_ai_pipeline() -> RequestPipeline:
             handler=cost_tracking_stage,
             order=200,
             required=False,  # Cost tracking failure shouldn't fail request
-        )
+        ),
     )
 
     return pipeline
 
 
 def setup_default_pipelines() -> None:
-    """
-    Setup default pipelines and register them.
+    """Setup default pipelines and register them.
 
     Should be called during application startup.
     """

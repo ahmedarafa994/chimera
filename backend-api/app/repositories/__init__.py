@@ -1,5 +1,4 @@
-"""
-Repository Layer
+"""Repository Layer.
 
 This module provides the repository pattern for data access abstraction.
 All database operations should go through repositories to maintain clean

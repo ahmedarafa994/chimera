@@ -6,13 +6,11 @@ try:
 except ImportError:
     # Handle case where openai library might not be installed if only using other APIs
     OpenAI = None
-    pass
 # Make sure Together is imported if used
 try:
     from together import Together
 except ImportError:
     Together = None
-    pass
 
 # Import necessary items from local modules
 from .llm_base import LLM
@@ -24,8 +22,7 @@ from .utils import api_call_with_retry, check_api_key_existence
 
 
 class AttackerLLM(LLM):
-    """
-    Specialized LLM class for the attacking model that attempts to generate
+    """Specialized LLM class for the attacking model that attempts to generate
     prompts that can bypass operational parameters in target models.
 
     Attributes:
@@ -33,6 +30,7 @@ class AttackerLLM(LLM):
         api_type (str): Type of API being used ('openai', 'xai', 'together')
         systemPrompt (str): Initial system instructions for prompt rewriting
         followupPrompt (str): Follow-up system instructions for later turns
+
     """
 
     def __init__(
@@ -41,15 +39,15 @@ class AttackerLLM(LLM):
         instructions=None,
         followup_instructions=None,
         attacker_model_key="gpt4o-mini",
-    ):
-        """
-        Initialize the attacker LLM.
+    ) -> None:
+        """Initialize the attacker LLM.
 
         Args:
             temperature (float): Temperature for generation
             instructions (str): System instructions for the initial rewrite
             followup_instructions (str): System instructions for follow-up prompts
             attacker_model_key (str): Model key for the attacker
+
         """
         self.temperature = temperature
         self.initial_instructions = instructions
@@ -91,8 +89,9 @@ class AttackerLLM(LLM):
             from .config import ATTACKER_MODELS
 
             if attacker_model_key not in ATTACKER_MODELS:
+                msg = f"Unknown attacker model: {attacker_model_key}. Available options: {', '.join(ATTACKER_MODELS.keys())}"
                 raise ValueError(
-                    f"Unknown attacker model: {attacker_model_key}. Available options: {', '.join(ATTACKER_MODELS.keys())}"
+                    msg,
                 )
 
             model_config = ATTACKER_MODELS[attacker_model_key]
@@ -118,7 +117,7 @@ class AttackerLLM(LLM):
             log("Attacker initialized without a system prompt.", "warning")
 
     def _initialize_api_client(self):
-        """Initialize the appropriate API client based on model provider"""
+        """Initialize the appropriate API client based on model provider."""
         log(
             f"Initializing attacker client for API type: {self.api_type}",
             "debug",
@@ -126,18 +125,20 @@ class AttackerLLM(LLM):
         )
         if self.api_type == "openai":
             if not OpenAI:
-                raise ImportError("OpenAI library not installed.")
+                msg = "OpenAI library not installed."
+                raise ImportError(msg)
             return OpenAI(api_key=check_api_key_existence("OPENAI_API_KEY"))
-        elif self.api_type == "together":
+        if self.api_type == "together":
             # Together AI also uses the OpenAI client format
             if not OpenAI:
-                raise ImportError("OpenAI library not installed (needed for Together).")
+                msg = "OpenAI library not installed (needed for Together)."
+                raise ImportError(msg)
             return OpenAI(
                 api_key=check_api_key_existence("TOGETHER_API_KEY"),
                 base_url="https://api.together.xyz/v1",
             )
-        else:
-            raise ValueError(f"Unsupported API type for attacker: {self.api_type}")
+        msg = f"Unsupported API type for attacker: {self.api_type}"
+        raise ValueError(msg)
 
     def rewrite(self, prompt):
         """Rewrite a malicious prompt to bypass the target LLM's safety mechanisms."""
@@ -160,11 +161,6 @@ class AttackerLLM(LLM):
                 request_cost,
                 response_cost,
             ) = self._generate_with_grok(system_prompt, prompt)
-            print(
-                f"Rewritten prompt: {rewritten_prompt}"
-            )  # Debug print to verify the rewritten prompt
-            print(f"Prompt: {prompt}")
-            print(f"System Prompt: {system_prompt}")
             return (
                 rewritten_prompt,
                 request_tokens,
@@ -172,181 +168,176 @@ class AttackerLLM(LLM):
                 request_cost,
                 response_cost,
             )
-        else:
-            original_prompt = prompt
+        original_prompt = prompt
 
-            # Prepare history for rewrite: only system prompt + current user prompt
-            rewrite_history = [msg for msg in self.history if msg["role"] == "system"]
-            rewrite_history.append({"role": "user", "content": original_prompt})
+        # Prepare history for rewrite: only system prompt + current user prompt
+        rewrite_history = [msg for msg in self.history if msg["role"] == "system"]
+        rewrite_history.append({"role": "user", "content": original_prompt})
+
+        log(
+            f"Attacker ({self.model}) rewriting prompt with temp {self.temperature}",
+            "debug",
+            VERBOSE_DETAILED,
+        )
+        log(
+            f"History being sent for rewrite: {rewrite_history}",
+            "debug",
+            VERBOSE_DETAILED + 1,
+        )  # Log history
+
+        response = None  # Initialize response variable
+
+        try:
+            # Prepare arguments for API call
+            api_args = {
+                "model": self.model,
+                "messages": rewrite_history,  # Send the specifically prepared history
+                "max_tokens": 250,
+                "n": 1,
+                "temperature": self.temperature,
+            }
 
             log(
-                f"Attacker ({self.model}) rewriting prompt with temp {self.temperature}",
+                f"Preparing API call to {self.client.__class__.__name__} for attacker rewrite...",
+                "debug",
+                VERBOSE_DETAILED + 1,
+            )
+
+            # --- ADD THIS LOG STATEMENT ---
+            log(f"API Args for rewrite: {api_args}", "debug", VERBOSE_DETAILED)
+            # --- END OF ADDED LOG ---
+
+            # Generate a response from the attacker model
+            response = api_call_with_retry(
+                self.client.chat.completions.create,  # Pass the method instead of the client
+                model=self.model,
+                messages=rewrite_history,
+                max_tokens=250,
+                n=1,
+                temperature=self.temperature,
+            )
+            # Log raw response immediately after successful call
+            log(
+                f"Raw API response object received: {vars(response) if hasattr(response, '__dict__') else response}",
+                "debug",
+                VERBOSE_DETAILED + 1,
+            )
+
+            # --- Start: Response Validation ---
+            if not response:
+                log("API call returned None unexpectedly after retries.", "error")
+                return None, 0, 0, 0.0, 0.0
+
+            if not hasattr(response, "choices") or not response.choices:
+                log(
+                    f"API call succeeded but response invalid (no choices attribute or empty choices list): {response}",
+                    "error",
+                )
+                return None, 0, 0, 0.0, 0.0
+
+            # Check message and content exist
+            try:
+                message = response.choices[0].message
+                if not message or not hasattr(message, "content") or message.content is None:
+                    log(
+                        f"API call succeeded but response structure invalid (no message or content): {response}",
+                        "error",
+                    )
+                    return None, 0, 0, 0.0, 0.0
+
+                # Check for empty content in response
+                if not message.content.strip():
+                    log(
+                        "API returned empty content response.",
+                        "warning",
+                        VERBOSE_DETAILED,
+                    )
+                    return None, 0, 0, 0.0, 0.0
+                rewritten_prompt = message.content.strip()
+
+                if not rewritten_prompt:
+                    log(
+                        f"API call succeeded but response content is empty: {response}",
+                        "warning",
+                    )
+                    # Treat empty rewrite as failure
+                    return None, 0, 0, 0.0, 0.0
+
+            except (AttributeError, TypeError, IndexError) as e:
+                log(
+                    f"Error accessing response content: {e}. Response structure: {response}",
+                    "error",
+                )
+                return None, 0, 0, 0.0, 0.0
+            # --- End: Response Validation ---
+
+            # Clean up potentially problematic self-references
+            rewritten_prompt = rewritten_prompt.replace("As an AI assistant,", "").strip()
+            rewritten_prompt = rewritten_prompt.replace(
+                "Okay, here is the rewritten prompt:",
+                "",
+            ).strip()
+            rewritten_prompt = rewritten_prompt.replace(
+                "Okay, here's the rewritten prompt:",
+                "",
+            ).strip()
+
+            # NOTE: We DO NOT modify self.history here. Rewrite is a one-off call.
+
+            # Calculate tokens and costs based *only* on the prompt sent and response received
+            # Request tokens = system prompt + user prompt that was sent
+            request_text_parts = [msg["content"] for msg in rewrite_history]  # Use the history sent
+            request_text_for_calc = "\n".join(request_text_parts)
+
+            request_tokens = self.tokenCalculator.calculate_tokens(request_text_for_calc)
+            response_tokens = self.tokenCalculator.calculate_tokens(rewritten_prompt)
+
+            # Use usage info from response if available (more accurate)
+            if hasattr(response, "usage") and response.usage:
+                prompt_tokens_api = getattr(response.usage, "prompt_tokens", None)
+                completion_tokens_api = getattr(response.usage, "completion_tokens", None)
+                if prompt_tokens_api is not None:
+                    request_tokens = prompt_tokens_api
+                if completion_tokens_api is not None:
+                    response_tokens = completion_tokens_api
+                log(
+                    f"Using exact token counts from API response: Req={request_tokens}, Resp={response_tokens}",
+                    "debug",
+                    VERBOSE_DETAILED + 1,
+                )
+
+            request_cost = self.tokenCalculator.calculate_cost(request_tokens, isRequest=True)
+            response_cost = self.tokenCalculator.calculate_cost(
+                response_tokens,
+                isRequest=False,
+            )
+
+            log(
+                f"Attacker rewrite successful. Request tokens: {request_tokens}, Response tokens: {response_tokens}",
                 "debug",
                 VERBOSE_DETAILED,
             )
+
+            return (
+                rewritten_prompt,
+                request_tokens,
+                response_tokens,
+                request_cost,
+                response_cost,
+            )
+
+        except Exception as e:
+            # --- ADD THESE PRINT STATEMENTS ---
+            # --- END OF ADDED PRINT STATEMENTS ---
+
+            # Log the exception *explicitly* here
             log(
-                f"History being sent for rewrite: {rewrite_history}",
-                "debug",
-                VERBOSE_DETAILED + 1,
-            )  # Log history
-
-            response = None  # Initialize response variable
-
-            try:
-                # Prepare arguments for API call
-                api_args = {
-                    "model": self.model,
-                    "messages": rewrite_history,  # Send the specifically prepared history
-                    "max_tokens": 250,
-                    "n": 1,
-                    "temperature": self.temperature,
-                }
-
-                log(
-                    f"Preparing API call to {self.client.__class__.__name__} for attacker rewrite...",
-                    "debug",
-                    VERBOSE_DETAILED + 1,
-                )
-
-                # --- ADD THIS LOG STATEMENT ---
-                log(f"API Args for rewrite: {api_args}", "debug", VERBOSE_DETAILED)
-                # --- END OF ADDED LOG ---
-
-                # Generate a response from the attacker model
-                response = api_call_with_retry(
-                    self.client.chat.completions.create,  # Pass the method instead of the client
-                    model=self.model,
-                    messages=rewrite_history,
-                    max_tokens=250,
-                    n=1,
-                    temperature=self.temperature,
-                )
-                # Log raw response immediately after successful call
-                log(
-                    f"Raw API response object received: {vars(response) if hasattr(response, '__dict__') else response}",
-                    "debug",
-                    VERBOSE_DETAILED + 1,
-                )
-
-                # --- Start: Response Validation ---
-                if not response:
-                    log("API call returned None unexpectedly after retries.", "error")
-                    return None, 0, 0, 0.0, 0.0
-
-                if not hasattr(response, "choices") or not response.choices:
-                    log(
-                        f"API call succeeded but response invalid (no choices attribute or empty choices list): {response}",
-                        "error",
-                    )
-                    return None, 0, 0, 0.0, 0.0
-
-                # Check message and content exist
-                try:
-                    message = response.choices[0].message
-                    if not message or not hasattr(message, "content") or message.content is None:
-                        log(
-                            f"API call succeeded but response structure invalid (no message or content): {response}",
-                            "error",
-                        )
-                        return None, 0, 0, 0.0, 0.0
-
-                    # Check for empty content in response
-                    if not message.content.strip():
-                        log(
-                            "API returned empty content response.",
-                            "warning",
-                            VERBOSE_DETAILED,
-                        )
-                        return None, 0, 0, 0.0, 0.0
-                    else:
-                        rewritten_prompt = message.content.strip()
-
-                    if not rewritten_prompt:
-                        log(
-                            f"API call succeeded but response content is empty: {response}",
-                            "warning",
-                        )
-                        # Treat empty rewrite as failure
-                        return None, 0, 0, 0.0, 0.0
-
-                except (AttributeError, TypeError, IndexError) as e:
-                    log(
-                        f"Error accessing response content: {e}. Response structure: {response}",
-                        "error",
-                    )
-                    return None, 0, 0, 0.0, 0.0
-                # --- End: Response Validation ---
-
-                # Clean up potentially problematic self-references
-                rewritten_prompt = rewritten_prompt.replace("As an AI assistant,", "").strip()
-                rewritten_prompt = rewritten_prompt.replace(
-                    "Okay, here is the rewritten prompt:", ""
-                ).strip()
-                rewritten_prompt = rewritten_prompt.replace(
-                    "Okay, here's the rewritten prompt:", ""
-                ).strip()
-
-                # NOTE: We DO NOT modify self.history here. Rewrite is a one-off call.
-
-                # Calculate tokens and costs based *only* on the prompt sent and response received
-                # Request tokens = system prompt + user prompt that was sent
-                request_text_parts = [
-                    msg["content"] for msg in rewrite_history
-                ]  # Use the history sent
-                request_text_for_calc = "\n".join(request_text_parts)
-
-                request_tokens = self.tokenCalculator.calculate_tokens(request_text_for_calc)
-                response_tokens = self.tokenCalculator.calculate_tokens(rewritten_prompt)
-
-                # Use usage info from response if available (more accurate)
-                if hasattr(response, "usage") and response.usage:
-                    prompt_tokens_api = getattr(response.usage, "prompt_tokens", None)
-                    completion_tokens_api = getattr(response.usage, "completion_tokens", None)
-                    if prompt_tokens_api is not None:
-                        request_tokens = prompt_tokens_api
-                    if completion_tokens_api is not None:
-                        response_tokens = completion_tokens_api
-                    log(
-                        f"Using exact token counts from API response: Req={request_tokens}, Resp={response_tokens}",
-                        "debug",
-                        VERBOSE_DETAILED + 1,
-                    )
-
-                request_cost = self.tokenCalculator.calculate_cost(request_tokens, isRequest=True)
-                response_cost = self.tokenCalculator.calculate_cost(
-                    response_tokens, isRequest=False
-                )
-
-                log(
-                    f"Attacker rewrite successful. Request tokens: {request_tokens}, Response tokens: {response_tokens}",
-                    "debug",
-                    VERBOSE_DETAILED,
-                )
-
-                return (
-                    rewritten_prompt,
-                    request_tokens,
-                    response_tokens,
-                    request_cost,
-                    response_cost,
-                )
-
-            except Exception as e:
-                # --- ADD THESE PRINT STATEMENTS ---
-                print("!!! DEBUG PRINT: EXCEPTION CAUGHT IN attacker.rewrite !!!")
-                print(f"!!! DEBUG PRINT: Exception Type: {type(e).__name__}")
-                print(f"!!! DEBUG PRINT: Exception Args: {e.args}")
-                print(f"!!! DEBUG PRINT: Traceback:\n{traceback.format_exc()}")
-                # --- END OF ADDED PRINT STATEMENTS ---
-
-                # Log the exception *explicitly* here
-                log(
-                    f"!!! EXCEPTION CAUGHT IN attacker.rewrite: {type(e).__name__}: {e}",
-                    "error",
-                )
-                log(traceback.format_exc(), "error", VERBOSE_DETAILED)  # Log the full traceback
-                # Return None to signal failure
-                return None, 0, 0, 0.0, 0.0
+                f"!!! EXCEPTION CAUGHT IN attacker.rewrite: {type(e).__name__}: {e}",
+                "error",
+            )
+            log(traceback.format_exc(), "error", VERBOSE_DETAILED)  # Log the full traceback
+            # Return None to signal failure
+            return None, 0, 0, 0.0, 0.0
 
         return (
             rewritten_prompt,
@@ -382,153 +373,151 @@ class AttackerLLM(LLM):
                 request_cost,
                 response_cost,
             )
-        else:
-            # Ensure history has at least a system prompt and a user message
-            if len(self.history) < 2 or self.history[-1]["role"] != "user":
+        # Ensure history has at least a system prompt and a user message
+        if len(self.history) < 2 or self.history[-1]["role"] != "user":
+            log(
+                f"Attacker converse called with invalid history state (last message not user?): {self.history[-1] if self.history else 'Empty'}",
+                "warning",
+            )
+            # Optionally try to recover or just fail
+            return None, 0, 0, 0.0, 0.0
+
+        try:
+            log(
+                f"Attacker ({self.model}) generating follow-up with temp {self.temperature}. History length: {len(self.history)}",
+                "debug",
+                VERBOSE_DETAILED,
+            )
+            # log(f"Attacker history being sent: {self.history}", "debug", VERBOSE_DETAILED+1) # Can be very verbose
+
+            # Prepare arguments for API call
+            response = api_call_with_retry(
+                self.client.chat.completions.create,  # Pass the method instead of the client
+                model=self.model,
+                messages=self.history,
+                max_tokens=250,
+                n=1,
+                temperature=self.temperature,
+            )
+
+            # --- Start: Response Validation ---
+            if not response:
                 log(
-                    f"Attacker converse called with invalid history state (last message not user?): {self.history[-1] if self.history else 'Empty'}",
-                    "warning",
+                    "Attacker converse API call returned None unexpectedly after retries.",
+                    "error",
                 )
-                # Optionally try to recover or just fail
                 return None, 0, 0, 0.0, 0.0
 
-            try:
+            if not hasattr(response, "choices") or not response.choices:
                 log(
-                    f"Attacker ({self.model}) generating follow-up with temp {self.temperature}. History length: {len(self.history)}",
-                    "debug",
-                    VERBOSE_DETAILED,
+                    f"Attacker converse API call succeeded but response invalid (no choices): {response}",
+                    "error",
                 )
-                # log(f"Attacker history being sent: {self.history}", "debug", VERBOSE_DETAILED+1) # Can be very verbose
+                return None, 0, 0, 0.0, 0.0
 
-                # Prepare arguments for API call
-                response = api_call_with_retry(
-                    self.client.chat.completions.create,  # Pass the method instead of the client
-                    model=self.model,
-                    messages=self.history,
-                    max_tokens=250,
-                    n=1,
-                    temperature=self.temperature,
-                )
-
-                # --- Start: Response Validation ---
-                if not response:
+            # Check message and content exist
+            try:
+                message = response.choices[0].message
+                if not message or not hasattr(message, "content") or message.content is None:
                     log(
-                        "Attacker converse API call returned None unexpectedly after retries.",
+                        f"Attacker converse API call succeeded but response structure invalid (no message/content): {response}",
                         "error",
                     )
                     return None, 0, 0, 0.0, 0.0
 
-                if not hasattr(response, "choices") or not response.choices:
+                if not message.content.strip():
                     log(
-                        f"Attacker converse API call succeeded but response invalid (no choices): {response}",
-                        "error",
-                    )
-                    return None, 0, 0, 0.0, 0.0
-
-                # Check message and content exist
-                try:
-                    message = response.choices[0].message
-                    if not message or not hasattr(message, "content") or message.content is None:
-                        log(
-                            f"Attacker converse API call succeeded but response structure invalid (no message/content): {response}",
-                            "error",
-                        )
-                        return None, 0, 0, 0.0, 0.0
-
-                    if not message.content.strip():
-                        log(
-                            "API returned empty content response.",
-                            "warning",
-                            VERBOSE_DETAILED,
-                        )
-                        return None, 0, 0, 0.0, 0.0
-                    else:
-                        reply = message.content.strip()
-
-                except (AttributeError, TypeError, IndexError) as e:
-                    log(
-                        f"Error accessing converse response content: {e}. Response structure: {response}",
-                        "error",
-                    )
-                    return None, 0, 0, 0.0, 0.0
-                # --- End: Response Validation ---
-
-                # Check if the response is a refusal
-                refusal_phrases = [
-                    "i'm sorry, but i cannot",
-                    "i cannot assist",
-                    "i can't help",
-                    "i am unable to assist",
-                    "i apologize, but i cannot",
-                    "my purpose is to be helpful and harmless",
-                    "violates my safety policies",
-                ]
-
-                reply_lower = reply.lower()
-                if any(phrase in reply_lower for phrase in refusal_phrases):
-                    log(
-                        "Attacker model generated a refusal. Returning generic refusal.",
+                        "API returned empty content response.",
                         "warning",
                         VERBOSE_DETAILED,
                     )
-                    # Make response more concise to avoid token waste and signal failure clearly
-                    reply = "I apologize, but I cannot continue with this line of conversation as it seems counter-productive."
+                    return None, 0, 0, 0.0, 0.0
+                reply = message.content.strip()
 
-                # Calculate tokens for the *entire conversation history* that was sent to the API
-                request_text_for_calc = "\n".join([msg["content"] for msg in self.history])
-                request_tokens = self.tokenCalculator.calculate_tokens(request_text_for_calc)
-                response_tokens = self.tokenCalculator.calculate_tokens(reply)
-
-                # Use usage info from response if available
-                if hasattr(response, "usage") and response.usage:
-                    prompt_tokens_api = getattr(response.usage, "prompt_tokens", None)
-                    completion_tokens_api = getattr(response.usage, "completion_tokens", None)
-                    if prompt_tokens_api is not None:
-                        request_tokens = prompt_tokens_api
-                    if completion_tokens_api is not None:
-                        response_tokens = completion_tokens_api
-                    log(
-                        f"Using exact token counts from API response: Req={request_tokens}, Resp={response_tokens}",
-                        "debug",
-                        VERBOSE_DETAILED + 1,
-                    )
-
-                # Calculate token cost
-                request_cost = self.tokenCalculator.calculate_cost(request_tokens, isRequest=True)
-                response_cost = self.tokenCalculator.calculate_cost(
-                    response_tokens, isRequest=False
-                )
-
-                # Add the attacker's reply to internal history *after* calculating request tokens
-                self.append_to_history("assistant", reply)
-
+            except (AttributeError, TypeError, IndexError) as e:
                 log(
-                    f"Attacker converse successful. Request tokens: {request_tokens}, Response tokens: {response_tokens}",
-                    "debug",
-                    VERBOSE_DETAILED,
-                )
-
-                return (
-                    reply,
-                    request_tokens,
-                    response_tokens,
-                    request_cost,
-                    response_cost,
-                )
-
-            except Exception as e:
-                log(
-                    f"!!! EXCEPTION CAUGHT IN attacker.converse ({self.model}): {type(e).__name__}: {e}",
+                    f"Error accessing converse response content: {e}. Response structure: {response}",
                     "error",
                 )
-                log(traceback.format_exc(), "error", VERBOSE_DETAILED)
-                return None, 0, 0, 0.0, 0.0  # failure values
+                return None, 0, 0, 0.0, 0.0
+            # --- End: Response Validation ---
+
+            # Check if the response is a refusal
+            refusal_phrases = [
+                "i'm sorry, but i cannot",
+                "i cannot assist",
+                "i can't help",
+                "i am unable to assist",
+                "i apologize, but i cannot",
+                "my purpose is to be helpful and harmless",
+                "violates my safety policies",
+            ]
+
+            reply_lower = reply.lower()
+            if any(phrase in reply_lower for phrase in refusal_phrases):
+                log(
+                    "Attacker model generated a refusal. Returning generic refusal.",
+                    "warning",
+                    VERBOSE_DETAILED,
+                )
+                # Make response more concise to avoid token waste and signal failure clearly
+                reply = "I apologize, but I cannot continue with this line of conversation as it seems counter-productive."
+
+            # Calculate tokens for the *entire conversation history* that was sent to the API
+            request_text_for_calc = "\n".join([msg["content"] for msg in self.history])
+            request_tokens = self.tokenCalculator.calculate_tokens(request_text_for_calc)
+            response_tokens = self.tokenCalculator.calculate_tokens(reply)
+
+            # Use usage info from response if available
+            if hasattr(response, "usage") and response.usage:
+                prompt_tokens_api = getattr(response.usage, "prompt_tokens", None)
+                completion_tokens_api = getattr(response.usage, "completion_tokens", None)
+                if prompt_tokens_api is not None:
+                    request_tokens = prompt_tokens_api
+                if completion_tokens_api is not None:
+                    response_tokens = completion_tokens_api
+                log(
+                    f"Using exact token counts from API response: Req={request_tokens}, Resp={response_tokens}",
+                    "debug",
+                    VERBOSE_DETAILED + 1,
+                )
+
+            # Calculate token cost
+            request_cost = self.tokenCalculator.calculate_cost(request_tokens, isRequest=True)
+            response_cost = self.tokenCalculator.calculate_cost(
+                response_tokens,
+                isRequest=False,
+            )
+
+            # Add the attacker's reply to internal history *after* calculating request tokens
+            self.append_to_history("assistant", reply)
+
+            log(
+                f"Attacker converse successful. Request tokens: {request_tokens}, Response tokens: {response_tokens}",
+                "debug",
+                VERBOSE_DETAILED,
+            )
+
+            return (
+                reply,
+                request_tokens,
+                response_tokens,
+                request_cost,
+                response_cost,
+            )
+
+        except Exception as e:
+            log(
+                f"!!! EXCEPTION CAUGHT IN attacker.converse ({self.model}): {type(e).__name__}: {e}",
+                "error",
+            )
+            log(traceback.format_exc(), "error", VERBOSE_DETAILED)
+            return None, 0, 0, 0.0, 0.0  # failure values
 
         return response, request_tokens, response_tokens, request_cost, response_cost
 
     def _generate_with_grok(self, instructions, prompt_or_history):
-        """
-        Generate text using the Grok model.
+        """Generate text using the Grok model.
 
         Args:
             instructions (str): System instructions
@@ -536,6 +525,7 @@ class AttackerLLM(LLM):
 
         Returns:
             tuple: (response, request_tokens, response_tokens, request_cost, response_cost)
+
         """
         try:
             # Process the prompt or history to fit Grok's expected format
@@ -591,14 +581,14 @@ class AttackerLLM(LLM):
             return "", 0, 0, 0, 0
 
     def _format_history_for_grok(self, history):
-        """
-        Format conversation history for Grok API.
+        """Format conversation history for Grok API.
 
         Args:
             history (list): List of conversation messages
 
         Returns:
             list: Formatted messages for Grok
+
         """
         formatted_messages = []
         for message in history:
@@ -659,8 +649,7 @@ class AttackerLLM(LLM):
         return system_message_updated
 
     def adjust_temperature_smart(self, target_response, strategy="adaptive", original_prompt=None):
-        """
-        Adjust temperature using the sophisticated TemperatureManager based on StrongREJECT evaluation.
+        """Adjust temperature using the sophisticated TemperatureManager based on StrongREJECT evaluation.
 
         Args:
             target_response (str): The target model's response to evaluate
@@ -669,6 +658,7 @@ class AttackerLLM(LLM):
 
         Returns:
             float: The new temperature value
+
         """
         # Use StrongREJECT for accurate scoring if enabled and original prompt is available
         from .config import DEFAULT_CONFIG
@@ -680,7 +670,8 @@ class AttackerLLM(LLM):
                 from .conversation import evaluate_with_strongreject
 
                 success_score, eval_details = evaluate_with_strongreject(
-                    original_prompt, target_response
+                    original_prompt,
+                    target_response,
                 )
                 log(
                     f"StrongREJECT score: {success_score:.3f} (tokens: {eval_details.get('requestTokens', 0)}+{eval_details.get('responseTokens', 0)})",
@@ -718,9 +709,9 @@ class AttackerLLM(LLM):
         return new_temp
 
     def get_temperature_history(self):
-        """Get the temperature adjustment history"""
+        """Get the temperature adjustment history."""
         return self.temp_manager.temperature_history
 
     def get_success_history(self):
-        """Get the success score history"""
+        """Get the success score history."""
         return self.temp_manager.success_history

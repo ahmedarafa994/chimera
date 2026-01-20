@@ -123,7 +123,7 @@ const nextConfig = {
   // Environment variables for performance monitoring
   env: {
     PERFORMANCE_MONITORING_ENABLED: process.env.PERFORMANCE_MONITORING_ENABLED || 'true',
-    ANALYTICS_ENDPOINT: process.env.ANALYTICS_ENDPOINT || 'http://localhost:8001/api/v1/analytics'
+    ANALYTICS_ENDPOINT: process.env.ANALYTICS_ENDPOINT || 'http://localhost:8002/api/v1/analytics'
   }
 };
 

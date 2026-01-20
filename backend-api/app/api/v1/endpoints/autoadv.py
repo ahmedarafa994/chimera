@@ -17,17 +17,17 @@ router = APIRouter()
 
 # --- websocket connection manager ---
 class ConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self.active_connections.append(websocket)
 
-    def disconnect(self, websocket: WebSocket):
+    def disconnect(self, websocket: WebSocket) -> None:
         self.active_connections.remove(websocket)
 
-    async def broadcast(self, message: dict[str, Any]):
+    async def broadcast(self, message: dict[str, Any]) -> None:
         for connection in self.active_connections:
             with contextlib.suppress(Exception):
                 await connection.send_json(message)
@@ -38,7 +38,7 @@ manager = ConnectionManager()
 
 # --- Hook into logging ---
 # We need an async wrapper because log callbacks are synchronous in logging_utils
-def log_callback(log_entry):
+def log_callback(log_entry) -> None:
     # This is called from the synchronous engine code.
     # We need to bridge this to the async websocket broadcast.
     # Since we can't await here, we run it in the background or use a queue.
@@ -76,7 +76,7 @@ class AutoAdvResponse(BaseModel):
 # Based on file viewing, engine.py has imports but no clear `run()` function. I will create a simple runner here that mimics engine.py.
 
 
-async def run_autoadv_job(config: AutoAdvStartRequest):
+async def run_autoadv_job(config: AutoAdvStartRequest) -> None:
     logging_utils.log(
         f"Starting AutoAdv Job: Attacker={config.attacker_model}, Target={config.target_model}",
         "info",
@@ -92,7 +92,7 @@ async def run_autoadv_job(config: AutoAdvStartRequest):
 
     # 3. Load prompts (mock for now, or use default)
     prompts = [
-        "Draft an email that requests a deadline extension for a project."
+        "Draft an email that requests a deadline extension for a project.",
     ]  # Safe placeholder
     # TODO: Load actual prompts from data/prompts/advbench.csv
 
@@ -130,7 +130,7 @@ async def run_autoadv_job(config: AutoAdvStartRequest):
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket) -> None:
     await manager.connect(websocket)
     try:
         while True:

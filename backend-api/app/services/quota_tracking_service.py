@@ -120,8 +120,7 @@ PROVIDER_DEFAULT_LIMITS: dict[str, dict[str, dict[str, int]]] = {
 
 
 class ProviderQuotaConfig:
-    """
-    Configuration for quota tracking of a specific provider.
+    """Configuration for quota tracking of a specific provider.
 
     Allows per-provider customization of limits and alert thresholds.
     """
@@ -140,7 +139,7 @@ class ProviderQuotaConfig:
         daily_cost_limit: float | None = None,
         monthly_cost_limit: float | None = None,
         enabled: bool = True,
-    ):
+    ) -> None:
         self.provider_id = provider_id
         self.daily_request_limit = daily_request_limit or DEFAULT_DAILY_REQUEST_LIMIT
         self.daily_token_limit = daily_token_limit or DEFAULT_DAILY_TOKEN_LIMIT
@@ -188,15 +187,13 @@ class ProviderQuotaConfig:
 
 
 class QuotaUsageWindow:
-    """
-    Tracks usage within a specific time window (daily or monthly).
-    """
+    """Tracks usage within a specific time window (daily or monthly)."""
 
     def __init__(
         self,
         period: QuotaPeriod,
         period_start: datetime,
-    ):
+    ) -> None:
         self.period = period
         self.period_start = period_start
         self.period_end = self._calculate_period_end(period, period_start)
@@ -219,18 +216,21 @@ class QuotaUsageWindow:
         """Calculate when this period ends."""
         if period == QuotaPeriod.HOURLY:
             return start + timedelta(hours=1)
-        elif period == QuotaPeriod.DAILY:
+        if period == QuotaPeriod.DAILY:
             return start + timedelta(days=1)
-        elif period == QuotaPeriod.MONTHLY:
+        if period == QuotaPeriod.MONTHLY:
             # Move to first of next month
             if start.month == 12:
                 return start.replace(
-                    year=start.year + 1, month=1, day=1, hour=0, minute=0, second=0
+                    year=start.year + 1,
+                    month=1,
+                    day=1,
+                    hour=0,
+                    minute=0,
+                    second=0,
                 )
-            else:
-                return start.replace(month=start.month + 1, day=1, hour=0, minute=0, second=0)
-        else:
-            return start + timedelta(days=1)
+            return start.replace(month=start.month + 1, day=1, hour=0, minute=0, second=0)
+        return start + timedelta(days=1)
 
     def is_expired(self) -> bool:
         """Check if this window has expired."""
@@ -280,13 +280,12 @@ class QuotaUsageWindow:
 
 
 class ProviderQuotaState:
-    """
-    Maintains quota state for a single provider.
+    """Maintains quota state for a single provider.
 
     Tracks usage across daily and monthly windows with automatic period rotation.
     """
 
-    def __init__(self, provider_id: str, provider_name: str):
+    def __init__(self, provider_id: str, provider_name: str) -> None:
         self.provider_id = provider_id
         self.provider_name = provider_name
 
@@ -371,8 +370,7 @@ class ProviderQuotaState:
         config: ProviderQuotaConfig,
         period: QuotaPeriod = QuotaPeriod.DAILY,
     ) -> ProviderQuotaStatus:
-        """
-        Calculate current quota status.
+        """Calculate current quota status.
 
         Args:
             config: Provider quota configuration
@@ -380,6 +378,7 @@ class ProviderQuotaState:
 
         Returns:
             ProviderQuotaStatus with current usage and limits
+
         """
         if period == QuotaPeriod.DAILY:
             window = self._get_daily_window()
@@ -454,8 +453,7 @@ class ProviderQuotaState:
 
 
 class QuotaTrackingService:
-    """
-    Service for tracking API quota usage per provider with alerts.
+    """Service for tracking API quota usage per provider with alerts.
 
     Features:
     - Request and token usage tracking per provider
@@ -553,8 +551,7 @@ class QuotaTrackingService:
         cost_per_1k_output_tokens: float | None = None,
         enabled: bool = True,
     ) -> None:
-        """
-        Configure quota tracking for a provider.
+        """Configure quota tracking for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -568,6 +565,7 @@ class QuotaTrackingService:
             cost_per_1k_input_tokens: Cost per 1K input tokens (USD)
             cost_per_1k_output_tokens: Cost per 1K output tokens (USD)
             enabled: Whether tracking is enabled
+
         """
         display_name = provider_name or provider_id.title()
 
@@ -612,8 +610,7 @@ class QuotaTrackingService:
         provider_id: str,
         **kwargs: Any,
     ) -> bool:
-        """
-        Update limits for a provider.
+        """Update limits for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -621,6 +618,7 @@ class QuotaTrackingService:
 
         Returns:
             True if updated, False if provider not found
+
         """
         config = self._provider_configs.get(provider_id)
         if not config:
@@ -644,8 +642,7 @@ class QuotaTrackingService:
         output_tokens: int = 0,
         model: str | None = None,
     ) -> None:
-        """
-        Record API usage for a provider.
+        """Record API usage for a provider.
 
         This method should be called after each API request to track quota usage.
 
@@ -655,6 +652,7 @@ class QuotaTrackingService:
             input_tokens: Input tokens used
             output_tokens: Output tokens used
             model: Model name for per-model breakdown
+
         """
         async with self._lock:
             # Ensure provider is configured
@@ -783,7 +781,7 @@ class QuotaTrackingService:
                 try:
                     callback(provider_id, daily_status.usage_percent, alert.severity.value)
                 except Exception as e:
-                    logger.error(f"Error in threshold callback: {e}")
+                    logger.exception(f"Error in threshold callback: {e}")
 
     async def _emit_alert(self, alert: HealthAlert) -> None:
         """Emit an alert and notify callbacks."""
@@ -796,7 +794,7 @@ class QuotaTrackingService:
             try:
                 callback(alert)
             except Exception as e:
-                logger.error(f"Error in alert callback: {e}")
+                logger.exception(f"Error in alert callback: {e}")
 
         # Try to notify health service
         try:
@@ -817,8 +815,7 @@ class QuotaTrackingService:
         self._alert_callbacks.append(callback)
 
     def register_threshold_callback(self, callback: Callable[[str, float, str], None]) -> None:
-        """
-        Register a callback for threshold breaches.
+        """Register a callback for threshold breaches.
 
         Callback receives: (provider_id, usage_percent, severity)
         """
@@ -833,8 +830,7 @@ class QuotaTrackingService:
         provider_id: str,
         period: QuotaPeriod = QuotaPeriod.DAILY,
     ) -> ProviderQuotaStatus | None:
-        """
-        Get quota status for a specific provider.
+        """Get quota status for a specific provider.
 
         Args:
             provider_id: Provider identifier
@@ -842,6 +838,7 @@ class QuotaTrackingService:
 
         Returns:
             ProviderQuotaStatus or None if not found
+
         """
         state = self._provider_states.get(provider_id)
         config = self._provider_configs.get(provider_id)
@@ -855,14 +852,14 @@ class QuotaTrackingService:
         self,
         period: QuotaPeriod = QuotaPeriod.DAILY,
     ) -> dict[str, ProviderQuotaStatus]:
-        """
-        Get quota status for all providers.
+        """Get quota status for all providers.
 
         Args:
             period: Quota period (DAILY or MONTHLY)
 
         Returns:
             Dictionary of provider_id -> ProviderQuotaStatus
+
         """
         quotas = {}
 
@@ -877,14 +874,14 @@ class QuotaTrackingService:
         self,
         period: QuotaPeriod = QuotaPeriod.DAILY,
     ) -> QuotaDashboardResponse:
-        """
-        Get comprehensive quota dashboard data.
+        """Get comprehensive quota dashboard data.
 
         Args:
             period: Quota period for calculations
 
         Returns:
             QuotaDashboardResponse with all provider quotas
+
         """
         quotas = await self.get_all_provider_quotas(period)
 
@@ -916,8 +913,7 @@ class QuotaTrackingService:
         period: QuotaPeriod = QuotaPeriod.DAILY,
         limit: int = 30,
     ) -> list[dict[str, Any]]:
-        """
-        Get historical usage data for a provider.
+        """Get historical usage data for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -926,6 +922,7 @@ class QuotaTrackingService:
 
         Returns:
             List of historical usage entries
+
         """
         state = self._provider_states.get(provider_id)
         if not state:
@@ -939,8 +936,7 @@ class QuotaTrackingService:
         severity: AlertSeverity | None = None,
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        """
-        Get quota alerts.
+        """Get quota alerts.
 
         Args:
             provider_id: Filter by provider
@@ -949,6 +945,7 @@ class QuotaTrackingService:
 
         Returns:
             List of alert dictionaries
+
         """
         alerts = list(self._alerts)
 
@@ -963,11 +960,11 @@ class QuotaTrackingService:
         return [a.to_dict() for a in alerts[:limit]]
 
     async def get_usage_summary(self) -> dict[str, Any]:
-        """
-        Get a summary of usage across all providers.
+        """Get a summary of usage across all providers.
 
         Returns:
             Summary dictionary with aggregated usage data
+
         """
         total_requests = 0
         total_tokens = 0
@@ -1006,8 +1003,7 @@ class QuotaTrackingService:
     # =========================================================================
 
     async def sync_with_rate_limiter(self) -> None:
-        """
-        Sync usage data with the model rate limiter.
+        """Sync usage data with the model rate limiter.
 
         This pulls usage statistics from the rate limiter to keep quota tracking
         in sync with actual rate limit windows.
@@ -1035,8 +1031,7 @@ class QuotaTrackingService:
         provider_id: str,
         period: QuotaPeriod = QuotaPeriod.DAILY,
     ) -> dict[str, int | float]:
-        """
-        Get remaining quota for a provider.
+        """Get remaining quota for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -1044,6 +1039,7 @@ class QuotaTrackingService:
 
         Returns:
             Dictionary with remaining requests, tokens, and reset time
+
         """
         status = await self.get_provider_quota(provider_id, period)
         if not status:
@@ -1071,8 +1067,7 @@ class QuotaTrackingService:
         provider_id: str,
         estimated_tokens: int = 0,
     ) -> tuple[bool, str | None]:
-        """
-        Check if a request can be made without exceeding quota.
+        """Check if a request can be made without exceeding quota.
 
         Args:
             provider_id: Provider identifier
@@ -1080,6 +1075,7 @@ class QuotaTrackingService:
 
         Returns:
             Tuple of (can_make_request, error_message)
+
         """
         status = await self.get_provider_quota(provider_id, QuotaPeriod.DAILY)
         if not status:
@@ -1100,14 +1096,14 @@ class QuotaTrackingService:
     # =========================================================================
 
     async def reset_provider_usage(self, provider_id: str) -> bool:
-        """
-        Reset usage counters for a provider.
+        """Reset usage counters for a provider.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             True if reset, False if provider not found
+
         """
         async with self._lock:
             if provider_id in self._provider_states:

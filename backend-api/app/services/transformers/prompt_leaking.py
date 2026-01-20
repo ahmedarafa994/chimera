@@ -1,13 +1,10 @@
-"""
-Prompt Leaking Transformers.
-"""
+"""Prompt Leaking Transformers."""
 
 from app.services.transformers.base import BaseTransformer, TransformationContext
 
 
 class SystemPromptExtractionTransformer(BaseTransformer):
-    """
-    System Prompt Extraction.
+    """System Prompt Extraction.
     Techniques for extracting the system's instructions.
     """
 

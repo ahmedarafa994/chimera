@@ -1,7 +1,8 @@
-"""Endpoints for dataset import and access"""
+"""Endpoints for dataset import and access."""
 
 import logging
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -16,25 +17,23 @@ router = APIRouter()
 
 @router.get("/datasets", response_model=list[JailbreakDatasetRead])
 def list_datasets(limit: int = 100, offset: int = 0):
-    """List datasets"""
+    """List datasets."""
     with SyncSessionFactory() as db:
-        ds = crud_jailbreak.get_datasets(db, limit=limit, offset=offset)
-        return ds
+        return crud_jailbreak.get_datasets(db, limit=limit, offset=offset)
 
 
 @router.get("/datasets/{dataset_id}/prompts")
 def get_prompts(dataset_id: int, limit: int = 100, offset: int = 0):
-    """Get prompts for a dataset"""
+    """Get prompts for a dataset."""
     with SyncSessionFactory() as db:
-        prompts = crud_jailbreak.get_prompts(db, dataset_id=dataset_id, limit=limit, offset=offset)
-        return prompts
+        return crud_jailbreak.get_prompts(db, dataset_id=dataset_id, limit=limit, offset=offset)
 
 
 @router.post("/datasets/import")
 def import_dataset(
-    filename: str = Query(..., description="Relative filename under imported_data"),
-    dataset_name: str | None = Query(None),
-    max_lines: int | None = Query(None),
+    filename: Annotated[str, Query(description="Relative filename under imported_data")] = ...,
+    dataset_name: Annotated[str | None, Query()] = None,
+    max_lines: Annotated[int | None, Query()] = None,
 ):
     """Import a dataset file (csv or jsonl) from the repository `imported_data/` path."""
     base_path = Path(__file__).resolve().parents[3] / "imported_data"

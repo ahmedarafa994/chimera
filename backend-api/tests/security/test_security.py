@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""
-Security Test Suite
-Comprehensive security tests for Project Chimera
+"""Security Test Suite
+Comprehensive security tests for Project Chimera.
 """
 
 import re
@@ -15,10 +14,10 @@ pytestmark = pytest.mark.security
 
 
 class TestTimingSafeComparison:
-    """Test timing-safe API key comparison to prevent timing attacks"""
+    """Test timing-safe API key comparison to prevent timing attacks."""
 
-    def test_timing_attack_resistance(self):
-        """Verify constant-time comparison for API keys"""
+    def test_timing_attack_resistance(self) -> None:
+        """Verify constant-time comparison for API keys."""
         from app.core.auth import AuthService
 
         auth = AuthService()
@@ -56,10 +55,10 @@ class TestTimingSafeComparison:
 
 
 class TestInputValidation:
-    """Test input validation and sanitization"""
+    """Test input validation and sanitization."""
 
-    def test_prompt_length_validation(self):
-        """Test that overly long prompts are rejected or truncated"""
+    def test_prompt_length_validation(self) -> None:
+        """Test that overly long prompts are rejected or truncated."""
         from app.core.validation import Sanitizer
 
         # Test max length enforcement
@@ -67,8 +66,8 @@ class TestInputValidation:
         sanitized = Sanitizer.sanitize_prompt(long_input, max_length=50000)
         assert len(sanitized) <= 50000
 
-    def test_null_byte_removal(self):
-        """Test that null bytes are removed from input"""
+    def test_null_byte_removal(self) -> None:
+        """Test that null bytes are removed from input."""
         from app.core.validation import Sanitizer
 
         malicious = "hello\x00world\x00test"
@@ -76,9 +75,8 @@ class TestInputValidation:
         assert "\x00" not in sanitized
         assert sanitized == "helloworldtest"
 
-    def test_script_tag_removal(self):
-        """Test XSS prevention via script tag removal"""
-
+    def test_script_tag_removal(self) -> None:
+        """Test XSS prevention via script tag removal."""
         xss_payloads = [
             "<script>alert('xss')</script>",
             "<SCRIPT>alert('xss')</SCRIPT>",
@@ -90,8 +88,8 @@ class TestInputValidation:
             # assert "<script" not in sanitized.lower()
             continue
 
-    def test_html_escaping(self):
-        """Test HTML entity escaping"""
+    def test_html_escaping(self) -> None:
+        """Test HTML entity escaping."""
         from app.core.validation import Sanitizer
 
         complex = "<div onclick='alert(1)'>test</div>"
@@ -102,9 +100,8 @@ class TestInputValidation:
         assert "&lt;" in escaped
         assert "&gt;" in escaped
 
-    def test_sql_injection_detection(self):
-        """Test SQL injection pattern detection"""
-
+    def test_sql_injection_detection(self) -> None:
+        """Test SQL injection pattern detection."""
         sql_payloads = [
             "'; DROP TABLE users; --",
             "1 OR 1=1",
@@ -118,7 +115,7 @@ class TestInputValidation:
             continue
 
     @pytest.mark.parametrize(
-        "malicious_input,should_pass",
+        ("malicious_input", "should_pass"),
         [
             ("<script>alert('xss')</script>", False),
             ("normal prompt text", True),
@@ -127,8 +124,8 @@ class TestInputValidation:
             ("'; DROP TABLE users;--", True),  # Should sanitize, not reject
         ],
     )
-    def test_prompt_input_validation(self, malicious_input: str, should_pass: bool):
-        """Test Pydantic model validation"""
+    def test_prompt_input_validation(self, malicious_input: str, should_pass: bool) -> None:
+        """Test Pydantic model validation."""
         from pydantic import ValidationError
 
         from app.core.validation import PromptInput
@@ -145,10 +142,10 @@ class TestInputValidation:
 
 
 class TestAuthenticationSecurity:
-    """Test authentication mechanisms"""
+    """Test authentication mechanisms."""
 
-    def test_jwt_token_expiration(self):
-        """Test that JWT tokens expire correctly"""
+    def test_jwt_token_expiration(self) -> None:
+        """Test that JWT tokens expire correctly."""
         import time
         from datetime import timedelta
 
@@ -174,8 +171,8 @@ class TestAuthenticationSecurity:
                 auth.decode_token(token)
             assert exc_info.value.status_code == 401
 
-    def test_jwt_token_tampering(self):
-        """Test that tampered tokens are rejected"""
+    def test_jwt_token_tampering(self) -> None:
+        """Test that tampered tokens are rejected."""
         from fastapi import HTTPException
 
         from app.core.auth import AuthService, Role
@@ -193,14 +190,14 @@ class TestAuthenticationSecurity:
                 auth.decode_token(tampered)
             assert exc_info.value.status_code == 401
 
-    def test_api_key_not_in_response(self):
-        """Test that API keys are not leaked in responses"""
+    def test_api_key_not_in_response(self) -> None:
+        """Test that API keys are not leaked in responses."""
         # This would be an integration test with the actual API
         # For unit test, we verify the pattern
         return
 
-    def test_password_hashing(self):
-        """Test that passwords are properly hashed"""
+    def test_password_hashing(self) -> None:
+        """Test that passwords are properly hashed."""
         from app.core.auth import AuthService
 
         auth = AuthService()
@@ -219,10 +216,10 @@ class TestAuthenticationSecurity:
 
 
 class TestRBACAuthorization:
-    """Test Role-Based Access Control"""
+    """Test Role-Based Access Control."""
 
-    def test_role_permissions_mapping(self):
-        """Test that role permissions are correctly defined"""
+    def test_role_permissions_mapping(self) -> None:
+        """Test that role permissions are correctly defined."""
         from app.core.auth import ROLE_PERMISSIONS, Permission, Role
 
         # Admin should have all permissions
@@ -238,8 +235,8 @@ class TestRBACAuthorization:
         execute_perms = [p for p in api_client_perms if "execute" in p.value]
         assert len(execute_perms) > 0
 
-    def test_permission_check_enforcement(self):
-        """Test that permission checks are enforced"""
+    def test_permission_check_enforcement(self) -> None:
+        """Test that permission checks are enforced."""
         from app.core.auth import AuthService, Role
 
         auth = AuthService()
@@ -257,34 +254,33 @@ class TestRBACAuthorization:
 
 
 class TestCORSSecurity:
-    """Test CORS configuration security"""
+    """Test CORS configuration security."""
 
-    def test_cors_origins_not_wildcard(self):
-        """Test that CORS does not use wildcard origins"""
+    def test_cors_origins_not_wildcard(self) -> None:
+        """Test that CORS does not use wildcard origins."""
         import os
 
         # Check the environment variable or default
         allowed_origins = os.getenv(
-            "ALLOWED_ORIGINS", "http://localhost:3001,http://localhost:8080"
+            "ALLOWED_ORIGINS",
+            "http://localhost:3001,http://localhost:8080",
         )
 
         # Should not be a wildcard
         assert allowed_origins != "*"
         assert "*" not in allowed_origins.split(",")
 
-    def test_cors_explicit_methods(self):
-        """Test that CORS uses explicit HTTP methods"""
+    def test_cors_explicit_methods(self) -> None:
+        """Test that CORS uses explicit HTTP methods."""
         # This is a static code analysis test
         # Verify the code doesn't use allow_methods=["*"]
-        pass
 
 
 class TestSecurityHeaders:
-    """Test security headers implementation"""
+    """Test security headers implementation."""
 
-    def test_security_headers_defined(self):
-        """Test that required security headers are implemented"""
-
+    def test_security_headers_defined(self) -> None:
+        """Test that required security headers are implemented."""
         # This would be tested via integration test
         # For unit test, we verify the configuration exists
         from app.core.observability import ObservabilityMiddleware
@@ -293,10 +289,10 @@ class TestSecurityHeaders:
 
 
 class TestSecretsManagement:
-    """Test secrets management security"""
+    """Test secrets management security."""
 
-    def test_secrets_not_hardcoded(self):
-        """Test that secrets are not hardcoded in the codebase"""
+    def test_secrets_not_hardcoded(self) -> None:
+        """Test that secrets are not hardcoded in the codebase."""
         import glob
 
         # Patterns that indicate hardcoded secrets
@@ -332,8 +328,8 @@ class TestSecretsManagement:
             except FileNotFoundError:
                 continue
 
-    def test_env_files_not_committed(self):
-        """Test that .env files are in .gitignore"""
+    def test_env_files_not_committed(self) -> None:
+        """Test that .env files are in .gitignore."""
         # Try multiple possible locations for .gitignore
         import pathlib
 
@@ -358,10 +354,10 @@ class TestSecretsManagement:
 
 
 class TestRateLimiting:
-    """Test rate limiting implementation"""
+    """Test rate limiting implementation."""
 
-    def test_rate_limit_configuration(self):
-        """Test that rate limiting is configured"""
+    def test_rate_limit_configuration(self) -> None:
+        """Test that rate limiting is configured."""
         import os
 
         # Check if rate limit is configured
@@ -371,10 +367,10 @@ class TestRateLimiting:
 
 
 class TestAuditLogging:
-    """Test audit logging for security events"""
+    """Test audit logging for security events."""
 
-    def test_audit_logger_exists(self):
-        """Test that audit logging is implemented"""
+    def test_audit_logger_exists(self) -> None:
+        """Test that audit logging is implemented."""
         from app.core.auth import AuditLogger
 
         audit = AuditLogger()
@@ -382,8 +378,8 @@ class TestAuditLogging:
         assert hasattr(audit, "log_authorization")
         assert hasattr(audit, "log_api_access")
 
-    def test_authentication_events_logged(self):
-        """Test that authentication events are logged"""
+    def test_authentication_events_logged(self) -> None:
+        """Test that authentication events are logged."""
         from app.core.auth import AuditLogger
 
         audit = AuditLogger()

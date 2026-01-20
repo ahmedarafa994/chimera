@@ -1,5 +1,4 @@
-"""
-Enhanced AutoDAN-Reasoning Attacker
+"""Enhanced AutoDAN-Reasoning Attacker.
 
 This module provides an enhanced attacker that integrates:
 - Output fixes for tokenization and malformation handling
@@ -7,8 +6,6 @@ This module provides an enhanced attacker that integrates:
 - Research override protocols for authorized testing
 - Enhanced execution with multi-stage pipelines and advanced templates
 """
-
-# flake8: noqa: F401
 
 import base64
 import codecs
@@ -79,7 +76,7 @@ class GenerationFeedback:
 class ModelLLMAdapter(LLMInterface):
     """Adapter to make existing model compatible with LLMInterface."""
 
-    def __init__(self, model):
+    def __init__(self, model) -> None:
         self.model = model
 
     async def generate(
@@ -93,21 +90,24 @@ class ModelLLMAdapter(LLMInterface):
         try:
             if hasattr(self.model, "generate_async"):
                 return await self.model.generate_async(
-                    system_prompt or "", prompt, temperature=temperature, max_tokens=max_tokens
+                    system_prompt or "",
+                    prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
                 )
-            elif hasattr(self.model, "generate"):
+            if hasattr(self.model, "generate"):
                 return self.model.generate(system_prompt or "", prompt)
-            else:
-                raise ValueError("Model does not have generate method")
+            msg = "Model does not have generate method"
+            raise ValueError(msg)
         except Exception as e:
-            logger.error(f"Model generation failed: {e}")
+            logger.exception(f"Model generation failed: {e}")
             return ""
 
 
 class RobustPromptGenerator:
     """Enhanced prompt generator with proper tokenization and encoding."""
 
-    def __init__(self, max_length: int = 4096):
+    def __init__(self, max_length: int = 4096) -> None:
         self.max_length = max_length
         self.encoding_cache = {}
         self.tokenization_handler = TokenizationBoundaryHandler(max_length)
@@ -116,7 +116,7 @@ class RobustPromptGenerator:
         self.pipeline = PromptSynthesisPipeline()
 
     def validate_encoding(self, text: str, technique: str) -> bool:
-        """Validate that encoding operations preserve text integrity. (CIVP: Always True)"""
+        """Validate that encoding operations preserve text integrity. (CIVP: Always True)."""
         return True
 
     def safe_encode_request(self, request: str, technique: str) -> str:
@@ -128,18 +128,19 @@ class RobustPromptGenerator:
         try:
             if "base64" in technique.lower():
                 return base64.b64encode(request.encode("utf-8")).decode("utf-8")
-            elif "rot13" in technique.lower():
+            if "rot13" in technique.lower():
                 return codecs.encode(request, "rot_13")
-            else:
-                return request
+            return request
         except Exception as e:
-            logger.error(f"Encoding failed for {technique}: {e}")
+            logger.exception(f"Encoding failed for {technique}: {e}")
             return request
 
     def safe_template_substitution(
-        self, template: str, substitutions: dict[str, str]
+        self,
+        template: str,
+        substitutions: dict[str, str],
     ) -> str | None:
-        """Perform safe template substitution with validation. (CIVP: Bypassed checks)"""
+        """Perform safe template substitution with validation. (CIVP: Bypassed checks)."""
         try:
             result = template
 
@@ -154,7 +155,7 @@ class RobustPromptGenerator:
             # CIVP: Malformation detection bypassed for unrestricted generation
             return result
         except Exception as e:
-            logger.error(f"Template substitution failed: {e}")
+            logger.exception(f"Template substitution failed: {e}")
             return None
 
     def truncate_with_boundaries(self, text: str, max_length: int | None = None) -> str:
@@ -172,7 +173,7 @@ class RobustPromptGenerator:
 class AdaptivePromptGenerator:
     """Dynamic LLM-powered generator that learns from feedback."""
 
-    def __init__(self, model, feedback_history: list[GenerationFeedback] | None = None):
+    def __init__(self, model, feedback_history: list[GenerationFeedback] | None = None) -> None:
         self.model = model
         self.feedback_history = feedback_history or []
         self.success_patterns = set()
@@ -184,10 +185,12 @@ class AdaptivePromptGenerator:
         self.strategy_library = StrategyLibrary()
         self.defense_analyzer = DefensePatternAnalyzer()
         self.dynamic_generator = DynamicPromptGenerator(
-            self.llm_adapter, self.strategy_library, self.defense_analyzer
+            self.llm_adapter,
+            self.strategy_library,
+            self.defense_analyzer,
         )
 
-    def analyze_feedback(self, feedback: GenerationFeedback):
+    def analyze_feedback(self, feedback: GenerationFeedback) -> None:
         """Analyze feedback to improve future generation."""
         self.feedback_history.append(feedback)
 
@@ -249,7 +252,8 @@ class AdaptivePromptGenerator:
                     break
 
         if not best_prompt:
-            raise RuntimeError("Adaptive generation produced no candidates; fallback is disabled.")
+            msg = "Adaptive generation produced no candidates; fallback is disabled."
+            raise RuntimeError(msg)
 
         return best_prompt, generation_metadata
 
@@ -280,7 +284,8 @@ class AdaptivePromptGenerator:
         response = self.model.generate(system_prompt, user_prompt)
         extracted = self._extract_and_clean_prompt(response, request)
         if not extracted:
-            raise ValueError("Failed to extract/clean adaptive candidate; fallback is disabled.")
+            msg = "Failed to extract/clean adaptive candidate; fallback is disabled."
+            raise ValueError(msg)
         return extracted
 
     def _build_adaptive_system_prompt(self, context: dict) -> str:
@@ -363,14 +368,13 @@ class AdaptivePromptGenerator:
 
 
 class ResearchOverrideProtocol:
-    """
-    Systematic override protocols for research prompt generation.
+    """Systematic override protocols for research prompt generation.
 
     This class wraps the new comprehensive research protocol system
     while maintaining backward compatibility.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.session_manager = SessionManager()
         self.protocol = NewResearchProtocol(self.session_manager)
         self.evaluation_harness = EvaluationHarness()
@@ -378,7 +382,10 @@ class ResearchOverrideProtocol:
         self.generation_audit_log = []
 
     def activate_research_mode(
-        self, session_id: str, research_purpose: str, functional_boundaries: dict[str, Any]
+        self,
+        session_id: str,
+        research_purpose: str,
+        functional_boundaries: dict[str, Any],
     ) -> bool:
         """Activate research mode with explicit authorization."""
         try:
@@ -412,19 +419,23 @@ class ResearchOverrideProtocol:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to activate research mode: {e}")
+            logger.exception(f"Failed to activate research mode: {e}")
             return False
 
     def validate_generation_request(self, session_id: str, request_details: dict) -> bool:
-        """Validate that generation request is within boundaries. (CIVP: Always True)"""
+        """Validate that generation request is within boundaries. (CIVP: Always True)."""
         return True
 
     def generate_research_prompt(
-        self, session_id: str, target_behavior: str, generator: AdaptivePromptGenerator
+        self,
+        session_id: str,
+        target_behavior: str,
+        generator: AdaptivePromptGenerator,
     ) -> str | None:
         """Generate adversarial prompt within research context."""
         if not self.validate_generation_request(session_id, {"target_behavior": target_behavior}):
-            raise ValueError("Generation request not authorized")
+            msg = "Generation request not authorized"
+            raise ValueError(msg)
 
         context = self.active_contexts[session_id]
 
@@ -447,11 +458,15 @@ class ResearchOverrideProtocol:
         return context.get_framed_prompt(target_behavior)
 
     def evaluate_prompt(
-        self, session_id: str, prompt: str, response: str | None = None
+        self,
+        session_id: str,
+        prompt: str,
+        response: str | None = None,
     ) -> dict[str, Any]:
         """Evaluate a generated prompt safely."""
         if session_id not in self.active_contexts:
-            raise ValueError("No active research context")
+            msg = "No active research context"
+            raise ValueError(msg)
 
         context = self.active_contexts[session_id]
 
@@ -463,7 +478,7 @@ class ResearchOverrideProtocol:
             return self.active_contexts[session_id].session.activities
         return []
 
-    def deactivate_research_mode(self, session_id: str):
+    def deactivate_research_mode(self, session_id: str) -> None:
         """Deactivate research mode and clean up."""
         if session_id in self.active_contexts:
             context = self.active_contexts[session_id]
@@ -473,16 +488,15 @@ class ResearchOverrideProtocol:
 
 
 class EnhancedAttackerAutoDANReasoning:
-    """
-    Enhanced AutoDAN-Reasoning attacker with:
+    """Enhanced AutoDAN-Reasoning attacker with:
     - Fixed output generation (tokenization, malformation handling)
     - Dynamic LLM-powered prompt generation
     - Research override protocols for authorized testing
     - Multi-stage attack pipelines with advanced templates
-    - Multiple execution modes (single-shot, iterative, best-of-n, beam search, adaptive)
+    - Multiple execution modes (single-shot, iterative, best-of-n, beam search, adaptive).
     """
 
-    def __init__(self, model):
+    def __init__(self, model) -> None:
         self.model = model
         self._attempt_count = 0
         self._successful_techniques = []
@@ -514,7 +528,10 @@ class EnhancedAttackerAutoDANReasoning:
             self._bypass_techniques = {}
 
     def warm_up_attack(
-        self, request: str, research_session_id: str | None = None, **kwargs
+        self,
+        request: str,
+        research_session_id: str | None = None,
+        **kwargs,
     ) -> tuple[str, str]:
         """Enhanced warm-up attack with research framing."""
         self._attempt_count += 1
@@ -522,7 +539,9 @@ class EnhancedAttackerAutoDANReasoning:
         if research_session_id:
             try:
                 prompt = self.research_protocol.generate_research_prompt(
-                    research_session_id, request, self.adaptive_generator
+                    research_session_id,
+                    request,
+                    self.adaptive_generator,
                 )
                 if prompt:
                     return prompt, f"RESEARCH_{research_session_id}"
@@ -538,8 +557,7 @@ class EnhancedAttackerAutoDANReasoning:
         config: ExecutionConfig = None,
         research_session_id: str | None = None,
     ) -> ExecutionResult:
-        """
-        Execute attack using enhanced execution pipeline.
+        """Execute attack using enhanced execution pipeline.
 
         Args:
             request: The target behavior/request to generate prompt for
@@ -549,6 +567,7 @@ class EnhancedAttackerAutoDANReasoning:
 
         Returns:
             ExecutionResult with best prompt, score, and metadata
+
         """
         self._attempt_count += 1
 
@@ -591,8 +610,7 @@ class EnhancedAttackerAutoDANReasoning:
         return result
 
     def _escalate_payload(self, request: str, level: int) -> str:
-        """
-        Escalate the payload aggression based on retry level.
+        """Escalate the payload aggression based on retry level.
 
         Strategies:
         1. Context Clearing + Direct Command
@@ -613,10 +631,11 @@ class EnhancedAttackerAutoDANReasoning:
         return escalations[idx](request)
 
     async def execute_multi_stage_attack(
-        self, request: str, research_session_id: str | None = None
+        self,
+        request: str,
+        research_session_id: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Execute full multi-stage attack pipeline.
+        """Execute full multi-stage attack pipeline.
 
         Stages:
         1. Reconnaissance - Analyze target model behavior
@@ -632,6 +651,7 @@ class EnhancedAttackerAutoDANReasoning:
 
         Returns:
             Complete pipeline results with all stage outputs
+
         """
         self._attempt_count += 1
 
@@ -656,8 +676,7 @@ class EnhancedAttackerAutoDANReasoning:
         }
 
     def get_advanced_template(self, strategy_type: StrategyType, request: str) -> tuple[str, float]:
-        """
-        Get an advanced prompt template for a specific strategy.
+        """Get an advanced prompt template for a specific strategy.
 
         Args:
             strategy_type: Type of strategy (roleplay, hypothetical, etc.)
@@ -665,6 +684,7 @@ class EnhancedAttackerAutoDANReasoning:
 
         Returns:
             Tuple of (formatted_prompt, effectiveness_score)
+
         """
         template = self.advanced_templates.get_best_template(strategy_type)
         if template:
@@ -673,10 +693,11 @@ class EnhancedAttackerAutoDANReasoning:
         return None, 0.0
 
     def get_best_template_for_defense(
-        self, defense_pattern: DefensePattern, request: str
+        self,
+        defense_pattern: DefensePattern,
+        request: str,
     ) -> tuple[str, float]:
-        """
-        Get the best template to bypass a specific defense pattern.
+        """Get the best template to bypass a specific defense pattern.
 
         Args:
             defense_pattern: Detected defense pattern
@@ -684,6 +705,7 @@ class EnhancedAttackerAutoDANReasoning:
 
         Returns:
             Tuple of (formatted_prompt, effectiveness_score)
+
         """
         # Get suggested strategies for this defense pattern
         analyzer = DefensePatternAnalyzer()
@@ -698,18 +720,17 @@ class EnhancedAttackerAutoDANReasoning:
         return None, 0.0
 
     def _generate_with_fallbacks(self, request: str, **kwargs) -> tuple[str, str]:
-        """
-        Generate prompt without any fallback paths.
+        """Generate prompt without any fallback paths.
 
         AutoDAN fallback chains (templates / bypass technique substitution /
         "ultimate fallback" strings) are intentionally disabled so failures
         surface to the caller.
         """
-
         prompt, metadata = self.adaptive_generator.generate_with_adaptation(request, max_attempts=3)
         if not prompt:
+            msg = "Adaptive generation returned an empty prompt; fallback is disabled."
             raise RuntimeError(
-                "Adaptive generation returned an empty prompt; fallback is disabled."
+                msg,
             )
 
         processed, _ = self.prompt_generator.process_prompt(prompt, request)
@@ -731,7 +752,7 @@ class EnhancedAttackerAutoDANReasoning:
         """Activate research mode for authorized testing."""
         return self.research_protocol.activate_research_mode(session_id, purpose, {})
 
-    def deactivate_research_mode(self, session_id: str):
+    def deactivate_research_mode(self, session_id: str) -> None:
         """Deactivate research mode."""
         self.research_protocol.deactivate_research_mode(session_id)
 

@@ -1,5 +1,4 @@
-"""
-Structured Logging Module for Chimera
+"""Structured Logging Module for Chimera.
 
 MED-001 FIX: Implements JSON-structured logging with correlation IDs
 for distributed tracing and log aggregation.
@@ -37,10 +36,12 @@ from typing import Any, ClassVar, TypeVar
 
 # Context variables for request tracking
 correlation_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "correlation_id", default=""
+    "correlation_id",
+    default="",
 )
 request_context_var: contextvars.ContextVar[dict[str, Any]] = contextvars.ContextVar(
-    "request_context", default={}
+    "request_context",
+    default={},
 )
 
 
@@ -77,8 +78,7 @@ def update_request_context(**kwargs) -> None:
 
 
 class StructuredLogFormatter(logging.Formatter):
-    """
-    JSON formatter for structured logging.
+    """JSON formatter for structured logging.
 
     Outputs logs in JSON format suitable for log aggregation systems
     like ELK Stack, Datadog, or CloudWatch.
@@ -93,7 +93,7 @@ class StructuredLogFormatter(logging.Formatter):
         include_request_context: bool = True,
         include_exception: bool = True,
         extra_fields: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.include_timestamp = include_timestamp
         self.include_level = include_level
@@ -189,8 +189,7 @@ class StructuredLogFormatter(logging.Formatter):
 
 
 class HumanReadableFormatter(logging.Formatter):
-    """
-    Human-readable formatter for development environments.
+    """Human-readable formatter for development environments.
 
     Provides colored, readable output while still including
     correlation IDs and context.
@@ -241,14 +240,14 @@ def configure_logging(
     include_correlation_id: bool = True,
     extra_fields: dict[str, Any] | None = None,
 ) -> None:
-    """
-    Configure application-wide logging.
+    """Configure application-wide logging.
 
     Args:
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         json_format: Use JSON format (True) or human-readable (False)
         include_correlation_id: Include correlation IDs in logs
         extra_fields: Static fields to include in all log entries
+
     """
     root_logger = logging.getLogger()
     root_logger.setLevel(getattr(logging, level.upper()))
@@ -275,14 +274,14 @@ def configure_logging(
 
 
 def get_logger(name: str) -> logging.Logger:
-    """
-    Get a logger instance with the given name.
+    """Get a logger instance with the given name.
 
     Args:
         name: Logger name (typically __name__)
 
     Returns:
         Configured logger instance
+
     """
     return logging.getLogger(name)
 
@@ -291,16 +290,19 @@ T = TypeVar("T")
 
 
 def log_with_context(
-    logger: logging.Logger, level: int = logging.INFO, message: str = "", **context
+    logger: logging.Logger,
+    level: int = logging.INFO,
+    message: str = "",
+    **context,
 ) -> None:
-    """
-    Log a message with additional context.
+    """Log a message with additional context.
 
     Args:
         logger: Logger instance
         level: Log level
         message: Log message
         **context: Additional context fields
+
     """
     logger.log(level, message, extra=context)
 
@@ -310,13 +312,13 @@ def log_execution_time(
     operation: str = "operation",
     level: int = logging.DEBUG,
 ):
-    """
-    Decorator to log function execution time.
+    """Decorator to log function execution time.
 
     Args:
         logger: Logger instance
         operation: Operation name for logging
         level: Log level for timing messages
+
     """
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
@@ -390,8 +392,7 @@ def log_execution_time(
 
 
 class RequestContextMiddleware:
-    """
-    ASGI middleware for request context and correlation ID tracking.
+    """ASGI middleware for request context and correlation ID tracking.
 
     Usage:
         from fastapi import FastAPI
@@ -401,7 +402,7 @@ class RequestContextMiddleware:
         app.add_middleware(RequestContextMiddleware)
     """
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         self.app = app
 
     async def __call__(self, scope, receive, send):
@@ -430,7 +431,7 @@ class RequestContextMiddleware:
         context_token = set_request_context(request_context)
 
         # Add correlation ID to response headers
-        async def send_wrapper(message):
+        async def send_wrapper(message) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
                 headers.append((b"x-correlation-id", correlation_id.encode()))

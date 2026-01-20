@@ -1,5 +1,4 @@
-"""
-Aegis Campaign Telemetry WebSocket Endpoint
+"""Aegis Campaign Telemetry WebSocket Endpoint.
 
 WebSocket endpoint for streaming real-time telemetry events from Aegis
 campaigns. Provides heartbeat support, authentication, and graceful
@@ -34,8 +33,7 @@ CONNECTION_TIMEOUT_SECONDS = 90  # Disconnect if no response in 90 seconds
 
 
 class AegisTelemetryConnection:
-    """
-    Manages a single WebSocket connection for Aegis telemetry.
+    """Manages a single WebSocket connection for Aegis telemetry.
 
     Handles:
     - Connection lifecycle (accept, close, cleanup)
@@ -49,7 +47,7 @@ class AegisTelemetryConnection:
         websocket: WebSocket,
         campaign_id: str,
         client_id: str | None = None,
-    ):
+    ) -> None:
         self.websocket = websocket
         self.campaign_id = campaign_id
         self.client_id = client_id or str(uuid.uuid4())
@@ -73,15 +71,15 @@ class AegisTelemetryConnection:
 
             logger.info(
                 f"Aegis telemetry connection accepted: "
-                f"client={self.client_id}, campaign={self.campaign_id}"
+                f"client={self.client_id}, campaign={self.campaign_id}",
             )
             return True
 
         except Exception as e:
-            logger.error(f"Failed to accept Aegis telemetry connection: {e}")
+            logger.exception(f"Failed to accept Aegis telemetry connection: {e}")
             return False
 
-    async def close(self, code: int = 1000, reason: str = "Connection closed"):
+    async def close(self, code: int = 1000, reason: str = "Connection closed") -> None:
         """Close the WebSocket connection gracefully."""
         self.is_active = False
 
@@ -105,14 +103,14 @@ class AegisTelemetryConnection:
 
         logger.info(
             f"Aegis telemetry connection closed: "
-            f"client={self.client_id}, campaign={self.campaign_id}"
+            f"client={self.client_id}, campaign={self.campaign_id}",
         )
 
-    async def start_heartbeat(self):
+    async def start_heartbeat(self) -> None:
         """Start the heartbeat background task."""
         self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
 
-    async def _heartbeat_loop(self):
+    async def _heartbeat_loop(self) -> None:
         """Send periodic heartbeats and check for stale connections."""
         while self.is_active:
             try:
@@ -129,7 +127,7 @@ class AegisTelemetryConnection:
                 if time_since_response > CONNECTION_TIMEOUT_SECONDS:
                     logger.warning(
                         f"Aegis telemetry connection timeout: "
-                        f"client={self.client_id}, campaign={self.campaign_id}"
+                        f"client={self.client_id}, campaign={self.campaign_id}",
                     )
                     await self.close(code=1001, reason="Heartbeat timeout")
                     break
@@ -140,10 +138,10 @@ class AegisTelemetryConnection:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in heartbeat loop: {e}")
+                logger.exception(f"Error in heartbeat loop: {e}")
                 break
 
-    async def _send_heartbeat(self):
+    async def _send_heartbeat(self) -> None:
         """Send a heartbeat event to the client."""
         try:
             state = aegis_telemetry_broadcaster.get_campaign_state(self.campaign_id)
@@ -169,10 +167,10 @@ class AegisTelemetryConnection:
             logger.debug(f"Sent heartbeat to client {self.client_id}")
 
         except Exception as e:
-            logger.error(f"Error sending heartbeat: {e}")
+            logger.exception(f"Error sending heartbeat: {e}")
             raise
 
-    async def handle_message(self, message: dict[str, Any]):
+    async def handle_message(self, message: dict[str, Any]) -> None:
         """Handle incoming client message."""
         message_type = message.get("type", "").lower()
 
@@ -188,7 +186,7 @@ class AegisTelemetryConnection:
                     "type": "pong",
                     "timestamp": datetime.utcnow().isoformat(),
                     "campaign_id": self.campaign_id,
-                }
+                },
             )
 
         elif message_type == "get_summary":
@@ -206,7 +204,7 @@ class AegisTelemetryConnection:
         else:
             logger.warning(f"Unknown message type from client: {message_type}")
 
-    async def _send_campaign_summary(self):
+    async def _send_campaign_summary(self) -> None:
         """Send current campaign summary to client."""
         try:
             state = aegis_telemetry_broadcaster.get_campaign_state(self.campaign_id)
@@ -218,7 +216,7 @@ class AegisTelemetryConnection:
                         "type": "campaign_summary",
                         "data": summary.model_dump(mode="json"),
                         "timestamp": datetime.utcnow().isoformat(),
-                    }
+                    },
                 )
             else:
                 await self.websocket.send_json(
@@ -227,11 +225,11 @@ class AegisTelemetryConnection:
                         "data": None,
                         "error": "Campaign not found or not started",
                         "timestamp": datetime.utcnow().isoformat(),
-                    }
+                    },
                 )
 
         except Exception as e:
-            logger.error(f"Error sending campaign summary: {e}")
+            logger.exception(f"Error sending campaign summary: {e}")
 
 
 @router.websocket("/ws/aegis/telemetry/{campaign_id}")
@@ -247,9 +245,8 @@ async def aegis_telemetry_websocket(
         alias="api_key",
         description="API key for authentication (alternative to header)",
     ),
-):
-    """
-    WebSocket endpoint for streaming Aegis campaign telemetry.
+) -> None:
+    """WebSocket endpoint for streaming Aegis campaign telemetry.
 
     Streams real-time telemetry events from an active Aegis campaign including:
     - Campaign lifecycle events (started, paused, resumed, completed, failed)
@@ -337,13 +334,13 @@ async def aegis_telemetry_websocket(
                         "type": "error",
                         "error_code": "INVALID_JSON",
                         "error_message": "Invalid JSON message",
-                    }
+                    },
                 )
 
     except WebSocketDisconnect:
         logger.info(
             f"Aegis telemetry client disconnected: "
-            f"client={connection.client_id}, campaign={campaign_id}"
+            f"client={connection.client_id}, campaign={campaign_id}",
         )
     except asyncio.CancelledError:
         logger.debug(f"Connection cancelled for client {connection.client_id}")
@@ -361,13 +358,13 @@ async def aegis_telemetry_websocket(
 
 @router.get("/ws/aegis/telemetry/{campaign_id}/info")
 async def get_campaign_telemetry_info(campaign_id: str):
-    """
-    Get information about telemetry connections for a campaign.
+    """Get information about telemetry connections for a campaign.
 
     Returns:
     - Number of connected clients
     - Campaign status
     - Last event sequence number
+
     """
     state = aegis_telemetry_broadcaster.get_campaign_state(campaign_id)
 
@@ -394,8 +391,7 @@ async def get_campaign_telemetry_info(campaign_id: str):
 
 @router.get("/ws/aegis/stats")
 async def get_aegis_telemetry_stats():
-    """
-    Get overall statistics for Aegis telemetry broadcasting.
+    """Get overall statistics for Aegis telemetry broadcasting.
 
     Returns broadcaster statistics including:
     - Total campaigns

@@ -556,8 +556,14 @@ class ModelSelectionStoreClass {
       return;
     }
 
+    if (!this.state.sessionId) {
+      console.warn("ModelSelectionStore: Cannot connect WebSocket without session ID");
+      this.scheduleReconnect();
+      return;
+    }
+
     try {
-      this.ws = new WebSocket(`${wsApiBaseUrl}/providers/ws/selection`);
+      this.ws = new WebSocket(`${wsApiBaseUrl}/providers/selection/subscribe/${this.state.sessionId}`);
 
       this.ws.onopen = () => {
         console.log("ModelSelectionStore: WebSocket connected");

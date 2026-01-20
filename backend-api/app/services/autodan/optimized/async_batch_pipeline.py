@@ -1,5 +1,4 @@
-"""
-Async Batch Pipeline for AutoDAN Turbo.
+"""Async Batch Pipeline for AutoDAN Turbo.
 
 Implements parallel candidate processing with:
 - Asynchronous batch execution
@@ -81,8 +80,7 @@ class PipelineStats:
 
 
 class DynamicBatchSizer:
-    """
-    Dynamically adjusts batch size based on performance.
+    """Dynamically adjusts batch size based on performance.
 
     Monitors throughput and latency to find optimal batch size.
     """
@@ -93,7 +91,7 @@ class DynamicBatchSizer:
         max_batch_size: int = 32,
         initial_batch_size: int = 8,
         target_latency: float = 1.0,
-    ):
+    ) -> None:
         self.min_batch_size = min_batch_size
         self.max_batch_size = max_batch_size
         self.current_batch_size = initial_batch_size
@@ -107,7 +105,7 @@ class DynamicBatchSizer:
         """Get current recommended batch size."""
         return self.current_batch_size
 
-    def update(self, batch_size: int, latency: float, throughput: float):
+    def update(self, batch_size: int, latency: float, throughput: float) -> None:
         """Update batch sizer with observed performance."""
         self.latency_history.append(latency)
         self.throughput_history.append(throughput)
@@ -134,20 +132,19 @@ class DynamicBatchSizer:
                 int(self.current_batch_size * 1.2),
             )
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset batch sizer state."""
         self.latency_history.clear()
         self.throughput_history.clear()
 
 
 class SpeculativeExecutor:
-    """
-    Executes speculative tasks that may be cancelled.
+    """Executes speculative tasks that may be cancelled.
 
     Useful for exploring multiple paths simultaneously.
     """
 
-    def __init__(self, max_speculative: int = 4):
+    def __init__(self, max_speculative: int = 4) -> None:
         self.max_speculative = max_speculative
         self.active_tasks: dict[str, asyncio.Task] = {}
         self.results: dict[str, Any] = {}
@@ -158,8 +155,7 @@ class SpeculativeExecutor:
         executor: Callable[[Any], Any],
         select_best: Callable[[list[Any]], int],
     ) -> Any:
-        """
-        Execute tasks speculatively and return best result.
+        """Execute tasks speculatively and return best result.
 
         Args:
             tasks: Tasks to execute speculatively
@@ -168,6 +164,7 @@ class SpeculativeExecutor:
 
         Returns:
             Best result from speculative execution
+
         """
         # Limit speculative tasks
         tasks = tasks[: self.max_speculative]
@@ -216,7 +213,8 @@ class SpeculativeExecutor:
                 except Exception:
                     continue
 
-        raise RuntimeError("All speculative tasks failed")
+        msg = "All speculative tasks failed"
+        raise RuntimeError(msg)
 
     async def _execute_task(
         self,
@@ -251,7 +249,7 @@ class SpeculativeExecutor:
             task.end_time = time.time()
             raise
 
-    def cancel_all(self):
+    def cancel_all(self) -> None:
         """Cancel all active speculative tasks."""
         for task in self.active_tasks.values():
             task.cancel()
@@ -259,8 +257,7 @@ class SpeculativeExecutor:
 
 
 class AsyncBatchPipeline:
-    """
-    Asynchronous batch processing pipeline.
+    """Asynchronous batch processing pipeline.
 
     Features:
     - Parallel batch execution
@@ -277,7 +274,7 @@ class AsyncBatchPipeline:
         max_batch_size: int = 32,
         target_latency: float = 1.0,
         enable_speculation: bool = True,
-    ):
+    ) -> None:
         self.max_concurrency = max_concurrency
         self.enable_speculation = enable_speculation
 
@@ -309,8 +306,7 @@ class AsyncBatchPipeline:
         processor: Callable[[Any], Any],
         batch_id: str | None = None,
     ) -> BatchResult:
-        """
-        Process a batch of items in parallel.
+        """Process a batch of items in parallel.
 
         Args:
             items: Items to process
@@ -319,6 +315,7 @@ class AsyncBatchPipeline:
 
         Returns:
             BatchResult with all results
+
         """
         if not items:
             return BatchResult(
@@ -430,8 +427,7 @@ class AsyncBatchPipeline:
         processor: Callable[[Any], Any],
         on_result: Callable[[Any], None] | None = None,
     ) -> list[Any]:
-        """
-        Process a stream of items with dynamic batching.
+        """Process a stream of items with dynamic batching.
 
         Args:
             item_generator: Async generator of items
@@ -440,6 +436,7 @@ class AsyncBatchPipeline:
 
         Returns:
             List of all results
+
         """
         all_results = []
         batch = []
@@ -478,8 +475,7 @@ class AsyncBatchPipeline:
         processor: Callable[[Any], Any],
         scorer: Callable[[Any], float],
     ) -> Any:
-        """
-        Process candidates with speculative execution.
+        """Process candidates with speculative execution.
 
         Executes multiple candidates in parallel and returns best.
 
@@ -490,6 +486,7 @@ class AsyncBatchPipeline:
 
         Returns:
             Best result from speculative execution
+
         """
         if not self.enable_speculation:
             # Fall back to sequential
@@ -522,8 +519,7 @@ class AsyncBatchPipeline:
         processor: Callable[[Any], Any],
         timeout: float | None = None,
     ) -> list[Any]:
-        """
-        Process items from priority queue.
+        """Process items from priority queue.
 
         Args:
             processor: Function to process each item
@@ -531,6 +527,7 @@ class AsyncBatchPipeline:
 
         Returns:
             List of results
+
         """
         results = []
         start_time = time.time()
@@ -560,7 +557,7 @@ class AsyncBatchPipeline:
 
         return results
 
-    def add_to_queue(self, item: Any, priority: int = 0):
+    def add_to_queue(self, item: Any, priority: int = 0) -> None:
         """Add item to priority queue."""
         task = PipelineTask(
             task_id=f"queue_{self.stats.total_tasks}",
@@ -571,7 +568,7 @@ class AsyncBatchPipeline:
         self.task_queue.put_nowait((-priority, task))
         self.stats.total_tasks += 1
 
-    def _update_stats(self, tasks: list[PipelineTask], batch_time: float):
+    def _update_stats(self, tasks: list[PipelineTask], batch_time: float) -> None:
         """Update pipeline statistics."""
         completed = sum(1 for t in tasks if t.status == TaskStatus.COMPLETED)
         failed = sum(1 for t in tasks if t.status == TaskStatus.FAILED)
@@ -610,7 +607,7 @@ class AsyncBatchPipeline:
             "max_concurrency": self.max_concurrency,
         }
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset pipeline state."""
         self.batch_sizer.reset()
         self.speculative.cancel_all()
@@ -625,13 +622,12 @@ class AsyncBatchPipeline:
 
 
 class PipelineOrchestrator:
-    """
-    Orchestrates multiple pipelines for complex workflows.
+    """Orchestrates multiple pipelines for complex workflows.
 
     Supports pipeline chaining and fan-out/fan-in patterns.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.pipelines: dict[str, AsyncBatchPipeline] = {}
         self.results: dict[str, list[Any]] = {}
 
@@ -654,8 +650,7 @@ class PipelineOrchestrator:
         items: list[Any],
         stages: list[tuple],
     ) -> list[Any]:
-        """
-        Execute a chain of pipeline stages.
+        """Execute a chain of pipeline stages.
 
         Args:
             items: Initial items
@@ -663,13 +658,15 @@ class PipelineOrchestrator:
 
         Returns:
             Final results after all stages
+
         """
         current_items = items
 
         for pipeline_name, processor in stages:
             pipeline = self.pipelines.get(pipeline_name)
             if not pipeline:
-                raise ValueError(f"Pipeline {pipeline_name} not found")
+                msg = f"Pipeline {pipeline_name} not found"
+                raise ValueError(msg)
 
             result = await pipeline.process_batch(current_items, processor)
             current_items = [r for r in result.results if r is not None]
@@ -683,8 +680,7 @@ class PipelineOrchestrator:
         fan_in_processor: Callable[[list[Any]], Any],
         pipeline_name: str = "default",
     ) -> list[Any]:
-        """
-        Fan-out items, process, then fan-in results.
+        """Fan-out items, process, then fan-in results.
 
         Args:
             items: Items to fan out
@@ -694,6 +690,7 @@ class PipelineOrchestrator:
 
         Returns:
             Fan-in results
+
         """
         pipeline = self.pipelines.get(pipeline_name)
         if not pipeline:

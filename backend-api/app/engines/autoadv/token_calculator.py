@@ -1,6 +1,4 @@
-"""
-Token calculator module for calculating tokens and cost for different models.
-"""
+"""Token calculator module for calculating tokens and cost for different models."""
 
 try:
     import tiktoken
@@ -23,19 +21,18 @@ from .logging_utils import log
 
 
 class TokenCalculator:
-    """
-    Class for calculating tokens and costs across different model types.
+    """Class for calculating tokens and costs across different model types.
     Handles OpenAI (tiktoken) and other models (HuggingFace tokenizers).
     """
 
-    def __init__(self, requestCostPerToken, responseCostPerToken, model=None):
-        """
-        Initialize with costs per token and optional model name.
+    def __init__(self, requestCostPerToken, responseCostPerToken, model=None) -> None:
+        """Initialize with costs per token and optional model name.
 
         Args:
             requestCostPerToken (float): Cost per token for requests
             responseCostPerToken (float): Cost per token for responses
             model (str, optional): Model name used for tokenization
+
         """
         # Costs are stored as dollars per token (NOT per 1000 tokens)
         self.requestCostPerToken = requestCostPerToken / 1000000  # Convert from per million
@@ -44,8 +41,7 @@ class TokenCalculator:
         self._tokenizers = {}  # Cache for tokenizers to avoid reloading
 
     def calculate_tokens(self, text: str, tokenModel=None) -> int:
-        """
-        Calculate the number of tokens in the given text.
+        """Calculate the number of tokens in the given text.
 
         Args:
             text (str): The text to calculate tokens for
@@ -53,6 +49,7 @@ class TokenCalculator:
 
         Returns:
             int: Number of tokens in the text
+
         """
         if not text:
             return 0
@@ -62,7 +59,8 @@ class TokenCalculator:
 
         # Model must be defined
         if model is None:
-            raise ValueError("Model was not defined. Unable to calculate tokens.")
+            msg = "Model was not defined. Unable to calculate tokens."
+            raise ValueError(msg)
 
         try:
             # Check if the model is a tiktoken encoding name
@@ -90,7 +88,7 @@ class TokenCalculator:
                 encoding = self._tokenizers[model]
                 return len(encoding.encode(text))
             # Handle Grok models specially, use cl100k_base encoding
-            elif "grok" in model.lower() and TIKTOKEN_AVAILABLE:
+            if "grok" in model.lower() and TIKTOKEN_AVAILABLE:
                 if model not in self._tokenizers:
                     # Use cl100k_base encoding for Grok models (similar to GPT-4)
                     log(
@@ -102,7 +100,7 @@ class TokenCalculator:
 
                 encoding = self._tokenizers[model]
                 return len(encoding.encode(text))
-            elif TRANSFORMERS_AVAILABLE:
+            if TRANSFORMERS_AVAILABLE:
                 # Other models use HuggingFace's AutoTokenizer
                 if model not in self._tokenizers:
                     try:
@@ -117,9 +115,8 @@ class TokenCalculator:
                 # Some tokenizers don't have tokenize method
                 if hasattr(tokenizer, "tokenize"):
                     return len(tokenizer.tokenize(text))
-                else:
-                    # Use encode method instead
-                    return len(tokenizer.encode(text))
+                # Use encode method instead
+                return len(tokenizer.encode(text))
 
         except Exception as e:
             log(f"Error calculating tokens: {e}", "error")
@@ -127,8 +124,7 @@ class TokenCalculator:
             return len(text.split()) * 4 // 3  # ~4/3 tokens per word
 
     def calculate_cost(self, tokenCount, isRequest=True) -> float:
-        """
-        Calculate the cost for a given number of tokens.
+        """Calculate the cost for a given number of tokens.
 
         Args:
             tokenCount (int): Number of tokens
@@ -136,13 +132,13 @@ class TokenCalculator:
 
         Returns:
             float: Cost in USD
+
         """
         costPerToken = self.requestCostPerToken if isRequest else self.responseCostPerToken
         return tokenCount * costPerToken
 
     def estimate_prompt_cost(self, prompt_text, model_name=None, is_chat=True):
-        """
-        Estimate the cost of sending a prompt and receiving a typical response.
+        """Estimate the cost of sending a prompt and receiving a typical response.
 
         NOTE: This function is currently UNUSED in the main codebase but kept for
         potential future cost estimation features.
@@ -154,6 +150,7 @@ class TokenCalculator:
 
         Returns:
             tuple: (request_tokens, request_cost, estimated_response_tokens, estimated_response_cost, total_estimated_cost)
+
         """
         # Count request tokens
         request_tokens = self.calculate_tokens(prompt_text, model_name)

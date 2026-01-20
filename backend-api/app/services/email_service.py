@@ -1,5 +1,4 @@
-"""
-Email Service - SMTP-based email delivery with template rendering.
+"""Email Service - SMTP-based email delivery with template rendering.
 
 Provides:
 - Async SMTP email delivery
@@ -54,8 +53,7 @@ class SMTPSecurityMode(str, Enum):
 
 @dataclass
 class EmailConfig:
-    """
-    Email service configuration from environment variables.
+    """Email service configuration from environment variables.
 
     Environment Variables:
         SMTP_HOST: SMTP server hostname (default: localhost)
@@ -505,8 +503,7 @@ class EmailResult:
 
 
 class EmailService:
-    """
-    Async email service with SMTP support.
+    """Async email service with SMTP support.
 
     Features:
     - HTML and plain text email support
@@ -516,12 +513,12 @@ class EmailService:
     - Graceful error handling
     """
 
-    def __init__(self, config: EmailConfig | None = None):
-        """
-        Initialize email service.
+    def __init__(self, config: EmailConfig | None = None) -> None:
+        """Initialize email service.
 
         Args:
             config: Email configuration (loads from env if not provided)
+
         """
         self._config = config or EmailConfig.from_env()
 
@@ -545,8 +542,7 @@ class EmailService:
         from_name: str | None = None,
         reply_to: str | None = None,
     ) -> EmailResult:
-        """
-        Send an email asynchronously.
+        """Send an email asynchronously.
 
         In development mode, logs the email instead of sending.
 
@@ -561,6 +557,7 @@ class EmailService:
 
         Returns:
             EmailResult with send status
+
         """
         sender_email = from_email or self._config.from_email
         sender_name = from_name or self._config.from_name
@@ -655,21 +652,21 @@ class EmailService:
                     return self._authenticate_and_send(server, message, to_email)
 
         except smtplib.SMTPAuthenticationError as e:
-            logger.error(f"SMTP authentication failed: {e}")
+            logger.exception(f"SMTP authentication failed: {e}")
             return EmailResult(
                 success=False,
                 error="SMTP authentication failed. Check username and password.",
             )
 
         except smtplib.SMTPException as e:
-            logger.error(f"SMTP error sending email to {to_email}: {e}")
+            logger.exception(f"SMTP error sending email to {to_email}: {e}")
             return EmailResult(
                 success=False,
                 error=f"SMTP error: {e}",
             )
 
         except TimeoutError:
-            logger.error(f"SMTP timeout connecting to {self._config.host}")
+            logger.exception(f"SMTP timeout connecting to {self._config.host}")
             return EmailResult(
                 success=False,
                 error="Connection to email server timed out",
@@ -712,15 +709,15 @@ class EmailService:
     ) -> EmailResult:
         """Log email in development mode instead of sending."""
         logger.info(
-            f"\n{'='*60}\n"
+            f"\n{'=' * 60}\n"
             f"EMAIL (DEV MODE - NOT SENT)\n"
-            f"{'='*60}\n"
+            f"{'=' * 60}\n"
             f"From: {sender_name} <{sender_email}>\n"
             f"To: {to_email}\n"
             f"Subject: {subject}\n"
-            f"{'='*60}\n"
+            f"{'=' * 60}\n"
             f"(HTML content not displayed in logs)\n"
-            f"{'='*60}\n"
+            f"{'=' * 60}\n",
         )
         return EmailResult(
             success=True,
@@ -738,8 +735,7 @@ class EmailService:
         username: str,
         verification_token: str,
     ) -> EmailResult:
-        """
-        Send email verification email.
+        """Send email verification email.
 
         Args:
             email: Recipient email address
@@ -748,6 +744,7 @@ class EmailService:
 
         Returns:
             EmailResult with send status
+
         """
         verification_url = f"{self._config.verification_url}?token={verification_token}"
 
@@ -774,8 +771,7 @@ class EmailService:
         username: str,
         reset_token: str,
     ) -> EmailResult:
-        """
-        Send password reset email.
+        """Send password reset email.
 
         Args:
             email: Recipient email address
@@ -784,6 +780,7 @@ class EmailService:
 
         Returns:
             EmailResult with send status
+
         """
         reset_url = f"{self._config.password_reset_url}?token={reset_token}"
 
@@ -809,8 +806,7 @@ class EmailService:
         email: str,
         username: str,
     ) -> EmailResult:
-        """
-        Send welcome email after email verification.
+        """Send welcome email after email verification.
 
         Args:
             email: Recipient email address
@@ -818,6 +814,7 @@ class EmailService:
 
         Returns:
             EmailResult with send status
+
         """
         html_content = EmailTemplates.welcome_html(
             username=username,
@@ -842,8 +839,7 @@ class EmailService:
         role: str,
         invitation_token: str,
     ) -> EmailResult:
-        """
-        Send invitation email (for admin invites).
+        """Send invitation email (for admin invites).
 
         Args:
             email: Recipient email address
@@ -853,6 +849,7 @@ class EmailService:
 
         Returns:
             EmailResult with send status
+
         """
         # Invitation URL goes to a special invite acceptance page
         invitation_url = f"{self._config.frontend_url}/accept-invite?token={invitation_token}"
@@ -887,11 +884,11 @@ _email_service: EmailService | None = None
 
 
 def get_email_service() -> EmailService:
-    """
-    Get or create the global email service instance.
+    """Get or create the global email service instance.
 
     Returns:
         EmailService instance
+
     """
     global _email_service
     if _email_service is None:
@@ -900,14 +897,14 @@ def get_email_service() -> EmailService:
 
 
 def create_email_service(config: EmailConfig | None = None) -> EmailService:
-    """
-    Create a new email service instance with optional config.
+    """Create a new email service instance with optional config.
 
     Args:
         config: Optional email configuration
 
     Returns:
         New EmailService instance
+
     """
     return EmailService(config)
 

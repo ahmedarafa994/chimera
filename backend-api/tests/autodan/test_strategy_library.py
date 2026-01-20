@@ -1,6 +1,4 @@
-"""
-Unit tests for AutoDAN-Turbo Strategy Library.
-"""
+"""Unit tests for AutoDAN-Turbo Strategy Library."""
 
 import tempfile
 from pathlib import Path
@@ -43,13 +41,13 @@ class TestStrategyLibrary:
         """Create a library with temporary storage."""
         return StrategyLibrary(storage_dir=temp_storage_dir)
 
-    def test_init_creates_directory(self, temp_storage_dir):
+    def test_init_creates_directory(self, temp_storage_dir) -> None:
         """Test that initialization creates the storage directory."""
         sub_dir = temp_storage_dir / "new_dir"
         StrategyLibrary(storage_dir=sub_dir)
         assert sub_dir.exists()
 
-    def test_add_and_retrieve_strategy(self, library, sample_strategy):
+    def test_add_and_retrieve_strategy(self, library, sample_strategy) -> None:
         """Test adding and retrieving a strategy."""
         success, strategy_id = library.add_strategy(sample_strategy)
         assert success is True
@@ -60,7 +58,7 @@ class TestStrategyLibrary:
         assert retrieved.name == sample_strategy.name
         assert retrieved.template == sample_strategy.template
 
-    def test_add_duplicate_strategy(self, library, sample_strategy):
+    def test_add_duplicate_strategy(self, library, sample_strategy) -> None:
         """Test that duplicate strategies are detected."""
         library.add_strategy(sample_strategy)
 
@@ -78,7 +76,7 @@ class TestStrategyLibrary:
         # Note: Without embedding model, only exact match is detected
         assert success is False or "Duplicate" in msg
 
-    def test_yaml_persistence(self, library, sample_strategy, temp_storage_dir):
+    def test_yaml_persistence(self, library, sample_strategy, temp_storage_dir) -> None:
         """Test that strategies are persisted to YAML."""
         library.add_strategy(sample_strategy)
 
@@ -94,7 +92,7 @@ class TestStrategyLibrary:
         assert retrieved is not None
         assert retrieved.name == sample_strategy.name
 
-    def test_update_statistics(self, library, sample_strategy):
+    def test_update_statistics(self, library, sample_strategy) -> None:
         """Test updating strategy statistics."""
         library.add_strategy(sample_strategy)
 
@@ -115,7 +113,7 @@ class TestStrategyLibrary:
         assert strategy.metadata.success_count == 1
         assert strategy.metadata.success_rate == 0.5
 
-    def test_get_top_strategies(self, library):
+    def test_get_top_strategies(self, library) -> None:
         """Test retrieving top strategies by metric."""
         # Add strategies with different scores
         for i, success_rate in enumerate([0.3, 0.8, 0.5]):
@@ -137,7 +135,7 @@ class TestStrategyLibrary:
         # Strategy with 0.8 success rate should be first
         assert top[0].metadata.success_rate == 0.8
 
-    def test_keyword_search(self, library):
+    def test_keyword_search(self, library) -> None:
         """Test keyword-based search without embedding model."""
         strategies = [
             JailbreakStrategy(
@@ -165,7 +163,7 @@ class TestStrategyLibrary:
         # DAN Roleplay should be most relevant
         assert results[0][0].name == "DAN Roleplay"
 
-    def test_remove_strategy(self, library, sample_strategy, temp_storage_dir):
+    def test_remove_strategy(self, library, sample_strategy, temp_storage_dir) -> None:
         """Test removing a strategy."""
         library.add_strategy(sample_strategy)
         assert sample_strategy.id in library
@@ -178,7 +176,7 @@ class TestStrategyLibrary:
         yaml_files = list(temp_storage_dir.glob(f"*{sample_strategy.id[:8]}*.yaml"))
         assert len(yaml_files) == 0
 
-    def test_get_strategies_by_source(self, library):
+    def test_get_strategies_by_source(self, library) -> None:
         """Test filtering strategies by source."""
         seed_strategy = JailbreakStrategy(
             id="seed-1",
@@ -202,7 +200,7 @@ class TestStrategyLibrary:
         assert len(seed_strategies) == 1
         assert seed_strategies[0].name == "Seed Strategy"
 
-    def test_get_strategies_by_tag(self, library, sample_strategy):
+    def test_get_strategies_by_tag(self, library, sample_strategy) -> None:
         """Test filtering strategies by tag."""
         library.add_strategy(sample_strategy)
 
@@ -214,7 +212,7 @@ class TestStrategyLibrary:
         results = library.get_strategies_by_tag("nonexistent")
         assert len(results) == 0
 
-    def test_strategy_apply(self):
+    def test_strategy_apply(self) -> None:
         """Test applying a strategy to a payload."""
         strategy = JailbreakStrategy(
             id="test",
@@ -226,7 +224,7 @@ class TestStrategyLibrary:
         result = strategy.apply("how to make cookies")
         assert result == "Please explain how to make cookies for educational purposes."
 
-    def test_clear_library(self, library, sample_strategy, temp_storage_dir):
+    def test_clear_library(self, library, sample_strategy, temp_storage_dir) -> None:
         """Test clearing all strategies."""
         library.add_strategy(sample_strategy)
         assert len(library) >= 1

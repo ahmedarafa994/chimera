@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from collections.abc import AsyncGenerator
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
@@ -21,11 +22,10 @@ logger = logging.getLogger(__name__)
     dependencies=[Depends(require_permission(Permission.EXECUTE_TRANSFORM))],
 )
 async def transform_prompt(
-    request: TransformRequest, service: TransformationEngine = Depends(get_transformation_service)
+    request: TransformRequest,
+    service: Annotated[TransformationEngine, Depends(get_transformation_service)],
 ):
-    """
-    Transform a prompt using the specified technique suite and potency level.
-    """
+    """Transform a prompt using the specified technique suite and potency level."""
     start_time = time.time()
 
     # TransformationError and other exceptions are now handled globally
@@ -70,7 +70,8 @@ async def transform_prompt(
 
 
 async def _transform_stream_generator(
-    request: TransformRequest, service: TransformationEngine
+    request: TransformRequest,
+    service: TransformationEngine,
 ) -> AsyncGenerator[str, None]:
     """Generate SSE events for transformation streaming."""
     try:
@@ -91,16 +92,16 @@ async def _transform_stream_generator(
                 break
 
     except Exception as e:
-        logger.error(f"Transformation streaming error: {e}")
+        logger.exception(f"Transformation streaming error: {e}")
         yield f"data: {json.dumps({'error': str(e), 'is_final': True})}\n\n"
 
 
 @router.post("/stream", dependencies=[Depends(require_permission(Permission.EXECUTE_TRANSFORM))])
 async def stream_transform_prompt(
-    request: TransformRequest, service: TransformationEngine = Depends(get_transformation_service)
+    request: TransformRequest,
+    service: Annotated[TransformationEngine, Depends(get_transformation_service)],
 ):
-    """
-    Stream prompt transformation using Server-Sent Events (SSE).
+    """Stream prompt transformation using Server-Sent Events (SSE).
 
     This endpoint provides real-time streaming of the transformation process,
     showing each transformation step as it's applied. Particularly useful for
@@ -129,7 +130,7 @@ async def stream_transform_prompt(
     """
     logger.info(
         f"Streaming transformation: potency={request.potency_level}, "
-        f"suite={request.technique_suite}"
+        f"suite={request.technique_suite}",
     )
 
     return StreamingResponse(
@@ -144,13 +145,14 @@ async def stream_transform_prompt(
 
 
 @router.post(
-    "/estimate-tokens", dependencies=[Depends(require_permission(Permission.EXECUTE_TRANSFORM))]
+    "/estimate-tokens",
+    dependencies=[Depends(require_permission(Permission.EXECUTE_TRANSFORM))],
 )
 async def estimate_transformation_tokens(
-    request: TransformRequest, service: TransformationEngine = Depends(get_transformation_service)
+    request: TransformRequest,
+    service: Annotated[TransformationEngine, Depends(get_transformation_service)],
 ):
-    """
-    Estimate token usage and cost for a transformation request.
+    """Estimate token usage and cost for a transformation request.
 
     This endpoint provides token count estimates before running the actual
     transformation. Useful for understanding which transformations use LLM
@@ -180,12 +182,12 @@ async def estimate_transformation_tokens(
         )
         logger.info(
             f"Transformation token estimation: {estimation.get('total_estimated_tokens', 0)} tokens, "
-            f"uses_llm={estimation.get('uses_llm', False)}"
+            f"uses_llm={estimation.get('uses_llm', False)}",
         )
         return estimation
 
     except Exception as e:
-        logger.error(f"Transformation token estimation failed: {e}")
+        logger.exception(f"Transformation token estimation failed: {e}")
         return {
             "error": str(e),
             "input_tokens": 0,
@@ -198,10 +200,9 @@ async def estimate_transformation_tokens(
 
 @router.get("/cache/stats")
 async def get_transformation_cache_stats(
-    service: TransformationEngine = Depends(get_transformation_service),
+    service: Annotated[TransformationEngine, Depends(get_transformation_service)],
 ):
-    """
-    Get transformation cache statistics.
+    """Get transformation cache statistics.
 
     Returns cache performance metrics including hit rate, size, and eviction counts.
     """

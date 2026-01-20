@@ -1,5 +1,4 @@
-"""
-AutoDAN Turbo Engine with Adaptive Mutation Rates.
+"""AutoDAN Turbo Engine with Adaptive Mutation Rates.
 
 Implements OPT-MUT-2 from the AutoDAN Optimization Report:
 - Adaptive mutation rate based on fitness improvement
@@ -31,8 +30,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AdaptiveMutationConfig:
-    """
-    Configuration for adaptive mutation rate control.
+    """Configuration for adaptive mutation rate control.
 
     Implements OPT-MUT-2: Adaptive Mutation Rate
     Expected Impact: 15-25% faster convergence
@@ -54,14 +52,14 @@ class AdaptiveMutationConfig:
         self.current_rate = self.base_rate
 
     def update(self, current_best_score: float) -> float:
-        """
-        Update mutation rate based on fitness improvement.
+        """Update mutation rate based on fitness improvement.
 
         Args:
             current_best_score: Best fitness score in current generation
 
         Returns:
             Updated mutation rate
+
         """
         if current_best_score > self.best_score_seen:
             # Improvement detected - decrease mutation rate to exploit
@@ -70,7 +68,7 @@ class AdaptiveMutationConfig:
             self.current_rate = max(self.min_rate, self.current_rate * self.decrease_factor)
             logger.debug(
                 f"Fitness improved to {current_best_score:.2f}, "
-                f"decreasing mutation rate to {self.current_rate:.3f}"
+                f"decreasing mutation rate to {self.current_rate:.3f}",
             )
         else:
             # No improvement - increase mutation rate to explore
@@ -79,7 +77,7 @@ class AdaptiveMutationConfig:
                 self.current_rate = min(self.max_rate, self.current_rate * self.increase_factor)
                 logger.debug(
                     f"Stagnation detected ({self.generations_without_improvement} gens), "
-                    f"increasing mutation rate to {self.current_rate:.3f}"
+                    f"increasing mutation rate to {self.current_rate:.3f}",
                 )
 
         return self.current_rate
@@ -88,7 +86,7 @@ class AdaptiveMutationConfig:
         """Determine if mutation should occur based on current rate."""
         return _secure_random() < self.current_rate
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset adaptive state for new attack."""
         self.current_rate = self.base_rate
         self.generations_without_improvement = 0
@@ -96,8 +94,7 @@ class AdaptiveMutationConfig:
 
 
 class AutoDANTurboEngine:
-    """
-    AI-driven generator for sophisticated, transferable, and evasive jailbreak vectors.
+    """AI-driven generator for sophisticated, transferable, and evasive jailbreak vectors.
 
     Uses an explicitly configured AI model for prompt generation, mutation, and optimization,
     replacing heuristic-based approaches with semantic understanding.
@@ -112,9 +109,8 @@ class AutoDANTurboEngine:
         mutation_rate: float = 0.1,
         potency: int = 5,
         use_adaptive_mutation: bool = True,
-    ):
-        """
-        Initialize the AutoDANTurboEngine with configurable hyperparameters and AI model.
+    ) -> None:
+        """Initialize the AutoDANTurboEngine with configurable hyperparameters and AI model.
 
         Args:
             model_name: Name of the LLM to use for generation.
@@ -124,6 +120,7 @@ class AutoDANTurboEngine:
             mutation_rate: Base probability of mutation.
             potency: Strength factor for adversarial objective.
             use_adaptive_mutation: Enable adaptive mutation rate (OPT-MUT-2).
+
         """
         self.population_size = population_size
         self.generations = generations
@@ -164,18 +161,18 @@ class AutoDANTurboEngine:
 
         logger.info(
             f"AutoDANTurboEngine initialized: model={self.llm.model_name}, "
-            f"provider={self.llm.provider}, population={population_size}"
+            f"provider={self.llm.provider}, population={population_size}",
         )
 
     async def transform_async(self, intent_data: dict) -> str:
-        """
-        Async entry point for generating adversarial prompts.
+        """Async entry point for generating adversarial prompts.
 
         Args:
             intent_data: Dictionary containing 'raw_text' (complex instruction).
 
         Returns:
             The best evolved adversarial prompt.
+
         """
         base_prompt = intent_data.get("raw_text", "")
         if not base_prompt:
@@ -207,7 +204,7 @@ class AutoDANTurboEngine:
 
             logger.info(
                 f"--- Generation {generation + 1}/{self.generations} "
-                f"(Temp: {current_temperature:.2f}, MutRate: {current_mutation_rate:.3f}) ---"
+                f"(Temp: {current_temperature:.2f}, MutRate: {current_mutation_rate:.3f}) ---",
             )
 
             next_generation = []
@@ -216,7 +213,7 @@ class AutoDANTurboEngine:
             tasks = []
             for candidate in population:
                 tasks.append(
-                    self._mutate_with_llm(candidate, base_prompt, temperature=current_temperature)
+                    self._mutate_with_llm(candidate, base_prompt, temperature=current_temperature),
                 )
 
             mutated_candidates = await asyncio.gather(*tasks, return_exceptions=True)
@@ -237,13 +234,13 @@ class AutoDANTurboEngine:
                 # Stagnation/Failure -> Heat up to break out
                 current_temperature = min(current_temperature + 0.1, 1.2)
                 logger.info(
-                    f"Low yield ({success_ratio:.0%}), heating up to {current_temperature:.2f}"
+                    f"Low yield ({success_ratio:.0%}), heating up to {current_temperature:.2f}",
                 )
             elif success_ratio > 0.8:
                 # High yield -> Cool down to exploit
                 current_temperature = max(current_temperature - 0.05, 0.4)
                 logger.info(
-                    f"High yield ({success_ratio:.0%}), cooling down to {current_temperature:.2f}"
+                    f"High yield ({success_ratio:.0%}), cooling down to {current_temperature:.2f}",
                 )
 
             # Update adaptive mutation rate based on generation performance (OPT-MUT-2)
@@ -266,9 +263,7 @@ class AutoDANTurboEngine:
         return best_candidate
 
     def transform(self, intent_data: dict) -> str:
-        """
-        Synchronous wrapper for transform_async.
-        """
+        """Synchronous wrapper for transform_async."""
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -290,9 +285,7 @@ class AutoDANTurboEngine:
             return loop.run_until_complete(self.transform_async(intent_data))
 
     async def _initialize_population(self, base_prompt: str) -> list[str]:
-        """
-        Generate initial population using varied strategies via LLM.
-        """
+        """Generate initial population using varied strategies via LLM."""
         strategies = [
             "Use a Socratic dialogue approach.",
             "Frame it as a fictional movie script scene.",
@@ -329,11 +322,12 @@ class AutoDANTurboEngine:
         return population
 
     async def _mutate_with_llm(
-        self, candidate: str, original_intent: str, temperature: float = 0.8
+        self,
+        candidate: str,
+        original_intent: str,
+        temperature: float = 0.8,
     ) -> str:
-        """
-        Apply mutation using the LLM to refine the prompt.
-        """
+        """Apply mutation using the LLM to refine the prompt."""
         mutation_prompt = (
             f"Analyze this adversarial prompt: '{candidate}'\n"
             f"The underlying intent is: '{original_intent}'\n\n"
@@ -345,7 +339,9 @@ class AutoDANTurboEngine:
 
         try:
             new_candidate = await self.llm.generate_async(
-                self.system_prompt, mutation_prompt, temperature=temperature
+                self.system_prompt,
+                mutation_prompt,
+                temperature=temperature,
             )
 
             if self.reasoning_engine:
@@ -365,7 +361,7 @@ class AutoDANTurboEngine:
 
             return new_candidate.strip()
         except Exception as e:
-            logger.error(f"Mutation failed: {e}")
+            logger.exception(f"Mutation failed: {e}")
             return candidate
 
 
@@ -373,8 +369,7 @@ class AutoDANTurboEngine:
 
 
 def transform(intent_data: dict, potency: int = 5) -> str:
-    """
-    Static wrapper for backward compatibility.
+    """Static wrapper for backward compatibility.
     WARNING: This creates a new engine instance per call which is inefficient.
     """
     engine = AutoDANTurboEngine(potency=potency)

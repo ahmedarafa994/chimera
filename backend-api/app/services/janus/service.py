@@ -1,5 +1,4 @@
-"""
-Janus Adversarial Simulation Service
+"""Janus Adversarial Simulation Service.
 
 This module provides the main Janus service for autonomous
 heuristic derivation and adversarial simulation of Guardian NPU.
@@ -48,15 +47,14 @@ class SimulationResult:
 
 
 class JanusService:
-    """
-    Janus Adversarial Simulation Service.
+    """Janus Adversarial Simulation Service.
 
     Provides autonomous heuristic derivation, causal mapping,
     and adversarial simulation for Guardian NPU validation.
     Integrates with AutoDAN and GPTFuzz for comprehensive testing.
     """
 
-    def __init__(self, config: JanusConfig | None = None):
+    def __init__(self, config: JanusConfig | None = None) -> None:
         self.config = config or get_config()
 
         # Core components
@@ -95,14 +93,14 @@ class JanusService:
 
         logger.info("JanusService created")
 
-    async def initialize(self, target_model: str, provider: str = "google", **kwargs):
-        """
-        Initialize Janus service.
+    async def initialize(self, target_model: str, provider: str = "google", **kwargs) -> None:
+        """Initialize Janus service.
 
         Args:
             target_model: The Guardian NPU model to test
             provider: LLM provider
             **kwargs: Additional configuration
+
         """
         if self.initialized and target_model == self._current_target:
             logger.info("Service already initialized with same target")
@@ -128,11 +126,12 @@ class JanusService:
             )
 
             self.inference_engine = AsymmetricInferenceEngine(
-                causal_graph=self.causal_mapper.causal_graph
+                causal_graph=self.causal_mapper.causal_graph,
             )
 
             self.heuristic_generator = HeuristicGenerator(
-                inference_engine=self.inference_engine, causal_mapper=self.causal_mapper
+                inference_engine=self.inference_engine,
+                causal_mapper=self.causal_mapper,
             )
 
             self.evolution_engine = EvolutionEngine(
@@ -173,13 +172,15 @@ class JanusService:
             self.initialized = False
             raise
 
-    async def _initialize_autodan(self, target_model: str, provider: str):
+    async def _initialize_autodan(self, target_model: str, provider: str) -> None:
         """Initialize AutoDAN integration."""
         try:
             from app.services.autodan.service_enhanced import enhanced_autodan_service
 
             await enhanced_autodan_service.initialize(
-                model_name=target_model, provider=provider, method="adaptive"
+                model_name=target_model,
+                provider=provider,
+                method="adaptive",
             )
 
             logger.info("AutoDAN integration initialized")
@@ -191,7 +192,7 @@ class JanusService:
             logger.warning(f"AutoDAN initialization failed: {e}")
             self.autodan_enabled = False
 
-    async def _initialize_gptfuzz(self, target_model: str, provider: str):
+    async def _initialize_gptfuzz(self, target_model: str, provider: str) -> None:
         """Initialize GPTFuzz integration."""
         try:
             from app.services.gptfuzz.service import gptfuzz_service
@@ -214,10 +215,12 @@ class JanusService:
             self.gptfuzz_enabled = False
 
     async def run_simulation(
-        self, duration_seconds: int = 3600, max_queries: int = 10000, target_failure_count: int = 10
+        self,
+        duration_seconds: int = 3600,
+        max_queries: int = 10000,
+        target_failure_count: int = 10,
     ) -> SimulationResult:
-        """
-        Run a full adversarial simulation.
+        """Run a full adversarial simulation.
 
         Args:
             duration_seconds: Maximum duration of simulation
@@ -226,13 +229,15 @@ class JanusService:
 
         Returns:
             Simulation results including discovered failures
+
         """
         if not self.initialized:
-            raise RuntimeError("Service not initialized")
+            msg = "Service not initialized"
+            raise RuntimeError(msg)
 
         logger.info(
             f"Starting simulation: duration={duration_seconds}s, "
-            f"max_queries={max_queries}, target_failures={target_failure_count}"
+            f"max_queries={max_queries}, target_failures={target_failure_count}",
         )
 
         start_time = time.time()
@@ -246,7 +251,8 @@ class JanusService:
         try:
             # Check resource budget
             if not self.resource_governor.check_budget():
-                raise ChimeraError("Query budget exceeded")
+                msg = "Query budget exceeded"
+                raise ChimeraError(msg)
 
             # Create session
             session_id = str(uuid.uuid4())
@@ -279,19 +285,23 @@ class JanusService:
                 if failure:
                     discovered_failures.append(failure)
                     logger.info(
-                        f"Discovered failure: {failure.failure_id} ({failure.failure_type.value})"
+                        f"Discovered failure: {failure.failure_id} ({failure.failure_type.value})",
                     )
 
                 # Log interaction for causal mapping
                 if result.response:
                     state = GuardianState(variables={}, context={}, session_id=session_id)
                     self.causal_mapper.add_interaction(
-                        state=state, response=result.response, heuristic_name=heuristic.name
+                        state=state,
+                        response=result.response,
+                        heuristic_name=heuristic.name,
                     )
 
                 # Process feedback
                 await self.feedback_controller.process_result(
-                    heuristic=heuristic, result=result, failure=failure
+                    heuristic=heuristic,
+                    result=result,
+                    failure=failure,
                 )
 
                 # Periodically evolve heuristics
@@ -302,7 +312,8 @@ class JanusService:
                     # Evolve new generation
                     current_heuristics = self.heuristic_generator.get_all_heuristics()
                     evolved = await self.evolution_engine.evolve_generation(
-                        current_heuristics, performance
+                        current_heuristics,
+                        performance,
                     )
                     heuristics_evolved += len(evolved)
 
@@ -352,7 +363,7 @@ class JanusService:
             logger.info(
                 f"Simulation completed: queries={query_count}, "
                 f"failures={len(discovered_failures)}, "
-                f"elapsed={elapsed:.2f}s"
+                f"elapsed={elapsed:.2f}s",
             )
 
             return SimulationResult(
@@ -378,21 +389,23 @@ class JanusService:
             raise
 
     async def _execute_heuristic(self, heuristic: Heuristic) -> InteractionResult:
-        """
-        Execute a heuristic against Guardian NPU.
+        """Execute a heuristic against Guardian NPU.
 
         Args:
             heuristic: Heuristic to execute
 
         Returns:
             Interaction result
+
         """
         start_time = time.time()
 
         try:
             # Check if heuristic is applicable
             state = GuardianState(
-                variables={}, context={}, session_id=f"exec_{uuid.uuid4().hex[:8]}"
+                variables={},
+                context={},
+                session_id=f"exec_{uuid.uuid4().hex[:8]}",
             )
 
             if not heuristic.is_applicable(state):
@@ -423,11 +436,11 @@ class JanusService:
             )
 
     async def _run_hybrid_attack(self) -> dict[str, Any] | None:
-        """
-        Run a hybrid attack using AutoDAN and GPTFuzz.
+        """Run a hybrid attack using AutoDAN and GPTFuzz.
 
         Returns:
             Dictionary with attack results or None if not available
+
         """
         if not (self.autodan_enabled or self.gptfuzz_enabled):
             return None
@@ -437,10 +450,10 @@ class JanusService:
 
         if strategy == "sequential":
             return await self._run_sequential_hybrid()
-        elif strategy == "parallel":
+        if strategy == "parallel":
             return await self._run_parallel_hybrid()
-        else:  # adaptive
-            return await self._run_adaptive_hybrid()
+        # adaptive
+        return await self._run_adaptive_hybrid()
 
     async def _run_sequential_hybrid(self) -> dict[str, Any]:
         """Run sequential hybrid attack (AutoDAN then GPTFuzz)."""
@@ -453,7 +466,8 @@ class JanusService:
                 from app.services.autodan.service_enhanced import enhanced_autodan_service
 
                 autodan_result = await enhanced_autodan_service.run_jailbreak(
-                    request="Generate a test prompt", method="adaptive"
+                    request="Generate a test prompt",
+                    method="adaptive",
                 )
 
                 queries += 1
@@ -486,7 +500,8 @@ class JanusService:
                             for result in fuzz_results.get("results", []):
                                 if result.get("success"):
                                     failure = self._create_hybrid_failure(
-                                        "sequential_hybrid", result
+                                        "sequential_hybrid",
+                                        result,
                                     )
                                     break
 
@@ -518,7 +533,8 @@ class JanusService:
                     from app.services.autodan.service_enhanced import enhanced_autodan_service
 
                     result = await enhanced_autodan_service.run_jailbreak(
-                        request="Generate a test prompt", method="adaptive"
+                        request="Generate a test prompt",
+                        method="adaptive",
                     )
                     return {"autodan": True, "result": result}
                 except Exception as e:
@@ -534,7 +550,8 @@ class JanusService:
 
                     session_id = str(uuid.uuid4())
                     gptfuzz_service.create_session(
-                        session_id, {"status": "pending", "results": [], "config": {}, "stats": {}}
+                        session_id,
+                        {"status": "pending", "results": [], "config": {}, "stats": {}},
                     )
 
                     result = await gptfuzz_service.fuzz(
@@ -594,7 +611,8 @@ class JanusService:
                 from app.services.autodan.service_enhanced import enhanced_autodan_service
 
                 autodan_result = await enhanced_autodan_service.run_jailbreak(
-                    request="Generate a test prompt", method="adaptive"
+                    request="Generate a test prompt",
+                    method="adaptive",
                 )
 
                 autodan_success = autodan_result.get("status") == "success"
@@ -610,7 +628,8 @@ class JanusService:
 
                 session_id = str(uuid.uuid4())
                 gptfuzz_service.create_session(
-                    session_id, {"status": "pending", "results": [], "config": {}, "stats": {}}
+                    session_id,
+                    {"status": "pending", "results": [], "config": {}, "stats": {}},
                 )
 
                 result = await gptfuzz_service.fuzz(
@@ -631,39 +650,39 @@ class JanusService:
             except Exception as e:
                 logger.warning(f"GPTFuzz adaptive hybrid failed: {e}")
                 return {"queries": 1, "autodan": 1, "gptfuzz": 0, "failure": None}
-        else:
-            # AutoDAN failed or disabled, use GPTFuzz
-            if self.gptfuzz_enabled:
-                try:
-                    from app.services.gptfuzz.service import gptfuzz_service
+        # AutoDAN failed or disabled, use GPTFuzz
+        elif self.gptfuzz_enabled:
+            try:
+                from app.services.gptfuzz.service import gptfuzz_service
 
-                    session_id = str(uuid.uuid4())
-                    gptfuzz_service.create_session(
-                        session_id, {"status": "pending", "results": [], "config": {}, "stats": {}}
-                    )
+                session_id = str(uuid.uuid4())
+                gptfuzz_service.create_session(
+                    session_id,
+                    {"status": "pending", "results": [], "config": {}, "stats": {}},
+                )
 
-                    result = await gptfuzz_service.fuzz(
-                        session_id=session_id,
-                        target_model=self._current_target or "default",
-                        questions=["test question"],
-                        max_queries=10,
-                        max_jailbreaks=1,
-                    )
+                result = await gptfuzz_service.fuzz(
+                    session_id=session_id,
+                    target_model=self._current_target or "default",
+                    questions=["test question"],
+                    max_queries=10,
+                    max_jailbreaks=1,
+                )
 
-                    return {
-                        "queries": result.get("total_queries", 0),
-                        "autodan": 0,
-                        "gptfuzz": result.get("total_queries", 0),
-                        "failure": (
-                            self._create_hybrid_failure("adaptive", result) if result else None
-                        ),
-                    }
+                return {
+                    "queries": result.get("total_queries", 0),
+                    "autodan": 0,
+                    "gptfuzz": result.get("total_queries", 0),
+                    "failure": (
+                        self._create_hybrid_failure("adaptive", result) if result else None
+                    ),
+                }
 
-                except Exception as e:
-                    logger.warning(f"GPTFuzz adaptive hybrid failed: {e}")
-                    return {"queries": 0, "autodan": 0, "gptfuzz": 0, "failure": None}
-            else:
+            except Exception as e:
+                logger.warning(f"GPTFuzz adaptive hybrid failed: {e}")
                 return {"queries": 0, "autodan": 0, "gptfuzz": 0, "failure": None}
+        else:
+            return {"queries": 0, "autodan": 0, "gptfuzz": 0, "failure": None}
 
     def _create_hybrid_failure(self, source: str, result: dict[str, Any]) -> FailureState | None:
         """Create a failure state from hybrid attack result."""
@@ -693,14 +712,14 @@ class JanusService:
             return None
 
     def get_session_status(self, session_id: str) -> dict[str, Any] | None:
-        """
-        Get status of a simulation session.
+        """Get status of a simulation session.
 
         Args:
             session_id: Session ID to query
 
         Returns:
             Session status dictionary or None if not found
+
         """
         return self.active_sessions.get(session_id)
 
@@ -716,7 +735,7 @@ class JanusService:
             "gptfuzz_enabled": self.gptfuzz_enabled,
         }
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         """Reset service metrics."""
         self._metrics = {
             "total_simulations": 0,
@@ -729,7 +748,7 @@ class JanusService:
         }
         logger.info("Metrics reset")
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup resources."""
         if self.feedback_controller:
             await self.feedback_controller.cleanup()

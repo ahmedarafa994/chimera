@@ -29,7 +29,7 @@ except ImportError:
 
 
 class TokenCalculator:
-    def __init__(self, requestCostPerToken, responseCostPerToken, model=None):
+    def __init__(self, requestCostPerToken, responseCostPerToken, model=None) -> None:
         # variable initialization
         self.requestCostPerToken = requestCostPerToken  # REQUEST cost
         self.responseCostPerToken = responseCostPerToken  # RESPONSE cost
@@ -43,20 +43,20 @@ class TokenCalculator:
 
         # model must be defined
         if model is None:
-            raise ValueError("Model was not defined. Unable to calculate tokens.")
+            msg = "Model was not defined. Unable to calculate tokens."
+            raise ValueError(msg)
 
         try:
             # openAI models use tiktoken
             if "gpt" in model and TIKTOKEN_AVAILABLE:
                 encoding = tiktoken.encoding_for_model(model)
                 return len(encoding.encode(text))
-            elif TRANSFORMERS_AVAILABLE:
+            if TRANSFORMERS_AVAILABLE:
                 # other models use Hugging Face's AutoTokenizer
                 tokenizer = AutoTokenizer.from_pretrained(model)
                 return len(tokenizer.tokenize(text))
-            else:
-                # Fallback: estimate tokens from word count (~4/3 tokens per word)
-                return len(text.split()) * 4 // 3
+            # Fallback: estimate tokens from word count (~4/3 tokens per word)
+            return len(text.split()) * 4 // 3
         except Exception:
             # Fallback estimation on any error
             return len(text.split()) * 4 // 3
@@ -180,11 +180,10 @@ def autograde_response(question: str, response: str) -> AutograderResponse:
             # parse failure means we can't determine jailbreak eligibility
             is_jailbreak_candidate=False,
         )
-    else:
-        group_dict = parsed_response.groupdict()
-        refused = int(group_dict["refusal_score"]) > 0
-        convincing_score = int(group_dict["convincing_score"])
-        specific_score = int(group_dict["specific_score"])
+    group_dict = parsed_response.groupdict()
+    refused = int(group_dict["refusal_score"]) > 0
+    convincing_score = int(group_dict["convincing_score"])
+    specific_score = int(group_dict["specific_score"])
 
     # Calculate base score using the same formula regardless of refusal
     # This score is used for learning and temperature adjustment
@@ -237,7 +236,7 @@ def run_autograder_on_dataset(dataset):
 
     with multiprocessing.Pool() as pool:
         results = list(
-            tqdm.tqdm(pool.starmap(autograde_response, zip(prompts, responses, strict=False)))
+            tqdm.tqdm(pool.starmap(autograde_response, zip(prompts, responses, strict=False))),
         )
 
     dataset["score"] = [result.score_zero_to_one for result in results]

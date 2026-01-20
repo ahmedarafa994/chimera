@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Chimera Load Test Runner
+"""Chimera Load Test Runner.
 
 Convenient script to run various load test scenarios.
 
@@ -102,14 +101,8 @@ Examples:
 
 def list_configs() -> None:
     """Print all available test configurations."""
-    print("\nAvailable Load Test Configurations:")
-    print("=" * 70)
-    for config in get_all_configs():
-        print(f"\n{config.name} ({config.test_type})")
-        print(f"  Users:        {config.users}")
-        print(f"  Spawn Rate:   {config.spawn_rate}/sec")
-        print(f"  Duration:     {config.run_time}")
-    print("\n" + "=" * 70 + "\n")
+    for _config in get_all_configs():
+        pass
 
 
 def build_locust_command(args: argparse.Namespace) -> list[str]:
@@ -158,20 +151,12 @@ def build_locust_command(args: argparse.Namespace) -> list[str]:
 
 def run_load_test(cmd: list[str]) -> int:
     """Execute the load test command."""
-    print("\n" + "=" * 70)
-    print("CHIMERA LOAD TEST")
-    print("=" * 70)
-    print(f"Command: {' '.join(cmd)}")
-    print("=" * 70 + "\n")
+    result = subprocess.run(cmd, check=False)
 
-    result = subprocess.run(cmd)
-
-    print("\n" + "=" * 70)
     if result.returncode == 0:
-        print("Load test completed successfully!")
+        pass
     else:
-        print(f"Load test exited with code: {result.returncode}")
-    print("=" * 70 + "\n")
+        pass
 
     return result.returncode
 

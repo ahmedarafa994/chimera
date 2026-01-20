@@ -1,5 +1,4 @@
-"""
-Tenant Management Service
+"""Tenant Management Service.
 
 Provides multi-tenant capabilities for enterprise deployments:
 - Tenant isolation for techniques
@@ -30,8 +29,7 @@ class TenantTier(str, Enum):
 
 @dataclass
 class TenantConfig:
-    """
-    Configuration for a tenant.
+    """Configuration for a tenant.
 
     Attributes:
         tenant_id: Unique identifier
@@ -45,6 +43,7 @@ class TenantConfig:
         custom_settings: Tenant-specific settings
         created_at: Creation timestamp
         is_active: Whether tenant is active
+
     """
 
     tenant_id: str
@@ -90,8 +89,7 @@ TIER_DEFAULTS = {
 
 
 class TenantService:
-    """
-    Manages tenant configurations and access control.
+    """Manages tenant configurations and access control.
 
     Provides methods for tenant CRUD operations and
     technique access validation.
@@ -113,7 +111,10 @@ class TenantService:
     def _create_default_tenant(self) -> None:
         """Create a default tenant for non-multi-tenant mode."""
         default = TenantConfig(
-            tenant_id="default", name="Default Tenant", tier=TenantTier.ENTERPRISE, is_active=True
+            tenant_id="default",
+            name="Default Tenant",
+            tier=TenantTier.ENTERPRISE,
+            is_active=True,
         )
         self._tenants["default"] = default
         logger.info("Created default tenant")
@@ -126,8 +127,7 @@ class TenantService:
         api_key: str | None = None,
         **kwargs,
     ) -> TenantConfig:
-        """
-        Create a new tenant.
+        """Create a new tenant.
 
         Args:
             tenant_id: Unique identifier
@@ -138,9 +138,11 @@ class TenantService:
 
         Returns:
             Created TenantConfig
+
         """
         if tenant_id in self._tenants:
-            raise ValueError(f"Tenant already exists: {tenant_id}")
+            msg = f"Tenant already exists: {tenant_id}"
+            raise ValueError(msg)
 
         # Apply tier defaults
         tier_config = TIER_DEFAULTS.get(tier, TIER_DEFAULTS[TenantTier.FREE])
@@ -151,7 +153,8 @@ class TenantService:
             tier=tier,
             api_key=api_key,
             rate_limit_per_minute=kwargs.get(
-                "rate_limit_per_minute", tier_config["rate_limit_per_minute"]
+                "rate_limit_per_minute",
+                tier_config["rate_limit_per_minute"],
             ),
             monthly_quota=kwargs.get("monthly_quota", tier_config["monthly_quota"]),
             custom_settings={
@@ -208,13 +211,16 @@ class TenantService:
         return list(self._tenants.values())
 
     def can_access_technique(
-        self, tenant_id: str, technique_name: str, technique_risk_level: str = "medium"
+        self,
+        tenant_id: str,
+        technique_name: str,
+        technique_risk_level: str = "medium",
     ) -> tuple[bool, str]:
-        """
-        Check if a tenant can access a specific technique.
+        """Check if a tenant can access a specific technique.
 
         Returns:
             Tuple of (allowed: bool, reason: str)
+
         """
         tenant = self._tenants.get(tenant_id)
 

@@ -1,5 +1,4 @@
-"""
-Dependency Injection Module
+"""Dependency Injection Module.
 
 Provides FastAPI dependencies for services with proper scoping:
 - Application-scoped: Shared across all requests (singletons)
@@ -30,8 +29,7 @@ if TYPE_CHECKING:
 
 @lru_cache
 def get_prompt_enhancer() -> PromptEnhancer:
-    """
-    Get or create a singleton instance of PromptEnhancer.
+    """Get or create a singleton instance of PromptEnhancer.
     Application-scoped - shared across all requests.
     """
     return PromptEnhancer()
@@ -39,8 +37,7 @@ def get_prompt_enhancer() -> PromptEnhancer:
 
 @lru_cache
 def get_jailbreak_enhancer() -> JailbreakPromptEnhancer:
-    """
-    Get or create a singleton instance of JailbreakPromptEnhancer.
+    """Get or create a singleton instance of JailbreakPromptEnhancer.
     Application-scoped - shared across all requests.
     """
     return JailbreakPromptEnhancer()
@@ -55,14 +52,14 @@ _llm_service_instance = None
 
 
 def get_llm_service():
-    """
-    Get the application-scoped LLM service instance.
+    """Get the application-scoped LLM service instance.
 
     This is the default dependency for most endpoints that need LLM access.
     The service maintains its own caching and circuit breaker state.
 
     Returns:
         LLMService: The shared LLM service instance
+
     """
     global _llm_service_instance
 
@@ -75,21 +72,20 @@ def get_llm_service():
 
 
 def set_llm_service(service) -> None:
-    """
-    Set the global LLM service instance.
+    """Set the global LLM service instance.
 
     Used during application startup to inject a configured service.
 
     Args:
         service: The LLMService instance to use
+
     """
     global _llm_service_instance
     _llm_service_instance = service
 
 
 class RequestScopedLLMService:
-    """
-    Request-scoped wrapper for LLM service.
+    """Request-scoped wrapper for LLM service.
 
     SCALE-004: Provides request isolation while sharing the underlying
     provider connections. Each request gets its own:
@@ -101,13 +97,13 @@ class RequestScopedLLMService:
     for efficiency.
     """
 
-    def __init__(self, base_service, request_id: str | None = None):
-        """
-        Initialize request-scoped service.
+    def __init__(self, base_service, request_id: str | None = None) -> None:
+        """Initialize request-scoped service.
 
         Args:
             base_service: The application-scoped LLMService
             request_id: Optional request ID for tracking
+
         """
         self._base_service = base_service
         self._request_id = request_id
@@ -128,27 +124,25 @@ class RequestScopedLLMService:
         return self._request_metrics.copy()
 
     async def generate_text(self, request):
-        """
-        Generate text with request-scoped tracking.
+        """Generate text with request-scoped tracking.
 
         Args:
             request: PromptRequest object
 
         Returns:
             PromptResponse from the LLM
+
         """
         self._request_metrics["calls"] += 1
 
         try:
-            response = await self._base_service.generate_text(request)
-            return response
+            return await self._base_service.generate_text(request)
         except Exception:
             self._request_metrics["errors"] += 1
             raise
 
     async def generate(self, prompt: str, provider: str | None = None, **kwargs):
-        """
-        Generate text with simplified interface.
+        """Generate text with simplified interface.
 
         Args:
             prompt: The text prompt
@@ -157,12 +151,12 @@ class RequestScopedLLMService:
 
         Returns:
             LLMResponse object
+
         """
         self._request_metrics["calls"] += 1
 
         try:
-            response = await self._base_service.generate(prompt, provider, **kwargs)
-            return response
+            return await self._base_service.generate(prompt, provider, **kwargs)
         except Exception:
             self._request_metrics["errors"] += 1
             raise
@@ -201,8 +195,7 @@ class RequestScopedLLMService:
 async def get_request_scoped_llm_service(
     request: Request,
 ) -> AsyncGenerator[RequestScopedLLMService, None]:
-    """
-    Get a request-scoped LLM service instance.
+    """Get a request-scoped LLM service instance.
 
     SCALE-004: Creates a new RequestScopedLLMService for each request,
     providing isolation while sharing the underlying providers.
@@ -220,6 +213,7 @@ async def get_request_scoped_llm_service(
 
     Yields:
         RequestScopedLLMService: A request-scoped LLM service wrapper
+
     """
     # Get request ID from headers or state
     request_id = request.headers.get("X-Request-ID") or getattr(request.state, "request_id", None)
@@ -246,11 +240,11 @@ async def get_request_scoped_llm_service(
 
 
 def get_provider_registry():
-    """
-    Get the provider registry for managing LLM providers.
+    """Get the provider registry for managing LLM providers.
 
     Returns:
         The LLM service which acts as the provider registry
+
     """
     return get_llm_service()
 
@@ -263,11 +257,11 @@ _session_service_instance = None
 
 
 def get_session_service():
-    """
-    Get the session service instance.
+    """Get the session service instance.
 
     Returns:
         SessionService: The shared session service instance
+
     """
     global _session_service_instance
 
@@ -280,11 +274,11 @@ def get_session_service():
 
 
 def set_session_service(service) -> None:
-    """
-    Set the global session service instance.
+    """Set the global session service instance.
 
     Args:
         service: The SessionService instance to use
+
     """
     global _session_service_instance
     _session_service_instance = service
@@ -298,11 +292,11 @@ _transformation_service_instance = None
 
 
 def get_transformation_service():
-    """
-    Get the transformation service instance.
+    """Get the transformation service instance.
 
     Returns:
         TransformationService: The shared transformation service instance
+
     """
     global _transformation_service_instance
 
@@ -315,11 +309,11 @@ def get_transformation_service():
 
 
 def set_transformation_service(service) -> None:
-    """
-    Set the global transformation service instance.
+    """Set the global transformation service instance.
 
     Args:
         service: The TransformationService instance to use
+
     """
     global _transformation_service_instance
     _transformation_service_instance = service
@@ -333,11 +327,11 @@ _intent_aware_service_instance = None
 
 
 def get_intent_aware_service():
-    """
-    Get the intent-aware jailbreak service instance.
+    """Get the intent-aware jailbreak service instance.
 
     Returns:
         IntentAwareJailbreakService: The shared service instance
+
     """
     global _intent_aware_service_instance
 
@@ -350,11 +344,11 @@ def get_intent_aware_service():
 
 
 def set_intent_aware_service(service) -> None:
-    """
-    Set the global intent-aware service instance.
+    """Set the global intent-aware service instance.
 
     Args:
         service: The IntentAwareJailbreakService instance to use
+
     """
     global _intent_aware_service_instance
     _intent_aware_service_instance = service
@@ -376,14 +370,14 @@ _global_model_selection_state_instance = None
 
 
 def get_global_model_selection_state() -> "GlobalModelSelectionState":
-    """
-    Get the application-scoped GlobalModelSelectionState instance.
+    """Get the application-scoped GlobalModelSelectionState instance.
 
     This singleton manages the global provider/model selection state
     across all requests, including request-scoped context tracking.
 
     Returns:
         GlobalModelSelectionState: The shared selection state instance
+
     """
     global _global_model_selection_state_instance
 
@@ -396,13 +390,13 @@ def get_global_model_selection_state() -> "GlobalModelSelectionState":
 
 
 def set_global_model_selection_state(service) -> None:
-    """
-    Set the global model selection state instance.
+    """Set the global model selection state instance.
 
     Used during application startup or testing.
 
     Args:
         service: The GlobalModelSelectionState instance to use
+
     """
     global _global_model_selection_state_instance
     _global_model_selection_state_instance = service
@@ -416,14 +410,14 @@ _provider_resolution_service_instance = None
 
 
 def get_provider_resolution_service() -> "ProviderResolutionService":
-    """
-    Get the application-scoped ProviderResolutionService instance.
+    """Get the application-scoped ProviderResolutionService instance.
 
     This singleton resolves the active provider/model for requests
     using a priority-based resolution strategy.
 
     Returns:
         ProviderResolutionService: The shared resolution service instance
+
     """
     global _provider_resolution_service_instance
 
@@ -438,13 +432,13 @@ def get_provider_resolution_service() -> "ProviderResolutionService":
 
 
 def set_provider_resolution_service(service) -> None:
-    """
-    Set the provider resolution service instance.
+    """Set the provider resolution service instance.
 
     Used during application startup or testing.
 
     Args:
         service: The ProviderResolutionService instance to use
+
     """
     global _provider_resolution_service_instance
     _provider_resolution_service_instance = service
@@ -456,8 +450,7 @@ async def get_resolved_provider_model(
     explicit_provider: str | None = None,
     explicit_model: str | None = None,
 ) -> tuple[str, str]:
-    """
-    FastAPI dependency that resolves the current provider/model.
+    """FastAPI dependency that resolves the current provider/model.
 
     Resolution priority:
     1. Explicit parameters (if provided)
@@ -484,6 +477,7 @@ async def get_resolved_provider_model(
 
     Returns:
         tuple[str, str]: The resolved (provider, model) pair
+
     """
     resolution_service = get_provider_resolution_service()
 
@@ -505,8 +499,7 @@ async def get_resolved_provider_model(
 
 
 class ResolvedProviderModel:
-    """
-    Request-scoped wrapper for resolved provider/model.
+    """Request-scoped wrapper for resolved provider/model.
 
     Provides convenient access to both the provider/model pair
     and resolution metadata for debugging.
@@ -518,7 +511,7 @@ class ResolvedProviderModel:
         model: str,
         resolution_source: str = "unknown",
         request_id: str | None = None,
-    ):
+    ) -> None:
         self.provider = provider
         self.model = model
         self.resolution_source = resolution_source
@@ -547,8 +540,7 @@ async def get_resolved_provider_model_with_metadata(
     explicit_provider: str | None = None,
     explicit_model: str | None = None,
 ) -> ResolvedProviderModel:
-    """
-    FastAPI dependency with resolution metadata for debugging.
+    """FastAPI dependency with resolution metadata for debugging.
 
     Same as get_resolved_provider_model but returns a wrapper object
     with additional metadata about how the resolution was performed.
@@ -561,6 +553,7 @@ async def get_resolved_provider_model_with_metadata(
 
     Returns:
         ResolvedProviderModel: Wrapper with provider, model, and metadata
+
     """
     resolution_service = get_provider_resolution_service()
 
@@ -593,8 +586,7 @@ async def get_resolved_provider_model_with_metadata(
 
 
 def reset_provider_services() -> None:
-    """
-    Reset provider-related service instances.
+    """Reset provider-related service instances.
 
     Useful for testing to ensure clean state.
     """
@@ -606,8 +598,7 @@ def reset_provider_services() -> None:
 
 
 def reset_all_services() -> None:
-    """
-    Reset all service instances.
+    """Reset all service instances.
 
     Useful for testing to ensure clean state between tests.
     """

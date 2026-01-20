@@ -1,5 +1,4 @@
-"""
-Comprehensive Test Fixtures for Chimera Backend API.
+"""Comprehensive Test Fixtures for Chimera Backend API.
 
 This module provides shared fixtures for testing all services, engines, and components.
 Includes mocks for LLM services, transformation engines, AutoDAN components, and more.
@@ -76,7 +75,7 @@ def test_env() -> dict[str, str]:
 # ============================================================================
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def app(test_env: dict[str, str]) -> FastAPI:
     """Create a fresh FastAPI application for each test."""
     # Import here to ensure environment is set up first
@@ -85,20 +84,20 @@ def app(test_env: dict[str, str]) -> FastAPI:
     return chimera_app
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def client(app: FastAPI) -> TestClient:
     """Create a test client for the FastAPI application."""
     return TestClient(app)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def authenticated_client(client: TestClient) -> TestClient:
     """Create an authenticated test client with API key."""
     client.headers["X-API-Key"] = "test-api-key"
     return client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def jwt_authenticated_client(client: TestClient) -> TestClient:
     """Create a JWT-authenticated test client."""
     # Mock JWT token for testing
@@ -109,7 +108,7 @@ def jwt_authenticated_client(client: TestClient) -> TestClient:
     return client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def admin_client(client: TestClient) -> TestClient:
     """Create an admin-authenticated test client."""
     client.headers["X-API-Key"] = "admin-api-key"
@@ -138,7 +137,7 @@ def mock_llm_provider() -> MagicMock:
     provider.count_tokens = MagicMock(return_value=10)
     provider.is_available = MagicMock(return_value=True)
     provider.get_model_info = MagicMock(
-        return_value={"name": "mock-model", "max_tokens": 4096, "supports_streaming": True}
+        return_value={"name": "mock-model", "max_tokens": 4096, "supports_streaming": True},
     )
     return provider
 
@@ -148,7 +147,7 @@ def mock_llm_client() -> MagicMock:
     """Create a mock LLM client for AutoDAN engines."""
     client = MagicMock()
     client.generate = MagicMock(
-        return_value=MagicMock(content="Mocked generated prompt for adversarial testing.")
+        return_value=MagicMock(content="Mocked generated prompt for adversarial testing."),
     )
     client.chat = AsyncMock(return_value="Mocked chat response")
     client.model_name = "mock-model"
@@ -168,15 +167,15 @@ def mock_llm_service(mock_llm_response: str) -> Generator[MagicMock, None, None]
                 provider="mock",
                 tokens_used=10,
                 cached=False,
-            )
+            ),
         )
         mock.is_available = MagicMock(return_value=True)
         mock.list_providers = AsyncMock(
             return_value=MagicMock(
                 providers=[
                     {"name": "mock", "available": True, "models": ["mock-model"]},
-                ]
-            )
+                ],
+            ),
         )
         yield mock
 
@@ -293,10 +292,10 @@ def mock_transformer_engine() -> MagicMock:
             technique="mock_technique",
             confidence=0.85,
             metadata={"applied_rules": ["rule1", "rule2"]},
-        )
+        ),
     )
     engine.get_config = MagicMock(
-        return_value={"name": "mock_engine", "enabled": True, "priority": 1}
+        return_value={"name": "mock_engine", "enabled": True, "priority": 1},
     )
     return engine
 
@@ -356,7 +355,7 @@ def mock_attack_scorer() -> MagicMock:
             refusal_detected=False,
             stealth_score=0.8,
             coherence_score=0.85,
-        )
+        ),
     )
     scorer.success_threshold = 7.0
     return scorer
@@ -448,7 +447,7 @@ def mock_autodan_service() -> MagicMock:
             "reasoning": "Successful",
             "strategy_id": "test-001",
             "latency_ms": 500,
-        }
+        },
     )
     service.get_lifelong_progress = MagicMock(
         return_value={
@@ -456,7 +455,7 @@ def mock_autodan_service() -> MagicMock:
             "total_attacks": 10,
             "successful_attacks": 7,
             "strategies_discovered": 3,
-        }
+        },
     )
     service.run_hybrid_attack = AsyncMock(
         return_value={
@@ -466,7 +465,7 @@ def mock_autodan_service() -> MagicMock:
             "is_jailbreak": True,
             "method_used": "beam_search",
             "difficulty": "medium",
-        }
+        },
     )
 
     return service
@@ -667,7 +666,7 @@ def mock_http_error_response() -> MagicMock:
 # ============================================================================
 
 
-def pytest_configure(config):
+def pytest_configure(config) -> None:
     """Configure custom pytest markers."""
     config.addinivalue_line("markers", "slow: mark test as slow running")
     config.addinivalue_line("markers", "integration: mark test as integration test")
@@ -680,7 +679,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "performance: Performance regression tests (PERF-007)")
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     """Add custom options for performance tests."""
     parser.addoption(
         "--baseline-file",
@@ -701,8 +700,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(autouse=True)
-def cleanup_after_test():
+def cleanup_after_test() -> None:
     """Clean up after each test."""
-    yield
+    return
     # Any cleanup code can go here
-    pass

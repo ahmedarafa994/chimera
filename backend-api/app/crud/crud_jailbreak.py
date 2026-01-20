@@ -1,5 +1,4 @@
-"""
-Jailbreak Dataset and Prompt CRUD Operations
+"""Jailbreak Dataset and Prompt CRUD Operations.
 
 Provides database operations for jailbreak datasets and prompts including:
 - Creating datasets and prompts

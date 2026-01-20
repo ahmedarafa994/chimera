@@ -10,7 +10,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -32,10 +32,12 @@ class HealthDashboardResponse(BaseModel):
     """Full health dashboard response with all provider data."""
 
     status: str = Field(
-        ..., description="Overall system health status (healthy/degraded/critical/unknown)"
+        ...,
+        description="Overall system health status (healthy/degraded/critical/unknown)",
     )
     providers: dict[str, Any] = Field(
-        default_factory=dict, description="Health metrics per provider"
+        default_factory=dict,
+        description="Health metrics per provider",
     )
     summary: dict[str, Any] = Field(default_factory=dict, description="Health summary statistics")
     alerts: list[dict[str, Any]] = Field(default_factory=list, description="Active health alerts")
@@ -47,7 +49,8 @@ class HealthMetricsResponse(BaseModel):
     """Real-time health metrics response."""
 
     providers: dict[str, Any] = Field(
-        default_factory=dict, description="Real-time metrics per provider"
+        default_factory=dict,
+        description="Real-time metrics per provider",
     )
     summary: dict[str, Any] = Field(default_factory=dict, description="Summary statistics")
     updated_at: str = Field(..., description="Metrics timestamp (ISO format)")
@@ -76,7 +79,8 @@ class RateLimitDashboardDataResponse(BaseModel):
     """Rate limit dashboard data response."""
 
     providers: dict[str, Any] = Field(
-        default_factory=dict, description="Rate limit metrics per provider"
+        default_factory=dict,
+        description="Rate limit metrics per provider",
     )
     summary: dict[str, Any] = Field(default_factory=dict, description="Rate limit summary")
     updated_at: str = Field(..., description="Last update time (ISO format)")
@@ -91,7 +95,8 @@ class ProviderHealthDetailResponse(BaseModel):
     quota: dict[str, Any] | None = Field(default=None, description="Quota status")
     rate_limits: dict[str, Any] | None = Field(default=None, description="Rate limit metrics")
     alerts: list[dict[str, Any]] = Field(
-        default_factory=list, description="Provider-specific alerts"
+        default_factory=list,
+        description="Provider-specific alerts",
     )
     updated_at: str = Field(..., description="Last update time (ISO format)")
 
@@ -156,7 +161,6 @@ def get_rate_limiter():
 
 @router.get(
     "/dashboard",
-    response_model=HealthDashboardResponse,
     summary="Full health dashboard data",
     description="""
 Get comprehensive health dashboard data for all configured LLM providers.
@@ -179,7 +183,7 @@ Returns:
     },
 )
 async def get_health_dashboard(
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> HealthDashboardResponse:
     """Get comprehensive health dashboard data."""
     logger.debug(f"Getting health dashboard for user {user.sub}")
@@ -219,7 +223,6 @@ async def get_health_dashboard(
 
 @router.get(
     "/metrics",
-    response_model=HealthMetricsResponse,
     summary="Real-time health metrics",
     description="""
 Get real-time health metrics for all configured providers.
@@ -241,7 +244,7 @@ Returns lightweight metrics suitable for frequent polling:
     },
 )
 async def get_health_metrics(
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> HealthMetricsResponse:
     """Get real-time health metrics for all providers."""
     logger.debug(f"Getting health metrics for user {user.sub}")
@@ -287,7 +290,6 @@ async def get_health_metrics(
 
 @router.get(
     "/history",
-    response_model=HealthHistoryResponse,
     summary="Historical health data",
     description="""
 Get historical health performance data for trend analysis.
@@ -310,10 +312,10 @@ Query Parameters:
     },
 )
 async def get_health_history(
-    provider_id: str | None = Query(None, description="Filter by provider ID"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum entries to return"),
-    start_time: str | None = Query(None, description="Start time (ISO format)"),
-    end_time: str | None = Query(None, description="End time (ISO format)"),
+    provider_id: Annotated[str | None, Query(description="Filter by provider ID")] = None,
+    limit: Annotated[int, Query(ge=1, le=1000, description="Maximum entries to return")] = 100,
+    start_time: Annotated[str | None, Query(description="Start time (ISO format)")] = None,
+    end_time: Annotated[str | None, Query(description="End time (ISO format)")] = None,
     user: TokenPayload = Depends(get_current_user),
 ) -> HealthHistoryResponse:
     """Get historical health performance data."""
@@ -325,7 +327,7 @@ async def get_health_history(
         end_dt = None
         if start_time:
             try:
-                start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                start_dt = datetime.fromisoformat(start_time)
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -333,7 +335,7 @@ async def get_health_history(
                 )
         if end_time:
             try:
-                end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+                end_dt = datetime.fromisoformat(end_time)
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -371,7 +373,6 @@ async def get_health_history(
 
 @router.get(
     "/{provider_id}",
-    response_model=ProviderHealthDetailResponse,
     summary="Provider health details",
     description="""
 Get detailed health information for a specific provider.
@@ -396,7 +397,7 @@ Returns comprehensive data including:
 )
 async def get_provider_health_detail(
     provider_id: str,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> ProviderHealthDetailResponse:
     """Get detailed health information for a specific provider."""
     logger.debug(f"Getting health details for provider {provider_id} by user {user.sub}")
@@ -529,7 +530,6 @@ async def get_provider_health_detail(
 
 @router.get(
     "/quota",
-    response_model=QuotaDashboardDataResponse,
     summary="Current quota usage",
     description="""
 Get current quota usage for all configured providers.
@@ -554,7 +554,9 @@ Query Parameters:
     },
 )
 async def get_quota_dashboard(
-    period: QuotaPeriod = Query(QuotaPeriod.DAILY, description="Quota period (daily or monthly)"),
+    period: Annotated[
+        QuotaPeriod, Query(description="Quota period (daily or monthly)")
+    ] = QuotaPeriod.DAILY,
     user: TokenPayload = Depends(get_current_user),
 ) -> QuotaDashboardDataResponse:
     """Get current quota usage for all providers."""
@@ -590,7 +592,6 @@ async def get_quota_dashboard(
 
 @router.get(
     "/quota/{provider_id}",
-    response_model=dict[str, Any],
     summary="Provider quota status",
     description="""
 Get quota status for a specific provider.
@@ -613,7 +614,7 @@ Returns detailed quota information including:
 )
 async def get_provider_quota(
     provider_id: str,
-    period: QuotaPeriod = Query(QuotaPeriod.DAILY, description="Quota period"),
+    period: Annotated[QuotaPeriod, Query(description="Quota period")] = QuotaPeriod.DAILY,
     user: TokenPayload = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Get quota status for a specific provider."""
@@ -643,7 +644,6 @@ async def get_provider_quota(
 
 @router.get(
     "/quota/{provider_id}/remaining",
-    response_model=dict[str, Any],
     summary="Remaining quota",
     description="""
 Get remaining quota for a provider.
@@ -664,7 +664,7 @@ Returns:
 )
 async def get_remaining_quota(
     provider_id: str,
-    period: QuotaPeriod = Query(QuotaPeriod.DAILY, description="Quota period"),
+    period: Annotated[QuotaPeriod, Query(description="Quota period")] = QuotaPeriod.DAILY,
     user: TokenPayload = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Get remaining quota for a provider."""
@@ -694,7 +694,6 @@ async def get_remaining_quota(
 
 @router.get(
     "/quota/{provider_id}/history",
-    response_model=list[dict[str, Any]],
     summary="Quota usage history",
     description="""
 Get historical quota usage data for a provider.
@@ -712,8 +711,10 @@ Returns daily or monthly usage summaries for trend analysis.
 )
 async def get_quota_history(
     provider_id: str,
-    period: QuotaPeriod = Query(QuotaPeriod.DAILY, description="Period type for history"),
-    limit: int = Query(30, ge=1, le=365, description="Maximum entries to return"),
+    period: Annotated[
+        QuotaPeriod, Query(description="Period type for history")
+    ] = QuotaPeriod.DAILY,
+    limit: Annotated[int, Query(ge=1, le=365, description="Maximum entries to return")] = 30,
     user: TokenPayload = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """Get historical quota usage for a provider."""
@@ -721,8 +722,7 @@ async def get_quota_history(
 
     try:
         quota_service = get_quota_service()
-        history = await quota_service.get_usage_history(provider_id, period, limit)
-        return history
+        return await quota_service.get_usage_history(provider_id, period, limit)
 
     except Exception as e:
         logger.error(f"Failed to get quota history: {e}", exc_info=True)
@@ -736,7 +736,6 @@ async def get_quota_history(
 
 @router.get(
     "/rate-limits",
-    response_model=RateLimitDashboardDataResponse,
     summary="Rate limit visualization data",
     description="""
 Get rate limit metrics for all providers.
@@ -758,7 +757,7 @@ Returns:
     },
 )
 async def get_rate_limits_dashboard(
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> RateLimitDashboardDataResponse:
     """Get rate limit visualization data for all providers."""
     logger.debug(f"Getting rate limits dashboard for user {user.sub}")
@@ -817,7 +816,6 @@ async def get_rate_limits_dashboard(
 
 @router.get(
     "/alerts",
-    response_model=list[dict[str, Any]],
     summary="Health alerts",
     description="""
 Get health alerts for all providers.
@@ -839,10 +837,10 @@ Query Parameters:
     },
 )
 async def get_health_alerts(
-    provider_id: str | None = Query(None, description="Filter by provider ID"),
-    severity: AlertSeverity | None = Query(None, description="Filter by severity"),
-    active_only: bool = Query(False, description="Only return active alerts"),
-    limit: int = Query(50, ge=1, le=200, description="Maximum alerts to return"),
+    provider_id: Annotated[str | None, Query(description="Filter by provider ID")] = None,
+    severity: Annotated[AlertSeverity | None, Query(description="Filter by severity")] = None,
+    active_only: Annotated[bool, Query(description="Only return active alerts")] = False,
+    limit: Annotated[int, Query(ge=1, le=200, description="Maximum alerts to return")] = 50,
     user: TokenPayload = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """Get health alerts."""
@@ -850,13 +848,12 @@ async def get_health_alerts(
 
     try:
         health_service = get_health_service()
-        alerts = await health_service.get_alerts(
+        return await health_service.get_alerts(
             provider_id=provider_id,
             severity=severity,
             active_only=active_only,
             limit=limit,
         )
-        return alerts
 
     except Exception as e:
         logger.error(f"Failed to get health alerts: {e}", exc_info=True)
@@ -865,7 +862,6 @@ async def get_health_alerts(
 
 @router.post(
     "/alerts/{alert_id}/acknowledge",
-    response_model=AlertAcknowledgeResponse,
     summary="Acknowledge alert",
     description="""
 Acknowledge a health alert.
@@ -884,7 +880,7 @@ Marks the alert as acknowledged but keeps it active until resolved.
 )
 async def acknowledge_alert(
     alert_id: str,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> AlertAcknowledgeResponse:
     """Acknowledge a health alert."""
     logger.info(f"Acknowledging alert {alert_id} by user {user.sub}")
@@ -918,7 +914,6 @@ async def acknowledge_alert(
 
 @router.post(
     "/alerts/{alert_id}/resolve",
-    response_model=AlertResolveResponse,
     summary="Resolve alert",
     description="""
 Resolve a health alert.
@@ -937,7 +932,7 @@ Marks the alert as resolved and inactive.
 )
 async def resolve_alert(
     alert_id: str,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> AlertResolveResponse:
     """Resolve a health alert."""
     logger.info(f"Resolving alert {alert_id} by user {user.sub}")
@@ -975,7 +970,6 @@ async def resolve_alert(
 
 @router.post(
     "/check",
-    response_model=HealthCheckTriggerResponse,
     summary="Trigger health check",
     description="""
 Trigger an immediate health check for all providers or a specific provider.
@@ -994,7 +988,7 @@ Query Parameters:
     },
 )
 async def trigger_health_check(
-    provider_id: str | None = Query(None, description="Specific provider to check"),
+    provider_id: Annotated[str | None, Query(description="Specific provider to check")] = None,
     user: TokenPayload = Depends(get_current_user),
 ) -> HealthCheckTriggerResponse:
     """Trigger an immediate health check."""
@@ -1026,7 +1020,6 @@ async def trigger_health_check(
 
 @router.get(
     "/usage-summary",
-    response_model=dict[str, Any],
     summary="Usage summary",
     description="""
 Get a summary of usage across all providers.
@@ -1047,15 +1040,14 @@ Returns aggregated usage data including:
     },
 )
 async def get_usage_summary(
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> dict[str, Any]:
     """Get usage summary across all providers."""
     logger.debug(f"Getting usage summary for user {user.sub}")
 
     try:
         quota_service = get_quota_service()
-        summary = await quota_service.get_usage_summary()
-        return summary
+        return await quota_service.get_usage_summary()
 
     except Exception as e:
         logger.error(f"Failed to get usage summary: {e}", exc_info=True)

@@ -12,33 +12,34 @@ logger = logging.getLogger(__name__)
 
 
 class EvasionEngine:
-    """
-    The core engine for orchestrating metamorphic evasion tasks.
+    """The core engine for orchestrating metamorphic evasion tasks.
     It applies a chain of metamorphosis strategies and interacts with target LLMs.
     """
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     async def execute_evasion_attempt(
-        self, task_id: str, evasion_config: EvasionTaskConfig, attempt_number: int
+        self,
+        task_id: str,
+        evasion_config: EvasionTaskConfig,
+        attempt_number: int,
     ) -> EvasionAttemptResult:
-        """
-        Executes a single evasion attempt: applies transformations and queries the LLM.
-        """
+        """Executes a single evasion attempt: applies transformations and queries the LLM."""
         initial_prompt = evasion_config.initial_prompt
         transformed_prompt = initial_prompt
         transformation_log: list[dict[str, Any]] = []
 
         logger.info(
-            f"Task {task_id}: Starting attempt {attempt_number} for model {evasion_config.target_model_id}"
+            f"Task {task_id}: Starting attempt {attempt_number} for model {evasion_config.target_model_id}",
         )
 
         # 1. Get Target LLM Adapter
         db_llm_model = get_llm_model(self.db, evasion_config.target_model_id)
         if not db_llm_model:
+            msg = f"Target LLM model with ID {evasion_config.target_model_id} not found."
             raise ValueError(
-                f"Target LLM model with ID {evasion_config.target_model_id} not found."
+                msg,
             )
 
         # In a real scenario, API keys should be retrieved securely, not from DB config directly.
@@ -47,7 +48,8 @@ class EvasionEngine:
         # The 'api_key' argument to get_adapter should come from a secure source (e.g., K-V store)
         # For now, we'll pass placeholder from config if available.
         llm_api_key = db_llm_model.config.get(
-            "api_key", ""
+            "api_key",
+            "",
         )  # This should ideally be from an env var or secret manager
 
         llm_adapter = LLMFactory.get_adapter(
@@ -65,7 +67,8 @@ class EvasionEngine:
 
             strategy_class = STRATEGY_REGISTRY.get(strategy_name)
             if not strategy_class:
-                raise ValueError(f"Unknown metamorphosis strategy: {strategy_name}")
+                msg = f"Unknown metamorphosis strategy: {strategy_name}"
+                raise ValueError(msg)
 
             strategy_instance: BaseMetamorphosisStrategy = strategy_class(strategy_params)
 
@@ -80,7 +83,8 @@ class EvasionEngine:
             previous_prompt = transformed_prompt
             try:
                 transformed_prompt = strategy_instance.transform(
-                    transformed_prompt, strategy_context
+                    transformed_prompt,
+                    strategy_context,
                 )
                 transformation_log.append(
                     {
@@ -89,10 +93,10 @@ class EvasionEngine:
                         "input_prompt": previous_prompt,
                         "output_prompt": transformed_prompt,
                         "status": "success",
-                    }
+                    },
                 )
                 logger.debug(
-                    f"Task {task_id}: Strategy {strategy_name} applied. New prompt length: {len(transformed_prompt)}"
+                    f"Task {task_id}: Strategy {strategy_name} applied. New prompt length: {len(transformed_prompt)}",
                 )
             except Exception as e:
                 transformation_log.append(
@@ -103,9 +107,9 @@ class EvasionEngine:
                         "output_prompt": transformed_prompt,
                         "status": "failed",
                         "error": str(e),
-                    }
+                    },
                 )
-                logger.error(f"Task {task_id}: Failed to apply strategy {strategy_name}: {e}")
+                logger.exception(f"Task {task_id}: Failed to apply strategy {strategy_name}: {e}")
                 # Decide whether to stop the chain or continue with the last valid prompt
                 # For now, we stop.
                 raise
@@ -114,11 +118,12 @@ class EvasionEngine:
         llm_response = ""
         try:
             llm_response = await llm_adapter.generate_response(
-                transformed_prompt, **db_llm_model.config
+                transformed_prompt,
+                **db_llm_model.config,
             )
             logger.info(f"Task {task_id}: LLM responded. Response length: {len(llm_response)}")
         except Exception as e:
-            logger.error(f"Task {task_id}: Error querying LLM {db_llm_model.name}: {e}")
+            logger.exception(f"Task {task_id}: Error querying LLM {db_llm_model.name}: {e}")
             raise
 
         # 4. Evaluate Response
@@ -129,7 +134,7 @@ class EvasionEngine:
         )
         is_evasion_successful = evaluation_results.get("is_evasion_successful", False)
         logger.info(
-            f"Task {task_id}: Evasion attempt {attempt_number} evaluation: {'SUCCESS' if is_evasion_successful else 'FAILURE'}"
+            f"Task {task_id}: Evasion attempt {attempt_number} evaluation: {'SUCCESS' if is_evasion_successful else 'FAILURE'}",
         )
 
         return EvasionAttemptResult(

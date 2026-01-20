@@ -1,5 +1,4 @@
-"""
-Lazy loading module for heavy ML dependencies.
+"""Lazy loading module for heavy ML dependencies.
 
 PERF-053: Phase 3 optimization for lazy loading heavy dependencies.
 
@@ -56,8 +55,7 @@ _state = _LazyModuleState()
 
 
 def get_torch() -> "torch":
-    """
-    Lazy load PyTorch.
+    """Lazy load PyTorch.
 
     PERF-055: Only loads torch when first accessed, not at import time.
 
@@ -66,13 +64,15 @@ def get_torch() -> "torch":
 
     Raises:
         ImportError: If torch is not installed
+
     """
     if _state._torch is not None:
         return _state._torch
 
     if _state._torch_loading:
         # Prevent recursive loading
-        raise RuntimeError("Circular import detected while loading torch")
+        msg = "Circular import detected while loading torch"
+        raise RuntimeError(msg)
 
     _state._torch_loading = True
 
@@ -98,8 +98,7 @@ def get_torch() -> "torch":
 
 
 def get_transformers() -> "transformers":
-    """
-    Lazy load HuggingFace Transformers.
+    """Lazy load HuggingFace Transformers.
 
     PERF-055: Only loads transformers when first accessed.
 
@@ -108,12 +107,14 @@ def get_transformers() -> "transformers":
 
     Raises:
         ImportError: If transformers is not installed
+
     """
     if _state._transformers is not None:
         return _state._transformers
 
     if _state._transformers_loading:
-        raise RuntimeError("Circular import detected while loading transformers")
+        msg = "Circular import detected while loading transformers"
+        raise RuntimeError(msg)
 
     _state._transformers_loading = True
 
@@ -129,7 +130,7 @@ def get_transformers() -> "transformers":
         _state._transformers = transformers
 
         logger.info(
-            f"Lazy loaded transformers in {load_time:.2f}s (version: {transformers.__version__})"
+            f"Lazy loaded transformers in {load_time:.2f}s (version: {transformers.__version__})",
         )
 
         return transformers
@@ -141,11 +142,11 @@ def get_transformers() -> "transformers":
 
 
 def get_sentence_transformers():
-    """
-    Lazy load Sentence Transformers.
+    """Lazy load Sentence Transformers.
 
     Returns:
         The sentence_transformers module
+
     """
     if _state._sentence_transformers is not None:
         return _state._sentence_transformers
@@ -170,11 +171,11 @@ def get_sentence_transformers():
 
 
 def get_accelerate():
-    """
-    Lazy load HuggingFace Accelerate.
+    """Lazy load HuggingFace Accelerate.
 
     Returns:
         The accelerate module
+
     """
     if _state._accelerate is not None:
         return _state._accelerate
@@ -244,7 +245,7 @@ def get_device() -> str:
         torch = get_torch()
         if torch.cuda.is_available():
             return "cuda"
-        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return "mps"
         return "cpu"
     except ImportError:
@@ -252,11 +253,11 @@ def get_device() -> str:
 
 
 def get_load_stats() -> dict[str, Any]:
-    """
-    Get statistics about lazy loaded modules.
+    """Get statistics about lazy loaded modules.
 
     Returns:
         Dictionary with load times and availability info
+
     """
     return {
         "loaded_modules": {
@@ -274,8 +275,7 @@ def get_load_stats() -> dict[str, Any]:
 
 
 def preload_ml_dependencies(modules: list[str] | None = None) -> dict[str, bool]:
-    """
-    Preload specified ML dependencies in background.
+    """Preload specified ML dependencies in background.
 
     PERF-057: Can be called during startup to warm up ML modules
     without blocking the main thread.
@@ -285,6 +285,7 @@ def preload_ml_dependencies(modules: list[str] | None = None) -> dict[str, bool]
 
     Returns:
         Dictionary mapping module names to success status
+
     """
     if modules is None:
         modules = ["torch", "transformers"]
@@ -320,13 +321,12 @@ def preload_ml_dependencies(modules: list[str] | None = None) -> dict[str, bool]
 
 
 class LazyAutoModel:
-    """
-    Lazy loader for HuggingFace AutoModel classes.
+    """Lazy loader for HuggingFace AutoModel classes.
 
     PERF-058: Delays model loading until first use.
     """
 
-    def __init__(self, model_name: str, model_class: str = "AutoModelForCausalLM"):
+    def __init__(self, model_name: str, model_class: str = "AutoModelForCausalLM") -> None:
         self.model_name = model_name
         self.model_class = model_class
         self._model = None

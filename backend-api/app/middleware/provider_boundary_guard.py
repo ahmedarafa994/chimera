@@ -1,5 +1,4 @@
-"""
-Provider Boundary Guard for Service Boundaries.
+"""Provider Boundary Guard for Service Boundaries.
 
 This module provides a guard mechanism that enforces provider/model
 consistency at service boundaries. It can be used as:
@@ -43,27 +42,26 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 class BoundaryValidationError(Exception):
-    """
-    Exception raised when provider/model boundary validation fails.
+    """Exception raised when provider/model boundary validation fails.
 
     Attributes:
         result: BoundaryValidationResult with failure details
         message: Human-readable error message
+
     """
 
     def __init__(
         self,
         result: BoundaryValidationResult,
         message: str | None = None,
-    ):
+    ) -> None:
         self.result = result
         self.message = message or result.error_message or "Boundary validation failed"
         super().__init__(self.message)
 
 
 class ProviderBoundaryGuard:
-    """
-    Guard that enforces provider/model consistency at service boundaries.
+    """Guard that enforces provider/model consistency at service boundaries.
 
     This class provides multiple ways to validate that the current context
     matches expected provider/model values:
@@ -81,14 +79,14 @@ class ProviderBoundaryGuard:
         strict_mode: bool = False,
         log_mismatches: bool = True,
         allow_upgrades: bool = False,
-    ):
-        """
-        Initialize the boundary guard.
+    ) -> None:
+        """Initialize the boundary guard.
 
         Args:
             strict_mode: Raise exception on mismatch (vs just log warning)
             log_mismatches: Whether to log boundary mismatches
             allow_upgrades: Allow "upgrade" mismatches (e.g., gpt-3.5 -> gpt-4)
+
         """
         self._strict_mode = strict_mode
         self._log_mismatches = log_mismatches
@@ -103,8 +101,7 @@ class ProviderBoundaryGuard:
         strict: bool = True,
         boundary_name: str | None = None,
     ) -> Callable[[F], F]:
-        """
-        Decorator that validates provider/model matches expectation.
+        """Decorator that validates provider/model matches expectation.
 
         Args:
             expected_provider: Expected provider ID
@@ -119,6 +116,7 @@ class ProviderBoundaryGuard:
             @ProviderBoundaryGuard.enforce("openai", "gpt-4")
             async def generate_completion(self, prompt: str):
                 ...
+
         """
 
         def decorator(func: F) -> F:
@@ -130,13 +128,12 @@ class ProviderBoundaryGuard:
                 if not result.is_consistent:
                     if strict:
                         raise BoundaryValidationError(result)
-                    else:
-                        logger.warning(
-                            f"Boundary mismatch in {_boundary}: "
-                            f"expected={expected_provider}/{expected_model}, "
-                            f"actual={result.actual_provider}/"
-                            f"{result.actual_model}"
-                        )
+                    logger.warning(
+                        f"Boundary mismatch in {_boundary}: "
+                        f"expected={expected_provider}/{expected_model}, "
+                        f"actual={result.actual_provider}/"
+                        f"{result.actual_model}",
+                    )
 
                 return await func(*args, **kwargs)
 
@@ -148,20 +145,18 @@ class ProviderBoundaryGuard:
                 if not result.is_consistent:
                     if strict:
                         raise BoundaryValidationError(result)
-                    else:
-                        logger.warning(
-                            f"Boundary mismatch in {_boundary}: "
-                            f"expected={expected_provider}/{expected_model}, "
-                            f"actual={result.actual_provider}/"
-                            f"{result.actual_model}"
-                        )
+                    logger.warning(
+                        f"Boundary mismatch in {_boundary}: "
+                        f"expected={expected_provider}/{expected_model}, "
+                        f"actual={result.actual_provider}/"
+                        f"{result.actual_model}",
+                    )
 
                 return func(*args, **kwargs)
 
             if asyncio.iscoroutinefunction(func):
                 return async_wrapper  # type: ignore
-            else:
-                return sync_wrapper  # type: ignore
+            return sync_wrapper  # type: ignore
 
         return decorator
 
@@ -170,8 +165,7 @@ class ProviderBoundaryGuard:
         strict: bool = True,
         boundary_name: str | None = None,
     ) -> Callable[[F], F]:
-        """
-        Decorator that ensures context exists (any provider/model).
+        """Decorator that ensures context exists (any provider/model).
 
         Args:
             strict: Whether to raise on missing context
@@ -184,6 +178,7 @@ class ProviderBoundaryGuard:
             @ProviderBoundaryGuard.require_context()
             async def process_request(self):
                 ...
+
         """
 
         def decorator(func: F) -> F:
@@ -200,10 +195,9 @@ class ProviderBoundaryGuard:
                                 expected_model="any",
                                 boundary_name=_boundary,
                                 error_message="No selection context available",
-                            )
+                            ),
                         )
-                    else:
-                        logger.warning(f"No context at boundary {_boundary}")
+                    logger.warning(f"No context at boundary {_boundary}")
 
                 return await func(*args, **kwargs)
 
@@ -220,17 +214,15 @@ class ProviderBoundaryGuard:
                                 expected_model="any",
                                 boundary_name=_boundary,
                                 error_message="No selection context available",
-                            )
+                            ),
                         )
-                    else:
-                        logger.warning(f"No context at boundary {_boundary}")
+                    logger.warning(f"No context at boundary {_boundary}")
 
                 return func(*args, **kwargs)
 
             if asyncio.iscoroutinefunction(func):
                 return async_wrapper  # type: ignore
-            else:
-                return sync_wrapper  # type: ignore
+            return sync_wrapper  # type: ignore
 
         return decorator
 
@@ -241,8 +233,7 @@ class ProviderBoundaryGuard:
         model: str,
         boundary_name: str = "async_block",
     ):
-        """
-        Async context manager for boundary validation.
+        """Async context manager for boundary validation.
 
         Args:
             provider: Expected provider ID
@@ -258,6 +249,7 @@ class ProviderBoundaryGuard:
         Example:
             async with guard.validate_boundary_async("openai", "gpt-4"):
                 await do_work()
+
         """
         self._validation_count += 1
         result = _check_boundary(provider, model, boundary_name)
@@ -269,7 +261,7 @@ class ProviderBoundaryGuard:
                 logger.warning(
                     f"Async boundary mismatch in {boundary_name}: "
                     f"expected={provider}/{model}, "
-                    f"actual={result.actual_provider}/{result.actual_model}"
+                    f"actual={result.actual_provider}/{result.actual_model}",
                 )
 
             if self._strict_mode:
@@ -287,8 +279,7 @@ class ProviderBoundaryGuard:
         model: str,
         boundary_name: str = "sync_block",
     ):
-        """
-        Sync context manager for boundary validation.
+        """Sync context manager for boundary validation.
 
         Args:
             provider: Expected provider ID
@@ -304,6 +295,7 @@ class ProviderBoundaryGuard:
         Example:
             with guard.validate_boundary("openai", "gpt-4"):
                 do_work()
+
         """
         self._validation_count += 1
         result = _check_boundary(provider, model, boundary_name)
@@ -315,7 +307,7 @@ class ProviderBoundaryGuard:
                 logger.warning(
                     f"Sync boundary mismatch in {boundary_name}: "
                     f"expected={provider}/{model}, "
-                    f"actual={result.actual_provider}/{result.actual_model}"
+                    f"actual={result.actual_provider}/{result.actual_model}",
                 )
 
             if self._strict_mode:
@@ -332,8 +324,7 @@ class ProviderBoundaryGuard:
         expected_model: str,
         boundary_name: str = "check",
     ) -> BoundaryValidationResult:
-        """
-        Check boundary without raising exception.
+        """Check boundary without raising exception.
 
         Args:
             expected_provider: Expected provider ID
@@ -342,6 +333,7 @@ class ProviderBoundaryGuard:
 
         Returns:
             BoundaryValidationResult with validation status
+
         """
         self._validation_count += 1
         result = _check_boundary(expected_provider, expected_model, boundary_name)
@@ -379,11 +371,11 @@ def _has_context() -> bool:
 
 
 def _get_current_selection() -> tuple[str | None, str | None]:
-    """
-    Get current provider/model from context.
+    """Get current provider/model from context.
 
     Returns:
         Tuple of (provider, model) or (None, None)
+
     """
     # Try RequestContext first
     if ContextManager.has_context():
@@ -404,8 +396,7 @@ def _check_boundary(
     expected_model: str,
     boundary_name: str,
 ) -> BoundaryValidationResult:
-    """
-    Check if current context matches expected provider/model.
+    """Check if current context matches expected provider/model.
 
     Args:
         expected_provider: Expected provider ID
@@ -414,6 +405,7 @@ def _check_boundary(
 
     Returns:
         BoundaryValidationResult
+
     """
     actual_provider, actual_model = _get_current_selection()
 
@@ -444,10 +436,10 @@ def _check_boundary(
         mismatches = []
         if not provider_matches:
             mismatches.append(
-                f"provider: expected '{expected_provider}', " f"got '{actual_provider}'"
+                f"provider: expected '{expected_provider}', got '{actual_provider}'",
             )
         if not model_matches:
-            mismatches.append(f"model: expected '{expected_model}', " f"got '{actual_model}'")
+            mismatches.append(f"model: expected '{expected_model}', got '{actual_model}'")
         error_message = f"Boundary mismatch: {'; '.join(mismatches)}"
 
     return BoundaryValidationResult(

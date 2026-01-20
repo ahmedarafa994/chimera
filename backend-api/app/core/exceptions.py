@@ -1,5 +1,4 @@
-"""
-Custom exceptions for the backend API.
+"""Custom exceptions for the backend API.
 Provides structured error handling with consistent error responses.
 """
 
@@ -21,7 +20,7 @@ class APIException(Exception):
         details: dict[str, Any] | None = None,
         status_code: int | None = None,
         error_code: str | None = None,
-    ):
+    ) -> None:
         """Initialize the API exception."""
         if message:
             self.message = message
@@ -131,7 +130,9 @@ class LLMQuotaExceededError(LLMProviderError):
     error_code = "LLM_QUOTA_EXCEEDED"
     message = "LLM API quota exceeded"
 
-    def __init__(self, message: str | None = None, retry_after: int | None = None, **kwargs):
+    def __init__(
+        self, message: str | None = None, retry_after: int | None = None, **kwargs
+    ) -> None:
         """Initialize with optional retry_after seconds."""
         super().__init__(message, **kwargs)
         self.retry_after = retry_after  # Seconds to wait before retry
@@ -150,7 +151,9 @@ class LLMContentBlockedError(LLMProviderError):
     error_code = "LLM_CONTENT_BLOCKED"
     message = "Content blocked by safety filters"
 
-    def __init__(self, message: str | None = None, block_reason: str | None = None, **kwargs):
+    def __init__(
+        self, message: str | None = None, block_reason: str | None = None, **kwargs
+    ) -> None:
         """Initialize with optional block reason."""
         super().__init__(message, **kwargs)
         self.block_reason = block_reason
@@ -184,7 +187,7 @@ class MissingFieldError(ValidationError):
     error_code = "MISSING_FIELD"
     message = "Required field is missing"
 
-    def __init__(self, field_name: str):
+    def __init__(self, field_name: str) -> None:
         """Initialize with field name."""
         super().__init__(
             message=f"Required field '{field_name}' is missing",
@@ -198,7 +201,7 @@ class InvalidFieldError(ValidationError):
     error_code = "INVALID_FIELD"
     message = "Field value is invalid"
 
-    def __init__(self, field_name: str, reason: str):
+    def __init__(self, field_name: str, reason: str) -> None:
         """Initialize with field name and reason."""
         super().__init__(
             message=f"Invalid value for field '{field_name}': {reason}",
@@ -220,7 +223,7 @@ class ProviderNotConfiguredError(LLMProviderError):
     error_code = "PROVIDER_NOT_CONFIGURED"
     message = "LLM provider is not configured"
 
-    def __init__(self, provider: str):
+    def __init__(self, provider: str) -> None:
         """Initialize with provider name."""
         super().__init__(
             message=f"Provider '{provider}' is not configured. Please set API key.",
@@ -234,7 +237,7 @@ class ProviderNotAvailableError(LLMProviderError):
     error_code = "PROVIDER_NOT_AVAILABLE"
     message = "LLM provider is not available"
 
-    def __init__(self, provider: str, reason: str | None = None):
+    def __init__(self, provider: str, reason: str | None = None) -> None:
         """Initialize with provider name and optional reason."""
         details = {"provider": provider}
         message = f"Provider '{provider}' is not available"
@@ -264,14 +267,14 @@ class ConfigurationError(APIException):
 
 
 def handle_exception(exception: Exception) -> dict[str, Any]:
-    """
-    Convert any exception to a consistent error response.
+    """Convert any exception to a consistent error response.
 
     Args:
         exception: The exception to handle
 
     Returns:
         Dictionary with error details for JSON response
+
     """
     if isinstance(exception, APIException):
         return exception.to_dict()

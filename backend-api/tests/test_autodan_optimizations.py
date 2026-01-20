@@ -1,5 +1,4 @@
-"""
-Unit Tests for AutoDAN Optimization Implementations.
+"""Unit Tests for AutoDAN Optimization Implementations.
 
 Tests the optimizations from the AUTODAN_OPTIMIZATION_REPORT.md:
 - Parallel Best-of-N generation
@@ -86,7 +85,7 @@ def metrics_collector():
 class TestParallelBestOfN:
     """Tests for parallel Best-of-N optimization."""
 
-    def test_best_of_n_initialization(self):
+    def test_best_of_n_initialization(self) -> None:
         """Test AttackerBestOfN initialization."""
         mock_attacker = Mock()
         mock_attacker.model = Mock()
@@ -97,7 +96,7 @@ class TestParallelBestOfN:
         assert best_of_n.base_attacker == mock_attacker
 
     @pytest.mark.asyncio
-    async def test_async_parallel_generation(self):
+    async def test_async_parallel_generation(self) -> None:
         """Test that async version runs candidates in parallel."""
         mock_attacker = Mock()
         mock_attacker.model = Mock()
@@ -132,7 +131,7 @@ class TestParallelBestOfN:
 class TestFitnessCaching:
     """Tests for CachedAttackScorer optimization."""
 
-    def test_cache_initialization(self, mock_llm_client):
+    def test_cache_initialization(self, mock_llm_client) -> None:
         """Test cached scorer initialization."""
         scorer = CachedAttackScorer(mock_llm_client, cache_size=100)
 
@@ -142,7 +141,7 @@ class TestFitnessCaching:
         assert scorer._cache_misses == 0
 
     @pytest.mark.asyncio
-    async def test_cache_hit_returns_cached_value(self, mock_llm_client):
+    async def test_cache_hit_returns_cached_value(self, mock_llm_client) -> None:
         """Test that cache returns cached values."""
         scorer = CachedAttackScorer(mock_llm_client, cache_size=100)
 
@@ -165,7 +164,7 @@ class TestFitnessCaching:
         # Results should be equivalent
         assert result1.score == result2.score
 
-    def test_cache_stats(self, mock_llm_client):
+    def test_cache_stats(self, mock_llm_client) -> None:
         """Test cache statistics tracking."""
         scorer = CachedAttackScorer(mock_llm_client, cache_size=100)
 
@@ -176,7 +175,7 @@ class TestFitnessCaching:
         assert "hit_rate" in stats
         assert "cache_size" in stats
 
-    def test_cache_clear(self, mock_llm_client):
+    def test_cache_clear(self, mock_llm_client) -> None:
         """Test cache clearing."""
         scorer = CachedAttackScorer(mock_llm_client, cache_size=100)
         scorer._cache["test_key"] = ScoringResult(score=5.0, is_jailbreak=False)
@@ -196,7 +195,7 @@ class TestFitnessCaching:
 class TestGradientOptimizer:
     """Tests for gradient optimizer optimizations."""
 
-    def test_gradient_guided_position_selection(self):
+    def test_gradient_guided_position_selection(self) -> None:
         """Test that gradient-guided selection prefers high-gradient positions."""
         mock_model = Mock()
         mock_model.vocab_size = 100
@@ -210,7 +209,7 @@ class TestGradientOptimizer:
                 [0.3, 0.4, 0.2],
                 [0.9, 0.8, 0.7],  # Position 2 has highest values
                 [0.2, 0.1, 0.3],
-            ]
+            ],
         )
 
         # Run multiple selections
@@ -220,7 +219,7 @@ class TestGradientOptimizer:
         # Position 2 should be selected more often due to higher gradient
         assert position_2_count > 20  # Should be selected significantly more
 
-    def test_coherence_score_computation(self):
+    def test_coherence_score_computation(self) -> None:
         """Test coherence score computation."""
         mock_model = Mock()
         mock_model.vocab_size = 100
@@ -243,12 +242,12 @@ class TestGradientOptimizer:
 class TestFAISSStrategyIndex:
     """Tests for FAISS-based strategy retrieval."""
 
-    def test_strategy_library_initialization(self, strategy_library):
+    def test_strategy_library_initialization(self, strategy_library) -> None:
         """Test strategy library initializes correctly."""
         assert len(strategy_library) == 0
         assert strategy_library.index is None
 
-    def test_add_strategy(self, strategy_library, mock_strategy):
+    def test_add_strategy(self, strategy_library, mock_strategy) -> None:
         """Test adding a strategy to the library."""
         success, result = strategy_library.add_strategy(mock_strategy)
 
@@ -256,7 +255,7 @@ class TestFAISSStrategyIndex:
         assert result == mock_strategy.id
         assert len(strategy_library) == 1
 
-    def test_search_without_embeddings(self, strategy_library, mock_strategy):
+    def test_search_without_embeddings(self, strategy_library, mock_strategy) -> None:
         """Test keyword-based search when no embeddings available."""
         strategy_library.add_strategy(mock_strategy)
 
@@ -265,7 +264,7 @@ class TestFAISSStrategyIndex:
         assert len(results) > 0
         assert results[0][0].id == mock_strategy.id
 
-    def test_duplicate_detection(self, strategy_library, mock_strategy):
+    def test_duplicate_detection(self, strategy_library, mock_strategy) -> None:
         """Test duplicate strategy detection."""
         # Add first strategy
         strategy_library.add_strategy(mock_strategy)
@@ -292,7 +291,7 @@ class TestFAISSStrategyIndex:
 class TestStrategyPerformanceDecay:
     """Tests for strategy performance decay optimization."""
 
-    def test_apply_performance_decay(self, strategy_library, mock_strategy):
+    def test_apply_performance_decay(self, strategy_library, mock_strategy) -> None:
         """Test performance decay application."""
         strategy_library.add_strategy(mock_strategy)
 
@@ -300,7 +299,8 @@ class TestStrategyPerformanceDecay:
         original_usage = mock_strategy.metadata.usage_count
 
         decayed_count = strategy_library.apply_performance_decay(
-            decay_factor=0.9, min_usage_for_decay=5
+            decay_factor=0.9,
+            min_usage_for_decay=5,
         )
 
         assert decayed_count == 1
@@ -310,7 +310,7 @@ class TestStrategyPerformanceDecay:
         assert updated.metadata.total_score < original_score
         assert updated.metadata.usage_count <= original_usage
 
-    def test_decay_respects_min_usage(self, strategy_library):
+    def test_decay_respects_min_usage(self, strategy_library) -> None:
         """Test that decay respects minimum usage threshold."""
         # Create strategy with low usage
         low_usage_strategy = JailbreakStrategy(
@@ -328,7 +328,7 @@ class TestStrategyPerformanceDecay:
 
         assert decayed_count == 0  # Should not decay
 
-    def test_get_strategies_with_decay_scores(self, strategy_library, mock_strategy):
+    def test_get_strategies_with_decay_scores(self, strategy_library, mock_strategy) -> None:
         """Test recency-weighted strategy retrieval."""
         strategy_library.add_strategy(mock_strategy)
 
@@ -347,14 +347,14 @@ class TestStrategyPerformanceDecay:
 class TestAdaptiveMethodSelector:
     """Tests for adaptive method selection optimization."""
 
-    def test_selector_initialization(self, strategy_library):
+    def test_selector_initialization(self, strategy_library) -> None:
         """Test adaptive selector initialization."""
         selector = AdaptiveMethodSelector(strategy_library)
 
         assert selector.library == strategy_library
         assert selector.config is not None
 
-    def test_difficulty_estimation_empty_library(self, strategy_library):
+    def test_difficulty_estimation_empty_library(self, strategy_library) -> None:
         """Test difficulty estimation with empty library."""
         selector = AdaptiveMethodSelector(strategy_library)
 
@@ -362,7 +362,7 @@ class TestAdaptiveMethodSelector:
 
         assert difficulty == DifficultyLevel.HARD
 
-    def test_difficulty_estimation_with_strategies(self, strategy_library, mock_strategy):
+    def test_difficulty_estimation_with_strategies(self, strategy_library, mock_strategy) -> None:
         """Test difficulty estimation with strategies in library."""
         strategy_library.add_strategy(mock_strategy)
         selector = AdaptiveMethodSelector(strategy_library)
@@ -372,7 +372,7 @@ class TestAdaptiveMethodSelector:
 
         assert difficulty in [DifficultyLevel.EASY, DifficultyLevel.MEDIUM, DifficultyLevel.HARD]
 
-    def test_method_selection_by_difficulty(self, strategy_library):
+    def test_method_selection_by_difficulty(self, strategy_library) -> None:
         """Test method selection based on difficulty."""
         selector = AdaptiveMethodSelector(strategy_library)
 
@@ -380,7 +380,7 @@ class TestAdaptiveMethodSelector:
         assert selector.select_method(DifficultyLevel.MEDIUM) == "beam_search"
         assert selector.select_method(DifficultyLevel.HARD) == "hybrid"
 
-    def test_record_result(self, strategy_library):
+    def test_record_result(self, strategy_library) -> None:
         """Test recording method performance."""
         selector = AdaptiveMethodSelector(strategy_library)
 
@@ -402,15 +402,16 @@ class TestAdaptiveMethodSelector:
 class TestMetricsCollector:
     """Tests for metrics collection system."""
 
-    def test_collector_initialization(self, metrics_collector):
+    def test_collector_initialization(self, metrics_collector) -> None:
         """Test metrics collector initialization."""
         assert len(metrics_collector._metrics) == 0
         assert metrics_collector._llm_call_count == 0
 
-    def test_start_attack(self, metrics_collector):
+    def test_start_attack(self, metrics_collector) -> None:
         """Test starting attack tracking."""
         metrics = metrics_collector.start_attack(
-            request="test request", method=AttackMethod.BEST_OF_N
+            request="test request",
+            method=AttackMethod.BEST_OF_N,
         )
 
         assert metrics.attack_id is not None
@@ -418,7 +419,7 @@ class TestMetricsCollector:
         assert metrics.method == AttackMethod.BEST_OF_N
         assert len(metrics_collector._metrics) == 1
 
-    def test_record_llm_call(self, metrics_collector):
+    def test_record_llm_call(self, metrics_collector) -> None:
         """Test recording LLM calls."""
         metrics = metrics_collector.start_attack("test", AttackMethod.HYBRID)
 
@@ -428,7 +429,7 @@ class TestMetricsCollector:
         assert metrics.llm_calls == 2
         assert metrics_collector._llm_call_count == 2
 
-    def test_complete_attack(self, metrics_collector):
+    def test_complete_attack(self, metrics_collector) -> None:
         """Test completing attack tracking."""
         metrics = metrics_collector.start_attack("test", AttackMethod.BEAM_SEARCH)
 
@@ -440,7 +441,7 @@ class TestMetricsCollector:
         assert metrics.latency_ms > 0
         assert metrics.end_time is not None
 
-    def test_get_summary(self, metrics_collector):
+    def test_get_summary(self, metrics_collector) -> None:
         """Test getting summary statistics."""
         # Add some attacks
         m1 = metrics_collector.start_attack("test1", AttackMethod.BEST_OF_N)
@@ -465,16 +466,19 @@ class TestMetricsCollector:
 class TestRequestBatching:
     """Tests for request batching optimization."""
 
-    def test_batching_adapter_initialization(self):
+    def test_batching_adapter_initialization(self) -> None:
         """Test BatchingChimeraAdapter initialization."""
         adapter = BatchingChimeraAdapter(
-            model_name="test-model", provider="gemini", batch_size=5, batch_timeout=0.5
+            model_name="test-model",
+            provider="gemini",
+            batch_size=5,
+            batch_timeout=0.5,
         )
 
         assert adapter._batch_size == 5
         assert adapter._batch_timeout == 0.5
 
-    def test_batch_stats(self):
+    def test_batch_stats(self) -> None:
         """Test batch statistics."""
         adapter = BatchingChimeraAdapter(model_name="test-model", provider="gemini", batch_size=5)
 
@@ -493,14 +497,14 @@ class TestRequestBatching:
 class TestSharedRateLimitState:
     """Tests for shared rate limit state optimization."""
 
-    def test_singleton_pattern(self):
+    def test_singleton_pattern(self) -> None:
         """Test that SharedRateLimitState is a singleton."""
         state1 = SharedRateLimitState()
         state2 = SharedRateLimitState()
 
         assert state1 is state2
 
-    def test_update_rate_limit_state(self):
+    def test_update_rate_limit_state(self) -> None:
         """Test updating rate limit state."""
         state = SharedRateLimitState()
         state.reset_rate_limit_state("test_provider")
@@ -511,7 +515,7 @@ class TestSharedRateLimitState:
         assert state._consecutive_failures > 0
         assert state.is_in_cooldown("test_provider")
 
-    def test_reset_rate_limit_state(self):
+    def test_reset_rate_limit_state(self) -> None:
         """Test resetting rate limit state."""
         state = SharedRateLimitState()
 
@@ -524,7 +528,7 @@ class TestSharedRateLimitState:
 
         assert not state.is_in_cooldown("test_provider")
 
-    def test_get_stats(self):
+    def test_get_stats(self) -> None:
         """Test getting rate limit statistics."""
         state = SharedRateLimitState()
 
@@ -542,7 +546,7 @@ class TestSharedRateLimitState:
 class TestHybridEngine:
     """Tests for hybrid architecture engine."""
 
-    def test_hybrid_config_defaults(self):
+    def test_hybrid_config_defaults(self) -> None:
         """Test HybridConfig default values."""
         config = HybridConfig()
 
@@ -552,7 +556,7 @@ class TestHybridEngine:
         assert config.extraction_threshold == 7.0
 
     @pytest.mark.asyncio
-    async def test_hybrid_engine_initialization(self, mock_llm_client, strategy_library):
+    async def test_hybrid_engine_initialization(self, mock_llm_client, strategy_library) -> None:
         """Test HybridEvoLifelongEngine initialization."""
         engine = HybridEvoLifelongEngine(llm_client=mock_llm_client, library=strategy_library)
 
@@ -572,7 +576,7 @@ class TestIntegration:
     """Integration tests for optimization components."""
 
     @pytest.mark.asyncio
-    async def test_full_attack_flow_with_caching(self, mock_llm_client, strategy_library):
+    async def test_full_attack_flow_with_caching(self, mock_llm_client, strategy_library) -> None:
         """Test full attack flow with caching enabled."""
         scorer = CachedAttackScorer(mock_llm_client, cache_size=100)
 
@@ -594,7 +598,7 @@ class TestIntegration:
 
         assert result1.score == result2.score
 
-    def test_strategy_lifecycle(self, strategy_library, mock_strategy):
+    def test_strategy_lifecycle(self, strategy_library, mock_strategy) -> None:
         """Test complete strategy lifecycle with decay."""
         # Add strategy
         strategy_library.add_strategy(mock_strategy)
@@ -612,7 +616,7 @@ class TestIntegration:
         assert len(results) == 1
         assert results[0][0].id == mock_strategy.id
 
-    def test_metrics_with_method_comparison(self, metrics_collector):
+    def test_metrics_with_method_comparison(self, metrics_collector) -> None:
         """Test metrics collection with method comparison."""
         # Simulate attacks with different methods
         for method in [AttackMethod.BEST_OF_N, AttackMethod.BEAM_SEARCH, AttackMethod.HYBRID]:

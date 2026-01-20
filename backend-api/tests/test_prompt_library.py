@@ -6,7 +6,7 @@ from app.services.prompt_library_service import prompt_library_service
 
 
 @pytest.mark.asyncio
-async def test_create_template():
+async def test_create_template() -> None:
     request = CreateTemplateRequest(
         title="Test Template",
         description="A test description for the template.",
@@ -27,7 +27,7 @@ async def test_create_template():
 
 
 @pytest.mark.asyncio
-async def test_search_templates():
+async def test_search_templates() -> None:
     # Setup - ensure we have something to search
     request = CreateTemplateRequest(
         title="Searchable Template",

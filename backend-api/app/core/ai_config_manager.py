@@ -1,5 +1,4 @@
-"""
-AI Configuration Manager
+"""AI Configuration Manager.
 
 Centralized manager for loading, validating, and providing access to
 AI provider configurations. Supports hot-reload and configuration versioning.
@@ -60,7 +59,7 @@ class ConfigEvent:
         event_type: str,
         data: dict[str, Any],
         timestamp: datetime | None = None,
-    ):
+    ) -> None:
         self.event_type = event_type
         self.data = data
         self.timestamp = timestamp or datetime.utcnow()
@@ -79,8 +78,7 @@ class ConfigEvent:
 
 
 class AIConfigManager:
-    """
-    Centralized AI provider configuration manager.
+    """Centralized AI provider configuration manager.
 
     Features:
     - Load and validate provider configurations from YAML
@@ -105,6 +103,7 @@ class AIConfigManager:
 
         # Subscribe to changes
         manager.on_change(my_callback)
+
     """
 
     _instance: Optional["AIConfigManager"] = None
@@ -120,7 +119,7 @@ class AIConfigManager:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._initialized:
             return
 
@@ -145,8 +144,7 @@ class AIConfigManager:
         config_path: Path | None = None,
         validate: bool = True,
     ) -> AIProvidersConfig:
-        """
-        Load configuration from YAML file.
+        """Load configuration from YAML file.
 
         Args:
             config_path: Optional path to config file (defaults to providers.yaml)
@@ -158,12 +156,14 @@ class AIConfigManager:
         Raises:
             FileNotFoundError: If config file doesn't exist
             ValueError: If configuration is invalid
+
         """
         async with self._lock:
             path = self._resolve_config_path(config_path)
 
             if not path.exists():
-                raise FileNotFoundError(f"Config file not found: {path}")
+                msg = f"Config file not found: {path}"
+                raise FileNotFoundError(msg)
 
             logger.info(f"Loading AI provider config from: {path}")
 
@@ -216,12 +216,12 @@ class AIConfigManager:
                         "default_provider": config.global_config.default_provider,
                         "schema_version": config.schema_version,
                     },
-                )
+                ),
             )
 
             logger.info(
                 f"Loaded AI config: {len(config.providers)} providers, "
-                f"default={config.global_config.default_provider}"
+                f"default={config.global_config.default_provider}",
             )
 
             return config
@@ -409,7 +409,7 @@ class AIConfigManager:
                 env_var = provider.api.key_env_var
                 if not os.getenv(env_var):
                     warnings.append(
-                        f"API key env var '{env_var}' not set " f"for provider '{provider_id}'"
+                        f"API key env var '{env_var}' not set for provider '{provider_id}'",
                     )
 
         # Check failover chain validity
@@ -418,7 +418,7 @@ class AIConfigManager:
                 resolved = config.aliases.get(failover_id, failover_id)
                 if resolved not in config.providers:
                     errors.append(
-                        f"Invalid failover provider '{failover_id}' " f"in '{provider_id}' chain"
+                        f"Invalid failover provider '{failover_id}' in '{provider_id}' chain",
                     )
 
         # Log warnings
@@ -427,74 +427,77 @@ class AIConfigManager:
 
         # Raise on errors
         if errors:
-            raise ValueError(f"Configuration validation failed: {errors}")
+            msg = f"Configuration validation failed: {errors}"
+            raise ValueError(msg)
 
     # =========================================================================
     # Configuration Access (Thread-Safe)
     # =========================================================================
 
     def get_config(self) -> AIProvidersConfig:
-        """
-        Get current configuration.
+        """Get current configuration.
 
         Returns:
             Current AIProvidersConfig
 
         Raises:
             RuntimeError: If configuration not loaded
+
         """
         if not self._config:
-            raise RuntimeError("Configuration not loaded. Call load_config() first.")
+            msg = "Configuration not loaded. Call load_config() first."
+            raise RuntimeError(msg)
         return self._config
 
     def get_provider(self, provider_id: str) -> ProviderConfig | None:
-        """
-        Get provider configuration by ID or alias.
+        """Get provider configuration by ID or alias.
 
         Args:
             provider_id: Provider ID or alias
 
         Returns:
             ProviderConfig or None if not found
+
         """
         config = self.get_config()
         return config.get_provider(provider_id)
 
     def get_active_provider(self) -> ProviderConfig:
-        """
-        Get the currently active (default) provider configuration.
+        """Get the currently active (default) provider configuration.
 
         Returns:
             Active ProviderConfig
 
         Raises:
             RuntimeError: If no active provider configured
+
         """
         config = self.get_config()
         provider = config.get_active_provider()
         if not provider:
-            raise RuntimeError("No active provider configured")
+            msg = "No active provider configured"
+            raise RuntimeError(msg)
         return provider
 
     def get_active_model(self) -> ModelConfig:
-        """
-        Get the currently active model configuration.
+        """Get the currently active model configuration.
 
         Returns:
             Active ModelConfig
 
         Raises:
             RuntimeError: If no active model configured
+
         """
         config = self.get_config()
         model = config.get_active_model()
         if not model:
-            raise RuntimeError("No active model configured")
+            msg = "No active model configured"
+            raise RuntimeError(msg)
         return model
 
     def get_model(self, model_id: str, provider_id: str | None = None) -> ModelConfig | None:
-        """
-        Get model configuration.
+        """Get model configuration.
 
         Args:
             model_id: Model ID to find
@@ -502,6 +505,7 @@ class AIConfigManager:
 
         Returns:
             ModelConfig or None if not found
+
         """
         config = self.get_config()
 
@@ -523,8 +527,7 @@ class AIConfigManager:
         return config.get_enabled_providers()
 
     def get_failover_chain(self, name: str, provider_id: str | None = None) -> list[str]:
-        """
-        Get a named failover chain or provider's failover chain.
+        """Get a named failover chain or provider's failover chain.
 
         Args:
             name: Named chain name OR provider ID
@@ -532,6 +535,7 @@ class AIConfigManager:
 
         Returns:
             List of provider IDs in failover order
+
         """
         config = self.get_config()
 
@@ -544,14 +548,14 @@ class AIConfigManager:
         return config.get_failover_chain(actual_provider_id)
 
     def resolve_provider_alias(self, name: str) -> str:
-        """
-        Resolve a provider alias to its canonical name.
+        """Resolve a provider alias to its canonical name.
 
         Args:
             name: Provider name or alias
 
         Returns:
             Canonical provider name
+
         """
         config = self.get_config()
         return config.resolve_provider_alias(name)
@@ -561,23 +565,25 @@ class AIConfigManager:
     # =========================================================================
 
     async def set_default_provider(self, provider_id: str) -> None:
-        """
-        Change the default provider at runtime.
+        """Change the default provider at runtime.
 
         Args:
             provider_id: New default provider ID
 
         Raises:
             ValueError: If provider doesn't exist or is disabled
+
         """
         async with self._lock:
             config = self.get_config()
             provider = config.get_provider(provider_id)
 
             if not provider:
-                raise ValueError(f"Provider '{provider_id}' not found")
+                msg = f"Provider '{provider_id}' not found"
+                raise ValueError(msg)
             if not provider.enabled:
-                raise ValueError(f"Provider '{provider_id}' is disabled")
+                msg = f"Provider '{provider_id}' is disabled"
+                raise ValueError(msg)
 
             old_default = config.global_config.default_provider
 
@@ -610,7 +616,7 @@ class AIConfigManager:
                 ConfigEvent(
                     event_type=ConfigEventType.DEFAULT_CHANGED,
                     data={"old_default": old_default, "new_default": provider_id},
-                )
+                ),
             )
 
     async def enable_provider(self, provider_id: str) -> None:
@@ -618,7 +624,8 @@ class AIConfigManager:
         async with self._lock:
             provider = self.get_provider(provider_id)
             if not provider:
-                raise ValueError(f"Provider '{provider_id}' not found")
+                msg = f"Provider '{provider_id}' not found"
+                raise ValueError(msg)
 
             # Note: With frozen models, we'd need to recreate the config
             logger.info(f"Provider '{provider_id}' enabled")
@@ -627,7 +634,7 @@ class AIConfigManager:
                 ConfigEvent(
                     event_type=ConfigEventType.PROVIDER_ENABLED,
                     data={"provider_id": provider_id},
-                )
+                ),
             )
 
     async def disable_provider(self, provider_id: str) -> None:
@@ -635,12 +642,14 @@ class AIConfigManager:
         async with self._lock:
             provider = self.get_provider(provider_id)
             if not provider:
-                raise ValueError(f"Provider '{provider_id}' not found")
+                msg = f"Provider '{provider_id}' not found"
+                raise ValueError(msg)
 
             # Prevent disabling default provider
             config = self.get_config()
             if provider_id == config.global_config.default_provider:
-                raise ValueError("Cannot disable the default provider")
+                msg = "Cannot disable the default provider"
+                raise ValueError(msg)
 
             # Note: With frozen models, we'd need to recreate the config
             logger.info(f"Provider '{provider_id}' disabled")
@@ -649,7 +658,7 @@ class AIConfigManager:
                 ConfigEvent(
                     event_type=ConfigEventType.PROVIDER_DISABLED,
                     data={"provider_id": provider_id},
-                )
+                ),
             )
 
     # =========================================================================
@@ -657,20 +666,20 @@ class AIConfigManager:
     # =========================================================================
 
     async def reload_config(self) -> AIProvidersConfig:
-        """
-        Reload configuration from file.
+        """Reload configuration from file.
 
         Returns:
             Reloaded AIProvidersConfig
+
         """
         return await self.load_config(self._config_path)
 
     async def start_file_watcher(self, interval_seconds: int = 5) -> None:
-        """
-        Start watching config file for changes.
+        """Start watching config file for changes.
 
         Args:
             interval_seconds: Check interval in seconds
+
         """
         if self._file_watcher_task and not self._file_watcher_task.done():
             logger.warning("File watcher already running")
@@ -708,14 +717,16 @@ class AIConfigManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in file watcher: {e}")
+                logger.exception(f"Error in file watcher: {e}")
 
     # =========================================================================
     # Configuration Versioning
     # =========================================================================
 
     def _create_snapshot(
-        self, config: AIProvidersConfig, description: str | None = None
+        self,
+        config: AIProvidersConfig,
+        description: str | None = None,
     ) -> ConfigSnapshot:
         """Create a configuration snapshot."""
         version = len(self._snapshots) + 1
@@ -734,8 +745,7 @@ class AIConfigManager:
         return self._snapshots.copy()
 
     async def rollback_to_version(self, version: int) -> AIProvidersConfig:
-        """
-        Rollback to a previous configuration version.
+        """Rollback to a previous configuration version.
 
         Args:
             version: Version number to rollback to
@@ -745,6 +755,7 @@ class AIConfigManager:
 
         Raises:
             ValueError: If version not found
+
         """
         async with self._lock:
             for snapshot in self._snapshots:
@@ -756,12 +767,13 @@ class AIConfigManager:
                         ConfigEvent(
                             event_type=ConfigEventType.CONFIG_RELOADED,
                             data={"action": "rollback", "version": version},
-                        )
+                        ),
                     )
 
                     return snapshot.config
 
-            raise ValueError(f"Config version {version} not found")
+            msg = f"Config version {version} not found"
+            raise ValueError(msg)
 
     # =========================================================================
     # Event Emission
@@ -772,12 +784,12 @@ class AIConfigManager:
         callback: Callable[[ConfigEvent], None],
         async_callback: bool = False,
     ) -> None:
-        """
-        Register a callback for configuration changes.
+        """Register a callback for configuration changes.
 
         Args:
             callback: Function to call on config changes
             async_callback: Whether callback is async
+
         """
         if async_callback:
             self._async_callbacks.append(callback)
@@ -798,14 +810,14 @@ class AIConfigManager:
             try:
                 callback(event)
             except Exception as e:
-                logger.error(f"Error in config callback: {e}")
+                logger.exception(f"Error in config callback: {e}")
 
         # Async callbacks
         for callback in self._async_callbacks:
             try:
                 await callback(event)
             except Exception as e:
-                logger.error(f"Error in async config callback: {e}")
+                logger.exception(f"Error in async config callback: {e}")
 
     # =========================================================================
     # Utility Methods

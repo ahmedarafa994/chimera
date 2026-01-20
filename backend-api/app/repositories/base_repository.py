@@ -1,5 +1,4 @@
-"""
-Base Repository Pattern
+"""Base Repository Pattern.
 
 This module provides a generic repository pattern for data access operations.
 It abstracts database operations and provides a consistent interface for
@@ -18,7 +17,7 @@ T = TypeVar("T", bound=DeclarativeBase)
 class BaseRepository(Generic[T]):
     """Base repository for data access operations."""
 
-    def __init__(self, model: type[T], session: AsyncSession):
+    def __init__(self, model: type[T], session: AsyncSession) -> None:
         self.model = model
         self.session = session
 

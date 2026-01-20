@@ -1,5 +1,4 @@
-"""
-Base Repository Interface
+"""Base Repository Interface.
 
 Story 1.3: Configuration Persistence System
 Provides abstract base class for all repositories.
@@ -29,19 +28,18 @@ class DuplicateEntityError(RepositoryError):
 
 
 class BaseRepository(ABC, Generic[T]):
-    """
-    Abstract base repository with common CRUD operations.
+    """Abstract base repository with common CRUD operations.
 
     Type Parameters:
         T: Entity type managed by this repository.
     """
 
-    def __init__(self, db: DatabaseConnection):
-        """
-        Initialize repository with database connection.
+    def __init__(self, db: DatabaseConnection) -> None:
+        """Initialize repository with database connection.
 
         Args:
             db: Database connection instance.
+
         """
         self._db = db
 
@@ -52,29 +50,28 @@ class BaseRepository(ABC, Generic[T]):
 
     @abstractmethod
     async def get_by_id(self, entity_id: str) -> T | None:
-        """
-        Get entity by ID.
+        """Get entity by ID.
 
         Args:
             entity_id: Unique entity identifier.
 
         Returns:
             Entity if found, None otherwise.
+
         """
 
     @abstractmethod
     async def get_all(self) -> list[T]:
-        """
-        Get all entities.
+        """Get all entities.
 
         Returns:
             List of all entities.
+
         """
 
     @abstractmethod
     async def create(self, entity: T) -> T:
-        """
-        Create new entity.
+        """Create new entity.
 
         Args:
             entity: Entity to create.
@@ -84,12 +81,12 @@ class BaseRepository(ABC, Generic[T]):
 
         Raises:
             DuplicateEntityError: If entity already exists.
+
         """
 
     @abstractmethod
     async def update(self, entity: T) -> T:
-        """
-        Update existing entity.
+        """Update existing entity.
 
         Args:
             entity: Entity with updated values.
@@ -99,41 +96,43 @@ class BaseRepository(ABC, Generic[T]):
 
         Raises:
             EntityNotFoundError: If entity doesn't exist.
+
         """
 
     @abstractmethod
     async def delete(self, entity_id: str) -> bool:
-        """
-        Delete entity by ID.
+        """Delete entity by ID.
 
         Args:
             entity_id: Unique entity identifier.
 
         Returns:
             True if deleted, False if not found.
+
         """
 
     async def exists(self, entity_id: str) -> bool:
-        """
-        Check if entity exists.
+        """Check if entity exists.
 
         Args:
             entity_id: Unique entity identifier.
 
         Returns:
             True if entity exists.
+
         """
         result = await self._db.fetchone(
-            f"SELECT 1 FROM {self.table_name} WHERE id = ?", (entity_id,)
+            f"SELECT 1 FROM {self.table_name} WHERE id = ?",
+            (entity_id,),
         )
         return result is not None
 
     async def count(self) -> int:
-        """
-        Count total entities.
+        """Count total entities.
 
         Returns:
             Total count of entities.
+
         """
         result = await self._db.fetchone(f"SELECT COUNT(*) as count FROM {self.table_name}")
         return result["count"] if result else 0

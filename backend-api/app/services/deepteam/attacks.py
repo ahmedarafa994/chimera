@@ -17,14 +17,14 @@ class AttackFactory:
 
     @staticmethod
     def create(config: AttackConfig) -> Any:
-        """
-        Create an attack instance from configuration.
+        """Create an attack instance from configuration.
 
         Args:
             config: Attack configuration
 
         Returns:
             DeepTeam attack instance
+
         """
         try:
             return AttackFactory._create_attack(config)
@@ -32,7 +32,7 @@ class AttackFactory:
             logger.warning(f"DeepTeam not installed, using mock: {e}")
             return AttackFactory._create_mock_attack(config)
         except Exception as e:
-            logger.error(f"Failed to create attack {config.type}: {e}")
+            logger.exception(f"Failed to create attack {config.type}: {e}")
             raise
 
     @staticmethod
@@ -117,7 +117,7 @@ class AttackFactory:
             kwargs = AttackFactory._build_kwargs(config, params)
             return attack_class(**kwargs)
 
-        elif attack_type in multi_turn_attacks:
+        if attack_type in multi_turn_attacks:
             attack_class, params = multi_turn_attacks[attack_type]
             kwargs = AttackFactory._build_kwargs(config, params)
 
@@ -133,8 +133,8 @@ class AttackFactory:
 
             return attack_class(**kwargs)
 
-        else:
-            raise ValueError(f"Unknown attack type: {config.type}")
+        msg = f"Unknown attack type: {config.type}"
+        raise ValueError(msg)
 
     @staticmethod
     def _build_kwargs(config: AttackConfig, allowed_params: list[str]) -> dict[str, Any]:
@@ -292,7 +292,7 @@ class AttackFactory:
 class MockAttack:
     """Mock attack for testing without DeepTeam installed."""
 
-    def __init__(self, config: AttackConfig):
+    def __init__(self, config: AttackConfig) -> None:
         self.config = config
         self.type = config.type
         self.weight = config.weight

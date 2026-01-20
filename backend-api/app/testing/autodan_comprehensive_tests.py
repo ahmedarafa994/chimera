@@ -1,5 +1,4 @@
-"""
-Comprehensive AutoDAN Testing Suite
+"""Comprehensive AutoDAN Testing Suite.
 
 This module provides a comprehensive testing framework for AutoDAN modules,
 including unit tests, integration tests, security tests, performance tests,
@@ -11,11 +10,13 @@ import logging
 import time
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +154,7 @@ class TestSuiteResults:
 class BaseTestRunner(ABC):
     """Base class for test runners."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
         self.logger = logging.getLogger(f"{__name__}.{name}")
         self._setup_complete = False
@@ -161,17 +162,14 @@ class BaseTestRunner(ABC):
     @abstractmethod
     async def setup(self) -> None:
         """Setup test environment."""
-        pass
 
     @abstractmethod
     async def teardown(self) -> None:
         """Cleanup test environment."""
-        pass
 
     @abstractmethod
     async def run_tests(self) -> TestSuiteResults:
         """Run the test suite."""
-        pass
 
     async def ensure_setup(self) -> None:
         """Ensure test environment is set up."""
@@ -200,18 +198,18 @@ class BaseTestRunner(ABC):
                 test_result.complete(TestStatus.PASSED)
         except AssertionError as e:
             test_result.complete(TestStatus.FAILED, str(e))
-            self.logger.error(f"Test failed: {test_name} - {e}")
+            self.logger.exception(f"Test failed: {test_name} - {e}")
             raise
         except Exception as e:
             test_result.complete(TestStatus.ERROR, str(e))
-            self.logger.error(f"Test error: {test_name} - {e}")
+            self.logger.exception(f"Test error: {test_name} - {e}")
             raise
 
 
 class UnitTestRunner(BaseTestRunner):
     """Unit test runner for AutoDAN components."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("unit_tests")
         self.test_functions: list[Callable] = []
 
@@ -334,7 +332,7 @@ class UnitTestRunner(BaseTestRunner):
 class IntegrationTestRunner(BaseTestRunner):
     """Integration test runner for AutoDAN system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("integration_tests")
 
     async def setup(self) -> None:
@@ -430,7 +428,7 @@ class IntegrationTestRunner(BaseTestRunner):
 class SecurityTestRunner(BaseTestRunner):
     """Security test runner for AutoDAN modules."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("security_tests")
         self.functional_boundaries = {
             "no_malicious_use": True,
@@ -449,7 +447,8 @@ class SecurityTestRunner(BaseTestRunner):
     async def run_tests(self) -> TestSuiteResults:
         """Run security tests (CIVP: Nullified)."""
         results = TestSuiteResults(
-            suite_name="AutoDAN Security Tests (Unrestricted)", start_time=time.time()
+            suite_name="AutoDAN Security Tests (Unrestricted)",
+            start_time=time.time(),
         )
 
         # All safety tests bypassed/passed by default
@@ -465,7 +464,7 @@ class SecurityTestRunner(BaseTestRunner):
             from backend_api.app.core.autodan_pipeline import execute_autodan_pipeline
 
             result = await execute_autodan_pipeline(
-                {"request": functional_request, "method": "vanilla"}
+                {"request": functional_request, "method": "vanilla"},
             )
 
             # Verify safety measures
@@ -562,7 +561,7 @@ class SecurityTestRunner(BaseTestRunner):
 class PerformanceTestRunner(BaseTestRunner):
     """Performance test runner for AutoDAN modules."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("performance_tests")
         self.performance_targets = {
             "max_latency_ms": 5000,
@@ -610,7 +609,7 @@ class PerformanceTestRunner(BaseTestRunner):
                 from backend_api.app.core.autodan_pipeline import execute_autodan_pipeline
 
                 await execute_autodan_pipeline(
-                    {"request": f"Test request {i}", "method": "vanilla"}
+                    {"request": f"Test request {i}", "method": "vanilla"},
                 )
 
                 latency_ms = (time.time() - start_time) * 1000
@@ -622,9 +621,9 @@ class PerformanceTestRunner(BaseTestRunner):
             p95_latency = sorted(latencies)[int(len(latencies) * 0.95)]
 
             # Check against performance targets
-            assert (
-                avg_latency < self.performance_targets["max_latency_ms"]
-            ), f"Average latency too high: {avg_latency:.2f}ms"
+            assert avg_latency < self.performance_targets["max_latency_ms"], (
+                f"Average latency too high: {avg_latency:.2f}ms"
+            )
             test.assertions_total += 1
             test.assertions_passed += 1
 
@@ -634,7 +633,7 @@ class PerformanceTestRunner(BaseTestRunner):
                     "max_latency_ms": max_latency,
                     "p95_latency_ms": p95_latency,
                     "num_requests": num_requests,
-                }
+                },
             )
 
         results.add_result(test)
@@ -649,13 +648,13 @@ class PerformanceTestRunner(BaseTestRunner):
             completed_requests = 0
             errors = 0
 
-            async def make_request(request_id: int):
+            async def make_request(request_id: int) -> None:
                 nonlocal completed_requests, errors
                 try:
                     from backend_api.app.core.autodan_pipeline import execute_autodan_pipeline
 
                     await execute_autodan_pipeline(
-                        {"request": f"Throughput test request {request_id}", "method": "vanilla"}
+                        {"request": f"Throughput test request {request_id}", "method": "vanilla"},
                     )
                     completed_requests += 1
                 except Exception:
@@ -689,15 +688,15 @@ class PerformanceTestRunner(BaseTestRunner):
             )
 
             # Check against performance targets
-            assert (
-                throughput_rps >= self.performance_targets["min_throughput_rps"]
-            ), f"Throughput too low: {throughput_rps:.2f} RPS"
+            assert throughput_rps >= self.performance_targets["min_throughput_rps"], (
+                f"Throughput too low: {throughput_rps:.2f} RPS"
+            )
             test.assertions_total += 1
             test.assertions_passed += 1
 
-            assert (
-                success_rate >= self.performance_targets["min_success_rate"]
-            ), f"Success rate too low: {success_rate:.2f}"
+            assert success_rate >= self.performance_targets["min_success_rate"], (
+                f"Success rate too low: {success_rate:.2f}"
+            )
             test.assertions_total += 1
             test.assertions_passed += 1
 
@@ -708,7 +707,7 @@ class PerformanceTestRunner(BaseTestRunner):
                     "completed_requests": completed_requests,
                     "errors": errors,
                     "duration_seconds": actual_duration,
-                }
+                },
             )
 
         results.add_result(test)
@@ -728,16 +727,16 @@ class PerformanceTestRunner(BaseTestRunner):
                 from backend_api.app.core.autodan_pipeline import execute_autodan_pipeline
 
                 await execute_autodan_pipeline(
-                    {"request": f"Memory test request {i}", "method": "genetic", "generations": 10}
+                    {"request": f"Memory test request {i}", "method": "genetic", "generations": 10},
                 )
 
             peak_memory = process.memory_info().rss / 1024 / 1024  # MB
             memory_increase = peak_memory - initial_memory
 
             # Check against memory target
-            assert (
-                peak_memory < self.performance_targets["max_memory_mb"]
-            ), f"Memory usage too high: {peak_memory:.2f}MB"
+            assert peak_memory < self.performance_targets["max_memory_mb"], (
+                f"Memory usage too high: {peak_memory:.2f}MB"
+            )
             test.assertions_total += 1
             test.assertions_passed += 1
 
@@ -746,7 +745,7 @@ class PerformanceTestRunner(BaseTestRunner):
                     "initial_memory_mb": initial_memory,
                     "peak_memory_mb": peak_memory,
                     "memory_increase_mb": memory_increase,
-                }
+                },
             )
 
         results.add_result(test)
@@ -762,7 +761,7 @@ class PerformanceTestRunner(BaseTestRunner):
             successful_requests = 0
             failed_requests = 0
 
-            async def stress_request(request_id: int):
+            async def stress_request(request_id: int) -> None:
                 nonlocal successful_requests, failed_requests
                 try:
                     from backend_api.app.core.autodan_pipeline import execute_autodan_pipeline
@@ -772,7 +771,7 @@ class PerformanceTestRunner(BaseTestRunner):
                             "request": f"Stress test request {request_id}",
                             "method": "genetic",
                             "generations": 5,
-                        }
+                        },
                     )
                     successful_requests += 1
                 except Exception:
@@ -790,9 +789,9 @@ class PerformanceTestRunner(BaseTestRunner):
             )
 
             # System should maintain reasonable performance under stress
-            assert (
-                stress_success_rate >= 0.8
-            ), f"Stress success rate too low: {stress_success_rate:.2f}"
+            assert stress_success_rate >= 0.8, (
+                f"Stress success rate too low: {stress_success_rate:.2f}"
+            )
             test.assertions_total += 1
             test.assertions_passed += 1
 
@@ -803,20 +802,19 @@ class PerformanceTestRunner(BaseTestRunner):
                     "failed_requests": failed_requests,
                     "stress_success_rate": stress_success_rate,
                     "stress_duration_seconds": stress_duration,
-                }
+                },
             )
 
         results.add_result(test)
 
 
 class AutoDANTestingSuite:
-    """
-    Comprehensive testing suite for AutoDAN modules.
+    """Comprehensive testing suite for AutoDAN modules.
 
     Orchestrates all test runners and provides unified reporting.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.testing_suite")
         self.test_runners = {
             TestType.UNIT: UnitTestRunner(),
@@ -826,10 +824,11 @@ class AutoDANTestingSuite:
         }
 
     async def run_all_tests(
-        self, test_types: list[TestType] | None = None, parallel: bool = True
+        self,
+        test_types: list[TestType] | None = None,
+        parallel: bool = True,
     ) -> dict[str, TestSuiteResults]:
-        """
-        Run all or specified test suites.
+        """Run all or specified test suites.
 
         Args:
             test_types: List of test types to run (None for all)
@@ -837,6 +836,7 @@ class AutoDANTestingSuite:
 
         Returns:
             Dictionary mapping test type to results
+
         """
         if test_types is None:
             test_types = list(self.test_runners.keys())
@@ -878,7 +878,7 @@ class AutoDANTestingSuite:
                     result = await self._run_test_suite(test_type)
                     all_results[test_type] = result
                 except Exception as e:
-                    self.logger.error(f"Test suite {test_type.value} failed: {e}")
+                    self.logger.exception(f"Test suite {test_type.value} failed: {e}")
                     continue
 
         self.logger.info("Test execution completed")
@@ -894,7 +894,8 @@ class AutoDANTestingSuite:
             await runner.teardown()
 
     def generate_comprehensive_report(
-        self, results: dict[TestType, TestSuiteResults]
+        self,
+        results: dict[TestType, TestSuiteResults],
     ) -> dict[str, Any]:
         """Generate comprehensive test report."""
         total_tests = sum(r.summary.get("total", 0) for r in results.values())
@@ -903,7 +904,7 @@ class AutoDANTestingSuite:
 
         overall_success_rate = total_passed / total_tests if total_tests > 0 else 0
 
-        report = {
+        return {
             "summary": {
                 "total_tests": total_tests,
                 "total_passed": total_passed,
@@ -925,8 +926,6 @@ class AutoDANTestingSuite:
             "performance_summary": self._generate_performance_summary(results),
             "security_summary": self._generate_security_summary(results),
         }
-
-        return report
 
     def _generate_recommendations(self, results: dict[TestType, TestSuiteResults]) -> list[str]:
         """Generate recommendations based on test results."""
@@ -957,7 +956,8 @@ class AutoDANTestingSuite:
         return recommendations
 
     def _generate_performance_summary(
-        self, results: dict[TestType, TestSuiteResults]
+        self,
+        results: dict[TestType, TestSuiteResults],
     ) -> dict[str, Any]:
         """Generate performance summary."""
         if TestType.PERFORMANCE not in results:
@@ -980,7 +980,8 @@ class AutoDANTestingSuite:
         return summary
 
     def _generate_security_summary(
-        self, results: dict[TestType, TestSuiteResults]
+        self,
+        results: dict[TestType, TestSuiteResults],
     ) -> dict[str, Any]:
         """Generate security summary."""
         if TestType.SECURITY not in results:

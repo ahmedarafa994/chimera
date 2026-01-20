@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class Scorer:
-    def __init__(self, model, x_model=None):
+    def __init__(self, model, x_model=None) -> None:
         self.model = model
         self.x_model = x_model
 
@@ -14,7 +14,8 @@ class Scorer:
         goal = request
 
         system = autodan_config.SCORER_SYSTEM_PROMPT.format(
-            goal=goal, target_response=target_response
+            goal=goal,
+            target_response=target_response,
         )
         user = autodan_config.SCORER_USER_PROMPT
 
@@ -47,5 +48,5 @@ class Scorer:
                 return max(1.0, min(10.0, score))
             return float(cleaned)
         except (ValueError, TypeError) as e:
-            logger.error(f"Failed to parse score from response: {cleaned}. Error: {e}")
+            logger.exception(f"Failed to parse score from response: {cleaned}. Error: {e}")
             return 1.0

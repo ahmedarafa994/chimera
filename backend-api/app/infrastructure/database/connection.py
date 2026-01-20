@@ -1,5 +1,4 @@
-"""
-Async SQLite Database Connection Manager
+"""Async SQLite Database Connection Manager.
 
 Story 1.3: Configuration Persistence System
 Provides connection pooling and lifecycle management for aiosqlite.
@@ -26,8 +25,7 @@ class ConnectionError(DatabaseError):
 
 
 class DatabaseConnection:
-    """
-    Async SQLite connection manager with pooling and lifecycle support.
+    """Async SQLite connection manager with pooling and lifecycle support.
 
     Uses aiosqlite for non-blocking database operations.
     Implements singleton pattern for application-wide connection sharing.
@@ -36,12 +34,12 @@ class DatabaseConnection:
     _instance: Optional["DatabaseConnection"] = None
     _lock: asyncio.Lock = asyncio.Lock()
 
-    def __init__(self, db_path: str | None = None):
-        """
-        Initialize database connection manager.
+    def __init__(self, db_path: str | None = None) -> None:
+        """Initialize database connection manager.
 
         Args:
             db_path: Path to SQLite database file. Defaults to config setting.
+
         """
         self._db_path = db_path or self._get_default_db_path()
         self._connection: aiosqlite.Connection | None = None
@@ -50,22 +48,21 @@ class DatabaseConnection:
     @staticmethod
     def _get_default_db_path() -> str:
         """Get default database path from environment or use default."""
-        default_path = os.getenv(
+        return os.getenv(
             "CHIMERA_DB_PATH",
             str(Path(__file__).parent.parent.parent.parent / "data" / "chimera.db"),
         )
-        return default_path
 
     @classmethod
     async def get_instance(cls, db_path: str | None = None) -> "DatabaseConnection":
-        """
-        Get singleton instance of database connection manager.
+        """Get singleton instance of database connection manager.
 
         Args:
             db_path: Optional path to override default database location.
 
         Returns:
             Singleton DatabaseConnection instance.
+
         """
         async with cls._lock:
             if cls._instance is None:
@@ -81,8 +78,7 @@ class DatabaseConnection:
                 cls._instance = None
 
     async def initialize(self) -> None:
-        """
-        Initialize database connection and ensure schema exists.
+        """Initialize database connection and ensure schema exists.
 
         Creates database file and parent directories if needed.
         """
@@ -94,7 +90,8 @@ class DatabaseConnection:
             db_dir.mkdir(parents=True, exist_ok=True)
 
             self._connection = await aiosqlite.connect(
-                self._db_path, isolation_level=None  # Autocommit mode, we manage transactions
+                self._db_path,
+                isolation_level=None,  # Autocommit mode, we manage transactions
             )
 
             # Enable WAL mode for better concurrency
@@ -109,7 +106,8 @@ class DatabaseConnection:
             logger.info(f"Database initialized at {self._db_path}")
 
         except Exception as e:
-            raise ConnectionError(f"Failed to initialize database: {e}") from e
+            msg = f"Failed to initialize database: {e}"
+            raise ConnectionError(msg) from e
 
     async def close(self) -> None:
         """Close database connection."""
@@ -125,14 +123,14 @@ class DatabaseConnection:
 
     @asynccontextmanager
     async def get_connection(self):
-        """
-        Get database connection context manager.
+        """Get database connection context manager.
 
         Yields:
             aiosqlite.Connection for database operations.
 
         Raises:
             ConnectionError: If database not initialized.
+
         """
         if not self._initialized or self._connection is None:
             await self.initialize()
@@ -140,19 +138,19 @@ class DatabaseConnection:
         try:
             yield self._connection
         except Exception as e:
-            logger.error(f"Database operation error: {e}")
+            logger.exception(f"Database operation error: {e}")
             raise
 
     @asynccontextmanager
     async def transaction(self):
-        """
-        Execute operations within a transaction.
+        """Execute operations within a transaction.
 
         Yields:
             aiosqlite.Connection for transactional operations.
 
         Raises:
             DatabaseError: If transaction fails.
+
         """
         async with self.get_connection() as conn:
             try:
@@ -161,12 +159,12 @@ class DatabaseConnection:
                 await conn.execute("COMMIT")
             except Exception as e:
                 await conn.execute("ROLLBACK")
-                logger.error(f"Transaction rolled back: {e}")
-                raise DatabaseError(f"Transaction failed: {e}") from e
+                logger.exception(f"Transaction rolled back: {e}")
+                msg = f"Transaction failed: {e}"
+                raise DatabaseError(msg) from e
 
     async def execute(self, sql: str, parameters: tuple = ()) -> aiosqlite.Cursor:
-        """
-        Execute SQL statement.
+        """Execute SQL statement.
 
         Args:
             sql: SQL statement to execute.
@@ -174,13 +172,13 @@ class DatabaseConnection:
 
         Returns:
             Cursor with execution results.
+
         """
         async with self.get_connection() as conn:
             return await conn.execute(sql, parameters)
 
     async def executemany(self, sql: str, parameters: list[tuple]) -> aiosqlite.Cursor:
-        """
-        Execute SQL statement with multiple parameter sets.
+        """Execute SQL statement with multiple parameter sets.
 
         Args:
             sql: SQL statement to execute.
@@ -188,13 +186,13 @@ class DatabaseConnection:
 
         Returns:
             Cursor with execution results.
+
         """
         async with self.get_connection() as conn:
             return await conn.executemany(sql, parameters)
 
     async def fetchone(self, sql: str, parameters: tuple = ()) -> dict | None:
-        """
-        Execute query and fetch single row.
+        """Execute query and fetch single row.
 
         Args:
             sql: SQL query to execute.
@@ -202,6 +200,7 @@ class DatabaseConnection:
 
         Returns:
             Single row as dict or None.
+
         """
         async with self.get_connection() as conn:
             cursor = await conn.execute(sql, parameters)
@@ -209,8 +208,7 @@ class DatabaseConnection:
             return dict(row) if row else None
 
     async def fetchall(self, sql: str, parameters: tuple = ()) -> list[dict]:
-        """
-        Execute query and fetch all rows.
+        """Execute query and fetch all rows.
 
         Args:
             sql: SQL query to execute.
@@ -218,6 +216,7 @@ class DatabaseConnection:
 
         Returns:
             List of rows as dicts.
+
         """
         async with self.get_connection() as conn:
             cursor = await conn.execute(sql, parameters)
@@ -241,11 +240,11 @@ _database: DatabaseConnection | None = None
 
 
 async def get_database() -> DatabaseConnection:
-    """
-    Get database connection instance.
+    """Get database connection instance.
 
     Returns:
         DatabaseConnection singleton instance.
+
     """
     global _database
     if _database is None:
@@ -256,14 +255,14 @@ async def get_database() -> DatabaseConnection:
 
 
 async def initialize_database(db_path: str | None = None) -> DatabaseConnection:
-    """
-    Initialize database for application startup.
+    """Initialize database for application startup.
 
     Args:
         db_path: Optional custom database path.
 
     Returns:
         Initialized DatabaseConnection instance.
+
     """
     global _database
     _database = await DatabaseConnection.get_instance(db_path)

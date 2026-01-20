@@ -1,5 +1,4 @@
-"""
-Provider Factory Service - Creates LLM clients based on selection context.
+"""Provider Factory Service - Creates LLM clients based on selection context.
 
 This module implements the factory pattern for creating BaseLLMClient instances
 based on the current selection context. It integrates with UnifiedProviderRegistry
@@ -25,8 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProviderFactory:
-    """
-    Factory for creating LLM clients based on provider/model selection.
+    """Factory for creating LLM clients based on provider/model selection.
 
     This factory integrates with SelectionContext and UnifiedProviderRegistry
     to provide a unified interface for client creation across the application.
@@ -44,22 +42,21 @@ class ProviderFactory:
         >>> client = factory.get_client_with_fallback("openai", "gpt-4")
     """
 
-    def __init__(self, enable_caching: bool = True):
-        """
-        Initialize the provider factory.
+    def __init__(self, enable_caching: bool = True) -> None:
+        """Initialize the provider factory.
 
         Args:
             enable_caching: Whether to cache client instances (default: True)
+
         """
         self._client_cache: dict[str, BaseLLMClient] = {}
         self._enable_caching = enable_caching
         logger.debug(
-            f"ProviderFactory initialized (caching={'enabled' if enable_caching else 'disabled'})"
+            f"ProviderFactory initialized (caching={'enabled' if enable_caching else 'disabled'})",
         )
 
     def get_client_from_context(self, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create a client based on the current selection context.
+        """Create a client based on the current selection context.
 
         This is the primary method for creating clients within request handlers.
         It reads the selection from SelectionContext and creates an appropriate client.
@@ -80,17 +77,21 @@ class ProviderFactory:
             >>> factory = ProviderFactory()
             >>> client = factory.get_client_from_context()
             >>> response = await client.generate("Hello, world!")
+
         """
         selection = SelectionContext.get_selection()
         if selection is None:
-            raise ValueError(
+            msg = (
                 "No provider selection found in context. "
                 "Ensure selection middleware is configured correctly."
+            )
+            raise ValueError(
+                msg,
             )
 
         logger.debug(
             f"Creating client from context: {selection.provider_id}/{selection.model_id} "
-            f"(scope={selection.scope.value})"
+            f"(scope={selection.scope.value})",
         )
 
         return self._create_client_internal(
@@ -101,8 +102,7 @@ class ProviderFactory:
         )
 
     def get_client(self, provider_id: str, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create a client for a specific provider and model.
+        """Create a client for a specific provider and model.
 
         This method bypasses the selection context and creates a client directly.
         Useful for administrative tasks or background jobs.
@@ -124,18 +124,25 @@ class ProviderFactory:
             >>> factory = ProviderFactory()
             >>> client = factory.get_client("openai", "gpt-4-turbo")
             >>> response = await client.generate("Hello, world!")
+
         """
         logger.debug(f"Creating client directly: {provider_id}/{model_id}")
 
         # Validate selection
         if not unified_registry.validate_selection(provider_id, model_id):
-            raise ValueError(
+            msg = (
                 f"Invalid provider/model combination: {provider_id}/{model_id}. "
                 "Model may not be available for this provider."
             )
+            raise ValueError(
+                msg,
+            )
 
         return self._create_client_internal(
-            provider_id=provider_id, model_id=model_id, selection=None, **kwargs
+            provider_id=provider_id,
+            model_id=model_id,
+            selection=None,
+            **kwargs,
         )
 
     def get_client_with_fallback(
@@ -146,8 +153,7 @@ class ProviderFactory:
         fallback_model: str | None = None,
         **kwargs: Any,
     ) -> BaseLLMClient:
-        """
-        Create a client with automatic fallback if primary selection fails.
+        """Create a client with automatic fallback if primary selection fails.
 
         Attempts to create a client for the primary provider/model. If that fails,
         attempts to create a client for the fallback provider/model.
@@ -172,34 +178,42 @@ class ProviderFactory:
             ...     fallback_provider="anthropic",
             ...     fallback_model="claude-3-5-sonnet-20241022"
             ... )
+
         """
         try:
             return self.get_client(provider_id, model_id, **kwargs)
         except Exception as e:
             logger.warning(
                 f"Failed to create client for {provider_id}/{model_id}: {e}. "
-                f"Attempting fallback..."
+                f"Attempting fallback...",
             )
 
             if not fallback_provider or not fallback_model:
+                msg = f"Failed to create client for {provider_id}/{model_id} and no fallback specified"
                 raise RuntimeError(
-                    f"Failed to create client for {provider_id}/{model_id} and no fallback specified"
+                    msg,
                 ) from e
 
             try:
                 logger.info(f"Using fallback: {fallback_provider}/{fallback_model}")
                 return self.get_client(fallback_provider, fallback_model, **kwargs)
             except Exception as fallback_error:
-                raise RuntimeError(
+                msg = (
                     f"Failed to create both primary ({provider_id}/{model_id}) "
                     f"and fallback ({fallback_provider}/{fallback_model}) clients"
+                )
+                raise RuntimeError(
+                    msg,
                 ) from fallback_error
 
     def _create_client_internal(
-        self, provider_id: str, model_id: str, selection: Selection | None, **kwargs: Any
+        self,
+        provider_id: str,
+        model_id: str,
+        selection: Selection | None,
+        **kwargs: Any,
     ) -> BaseLLMClient:
-        """
-        Internal method to create a client with caching support.
+        """Internal method to create a client with caching support.
 
         Args:
             provider_id: The provider ID
@@ -213,6 +227,7 @@ class ProviderFactory:
         Raises:
             KeyError: If provider is not registered
             RuntimeError: If client creation fails
+
         """
         # Generate cache key
         cache_key = self._generate_cache_key(provider_id, model_id, kwargs)
@@ -234,15 +249,15 @@ class ProviderFactory:
             return client
 
         except KeyError as e:
-            logger.error(f"Provider '{provider_id}' not registered: {e}")
+            logger.exception(f"Provider '{provider_id}' not registered: {e}")
             raise
         except Exception as e:
-            logger.error(f"Failed to create client for {provider_id}/{model_id}: {e}")
-            raise RuntimeError(f"Client creation failed for {provider_id}/{model_id}: {e!s}") from e
+            logger.exception(f"Failed to create client for {provider_id}/{model_id}: {e}")
+            msg = f"Client creation failed for {provider_id}/{model_id}: {e!s}"
+            raise RuntimeError(msg) from e
 
     def _generate_cache_key(self, provider_id: str, model_id: str, kwargs: dict[str, Any]) -> str:
-        """
-        Generate a cache key for client instances.
+        """Generate a cache key for client instances.
 
         Args:
             provider_id: Provider ID
@@ -251,6 +266,7 @@ class ProviderFactory:
 
         Returns:
             Cache key string
+
         """
         # Sort kwargs for consistent key generation
         sorted_kwargs = sorted(kwargs.items())
@@ -258,8 +274,7 @@ class ProviderFactory:
         return f"{provider_id}:{model_id}:{kwargs_str}"
 
     async def cleanup(self) -> None:
-        """
-        Clean up all cached clients.
+        """Clean up all cached clients.
 
         Calls close() on all cached clients to release resources.
         Should be called at application shutdown.
@@ -271,14 +286,13 @@ class ProviderFactory:
                 await client.close()
                 logger.debug(f"Closed client: {cache_key}")
             except Exception as e:
-                logger.error(f"Failed to close client {cache_key}: {e}")
+                logger.exception(f"Failed to close client {cache_key}: {e}")
 
         self._client_cache.clear()
         logger.info("Client cache cleared")
 
     def clear_cache(self) -> None:
-        """
-        Clear the client cache without closing connections.
+        """Clear the client cache without closing connections.
 
         Use this for testing or when you want to force recreation of clients.
         For production cleanup, use cleanup() instead.
@@ -288,11 +302,11 @@ class ProviderFactory:
         logger.info(f"Cleared {count} clients from cache (connections not closed)")
 
     def get_cache_stats(self) -> dict[str, Any]:
-        """
-        Get statistics about the client cache.
+        """Get statistics about the client cache.
 
         Returns:
             Dictionary with cache statistics
+
         """
         return {
             "cache_enabled": self._enable_caching,
@@ -307,8 +321,7 @@ provider_factory = ProviderFactory()
 
 # Convenience function for FastAPI dependency injection
 def get_llm_client(**kwargs: Any) -> BaseLLMClient:
-    """
-    FastAPI dependency to get an LLM client from context.
+    """FastAPI dependency to get an LLM client from context.
 
     Usage in route:
         @app.post("/api/v1/generate")
@@ -327,5 +340,6 @@ def get_llm_client(**kwargs: Any) -> BaseLLMClient:
 
     Raises:
         ValueError: If no selection is set in context
+
     """
     return provider_factory.get_client_from_context(**kwargs)

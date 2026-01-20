@@ -1,5 +1,4 @@
-"""
-Provider Management API Endpoints
+"""Provider Management API Endpoints.
 
 Provides endpoints for:
 - Listing available providers (Gemini, DeepSeek)
@@ -14,7 +13,7 @@ Provides endpoints for:
 import asyncio
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import (
     APIRouter,
@@ -46,7 +45,7 @@ router = APIRouter(prefix="/providers", tags=["providers"])
 
 
 class ProviderModel(BaseModel):
-    """Model information within a provider"""
+    """Model information within a provider."""
 
     id: str
     name: str
@@ -57,7 +56,7 @@ class ProviderModel(BaseModel):
 
 
 class ProviderInfo(BaseModel):
-    """Provider information with models"""
+    """Provider information with models."""
 
     provider: str
     display_name: str
@@ -69,7 +68,7 @@ class ProviderInfo(BaseModel):
 
 
 class ProvidersListResponse(BaseModel):
-    """Response for listing all providers"""
+    """Response for listing all providers."""
 
     providers: list[ProviderInfo]
     count: int
@@ -78,7 +77,7 @@ class ProvidersListResponse(BaseModel):
 
 
 class ProviderModelsResponse(BaseModel):
-    """Response for provider-specific models"""
+    """Response for provider-specific models."""
 
     provider: str
     display_name: str
@@ -88,7 +87,7 @@ class ProviderModelsResponse(BaseModel):
 
 
 class SelectProviderRequest(BaseModel):
-    """Request to select a provider and model"""
+    """Request to select a provider and model."""
 
     provider: str = Field(
         ...,
@@ -103,7 +102,7 @@ class SelectProviderRequest(BaseModel):
 
 
 class SelectProviderResponse(BaseModel):
-    """Response after selecting a provider"""
+    """Response after selecting a provider."""
 
     success: bool
     message: str
@@ -113,7 +112,7 @@ class SelectProviderResponse(BaseModel):
 
 
 class CurrentSelectionResponse(BaseModel):
-    """Response for current provider/model selection"""
+    """Response for current provider/model selection."""
 
     provider: str
     model: str
@@ -123,14 +122,14 @@ class CurrentSelectionResponse(BaseModel):
 
 
 class ProviderHealthResponse(BaseModel):
-    """Response for provider health status"""
+    """Response for provider health status."""
 
     providers: list[dict[str, Any]]
     timestamp: str
 
 
 class RateLimitInfoResponse(BaseModel):
-    """Response for rate limit information"""
+    """Response for rate limit information."""
 
     allowed: bool
     remaining_requests: int
@@ -143,7 +142,7 @@ class RateLimitInfoResponse(BaseModel):
 
 
 class WebSocketMessage(BaseModel):
-    """WebSocket message format"""
+    """WebSocket message format."""
 
     type: str
     data: dict[str, Any]
@@ -159,7 +158,7 @@ def get_session_id(
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
     chimera_session_id: str | None = Cookie(None),
 ) -> str | None:
-    """Extract session ID from header or cookie"""
+    """Extract session ID from header or cookie."""
     return x_session_id or chimera_session_id
 
 
@@ -167,7 +166,7 @@ def get_or_create_session_id(
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
     chimera_session_id: str | None = Cookie(None),
 ) -> str:
-    """Get existing session ID or create a new one"""
+    """Get existing session ID or create a new one."""
     session_id = x_session_id or chimera_session_id
     if not session_id:
         # Create a new session
@@ -192,10 +191,9 @@ def _select_query_value(primary: str | None, fallback: str | None, label: str) -
 @router.get("/", response_model=ProvidersListResponse)
 @router.get("/available", response_model=ProvidersListResponse)
 async def get_available_providers(
-    router_service: ModelRouterService = Depends(get_model_router_service),
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
 ):
-    """
-    Get all available providers with their health status.
+    """Get all available providers with their health status.
 
     Returns a list of supported providers (Gemini and DeepSeek) with:
     - Available models for each provider
@@ -225,7 +223,7 @@ async def get_available_providers(
                 models=p["models"],
                 default_model=p["default_model"],
                 latency_ms=health.get("latency_ms"),
-            )
+            ),
         )
 
     default_provider, default_model = session_service.get_default_model()
@@ -240,10 +238,10 @@ async def get_available_providers(
 
 @router.get("/{provider}/models", response_model=ProviderModelsResponse)
 async def get_provider_models(
-    provider: str, router_service: ModelRouterService = Depends(get_model_router_service)
+    provider: str,
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
 ):
-    """
-    Get available models for a specific provider.
+    """Get available models for a specific provider.
 
     Args:
         provider: Provider identifier (gemini or deepseek)
@@ -252,6 +250,7 @@ async def get_provider_models(
     - Model ID and display name
     - Maximum token limits
     - Model tier (standard/premium/experimental)
+
     """
     await router_service.initialize()
 
@@ -287,7 +286,7 @@ async def get_provider_models(
                 max_tokens=detail.get("max_tokens", 4096) if detail else 4096,
                 is_default=detail.get("is_default", False) if detail else False,
                 tier=detail.get("tier", "standard") if detail else "standard",
-            )
+            ),
         )
 
     display_name = "Google Gemini" if normalized == "gemini" else "DeepSeek"
@@ -303,7 +302,8 @@ async def get_provider_models(
 
 @router.get("/{provider}", response_model=ProviderInfo)
 async def get_provider_detail(
-    provider: str, router_service: ModelRouterService = Depends(get_model_router_service)
+    provider: str,
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
 ):
     """Get information about a single provider."""
     await router_service.initialize()
@@ -333,12 +333,11 @@ async def get_provider_detail(
 async def select_provider(
     request: SelectProviderRequest,
     response: Response,
-    session_id: str = Depends(get_or_create_session_id),
-    router_service: ModelRouterService = Depends(get_model_router_service),
-    rate_limiter: ModelRateLimiter = Depends(get_model_rate_limiter),
+    session_id: Annotated[str, Depends(get_or_create_session_id)],
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
+    rate_limiter: Annotated[ModelRateLimiter, Depends(get_model_rate_limiter)],
 ):
-    """
-    Select a provider and model for the current session.
+    """Select a provider and model for the current session.
 
     This endpoint:
     1. Checks rate limits for the selected provider
@@ -423,8 +422,7 @@ async def check_rate_limit(
     session_id: str | None = Depends(get_session_id),
     rate_limiter: ModelRateLimiter = Depends(get_model_rate_limiter),
 ):
-    """
-    Check rate limit status for a provider/model combination.
+    """Check rate limit status for a provider/model combination.
 
     Returns current rate limit status including:
     - Whether requests are allowed
@@ -467,11 +465,10 @@ async def check_rate_limit(
 
 @router.get("/current", response_model=CurrentSelectionResponse)
 async def get_current_selection(
-    session_id: str | None = Depends(get_session_id),
-    router_service: ModelRouterService = Depends(get_model_router_service),
+    session_id: Annotated[str | None, Depends(get_session_id)],
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
 ):
-    """
-    Get the current provider/model selection for the session.
+    """Get the current provider/model selection for the session.
 
     Returns the currently selected provider and model, or defaults if
     no session exists.
@@ -501,10 +498,9 @@ async def get_current_selection(
 
 @router.get("/health", response_model=ProviderHealthResponse)
 async def get_provider_health(
-    router_service: ModelRouterService = Depends(get_model_router_service),
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
 ):
-    """
-    Get health status for all providers.
+    """Get health status for all providers.
 
     Returns health information including:
     - Current health status (healthy/unhealthy)
@@ -524,7 +520,8 @@ async def get_provider_health(
 
 @router.get("/{provider}/health")
 async def get_provider_health_detail(
-    provider: str, router_service: ModelRouterService = Depends(get_model_router_service)
+    provider: str,
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
 ):
     """Get health status for a specific provider."""
     await router_service.initialize()
@@ -538,7 +535,8 @@ async def get_provider_health_detail(
 
 @router.post("/{provider}/test")
 async def test_provider_connection(
-    provider: str, router_service: ModelRouterService = Depends(get_model_router_service)
+    provider: str,
+    router_service: Annotated[ModelRouterService, Depends(get_model_router_service)],
 ):
     """Lightweight provider test using cached health data."""
     await router_service.initialize()
@@ -579,7 +577,7 @@ async def set_default_provider(request: SetDefaultProviderRequest):
 @router.delete("/current")
 async def clear_current_selection(
     response: Response,
-    session_id: str | None = Depends(get_session_id),
+    session_id: Annotated[str | None, Depends(get_session_id)],
 ):
     """Clear the current session selection and revert to defaults."""
     if not session_id:
@@ -607,9 +605,8 @@ _active_connections: dict[str, WebSocket] = {}
 
 
 @router.websocket("/ws/selection")
-async def websocket_selection_sync(websocket: WebSocket):
-    """
-    WebSocket endpoint for real-time model selection synchronization.
+async def websocket_selection_sync(websocket: WebSocket) -> None:
+    """WebSocket endpoint for real-time model selection synchronization.
 
     Clients connect to receive:
     - Model selection change notifications
@@ -634,7 +631,7 @@ async def websocket_selection_sync(websocket: WebSocket):
     await router_service.initialize()
 
     # Subscribe to selection changes
-    async def on_selection_change(event: ModelSelectionEvent):
+    async def on_selection_change(event: ModelSelectionEvent) -> None:
         message = WebSocketMessage(
             type="selection_change",
             data={
@@ -660,7 +657,7 @@ async def websocket_selection_sync(websocket: WebSocket):
                 "type": "connected",
                 "data": {"client_id": client_id},
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         # Main loop: handle incoming messages and send heartbeats
@@ -671,7 +668,8 @@ async def websocket_selection_sync(websocket: WebSocket):
             try:
                 # Wait for message with timeout for heartbeat
                 message = await asyncio.wait_for(
-                    websocket.receive_json(), timeout=heartbeat_interval
+                    websocket.receive_json(),
+                    timeout=heartbeat_interval,
                 )
 
                 # Handle client messages
@@ -683,7 +681,7 @@ async def websocket_selection_sync(websocket: WebSocket):
                             "type": "pong",
                             "data": {},
                             "timestamp": datetime.utcnow().isoformat(),
-                        }
+                        },
                     )
 
                 elif msg_type == "get_health":
@@ -693,7 +691,7 @@ async def websocket_selection_sync(websocket: WebSocket):
                             "type": "health_update",
                             "data": {"providers": health_data},
                             "timestamp": datetime.utcnow().isoformat(),
-                        }
+                        },
                     )
 
                 elif msg_type == "get_current":
@@ -712,7 +710,7 @@ async def websocket_selection_sync(websocket: WebSocket):
                                 "session_id": session_id,
                             },
                             "timestamp": datetime.utcnow().isoformat(),
-                        }
+                        },
                     )
 
             except TimeoutError:
@@ -724,7 +722,7 @@ async def websocket_selection_sync(websocket: WebSocket):
                             "type": "heartbeat",
                             "data": {},
                             "timestamp": now.isoformat(),
-                        }
+                        },
                     )
                     last_heartbeat = now
 
@@ -738,8 +736,8 @@ async def websocket_selection_sync(websocket: WebSocket):
         _active_connections.pop(client_id, None)
 
 
-async def broadcast_to_all_clients(message: dict):
-    """Broadcast a message to all connected WebSocket clients"""
+async def broadcast_to_all_clients(message: dict) -> None:
+    """Broadcast a message to all connected WebSocket clients."""
     disconnected = []
 
     for client_id, websocket in _active_connections.items():

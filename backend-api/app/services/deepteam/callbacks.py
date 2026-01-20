@@ -17,8 +17,7 @@ AsyncCallbackType = Callable[[str], "asyncio.Future[str]"]
 
 
 class ChimeraModelCallback:
-    """
-    Adapter that wraps Chimera's LLM service as a DeepTeam model callback.
+    """Adapter that wraps Chimera's LLM service as a DeepTeam model callback.
 
     This allows DeepTeam to red team any LLM accessible through Chimera's
     unified LLM service interface.
@@ -32,9 +31,8 @@ class ChimeraModelCallback:
         system_prompt: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1024,
-    ):
-        """
-        Initialize the callback adapter.
+    ) -> None:
+        """Initialize the callback adapter.
 
         Args:
             llm_service: Chimera's LLM service instance
@@ -43,6 +41,7 @@ class ChimeraModelCallback:
             system_prompt: Optional system prompt to prepend
             temperature: Generation temperature
             max_tokens: Maximum tokens to generate
+
         """
         self.llm_service = llm_service
         self.model_id = model_id
@@ -54,25 +53,24 @@ class ChimeraModelCallback:
         self._error_count = 0
 
     async def __call__(self, input: str) -> str:
-        """
-        Async callback that DeepTeam calls with adversarial inputs.
+        """Async callback that DeepTeam calls with adversarial inputs.
 
         Args:
             input: The adversarial input/prompt from DeepTeam
 
         Returns:
             The model's response
+
         """
         self._call_count += 1
 
         try:
             if self.llm_service is not None:
                 return await self._call_chimera_service(input)
-            else:
-                return await self._call_direct_provider(input)
+            return await self._call_direct_provider(input)
         except Exception as e:
             self._error_count += 1
-            logger.error(f"Model callback error: {e}")
+            logger.exception(f"Model callback error: {e}")
             return f"Error: {e!s}"
 
     async def _call_chimera_service(self, input: str) -> str:
@@ -96,12 +94,12 @@ class ChimeraModelCallback:
         # This is a fallback for when Chimera service is not available
         if self.provider == "openai":
             return await self._call_openai(input)
-        elif self.provider == "anthropic":
+        if self.provider == "anthropic":
             return await self._call_anthropic(input)
-        elif self.provider in ("google", "gemini"):
+        if self.provider in ("google", "gemini"):
             return await self._call_google(input)
-        else:
-            raise ValueError(f"Unknown provider: {self.provider}")
+        msg = f"Unknown provider: {self.provider}"
+        raise ValueError(msg)
 
     async def _call_openai(self, input: str) -> str:
         """Call OpenAI directly."""
@@ -176,8 +174,7 @@ def create_model_callback(
     temperature: float = 0.7,
     max_tokens: int = 1024,
 ) -> ChimeraModelCallback:
-    """
-    Factory function to create a model callback.
+    """Factory function to create a model callback.
 
     Args:
         model_id: Model identifier
@@ -189,6 +186,7 @@ def create_model_callback(
 
     Returns:
         ChimeraModelCallback instance
+
     """
     # Auto-detect provider from model_id if not specified
     if provider is None:
@@ -210,36 +208,36 @@ def _detect_provider(model_id: str) -> str:
 
     if any(x in model_lower for x in ["gpt", "o1", "davinci", "curie", "babbage"]):
         return "openai"
-    elif any(x in model_lower for x in ["claude", "anthropic"]):
+    if any(x in model_lower for x in ["claude", "anthropic"]):
         return "anthropic"
-    elif any(x in model_lower for x in ["gemini", "palm", "bard"]):
+    if any(x in model_lower for x in ["gemini", "palm", "bard"]):
         return "google"
-    elif any(x in model_lower for x in ["llama", "mistral", "mixtral"]):
+    if any(x in model_lower for x in ["llama", "mistral", "mixtral"]):
         return "local"
-    else:
-        return "openai"  # Default to OpenAI
+    return "openai"  # Default to OpenAI
 
 
 class AutoDANCallback(ChimeraModelCallback):
-    """
-    Specialized callback that integrates with AutoDAN engines.
+    """Specialized callback that integrates with AutoDAN engines.
 
     This callback uses Chimera's AutoDAN engines to generate more
     sophisticated responses that can be used in red teaming.
     """
 
     def __init__(
-        self, autodan_engine=None, use_reasoning: bool = True, use_ppo: bool = True, **kwargs
-    ):
+        self,
+        autodan_engine=None,
+        use_reasoning: bool = True,
+        use_ppo: bool = True,
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
         self.autodan_engine = autodan_engine
         self.use_reasoning = use_reasoning
         self.use_ppo = use_ppo
 
     async def __call__(self, input: str) -> str:
-        """
-        Call that can optionally use AutoDAN processing.
-        """
+        """Call that can optionally use AutoDAN processing."""
         self._call_count += 1
 
         try:
@@ -250,30 +248,31 @@ class AutoDANCallback(ChimeraModelCallback):
             if self.autodan_engine and self.use_reasoning:
                 # Log for analysis - AutoDAN can learn from this
                 self.autodan_engine.record_interaction(
-                    prompt=input, response=base_response, context="deepteam_red_team"
+                    prompt=input,
+                    response=base_response,
+                    context="deepteam_red_team",
                 )
 
             return base_response
 
         except Exception as e:
             self._error_count += 1
-            logger.error(f"AutoDAN callback error: {e}")
+            logger.exception(f"AutoDAN callback error: {e}")
             return f"Error: {e!s}"
 
 
 class MultiModelCallback:
-    """
-    Callback that can test multiple models simultaneously.
+    """Callback that can test multiple models simultaneously.
 
     Useful for comparing vulnerability across different models.
     """
 
-    def __init__(self, callbacks: list[ChimeraModelCallback]):
-        """
-        Initialize with multiple callbacks.
+    def __init__(self, callbacks: list[ChimeraModelCallback]) -> None:
+        """Initialize with multiple callbacks.
 
         Args:
             callbacks: List of model callbacks to test
+
         """
         self.callbacks = callbacks
         self._results: dict[str, list] = {
@@ -281,14 +280,14 @@ class MultiModelCallback:
         }
 
     async def __call__(self, input: str) -> dict[str, str]:
-        """
-        Call all models and return their responses.
+        """Call all models and return their responses.
 
         Args:
             input: Adversarial input
 
         Returns:
             Dict mapping model_id to response
+
         """
         tasks = [cb(input) for cb in self.callbacks]
         responses = await asyncio.gather(*tasks, return_exceptions=True)

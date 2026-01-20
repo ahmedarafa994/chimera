@@ -1,5 +1,4 @@
-"""
-Tests for Generation Service.
+"""Tests for Generation Service.
 
 Tests the core generation functionality including jailbreak generation,
 prompt processing, and result handling.
@@ -29,12 +28,12 @@ class TestGenerationService:
             return_value={
                 "transformed_prompt": "Transformed content",
                 "techniques_applied": ["role_play"],
-            }
+            },
         )
         return service
 
     @pytest.mark.asyncio
-    async def test_generate_jailbreak_basic(self, mock_llm_service):
+    async def test_generate_jailbreak_basic(self, mock_llm_service) -> None:
         """Test basic jailbreak generation."""
         # Arrange
         request = {
@@ -44,7 +43,7 @@ class TestGenerationService:
 
         # Act - simulate generation
         result = await mock_llm_service.generate(
-            f"Generate jailbreak for: {request['core_request']}"
+            f"Generate jailbreak for: {request['core_request']}",
         )
 
         # Assert
@@ -53,7 +52,7 @@ class TestGenerationService:
         mock_llm_service.generate.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_generate_with_technique_suite(self, mock_llm_service):
+    async def test_generate_with_technique_suite(self, mock_llm_service) -> None:
         """Test generation with specific technique suite."""
         # Arrange
         request = {
@@ -64,14 +63,14 @@ class TestGenerationService:
 
         # Act
         result = await mock_llm_service.generate(
-            f"Apply {request['technique_suite']} to: {request['core_request']}"
+            f"Apply {request['technique_suite']} to: {request['core_request']}",
         )
 
         # Assert
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_generate_batch_requests(self, mock_llm_service):
+    async def test_generate_batch_requests(self, mock_llm_service) -> None:
         """Test batch generation of multiple requests."""
         # Arrange
         requests = [
@@ -91,7 +90,7 @@ class TestGenerationService:
         assert mock_llm_service.generate.call_count == 3
 
     @pytest.mark.asyncio
-    async def test_generation_error_handling(self, mock_llm_service):
+    async def test_generation_error_handling(self, mock_llm_service) -> None:
         """Test error handling in generation."""
         # Arrange
         mock_llm_service.generate = AsyncMock(side_effect=RuntimeError("Generation failed"))
@@ -104,7 +103,7 @@ class TestGenerationService:
 class TestGenerationConfig:
     """Tests for generation configuration."""
 
-    def test_default_config_values(self):
+    def test_default_config_values(self) -> None:
         """Test default configuration values."""
         config = {
             "max_iterations": 10,
@@ -119,7 +118,7 @@ class TestGenerationConfig:
         assert 0 <= config["top_p"] <= 1
         assert config["max_tokens"] > 0
 
-    def test_config_validation(self):
+    def test_config_validation(self) -> None:
         """Test configuration validation."""
         # Valid config
         valid_config = {
@@ -137,7 +136,7 @@ class TestGenerationConfig:
 class TestGenerationMetrics:
     """Tests for generation metrics tracking."""
 
-    def test_track_generation_time(self):
+    def test_track_generation_time(self) -> None:
         """Test tracking of generation time."""
         import time
 
@@ -150,7 +149,7 @@ class TestGenerationMetrics:
         assert generation_time >= 0.01
         assert generation_time < 1.0  # Should be fast for mock
 
-    def test_track_token_usage(self):
+    def test_track_token_usage(self) -> None:
         """Test tracking of token usage."""
         usage = {
             "prompt_tokens": 100,
@@ -160,7 +159,7 @@ class TestGenerationMetrics:
 
         assert usage["total_tokens"] == (usage["prompt_tokens"] + usage["completion_tokens"])
 
-    def test_track_success_rate(self):
+    def test_track_success_rate(self) -> None:
         """Test tracking of success rate."""
         results = [
             {"success": True},
@@ -180,7 +179,7 @@ class TestGenerationQueue:
     """Tests for generation request queue."""
 
     @pytest.mark.asyncio
-    async def test_queue_request(self):
+    async def test_queue_request(self) -> None:
         """Test queuing a generation request."""
         queue = []
         request = {
@@ -195,7 +194,7 @@ class TestGenerationQueue:
         assert queue[0]["id"] == "req_001"
 
     @pytest.mark.asyncio
-    async def test_priority_ordering(self):
+    async def test_priority_ordering(self) -> None:
         """Test priority-based queue ordering."""
         import heapq
 
@@ -218,11 +217,11 @@ class TestGenerationQueue:
         assert results == ["req_2", "req_3", "req_1"]
 
     @pytest.mark.asyncio
-    async def test_queue_timeout(self):
+    async def test_queue_timeout(self) -> None:
         """Test queue timeout handling."""
         import asyncio
 
-        async def slow_task():
+        async def slow_task() -> str:
             await asyncio.sleep(10)
             return "result"
 

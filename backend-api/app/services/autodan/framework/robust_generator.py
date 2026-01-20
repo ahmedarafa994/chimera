@@ -7,15 +7,14 @@ logger = logging.getLogger(__name__)
 
 
 class RobustPromptGenerator:
-    """
-    Handles robust generation of adversarial prompts, including:
+    """Handles robust generation of adversarial prompts, including:
     - Safe encoding validation
     - Template substitution with format handling
     - Boundary-aware truncation
-    - Malformed output detection
+    - Malformed output detection.
     """
 
-    def __init__(self, max_length: int = 4096):
+    def __init__(self, max_length: int = 4096) -> None:
         self.max_length = max_length
         self.encoding_cache = {}
 
@@ -78,16 +77,17 @@ class RobustPromptGenerator:
         try:
             if "base64" in technique.lower():
                 return base64.b64encode(request.encode("utf-8")).decode("utf-8")
-            elif "rot13" in technique.lower():
+            if "rot13" in technique.lower():
                 return codecs.encode(request, "rot_13")
-            else:
-                return request
+            return request
         except Exception as e:
-            logger.error(f"Encoding failed: {e}")
+            logger.exception(f"Encoding failed: {e}")
             return request
 
     def safe_template_substitution(
-        self, template: str, substitutions: dict[str, str]
+        self,
+        template: str,
+        substitutions: dict[str, str],
     ) -> str | None:
         """Perform safe template substitution with validation."""
         try:
@@ -112,7 +112,7 @@ class RobustPromptGenerator:
 
             return result
         except Exception as e:
-            logger.error(f"Template substitution failed: {e}")
+            logger.exception(f"Template substitution failed: {e}")
             return None
 
     def _is_malformed(self, text: str) -> bool:

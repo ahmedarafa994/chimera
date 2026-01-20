@@ -1,5 +1,4 @@
-"""
-Configuration Module for AutoDAN Optimization Framework.
+"""Configuration Module for AutoDAN Optimization Framework.
 
 Provides centralized configuration management with:
 - Default configurations for different use cases
@@ -122,8 +121,7 @@ class ParallelizationConfig:
 
 @dataclass
 class AutoDANConfig:
-    """
-    Main configuration for AutoDAN optimization framework.
+    """Main configuration for AutoDAN optimization framework.
 
     Combines all sub-configurations into a unified config.
     """
@@ -159,10 +157,10 @@ class AutoDANConfig:
                 parallelization=ParallelizationConfig(max_concurrent=8, batch_size=16),
             )
 
-        elif preset == OptimizationPreset.BALANCED:
+        if preset == OptimizationPreset.BALANCED:
             return cls()  # Default is balanced
 
-        elif preset == OptimizationPreset.QUALITY:
+        if preset == OptimizationPreset.QUALITY:
             return cls(
                 max_iterations=300,
                 gradient=GradientConfig(
@@ -183,7 +181,7 @@ class AutoDANConfig:
                 ),
             )
 
-        elif preset == OptimizationPreset.MEMORY_EFFICIENT:
+        if preset == OptimizationPreset.MEMORY_EFFICIENT:
             return cls(
                 memory=MemoryConfig(
                     pool_size_mb=50,
@@ -201,7 +199,7 @@ class AutoDANConfig:
                 ),
             )
 
-        elif preset == OptimizationPreset.DISTRIBUTED:
+        if preset == OptimizationPreset.DISTRIBUTED:
             return cls(
                 parallelization=ParallelizationConfig(
                     max_concurrent=16,
@@ -349,7 +347,8 @@ class AutoDANConfig:
             errors.append("batch_size must be >= 1")
 
         if errors:
-            raise ValueError(f"Configuration errors: {errors}")
+            msg = f"Configuration errors: {errors}"
+            raise ValueError(msg)
 
         return True
 
@@ -365,6 +364,7 @@ def get_config_from_preset(preset_name: str) -> AutoDANConfig:
         preset = OptimizationPreset(preset_name.lower())
         return AutoDANConfig.from_preset(preset)
     except ValueError:
+        msg = f"Unknown preset: {preset_name}. Available: {[p.value for p in OptimizationPreset]}"
         raise ValueError(
-            f"Unknown preset: {preset_name}. Available: {[p.value for p in OptimizationPreset]}"
+            msg,
         )

@@ -1,5 +1,4 @@
-"""
-Distributed execution tracker with Redis backend.
+"""Distributed execution tracker with Redis backend.
 
 This module provides a production-ready execution tracker that stores state
 in Redis for horizontal scalability and automatic TTL-based cleanup to
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class RedisExecutionTracker:
-    """
-    Distributed execution tracker with Redis backend.
+    """Distributed execution tracker with Redis backend.
 
     Features:
     - Automatic TTL-based cleanup (no memory leaks)
@@ -41,7 +39,7 @@ class RedisExecutionTracker:
         active_ttl: int | None = None,
         completed_ttl: int | None = None,
         local_cache_size: int | None = None,
-    ):
+    ) -> None:
         self.redis_url = redis_url
         self._redis: redis.Redis | None = None
         self._connected = False
@@ -95,7 +93,10 @@ class RedisExecutionTracker:
             cache.popitem(last=False)
 
     async def start_execution(
-        self, execution_id: str, technique_id: str, user_id: str | None = None
+        self,
+        execution_id: str,
+        technique_id: str,
+        user_id: str | None = None,
     ) -> bool:
         """Start tracking an execution with automatic TTL."""
         execution_data = {
@@ -121,19 +122,24 @@ class RedisExecutionTracker:
                 pipe = self._redis.pipeline()
                 # Store execution data with TTL
                 pipe.setex(
-                    self._active_key(execution_id), self.active_ttl, json.dumps(execution_data)
+                    self._active_key(execution_id),
+                    self.active_ttl,
+                    json.dumps(execution_data),
                 )
                 # Add to technique's active set for concurrent counting
                 pipe.sadd(self._technique_active_set(technique_id), execution_id)
                 pipe.expire(self._technique_active_set(technique_id), self.active_ttl)
                 await pipe.execute()
             except Exception as e:
-                logger.error(f"Redis start_execution error: {e}")
+                logger.exception(f"Redis start_execution error: {e}")
 
         return True
 
     async def complete_execution(
-        self, execution_id: str, success: bool, execution_time_ms: float
+        self,
+        execution_id: str,
+        success: bool,
+        execution_time_ms: float,
     ) -> None:
         """Mark execution as completed with automatic TTL cleanup."""
         async with self._lock:
@@ -147,7 +153,7 @@ class RedisExecutionTracker:
                     if data:
                         execution = json.loads(data)
                 except Exception as e:
-                    logger.error(f"Redis fetch error: {e}")
+                    logger.exception(f"Redis fetch error: {e}")
                     return
 
         if not execution:
@@ -161,7 +167,7 @@ class RedisExecutionTracker:
                 "success": success,
                 "execution_time_ms": execution_time_ms,
                 "end_time": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         async with self._lock:
@@ -181,11 +187,13 @@ class RedisExecutionTracker:
                     pipe.srem(self._technique_active_set(technique_id), execution_id)
                 # Store in completed with TTL (auto-cleanup!)
                 pipe.setex(
-                    self._completed_key(execution_id), self.completed_ttl, json.dumps(execution)
+                    self._completed_key(execution_id),
+                    self.completed_ttl,
+                    json.dumps(execution),
                 )
                 await pipe.execute()
             except Exception as e:
-                logger.error(f"Redis complete_execution error: {e}")
+                logger.exception(f"Redis complete_execution error: {e}")
 
     async def fail_execution(self, execution_id: str, error_message: str) -> None:
         """Mark execution as failed."""
@@ -198,7 +206,7 @@ class RedisExecutionTracker:
                 if data:
                     execution = json.loads(data)
             except Exception as e:
-                logger.error(f"Redis fetch error: {e}")
+                logger.exception(f"Redis fetch error: {e}")
 
         if not execution:
             return
@@ -209,7 +217,7 @@ class RedisExecutionTracker:
                 "success": False,
                 "error_message": error_message,
                 "end_time": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         async with self._lock:
@@ -224,11 +232,13 @@ class RedisExecutionTracker:
                 if technique_id:
                     pipe.srem(self._technique_active_set(technique_id), execution_id)
                 pipe.setex(
-                    self._completed_key(execution_id), self.completed_ttl, json.dumps(execution)
+                    self._completed_key(execution_id),
+                    self.completed_ttl,
+                    json.dumps(execution),
                 )
                 await pipe.execute()
             except Exception as e:
-                logger.error(f"Redis fail_execution error: {e}")
+                logger.exception(f"Redis fail_execution error: {e}")
 
     async def get_active_count(self, technique_id: str | None = None) -> int:
         """Get count of active executions (distributed-aware)."""
@@ -236,7 +246,7 @@ class RedisExecutionTracker:
             try:
                 return await self._redis.scard(self._technique_active_set(technique_id))
             except Exception as e:
-                logger.error(f"Redis get_active_count error: {e}")
+                logger.exception(f"Redis get_active_count error: {e}")
 
         # Fallback to local cache
         if technique_id:
@@ -245,7 +255,7 @@ class RedisExecutionTracker:
                     e
                     for e in self._local_active_cache.values()
                     if e.get("technique_id") == technique_id
-                ]
+                ],
             )
         return len(self._local_active_cache)
 
@@ -255,7 +265,10 @@ class RedisExecutionTracker:
         return count >= max_concurrent
 
     async def enforce_cooldown(
-        self, technique_id: str, user_id: str | None, cooldown_seconds: int
+        self,
+        technique_id: str,
+        user_id: str | None,
+        cooldown_seconds: int,
     ) -> bool:
         """Check cooldown period using Redis-based recent execution tracking."""
         if cooldown_seconds <= 0:
@@ -268,7 +281,7 @@ class RedisExecutionTracker:
                 exists = await self._redis.exists(cooldown_key)
                 return exists > 0
             except Exception as e:
-                logger.error(f"Redis cooldown check error: {e}")
+                logger.exception(f"Redis cooldown check error: {e}")
 
         # Fallback: check local completed cache
         now = datetime.utcnow()
@@ -284,7 +297,10 @@ class RedisExecutionTracker:
         return False
 
     async def set_cooldown(
-        self, technique_id: str, user_id: str | None, cooldown_seconds: int
+        self,
+        technique_id: str,
+        user_id: str | None,
+        cooldown_seconds: int,
     ) -> None:
         """Set cooldown after execution completion."""
         if cooldown_seconds <= 0:
@@ -296,7 +312,7 @@ class RedisExecutionTracker:
             try:
                 await self._redis.setex(cooldown_key, cooldown_seconds, "1")
             except Exception as e:
-                logger.error(f"Redis set_cooldown error: {e}")
+                logger.exception(f"Redis set_cooldown error: {e}")
 
     async def get_execution(self, execution_id: str) -> dict[str, Any] | None:
         """Get execution data by ID."""
@@ -320,7 +336,7 @@ class RedisExecutionTracker:
                 if data:
                     return json.loads(data)
             except Exception as e:
-                logger.error(f"Redis get_execution error: {e}")
+                logger.exception(f"Redis get_execution error: {e}")
 
         return None
 
@@ -343,7 +359,7 @@ class RedisExecutionTracker:
                     {
                         "redis_active_count": len(active_keys),
                         "redis_completed_count": len(completed_keys),
-                    }
+                    },
                 )
             except Exception as e:
                 stats["redis_error"] = str(e)

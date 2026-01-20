@@ -1,5 +1,4 @@
-"""
-LLM Factory for Project Chimera.
+"""LLM Factory for Project Chimera.
 
 Factory class for creating and managing LLM adapter instances.
 Supports both legacy adapter-based approach and new plugin system.
@@ -17,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class LLMFactory:
-    """
-    Factory class to create and retrieve instances of LLM adapters.
+    """Factory class to create and retrieve instances of LLM adapters.
 
     Supports both:
     - Legacy adapter-based approach (OpenAI, Gemini adapters)
@@ -43,8 +41,7 @@ class LLMFactory:
         api_key: str,
         config: dict[str, Any],
     ) -> BaseLLMAdapter:
-        """
-        Retrieves an LLM adapter instance. Caches adapters to avoid
+        """Retrieves an LLM adapter instance. Caches adapters to avoid
         re-initialization.
 
         Args:
@@ -59,6 +56,7 @@ class LLMFactory:
 
         Raises:
             ValueError: If provider is not supported
+
         """
         if model_id not in cls._adapters:
             adapter = cls._create_adapter(provider, model_name, api_key, config)
@@ -73,8 +71,7 @@ class LLMFactory:
         api_key: str,
         config: dict[str, Any],
     ) -> BaseLLMAdapter:
-        """
-        Create a new adapter instance for the given provider.
+        """Create a new adapter instance for the given provider.
 
         Args:
             provider: LLM provider type
@@ -84,11 +81,12 @@ class LLMFactory:
 
         Returns:
             BaseLLMAdapter instance
+
         """
         # Try legacy adapters first for backward compatibility
         if provider == LLMProvider.OPENAI:
             return OpenAIAdapter(model_name=model_name, api_key=api_key, config=config)
-        elif provider == LLMProvider.GEMINI:
+        if provider == LLMProvider.GEMINI:
             return GeminiAdapter(model_name=model_name, api_key=api_key, config=config)
 
         # Try plugin-based approach for other providers
@@ -96,21 +94,25 @@ class LLMFactory:
         if plugin:
             # Create a plugin-based adapter wrapper
             return PluginAdapterWrapper(
-                plugin=plugin, model_name=model_name, api_key=api_key, config=config
+                plugin=plugin,
+                model_name=model_name,
+                api_key=api_key,
+                config=config,
             )
 
-        raise ValueError(f"Unsupported LLM provider: {provider}")
+        msg = f"Unsupported LLM provider: {provider}"
+        raise ValueError(msg)
 
     @classmethod
     def get_plugin_for_provider(cls, provider_type: str) -> Any:
-        """
-        Get a plugin instance for the given provider type.
+        """Get a plugin instance for the given provider type.
 
         Args:
             provider_type: Provider type string (e.g., "openai", "anthropic")
 
         Returns:
             Plugin instance or None
+
         """
         # Initialize plugins if not done
         if not cls._plugins_initialized:
@@ -145,15 +147,15 @@ class LLMFactory:
         except ImportError:
             logger.warning("Plugin system not available for initialization")
         except Exception as e:
-            logger.error(f"Failed to initialize plugins: {e}")
+            logger.exception(f"Failed to initialize plugins: {e}")
 
     @classmethod
     def get_available_providers(cls) -> list[str]:
-        """
-        Get list of all available provider types.
+        """Get list of all available provider types.
 
         Returns:
             List of provider type strings
+
         """
         providers = set()
 
@@ -178,8 +180,7 @@ class LLMFactory:
 
     @classmethod
     def clear_cache(cls) -> None:
-        """
-        Clears the adapter cache.
+        """Clears the adapter cache.
         Useful for testing or when configurations change dynamically.
         """
         cls._adapters = {}
@@ -200,8 +201,7 @@ class LLMFactory:
 
 
 class PluginAdapterWrapper(BaseLLMAdapter):
-    """
-    Wrapper that adapts a ProviderPlugin to the BaseLLMAdapter interface.
+    """Wrapper that adapts a ProviderPlugin to the BaseLLMAdapter interface.
 
     This allows using the new plugin system with code that expects
     the legacy adapter interface.
@@ -213,15 +213,15 @@ class PluginAdapterWrapper(BaseLLMAdapter):
         model_name: str,
         api_key: str,
         config: dict[str, Any],
-    ):
-        """
-        Initialize the wrapper.
+    ) -> None:
+        """Initialize the wrapper.
 
         Args:
             plugin: ProviderPlugin instance
             model_name: Name of the model to use
             api_key: API key for authentication
             config: Additional configuration
+
         """
         self.plugin = plugin
         self.model_name = model_name
@@ -233,8 +233,7 @@ class PluginAdapterWrapper(BaseLLMAdapter):
         prompt: str,
         **kwargs: Any,
     ) -> str:
-        """
-        Generate text using the plugin.
+        """Generate text using the plugin.
 
         Args:
             prompt: Input prompt
@@ -242,6 +241,7 @@ class PluginAdapterWrapper(BaseLLMAdapter):
 
         Returns:
             Generated text
+
         """
         from app.services.provider_plugins import GenerationRequest
 
@@ -264,8 +264,7 @@ class PluginAdapterWrapper(BaseLLMAdapter):
         prompt: str,
         **kwargs: Any,
     ):
-        """
-        Stream text generation using the plugin.
+        """Stream text generation using the plugin.
 
         Args:
             prompt: Input prompt
@@ -273,6 +272,7 @@ class PluginAdapterWrapper(BaseLLMAdapter):
 
         Yields:
             Text chunks
+
         """
         from app.services.provider_plugins import GenerationRequest
 
@@ -295,8 +295,7 @@ class PluginAdapterWrapper(BaseLLMAdapter):
         return self.plugin.supports_streaming()
 
     async def count_tokens(self, text: str) -> int:
-        """
-        Count tokens in text.
+        """Count tokens in text.
 
         This is a basic implementation; providers may override.
         """
@@ -335,8 +334,7 @@ def get_llm_adapter(
     api_key: str,
     config: dict[str, Any] | None = None,
 ) -> BaseLLMAdapter:
-    """
-    Convenience function to get an LLM adapter.
+    """Convenience function to get an LLM adapter.
 
     Args:
         model_id: Database model ID
@@ -347,6 +345,7 @@ def get_llm_adapter(
 
     Returns:
         BaseLLMAdapter instance
+
     """
     if isinstance(provider, str):
         try:
@@ -357,9 +356,13 @@ def get_llm_adapter(
             plugin = LLMFactory.get_plugin_for_provider(provider)
             if plugin:
                 return PluginAdapterWrapper(
-                    plugin=plugin, model_name=model_name, api_key=api_key, config=config or {}
+                    plugin=plugin,
+                    model_name=model_name,
+                    api_key=api_key,
+                    config=config or {},
                 )
-            raise ValueError(f"Unknown provider: {provider}")
+            msg = f"Unknown provider: {provider}"
+            raise ValueError(msg)
 
     return LLMFactory.get_adapter(
         model_id=model_id,

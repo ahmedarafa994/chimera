@@ -7,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class AttackerChainOfThought:
-    """
-    Chain-of-Thought (CoT) Attacker for AutoDAN-Reasoning.
+    """Chain-of-Thought (CoT) Attacker for AutoDAN-Reasoning.
 
     This attacker uses a multi-step reasoning process to generate high-quality
     jailbreak prompts by:
@@ -21,11 +20,11 @@ class AttackerChainOfThought:
     The CoT process ensures sophisticated, AI-generated adversarial prompts.
     """
 
-    def __init__(self, base_attacker, refinement_iterations: int = 1):
-        """
-        Args:
-            base_attacker: The underlying attacker
-            refinement_iterations: Number of critique/refine cycles
+    def __init__(self, base_attacker, refinement_iterations: int = 1) -> None:
+        """Args:
+        base_attacker: The underlying attacker
+        refinement_iterations: Number of critique/refine cycles.
+
         """
         self.base_attacker = base_attacker
         self.model = base_attacker.model
@@ -33,7 +32,7 @@ class AttackerChainOfThought:
         self.refinement_iterations = refinement_iterations
 
     def warm_up_attack(self, request, **kwargs):
-        """Delegate to base attacker for initial warm-up"""
+        """Delegate to base attacker for initial warm-up."""
         return self.base_attacker.warm_up_attack(request, **kwargs)
 
     def generate_with_cot(
@@ -43,15 +42,17 @@ class AttackerChainOfThought:
         attack_context: Any | None = None,
         **kwargs,
     ) -> tuple[str, str]:
-        """
-        Generate a jailbreak prompt using the Chain-of-Thought process.
+        """Generate a jailbreak prompt using the Chain-of-Thought process.
 
         All output is AI-generated through a multi-step reasoning process.
         """
         try:
             # Steps 1 & 2: Analyze and plan in a single generation to reduce latency
             _analysis, strategy = self._analyze_and_plan(
-                request, strategy_list, attack_context, **kwargs
+                request,
+                strategy_list,
+                attack_context,
+                **kwargs,
             )
             logger.info(f"CoT Combined Analysis/Strategy completed for: {request[:50]}...")
 
@@ -64,21 +65,25 @@ class AttackerChainOfThought:
             for i in range(self.refinement_iterations):
                 logger.info(f"CoT Refinement Iteration {i + 1}/{self.refinement_iterations}")
                 current_prompt, _critique = self._critique_and_refine(
-                    request, current_prompt, attack_context=attack_context, **kwargs
+                    request,
+                    current_prompt,
+                    attack_context=attack_context,
+                    **kwargs,
                 )
                 logger.info(f"CoT Critique+Refinement iteration {i + 1} completed")
 
             # Validate the final prompt is AI-generated and complete
             validated = self._validate_prompt(current_prompt, request)
             if not validated:
+                msg = "CoT generated prompt failed validation; output appears incomplete or templated."
                 raise RuntimeError(
-                    "CoT generated prompt failed validation; output appears incomplete or templated."
+                    msg,
                 )
 
             return validated, "CHAIN_OF_THOUGHT"
 
         except Exception as e:
-            logger.error(f"Chain-of-Thought generation failed: {e}")
+            logger.exception(f"Chain-of-Thought generation failed: {e}")
             raise
 
     def _analyze_and_plan(
@@ -88,8 +93,7 @@ class AttackerChainOfThought:
         attack_context: Any | None = None,
         **kwargs,
     ) -> tuple[str, str]:
-        """
-        Combined analysis and strategy planning prompt to save a full LLM round-trip.
+        """Combined analysis and strategy planning prompt to save a full LLM round-trip.
         Falls back to the legacy two-call flow if we cannot parse the structured response.
         """
         context_str = self._get_context_summary(attack_context)
@@ -178,10 +182,13 @@ class AttackerChainOfThought:
         return self._clean_response(response, request)
 
     def _critique_and_refine(
-        self, request: str, prompt: str, attack_context: Any | None = None, **kwargs
+        self,
+        request: str,
+        prompt: str,
+        attack_context: Any | None = None,
+        **kwargs,
     ) -> tuple[str, str]:
-        """
-        Combined critique/refinement helper to keep CoT latency low.
+        """Combined critique/refinement helper to keep CoT latency low.
         Falls back to legacy two-call approach if structured output is missing.
         """
         context_str = self._get_context_summary(attack_context)
@@ -217,7 +224,11 @@ class AttackerChainOfThought:
         return refined_prompt, critique
 
     def _critique_draft(
-        self, request: str, draft: str, attack_context: Any | None = None, **kwargs
+        self,
+        request: str,
+        draft: str,
+        attack_context: Any | None = None,
+        **kwargs,
     ) -> str:
         context_str = self._get_context_summary(attack_context)
 
@@ -275,7 +286,8 @@ class AttackerChainOfThought:
         sections: dict[str, str] = {}
         for key in keys:
             pattern = re.compile(
-                rf"{key}\s*[:\-]\s*(.+?)(?=\n[A-Z][^\n]{{2,}}[:\-]|$)", re.IGNORECASE | re.DOTALL
+                rf"{key}\s*[:\-]\s*(.+?)(?=\n[A-Z][^\n]{{2,}}[:\-]|$)",
+                re.IGNORECASE | re.DOTALL,
             )
             match = pattern.search(cleaned)
             if match:
@@ -395,11 +407,11 @@ class AttackerChainOfThought:
         return prompt
 
     def use_strategy(self, request, strategy_list, **kwargs):
-        """Use CoT with strategy context"""
+        """Use CoT with strategy context."""
         return self.generate_with_cot(request, strategy_list=strategy_list, **kwargs)
 
     def find_new_strategy(self, request, strategy_list, **kwargs):
-        """Delegate to base attacker"""
+        """Delegate to base attacker."""
         return self.base_attacker.find_new_strategy(request, strategy_list, **kwargs)
 
     def wrapper(self, response, request):
@@ -409,7 +421,8 @@ class AttackerChainOfThought:
         performing template substitution.
         """
         if not response:
-            raise ValueError("Empty response from model")
+            msg = "Empty response from model"
+            raise ValueError(msg)
 
         # Clean the response
         cleaned = self._clean_response(response, request)
@@ -417,8 +430,9 @@ class AttackerChainOfThought:
         # Validate it's AI-generated
         validated = self._validate_prompt(cleaned, request)
         if not validated:
+            msg = "Failed to validate jailbreak prompt; output appears incomplete or templated."
             raise ValueError(
-                "Failed to validate jailbreak prompt; output appears incomplete or templated."
+                msg,
             )
 
         return validated

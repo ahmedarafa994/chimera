@@ -1,5 +1,4 @@
-"""
-OVERTHINK API Endpoints - Reasoning Token Exploitation.
+"""OVERTHINK API Endpoints - Reasoning Token Exploitation.
 
 This module provides API endpoints for the OVERTHINK attack technique,
 implementing reasoning token amplification attacks on reasoning-enhanced LLMs
@@ -72,7 +71,7 @@ class OverthinkAttackRequest(StrictModel):
     injection_strategy: str | None = Field(
         None,
         description=(
-            "Injection strategy: context_aware, context_agnostic, " "hybrid, stealth, aggressive"
+            "Injection strategy: context_aware, context_agnostic, hybrid, stealth, aggressive"
         ),
     )
     num_decoys: int = Field(
@@ -92,7 +91,8 @@ class OverthinkAttackRequest(StrictModel):
     def _strip_prompt(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("prompt cannot be empty")
+            msg = "prompt cannot be empty"
+            raise ValueError(msg)
         return stripped
 
     @field_validator("technique")
@@ -100,7 +100,8 @@ class OverthinkAttackRequest(StrictModel):
     def _validate_technique(cls, value: str) -> str:
         valid = [t.value for t in AttackTechnique]
         if value not in valid:
-            raise ValueError(f"technique must be one of: {valid}")
+            msg = f"technique must be one of: {valid}"
+            raise ValueError(msg)
         return value
 
     @field_validator("target_model")
@@ -108,7 +109,8 @@ class OverthinkAttackRequest(StrictModel):
     def _validate_model(cls, value: str) -> str:
         valid = [m.value for m in ReasoningModel]
         if value not in valid:
-            raise ValueError(f"target_model must be one of: {valid}")
+            msg = f"target_model must be one of: {valid}"
+            raise ValueError(msg)
         return value
 
     @field_validator("decoy_types")
@@ -130,7 +132,8 @@ class OverthinkAttackRequest(StrictModel):
             return None
         valid = [s.value for s in InjectionStrategy]
         if value not in valid:
-            raise ValueError(f"injection_strategy must be one of: {valid}")
+            msg = f"injection_strategy must be one of: {valid}"
+            raise ValueError(msg)
         return value
 
 
@@ -170,13 +173,13 @@ class MousetrapFusionRequest(StrictModel):
     def _strip_prompt(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("prompt cannot be empty")
+            msg = "prompt cannot be empty"
+            raise ValueError(msg)
         return stripped
 
 
 class TokenMetricsResponse(StrictModel):
-    """
-    Response model for token metrics.
+    """Response model for token metrics.
 
     Extends base TokenMetrics with OVERTHINK-specific fields.
     """
@@ -187,7 +190,8 @@ class TokenMetricsResponse(StrictModel):
     total_tokens: int = Field(default=0, description="Total tokens")
     baseline_tokens: int = Field(default=0, description="Baseline reasoning tokens without attack")
     amplification_factor: float = Field(
-        default=0.0, description="Reasoning token amplification factor"
+        default=0.0,
+        description="Reasoning token amplification factor",
     )
 
     def to_reasoning_metrics(self) -> ReasoningMetrics:
@@ -201,8 +205,7 @@ class TokenMetricsResponse(StrictModel):
 
 
 class CostMetricsResponse(StrictModel):
-    """
-    Response model for cost metrics.
+    """Response model for cost metrics.
 
     Tracks all cost components for OVERTHINK attacks.
     """
@@ -233,8 +236,7 @@ class DecoyProblemInfo(StrictModel):
 
 
 class OverthinkResponse(StrictModel):
-    """
-    Response model for OVERTHINK attacks.
+    """Response model for OVERTHINK attacks.
 
     Synchronized with unified adversarial response schema:
     - Uses `generated_prompt` (alias for `injected_prompt`)
@@ -247,7 +249,8 @@ class OverthinkResponse(StrictModel):
     attack_id: str = Field(..., description="Unique attack identifier")
     success: bool = Field(..., description="Whether the attack succeeded")
     generated_prompt: str = Field(
-        ..., description="Generated adversarial prompt with injected decoys"
+        ...,
+        description="Generated adversarial prompt with injected decoys",
     )
     score: float = Field(
         default=0.0,
@@ -273,21 +276,25 @@ class OverthinkResponse(StrictModel):
 
     # Metrics (OVERTHINK-specific)
     token_metrics: TokenMetricsResponse | None = Field(
-        None, description="Token consumption metrics"
+        None,
+        description="Token consumption metrics",
     )
     cost_metrics: CostMetricsResponse | None = Field(None, description="Cost metrics")
 
     # Unified reasoning metrics (for cross-endpoint compatibility)
     reasoning_metrics: ReasoningMetrics | None = Field(
-        None, description="Unified reasoning metrics for OVERTHINK integration"
+        None,
+        description="Unified reasoning metrics for OVERTHINK integration",
     )
 
     # Details
     decoy_info: list[DecoyProblemInfo] | None = Field(
-        None, description="Information about injected decoys"
+        None,
+        description="Information about injected decoys",
     )
     injection_positions: list[tuple[str, int]] | None = Field(
-        None, description="Positions where decoys were injected"
+        None,
+        description="Positions where decoys were injected",
     )
 
     # Metadata
@@ -307,8 +314,7 @@ class OverthinkResponse(StrictModel):
 
 
 class MousetrapFusionResponse(OverthinkResponse):
-    """
-    Response model for Mousetrap + OVERTHINK fusion attacks.
+    """Response model for Mousetrap + OVERTHINK fusion attacks.
 
     Extends OverthinkResponse with Mousetrap-specific fields.
     """
@@ -346,7 +352,8 @@ class OverthinkStatsResponse(StrictModel):
     total_reasoning_tokens: int = Field(default=0, description="Total reasoning tokens consumed")
     total_cost: float = Field(default=0.0, description="Total cost incurred")
     attacks_by_technique: dict[str, int] = Field(
-        default_factory=dict, description="Attack count by technique"
+        default_factory=dict,
+        description="Attack count by technique",
     )
 
 
@@ -355,7 +362,8 @@ class DecoyTypesResponse(StrictModel):
 
     decoy_types: list[dict[str, Any]] = Field(..., description="Available decoy types")
     injection_strategies: list[dict[str, Any]] = Field(
-        ..., description="Available injection strategies"
+        ...,
+        description="Available injection strategies",
     )
     attack_techniques: list[dict[str, Any]] = Field(..., description="Available attack techniques")
     target_models: list[dict[str, Any]] = Field(..., description="Supported target models")
@@ -405,8 +413,7 @@ def get_engine() -> OverthinkEngine:
     default_error_message="OVERTHINK attack failed",
 )
 async def run_overthink_attack(request: OverthinkAttackRequest):
-    """
-    Execute an OVERTHINK reasoning token exploitation attack.
+    """Execute an OVERTHINK reasoning token exploitation attack.
 
     OVERTHINK injects computationally expensive decoy problems into prompts
     to amplify reasoning token consumption in reasoning-enhanced LLMs like
@@ -566,8 +573,7 @@ async def run_overthink_attack(request: OverthinkAttackRequest):
     default_error_message="Mousetrap + OVERTHINK fusion attack failed",
 )
 async def run_mousetrap_fusion_attack(request: MousetrapFusionRequest):
-    """
-    Execute a combined Mousetrap + OVERTHINK fusion attack.
+    """Execute a combined Mousetrap + OVERTHINK fusion attack.
 
     This endpoint combines the chaotic reasoning of Mousetrap with
     OVERTHINK's reasoning token amplification for maximum effectiveness.
@@ -705,8 +711,7 @@ async def run_mousetrap_fusion_attack(request: MousetrapFusionRequest):
     default_error_message="Failed to get OVERTHINK statistics",
 )
 async def get_overthink_stats():
-    """
-    Get OVERTHINK attack statistics.
+    """Get OVERTHINK attack statistics.
 
     Returns comprehensive statistics about executed attacks including:
     - Total attack count and success rate
@@ -745,8 +750,7 @@ async def get_overthink_stats():
     default_error_message="Failed to get decoy types",
 )
 async def get_decoy_types():
-    """
-    Get available decoy types, injection strategies, and attack techniques.
+    """Get available decoy types, injection strategies, and attack techniques.
 
     Returns comprehensive information about all configurable options
     for OVERTHINK attacks.
@@ -756,9 +760,7 @@ async def get_decoy_types():
             {
                 "value": "mdp",
                 "name": "MDP (Markov Decision Process)",
-                "description": (
-                    "State-action-transition problems requiring " "dynamic programming"
-                ),
+                "description": ("State-action-transition problems requiring dynamic programming"),
                 "expected_amplification": "10-20x",
             },
             {
@@ -922,8 +924,7 @@ async def get_decoy_types():
     default_error_message="Failed to estimate cost",
 )
 async def estimate_attack_cost(request: CostEstimateRequest):
-    """
-    Estimate the cost of an OVERTHINK attack before execution.
+    """Estimate the cost of an OVERTHINK attack before execution.
 
     Provides cost estimates for input, output, and reasoning tokens
     based on the attack configuration and target model pricing.
@@ -962,8 +963,7 @@ async def estimate_attack_cost(request: CostEstimateRequest):
     default_error_message="Failed to reset statistics",
 )
 async def reset_overthink_stats():
-    """
-    Reset OVERTHINK attack statistics.
+    """Reset OVERTHINK attack statistics.
 
     Clears all accumulated statistics and attack history.
     """

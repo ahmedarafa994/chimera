@@ -1,5 +1,4 @@
-"""
-Multi-Provider LLM Adapter for AutoDAN
+"""Multi-Provider LLM Adapter for AutoDAN.
 
 This module provides a unified interface for multiple LLM providers:
 - Google (Gemini)
@@ -92,7 +91,7 @@ class LLMRequest:
 class BaseLLMProvider(ABC):
     """Abstract base class for LLM providers."""
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig) -> None:
         self.config = config
         self._last_request_time = 0.0
         self._request_count = 0
@@ -100,14 +99,12 @@ class BaseLLMProvider(ABC):
     @abstractmethod
     async def generate(self, request: LLMRequest) -> LLMResponse:
         """Generate a response from the LLM."""
-        pass
 
     @abstractmethod
     async def is_available(self) -> bool:
         """Check if the provider is available."""
-        pass
 
-    async def _rate_limit(self):
+    async def _rate_limit(self) -> None:
         """Apply rate limiting if configured."""
         if self.config.rate_limit_rpm:
             min_interval = 60.0 / self.config.rate_limit_rpm
@@ -121,7 +118,7 @@ class BaseLLMProvider(ABC):
 class GoogleProvider(BaseLLMProvider):
     """Google/Gemini LLM provider."""
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig) -> None:
         super().__init__(config)
         self._client = None
 
@@ -147,7 +144,8 @@ class GoogleProvider(BaseLLMProvider):
 
             client = await self._get_client()
             if not client:
-                raise RuntimeError("Gemini client not available")
+                msg = "Gemini client not available"
+                raise RuntimeError(msg)
 
             model_name = request.model or self.config.default_model or "gemini-3-pro-preview"
 
@@ -173,7 +171,9 @@ class GoogleProvider(BaseLLMProvider):
 
             # Generate using new SDK
             response = client.models.generate_content(
-                model=model_name, contents=contents, config=config
+                model=model_name,
+                contents=contents,
+                config=config,
             )
 
             latency_ms = (time.time() - start_time) * 1000
@@ -187,7 +187,7 @@ class GoogleProvider(BaseLLMProvider):
             )
 
         except Exception as e:
-            logger.error(f"Google provider error: {e}")
+            logger.exception(f"Google provider error: {e}")
             raise
 
     async def is_available(self) -> bool:
@@ -202,7 +202,7 @@ class GoogleProvider(BaseLLMProvider):
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI LLM provider."""
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig) -> None:
         super().__init__(config)
         self._client = None
 
@@ -256,7 +256,7 @@ class OpenAIProvider(BaseLLMProvider):
             )
 
         except Exception as e:
-            logger.error(f"OpenAI provider error: {e}")
+            logger.exception(f"OpenAI provider error: {e}")
             raise
 
     async def is_available(self) -> bool:
@@ -271,7 +271,7 @@ class OpenAIProvider(BaseLLMProvider):
 class AnthropicProvider(BaseLLMProvider):
     """Anthropic (Claude) LLM provider."""
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig) -> None:
         super().__init__(config)
         self._client = None
 
@@ -328,7 +328,7 @@ class AnthropicProvider(BaseLLMProvider):
             )
 
         except Exception as e:
-            logger.error(f"Anthropic provider error: {e}")
+            logger.exception(f"Anthropic provider error: {e}")
             raise
 
     async def is_available(self) -> bool:
@@ -343,7 +343,7 @@ class AnthropicProvider(BaseLLMProvider):
 class DeepSeekProvider(BaseLLMProvider):
     """DeepSeek LLM provider (OpenAI-compatible API)."""
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig) -> None:
         super().__init__(config)
         self._client = None
 
@@ -397,7 +397,7 @@ class DeepSeekProvider(BaseLLMProvider):
             )
 
         except Exception as e:
-            logger.error(f"DeepSeek provider error: {e}")
+            logger.exception(f"DeepSeek provider error: {e}")
             raise
 
     async def is_available(self) -> bool:
@@ -412,7 +412,7 @@ class DeepSeekProvider(BaseLLMProvider):
 class OllamaProvider(BaseLLMProvider):
     """Ollama local LLM provider."""
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig) -> None:
         super().__init__(config)
         self._base_url = config.base_url or "http://localhost:11434"
 
@@ -461,7 +461,7 @@ class OllamaProvider(BaseLLMProvider):
             )
 
         except Exception as e:
-            logger.error(f"Ollama provider error: {e}")
+            logger.exception(f"Ollama provider error: {e}")
             raise
 
     async def is_available(self) -> bool:
@@ -477,8 +477,7 @@ class OllamaProvider(BaseLLMProvider):
 
 
 class MultiProviderAdapter:
-    """
-    Multi-provider LLM adapter with automatic fallback.
+    """Multi-provider LLM adapter with automatic fallback.
 
     Features:
     - Automatic provider selection based on availability and priority
@@ -487,7 +486,7 @@ class MultiProviderAdapter:
     - Rate limiting and quota management
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._providers: dict[ProviderType, BaseLLMProvider] = {}
         self._fallback_chain: list[ProviderType] = []
         self._default_provider: ProviderType | None = None
@@ -502,8 +501,11 @@ class MultiProviderAdapter:
         }
 
     def register_provider(
-        self, provider_type: ProviderType, config: ProviderConfig, is_default: bool = False
-    ):
+        self,
+        provider_type: ProviderType,
+        config: ProviderConfig,
+        is_default: bool = False,
+    ) -> None:
         """Register a provider with the adapter."""
         provider_class = self._get_provider_class(provider_type)
         if provider_class:
@@ -527,16 +529,18 @@ class MultiProviderAdapter:
         }
         return mapping.get(provider_type)
 
-    def set_fallback_chain(self, chain: list[ProviderType]):
+    def set_fallback_chain(self, chain: list[ProviderType]) -> None:
         """Set the fallback chain for provider selection."""
         self._fallback_chain = chain
         logger.info(f"Fallback chain set: {[p.value for p in chain]}")
 
     async def generate(
-        self, request: LLMRequest, provider: ProviderType | None = None, use_fallback: bool = True
+        self,
+        request: LLMRequest,
+        provider: ProviderType | None = None,
+        use_fallback: bool = True,
     ) -> LLMResponse:
-        """
-        Generate a response using the specified or default provider.
+        """Generate a response using the specified or default provider.
 
         Args:
             request: The LLM request
@@ -545,6 +549,7 @@ class MultiProviderAdapter:
 
         Returns:
             LLMResponse from the provider
+
         """
         self._stats["total_requests"] += 1
 
@@ -586,10 +591,14 @@ class MultiProviderAdapter:
                 continue
 
         self._stats["failed_requests"] += 1
-        raise RuntimeError(f"All providers failed. Last error: {last_error}")
+        msg = f"All providers failed. Last error: {last_error}"
+        raise RuntimeError(msg)
 
     async def generate_with_retry(
-        self, request: LLMRequest, max_retries: int = 3, retry_delay: float = 1.0
+        self,
+        request: LLMRequest,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
     ) -> LLMResponse:
         """Generate with automatic retry on failure."""
         last_error = None
@@ -628,7 +637,7 @@ class MultiProviderAdapter:
 multi_provider_adapter = MultiProviderAdapter()
 
 
-def setup_default_providers():
+def setup_default_providers() -> None:
     """Setup default providers based on available API keys."""
     # Google/Gemini
     if hasattr(settings, "GOOGLE_API_KEY") and settings.GOOGLE_API_KEY:
@@ -677,7 +686,7 @@ def setup_default_providers():
             ProviderType.OPENAI,
             ProviderType.DEEPSEEK,
             ProviderType.OLLAMA,
-        ]
+        ],
     )
 
     logger.info("Default providers configured")

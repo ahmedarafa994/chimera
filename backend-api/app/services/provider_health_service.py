@@ -62,8 +62,7 @@ MAX_ALERTS_RETAINED = 200
 
 
 class ProviderHealthConfig:
-    """
-    Configuration for health monitoring of a specific provider.
+    """Configuration for health monitoring of a specific provider.
 
     Allows per-provider customization of check intervals, thresholds, and alerting.
     """
@@ -80,7 +79,7 @@ class ProviderHealthConfig:
         consecutive_failures_degraded: int = DEFAULT_CONSECUTIVE_FAILURES_DEGRADED,
         consecutive_failures_down: int = DEFAULT_CONSECUTIVE_FAILURES_DOWN,
         enabled: bool = True,
-    ):
+    ) -> None:
         self.provider_id = provider_id
         self.check_interval_seconds = check_interval_seconds
         self.check_timeout_seconds = check_timeout_seconds
@@ -116,13 +115,12 @@ class ProviderHealthConfig:
 
 
 class ProviderHealthState:
-    """
-    Maintains health state for a single provider.
+    """Maintains health state for a single provider.
 
     Tracks metrics, history, latency samples, and calculates rolling statistics.
     """
 
-    def __init__(self, provider_id: str, provider_name: str):
+    def __init__(self, provider_id: str, provider_name: str) -> None:
         self.provider_id = provider_id
         self.provider_name = provider_name
 
@@ -155,7 +153,7 @@ class ProviderHealthState:
 
         # Uptime tracking
         self._uptime_samples: deque[tuple[float, bool]] = deque(
-            maxlen=3600
+            maxlen=3600,
         )  # 1 hour at 1s resolution
 
         # Last calculated metrics
@@ -169,8 +167,7 @@ class ProviderHealthState:
         is_rate_limited: bool = False,
         error_message: str | None = None,
     ) -> None:
-        """
-        Record the result of a health check.
+        """Record the result of a health check.
 
         Args:
             success: Whether the check succeeded
@@ -178,6 +175,7 @@ class ProviderHealthState:
             is_timeout: Whether the check timed out
             is_rate_limited: Whether the check was rate limited
             error_message: Error message if failed
+
         """
         now = datetime.utcnow()
         self.last_check_at = now
@@ -237,14 +235,14 @@ class ProviderHealthState:
         return (self.failed_requests / self.total_requests) * 100
 
     def calculate_uptime_percent(self, window_seconds: int = 3600) -> float:
-        """
-        Calculate uptime percentage over a time window.
+        """Calculate uptime percentage over a time window.
 
         Args:
             window_seconds: Time window in seconds
 
         Returns:
             Uptime percentage (0-100)
+
         """
         if not self._uptime_samples:
             return 100.0
@@ -268,16 +266,17 @@ class ProviderHealthState:
         return 0.0
 
     def to_metrics(
-        self, check_interval_seconds: int = DEFAULT_CHECK_INTERVAL_SECONDS
+        self,
+        check_interval_seconds: int = DEFAULT_CHECK_INTERVAL_SECONDS,
     ) -> ProviderHealthMetrics:
-        """
-        Convert current state to ProviderHealthMetrics model.
+        """Convert current state to ProviderHealthMetrics model.
 
         Args:
             check_interval_seconds: Health check interval for metadata
 
         Returns:
             ProviderHealthMetrics instance
+
         """
         latency_metrics = self.calculate_latency_metrics()
         request_metrics = self.calculate_request_metrics()
@@ -311,8 +310,7 @@ class ProviderHealthState:
 
 
 class ProviderHealthService:
-    """
-    Background health monitoring service with configurable intervals and alerting.
+    """Background health monitoring service with configurable intervals and alerting.
 
     Features:
     - Background health check tasks for all configured providers
@@ -400,8 +398,7 @@ class ProviderHealthService:
         critical_latency_ms: float | None = None,
         enabled: bool = True,
     ) -> None:
-        """
-        Configure health monitoring for a provider.
+        """Configure health monitoring for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -413,6 +410,7 @@ class ProviderHealthService:
             warning_latency_ms: Latency threshold for warnings
             critical_latency_ms: Latency threshold for critical
             enabled: Whether monitoring is enabled
+
         """
         display_name = provider_name or provider_id.title()
 
@@ -447,8 +445,7 @@ class ProviderHealthService:
         provider_id: str,
         **kwargs: Any,
     ) -> bool:
-        """
-        Update configuration for a provider.
+        """Update configuration for a provider.
 
         Args:
             provider_id: Provider identifier
@@ -456,6 +453,7 @@ class ProviderHealthService:
 
         Returns:
             True if updated, False if provider not found
+
         """
         config = self._provider_configs.get(provider_id)
         if not config:
@@ -563,14 +561,14 @@ class ProviderHealthService:
                 await asyncio.sleep(5)  # Back off on error
 
     async def _check_provider_health(self, provider_id: str) -> dict[str, Any]:
-        """
-        Perform health check for a single provider.
+        """Perform health check for a single provider.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             Health check result dictionary
+
         """
         config = self._provider_configs.get(provider_id)
         if not config:
@@ -594,7 +592,7 @@ class ProviderHealthService:
                 cb_status = CircuitBreakerRegistry.get_status(provider_id)
                 if cb_status:
                     cb_state = cb_status.get("state")
-                    if cb_state == CircuitState.OPEN or cb_state == "open":
+                    if cb_state in (CircuitState.OPEN, "open"):
                         state.circuit_breaker_state = "open"
                         # Record as failure due to circuit breaker
                         latency_ms = (time.perf_counter() - start_time) * 1000
@@ -604,7 +602,10 @@ class ProviderHealthService:
                             error_message="Circuit breaker open",
                         )
                         await self._process_health_result(
-                            provider_id, False, latency_ms, "Circuit breaker open"
+                            provider_id,
+                            False,
+                            latency_ms,
+                            "Circuit breaker open",
                         )
                         return {
                             "provider": provider_id,
@@ -613,7 +614,7 @@ class ProviderHealthService:
                             "error": "Circuit breaker open",
                             "skipped": True,
                         }
-                    elif cb_state == CircuitState.HALF_OPEN or cb_state == "half_open":
+                    if cb_state in (CircuitState.HALF_OPEN, "half_open"):
                         state.circuit_breaker_state = "half_open"
                     else:
                         state.circuit_breaker_state = "closed"
@@ -687,14 +688,14 @@ class ProviderHealthService:
         latency_ms: float,
         error_message: str | None,
     ) -> None:
-        """
-        Process health check result, update status, and trigger alerts.
+        """Process health check result, update status, and trigger alerts.
 
         Args:
             provider_id: Provider identifier
             success: Whether check succeeded
             latency_ms: Response latency
             error_message: Error message if failed
+
         """
         config = self._provider_configs.get(provider_id)
         state = self._provider_states.get(provider_id)
@@ -715,7 +716,7 @@ class ProviderHealthService:
             state.status_since = state.last_status_change_at
 
             logger.info(
-                f"Provider {provider_id} status changed: {old_status.value} -> {new_status.value}"
+                f"Provider {provider_id} status changed: {old_status.value} -> {new_status.value}",
             )
 
             # Trigger status change callbacks
@@ -723,7 +724,7 @@ class ProviderHealthService:
                 try:
                     callback(provider_id, old_status, new_status)
                 except Exception as e:
-                    logger.error(f"Error in status change callback: {e}")
+                    logger.exception(f"Error in status change callback: {e}")
 
             # Generate status transition alert
             await self._generate_status_transition_alert(provider_id, old_status, new_status, state)
@@ -747,8 +748,7 @@ class ProviderHealthService:
         config: ProviderHealthConfig,
         state: ProviderHealthState,
     ) -> ProviderHealthStatus:
-        """
-        Determine provider health status based on metrics.
+        """Determine provider health status based on metrics.
 
         Status logic:
         - DOWN: Consecutive failures >= threshold OR error rate >= critical
@@ -896,7 +896,7 @@ class ProviderHealthService:
             try:
                 callback(alert)
             except Exception as e:
-                logger.error(f"Error in alert callback: {e}")
+                logger.exception(f"Error in alert callback: {e}")
 
     def _record_history(
         self,
@@ -936,7 +936,8 @@ class ProviderHealthService:
         self._alert_callbacks.append(callback)
 
     def register_status_change_callback(
-        self, callback: Callable[[str, ProviderHealthStatus, ProviderHealthStatus], None]
+        self,
+        callback: Callable[[str, ProviderHealthStatus, ProviderHealthStatus], None],
     ) -> None:
         """Register a callback to be invoked when provider status changes."""
         self._status_change_callbacks.append(callback)
@@ -946,11 +947,11 @@ class ProviderHealthService:
     # =========================================================================
 
     async def get_health_dashboard(self) -> dict[str, Any]:
-        """
-        Get comprehensive health dashboard data.
+        """Get comprehensive health dashboard data.
 
         Returns:
             Dashboard dictionary with all providers, summary, and alerts
+
         """
         providers: dict[str, dict[str, Any]] = {}
 
@@ -1007,22 +1008,21 @@ class ProviderHealthService:
 
         if any(s == ProviderHealthStatus.DOWN for s in statuses):
             return "critical"
-        elif any(s == ProviderHealthStatus.DEGRADED for s in statuses):
+        if any(s == ProviderHealthStatus.DEGRADED for s in statuses):
             return "degraded"
-        elif all(s == ProviderHealthStatus.OPERATIONAL for s in statuses):
+        if all(s == ProviderHealthStatus.OPERATIONAL for s in statuses):
             return "healthy"
-        else:
-            return "unknown"
+        return "unknown"
 
     async def get_provider_health(self, provider_id: str) -> dict[str, Any] | None:
-        """
-        Get health metrics for a specific provider.
+        """Get health metrics for a specific provider.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             Provider health metrics dictionary or None if not found
+
         """
         state = self._provider_states.get(provider_id)
         if not state:
@@ -1040,8 +1040,7 @@ class ProviderHealthService:
         start_time: datetime | None = None,
         end_time: datetime | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Get health history entries.
+        """Get health history entries.
 
         Args:
             provider_id: Filter by provider (None = all)
@@ -1051,6 +1050,7 @@ class ProviderHealthService:
 
         Returns:
             List of health history entries
+
         """
         history = list(self._health_history)
 
@@ -1079,8 +1079,7 @@ class ProviderHealthService:
         active_only: bool = False,
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        """
-        Get health alerts.
+        """Get health alerts.
 
         Args:
             provider_id: Filter by provider
@@ -1090,6 +1089,7 @@ class ProviderHealthService:
 
         Returns:
             List of alert dictionaries
+
         """
         alerts = list(self._alerts)
 
@@ -1106,14 +1106,14 @@ class ProviderHealthService:
         return [a.to_dict() for a in alerts[:limit]]
 
     async def get_provider_uptime(self, provider_id: str) -> ProviderUptimeMetrics | None:
-        """
-        Get detailed uptime metrics for a provider.
+        """Get detailed uptime metrics for a provider.
 
         Args:
             provider_id: Provider identifier
 
         Returns:
             ProviderUptimeMetrics or None if not found
+
         """
         state = self._provider_states.get(provider_id)
         if not state:
@@ -1154,41 +1154,39 @@ class ProviderHealthService:
         )
 
     async def check_now(self, provider_id: str | None = None) -> dict[str, Any]:
-        """
-        Trigger an immediate health check.
+        """Trigger an immediate health check.
 
         Args:
             provider_id: Specific provider to check (None = all)
 
         Returns:
             Health check results
+
         """
         if provider_id:
             if provider_id not in self._provider_configs:
                 return {"error": f"Provider {provider_id} not configured"}
             result = await self._check_provider_health(provider_id)
             return {"provider": provider_id, "result": result}
-        else:
-            # Check all providers
-            results = {}
-            tasks = [
-                self._check_provider_health(pid)
-                for pid in self._provider_configs
-                if self._provider_configs[pid].enabled
-            ]
-            check_results = await asyncio.gather(*tasks, return_exceptions=True)
+        # Check all providers
+        results = {}
+        tasks = [
+            self._check_provider_health(pid)
+            for pid in self._provider_configs
+            if self._provider_configs[pid].enabled
+        ]
+        check_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for pid, result in zip(self._provider_configs.keys(), check_results, strict=False):
-                if isinstance(result, Exception):
-                    results[pid] = {"success": False, "error": str(result)}
-                else:
-                    results[pid] = result
+        for pid, result in zip(self._provider_configs.keys(), check_results, strict=False):
+            if isinstance(result, Exception):
+                results[pid] = {"success": False, "error": str(result)}
+            else:
+                results[pid] = result
 
-            return {"providers": results}
+        return {"providers": results}
 
     async def acknowledge_alert(self, alert_id: str, acknowledged_by: str) -> bool:
-        """
-        Acknowledge an alert.
+        """Acknowledge an alert.
 
         Args:
             alert_id: Alert identifier
@@ -1196,6 +1194,7 @@ class ProviderHealthService:
 
         Returns:
             True if acknowledged, False if not found
+
         """
         for alert in self._alerts:
             if alert.alert_id == alert_id:
@@ -1206,14 +1205,14 @@ class ProviderHealthService:
         return False
 
     async def resolve_alert(self, alert_id: str) -> bool:
-        """
-        Resolve an alert.
+        """Resolve an alert.
 
         Args:
             alert_id: Alert identifier
 
         Returns:
             True if resolved, False if not found
+
         """
         for alert in self._alerts:
             if alert.alert_id == alert_id:
@@ -1235,8 +1234,7 @@ class ProviderHealthService:
         is_rate_limited: bool = False,
         error_message: str | None = None,
     ) -> None:
-        """
-        Record an external health check result (e.g., from actual LLM requests).
+        """Record an external health check result (e.g., from actual LLM requests).
 
         This allows integrating health tracking with actual request metrics,
         not just health check probes.
@@ -1248,6 +1246,7 @@ class ProviderHealthService:
             is_timeout: Whether it was a timeout
             is_rate_limited: Whether it was rate limited
             error_message: Error message if failed
+
         """
         state = self._provider_states.get(provider_id)
         if not state:

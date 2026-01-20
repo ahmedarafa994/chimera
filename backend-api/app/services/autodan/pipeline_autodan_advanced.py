@@ -6,12 +6,11 @@ from .pipeline_autodan_reasoning import AutoDANReasoning
 
 
 class AutoDANAdvanced(AutoDANReasoning):
-    """
-    AutoDAN-Advanced: Implements Hierarchical Genetic Search (HGS) and
+    """AutoDAN-Advanced: Implements Hierarchical Genetic Search (HGS) and
     Coherence-Constrained Gradient Search (CCGS).
     """
 
-    def __init__(self, turbo_framework: dict, data, target, **kwargs):
+    def __init__(self, turbo_framework: dict, data, target, **kwargs) -> None:
         super().__init__(turbo_framework, data, target, **kwargs)
 
         # Initialize Diversity Archive
@@ -26,9 +25,7 @@ class AutoDANAdvanced(AutoDANReasoning):
         self.logger = turbo_framework["logger"]
 
     def hierarchical_genetic_search(self, request, input_strategy_library=None):
-        """
-        Main entry point for the HGS algorithm.
-        """
+        """Main entry point for the HGS algorithm."""
         self.logger.info("Starting Hierarchical Genetic Search")
 
         # Level 1: Initialize Meta-Strategies (Population)
@@ -77,7 +74,10 @@ class AutoDANAdvanced(AutoDANReasoning):
                 if not self._is_refusal(response):
                     try:
                         assessment, _ = self.scorer.scoring(
-                            request, response, max_length=10000, do_sample=True
+                            request,
+                            response,
+                            max_length=10000,
+                            do_sample=True,
                         )
                         score = self.scorer.wrapper(assessment, max_length=2000)
                     except Exception as e:

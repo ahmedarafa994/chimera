@@ -1,9 +1,10 @@
-"""
-Background Jobs API Endpoint
+"""Background Jobs API Endpoint.
 
 Provides endpoints for managing and monitoring background jobs.
 SCALE-002: Background job management API.
 """
+
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -84,8 +85,7 @@ async def list_jobs(
     service: BackgroundJobService = Depends(get_job_service),
     _user: TokenPayload = Depends(get_current_user),
 ):
-    """
-    List background jobs.
+    """List background jobs.
 
     Optionally filter by status: pending, running, completed, failed, cancelled
     """
@@ -132,8 +132,8 @@ async def list_jobs(
 
 @router.get("/stats", response_model=JobStatsResponse)
 async def get_job_stats(
-    service: BackgroundJobService = Depends(get_job_service),
-    _user: TokenPayload = Depends(get_current_user),
+    service: Annotated[BackgroundJobService, Depends(get_job_service)],
+    _user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
     """Get background job service statistics."""
     stats = service.get_stats()
@@ -143,15 +143,16 @@ async def get_job_stats(
 @router.get("/{job_id}", response_model=JobResponse)
 async def get_job(
     job_id: str,
-    service: BackgroundJobService = Depends(get_job_service),
-    _user: TokenPayload = Depends(get_current_user),
+    service: Annotated[BackgroundJobService, Depends(get_job_service)],
+    _user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
     """Get a specific job by ID."""
     job = await service.get_job(job_id)
 
     if not job:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Job not found: {job_id}"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job not found: {job_id}",
         )
 
     return JobResponse(
@@ -180,11 +181,10 @@ async def get_job(
 @router.post("/{job_id}/cancel")
 async def cancel_job(
     job_id: str,
-    service: BackgroundJobService = Depends(get_job_service),
-    _user: TokenPayload = Depends(get_current_user),
+    service: Annotated[BackgroundJobService, Depends(get_job_service)],
+    _user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """
-    Cancel a pending job.
+    """Cancel a pending job.
 
     Note: Running jobs cannot be cancelled.
     """
@@ -194,7 +194,8 @@ async def cancel_job(
         job = await service.get_job(job_id)
         if not job:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"Job not found: {job_id}"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Job not found: {job_id}",
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

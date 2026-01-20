@@ -1,5 +1,4 @@
-"""
-Integration Tests for Unified Streaming Service.
+"""Integration Tests for Unified Streaming Service.
 
 Tests end-to-end streaming integration including:
 - SSE format validation
@@ -13,6 +12,7 @@ References:
 - Streaming endpoints: app/api/v1/endpoints/streaming.py
 - Unified streaming service: app/services/unified_streaming_service.py
 - Stream context: app/services/stream_context.py
+
 """
 
 import asyncio
@@ -20,7 +20,7 @@ import contextlib
 import json
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any
+from typing import Any, Never
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -90,7 +90,7 @@ def mock_unified_streaming_service(mock_stream_chunks):
             "error_rate": 0.0,
             "avg_duration_ms": 150.0,
             "avg_first_chunk_latency_ms": 50.0,
-        }
+        },
     )
     service.get_recent_metrics = MagicMock(return_value=[])
     service.cancel_stream = AsyncMock(return_value=True)
@@ -150,7 +150,7 @@ def mock_provider_plugin():
 class TestSSEFormatting:
     """Tests for SSE format validation."""
 
-    def test_sse_chunk_format(self):
+    def test_sse_chunk_format(self) -> None:
         """Test that SSE chunks are properly formatted."""
         from app.services.stream_formatters import StreamResponseFormatter
 
@@ -182,7 +182,7 @@ class TestSSEFormatting:
         assert data["model"] == "gpt-4o"
         assert data["is_final"] is False
 
-    def test_sse_done_event_format(self):
+    def test_sse_done_event_format(self) -> None:
         """Test SSE done event format."""
         from app.services.stream_formatters import StreamResponseFormatter
 
@@ -207,7 +207,7 @@ class TestSSEFormatting:
         assert data["total_chunks"] == 5
         assert data["finish_reason"] == "stop"
 
-    def test_sse_error_event_format(self):
+    def test_sse_error_event_format(self) -> None:
         """Test SSE error event format."""
         from app.services.stream_formatters import StreamResponseFormatter
 
@@ -228,7 +228,7 @@ class TestSSEFormatting:
         assert data["error"] == "Provider not available"
         assert data["error_code"] == "PROVIDER_ERROR"
 
-    def test_sse_keepalive_ping(self):
+    def test_sse_keepalive_ping(self) -> None:
         """Test SSE keep-alive ping format."""
         from app.services.stream_formatters import SSE_KEEP_ALIVE_COMMENT, StreamResponseFormatter
 
@@ -247,7 +247,7 @@ class TestSSEFormatting:
 class TestSelectionHeaders:
     """Tests for selection tracing headers."""
 
-    def test_sse_headers_include_provider_model(self):
+    def test_sse_headers_include_provider_model(self) -> None:
         """Test that SSE headers include provider/model information."""
         from app.services.stream_formatters import StreamingHeadersBuilder
 
@@ -265,7 +265,7 @@ class TestSelectionHeaders:
         assert "X-Stream-Started-At" in headers
         assert headers["Content-Type"] == "text/event-stream"
 
-    def test_jsonl_headers_include_provider_model(self):
+    def test_jsonl_headers_include_provider_model(self) -> None:
         """Test that JSONL headers include provider/model information."""
         from app.services.stream_formatters import StreamingHeadersBuilder
 
@@ -288,7 +288,7 @@ class TestSelectionHeaders:
         mock_unified_streaming_service,
         mock_resolution_service,
         mock_provider_plugin,
-    ):
+    ) -> None:
         """Test that streaming endpoint returns proper headers."""
         with (
             patch(
@@ -331,7 +331,7 @@ class TestSessionSelection:
         mock_unified_streaming_service,
         mock_resolution_service,
         mock_provider_plugin,
-    ):
+    ) -> None:
         """Test that stream uses session's provider/model selection."""
         # Configure resolution to return session-based selection
         mock_resolution_service.resolve_with_metadata.return_value.resolution_source = "session"
@@ -369,7 +369,7 @@ class TestSessionSelection:
         mock_unified_streaming_service,
         mock_resolution_service,
         mock_provider_plugin,
-    ):
+    ) -> None:
         """Test that explicit provider/model takes precedence over session."""
         mock_resolution_service.resolve_with_metadata.return_value.resolution_source = "explicit"
         mock_resolution_service.resolve_with_metadata.return_value.resolution_priority = 10
@@ -418,7 +418,7 @@ class TestProviderAvailability:
         self,
         mock_unified_streaming_service,
         mock_resolution_service,
-    ):
+    ) -> None:
         """Test proper error when provider not available."""
         with (
             patch(
@@ -449,7 +449,7 @@ class TestProviderAvailability:
         self,
         mock_unified_streaming_service,
         mock_resolution_service,
-    ):
+    ) -> None:
         """Test that provider not available error includes provider name."""
         mock_resolution_service.resolve_with_metadata.return_value.provider = "unavailable_provider"
 
@@ -486,7 +486,7 @@ class TestStreamContextLocking:
     """Tests for selection lock during streaming."""
 
     @pytest.mark.asyncio
-    async def test_selection_locked_during_stream(self):
+    async def test_selection_locked_during_stream(self) -> None:
         """Test that selection is locked during streaming."""
         from app.services.stream_context import get_streaming_context
 
@@ -513,7 +513,7 @@ class TestStreamContextLocking:
         assert not context.is_selection_locked("sess_test")
 
     @pytest.mark.asyncio
-    async def test_concurrent_streams_same_session(self):
+    async def test_concurrent_streams_same_session(self) -> None:
         """Test handling of concurrent streams for same session."""
         from app.services.stream_context import get_streaming_context
 
@@ -540,7 +540,7 @@ class TestStreamContextLocking:
                 assert len(sessions) == 2
 
     @pytest.mark.asyncio
-    async def test_stream_cleanup_on_error(self):
+    async def test_stream_cleanup_on_error(self) -> None:
         """Test that stream context cleans up on error."""
         from app.services.stream_context import get_streaming_context
 
@@ -552,7 +552,8 @@ class TestStreamContextLocking:
                 provider="openai",
                 model="gpt-4o",
             ) as session:
-                raise RuntimeError("Simulated error")
+                msg = "Simulated error"
+                raise RuntimeError(msg)
         except RuntimeError:
             pass
 
@@ -562,19 +563,19 @@ class TestStreamContextLocking:
         assert session.completed is True
 
     @pytest.mark.asyncio
-    async def test_stream_cleanup_on_cancellation(self):
+    async def test_stream_cleanup_on_cancellation(self) -> None:
         """Test that stream context cleans up on cancellation."""
         from app.services.stream_context import get_streaming_context
 
         context = get_streaming_context()
 
-        async def simulate_cancelled_stream():
+        async def simulate_cancelled_stream() -> Never:
             async with context.locked_stream(
                 session_id="sess_cancel",
                 provider="openai",
                 model="gpt-4o",
             ):
-                raise asyncio.CancelledError()
+                raise asyncio.CancelledError
 
         with contextlib.suppress(asyncio.CancelledError):
             await simulate_cancelled_stream()
@@ -592,7 +593,7 @@ class TestStreamMetrics:
     """Tests for metrics collection during streaming."""
 
     @pytest.mark.asyncio
-    async def test_metrics_recorded_on_stream_complete(self):
+    async def test_metrics_recorded_on_stream_complete(self) -> None:
         """Test that metrics are recorded when stream completes."""
         from app.services.stream_metrics_service import (
             StreamEvent,
@@ -614,7 +615,7 @@ class TestStreamMetrics:
                 model="gpt-4o",
                 timestamp=datetime.utcnow(),
                 session_id="sess_metrics",
-            )
+            ),
         )
 
         await metrics_service.record_event(
@@ -628,7 +629,7 @@ class TestStreamMetrics:
                 token_count=100,
                 latency_ms=150.0,
                 finish_reason="stop",
-            )
+            ),
         )
 
         # Check metrics
@@ -638,7 +639,7 @@ class TestStreamMetrics:
         assert provider_metrics["openai"].successful_streams >= 1
 
     @pytest.mark.asyncio
-    async def test_metrics_recorded_on_stream_error(self):
+    async def test_metrics_recorded_on_stream_error(self) -> None:
         """Test that metrics are recorded when stream errors."""
         from app.services.stream_metrics_service import (
             StreamEvent,
@@ -656,7 +657,7 @@ class TestStreamMetrics:
                 provider="openai",
                 model="gpt-4o",
                 timestamp=datetime.utcnow(),
-            )
+            ),
         )
 
         await metrics_service.record_event(
@@ -667,7 +668,7 @@ class TestStreamMetrics:
                 model="gpt-4o",
                 timestamp=datetime.utcnow(),
                 error="Connection timeout",
-            )
+            ),
         )
 
         # Check that error was recorded
@@ -675,7 +676,7 @@ class TestStreamMetrics:
         error_found = any(e["stream_id"] == "stream_error_test" for e in recent_errors)
         assert error_found
 
-    def test_get_stream_metrics_endpoint(self, test_client):
+    def test_get_stream_metrics_endpoint(self, test_client) -> None:
         """Test the streaming metrics endpoint."""
         response = test_client.get("/api/v1/stream/metrics")
 
@@ -685,7 +686,7 @@ class TestStreamMetrics:
         assert "active_streams" in data
         assert "by_provider" in data
 
-    def test_get_active_streams_endpoint(self, test_client):
+    def test_get_active_streams_endpoint(self, test_client) -> None:
         """Test the active streams endpoint."""
         response = test_client.get("/api/v1/stream/active")
 
@@ -703,7 +704,7 @@ class TestStreamMetrics:
 class TestStreamFormats:
     """Tests for different stream output formats."""
 
-    def test_jsonl_format(self):
+    def test_jsonl_format(self) -> None:
         """Test JSON Lines format output."""
         from app.services.stream_formatters import StreamResponseFormatter
 
@@ -723,7 +724,7 @@ class TestStreamFormats:
         assert data["text"] == "Hello"
         assert data["chunk_index"] == 0
 
-    def test_websocket_format(self):
+    def test_websocket_format(self) -> None:
         """Test WebSocket format output."""
         from app.services.stream_formatters import StreamResponseFormatter
 
@@ -743,7 +744,7 @@ class TestStreamFormats:
         assert message["payload"]["text"] == "Hello"
         assert message["payload"]["chunk_index"] == 0
 
-    def test_format_unified_chunk_sse(self):
+    def test_format_unified_chunk_sse(self) -> None:
         """Test formatting unified chunk as SSE."""
         from app.services.stream_formatters import StreamFormat, StreamResponseFormatter
         from app.services.unified_streaming_service import UnifiedStreamChunk
@@ -763,7 +764,7 @@ class TestStreamFormats:
         assert "event: chunk" in formatted
         assert "data: " in formatted
 
-    def test_format_unified_chunk_jsonl(self):
+    def test_format_unified_chunk_jsonl(self) -> None:
         """Test formatting unified chunk as JSONL."""
         from app.services.stream_formatters import StreamFormat, StreamResponseFormatter
         from app.services.unified_streaming_service import UnifiedStreamChunk
@@ -793,7 +794,7 @@ class TestUnifiedStreamingService:
     """Tests for the UnifiedStreamingService."""
 
     @pytest.mark.asyncio
-    async def test_stream_generate_creates_context(self):
+    async def test_stream_generate_creates_context(self) -> None:
         """Test that stream_generate creates proper context."""
         from app.services.unified_streaming_service import get_unified_streaming_service
 
@@ -803,7 +804,7 @@ class TestUnifiedStreamingService:
         assert service is not None
         assert service._initialized is True
 
-    def test_get_metrics_summary(self):
+    def test_get_metrics_summary(self) -> None:
         """Test getting metrics summary."""
         from app.services.unified_streaming_service import get_unified_streaming_service
 
@@ -815,7 +816,7 @@ class TestUnifiedStreamingService:
         assert "by_provider" in summary
         assert "error_rate" in summary
 
-    def test_get_active_streams(self):
+    def test_get_active_streams(self) -> None:
         """Test getting active streams."""
         from app.services.unified_streaming_service import get_unified_streaming_service
 
@@ -838,7 +839,7 @@ class TestChatStreaming:
         self,
         mock_unified_streaming_service,
         mock_resolution_service,
-    ):
+    ) -> None:
         """Test that chat endpoint accepts message format."""
         with (
             patch(
@@ -877,7 +878,7 @@ class TestChatStreaming:
 class TestStreamingErrorHandling:
     """Tests for streaming error handling."""
 
-    def test_streaming_error_exception(self):
+    def test_streaming_error_exception(self) -> None:
         """Test StreamingError exception."""
         from app.api.v1.endpoints.streaming import StreamingError
 
@@ -893,7 +894,7 @@ class TestStreamingErrorHandling:
         assert error.status_code == 500
         assert error.stream_id == "stream_test"
 
-    def test_provider_not_available_error(self):
+    def test_provider_not_available_error(self) -> None:
         """Test ProviderNotAvailableError exception."""
         from app.api.v1.endpoints.streaming import ProviderNotAvailableError
 
@@ -906,7 +907,7 @@ class TestStreamingErrorHandling:
         assert error.status_code == 503
         assert error.error_code == "PROVIDER_NOT_AVAILABLE"
 
-    def test_model_not_found_error(self):
+    def test_model_not_found_error(self) -> None:
         """Test ModelNotFoundError exception."""
         from app.api.v1.endpoints.streaming import ModelNotFoundError
 
@@ -921,7 +922,7 @@ class TestStreamingErrorHandling:
         assert error.status_code == 404
         assert error.error_code == "MODEL_NOT_FOUND"
 
-    def test_rate_limit_exceeded_error(self):
+    def test_rate_limit_exceeded_error(self) -> None:
         """Test RateLimitExceededError exception."""
         from app.api.v1.endpoints.streaming import RateLimitExceededError
 
@@ -945,13 +946,13 @@ class TestStreamingErrorHandling:
 class TestStreamCancellation:
     """Tests for stream cancellation."""
 
-    def test_cancel_nonexistent_stream_returns_404(self, test_client):
+    def test_cancel_nonexistent_stream_returns_404(self, test_client) -> None:
         """Test cancelling a nonexistent stream returns 404."""
         response = test_client.delete("/api/v1/stream/nonexistent_stream_id")
         assert response.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_cancel_active_stream(self, mock_unified_streaming_service):
+    async def test_cancel_active_stream(self, mock_unified_streaming_service) -> None:
         """Test cancelling an active stream."""
         mock_unified_streaming_service.cancel_stream = AsyncMock(return_value=True)
 
@@ -975,7 +976,7 @@ class TestStreamCancellation:
 class TestStreamingCapabilities:
     """Tests for streaming capabilities endpoint."""
 
-    def test_get_capabilities_endpoint(self, test_client):
+    def test_get_capabilities_endpoint(self, test_client) -> None:
         """Test the streaming capabilities endpoint."""
         response = test_client.get("/api/v1/generate/stream/capabilities")
 

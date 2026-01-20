@@ -9,6 +9,7 @@
 # =============================================================================
 
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -47,7 +48,10 @@ class ApiKeyBatchDeleteRequest(BaseModel):
     """Request model for batch deletion of API keys."""
 
     key_ids: list[str] = Field(
-        ..., min_length=1, max_length=50, description="List of key IDs to delete"
+        ...,
+        min_length=1,
+        max_length=50,
+        description="List of key IDs to delete",
     )
 
 
@@ -57,7 +61,8 @@ class ApiKeyBatchDeleteResponse(BaseModel):
     success: bool = Field(..., description="Whether the batch operation succeeded")
     deleted_count: int = Field(..., ge=0, description="Number of keys deleted")
     failed_ids: list[str] = Field(
-        default_factory=list, description="List of key IDs that failed to delete"
+        default_factory=list,
+        description="List of key IDs that failed to delete",
     )
     errors: dict[str, str] = Field(default_factory=dict, description="Errors for failed deletions")
 
@@ -68,7 +73,9 @@ class ProvidersSummaryResponse(BaseModel):
     providers: list[ProviderKeySummary] = Field(..., description="List of provider key summaries")
     total_keys: int = Field(..., ge=0, description="Total number of keys across all providers")
     configured_providers: int = Field(
-        ..., ge=0, description="Number of providers with at least one active key"
+        ...,
+        ge=0,
+        description="Number of providers with at least one active key",
     )
 
 
@@ -96,7 +103,6 @@ def get_service() -> ApiKeyStorageService:
 
 @router.post(
     "",
-    response_model=ApiKeyResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add a new API key",
     description="""
@@ -121,8 +127,8 @@ before storage. The response returns a masked version of the key for security.
 )
 async def create_api_key(
     request: ApiKeyCreate,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyResponse:
     """Add a new API key for a provider."""
     try:
@@ -144,7 +150,7 @@ async def create_api_key(
             detail=str(e),
         ) from e
     except ApiKeyServiceError as e:
-        logger.error(f"Service error creating key: {e}")
+        logger.exception(f"Service error creating key: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create API key",
@@ -153,7 +159,6 @@ async def create_api_key(
 
 @router.get(
     "",
-    response_model=ApiKeyListResponse,
     summary="List all API keys",
     description="""
 List all API keys with optional filtering.
@@ -167,12 +172,12 @@ for provider, role, and status. By default, inactive/revoked keys are excluded.
     },
 )
 async def list_api_keys(
-    provider_id: str | None = Query(None, description="Filter by provider ID"),
-    role: ApiKeyRole | None = Query(None, description="Filter by key role"),
-    status_filter: ApiKeyStatus | None = Query(
-        None, alias="status", description="Filter by key status"
-    ),
-    include_inactive: bool = Query(False, description="Include inactive/revoked keys"),
+    provider_id: Annotated[str | None, Query(description="Filter by provider ID")] = None,
+    role: Annotated[ApiKeyRole | None, Query(description="Filter by key role")] = None,
+    status_filter: Annotated[
+        ApiKeyStatus | None, Query(alias="status", description="Filter by key status")
+    ] = None,
+    include_inactive: Annotated[bool, Query(description="Include inactive/revoked keys")] = False,
     user: TokenPayload = Depends(get_current_user),
     service: ApiKeyStorageService = Depends(get_service),
 ) -> ApiKeyListResponse:
@@ -188,7 +193,6 @@ async def list_api_keys(
 
 @router.get(
     "/providers",
-    response_model=ProvidersSummaryResponse,
     summary="Get provider key summaries",
     description="""
 Get a summary of API key configuration status for all supported providers.
@@ -202,8 +206,8 @@ for each provider. Useful for dashboard displays.
     },
 )
 async def get_provider_summaries(
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ProvidersSummaryResponse:
     """Get summaries of API keys for all providers."""
     logger.debug(f"Getting provider summaries for user {user.sub}")
@@ -222,7 +226,6 @@ async def get_provider_summaries(
 
 @router.get(
     "/{key_id}",
-    response_model=ApiKeyResponse,
     summary="Get API key by ID",
     description="""
 Get details of a specific API key by its ID.
@@ -237,8 +240,8 @@ Returns the key with masked value. Never exposes the raw API key.
 )
 async def get_api_key(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyResponse:
     """Get a specific API key by ID."""
     logger.debug(f"Getting API key {key_id} for user {user.sub}")
@@ -255,7 +258,6 @@ async def get_api_key(
 
 @router.put(
     "/{key_id}",
-    response_model=ApiKeyResponse,
     summary="Update API key",
     description="""
 Update an existing API key.
@@ -273,8 +275,8 @@ it will be encrypted before storage.
 async def update_api_key(
     key_id: str,
     update: ApiKeyUpdate,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyResponse:
     """Update an existing API key."""
     try:
@@ -294,7 +296,7 @@ async def update_api_key(
             detail=str(e),
         ) from e
     except ApiKeyServiceError as e:
-        logger.error(f"Service error updating key: {e}")
+        logger.exception(f"Service error updating key: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update API key",
@@ -303,7 +305,6 @@ async def update_api_key(
 
 @router.delete(
     "/{key_id}",
-    response_model=MessageResponse,
     summary="Delete API key",
     description="""
 Permanently delete an API key.
@@ -318,8 +319,8 @@ This action cannot be undone. Consider using revoke instead for audit purposes.
 )
 async def delete_api_key(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> MessageResponse:
     """Delete an API key."""
     try:
@@ -340,7 +341,6 @@ async def delete_api_key(
 
 @router.post(
     "/{key_id}/revoke",
-    response_model=ApiKeyResponse,
     summary="Revoke API key",
     description="""
 Revoke an API key (soft delete).
@@ -356,8 +356,8 @@ Unlike delete, the key record is preserved for audit purposes.
 )
 async def revoke_api_key(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyResponse:
     """Revoke an API key (soft delete)."""
     try:
@@ -375,7 +375,6 @@ async def revoke_api_key(
 
 @router.post(
     "/{key_id}/test",
-    response_model=ApiKeyTestResult,
     summary="Test API key connectivity",
     description="""
 Test an API key's connectivity by making a lightweight API call.
@@ -390,8 +389,8 @@ Returns latency, available models, and any rate limit information.
 )
 async def test_api_key(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyTestResult:
     """Test an API key's connectivity."""
     logger.info(f"Testing API key {key_id} by user {user.sub}")
@@ -419,7 +418,6 @@ async def test_api_key(
 
 @router.post(
     "/test",
-    response_model=ApiKeyTestResult,
     summary="Test API key (inline)",
     description="""
 Test an API key's connectivity without storing it.
@@ -433,8 +431,8 @@ Useful for validating a key before adding it to the system.
     },
 )
 async def test_api_key_inline(
-    provider_id: str = Query(..., description="Provider ID (e.g., 'openai', 'google')"),
-    api_key: str = Query(..., min_length=10, description="API key to test"),
+    provider_id: Annotated[str, Query(description="Provider ID (e.g., 'openai', 'google')")] = ...,
+    api_key: Annotated[str, Query(min_length=10, description="API key to test")] = ...,
     user: TokenPayload = Depends(get_current_user),
     service: ApiKeyStorageService = Depends(get_service),
 ) -> ApiKeyTestResult:
@@ -455,7 +453,6 @@ async def test_api_key_inline(
 
 @router.delete(
     "",
-    response_model=ApiKeyBatchDeleteResponse,
     summary="Batch delete API keys",
     description="""
 Delete multiple API keys in a single operation.
@@ -469,8 +466,8 @@ Returns a summary of successful and failed deletions.
 )
 async def batch_delete_api_keys(
     request: ApiKeyBatchDeleteRequest,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyBatchDeleteResponse:
     """Delete multiple API keys."""
     logger.info(f"Batch deleting {len(request.key_ids)} API keys by user {user.sub}")
@@ -503,7 +500,6 @@ async def batch_delete_api_keys(
 
 @router.get(
     "/provider/{provider_id}",
-    response_model=ApiKeyListResponse,
     summary="List keys for a provider",
     description="""
 List all API keys for a specific provider.
@@ -517,8 +513,8 @@ Shortcut for filtering by provider_id.
 )
 async def list_keys_for_provider(
     provider_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyListResponse:
     """List all API keys for a specific provider."""
     logger.debug(f"Listing API keys for provider {provider_id} by user {user.sub}")
@@ -527,7 +523,6 @@ async def list_keys_for_provider(
 
 @router.get(
     "/provider/{provider_id}/summary",
-    response_model=ProviderKeySummary,
     summary="Get provider key summary",
     description="""
 Get a summary of API key configuration for a specific provider.
@@ -542,8 +537,8 @@ Returns the number of keys, active keys, and primary/backup key IDs.
 )
 async def get_provider_summary(
     provider_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ProviderKeySummary:
     """Get a summary of API keys for a specific provider."""
     logger.debug(f"Getting summary for provider {provider_id} by user {user.sub}")
@@ -560,7 +555,6 @@ async def get_provider_summary(
 
 @router.post(
     "/{key_id}/activate",
-    response_model=ApiKeyResponse,
     summary="Activate API key",
     description="""
 Activate a previously inactive or rate-limited API key.
@@ -575,8 +569,8 @@ Sets the key status to ACTIVE.
 )
 async def activate_api_key(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyResponse:
     """Activate an API key."""
     try:
@@ -597,7 +591,6 @@ async def activate_api_key(
 
 @router.post(
     "/{key_id}/deactivate",
-    response_model=ApiKeyResponse,
     summary="Deactivate API key",
     description="""
 Deactivate an API key.
@@ -612,8 +605,8 @@ Sets the key status to INACTIVE. The key can be reactivated later.
 )
 async def deactivate_api_key(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    service: ApiKeyStorageService = Depends(get_service),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
+    service: Annotated[ApiKeyStorageService, Depends(get_service)],
 ) -> ApiKeyResponse:
     """Deactivate an API key."""
     try:

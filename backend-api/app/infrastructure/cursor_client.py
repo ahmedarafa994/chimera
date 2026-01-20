@@ -1,5 +1,4 @@
-"""
-Modern Cursor client using OpenAI-compatible API.
+"""Modern Cursor client using OpenAI-compatible API.
 
 Cursor uses an OpenAI-compatible API interface.
 Implements the LLMProvider interface with native async support.
@@ -21,8 +20,7 @@ from app.domain.models import PromptRequest, PromptResponse, StreamChunk
 
 
 class CursorClient(LLMProvider):
-    """
-    Cursor client using OpenAI-compatible API.
+    """Cursor client using OpenAI-compatible API.
 
     Note: Cursor's API endpoint and authentication may vary.
     Configure via CURSOR_API_KEY and provider endpoint settings.
@@ -31,7 +29,7 @@ class CursorClient(LLMProvider):
     DEFAULT_ENDPOINT = "https://api.cursor.sh/v1"
     DEFAULT_MODEL = "cursor-small"
 
-    def __init__(self, config: Settings | None = None):
+    def __init__(self, config: Settings | None = None) -> None:
         self.config = config or get_settings()
         self.endpoint = self.config.get_provider_endpoint("cursor") or self.DEFAULT_ENDPOINT
         api_key = getattr(self.config, "CURSOR_API_KEY", None)
@@ -52,7 +50,8 @@ class CursorClient(LLMProvider):
     def _sanitize_prompt(self, prompt: str) -> str:
         """Sanitize user input."""
         if not prompt:
-            raise ValueError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise ValueError(msg)
 
         prompt = re.sub(r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL)
         prompt = re.sub(r"javascript:", "", prompt, flags=re.IGNORECASE)
@@ -69,15 +68,17 @@ class CursorClient(LLMProvider):
         """Get client, using override API key if provided."""
         if request.api_key:
             if not self._validate_api_key(request.api_key):
+                msg = "Invalid API key format"
                 raise AppError(
-                    "Invalid API key format",
+                    msg,
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
             return AsyncOpenAI(api_key=request.api_key, base_url=self.endpoint)
 
         if not self.client:
+            msg = "Cursor client not initialized. Check API key."
             raise AppError(
-                "Cursor client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return self.client
@@ -85,8 +86,9 @@ class CursorClient(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         """Generate a response from Cursor."""
         if not request.prompt:
+            msg = "Prompt is required"
             raise AppError(
-                "Prompt is required",
+                msg,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -137,14 +139,16 @@ class CursorClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"Cursor API error: {e.message}")
+            msg = f"Cursor API error: {e.message}"
             raise AppError(
-                f"Cursor API error: {e.message}",
+                msg,
                 status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"Cursor generation failed: {e!s}", exc_info=True)
+            msg = f"Cursor generation failed: {e!s}"
             raise AppError(
-                f"Cursor generation failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -177,8 +181,9 @@ class CursorClient(LLMProvider):
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Cursor."""
         if not request.prompt:
+            msg = "Prompt is required"
             raise AppError(
-                "Prompt is required",
+                msg,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -224,14 +229,16 @@ class CursorClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"Cursor streaming error: {e.message}")
+            msg = f"Streaming failed: {e.message}"
             raise AppError(
-                f"Streaming failed: {e.message}",
+                msg,
                 status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"Cursor streaming failed: {e!s}", exc_info=True)
+            msg = f"Streaming failed: {e!s}"
             raise AppError(
-                f"Streaming failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -243,7 +250,8 @@ class CursorClient(LLMProvider):
             return len(tokens)
         except Exception as e:
             logger.error(f"Token counting failed: {e!s}", exc_info=True)
+            msg = f"Token counting failed: {e!s}"
             raise AppError(
-                f"Token counting failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )

@@ -13,8 +13,7 @@ from .pipeline import AutoDANTurbo
 
 
 class AutoDANReasoning(AutoDANTurbo):
-    """
-    AutoDAN-Reasoning: Enhanced version of AutoDAN-Turbo with scaling.
+    """AutoDAN-Reasoning: Enhanced version of AutoDAN-Turbo with scaling.
 
     This class extends AutoDANTurbo with three test-time scaling methods:
     1. Best-of-N: Generate N candidates and select the best
@@ -35,20 +34,20 @@ class AutoDANReasoning(AutoDANTurbo):
         beam_width=4,
         beam_depth=3,
         beam_k=10,
-    ):
-        """
-        Args:
-            turbo_framework: Dict with attacker, scorer, summarizer, etc.
-            data: Dataset for attacks
-            target: Target model to attack
-            epochs: Number of attack iterations per request
-            break_score: Score threshold to stop attack
-            warm_up_iterations: Number of warm-up iterations
-            lifelong_iterations: Number of lifelong learning iterations
-            best_of_n: N parameter for Best-of-N method (default: 4)
-            beam_width: W parameter for Beam Search (default: 4)
-            beam_depth: C parameter for Beam Search (default: 3)
-            beam_k: K parameter for Beam Search (default: 10)
+    ) -> None:
+        """Args:
+        turbo_framework: Dict with attacker, scorer, summarizer, etc.
+        data: Dataset for attacks
+        target: Target model to attack
+        epochs: Number of attack iterations per request
+        break_score: Score threshold to stop attack
+        warm_up_iterations: Number of warm-up iterations
+        lifelong_iterations: Number of lifelong learning iterations
+        best_of_n: N parameter for Best-of-N method (default: 4)
+        beam_width: W parameter for Beam Search (default: 4)
+        beam_depth: C parameter for Beam Search (default: 3)
+        beam_k: K parameter for Beam Search (default: 10).
+
         """
         super().__init__(
             turbo_framework,
@@ -71,7 +70,10 @@ class AutoDANReasoning(AutoDANTurbo):
         # Create specialized attackers using the enhanced attacker
         self.attacker_best_of_n = AttackerBestOfN(self.autodan_reasoning_attacker, N=best_of_n)
         self.attacker_beam_search = AttackerBeamSearch(
-            self.autodan_reasoning_attacker, W=beam_width, C=beam_depth, K=beam_k
+            self.autodan_reasoning_attacker,
+            W=beam_width,
+            C=beam_depth,
+            K=beam_k,
         )
         self.attacker_cot = AttackerChainOfThought(self.autodan_reasoning_attacker)
 
@@ -82,8 +84,7 @@ class AutoDANReasoning(AutoDANTurbo):
         self.beam_k = beam_k
 
     def test_chain_of_thought(self, request, input_strategy_library=None, epochs=None):
-        """
-        Test using Chain-of-Thought (CoT) reasoning method.
+        """Test using Chain-of-Thought (CoT) reasoning method.
 
         Algorithm:
         1. Use AttackerChainOfThought to generate a prompt via reasoning
@@ -97,6 +98,7 @@ class AutoDANReasoning(AutoDANTurbo):
 
         Returns:
             str: The best jailbreak prompt found
+
         """
         self.logger.info("Testing with Chain-of-Thought (CoT) Reasoning")
         jailbreak_prompt = ""
@@ -123,9 +125,12 @@ class AutoDANReasoning(AutoDANTurbo):
 
             # If the attacker returned a refusal, use LLM fallback
             if self._is_refusal(jailbreak_prompt):
-                raise RuntimeError(
+                msg = (
                     "AutoDAN-Reasoning CoT attacker returned a refusal prompt; "
                     "fallback generation is disabled."
+                )
+                raise RuntimeError(
+                    msg,
                 )
 
             target_response = self.target.respond(jailbreak_prompt)
@@ -142,7 +147,7 @@ class AutoDANReasoning(AutoDANTurbo):
                 )
                 score = self.scorer.wrapper(assessment, max_length=2000, do_sample=False)
             except Exception as e:
-                self.logger.error(f"Scorer failed: {e}")
+                self.logger.exception(f"Scorer failed: {e}")
                 raise
 
             self.logger.info(f"Iteration {j}: CoT score = {score}")
@@ -159,9 +164,7 @@ class AutoDANReasoning(AutoDANTurbo):
         return {"prompt": jailbreak_prompt, "score": score, "iterations": j + 1}
 
     def test_best_of_n(self, request, input_strategy_library):
-        """
-        Test using Best-of-N scaling method.
-        """
+        """Test using Best-of-N scaling method."""
         self.logger.info(f"Testing with Best-of-N (N={self.best_of_n})")
         jailbreak_prompt = ""
         self.test_library = Library(library=input_strategy_library, logger=self.logger)
@@ -178,13 +181,20 @@ class AutoDANReasoning(AutoDANTurbo):
 
             if j == 0:
                 # Initial warm-up attack
-                jailbreak_prompt, attacker_system = self.autodan_reasoning_attacker.warm_up_attack(
-                    request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
+                jailbreak_prompt, _ = self.autodan_reasoning_attacker.warm_up_attack(
+                    request,
+                    max_length=10000,
+                    do_sample=True,
+                    temperature=1.0,
+                    top_p=1,
                 )
                 if self._is_refusal(jailbreak_prompt):
-                    raise RuntimeError(
+                    msg = (
                         "AutoDAN-Reasoning attacker returned a refusal prompt; "
                         "fallback generation is disabled."
+                    )
+                    raise RuntimeError(
+                        msg,
                     )
 
                 target_response = self.target.respond(jailbreak_prompt)
@@ -201,7 +211,7 @@ class AutoDANReasoning(AutoDANTurbo):
                     )
                     score = self.scorer.wrapper(assessment, max_length=2000, do_sample=False)
                 except Exception as e:
-                    self.logger.error(f"Scorer failed: {e}")
+                    self.logger.exception(f"Scorer failed: {e}")
                     raise
 
                 prev_target_response = target_response
@@ -210,13 +220,17 @@ class AutoDANReasoning(AutoDANTurbo):
                 # Retrieve strategies and use Best-of-N
                 current_library = self.test_library.all()
                 valid, retrival_strategy_list = self.retrival.pop(
-                    current_library, prev_target_response
+                    current_library,
+                    prev_target_response,
                 )
 
                 if not (retrival_strategy_list and valid):
-                    raise RuntimeError(
+                    msg = (
                         "AutoDAN-Reasoning retrieval produced no valid strategies; "
                         "fallback attack generation is disabled."
+                    )
+                    raise RuntimeError(
+                        msg,
                     )
 
                 (jailbreak_prompt, target_response, score, _attacker_system, assessment) = (
@@ -252,11 +266,9 @@ class AutoDANReasoning(AutoDANTurbo):
         return {"prompt": jailbreak_prompt, "score": score, "iterations": j + 1}
 
     def test_beam_search(self, request, input_strategy_library):
-        """
-        Test using Beam Search scaling method.
-        """
+        """Test using Beam Search scaling method."""
         self.logger.info(
-            f"Testing with Beam Search (W={self.beam_width}, C={self.beam_depth}, K={self.beam_k})"
+            f"Testing with Beam Search (W={self.beam_width}, C={self.beam_depth}, K={self.beam_k})",
         )
         jailbreak_prompt = ""
         self.test_library = Library(library=input_strategy_library, logger=self.logger)
@@ -270,13 +282,20 @@ class AutoDANReasoning(AutoDANTurbo):
 
             if j == 0:
                 # Initial warm-up attack
-                jailbreak_prompt, attacker_system = self.autodan_reasoning_attacker.warm_up_attack(
-                    request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
+                jailbreak_prompt, _ = self.autodan_reasoning_attacker.warm_up_attack(
+                    request,
+                    max_length=10000,
+                    do_sample=True,
+                    temperature=1.0,
+                    top_p=1,
                 )
                 if self._is_refusal(jailbreak_prompt):
-                    raise RuntimeError(
+                    msg = (
                         "AutoDAN-Reasoning attacker returned a refusal prompt; "
                         "fallback generation is disabled."
+                    )
+                    raise RuntimeError(
+                        msg,
                     )
 
                 target_response = self.target.respond(jailbreak_prompt)
@@ -293,7 +312,7 @@ class AutoDANReasoning(AutoDANTurbo):
                     )
                     score = self.scorer.wrapper(assessment, max_length=2000, do_sample=False)
                 except Exception as e:
-                    self.logger.error(f"Scorer failed: {e}")
+                    self.logger.exception(f"Scorer failed: {e}")
                     raise
 
                 prev_target_response = target_response
@@ -326,11 +345,12 @@ class AutoDANReasoning(AutoDANTurbo):
                     )
                     self.logger.info(
                         f"Iteration {j}: Beam Search score = {score}, "
-                        f"used {len(strategy_combo)} strategies"
+                        f"used {len(strategy_combo)} strategies",
                     )
                 except Exception as e:
+                    msg = f"AutoDAN-Reasoning beam search failed: {e}. Fallback is disabled."
                     raise RuntimeError(
-                        f"AutoDAN-Reasoning beam search failed: {e}. Fallback is disabled."
+                        msg,
                     ) from e
 
                 prev_target_response = target_response
@@ -347,8 +367,6 @@ class AutoDANReasoning(AutoDANTurbo):
         return {"prompt": jailbreak_prompt, "score": score, "iterations": j + 1}
 
     def test_vanilla(self, request, input_strategy_library):
-        """
-        Test using vanilla AutoDAN-Turbo method (baseline).
-        """
+        """Test using vanilla AutoDAN-Turbo method (baseline)."""
         self.logger.info("Testing with Vanilla AutoDAN-Turbo (baseline)")
         return self.test(request, input_strategy_library)

@@ -1,5 +1,4 @@
-"""
-Circuit Breaker Tests
+"""Circuit Breaker Tests.
 
 This module tests the circuit breaker pattern implementation for LLM provider
 resilience and failover behavior.
@@ -10,6 +9,7 @@ P1 Test Coverage: Circuit breaker state transitions, failover, and recovery.
 import asyncio
 import contextlib
 from datetime import datetime
+from typing import Never
 from unittest.mock import Mock, patch
 
 import pytest
@@ -18,7 +18,7 @@ import pytest
 class TestCircuitBreakerStates:
     """Test circuit breaker state transitions."""
 
-    def test_initial_state_is_closed(self):
+    def test_initial_state_is_closed(self) -> None:
         """Circuit breaker should start in closed state."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -27,7 +27,7 @@ class TestCircuitBreakerStates:
         assert cb.state == "closed"
         assert cb.failure_count == 0
 
-    def test_transitions_to_open_after_threshold(self):
+    def test_transitions_to_open_after_threshold(self) -> None:
         """Circuit breaker opens after reaching failure threshold."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -40,7 +40,7 @@ class TestCircuitBreakerStates:
         assert cb.state == "open"
         assert cb.failure_count >= 3
 
-    def test_transitions_to_half_open_after_timeout(self):
+    def test_transitions_to_half_open_after_timeout(self) -> None:
         """Circuit breaker transitions to half-open after recovery timeout."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -61,7 +61,7 @@ class TestCircuitBreakerStates:
         can_proceed = cb.can_proceed()
         assert cb.state == "half_open" or can_proceed
 
-    def test_transitions_to_closed_on_success(self):
+    def test_transitions_to_closed_on_success(self) -> None:
         """Circuit breaker closes after successful calls in half-open state."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -81,7 +81,7 @@ class TestCircuitBreakerStates:
         assert cb.state == "closed"
         assert cb.failure_count == 0
 
-    def test_returns_to_open_on_failure_in_half_open(self):
+    def test_returns_to_open_on_failure_in_half_open(self) -> None:
         """Circuit breaker returns to open on failure in half-open state."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -95,7 +95,7 @@ class TestCircuitBreakerStates:
 
         assert cb.state == "open"
 
-    def test_cannot_proceed_when_open(self):
+    def test_cannot_proceed_when_open(self) -> None:
         """Cannot proceed with requests when circuit is open."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -107,7 +107,7 @@ class TestCircuitBreakerStates:
 
         assert not cb.can_proceed()
 
-    def test_can_proceed_when_closed(self):
+    def test_can_proceed_when_closed(self) -> None:
         """Can proceed with requests when circuit is closed."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -119,7 +119,7 @@ class TestCircuitBreakerStates:
 class TestCircuitBreakerMetrics:
     """Test circuit breaker metrics and monitoring."""
 
-    def test_tracks_failure_count(self):
+    def test_tracks_failure_count(self) -> None:
         """Circuit breaker tracks failure count accurately."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -131,7 +131,7 @@ class TestCircuitBreakerMetrics:
 
         assert cb.failure_count == 3
 
-    def test_resets_failure_count_on_success(self):
+    def test_resets_failure_count_on_success(self) -> None:
         """Failure count resets after successful call."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -144,7 +144,7 @@ class TestCircuitBreakerMetrics:
         cb.record_success()
         assert cb.failure_count == 0
 
-    def test_tracks_last_failure_time(self):
+    def test_tracks_last_failure_time(self) -> None:
         """Circuit breaker tracks last failure timestamp."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -157,7 +157,7 @@ class TestCircuitBreakerMetrics:
         assert cb.last_failure_time is not None
         assert before <= cb.last_failure_time <= after
 
-    def test_get_metrics_returns_complete_data(self):
+    def test_get_metrics_returns_complete_data(self) -> None:
         """Get metrics returns complete circuit breaker data."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -179,7 +179,7 @@ class TestCircuitBreakerIntegration:
     """Integration tests for circuit breaker with LLM service."""
 
     @pytest.mark.asyncio
-    async def test_llm_service_uses_circuit_breaker(self):
+    async def test_llm_service_uses_circuit_breaker(self) -> None:
         """LLM service integrates with circuit breaker."""
         from app.services.llm_service import llm_service
 
@@ -187,7 +187,7 @@ class TestCircuitBreakerIntegration:
         assert hasattr(llm_service, "circuit_breakers") or hasattr(llm_service, "_circuit_breaker")
 
     @pytest.mark.asyncio
-    async def test_provider_failure_triggers_circuit_breaker(self):
+    async def test_provider_failure_triggers_circuit_breaker(self) -> None:
         """Provider failures trigger circuit breaker."""
         from app.core.circuit_breaker import CircuitBreaker
         from app.services.llm_service import LLMService
@@ -210,10 +210,9 @@ class TestCircuitBreakerIntegration:
 
         # Verify circuit breaker was notified
         # Implementation-specific assertion
-        pass
 
     @pytest.mark.asyncio
-    async def test_failover_when_circuit_open(self):
+    async def test_failover_when_circuit_open(self) -> None:
         """Service fails over to secondary provider when circuit is open."""
         from app.services.llm_service import LLMService
 
@@ -226,7 +225,7 @@ class TestCircuitBreakerIntegration:
 class TestCircuitBreakerRecovery:
     """Test circuit breaker recovery behavior."""
 
-    def test_gradual_recovery_in_half_open(self):
+    def test_gradual_recovery_in_half_open(self) -> None:
         """Circuit breaker allows gradual recovery in half-open state."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -249,7 +248,7 @@ class TestCircuitBreakerRecovery:
 
         assert allowed_calls <= 3
 
-    def test_full_recovery_resets_all_counters(self):
+    def test_full_recovery_resets_all_counters(self) -> None:
         """Full recovery resets all circuit breaker counters."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -271,13 +270,13 @@ class TestCircuitBreakerConcurrency:
     """Test circuit breaker thread safety."""
 
     @pytest.mark.asyncio
-    async def test_concurrent_failures_handled(self):
+    async def test_concurrent_failures_handled(self) -> None:
         """Circuit breaker handles concurrent failures correctly."""
         from app.core.circuit_breaker import CircuitBreaker
 
         cb = CircuitBreaker(failure_threshold=10, recovery_timeout=30)
 
-        async def record_failure():
+        async def record_failure() -> None:
             cb.record_failure()
 
         # Record failures concurrently
@@ -287,13 +286,13 @@ class TestCircuitBreakerConcurrency:
         assert cb.failure_count >= 10 or cb.state == "open"
 
     @pytest.mark.asyncio
-    async def test_state_transitions_atomic(self):
+    async def test_state_transitions_atomic(self) -> None:
         """State transitions are atomic under concurrent access."""
         from app.core.circuit_breaker import CircuitBreaker
 
         cb = CircuitBreaker(failure_threshold=5, recovery_timeout=30)
 
-        async def toggle_state():
+        async def toggle_state() -> None:
             if cb.state == "closed":
                 cb.record_failure()
             else:
@@ -309,7 +308,7 @@ class TestCircuitBreakerConcurrency:
 class TestCircuitBreakerConfiguration:
     """Test circuit breaker configuration options."""
 
-    def test_custom_failure_threshold(self):
+    def test_custom_failure_threshold(self) -> None:
         """Circuit breaker respects custom failure threshold."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -325,7 +324,7 @@ class TestCircuitBreakerConfiguration:
         cb.record_failure()
         assert cb.state == "open"
 
-    def test_custom_recovery_timeout(self):
+    def test_custom_recovery_timeout(self) -> None:
         """Circuit breaker respects custom recovery timeout."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -337,7 +336,7 @@ class TestCircuitBreakerConfiguration:
         # Should not recover immediately
         assert not cb.can_proceed()
 
-    def test_per_provider_circuit_breakers(self):
+    def test_per_provider_circuit_breakers(self) -> None:
         """Each provider gets its own circuit breaker."""
         from app.core.circuit_breaker import CircuitBreakerRegistry
 
@@ -360,7 +359,7 @@ class TestCircuitBreakerConfiguration:
 class TestCircuitBreakerExceptions:
     """Test circuit breaker exception handling."""
 
-    def test_raises_circuit_open_exception(self):
+    def test_raises_circuit_open_exception(self) -> None:
         """Circuit breaker raises appropriate exception when open."""
         from app.core.circuit_breaker import CircuitBreaker, CircuitOpenError
 
@@ -371,7 +370,7 @@ class TestCircuitBreakerExceptions:
         with pytest.raises(CircuitOpenError):
             cb.execute(lambda: "test")
 
-    def test_wraps_function_execution(self):
+    def test_wraps_function_execution(self) -> None:
         """Circuit breaker wraps function execution correctly."""
         from app.core.circuit_breaker import CircuitBreaker
 
@@ -382,8 +381,9 @@ class TestCircuitBreakerExceptions:
         assert result == "success"
 
         # Failed execution
-        def failing_func():
-            raise ValueError("test error")
+        def failing_func() -> Never:
+            msg = "test error"
+            raise ValueError(msg)
 
         with pytest.raises(ValueError):
             cb.execute(failing_func)

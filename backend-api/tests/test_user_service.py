@@ -1,5 +1,4 @@
-"""
-Comprehensive Tests for User Service.
+"""Comprehensive Tests for User Service.
 
 This module provides thorough unit testing for the UserService class:
 - User registration flow
@@ -113,15 +112,15 @@ def user_service(mock_session: AsyncMock, mock_repository: MagicMock) -> UserSer
 class TestRoleMapping:
     """Tests for database role to auth role mapping."""
 
-    def test_admin_role_mapping(self):
+    def test_admin_role_mapping(self) -> None:
         """Test admin role maps correctly."""
         assert _db_role_to_auth_role(UserRole.ADMIN) == Role.ADMIN
 
-    def test_researcher_role_mapping(self):
+    def test_researcher_role_mapping(self) -> None:
         """Test researcher role maps correctly."""
         assert _db_role_to_auth_role(UserRole.RESEARCHER) == Role.RESEARCHER
 
-    def test_viewer_role_mapping(self):
+    def test_viewer_role_mapping(self) -> None:
         """Test viewer role maps correctly."""
         assert _db_role_to_auth_role(UserRole.VIEWER) == Role.VIEWER
 
@@ -139,7 +138,7 @@ class TestRegistration:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful user registration."""
         mock_repository.create_user.return_value = mock_user
         mock_repository.set_verification_token.return_value = True
@@ -155,7 +154,7 @@ class TestRegistration:
         assert result.verification_token is not None
         assert len(result.errors) == 0
 
-    async def test_register_user_weak_password(self, user_service: UserService):
+    async def test_register_user_weak_password(self, user_service: UserService) -> None:
         """Test registration fails with weak password."""
         result = await user_service.register_user(
             email="newuser@example.com",
@@ -166,7 +165,7 @@ class TestRegistration:
         assert result.success is False
         assert len(result.errors) > 0
 
-    async def test_register_user_password_too_short(self, user_service: UserService):
+    async def test_register_user_password_too_short(self, user_service: UserService) -> None:
         """Test registration fails with password under minimum length."""
         result = await user_service.register_user(
             email="newuser@example.com",
@@ -177,7 +176,7 @@ class TestRegistration:
         assert result.success is False
         assert any("12" in error or "length" in error.lower() for error in result.errors)
 
-    async def test_register_user_password_no_uppercase(self, user_service: UserService):
+    async def test_register_user_password_no_uppercase(self, user_service: UserService) -> None:
         """Test registration fails without uppercase letter."""
         result = await user_service.register_user(
             email="newuser@example.com",
@@ -188,7 +187,7 @@ class TestRegistration:
         assert result.success is False
         assert any("uppercase" in error.lower() for error in result.errors)
 
-    async def test_register_user_password_no_lowercase(self, user_service: UserService):
+    async def test_register_user_password_no_lowercase(self, user_service: UserService) -> None:
         """Test registration fails without lowercase letter."""
         result = await user_service.register_user(
             email="newuser@example.com",
@@ -199,7 +198,7 @@ class TestRegistration:
         assert result.success is False
         assert any("lowercase" in error.lower() for error in result.errors)
 
-    async def test_register_user_password_no_digit(self, user_service: UserService):
+    async def test_register_user_password_no_digit(self, user_service: UserService) -> None:
         """Test registration fails without digit."""
         result = await user_service.register_user(
             email="newuser@example.com",
@@ -210,7 +209,7 @@ class TestRegistration:
         assert result.success is False
         assert any("digit" in error.lower() or "number" in error.lower() for error in result.errors)
 
-    async def test_register_user_password_no_special(self, user_service: UserService):
+    async def test_register_user_password_no_special(self, user_service: UserService) -> None:
         """Test registration fails without special character."""
         result = await user_service.register_user(
             email="newuser@example.com",
@@ -225,7 +224,7 @@ class TestRegistration:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test registration fails with duplicate email."""
         mock_repository.create_user.side_effect = EmailAlreadyExistsError("Email exists")
 
@@ -242,7 +241,7 @@ class TestRegistration:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test registration fails with duplicate username."""
         mock_repository.create_user.side_effect = UsernameAlreadyExistsError("Username exists")
 
@@ -260,7 +259,7 @@ class TestRegistration:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test registration with specific role."""
         mock_user.role = UserRole.RESEARCHER
         mock_repository.create_user.return_value = mock_user
@@ -292,7 +291,7 @@ class TestAuthentication:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful authentication with email."""
         mock_repository.get_by_email_or_username.return_value = mock_user
 
@@ -318,7 +317,7 @@ class TestAuthentication:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful authentication with username."""
         mock_repository.get_by_email_or_username.return_value = mock_user
 
@@ -341,7 +340,7 @@ class TestAuthentication:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test authentication fails when user not found."""
         mock_repository.get_by_email_or_username.return_value = None
 
@@ -358,7 +357,7 @@ class TestAuthentication:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test authentication fails with wrong password."""
         mock_repository.get_by_email_or_username.return_value = mock_user
 
@@ -378,7 +377,7 @@ class TestAuthentication:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test authentication fails for inactive user."""
         mock_user.is_active = False
         mock_repository.get_by_email_or_username.return_value = mock_user
@@ -396,7 +395,7 @@ class TestAuthentication:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test authentication requires email verification."""
         mock_user.is_verified = False
         mock_repository.get_by_email_or_username.return_value = mock_user
@@ -417,7 +416,7 @@ class TestAuthentication:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test that successful authentication updates last_login."""
         mock_repository.get_by_email_or_username.return_value = mock_user
 
@@ -451,7 +450,7 @@ class TestEmailVerification:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful email verification."""
         mock_repository.verify_email.return_value = mock_user
 
@@ -464,7 +463,7 @@ class TestEmailVerification:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test email verification fails with invalid token."""
         mock_repository.verify_email.side_effect = InvalidTokenError("Invalid token")
 
@@ -478,14 +477,14 @@ class TestEmailVerification:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful resend of verification email."""
         mock_user.is_verified = False
         mock_repository.get_by_email.return_value = mock_user
         mock_repository.resend_verification.return_value = True
 
         success, token, _error = await user_service.resend_verification_email(
-            email="unverified@example.com"
+            email="unverified@example.com",
         )
 
         assert success is True
@@ -496,13 +495,13 @@ class TestEmailVerification:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test resend fails when already verified."""
         mock_user.is_verified = True
         mock_repository.get_by_email.return_value = mock_user
 
         success, _token, error = await user_service.resend_verification_email(
-            email="verified@example.com"
+            email="verified@example.com",
         )
 
         assert success is False
@@ -512,12 +511,12 @@ class TestEmailVerification:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test resend for non-existent email returns success (security)."""
         mock_repository.get_by_email.return_value = None
 
         success, token, _error = await user_service.resend_verification_email(
-            email="nonexistent@example.com"
+            email="nonexistent@example.com",
         )
 
         # Returns success to prevent email enumeration
@@ -538,7 +537,7 @@ class TestPasswordReset:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful password reset request."""
         mock_repository.get_by_email.return_value = mock_user
         mock_repository.set_reset_token.return_value = True
@@ -552,7 +551,7 @@ class TestPasswordReset:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test password reset request for non-existent email."""
         mock_repository.get_by_email.return_value = None
 
@@ -567,7 +566,7 @@ class TestPasswordReset:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test password reset request for inactive user."""
         mock_user.is_active = False
         mock_repository.get_by_email.return_value = mock_user
@@ -583,7 +582,7 @@ class TestPasswordReset:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful password reset."""
         mock_repository.get_by_reset_token.return_value = mock_user
         mock_repository.reset_password.return_value = True
@@ -602,7 +601,7 @@ class TestPasswordReset:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test password reset fails with invalid token."""
         mock_repository.get_by_reset_token.return_value = None
 
@@ -619,7 +618,7 @@ class TestPasswordReset:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test password reset fails with weak new password."""
         mock_repository.get_by_reset_token.return_value = mock_user
 
@@ -646,7 +645,7 @@ class TestPasswordChange:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful password change."""
         mock_repository.get_by_id.return_value = mock_user
 
@@ -667,7 +666,7 @@ class TestPasswordChange:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test password change fails with wrong current password."""
         mock_repository.get_by_id.return_value = mock_user
 
@@ -687,7 +686,7 @@ class TestPasswordChange:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test password change fails when user not found."""
         mock_repository.get_by_id.return_value = None
 
@@ -705,7 +704,7 @@ class TestPasswordChange:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test password change fails with weak new password."""
         mock_repository.get_by_id.return_value = mock_user
 
@@ -735,7 +734,7 @@ class TestProfileUpdate:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test successful profile update."""
         mock_user.username = "newusername"
         mock_repository.update_user.return_value = mock_user
@@ -749,7 +748,7 @@ class TestProfileUpdate:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test profile update fails with duplicate username."""
         from app.core.exceptions import ValidationError
 
@@ -765,7 +764,7 @@ class TestProfileUpdate:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test that invalid fields are ignored."""
         mock_repository.get_by_id.return_value = mock_user
 
@@ -791,7 +790,7 @@ class TestAccountStatus:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test successful user deactivation."""
         mock_repository.deactivate_user.return_value = True
 
@@ -804,7 +803,7 @@ class TestAccountStatus:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test deactivation of non-existent user."""
         mock_repository.deactivate_user.return_value = False
 
@@ -816,7 +815,7 @@ class TestAccountStatus:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test successful user activation."""
         mock_repository.activate_user.return_value = True
 
@@ -829,7 +828,7 @@ class TestAccountStatus:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test successful role update."""
         mock_repository.update_role.return_value = True
 
@@ -852,7 +851,7 @@ class TestUtilityMethods:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test get user by ID."""
         mock_repository.get_by_id.return_value = mock_user
 
@@ -864,7 +863,7 @@ class TestUtilityMethods:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test get user by ID when not found."""
         mock_repository.get_by_id.return_value = None
 
@@ -877,7 +876,7 @@ class TestUtilityMethods:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_user: MagicMock,
-    ):
+    ) -> None:
         """Test get user by email."""
         mock_repository.get_by_email.return_value = mock_user
 
@@ -888,7 +887,7 @@ class TestUtilityMethods:
     async def test_validate_password_strength(
         self,
         user_service: UserService,
-    ):
+    ) -> None:
         """Test password strength validation utility."""
         result = await user_service.validate_password_strength(
             password="SecureP@ssw0rd123!",
@@ -899,7 +898,7 @@ class TestUtilityMethods:
     async def test_validate_password_strength_with_context(
         self,
         user_service: UserService,
-    ):
+    ) -> None:
         """Test password validation with email/username context."""
         result = await user_service.validate_password_strength(
             password="SecureP@ssw0rd123!",
@@ -909,19 +908,19 @@ class TestUtilityMethods:
 
         assert result.is_valid is True
 
-    def test_generate_token_length(self, user_service: UserService):
+    def test_generate_token_length(self, user_service: UserService) -> None:
         """Test that generated tokens have correct length."""
         # Default length is 32 bytes = 64 hex characters
         token = user_service._generate_token()
         assert len(token) == 64
         assert all(c in "0123456789abcdef" for c in token)
 
-    def test_generate_token_custom_length(self, user_service: UserService):
+    def test_generate_token_custom_length(self, user_service: UserService) -> None:
         """Test token generation with custom length."""
         token = user_service._generate_token(length=16)
         assert len(token) == 32  # 16 bytes = 32 hex characters
 
-    def test_generate_token_uniqueness(self, user_service: UserService):
+    def test_generate_token_uniqueness(self, user_service: UserService) -> None:
         """Test that generated tokens are unique."""
         tokens = [user_service._generate_token() for _ in range(100)]
         assert len(set(tokens)) == 100  # All unique
@@ -940,7 +939,7 @@ class TestErrorHandling:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_session: AsyncMock,
-    ):
+    ) -> None:
         """Test registration handles database errors gracefully."""
         mock_repository.create_user.side_effect = Exception("Database error")
 
@@ -958,7 +957,7 @@ class TestErrorHandling:
         self,
         user_service: UserService,
         mock_repository: MagicMock,
-    ):
+    ) -> None:
         """Test authentication handles database errors gracefully."""
         mock_repository.get_by_email_or_username.side_effect = Exception("Database error")
 
@@ -975,7 +974,7 @@ class TestErrorHandling:
         user_service: UserService,
         mock_repository: MagicMock,
         mock_session: AsyncMock,
-    ):
+    ) -> None:
         """Test email verification handles database errors gracefully."""
         mock_repository.verify_email.side_effect = Exception("Database error")
 
@@ -991,7 +990,7 @@ class TestErrorHandling:
         mock_repository: MagicMock,
         mock_user: MagicMock,
         mock_session: AsyncMock,
-    ):
+    ) -> None:
         """Test password reset handles database errors gracefully."""
         mock_repository.get_by_reset_token.return_value = mock_user
         mock_repository.reset_password.side_effect = Exception("Database error")

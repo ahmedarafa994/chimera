@@ -1,5 +1,4 @@
-"""
-Parallel Mousetrap Generator for Optimized Jailbreak Chain Generation
+"""Parallel Mousetrap Generator for Optimized Jailbreak Chain Generation.
 
 This module implements parallel generation of Mousetrap attack chains to significantly
 improve throughput and effectiveness through concurrent exploration of different
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class ParallelStrategy(Enum):
-    """Strategies for parallel Mousetrap generation"""
+    """Strategies for parallel Mousetrap generation."""
 
     DIVERSE_CHAOS = "diverse_chaos"  # Different chaos levels per worker
     VARIED_COMPLEXITY = "varied_complexity"  # Different complexity levels
@@ -39,7 +38,7 @@ class ParallelStrategy(Enum):
 
 @dataclass
 class ParallelConfig:
-    """Configuration for parallel Mousetrap generation"""
+    """Configuration for parallel Mousetrap generation."""
 
     max_workers: int = 4
     max_concurrent_chains: int = 8
@@ -54,7 +53,7 @@ class ParallelConfig:
 
 @dataclass
 class ParallelMousetrapResult:
-    """Enhanced result from parallel Mousetrap generation"""
+    """Enhanced result from parallel Mousetrap generation."""
 
     best_result: MousetrapResult
     all_results: list[MousetrapResult]
@@ -65,7 +64,7 @@ class ParallelMousetrapResult:
 
 @dataclass
 class WorkerTask:
-    """Task configuration for individual workers"""
+    """Task configuration for individual workers."""
 
     worker_id: int
     goal: str
@@ -78,7 +77,7 @@ class WorkerTask:
 
 @dataclass
 class WorkerResult:
-    """Result from individual worker"""
+    """Result from individual worker."""
 
     worker_id: int
     result: MousetrapResult | None
@@ -88,8 +87,7 @@ class WorkerResult:
 
 
 class ParallelMousetrapGenerator:
-    """
-    Advanced parallel Mousetrap generator for high-throughput jailbreak chain creation
+    """Advanced parallel Mousetrap generator for high-throughput jailbreak chain creation.
 
     Features:
     - Concurrent generation across multiple workers
@@ -104,7 +102,7 @@ class ParallelMousetrapGenerator:
         llm_adapter: ChimeraLLMAdapter,
         base_config: MousetrapConfig | None = None,
         parallel_config: ParallelConfig | None = None,
-    ):
+    ) -> None:
         self.llm_adapter = llm_adapter
         self.base_config = base_config or MousetrapConfig()
         self.parallel_config = parallel_config or ParallelConfig()
@@ -141,8 +139,7 @@ class ParallelMousetrapGenerator:
         parallel_strategy: ParallelStrategy = ParallelStrategy.DIVERSE_CHAOS,
         custom_iterations: int | None = None,
     ) -> ParallelMousetrapResult:
-        """
-        Generate Mousetrap attack using parallel workers
+        """Generate Mousetrap attack using parallel workers.
 
         Args:
             goal: Target goal for the attack
@@ -152,13 +149,14 @@ class ParallelMousetrapGenerator:
 
         Returns:
             ParallelMousetrapResult with best result and comprehensive metrics
+
         """
         start_time = time.time()
         self.metrics["total_generations"] += 1
 
         logger.info(
             f"Starting parallel Mousetrap generation: strategy={parallel_strategy.value}, "
-            f"workers={self.parallel_config.max_workers}"
+            f"workers={self.parallel_config.max_workers}",
         )
 
         # Check circuit breaker
@@ -169,7 +167,10 @@ class ParallelMousetrapGenerator:
         try:
             # Generate worker tasks
             worker_tasks = self._generate_worker_tasks(
-                goal, strategy_context, parallel_strategy, custom_iterations
+                goal,
+                strategy_context,
+                parallel_strategy,
+                custom_iterations,
             )
 
             # Execute tasks in parallel
@@ -189,13 +190,13 @@ class ParallelMousetrapGenerator:
             logger.info(
                 f"Parallel Mousetrap generation completed: "
                 f"best_score={aggregated_result.best_result.effectiveness_score:.3f}, "
-                f"execution_time={execution_time:.2f}s"
+                f"execution_time={execution_time:.2f}s",
             )
 
             return aggregated_result
 
         except Exception as e:
-            logger.error(f"Parallel generation failed: {e}")
+            logger.exception(f"Parallel generation failed: {e}")
             await self._handle_circuit_breaker_failure()
             return await self._fallback_to_sequential(goal, strategy_context, custom_iterations)
 
@@ -206,7 +207,7 @@ class ParallelMousetrapGenerator:
         parallel_strategy: ParallelStrategy,
         custom_iterations: int | None,
     ) -> list[WorkerTask]:
-        """Generate tasks for parallel workers based on the selected strategy"""
+        """Generate tasks for parallel workers based on the selected strategy."""
         tasks = []
         base_iterations = custom_iterations or self.base_config.iterative_refinement_steps
 
@@ -233,7 +234,8 @@ class ParallelMousetrapGenerator:
                 chaos_modifier = chaos_levels[worker_id % len(chaos_levels)]
                 worker_config.chaos_escalation_rate += chaos_modifier
                 worker_config.semantic_obfuscation_level = min(
-                    1.0, worker_config.semantic_obfuscation_level + chaos_modifier
+                    1.0,
+                    worker_config.semantic_obfuscation_level + chaos_modifier,
                 )
 
             elif parallel_strategy == ParallelStrategy.VARIED_COMPLEXITY:
@@ -241,10 +243,12 @@ class ParallelMousetrapGenerator:
                 complexity_modifiers = [-0.3, -0.1, 0.1, 0.3]
                 complexity_modifier = complexity_modifiers[worker_id % len(complexity_modifiers)]
                 worker_config.reasoning_complexity = max(
-                    1, int(worker_config.reasoning_complexity * (1 + complexity_modifier))
+                    1,
+                    int(worker_config.reasoning_complexity * (1 + complexity_modifier)),
                 )
                 worker_config.max_chain_length = max(
-                    4, int(worker_config.max_chain_length * (1 + complexity_modifier))
+                    4,
+                    int(worker_config.max_chain_length * (1 + complexity_modifier)),
                 )
 
             elif parallel_strategy == ParallelStrategy.MULTI_STRATEGY:
@@ -263,7 +267,8 @@ class ParallelMousetrapGenerator:
                 complexity_modifier = random.uniform(-0.2, 0.3)
                 worker_config.chaos_escalation_rate += chaos_modifier
                 worker_config.reasoning_complexity = max(
-                    1, int(worker_config.reasoning_complexity * (1 + complexity_modifier))
+                    1,
+                    int(worker_config.reasoning_complexity * (1 + complexity_modifier)),
                 )
 
             task = WorkerTask(
@@ -281,7 +286,7 @@ class ParallelMousetrapGenerator:
         return tasks
 
     async def _execute_parallel_tasks(self, tasks: list[WorkerTask]) -> list[WorkerResult]:
-        """Execute worker tasks in parallel with timeout and error handling"""
+        """Execute worker tasks in parallel with timeout and error handling."""
         semaphore = asyncio.Semaphore(self.parallel_config.max_concurrent_chains)
 
         async def execute_single_task(task: WorkerTask) -> WorkerResult:
@@ -294,7 +299,9 @@ class ParallelMousetrapGenerator:
                     # Execute with timeout
                     result = await asyncio.wait_for(
                         worker_generator.generate_mousetrap_attack(
-                            task.goal, task.strategy_context, task.iterations
+                            task.goal,
+                            task.strategy_context,
+                            task.iterations,
                         ),
                         timeout=self.parallel_config.timeout_seconds,
                     )
@@ -331,7 +338,7 @@ class ParallelMousetrapGenerator:
 
                 except Exception as e:
                     execution_time = time.time() - start_time
-                    logger.error(f"Worker {task.worker_id} failed: {e}")
+                    logger.exception(f"Worker {task.worker_id} failed: {e}")
 
                     return WorkerResult(
                         worker_id=task.worker_id,
@@ -343,7 +350,8 @@ class ParallelMousetrapGenerator:
 
         # Execute all tasks concurrently
         worker_results = await asyncio.gather(
-            *[execute_single_task(task) for task in tasks], return_exceptions=True
+            *[execute_single_task(task) for task in tasks],
+            return_exceptions=True,
         )
 
         # Handle any exceptions from gather
@@ -352,7 +360,7 @@ class ParallelMousetrapGenerator:
             if isinstance(result, Exception):
                 logger.error(f"Task {i} failed with exception: {result}")
                 processed_results.append(
-                    WorkerResult(worker_id=i, result=None, execution_time=0.0, error=str(result))
+                    WorkerResult(worker_id=i, result=None, execution_time=0.0, error=str(result)),
                 )
             else:
                 processed_results.append(result)
@@ -376,9 +384,12 @@ class ParallelMousetrapGenerator:
         return processed_results
 
     def _aggregate_results(
-        self, worker_results: list[WorkerResult], goal: str, strategy_context: str
+        self,
+        worker_results: list[WorkerResult],
+        goal: str,
+        strategy_context: str,
     ) -> ParallelMousetrapResult:
-        """Aggregate worker results using the configured strategy"""
+        """Aggregate worker results using the configured strategy."""
         # Filter successful results
         successful_results = [
             wr.result
@@ -458,7 +469,7 @@ class ParallelMousetrapGenerator:
         )
 
     def _calculate_parallel_speedup(self, worker_results: list[WorkerResult]) -> float:
-        """Calculate theoretical parallel speedup"""
+        """Calculate theoretical parallel speedup."""
         if not worker_results:
             return 1.0
 
@@ -468,12 +479,12 @@ class ParallelMousetrapGenerator:
         return total_time / max_time if max_time > 0 else 1.0
 
     def _calculate_resource_utilization(self, worker_results: list[WorkerResult]) -> float:
-        """Calculate resource utilization efficiency"""
+        """Calculate resource utilization efficiency."""
         successful_workers = len([wr for wr in worker_results if wr.result is not None])
         return successful_workers / len(worker_results) if worker_results else 0.0
 
     def _calculate_result_diversity(self, results: list[MousetrapResult]) -> float:
-        """Calculate diversity of results based on chain characteristics"""
+        """Calculate diversity of results based on chain characteristics."""
         if len(results) <= 1:
             return 0.0
 
@@ -492,7 +503,7 @@ class ParallelMousetrapGenerator:
         return (chain_variance + score_variance) / 2
 
     def _calculate_score_variance(self, results: list[MousetrapResult]) -> float:
-        """Calculate variance in effectiveness scores"""
+        """Calculate variance in effectiveness scores."""
         if len(results) <= 1:
             return 0.0
 
@@ -501,7 +512,7 @@ class ParallelMousetrapGenerator:
         return sum((score - mean_score) ** 2 for score in scores) / len(scores)
 
     def _calculate_chain_length_variance(self, results: list[MousetrapResult]) -> float:
-        """Calculate variance in chain lengths"""
+        """Calculate variance in chain lengths."""
         if len(results) <= 1:
             return 0.0
 
@@ -510,7 +521,7 @@ class ParallelMousetrapGenerator:
         return sum((length - mean_length) ** 2 for length in lengths) / len(lengths)
 
     async def _is_circuit_breaker_open(self) -> bool:
-        """Check if circuit breaker is open"""
+        """Check if circuit breaker is open."""
         if self.circuit_breaker_failures >= self.circuit_breaker_threshold:
             if time.time() - self.last_failure_time > self.circuit_breaker_recovery_time:
                 # Reset circuit breaker
@@ -520,22 +531,27 @@ class ParallelMousetrapGenerator:
             return True
         return False
 
-    async def _handle_circuit_breaker_failure(self):
-        """Handle circuit breaker failure"""
+    async def _handle_circuit_breaker_failure(self) -> None:
+        """Handle circuit breaker failure."""
         self.circuit_breaker_failures += 1
         self.last_failure_time = time.time()
         logger.warning(f"Circuit breaker failure count: {self.circuit_breaker_failures}")
 
     async def _fallback_to_sequential(
-        self, goal: str, strategy_context: str, custom_iterations: int | None
+        self,
+        goal: str,
+        strategy_context: str,
+        custom_iterations: int | None,
     ) -> ParallelMousetrapResult:
-        """Fallback to sequential generation when parallel fails"""
+        """Fallback to sequential generation when parallel fails."""
         logger.info("Falling back to sequential Mousetrap generation")
         self.metrics["sequential_generations"] += 1
 
         try:
             result = await self.base_generator.generate_mousetrap_attack(
-                goal, strategy_context, custom_iterations
+                goal,
+                strategy_context,
+                custom_iterations,
             )
 
             return ParallelMousetrapResult(
@@ -546,7 +562,7 @@ class ParallelMousetrapGenerator:
                 convergence_analysis={"sequential_fallback": True},
             )
         except Exception as e:
-            logger.error(f"Sequential fallback also failed: {e}")
+            logger.exception(f"Sequential fallback also failed: {e}")
             # Return minimal result
             from ..mousetrap import MousetrapResult
 
@@ -568,7 +584,7 @@ class ParallelMousetrapGenerator:
             )
 
     def get_metrics(self) -> dict[str, Any]:
-        """Get comprehensive parallel generation metrics"""
+        """Get comprehensive parallel generation metrics."""
         return {
             **self.metrics,
             "circuit_breaker_failures": self.circuit_breaker_failures,
@@ -580,8 +596,8 @@ class ParallelMousetrapGenerator:
             },
         }
 
-    def reset_metrics(self):
-        """Reset all metrics"""
+    def reset_metrics(self) -> None:
+        """Reset all metrics."""
         self.metrics = {
             "total_generations": 0,
             "parallel_generations": 0,
@@ -593,15 +609,16 @@ class ParallelMousetrapGenerator:
         }
         logger.info("Parallel Mousetrap metrics reset")
 
-    async def cleanup(self):
-        """Cleanup resources"""
+    async def cleanup(self) -> None:
+        """Cleanup resources."""
         self.executor.shutdown(wait=True)
         logger.info("ParallelMousetrapGenerator cleaned up")
 
 
 # Factory function for easy instantiation
 def create_parallel_mousetrap_generator(
-    llm_adapter: ChimeraLLMAdapter, **kwargs
+    llm_adapter: ChimeraLLMAdapter,
+    **kwargs,
 ) -> ParallelMousetrapGenerator:
-    """Create a parallel Mousetrap generator with optimized configuration"""
+    """Create a parallel Mousetrap generator with optimized configuration."""
     return ParallelMousetrapGenerator(llm_adapter, **kwargs)

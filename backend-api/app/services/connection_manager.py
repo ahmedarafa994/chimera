@@ -1,5 +1,4 @@
-"""
-API Connection Manager Service
+"""API Connection Manager Service
 Direct-only API connection management.
 Uses centralized settings for provider endpoint resolution.
 """
@@ -25,11 +24,9 @@ class ConnectionStatus:
 
 
 class ConnectionManager:
-    """
-    Manages direct API connections using centralized settings.
-    """
+    """Manages direct API connections using centralized settings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._mode: APIConnectionMode = APIConnectionMode.DIRECT
 
     @property
@@ -48,8 +45,7 @@ class ConnectionManager:
         return settings.GOOGLE_API_KEY
 
     async def check_connection(self) -> ConnectionStatus:
-        """
-        Check connection status for direct mode.
+        """Check connection status for direct mode.
         Returns detailed status information.
         """
         import time
@@ -92,20 +88,16 @@ class ConnectionManager:
                         latency_ms=latency,
                         available_models=models[:20],
                     )
-                else:
-                    content_type = response.headers.get("content-type", "")
-                    if content_type.startswith("application/json"):
-                        error_data = response.json()
-                    else:
-                        error_data = {}
-                    error_msg = error_data.get("error", {}).get("message", response.text[:200])
-                    return ConnectionStatus(
-                        mode="direct",
-                        is_connected=False,
-                        base_url=direct_base_url,
-                        error_message=(f"HTTP {response.status_code}: {error_msg}"),
-                        latency_ms=latency,
-                    )
+                content_type = response.headers.get("content-type", "")
+                error_data = response.json() if content_type.startswith("application/json") else {}
+                error_msg = error_data.get("error", {}).get("message", response.text[:200])
+                return ConnectionStatus(
+                    mode="direct",
+                    is_connected=False,
+                    base_url=direct_base_url,
+                    error_message=(f"HTTP {response.status_code}: {error_msg}"),
+                    latency_ms=latency,
+                )
             except httpx.ConnectError as e:
                 latency = (time.time() - start_time) * 1000
                 return ConnectionStatus(

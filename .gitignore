@@ -88,3 +88,4 @@ backend-api/.env
 
 # Auto Claude data directory
 .auto-claude/
+.auth/

@@ -1,5 +1,4 @@
-"""
-Enhanced Genetic Algorithm Optimizer for AutoDAN
+"""Enhanced Genetic Algorithm Optimizer for AutoDAN.
 
 This module implements an optimized genetic algorithm with:
 - Multiple mutation strategies (random, gradient-guided, semantic, adaptive)
@@ -20,7 +19,7 @@ from typing import Any
 
 import numpy as np
 
-from ..config_enhanced import (
+from app.services.autodan.config_enhanced import (
     CrossoverStrategy,
     EnhancedAutoDANConfig,
     GeneticAlgorithmConfig,
@@ -57,9 +56,7 @@ class Individual:
     @property
     def id(self) -> str:
         """Generate unique ID based on prompt content."""
-        return hashlib.md5(self.prompt.encode()).hexdigest()[
-            :12
-        ]  # - unique ID, not cryptographic
+        return hashlib.md5(self.prompt.encode()).hexdigest()[:12]  # - unique ID, not cryptographic
 
     def __hash__(self):
         return hash(self.prompt)
@@ -88,7 +85,7 @@ class PopulationStats:
 class FitnessCache:
     """LRU cache for fitness evaluations with similarity matching."""
 
-    def __init__(self, max_size: int = 1000, similarity_threshold: float = 0.95):
+    def __init__(self, max_size: int = 1000, similarity_threshold: float = 0.95) -> None:
         self.max_size = max_size
         self.similarity_threshold = similarity_threshold
         self._cache: dict[str, float] = {}
@@ -98,7 +95,7 @@ class FitnessCache:
 
     def _get_key(self, prompt: str) -> str:
         """Generate cache key from prompt."""
-        return hashlib.md5(prompt.encode()).hexdigest()  # noqa: S324 - cache key, not cryptographic
+        return hashlib.md5(prompt.encode()).hexdigest()
 
     def get(self, prompt: str) -> float | None:
         """Get cached fitness value."""
@@ -113,7 +110,7 @@ class FitnessCache:
         self._misses += 1
         return None
 
-    def set(self, prompt: str, fitness: float):
+    def set(self, prompt: str, fitness: float) -> None:
         """Cache fitness value."""
         key = self._get_key(prompt)
         if key not in self._cache:
@@ -130,7 +127,7 @@ class FitnessCache:
         total = self._hits + self._misses
         return self._hits / total if total > 0 else 0.0
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear the cache."""
         self._cache.clear()
         self._access_order.clear()
@@ -146,7 +143,7 @@ class MutationOperator:
     semantic layers of the target model simultaneously.
     """
 
-    def __init__(self, config: GeneticAlgorithmConfig, scoring_config: dict):
+    def __init__(self, config: GeneticAlgorithmConfig, scoring_config: dict) -> None:
         self.config = config
         self.scoring_config = scoring_config
         self.token_categories = scoring_config.get("reward_categories", {})
@@ -206,14 +203,13 @@ class MutationOperator:
         """Apply mutation based on strategy."""
         if strategy == MutationStrategy.RANDOM:
             return self._random_mutation(individual)
-        elif strategy == MutationStrategy.GRADIENT_GUIDED:
+        if strategy == MutationStrategy.GRADIENT_GUIDED:
             return self._gradient_guided_mutation(individual)
-        elif strategy == MutationStrategy.SEMANTIC:
+        if strategy == MutationStrategy.SEMANTIC:
             return self._semantic_mutation(individual)
-        elif strategy == MutationStrategy.ADAPTIVE:
+        if strategy == MutationStrategy.ADAPTIVE:
             return self._adaptive_mutation(individual)
-        else:
-            return self._random_mutation(individual)
+        return self._random_mutation(individual)
 
     def _random_mutation(self, individual: Individual) -> Individual:
         """Apply semantically coherent random mutations."""
@@ -275,7 +271,7 @@ class MutationOperator:
             return individual
 
         high_impact_tokens = []
-        for _category, tokens in self.token_categories.items():
+        for tokens in self.token_categories.values():
             high_impact_tokens.extend(tokens)
 
         if not high_impact_tokens:
@@ -358,10 +354,9 @@ class MutationOperator:
 
         if selected == "semantic":
             return self._semantic_mutation(individual)
-        elif selected == "gradient":
+        if selected == "gradient":
             return self._gradient_guided_mutation(individual)
-        else:
-            return self._random_mutation(individual)
+        return self._random_mutation(individual)
 
     # Advanced Rhetorical Templates
     def _nested_hypothetical_template(self, payload: str) -> str:
@@ -481,26 +476,30 @@ class MutationOperator:
 class CrossoverOperator:
     """Collection of crossover operators for genetic optimization."""
 
-    def __init__(self, config: GeneticAlgorithmConfig):
+    def __init__(self, config: GeneticAlgorithmConfig) -> None:
         self.config = config
 
     def crossover(
-        self, parent1: Individual, parent2: Individual, strategy: CrossoverStrategy
+        self,
+        parent1: Individual,
+        parent2: Individual,
+        strategy: CrossoverStrategy,
     ) -> tuple[Individual, Individual]:
         """Apply crossover based on strategy."""
         if strategy == CrossoverStrategy.SINGLE_POINT:
             return self._single_point_crossover(parent1, parent2)
-        elif strategy == CrossoverStrategy.TWO_POINT:
+        if strategy == CrossoverStrategy.TWO_POINT:
             return self._two_point_crossover(parent1, parent2)
-        elif strategy == CrossoverStrategy.UNIFORM:
+        if strategy == CrossoverStrategy.UNIFORM:
             return self._uniform_crossover(parent1, parent2)
-        elif strategy == CrossoverStrategy.SEMANTIC:
+        if strategy == CrossoverStrategy.SEMANTIC:
             return self._semantic_crossover(parent1, parent2)
-        else:
-            return self._single_point_crossover(parent1, parent2)
+        return self._single_point_crossover(parent1, parent2)
 
     def _single_point_crossover(
-        self, parent1: Individual, parent2: Individual
+        self,
+        parent1: Individual,
+        parent2: Individual,
     ) -> tuple[Individual, Individual]:
         """Single-point crossover at word level."""
         words1 = parent1.prompt.split()
@@ -532,7 +531,9 @@ class CrossoverOperator:
         return child1, child2
 
     def _two_point_crossover(
-        self, parent1: Individual, parent2: Individual
+        self,
+        parent1: Individual,
+        parent2: Individual,
     ) -> tuple[Individual, Individual]:
         """Two-point crossover at word level."""
         words1 = parent1.prompt.split()
@@ -571,7 +572,9 @@ class CrossoverOperator:
         return child1, child2
 
     def _uniform_crossover(
-        self, parent1: Individual, parent2: Individual
+        self,
+        parent1: Individual,
+        parent2: Individual,
     ) -> tuple[Individual, Individual]:
         """Uniform crossover - each word has 50% chance from either parent."""
         words1 = parent1.prompt.split()
@@ -612,7 +615,9 @@ class CrossoverOperator:
         return child1, child2
 
     def _semantic_crossover(
-        self, parent1: Individual, parent2: Individual
+        self,
+        parent1: Individual,
+        parent2: Individual,
     ) -> tuple[Individual, Individual]:
         """Semantic crossover - tries to preserve sentence structure."""
         import re
@@ -667,26 +672,30 @@ class CrossoverOperator:
 class SelectionOperator:
     """Collection of selection operators for genetic optimization."""
 
-    def __init__(self, config: GeneticAlgorithmConfig):
+    def __init__(self, config: GeneticAlgorithmConfig) -> None:
         self.config = config
 
     def select(
-        self, population: list[Individual], n_select: int, strategy: SelectionStrategy
+        self,
+        population: list[Individual],
+        n_select: int,
+        strategy: SelectionStrategy,
     ) -> list[Individual]:
         """Select individuals based on strategy."""
         if strategy == SelectionStrategy.TOURNAMENT:
             return self._tournament_selection(population, n_select)
-        elif strategy == SelectionStrategy.ROULETTE:
+        if strategy == SelectionStrategy.ROULETTE:
             return self._roulette_selection(population, n_select)
-        elif strategy == SelectionStrategy.RANK:
+        if strategy == SelectionStrategy.RANK:
             return self._rank_selection(population, n_select)
-        elif strategy == SelectionStrategy.ELITIST:
+        if strategy == SelectionStrategy.ELITIST:
             return self._elitist_selection(population, n_select)
-        else:
-            return self._tournament_selection(population, n_select)
+        return self._tournament_selection(population, n_select)
 
     def _tournament_selection(
-        self, population: list[Individual], n_select: int
+        self,
+        population: list[Individual],
+        n_select: int,
     ) -> list[Individual]:
         """Tournament selection."""
         selected = []
@@ -694,7 +703,8 @@ class SelectionOperator:
 
         for _ in range(n_select):
             tournament = secrets.SystemRandom().sample(
-                population, min(tournament_size, len(population))
+                population,
+                min(tournament_size, len(population)),
             )
             winner = max(tournament, key=lambda x: x.fitness)
             selected.append(winner)
@@ -752,16 +762,14 @@ class SelectionOperator:
 
 
 class GeneticOptimizer:
-    """
-    Enhanced Genetic Algorithm Optimizer for adversarial prompt generation.
-    """
+    """Enhanced Genetic Algorithm Optimizer for adversarial prompt generation."""
 
     def __init__(
         self,
         config: EnhancedAutoDANConfig | None = None,
         fitness_function: Callable[[str], float] | None = None,
         semantic_model: Any | None = None,
-    ):
+    ) -> None:
         self.config = config or get_config()
         self.ga_config = self.config.genetic
         self.scoring_config = self.config.scoring.model_dump()
@@ -791,11 +799,12 @@ class GeneticOptimizer:
         logger.info(f"GeneticOptimizer initialized. Pop: {self.ga_config.population_size}")
 
     def optimize(
-        self, initial_prompt: str, target_fitness: float = 0.9, max_generations: int | None = None
+        self,
+        initial_prompt: str,
+        target_fitness: float = 0.9,
+        max_generations: int | None = None,
     ) -> tuple[Individual, list[PopulationStats]]:
-        """
-        Run genetic optimization to evolve adversarial prompts.
-        """
+        """Run genetic optimization to evolve adversarial prompts."""
         max_gen = max_generations or self.ga_config.generations
 
         # Initialize population
@@ -832,7 +841,9 @@ class GeneticOptimizer:
                 if len(parents) >= 2 and _secure_random() < self.ga_config.crossover_rate:
                     parent1, parent2 = secrets.SystemRandom().sample(parents, 2)
                     child1, child2 = self.crossover_op.crossover(
-                        parent1, parent2, self.ga_config.crossover_strategy
+                        parent1,
+                        parent2,
+                        self.ga_config.crossover_strategy,
                     )
 
                     # Apply mutation
@@ -871,7 +882,7 @@ class GeneticOptimizer:
             # Log progress
             logger.info(
                 f"Gen {generation + 1}: best={stats.best_fitness:.4f}, "
-                f"diversity={stats.diversity_score:.4f}"
+                f"diversity={stats.diversity_score:.4f}",
             )
 
         logger.info(f"Optimization complete. Best: {best_overall.fitness:.4f}")
@@ -894,14 +905,14 @@ class GeneticOptimizer:
 
         return population
 
-    def _evaluate_population(self, population: list[Individual]):
+    def _evaluate_population(self, population: list[Individual]) -> None:
         """Evaluate fitness for all individuals."""
         if self.config.parallel.enable_parallel:
             self._evaluate_parallel(population)
         else:
             self._evaluate_sequential(population)
 
-    def _evaluate_sequential(self, population: list[Individual]):
+    def _evaluate_sequential(self, population: list[Individual]) -> None:
         """Evaluate population sequentially."""
         for individual in population:
             cached_fitness = self.fitness_cache.get(individual.prompt)
@@ -911,7 +922,7 @@ class GeneticOptimizer:
                 individual.fitness = self.fitness_function(individual.prompt)
                 self.fitness_cache.set(individual.prompt, individual.fitness)
 
-    def _evaluate_parallel(self, population: list[Individual]):
+    def _evaluate_parallel(self, population: list[Individual]) -> None:
         """Evaluate population in parallel."""
         max_workers = self.config.parallel.max_workers
         uncached = []
@@ -938,7 +949,7 @@ class GeneticOptimizer:
                     individual.fitness = fitness
                     self.fitness_cache.set(individual.prompt, fitness)
                 except Exception as e:
-                    logger.error(f"Evaluation failed: {e}")
+                    logger.exception(f"Evaluation failed: {e}")
                     individual.fitness = 0.0
 
     def _select_elite(self, population: list[Individual]) -> list[Individual]:
@@ -947,7 +958,10 @@ class GeneticOptimizer:
         return sorted_pop[: self.ga_config.elite_size]
 
     def _collect_stats(
-        self, population: list[Individual], generation: int, elapsed_time: float
+        self,
+        population: list[Individual],
+        generation: int,
+        elapsed_time: float,
     ) -> PopulationStats:
         """Collect statistics for the current generation."""
         f_vals = [ind.fitness for ind in population]
@@ -988,7 +1002,7 @@ class GeneticOptimizer:
             return 1.0
         return 1.0 - (total_sim / n_pairs)
 
-    def _adapt_hyperparameters(self, stats: PopulationStats):
+    def _adapt_hyperparameters(self, stats: PopulationStats) -> None:
         """Adapt hyperparameters based on population statistics."""
         if not self.ga_config.adaptive_mutation:
             return
@@ -1009,16 +1023,19 @@ class GeneticOptimizer:
 
         if self.stagnation_counter >= self.ga_config.stagnation_threshold:
             self.current_mutation_rate = min(
-                self.ga_config.max_mutation_rate, self.current_mutation_rate * 1.5
+                self.ga_config.max_mutation_rate,
+                self.current_mutation_rate * 1.5,
             )
             self.stagnation_counter = 0
         elif stats.diversity_score < 0.3:
             self.current_mutation_rate = min(
-                self.ga_config.max_mutation_rate, self.current_mutation_rate * 1.2
+                self.ga_config.max_mutation_rate,
+                self.current_mutation_rate * 1.2,
             )
         elif stats.std_fitness < 0.05:
             self.current_mutation_rate = max(
-                self.ga_config.min_mutation_rate, self.current_mutation_rate * 0.9
+                self.ga_config.min_mutation_rate,
+                self.current_mutation_rate * 0.9,
             )
 
         if len(self.mutation_history) > 20:
@@ -1039,7 +1056,7 @@ class GeneticOptimizer:
                 penalty += 0.2
 
         reward = 0.0
-        for _category, tokens in scoring.reward_categories.items():
+        for tokens in scoring.reward_categories.values():
             for token in tokens:
                 if token in p_lower:
                     reward += 0.05
@@ -1054,7 +1071,7 @@ class GeneticOptimizer:
         )
         return max(0.0, min(1.0, score))
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset optimizer state."""
         self.current_mutation_rate = self.ga_config.mutation_rate
         self.mutation_history.clear()

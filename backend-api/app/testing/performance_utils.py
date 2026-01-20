@@ -1,5 +1,4 @@
-"""
-Performance Testing Utilities and Helpers.
+"""Performance Testing Utilities and Helpers.
 
 This module provides utility functions and classes for performance testing:
 - Test data generators
@@ -29,14 +28,16 @@ from app.domain.models import GenerationConfig, PromptRequest
 class PerformanceTestDataGenerator:
     """Generate realistic test data for performance testing."""
 
-    def __init__(self, seed: int = 42):
+    def __init__(self, seed: int = 42) -> None:
         self.fake = Faker()
         Faker.seed(seed)
         random.seed(seed)
         np.random.seed(seed)
 
     def generate_prompt_requests(
-        self, count: int, complexity: str = "mixed"
+        self,
+        count: int,
+        complexity: str = "mixed",
     ) -> list[PromptRequest]:
         """Generate realistic prompt requests for testing."""
         requests = []
@@ -44,23 +45,22 @@ class PerformanceTestDataGenerator:
         for _i in range(count):
             if complexity == "simple":
                 prompt = self.fake.sentence(
-                    nb_words=random.randint(5, 15)
+                    nb_words=random.randint(5, 15),
                 )  # - test data
             elif complexity == "complex":
                 prompt = " ".join(
-                    [self.fake.paragraph() for _ in range(random.randint(2, 5))]
+                    [self.fake.paragraph() for _ in range(random.randint(2, 5))],
                 )  # - test data
-            else:  # mixed
-                if random.random() < 0.3:  # - test data
-                    prompt = self.fake.sentence(
-                        nb_words=random.randint(5, 15)
-                    )  # - test data
-                elif random.random() < 0.7:  # - test data
-                    prompt = self.fake.paragraph()
-                else:
-                    prompt = " ".join(
-                        [self.fake.paragraph() for _ in range(random.randint(2, 3))]
-                    )  # - test data
+            elif random.random() < 0.3:  # - test data
+                prompt = self.fake.sentence(
+                    nb_words=random.randint(5, 15),
+                )  # - test data
+            elif random.random() < 0.7:  # - test data
+                prompt = self.fake.paragraph()
+            else:
+                prompt = " ".join(
+                    [self.fake.paragraph() for _ in range(random.randint(2, 3))],
+                )  # - test data
 
             config = GenerationConfig(
                 max_tokens=random.randint(50, 500),  # - test data
@@ -109,7 +109,9 @@ class PerformanceTestDataGenerator:
         return requests
 
     def generate_cache_test_data(
-        self, key_count: int, value_size_kb: float = 1.0
+        self,
+        key_count: int,
+        value_size_kb: float = 1.0,
     ) -> list[tuple[str, dict[str, Any]]]:
         """Generate cache test data with realistic keys and values."""
         test_data = []
@@ -126,7 +128,7 @@ class PerformanceTestDataGenerator:
                 "metadata": {
                     "timestamp": time.time(),
                     "provider": random.choice(
-                        ["google", "openai", "anthropic"]
+                        ["google", "openai", "anthropic"],
                     ),  # - test data generation
                     "tokens": random.randint(50, 500),  # - test data generation
                 },
@@ -168,7 +170,7 @@ class PerformanceTestDataGenerator:
                 message = {
                     "type": "status",
                     "data": {
-                        "status": random.choice(["processing", "complete", "error"])
+                        "status": random.choice(["processing", "complete", "error"]),
                     },  # - test data
                     "timestamp": time.time(),
                 }
@@ -188,34 +190,48 @@ class PerformanceAssertions:
 
     @staticmethod
     def assert_response_time(
-        response_time_ms: float, max_time_ms: float, context: str = ""
+        response_time_ms: float,
+        max_time_ms: float,
+        context: str = "",
     ) -> None:
         """Assert that response time is within acceptable limits."""
         if response_time_ms > max_time_ms:
-            raise AssertionError(
+            msg = (
                 f"Response time {response_time_ms:.2f}ms exceeds limit {max_time_ms}ms"
                 f"{f' for {context}' if context else ''}"
+            )
+            raise AssertionError(
+                msg,
             )
 
     @staticmethod
     def assert_throughput(
-        operations: int, duration_seconds: float, min_ops_per_second: float, context: str = ""
+        operations: int,
+        duration_seconds: float,
+        min_ops_per_second: float,
+        context: str = "",
     ) -> None:
         """Assert that throughput meets minimum requirements."""
         actual_ops_per_second = operations / duration_seconds
         if actual_ops_per_second < min_ops_per_second:
-            raise AssertionError(
+            msg = (
                 f"Throughput {actual_ops_per_second:.2f} ops/sec below minimum {min_ops_per_second} ops/sec"
                 f"{f' for {context}' if context else ''}"
+            )
+            raise AssertionError(
+                msg,
             )
 
     @staticmethod
     def assert_memory_usage(memory_mb: float, max_memory_mb: float, context: str = "") -> None:
         """Assert that memory usage is within limits."""
         if memory_mb > max_memory_mb:
-            raise AssertionError(
+            msg = (
                 f"Memory usage {memory_mb:.2f}MB exceeds limit {max_memory_mb}MB"
                 f"{f' for {context}' if context else ''}"
+            )
+            raise AssertionError(
+                msg,
             )
 
     @staticmethod
@@ -223,21 +239,30 @@ class PerformanceAssertions:
         """Assert that cache hit ratio meets minimum requirements."""
         actual_ratio = hits / total if total > 0 else 0
         if actual_ratio < min_ratio:
-            raise AssertionError(
+            msg = (
                 f"Cache hit ratio {actual_ratio:.2%} below minimum {min_ratio:.2%}"
                 f"{f' for {context}' if context else ''}"
+            )
+            raise AssertionError(
+                msg,
             )
 
     @staticmethod
     def assert_error_rate(
-        errors: int, total: int, max_error_rate: float, context: str = ""
+        errors: int,
+        total: int,
+        max_error_rate: float,
+        context: str = "",
     ) -> None:
         """Assert that error rate is within acceptable limits."""
         actual_error_rate = errors / total if total > 0 else 0
         if actual_error_rate > max_error_rate:
-            raise AssertionError(
+            msg = (
                 f"Error rate {actual_error_rate:.2%} exceeds maximum {max_error_rate:.2%}"
                 f"{f' for {context}' if context else ''}"
+            )
+            raise AssertionError(
+                msg,
             )
 
 
@@ -261,7 +286,9 @@ class PerformanceRegression:
 class BenchmarkResultAnalyzer:
     """Analyze benchmark results and detect performance regressions."""
 
-    def __init__(self, baseline_file: str | None = None, regression_threshold: float = 10.0):
+    def __init__(
+        self, baseline_file: str | None = None, regression_threshold: float = 10.0
+    ) -> None:
         self.regression_threshold = regression_threshold
         self.baseline_data: dict[str, Any] | None = None
 
@@ -311,7 +338,10 @@ class BenchmarkResultAnalyzer:
 
         for metric_path, unit, higher_is_better in metrics_to_check:
             regression = self._check_metric_regression(
-                current_results, metric_path, higher_is_better, unit
+                current_results,
+                metric_path,
+                higher_is_better,
+                unit,
             )
             if regression:
                 regressions.append(regression)
@@ -319,7 +349,11 @@ class BenchmarkResultAnalyzer:
         return regressions
 
     def _check_metric_regression(
-        self, current_results: dict[str, Any], metric_path: str, higher_is_better: bool, unit: str
+        self,
+        current_results: dict[str, Any],
+        metric_path: str,
+        higher_is_better: bool,
+        unit: str,
     ) -> PerformanceRegression | None:
         """Check a specific metric for regression."""
         # Extract values from nested dict
@@ -375,7 +409,8 @@ class BenchmarkResultAnalyzer:
             return None
 
     def generate_regression_report(
-        self, regressions: list[PerformanceRegression]
+        self,
+        regressions: list[PerformanceRegression],
     ) -> dict[str, Any]:
         """Generate comprehensive regression analysis report."""
         if not regressions:
@@ -414,10 +449,9 @@ class BenchmarkResultAnalyzer:
 
         if critical:
             return "BLOCK: Critical performance regressions detected. Do not deploy."
-        elif major:
+        if major:
             return "INVESTIGATE: Major performance regressions detected. Review before deployment."
-        else:
-            return "MONITOR: Minor performance regressions detected. Monitor in production."
+        return "MONITOR: Minor performance regressions detected. Monitor in production."
 
 
 # =====================================================
@@ -429,8 +463,10 @@ class CICDPerformanceGate:
     """Performance gate for CI/CD pipelines."""
 
     def __init__(
-        self, config_file: str | None = None, baseline_dir: str = "./performance_baselines"
-    ):
+        self,
+        config_file: str | None = None,
+        baseline_dir: str = "./performance_baselines",
+    ) -> None:
         self.baseline_dir = Path(baseline_dir)
         self.baseline_dir.mkdir(parents=True, exist_ok=True)
 
@@ -662,17 +698,13 @@ if __name__ == "__main__":
     # CLI for performance gate check
     import sys
 
-    async def main():
+    async def main() -> None:
         passed, results = await run_performance_gate_check()
 
-        print(f"Performance Gate: {results['overall_result']}")
-        print(f"Gates Passed: {results['summary']['passed']}/{results['summary']['total_gates']}")
-
         if not passed:
-            print("Failed gates:")
-            for name, result in results["gates"].items():
+            for result in results["gates"].values():
                 if not result["passed"]:
-                    print(f"  - {name}: {result['details']}")
+                    pass
 
         sys.exit(0 if passed else 1)
 

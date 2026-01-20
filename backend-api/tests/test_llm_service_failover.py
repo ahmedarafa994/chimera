@@ -1,5 +1,4 @@
-"""
-Tests for LLMService failover functionality (Story 1.2).
+"""Tests for LLMService failover functionality (Story 1.2).
 
 Tests cover:
 - Automatic provider failover on circuit breaker open
@@ -8,6 +7,7 @@ Tests cover:
 - Failover enable/disable
 """
 
+from typing import Never
 from unittest.mock import patch
 
 import pytest
@@ -26,7 +26,7 @@ from app.services.llm_service import LLMService
 class MockAsyncProvider(LLMProvider):
     """Mock async provider for testing."""
 
-    def __init__(self, name: str, should_fail: bool = False, fail_with_cb: bool = False):
+    def __init__(self, name: str, should_fail: bool = False, fail_with_cb: bool = False) -> None:
         self.name = name
         self.should_fail = should_fail
         self.fail_with_cb = fail_with_cb
@@ -37,7 +37,8 @@ class MockAsyncProvider(LLMProvider):
         if self.fail_with_cb:
             raise CircuitBreakerOpen(self.name, retry_after=60.0)
         if self.should_fail:
-            raise Exception(f"Provider {self.name} failed")
+            msg = f"Provider {self.name} failed"
+            raise Exception(msg)
         return PromptResponse(
             text=f"Response from {self.name}",
             model_used="test-model",
@@ -76,7 +77,7 @@ def sample_request():
 class TestFailoverChain:
     """Tests for failover chain configuration."""
 
-    def test_default_failover_chains_defined(self, llm_service):
+    def test_default_failover_chains_defined(self, llm_service) -> None:
         """Default failover chains are defined for all major providers."""
         chains = llm_service._DEFAULT_FAILOVER_CHAIN
 
@@ -89,14 +90,14 @@ class TestFailoverChain:
         assert len(chains["gemini"]) >= 2
         assert len(chains["openai"]) >= 2
 
-    def test_set_custom_failover_chain(self, llm_service):
+    def test_set_custom_failover_chain(self, llm_service) -> None:
         """Custom failover chains can be set."""
         custom_chain = ["provider1", "provider2"]
         llm_service.set_failover_chain("custom", custom_chain)
 
         assert llm_service._failover_chains["custom"] == custom_chain
 
-    def test_get_failover_providers_filters_unregistered(self, llm_service):
+    def test_get_failover_providers_filters_unregistered(self, llm_service) -> None:
         """Failover chain filters to only registered providers."""
         # Register only one provider
         provider = MockAsyncProvider("openai")
@@ -119,7 +120,7 @@ class TestFailoverExecution:
     """Tests for failover execution during generation."""
 
     @pytest.mark.asyncio
-    async def test_primary_success_no_failover(self, llm_service, sample_request):
+    async def test_primary_success_no_failover(self, llm_service, sample_request) -> None:
         """Successful primary provider doesn't trigger failover."""
         primary = MockAsyncProvider("openai")
         backup = MockAsyncProvider("anthropic")
@@ -144,7 +145,7 @@ class TestFailoverExecution:
             assert backup.call_count == 0
 
     @pytest.mark.asyncio
-    async def test_failover_on_circuit_breaker_open(self, llm_service, sample_request):
+    async def test_failover_on_circuit_breaker_open(self, llm_service, sample_request) -> None:
         """Circuit breaker open triggers failover to backup."""
         primary = MockAsyncProvider("openai", fail_with_cb=True)
         backup = MockAsyncProvider("anthropic")
@@ -161,7 +162,8 @@ class TestFailoverExecution:
         async def mock_cb_call(provider_name, func, *args, **kwargs):
             call_count[0] += 1
             if provider_name == "openai":
-                raise CircuitBreakerOpen("openai", retry_after=60.0)
+                msg = "openai"
+                raise CircuitBreakerOpen(msg, retry_after=60.0)
             return await func(*args, **kwargs)
 
         with patch.object(llm_service, "_call_with_circuit_breaker", side_effect=mock_cb_call):
@@ -171,7 +173,7 @@ class TestFailoverExecution:
             assert call_count[0] >= 2  # Primary + backup
 
     @pytest.mark.asyncio
-    async def test_failover_all_providers_fail(self, llm_service, sample_request):
+    async def test_failover_all_providers_fail(self, llm_service, sample_request) -> None:
         """All providers failing raises ProviderNotAvailableError."""
         primary = MockAsyncProvider("openai", fail_with_cb=True)
         backup = MockAsyncProvider("anthropic", fail_with_cb=True)
@@ -180,11 +182,13 @@ class TestFailoverExecution:
         llm_service.register_provider("anthropic", backup)
         llm_service.set_failover_chain("openai", ["anthropic"])
 
-        async def mock_cb_always_fail(provider_name, func, *args, **kwargs):
+        async def mock_cb_always_fail(provider_name, func, *args, **kwargs) -> Never:
             raise CircuitBreakerOpen(provider_name, retry_after=60.0)
 
         with patch.object(
-            llm_service, "_call_with_circuit_breaker", side_effect=mock_cb_always_fail
+            llm_service,
+            "_call_with_circuit_breaker",
+            side_effect=mock_cb_always_fail,
         ):
             with pytest.raises(ProviderNotAvailableError) as exc_info:
                 await llm_service.generate_text(sample_request)
@@ -193,7 +197,7 @@ class TestFailoverExecution:
             assert "tried_providers" in exc_info.value.details
 
     @pytest.mark.asyncio
-    async def test_failover_disabled(self, llm_service, sample_request):
+    async def test_failover_disabled(self, llm_service, sample_request) -> None:
         """Failover disabled doesn't try backup providers."""
         primary = MockAsyncProvider("openai", fail_with_cb=True)
         backup = MockAsyncProvider("anthropic")
@@ -205,11 +209,14 @@ class TestFailoverExecution:
 
         async def mock_cb_primary_fail(provider_name, func, *args, **kwargs):
             if provider_name == "openai":
-                raise CircuitBreakerOpen("openai", retry_after=60.0)
+                msg = "openai"
+                raise CircuitBreakerOpen(msg, retry_after=60.0)
             return await func(*args, **kwargs)
 
         with patch.object(
-            llm_service, "_call_with_circuit_breaker", side_effect=mock_cb_primary_fail
+            llm_service,
+            "_call_with_circuit_breaker",
+            side_effect=mock_cb_primary_fail,
         ):
             with pytest.raises(ProviderNotAvailableError):
                 await llm_service.generate_text(sample_request)
@@ -226,7 +233,7 @@ class TestFailoverExecution:
 class TestPerformanceStats:
     """Tests for performance statistics with failover info."""
 
-    def test_stats_include_failover_config(self, llm_service):
+    def test_stats_include_failover_config(self, llm_service) -> None:
         """Performance stats include failover configuration."""
         llm_service.register_provider("openai", MockAsyncProvider("openai"))
         llm_service.register_provider("anthropic", MockAsyncProvider("anthropic"))
@@ -237,7 +244,7 @@ class TestPerformanceStats:
         assert "failover_chains" in stats
         assert isinstance(stats["failover_chains"], dict)
 
-    def test_enable_failover_updates_state(self, llm_service):
+    def test_enable_failover_updates_state(self, llm_service) -> None:
         """Enable/disable failover updates internal state."""
         assert llm_service._FAILOVER_ENABLED is True
 
@@ -256,7 +263,7 @@ class TestPerformanceStats:
 class TestFallbackRequest:
     """Tests for fallback request creation."""
 
-    def test_create_fallback_request(self, llm_service, sample_request):
+    def test_create_fallback_request(self, llm_service, sample_request) -> None:
         """Fallback request is created correctly."""
         fallback = llm_service._create_fallback_request(sample_request, "anthropic")
 
@@ -267,7 +274,7 @@ class TestFallbackRequest:
         # Config should be preserved
         assert fallback.config == sample_request.config
 
-    def test_fallback_request_strips_api_key(self, llm_service):
+    def test_fallback_request_strips_api_key(self, llm_service) -> None:
         """Fallback request doesn't use original API key."""
         original = PromptRequest(
             prompt="test",
@@ -288,7 +295,7 @@ class TestFailoverIntegration:
     """Integration tests for failover with LLMService."""
 
     @pytest.mark.asyncio
-    async def test_failover_chain_priority_order(self, llm_service, sample_request):
+    async def test_failover_chain_priority_order(self, llm_service, sample_request) -> None:
         """Failover tries providers in chain order."""
         providers = [
             MockAsyncProvider("openai", fail_with_cb=True),

@@ -1,5 +1,4 @@
-"""
-Per-Model Rate Limiting Service
+"""Per-Model Rate Limiting Service.
 
 Provides rate limiting on a per-provider and per-model basis with
 support for different user tiers and graceful degradation.
@@ -119,8 +118,7 @@ TIER_LIMITS: dict[str, dict[str, RateLimitConfig]] = {
 
 
 class ModelRateLimiter:
-    """
-    Per-model rate limiter with sliding window algorithm.
+    """Per-model rate limiter with sliding window algorithm.
 
     Features:
     - Per-provider and per-model rate limits
@@ -130,11 +128,11 @@ class ModelRateLimiter:
     - Graceful degradation with fallback suggestions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # In-memory storage (use Redis in production)
         # Structure: {user_id: {provider: {model: {window_type: RateLimitWindow}}}}
         self._windows: dict[str, dict[str, dict[str, dict[str, RateLimitWindow]]]] = defaultdict(
-            lambda: defaultdict(lambda: defaultdict(dict))
+            lambda: defaultdict(lambda: defaultdict(dict)),
         )
 
         # Concurrent request tracking: {user_id: {provider: count}}
@@ -144,7 +142,10 @@ class ModelRateLimiter:
         self._lock = asyncio.Lock()
 
     def get_limit_config(
-        self, tier: str, provider: str, model: str | None = None
+        self,
+        tier: str,
+        provider: str,
+        model: str | None = None,
     ) -> RateLimitConfig:
         """Get rate limit configuration for a tier/provider combination."""
         tier_config = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
@@ -160,8 +161,7 @@ class ModelRateLimiter:
         tier: str = "free",
         estimated_tokens: int = 0,
     ) -> RateLimitResult:
-        """
-        Check if a request is allowed under rate limits.
+        """Check if a request is allowed under rate limits.
 
         Args:
             user_id: User identifier
@@ -172,6 +172,7 @@ class ModelRateLimiter:
 
         Returns:
             RateLimitResult with allowed status and limit info
+
         """
         async with self._lock:
             config = self.get_limit_config(tier, provider, model)
@@ -194,7 +195,10 @@ class ModelRateLimiter:
 
             # Check minute window
             minute_window = self._get_or_create_window(
-                user_windows, "minute", now, timedelta(minutes=1)
+                user_windows,
+                "minute",
+                now,
+                timedelta(minutes=1),
             )
 
             if minute_window.request_count >= config.requests_per_minute:
@@ -250,7 +254,7 @@ class ModelRateLimiter:
         provider: str,
         model: str,
         tokens_used: int = 0,
-    ):
+    ) -> None:
         """Record a completed request for rate limiting."""
         async with self._lock:
             now = datetime.utcnow()
@@ -258,7 +262,10 @@ class ModelRateLimiter:
 
             # Update minute window
             minute_window = self._get_or_create_window(
-                user_windows, "minute", now, timedelta(minutes=1)
+                user_windows,
+                "minute",
+                now,
+                timedelta(minutes=1),
             )
             minute_window.request_count += 1
             minute_window.token_count += tokens_used
@@ -288,7 +295,7 @@ class ModelRateLimiter:
         self,
         user_id: str,
         provider: str,
-    ):
+    ) -> None:
         """Release a concurrent request slot."""
         async with self._lock:
             if self._concurrent[user_id][provider] > 0:

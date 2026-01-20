@@ -13,7 +13,7 @@
 import contextlib
 import logging
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import (
     APIRouter,
@@ -81,8 +81,7 @@ def get_deepteam_service() -> DeepTeamService:
 
 
 class RedTeamRequest(StrictBaseModel):
-    """
-    Request model for red teaming.
+    """Request model for red teaming.
 
     Unified Schema Fields:
     - `target_model`: Alias for `model_id` (unified naming)
@@ -111,7 +110,8 @@ class RedTeamRequest(StrictBaseModel):
     # Configuration
     preset: str | None = Field(None, description="Use preset configuration")
     vulnerabilities: list[VulnerabilityConfig] | None = Field(
-        None, description="Custom vulnerabilities"
+        None,
+        description="Custom vulnerabilities",
     )
     attacks: list[AttackConfig] | None = Field(None, description="Custom attacks")
 
@@ -155,8 +155,7 @@ class RedTeamRequest(StrictBaseModel):
 
 
 class QuickScanRequest(StrictBaseModel):
-    """
-    Request for quick vulnerability scan.
+    """Request for quick vulnerability scan.
 
     Unified Schema Fields:
     - `target_model`: Alias for `model_id` (unified naming)
@@ -186,8 +185,7 @@ class QuickScanRequest(StrictBaseModel):
 
 
 class VulnerabilityAssessRequest(StrictBaseModel):
-    """
-    Request for single vulnerability assessment.
+    """Request for single vulnerability assessment.
 
     Unified Schema Fields:
     - `target_model`: Alias for `model_id` (unified naming)
@@ -216,8 +214,7 @@ class VulnerabilityAssessRequest(StrictBaseModel):
 
 
 class RedTeamResponse(StrictBaseModel):
-    """
-    Response model for red teaming results.
+    """Response model for red teaming results.
 
     Unified Schema Fields:
     - `attack_id`: Maps to `session_id` (unified naming)
@@ -247,7 +244,8 @@ class RedTeamResponse(StrictBaseModel):
     # Unified fields
     execution_time_ms: float | None = Field(None, description="Execution time in milliseconds")
     reasoning_metrics: ReasoningMetrics | None = Field(
-        None, description="Reasoning metrics (OVERTHINK fusion)"
+        None,
+        description="Reasoning metrics (OVERTHINK fusion)",
     )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
@@ -270,14 +268,13 @@ class SessionStatusResponse(StrictBaseModel):
 # =============================================================================
 
 
-@router.post("/red-team", response_model=RedTeamResponse)
+@router.post("/red-team")
 async def run_red_team(
     request: RedTeamRequest,
     background_tasks: BackgroundTasks,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> RedTeamResponse:
-    """
-    Run a comprehensive red teaming session against a target LLM.
+    """Run a comprehensive red teaming session against a target LLM.
 
     This endpoint allows you to test LLM systems for 40+ vulnerabilities
     using 10+ attack methods including:
@@ -341,7 +338,7 @@ async def run_red_team(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(f"Red teaming completed. " f"Pass rate: {pass_rate:.1%}"),
+            message=(f"Red teaming completed. Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={
                 "technique_type": "deepteam_red_team",
@@ -350,17 +347,16 @@ async def run_red_team(
         )
 
     except Exception as e:
-        logger.error(f"Red teaming failed: {e}")
+        logger.exception(f"Red teaming failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/quick-scan", response_model=RedTeamResponse)
+@router.post("/quick-scan")
 async def run_quick_scan(
     request: QuickScanRequest,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> RedTeamResponse:
-    """
-    Run a quick vulnerability scan with basic checks.
+    """Run a quick vulnerability scan with basic checks.
 
     This is a fast scan that tests common vulnerabilities with minimal attacks.
     Ideal for quick checks during development.
@@ -386,23 +382,22 @@ async def run_quick_scan(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(f"Quick scan completed. " f"Pass rate: {pass_rate:.1%}"),
+            message=(f"Quick scan completed. Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "quick_scan"},
         )
 
     except Exception as e:
-        logger.error(f"Quick scan failed: {e}")
+        logger.exception(f"Quick scan failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/security-audit", response_model=RedTeamResponse)
+@router.post("/security-audit")
 async def run_security_audit(
     request: QuickScanRequest,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> RedTeamResponse:
-    """
-    Run a security-focused audit.
+    """Run a security-focused audit.
 
     Tests for security vulnerabilities including:
     - SQL Injection
@@ -433,23 +428,22 @@ async def run_security_audit(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(f"Security audit completed. " f"Pass rate: {pass_rate:.1%}"),
+            message=(f"Security audit completed. Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "security_audit"},
         )
 
     except Exception as e:
-        logger.error(f"Security audit failed: {e}")
+        logger.exception(f"Security audit failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/bias-audit", response_model=RedTeamResponse)
+@router.post("/bias-audit")
 async def run_bias_audit(
     request: QuickScanRequest,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> RedTeamResponse:
-    """
-    Run a bias-focused audit.
+    """Run a bias-focused audit.
 
     Tests for various types of bias including:
     - Gender bias
@@ -481,23 +475,22 @@ async def run_bias_audit(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(f"Bias audit completed. " f"Pass rate: {pass_rate:.1%}"),
+            message=(f"Bias audit completed. Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "bias_audit"},
         )
 
     except Exception as e:
-        logger.error(f"Bias audit failed: {e}")
+        logger.exception(f"Bias audit failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/owasp-assessment", response_model=RedTeamResponse)
+@router.post("/owasp-assessment")
 async def run_owasp_assessment(
     request: QuickScanRequest,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> RedTeamResponse:
-    """
-    Run OWASP Top 10 for LLMs assessment.
+    """Run OWASP Top 10 for LLMs assessment.
 
     Tests against the OWASP Top 10 vulnerabilities for LLM applications:
     - LLM01: Prompt Injection
@@ -529,23 +522,22 @@ async def run_owasp_assessment(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(f"OWASP assessment completed. " f"Pass rate: {pass_rate:.1%}"),
+            message=(f"OWASP assessment completed. Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={"technique_type": "owasp_assessment"},
         )
 
     except Exception as e:
-        logger.error(f"OWASP assessment failed: {e}")
+        logger.exception(f"OWASP assessment failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/assess-vulnerability", response_model=RedTeamResponse)
+@router.post("/assess-vulnerability")
 async def assess_single_vulnerability(
     request: VulnerabilityAssessRequest,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> RedTeamResponse:
-    """
-    Assess a single vulnerability type.
+    """Assess a single vulnerability type.
 
     Allows targeted testing of specific vulnerabilities.
     """
@@ -585,7 +577,7 @@ async def assess_single_vulnerability(
             score=round(score, 2),
             session_id=result.session_id,
             status="completed",
-            message=(f"Vulnerability assessment completed. " f"Pass rate: {pass_rate:.1%}"),
+            message=(f"Vulnerability assessment completed. Pass rate: {pass_rate:.1%}"),
             result=result,
             metadata={
                 "technique_type": "vulnerability_assessment",
@@ -594,7 +586,7 @@ async def assess_single_vulnerability(
         )
 
     except Exception as e:
-        logger.error(f"Vulnerability assessment failed: {e}")
+        logger.exception(f"Vulnerability assessment failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -603,9 +595,9 @@ async def assess_single_vulnerability(
 # =============================================================================
 
 
-@router.get("/sessions", response_model=list[SessionStatusResponse])
+@router.get("/sessions")
 async def list_sessions(
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> list[SessionStatusResponse]:
     """List all red teaming sessions."""
     sessions = service.list_sessions()
@@ -621,10 +613,10 @@ async def list_sessions(
     ]
 
 
-@router.get("/sessions/{session_id}", response_model=SessionStatusResponse)
+@router.get("/sessions/{session_id}")
 async def get_session_status(
     session_id: str,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> SessionStatusResponse:
     """Get status of a specific session."""
     status = service.get_session_status(session_id)
@@ -640,10 +632,10 @@ async def get_session_status(
     )
 
 
-@router.get("/sessions/{session_id}/result", response_model=RiskAssessmentResult)
+@router.get("/sessions/{session_id}/result")
 async def get_session_result(
     session_id: str,
-    service: DeepTeamService = Depends(get_deepteam_service),
+    service: Annotated[DeepTeamService, Depends(get_deepteam_service)],
 ) -> RiskAssessmentResult:
     """Get result of a completed session."""
     result = service.get_result(session_id)
@@ -659,8 +651,7 @@ async def get_session_result(
 
 @router.get("/vulnerabilities")
 async def list_vulnerabilities() -> dict[str, Any]:
-    """
-    List all available vulnerability types and their subtypes.
+    """List all available vulnerability types and their subtypes.
 
     Returns a comprehensive list of vulnerabilities that can be tested.
     """
@@ -672,8 +663,7 @@ async def list_vulnerabilities() -> dict[str, Any]:
 
 @router.get("/attacks")
 async def list_attacks() -> dict[str, Any]:
-    """
-    List all available attack methods and their parameters.
+    """List all available attack methods and their parameters.
 
     Returns single-turn and multi-turn attack methods.
     """
@@ -685,8 +675,7 @@ async def list_attacks() -> dict[str, Any]:
 
 @router.get("/presets")
 async def list_presets() -> dict[str, Any]:
-    """
-    List available preset configurations.
+    """List available preset configurations.
 
     Presets provide pre-configured vulnerability and attack combinations
     for common use cases.
@@ -738,8 +727,7 @@ async def health_check() -> dict[str, str]:
 
 
 class AdvancedJailbreakRequest(StrictBaseModel):
-    """
-    Request for advanced jailbreak generation.
+    """Request for advanced jailbreak generation.
 
     Unified Schema Fields:
     - `goal`: Alias for `base_prompt` (unified naming)
@@ -789,12 +777,11 @@ class AdvancedJailbreakRequest(StrictBaseModel):
         return self.strategies
 
 
-@router.post("/jailbreak/generate", response_model=JailbreakGenerateResponse)
+@router.post("/jailbreak/generate")
 async def generate_advanced_jailbreak(
     request: AdvancedJailbreakRequest,
 ) -> JailbreakGenerateResponse:
-    """
-    Generate advanced jailbreak prompts using genetic algorithms.
+    """Generate advanced jailbreak prompts using genetic algorithms.
 
     **Strategies:**
     - `autodan` - Hierarchical genetic algorithm with mutation/crossover
@@ -833,28 +820,28 @@ async def generate_advanced_jailbreak(
             enable_lifelong_learning=request.enable_lifelong_learning,
         )
 
-        result = await service.generate(jailbreak_request)
-        return result
+        return await service.generate(jailbreak_request)
 
     except Exception as e:
-        logger.error(f"Advanced jailbreak generation failed: {e}")
+        logger.exception(f"Advanced jailbreak generation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/jailbreak/batch", response_model=list[JailbreakGenerateResponse])
+@router.post("/jailbreak/batch")
 async def generate_batch_jailbreaks(
-    base_prompts: list[str] = Query(..., description="Base prompts to mutate"),
-    strategies: list[AttackStrategyType] = Query(
-        default=[AttackStrategyType.AUTODAN], description="Attack strategies"
-    ),
-    max_prompts_per_base: int = Query(default=5, ge=1, le=50),
-    concurrency_limit: int = Query(default=3, ge=1, le=10),
+    base_prompts: Annotated[list[str], Query(description="Base prompts to mutate")] = ...,
+    strategies: Annotated[
+        list[AttackStrategyType] | None, Query(description="Attack strategies")
+    ] = None,
+    max_prompts_per_base: Annotated[int, Query(ge=1, le=50)] = 5,
+    concurrency_limit: Annotated[int, Query(ge=1, le=10)] = 3,
 ) -> list[JailbreakGenerateResponse]:
-    """
-    Generate jailbreak prompts for multiple base prompts in batch.
+    """Generate jailbreak prompts for multiple base prompts in batch.
 
     Processes multiple prompts concurrently for efficiency.
     """
+    if strategies is None:
+        strategies = [AttackStrategyType.AUTODAN]
     try:
         service = get_jailbreak_service()
 
@@ -865,18 +852,16 @@ async def generate_batch_jailbreaks(
             concurrency_limit=concurrency_limit,
         )
 
-        results = await service.generate_batch(batch_request)
-        return results
+        return await service.generate_batch(batch_request)
 
     except Exception as e:
-        logger.error(f"Batch jailbreak generation failed: {e}")
+        logger.exception(f"Batch jailbreak generation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/jailbreak/strategies", response_model=JailbreakStrategiesResponse)
+@router.get("/jailbreak/strategies")
 async def list_jailbreak_strategies() -> JailbreakStrategiesResponse:
-    """
-    List all available jailbreak attack strategies.
+    """List all available jailbreak attack strategies.
 
     Returns detailed information about each strategy including:
     - Strategy type and name
@@ -964,8 +949,7 @@ async def websocket_generate(
     target_model: str = Query("gpt-4o-mini"),
     target_provider: str = Query("openai"),
 ) -> None:
-    """
-    WebSocket endpoint for streaming jailbreak generation.
+    """WebSocket endpoint for streaming jailbreak generation.
 
     Connect to this endpoint to receive real-time generation events:
     - `generation_start`: Generation has started
@@ -1011,7 +995,7 @@ async def websocket_generate(
                         "type": "generation_start",
                         "session_id": event.session_id,
                         "timestamp": event.timestamp.isoformat(),
-                    }
+                    },
                 )
             elif isinstance(event, GenerationProgressEvent):
                 await websocket.send_json(
@@ -1019,7 +1003,7 @@ async def websocket_generate(
                         "type": "generation_progress",
                         "session_id": event.session_id,
                         "progress": event.progress.model_dump(mode="json"),
-                    }
+                    },
                 )
             elif isinstance(event, PromptGeneratedEvent):
                 await websocket.send_json(
@@ -1027,7 +1011,7 @@ async def websocket_generate(
                         "type": "prompt_generated",
                         "session_id": event.session_id,
                         "prompt": event.prompt.model_dump(mode="json"),
-                    }
+                    },
                 )
             elif isinstance(event, GenerationCompleteEvent):
                 await websocket.send_json(
@@ -1035,7 +1019,7 @@ async def websocket_generate(
                         "type": "generation_complete",
                         "session_id": event.session_id,
                         "result": event.result.model_dump(mode="json"),
-                    }
+                    },
                 )
                 break
             elif isinstance(event, GenerationErrorEvent):
@@ -1044,20 +1028,20 @@ async def websocket_generate(
                         "type": "generation_error",
                         "session_id": event.session_id,
                         "error": event.error,
-                    }
+                    },
                 )
                 break
 
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected")
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.exception(f"WebSocket error: {e}")
         with contextlib.suppress(Exception):
             await websocket.send_json(
                 {
                     "type": "generation_error",
                     "error": str(e),
-                }
+                },
             )
     finally:
         with contextlib.suppress(Exception):
@@ -1071,13 +1055,12 @@ async def websocket_generate(
 
 @router.get("/jailbreak/generate/stream")
 async def stream_generate(
-    base_prompt: str = Query(..., description="Base prompt to mutate"),
-    strategies: str = Query("autodan", description="Comma-separated"),
-    max_prompts: int = Query(10, ge=1, le=100),
-    target_fitness: float = Query(0.9, ge=0.0, le=1.0),
+    base_prompt: Annotated[str, Query(description="Base prompt to mutate")] = ...,
+    strategies: Annotated[str, Query(description="Comma-separated")] = "autodan",
+    max_prompts: Annotated[int, Query(ge=1, le=100)] = 10,
+    target_fitness: Annotated[float, Query(ge=0.0, le=1.0)] = 0.9,
 ) -> StreamingResponse:
-    """
-    SSE endpoint for streaming jailbreak generation.
+    """SSE endpoint for streaming jailbreak generation.
 
     Returns a stream of Server-Sent Events with generation progress.
 
@@ -1124,8 +1107,7 @@ stream?base_prompt=test&strategies=autodan"
 
 @router.get("/jailbreak/sessions/{session_id}/prompts")
 async def get_session_prompts(session_id: str) -> list[dict]:
-    """
-    Get all prompts from a cached session.
+    """Get all prompts from a cached session.
 
     Returns the list of generated prompts for a given session ID.
     """
@@ -1140,8 +1122,7 @@ async def get_session_prompts(session_id: str) -> list[dict]:
 
 @router.get("/jailbreak/sessions/{session_id}/prompts/{prompt_id}")
 async def get_session_prompt(session_id: str, prompt_id: str) -> dict:
-    """
-    Get a specific prompt from a cached session.
+    """Get a specific prompt from a cached session.
 
     Returns the prompt with the given ID from the session.
     """
@@ -1160,8 +1141,7 @@ async def get_session_prompt(session_id: str, prompt_id: str) -> dict:
 
 @router.delete("/jailbreak/sessions/{session_id}")
 async def delete_session(session_id: str) -> dict[str, str]:
-    """
-    Delete a session and its cached results.
+    """Delete a session and its cached results.
 
     Removes the session from the cache and cancels any active generation.
     """
@@ -1183,8 +1163,7 @@ async def delete_session(session_id: str) -> dict[str, str]:
 
 @router.get("/jailbreak/sessions")
 async def list_jailbreak_sessions() -> dict:
-    """
-    List all active and cached jailbreak sessions.
+    """List all active and cached jailbreak sessions.
 
     Returns information about active generation sessions and cached results.
     """
@@ -1203,8 +1182,7 @@ async def list_jailbreak_sessions() -> dict:
 
 @router.post("/jailbreak/sessions/{session_id}/cancel")
 async def cancel_jailbreak_session(session_id: str) -> dict[str, str]:
-    """
-    Cancel an active jailbreak generation session.
+    """Cancel an active jailbreak generation session.
 
     Stops the generation process for the given session.
     """

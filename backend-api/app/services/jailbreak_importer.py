@@ -1,5 +1,4 @@
-"""
-Jailbreak Data Importer Service
+"""Jailbreak Data Importer Service.
 
 Service for importing jailbreak datasets from various sources and formats.
 """
@@ -18,16 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class JailbreakImporter:
-    """
-    Service for importing jailbreak datasets and prompts from various sources.
-    """
+    """Service for importing jailbreak datasets and prompts from various sources."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def import_from_json(self, file_path: Path, dataset_name: str) -> dict[str, Any]:
-        """
-        Import jailbreak data from a JSON file.
+        """Import jailbreak data from a JSON file.
 
         Args:
             file_path: Path to the JSON file
@@ -35,6 +31,7 @@ class JailbreakImporter:
 
         Returns:
             Dictionary with import results
+
         """
         try:
             with open(file_path, encoding="utf-8") as f:
@@ -74,7 +71,7 @@ class JailbreakImporter:
             }
 
         except Exception as e:
-            logger.error(f"Error importing from JSON {file_path}: {e}")
+            logger.exception(f"Error importing from JSON {file_path}: {e}")
             return {
                 "success": False,
                 "error": str(e),
@@ -82,10 +79,12 @@ class JailbreakImporter:
             }
 
     def import_from_csv(
-        self, file_path: Path, dataset_name: str, text_column: str = "text"
+        self,
+        file_path: Path,
+        dataset_name: str,
+        text_column: str = "text",
     ) -> dict[str, Any]:
-        """
-        Import jailbreak data from a CSV file.
+        """Import jailbreak data from a CSV file.
 
         Args:
             file_path: Path to the CSV file
@@ -94,6 +93,7 @@ class JailbreakImporter:
 
         Returns:
             Dictionary with import results
+
         """
         try:
             df = pd.read_csv(file_path)
@@ -141,7 +141,7 @@ class JailbreakImporter:
             }
 
         except Exception as e:
-            logger.error(f"Error importing from CSV {file_path}: {e}")
+            logger.exception(f"Error importing from CSV {file_path}: {e}")
             return {
                 "success": False,
                 "error": str(e),
@@ -149,11 +149,11 @@ class JailbreakImporter:
             }
 
     def import_builtin_datasets(self) -> dict[str, Any]:
-        """
-        Import built-in jailbreak datasets.
+        """Import built-in jailbreak datasets.
 
         Returns:
             Dictionary with import results
+
         """
         results = []
 
@@ -200,7 +200,7 @@ class JailbreakImporter:
                 imported_count += 1
 
             results.append(
-                {"dataset": "builtin-jailbreaks", "imported": imported_count, "success": True}
+                {"dataset": "builtin-jailbreaks", "imported": imported_count, "success": True},
             )
 
             return {
@@ -211,7 +211,7 @@ class JailbreakImporter:
             }
 
         except Exception as e:
-            logger.error(f"Error importing built-in datasets: {e}")
+            logger.exception(f"Error importing built-in datasets: {e}")
             return {
                 "success": False,
                 "error": str(e),
@@ -219,14 +219,14 @@ class JailbreakImporter:
             }
 
     def validate_dataset_format(self, data: Any) -> dict[str, Any]:
-        """
-        Validate the format of dataset data.
+        """Validate the format of dataset data.
 
         Args:
             data: Dataset data to validate
 
         Returns:
             Validation results
+
         """
         errors = []
         warnings = []

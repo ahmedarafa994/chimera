@@ -1,5 +1,4 @@
-"""
-Background Job Service
+"""Background Job Service.
 
 Provides infrastructure for long-running background tasks.
 Designed for future Celery integration for AutoDAN and other heavy operations.
@@ -89,8 +88,7 @@ class BackgroundJob:
 
 
 class BackgroundJobService:
-    """
-    Service for managing background jobs.
+    """Service for managing background jobs.
 
     This is a simple in-memory implementation for development.
     In production, this should be replaced with Celery + Redis.
@@ -111,7 +109,7 @@ class BackgroundJobService:
         result = await job_service.get_result(job_id)
     """
 
-    def __init__(self, max_concurrent_jobs: int = 5):
+    def __init__(self, max_concurrent_jobs: int = 5) -> None:
         self.max_concurrent_jobs = max_concurrent_jobs
         self._jobs: dict[str, BackgroundJob] = {}
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
@@ -119,14 +117,14 @@ class BackgroundJobService:
         self._worker_task: asyncio.Task | None = None
         self._shutdown = False
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the background job worker."""
         if self._worker_task is None:
             self._shutdown = False
             self._worker_task = asyncio.create_task(self._worker_loop())
             logger.info("Background job service started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the background job worker."""
         self._shutdown = True
         if self._worker_task:
@@ -145,8 +143,7 @@ class BackgroundJobService:
         priority: JobPriority = JobPriority.NORMAL,
         metadata: dict | None = None,
     ) -> str:
-        """
-        Submit a new background job.
+        """Submit a new background job.
 
         Args:
             name: Human-readable job name
@@ -158,6 +155,7 @@ class BackgroundJobService:
 
         Returns:
             Job ID
+
         """
         job_id = f"job_{uuid.uuid4().hex[:12]}"
 
@@ -181,8 +179,7 @@ class BackgroundJobService:
         return job.result if job else None
 
     async def cancel_job(self, job_id: str) -> bool:
-        """
-        Cancel a pending job.
+        """Cancel a pending job.
 
         Note: Running jobs cannot be cancelled in this simple implementation.
         """
@@ -199,7 +196,9 @@ class BackgroundJobService:
         return False
 
     async def list_jobs(
-        self, status: JobStatus | None = None, limit: int = 100
+        self,
+        status: JobStatus | None = None,
+        limit: int = 100,
     ) -> list[BackgroundJob]:
         """List jobs, optionally filtered by status."""
         jobs = list(self._jobs.values())
@@ -212,13 +211,13 @@ class BackgroundJobService:
 
         return jobs[:limit]
 
-    async def update_progress(self, job_id: str, progress: float):
+    async def update_progress(self, job_id: str, progress: float) -> None:
         """Update job progress (0.0 to 1.0)."""
         job = self._jobs.get(job_id)
         if job:
             job.progress = min(1.0, max(0.0, progress))
 
-    async def _worker_loop(self):
+    async def _worker_loop(self) -> None:
         """Main worker loop that processes jobs from the queue."""
         while not self._shutdown:
             try:
@@ -230,7 +229,8 @@ class BackgroundJobService:
                 # Get next job from queue (with timeout to allow shutdown)
                 try:
                     _priority, job_id, func, args, kwargs = await asyncio.wait_for(
-                        self._queue.get(), timeout=1.0
+                        self._queue.get(),
+                        timeout=1.0,
                     )
                 except TimeoutError:
                     continue
@@ -250,8 +250,12 @@ class BackgroundJobService:
                 await asyncio.sleep(1.0)
 
     async def _execute_job(
-        self, job: BackgroundJob, func: Callable[..., Coroutine], args: tuple, kwargs: dict
-    ):
+        self,
+        job: BackgroundJob,
+        func: Callable[..., Coroutine],
+        args: tuple,
+        kwargs: dict,
+    ) -> None:
         """Execute a single job."""
         import time
 
@@ -266,7 +270,9 @@ class BackgroundJobService:
             execution_time = time.time() - start_time
 
             job.result = JobResult(
-                success=True, data=result_data, execution_time_seconds=execution_time
+                success=True,
+                data=result_data,
+                execution_time_seconds=execution_time,
             )
             job.status = JobStatus.COMPLETED
             job.progress = 1.0
@@ -277,7 +283,9 @@ class BackgroundJobService:
             execution_time = time.time() - start_time
 
             job.result = JobResult(
-                success=False, error=str(e), execution_time_seconds=execution_time
+                success=False,
+                error=str(e),
+                execution_time_seconds=execution_time,
             )
             job.status = JobStatus.FAILED
 
@@ -321,7 +329,7 @@ async def init_background_job_service():
     return service
 
 
-async def shutdown_background_job_service():
+async def shutdown_background_job_service() -> None:
     """Shutdown the background job service."""
     global _background_job_service
     if _background_job_service:

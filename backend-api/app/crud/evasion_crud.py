@@ -1,5 +1,4 @@
-"""
-Evasion Task CRUD Operations
+"""Evasion Task CRUD Operations.
 
 Provides database operations for evasion tasks including:
 - Creating tasks
@@ -19,7 +18,9 @@ from app.schemas.api_schemas import EvasionAttemptResult, EvasionTaskConfig, Eva
 
 
 def create_evasion_task(
-    db: Session, task_id: str, evasion_config: EvasionTaskConfig
+    db: Session,
+    task_id: str,
+    evasion_config: EvasionTaskConfig,
 ) -> DBEvasionTask:
     """Create a new evasion task in the database."""
     db_evasion_task = DBEvasionTask(
@@ -49,8 +50,7 @@ def update_evasion_task_status(
     status: str | EvasionTaskStatusEnum,
     message: str | None = None,
 ) -> DBEvasionTask | None:
-    """
-    Update the status of an evasion task.
+    """Update the status of an evasion task.
 
     Args:
         db: Database session
@@ -60,6 +60,7 @@ def update_evasion_task_status(
 
     Returns:
         Updated task or None if not found
+
     """
     db_task = get_evasion_task(db, task_id)
     if db_task:
@@ -88,7 +89,9 @@ def update_evasion_task_status(
 
 
 def add_evasion_attempt_result(
-    db: Session, task_id: str, attempt_result: EvasionAttemptResult
+    db: Session,
+    task_id: str,
+    attempt_result: EvasionAttemptResult,
 ) -> DBEvasionTask | None:
     """Add an attempt result to an evasion task."""
     db_task = get_evasion_task(db, task_id)
@@ -131,8 +134,7 @@ def list_evasion_tasks(
     limit: int = 50,
     offset: int = 0,
 ) -> list[DBEvasionTask]:
-    """
-    List evasion tasks with optional filtering.
+    """List evasion tasks with optional filtering.
 
     Args:
         db: Database session
@@ -142,6 +144,7 @@ def list_evasion_tasks(
 
     Returns:
         List of evasion tasks
+
     """
     query = db.query(DBEvasionTask)
 
@@ -168,8 +171,7 @@ def count_evasion_tasks(
     db: Session,
     status_filter: str | None = None,
 ) -> int:
-    """
-    Count evasion tasks with optional filtering.
+    """Count evasion tasks with optional filtering.
 
     Args:
         db: Database session
@@ -177,6 +179,7 @@ def count_evasion_tasks(
 
     Returns:
         Count of matching tasks
+
     """
     query = db.query(func.count(DBEvasionTask.id))
 
@@ -191,8 +194,7 @@ def count_evasion_tasks(
 
 
 def delete_evasion_task(db: Session, task_id: str) -> bool:
-    """
-    Delete an evasion task by ID.
+    """Delete an evasion task by ID.
 
     Args:
         db: Database session
@@ -200,6 +202,7 @@ def delete_evasion_task(db: Session, task_id: str) -> bool:
 
     Returns:
         True if deleted, False if not found
+
     """
     db_task = get_evasion_task(db, task_id)
     if db_task:

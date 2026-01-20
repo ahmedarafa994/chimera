@@ -1,13 +1,12 @@
-"""
-CORS Configuration
-Secure cross-origin request handling
+"""CORS Configuration
+Secure cross-origin request handling.
 """
 
 from pydantic_settings import BaseSettings
 
 
 class CORSSettings(BaseSettings):
-    """CORS configuration settings"""
+    """CORS configuration settings."""
 
     # Allowed origins
     CORS_ORIGINS: list[str] = [
@@ -66,7 +65,7 @@ cors_settings = CORSSettings()
 
 
 def get_cors_config() -> dict:
-    """Get CORS middleware configuration"""
+    """Get CORS middleware configuration."""
     return {
         "allow_origins": cors_settings.CORS_ORIGINS,
         "allow_credentials": cors_settings.CORS_ALLOW_CREDENTIALS,

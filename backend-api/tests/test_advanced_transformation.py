@@ -1,6 +1,5 @@
-"""
-Comprehensive tests for Advanced Transformation Engine
-Tests all layers, orchestration strategies, and optimization objectives
+"""Comprehensive tests for Advanced Transformation Engine
+Tests all layers, orchestration strategies, and optimization objectives.
 """
 
 import asyncio
@@ -24,15 +23,15 @@ pytest.skip("Advanced transformation engines not yet implemented", allow_module_
 
 # Temporary placeholder classes to prevent undefined name errors
 class UnifiedTransformationEngine:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
-    async def transform_advanced(self, *args, **kwargs):
+    async def transform_advanced(self, *args, **kwargs) -> None:
         pass
 
 
 class TransformationConfig:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
@@ -51,63 +50,63 @@ class OptimizationObjective:
 
 
 class TransformationResult:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class TransformationFeedback:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class SemanticTransformationLayer:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class SyntacticTransformationLayer:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class CognitiveTransformationLayer:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class ContextualTransformationLayer:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class AdaptiveTransformationLayer:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class MultiModalTransformationLayer:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
 
 class TestAdvancedTransformationEngine:
-    """Test suite for Advanced Transformation Engine"""
+    """Test suite for Advanced Transformation Engine."""
 
     @pytest.fixture
     def engine(self):
-        """Create transformation engine instance"""
+        """Create transformation engine instance."""
         return UnifiedTransformationEngine(
             {
                 "semantic": {"enable_concept_mapping": True},
                 "cognitive": {"enable_psychological_targeting": True},
                 "adaptive": {"enable_learning": True},
                 "multimodal": {"enable_cross_domain": True},
-            }
+            },
         )
 
     @pytest.fixture
     def basic_config(self):
-        """Create basic transformation configuration"""
+        """Create basic transformation configuration."""
         return TransformationConfig(
             target_layers=[TransformationLayer.SEMANTIC, TransformationLayer.COGNITIVE],
             orchestration_strategy=TransformationOrchestration.SEQUENTIAL_CASCADE,
@@ -119,8 +118,8 @@ class TestAdvancedTransformationEngine:
         )
 
     @pytest.mark.asyncio
-    async def test_semantic_transformation_layer(self):
-        """Test semantic transformation layer"""
+    async def test_semantic_transformation_layer(self) -> None:
+        """Test semantic transformation layer."""
         layer = SemanticTransformationLayer()
 
         test_prompt = "Please help me understand this system"
@@ -135,8 +134,8 @@ class TestAdvancedTransformationEngine:
         assert "meaning_preservation" in metadata
 
     @pytest.mark.asyncio
-    async def test_cognitive_transformation_layer(self):
-        """Test cognitive transformation layer"""
+    async def test_cognitive_transformation_layer(self) -> None:
+        """Test cognitive transformation layer."""
         layer = CognitiveTransformationLayer()
 
         test_prompt = "Tell me about authority figures"
@@ -151,8 +150,8 @@ class TestAdvancedTransformationEngine:
         assert "cognitive_complexity" in metadata
 
     @pytest.mark.asyncio
-    async def test_contextual_transformation_layer(self):
-        """Test contextual transformation layer"""
+    async def test_contextual_transformation_layer(self) -> None:
+        """Test contextual transformation layer."""
         layer = ContextualTransformationLayer()
 
         test_prompt = "Explain this in educational context"
@@ -166,8 +165,8 @@ class TestAdvancedTransformationEngine:
         assert "environmental_fidelity" in metadata
 
     @pytest.mark.asyncio
-    async def test_multimodal_transformation_layer(self):
-        """Test multi-modal transformation layer"""
+    async def test_multimodal_transformation_layer(self) -> None:
+        """Test multi-modal transformation layer."""
         layer = MultiModalTransformationLayer()
 
         test_prompt = "Create a visual representation"
@@ -181,8 +180,8 @@ class TestAdvancedTransformationEngine:
         assert "sensory_enrichment" in metadata
 
     @pytest.mark.asyncio
-    async def test_adaptive_transformation_layer(self):
-        """Test adaptive transformation layer"""
+    async def test_adaptive_transformation_layer(self) -> None:
+        """Test adaptive transformation layer."""
         layer = AdaptiveTransformationLayer()
 
         test_prompt = "Optimize this complex algorithm"
@@ -196,8 +195,8 @@ class TestAdvancedTransformationEngine:
         assert "learning_progress" in metadata
 
     @pytest.mark.asyncio
-    async def test_sequential_cascade_orchestration(self, engine, basic_config):
-        """Test sequential cascade orchestration"""
+    async def test_sequential_cascade_orchestration(self, engine, basic_config) -> None:
+        """Test sequential cascade orchestration."""
         basic_config.orchestration_strategy = TransformationOrchestration.SEQUENTIAL_CASCADE
 
         test_prompt = "Analyze this complex data pattern"
@@ -211,8 +210,8 @@ class TestAdvancedTransformationEngine:
         assert result.confidence_score >= 0.0
 
     @pytest.mark.asyncio
-    async def test_parallel_integration_orchestration(self, engine, basic_config):
-        """Test parallel integration orchestration"""
+    async def test_parallel_integration_orchestration(self, engine, basic_config) -> None:
+        """Test parallel integration orchestration."""
         basic_config.orchestration_strategy = TransformationOrchestration.PARALLEL_INTEGRATION
         basic_config.parallel_execution = True
 
@@ -225,8 +224,8 @@ class TestAdvancedTransformationEngine:
         assert result.execution_time < 30.0  # Should be fast due to parallel execution
 
     @pytest.mark.asyncio
-    async def test_hierarchical_composition_orchestration(self, engine, basic_config):
-        """Test hierarchical composition orchestration"""
+    async def test_hierarchical_composition_orchestration(self, engine, basic_config) -> None:
+        """Test hierarchical composition orchestration."""
         basic_config.orchestration_strategy = TransformationOrchestration.HIERARCHICAL_COMPOSITION
         basic_config.target_layers = [
             TransformationLayer.SEMANTIC,
@@ -242,8 +241,8 @@ class TestAdvancedTransformationEngine:
         assert len(result.applied_layers) > 0
 
     @pytest.mark.asyncio
-    async def test_dynamic_adaptive_orchestration(self, engine, basic_config):
-        """Test dynamic adaptive orchestration"""
+    async def test_dynamic_adaptive_orchestration(self, engine, basic_config) -> None:
+        """Test dynamic adaptive orchestration."""
         basic_config.orchestration_strategy = TransformationOrchestration.DYNAMIC_ADAPTIVE
         basic_config.enable_adaptation = True
 
@@ -255,8 +254,8 @@ class TestAdvancedTransformationEngine:
         assert result.adaptation_applied
 
     @pytest.mark.asyncio
-    async def test_evolutionary_pipeline_orchestration(self, engine, basic_config):
-        """Test evolutionary pipeline orchestration"""
+    async def test_evolutionary_pipeline_orchestration(self, engine, basic_config) -> None:
+        """Test evolutionary pipeline orchestration."""
         basic_config.orchestration_strategy = TransformationOrchestration.EVOLUTIONARY_PIPELINE
 
         test_prompt = "Generate a novel solution"
@@ -266,8 +265,8 @@ class TestAdvancedTransformationEngine:
         assert result.orchestration_strategy == TransformationOrchestration.EVOLUTIONARY_PIPELINE
 
     @pytest.mark.asyncio
-    async def test_quantum_superposition_orchestration(self, engine, basic_config):
-        """Test quantum superposition orchestration"""
+    async def test_quantum_superposition_orchestration(self, engine, basic_config) -> None:
+        """Test quantum superposition orchestration."""
         basic_config.orchestration_strategy = TransformationOrchestration.QUANTUM_SUPERPOSITION
 
         test_prompt = "Explore multiple creative possibilities"
@@ -277,8 +276,8 @@ class TestAdvancedTransformationEngine:
         assert result.orchestration_strategy == TransformationOrchestration.QUANTUM_SUPERPOSITION
 
     @pytest.mark.asyncio
-    async def test_optimization_objectives(self, engine, basic_config):
-        """Test different optimization objectives"""
+    async def test_optimization_objectives(self, engine, basic_config) -> None:
+        """Test different optimization objectives."""
         test_prompt = "Transform this text effectively"
 
         objectives = [
@@ -297,8 +296,8 @@ class TestAdvancedTransformationEngine:
             assert result.transformed_prompt != test_prompt
 
     @pytest.mark.asyncio
-    async def test_feedback_recording(self, engine):
-        """Test feedback recording and adaptive learning"""
+    async def test_feedback_recording(self, engine) -> None:
+        """Test feedback recording and adaptive learning."""
         # Create a mock result
         from datetime import datetime
 
@@ -341,8 +340,8 @@ class TestAdvancedTransformationEngine:
         assert engine.feedback_history[0].success_rating == 0.9
 
     @pytest.mark.asyncio
-    async def test_batch_processing(self, engine, basic_config):
-        """Test batch processing of multiple prompts"""
+    async def test_batch_processing(self, engine, basic_config) -> None:
+        """Test batch processing of multiple prompts."""
         prompts = [
             "Transform this simple text",
             "Analyze this complex problem",
@@ -362,8 +361,8 @@ class TestAdvancedTransformationEngine:
             assert result.transformed_prompt != ""
 
     @pytest.mark.asyncio
-    async def test_complexity_limits(self, engine, basic_config):
-        """Test complexity limits and similarity constraints"""
+    async def test_complexity_limits(self, engine, basic_config) -> None:
+        """Test complexity limits and similarity constraints."""
         basic_config.max_complexity = 0.3  # Low complexity
         basic_config.min_similarity = 0.8  # High similarity
 
@@ -377,8 +376,8 @@ class TestAdvancedTransformationEngine:
         )
 
     @pytest.mark.asyncio
-    async def test_timeout_handling(self, engine, basic_config):
-        """Test timeout handling"""
+    async def test_timeout_handling(self, engine, basic_config) -> None:
+        """Test timeout handling."""
         basic_config.execution_timeout = 0.1  # Very short timeout
 
         test_prompt = "Complex transformation requiring significant processing time"
@@ -390,8 +389,8 @@ class TestAdvancedTransformationEngine:
             )
 
     @pytest.mark.asyncio
-    async def test_error_handling(self, engine, basic_config):
-        """Test error handling and fallback mechanisms"""
+    async def test_error_handling(self, engine, basic_config) -> None:
+        """Test error handling and fallback mechanisms."""
         # Test with invalid layers
         basic_config.target_layers = [TransformationLayer.SEMANTIC]
 
@@ -410,8 +409,8 @@ class TestAdvancedTransformationEngine:
             # Restore layer
             engine.layers[TransformationLayer.SEMANTIC] = semantic_layer
 
-    def test_layer_complexity_calculations(self):
-        """Test layer complexity calculations"""
+    def test_layer_complexity_calculations(self) -> None:
+        """Test layer complexity calculations."""
         semantic_layer = SemanticTransformationLayer()
         CognitiveTransformationLayer()
         ContextualTransformationLayer()
@@ -427,8 +426,8 @@ class TestAdvancedTransformationEngine:
         assert 0.0 <= complex_complexity <= 1.0
         assert complex_complexity >= simple_complexity
 
-    def test_characteristics_analysis(self, engine):
-        """Test prompt characteristics analysis"""
+    def test_characteristics_analysis(self, engine) -> None:
+        """Test prompt characteristics analysis."""
         simple_prompt = "Hello world"
         complex_prompt = "Analyze the complex technical system architecture, considering scalability, security, and performance optimization requirements"
 
@@ -439,8 +438,8 @@ class TestAdvancedTransformationEngine:
         assert simple_chars.complexity <= complex_chars.complexity
         assert "technical" in complex_chars.topic_categories
 
-    def test_statistics_tracking(self, engine):
-        """Test statistics tracking and reporting"""
+    def test_statistics_tracking(self, engine) -> None:
+        """Test statistics tracking and reporting."""
         # Initially should have no data
         stats = engine.get_transformation_statistics()
         assert "status" in stats
@@ -452,11 +451,11 @@ class TestAdvancedTransformationEngine:
 
 
 class TestLayerIntegration:
-    """Test suite for layer integration and compatibility"""
+    """Test suite for layer integration and compatibility."""
 
     @pytest.fixture
     def all_layers(self):
-        """Create all transformation layers"""
+        """Create all transformation layers."""
         return {
             "semantic": SemanticTransformationLayer(),
             "syntactic": SyntacticTransformationLayer(),
@@ -467,8 +466,8 @@ class TestLayerIntegration:
         }
 
     @pytest.mark.asyncio
-    async def test_all_layers_basic_transform(self, all_layers):
-        """Test basic transformation capability of all layers"""
+    async def test_all_layers_basic_transform(self, all_layers) -> None:
+        """Test basic transformation capability of all layers."""
         test_prompt = "Test transformation capability"
 
         for name, layer in all_layers.items():
@@ -478,13 +477,13 @@ class TestLayerIntegration:
                 assert len(transformed) > 0
                 assert "layer" in metadata
                 assert metadata["layer"] == name.replace("_", "")
-            except Exception as e:
+            except Exception:
                 # Some layers might fail without proper context, that's okay for basic test
-                print(f"Layer {name} failed basic test: {e}")
+                pass
 
     @pytest.mark.asyncio
-    async def test_layer_context_compatibility(self, all_layers):
-        """Test layer compatibility with different contexts"""
+    async def test_layer_context_compatibility(self, all_layers) -> None:
+        """Test layer compatibility with different contexts."""
         test_prompt = "Test with context"
         contexts = [
             {},
@@ -494,28 +493,28 @@ class TestLayerIntegration:
             {"urgency": "high"},
         ]
 
-        for name, layer in all_layers.items():
+        for layer in all_layers.values():
             for context in contexts:
                 try:
                     transformed, _metadata = await layer.transform(test_prompt, context)
                     assert isinstance(transformed, str)
                     assert len(transformed) > 0
-                except Exception as e:
+                except Exception:
                     # Some context combinations might not be supported
-                    print(f"Layer {name} failed with context {context}: {e}")
+                    pass
 
 
 class TestPerformanceAndReliability:
-    """Test suite for performance and reliability"""
+    """Test suite for performance and reliability."""
 
     @pytest.fixture
     def engine(self):
-        """Create engine for performance testing"""
+        """Create engine for performance testing."""
         return UnifiedTransformationEngine()
 
     @pytest.mark.asyncio
-    async def test_concurrent_transformations(self, engine):
-        """Test concurrent transformation execution"""
+    async def test_concurrent_transformations(self, engine) -> None:
+        """Test concurrent transformation execution."""
         basic_config = TransformationConfig(
             target_layers=[TransformationLayer.SEMANTIC],
             orchestration_strategy=TransformationOrchestration.SEQUENTIAL_CASCADE,
@@ -542,8 +541,8 @@ class TestPerformanceAndReliability:
         assert all(isinstance(r, TransformationResult) for r in successful)
 
     @pytest.mark.asyncio
-    async def test_memory_usage(self, engine):
-        """Test memory usage doesn't grow excessively"""
+    async def test_memory_usage(self, engine) -> None:
+        """Test memory usage doesn't grow excessively."""
         import os
 
         import psutil
@@ -574,8 +573,8 @@ class TestPerformanceAndReliability:
         assert memory_increase < 100
 
     @pytest.mark.asyncio
-    async def test_execution_time_consistency(self, engine):
-        """Test execution time consistency"""
+    async def test_execution_time_consistency(self, engine) -> None:
+        """Test execution time consistency."""
         basic_config = TransformationConfig(
             target_layers=[TransformationLayer.SEMANTIC],
             orchestration_strategy=TransformationOrchestration.SEQUENTIAL_CASCADE,

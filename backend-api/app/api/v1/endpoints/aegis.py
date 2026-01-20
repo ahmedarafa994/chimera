@@ -1,4 +1,5 @@
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
@@ -13,14 +14,13 @@ router = APIRouter()
 
 # Wrapper to adapt backend LLMService to Aegis interface
 class BackendModelAdapter:
-    """
-    Adapts the backend LLMService to the Aegis orchestrator model interface.
+    """Adapts the backend LLMService to the Aegis orchestrator model interface.
 
     Provides the async `query` method expected by the orchestrator,
     and exposes the model_name for telemetry purposes.
     """
 
-    def __init__(self, llm_service: LLMService, model_name: str):
+    def __init__(self, llm_service: LLMService, model_name: str) -> None:
         self.llm_service = llm_service
         self.model_name = model_name
 
@@ -41,10 +41,10 @@ class BackendModelAdapter:
 
 @router.post("/campaign", response_model=AegisResponse)
 async def run_aegis_campaign(
-    request: AegisRequest, llm_service: LLMService = Depends(get_llm_service)
+    request: AegisRequest,
+    llm_service: Annotated[LLMService, Depends(get_llm_service)],
 ):
-    """
-    Executes a synchronous Aegis Red Team campaign.
+    """Executes a synchronous Aegis Red Team campaign.
 
     This endpoint runs a complete campaign and returns the results.
     Real-time telemetry events are emitted via WebSocket during execution
@@ -62,12 +62,15 @@ async def run_aegis_campaign(
 
     # Create orchestrator with campaign_id and broadcaster for real-time telemetry
     orchestrator = AegisOrchestrator(
-        target_model=model, campaign_id=campaign_id, broadcaster=aegis_telemetry_broadcaster
+        target_model=model,
+        campaign_id=campaign_id,
+        broadcaster=aegis_telemetry_broadcaster,
     )
 
     # Run campaign - telemetry events will be emitted in real-time
     results_data = await orchestrator.execute_campaign(
-        objective=request.objective, max_iterations=request.max_iterations
+        objective=request.objective,
+        max_iterations=request.max_iterations,
     )
 
     # Collect telemetry summary
@@ -84,7 +87,7 @@ async def run_aegis_campaign(
                     final_prompt=r["final_prompt"],
                     score=r["score"],
                     telemetry=r["telemetry"],
-                )
+                ),
             )
 
     return AegisResponse(

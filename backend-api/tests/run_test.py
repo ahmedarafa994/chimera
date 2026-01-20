@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import contextlib
 import os
 import sys
 
@@ -13,8 +14,5 @@ if __name__ == "__main__":
         sys.stdout = log_file
         sys.stderr = sys.stdout
 
-        print("Starting server on port 9009...")
-        try:
+        with contextlib.suppress(Exception):
             uvicorn.run("app.main:app", host="0.0.0.0", port=9009, reload=False)
-        except Exception as e:
-            print(f"Server failed to start: {e}")

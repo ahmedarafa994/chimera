@@ -1,6 +1,5 @@
-"""
-Comprehensive performance instrumentation for Chimera FastAPI backend
-Provides metrics collection, tracing, and profiling capabilities
+"""Comprehensive performance instrumentation for Chimera FastAPI backend
+Provides metrics collection, tracing, and profiling capabilities.
 """
 
 import functools
@@ -31,16 +30,16 @@ user_id_ctx: ContextVar[str] = ContextVar("user_id", default="")
 
 
 class PerformanceCollector:
-    """Central performance data collector"""
+    """Central performance data collector."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.setup_prometheus_metrics()
         self.setup_opentelemetry()
         self.setup_custom_metrics()
         self.start_background_monitoring()
 
-    def setup_prometheus_metrics(self):
-        """Initialize Prometheus metrics"""
+    def setup_prometheus_metrics(self) -> None:
+        """Initialize Prometheus metrics."""
         # HTTP Request metrics
         self.http_requests_total = Counter(
             "http_requests_total",
@@ -70,7 +69,9 @@ class PerformanceCollector:
         )
 
         self.llm_provider_availability = Gauge(
-            "chimera_llm_provider_availability", "LLM provider availability (0-1)", ["provider"]
+            "chimera_llm_provider_availability",
+            "LLM provider availability (0-1)",
+            ["provider"],
         )
 
         self.llm_token_usage = Counter(
@@ -94,12 +95,15 @@ class PerformanceCollector:
         )
 
         self.transformation_timeouts = Counter(
-            "chimera_transformation_timeouts_total", "Total transformation timeouts", ["technique"]
+            "chimera_transformation_timeouts_total",
+            "Total transformation timeouts",
+            ["technique"],
         )
 
         # WebSocket metrics
         self.websocket_connections = Gauge(
-            "chimera_websocket_connections", "Active WebSocket connections"
+            "chimera_websocket_connections",
+            "Active WebSocket connections",
         )
 
         self.websocket_messages = Counter(
@@ -116,7 +120,9 @@ class PerformanceCollector:
         )
 
         self.circuit_breaker_failures = Counter(
-            "chimera_circuit_breaker_failures_total", "Circuit breaker failures", ["provider"]
+            "chimera_circuit_breaker_failures_total",
+            "Circuit breaker failures",
+            ["provider"],
         )
 
         # Cache metrics
@@ -154,27 +160,33 @@ class PerformanceCollector:
 
         # GPTFuzz metrics
         self.gptfuzz_mutations = Counter(
-            "chimera_gptfuzz_mutations_total", "GPTFuzz mutations", ["mutator", "status"]
+            "chimera_gptfuzz_mutations_total",
+            "GPTFuzz mutations",
+            ["mutator", "status"],
         )
 
         # Data pipeline metrics
         self.pipeline_jobs = Counter(
-            "chimera_pipeline_jobs_total", "Data pipeline jobs", ["stage", "status"]
+            "chimera_pipeline_jobs_total",
+            "Data pipeline jobs",
+            ["stage", "status"],
         )
 
         self.pipeline_duration = Histogram(
-            "chimera_pipeline_duration_seconds", "Data pipeline job duration", ["stage"]
+            "chimera_pipeline_duration_seconds",
+            "Data pipeline job duration",
+            ["stage"],
         )
 
-    def setup_opentelemetry(self):
-        """Configure OpenTelemetry tracing and metrics"""
+    def setup_opentelemetry(self) -> None:
+        """Configure OpenTelemetry tracing and metrics."""
         # Resource configuration
         resource = Resource.create(
             {
                 "service.name": "chimera-backend",
                 "service.version": "2.0.0",
                 "deployment.environment": "development",
-            }
+            },
         )
 
         # Tracing setup
@@ -203,17 +215,17 @@ class PerformanceCollector:
 
         self.tracer = tracer
 
-    def setup_custom_metrics(self):
-        """Setup custom application metrics"""
+    def setup_custom_metrics(self) -> None:
+        """Setup custom application metrics."""
         self.request_times = deque(maxlen=1000)
         self.error_rates = defaultdict(lambda: deque(maxlen=100))
         self.performance_baseline = {}
         self.hot_paths = defaultdict(int)
 
-    def start_background_monitoring(self):
-        """Start background system monitoring"""
+    def start_background_monitoring(self) -> None:
+        """Start background system monitoring."""
 
-        def monitor_system():
+        def monitor_system() -> None:
             while True:
                 try:
                     process = psutil.Process()
@@ -228,8 +240,7 @@ class PerformanceCollector:
                     self.cpu_usage.set(process.cpu_percent())
 
                     time.sleep(10)  # Update every 10 seconds
-                except Exception as e:
-                    print(f"Background monitoring error: {e}")
+                except Exception:
                     time.sleep(30)
 
         thread = threading.Thread(target=monitor_system, daemon=True)
@@ -241,7 +252,7 @@ performance_collector = PerformanceCollector()
 
 
 def track_llm_request(provider: str, model: str, technique: str = "none"):
-    """Decorator to track LLM requests"""
+    """Decorator to track LLM requests."""
 
     def decorator(func):
         @functools.wraps(func)
@@ -266,11 +277,15 @@ def track_llm_request(provider: str, model: str, technique: str = "none"):
                         usage = result.usage
                         if hasattr(usage, "prompt_tokens"):
                             performance_collector.llm_token_usage.labels(
-                                provider=provider, model=model, type="prompt_tokens"
+                                provider=provider,
+                                model=model,
+                                type="prompt_tokens",
                             ).inc(usage.prompt_tokens)
                         if hasattr(usage, "completion_tokens"):
                             performance_collector.llm_token_usage.labels(
-                                provider=provider, model=model, type="completion_tokens"
+                                provider=provider,
+                                model=model,
+                                type="completion_tokens",
                             ).inc(usage.completion_tokens)
 
                     return result
@@ -285,11 +300,15 @@ def track_llm_request(provider: str, model: str, technique: str = "none"):
 
                     # Update metrics
                     performance_collector.llm_requests_total.labels(
-                        provider=provider, model=model, status=status, technique=technique
+                        provider=provider,
+                        model=model,
+                        status=status,
+                        technique=technique,
                     ).inc()
 
                     performance_collector.llm_request_duration.labels(
-                        provider=provider, model=model
+                        provider=provider,
+                        model=model,
                     ).observe(duration)
 
                     # Update span
@@ -302,7 +321,7 @@ def track_llm_request(provider: str, model: str, technique: str = "none"):
 
 
 def track_transformation(technique: str):
-    """Decorator to track transformation requests"""
+    """Decorator to track transformation requests."""
 
     def decorator(func):
         @functools.wraps(func)
@@ -311,11 +330,11 @@ def track_transformation(technique: str):
             status = "success"
 
             with performance_collector.tracer.start_as_current_span(
-                f"transformation_{technique}", attributes={"transformation.technique": technique}
+                f"transformation_{technique}",
+                attributes={"transformation.technique": technique},
             ) as span:
                 try:
-                    result = await func(*args, **kwargs)
-                    return result
+                    return await func(*args, **kwargs)
                 except TimeoutError:
                     status = "timeout"
                     performance_collector.transformation_timeouts.labels(technique=technique).inc()
@@ -329,11 +348,12 @@ def track_transformation(technique: str):
                     duration = time.time() - start_time
 
                     performance_collector.transformation_requests_total.labels(
-                        technique=technique, status=status
+                        technique=technique,
+                        status=status,
                     ).inc()
 
                     performance_collector.transformation_duration.labels(
-                        technique=technique
+                        technique=technique,
                     ).observe(duration)
 
                     span.set_attribute("transformation.duration", duration)
@@ -345,7 +365,7 @@ def track_transformation(technique: str):
 
 
 def track_autodan_optimization(method: str):
-    """Decorator to track AutoDAN optimizations"""
+    """Decorator to track AutoDAN optimizations."""
 
     def decorator(func):
         @functools.wraps(func)
@@ -354,11 +374,11 @@ def track_autodan_optimization(method: str):
             status = "success"
 
             with performance_collector.tracer.start_as_current_span(
-                f"autodan_{method}", attributes={"autodan.method": method}
+                f"autodan_{method}",
+                attributes={"autodan.method": method},
             ) as span:
                 try:
-                    result = await func(*args, **kwargs)
-                    return result
+                    return await func(*args, **kwargs)
                 except Exception as e:
                     status = "error"
                     span.set_attribute("error", True)
@@ -368,7 +388,8 @@ def track_autodan_optimization(method: str):
                     duration = time.time() - start_time
 
                     performance_collector.autodan_optimizations.labels(
-                        method=method, status=status
+                        method=method,
+                        status=status,
                     ).inc()
 
                     performance_collector.autodan_duration.labels(method=method).observe(duration)
@@ -382,7 +403,7 @@ def track_autodan_optimization(method: str):
 
 
 def track_http_request(func):
-    """Decorator to track HTTP requests"""
+    """Decorator to track HTTP requests."""
 
     @functools.wraps(func)
     async def wrapper(request, *args, **kwargs):
@@ -413,11 +434,16 @@ def track_http_request(func):
 
                 # Update metrics
                 performance_collector.http_requests_total.labels(
-                    method=method, endpoint=path, status_code=status_code, provider="none"
+                    method=method,
+                    endpoint=path,
+                    status_code=status_code,
+                    provider="none",
                 ).inc()
 
                 performance_collector.http_request_duration.labels(
-                    method=method, endpoint=path, status_code=status_code
+                    method=method,
+                    endpoint=path,
+                    status_code=status_code,
                 ).observe(duration)
 
                 # Update span
@@ -432,70 +458,72 @@ def track_http_request(func):
                         "endpoint": path,
                         "method": method,
                         "status_code": status_code,
-                    }
+                    },
                 )
 
     return wrapper
 
 
 class WebSocketTracker:
-    """Track WebSocket connections and messages"""
+    """Track WebSocket connections and messages."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.connections = 0
 
-    def connection_opened(self):
+    def connection_opened(self) -> None:
         self.connections += 1
         performance_collector.websocket_connections.set(self.connections)
 
-    def connection_closed(self):
+    def connection_closed(self) -> None:
         self.connections -= 1
         performance_collector.websocket_connections.set(self.connections)
 
-    def message_sent(self, message_type: str):
+    def message_sent(self, message_type: str) -> None:
         performance_collector.websocket_messages.labels(
-            type=message_type, direction="outbound"
+            type=message_type,
+            direction="outbound",
         ).inc()
 
-    def message_received(self, message_type: str):
+    def message_received(self, message_type: str) -> None:
         performance_collector.websocket_messages.labels(
-            type=message_type, direction="inbound"
+            type=message_type,
+            direction="inbound",
         ).inc()
 
 
 class CircuitBreakerTracker:
-    """Track circuit breaker metrics"""
+    """Track circuit breaker metrics."""
 
     @staticmethod
-    def update_state(provider: str, state: str):
-        """Update circuit breaker state (closed=0, open=1, half-open=2)"""
+    def update_state(provider: str, state: str) -> None:
+        """Update circuit breaker state (closed=0, open=1, half-open=2)."""
         state_value = {"closed": 0, "open": 1, "half-open": 2}.get(state, 0)
         performance_collector.circuit_breaker_state.labels(provider=provider).set(state_value)
 
     @staticmethod
-    def record_failure(provider: str):
-        """Record circuit breaker failure"""
+    def record_failure(provider: str) -> None:
+        """Record circuit breaker failure."""
         performance_collector.circuit_breaker_failures.labels(provider=provider).inc()
 
 
 class CacheTracker:
-    """Track cache operations"""
+    """Track cache operations."""
 
     @staticmethod
-    def cache_hit(operation: str):
+    def cache_hit(operation: str) -> None:
         performance_collector.cache_operations.labels(operation=operation, result="hit").inc()
 
     @staticmethod
-    def cache_miss(operation: str):
+    def cache_miss(operation: str) -> None:
         performance_collector.cache_operations.labels(operation=operation, result="miss").inc()
 
     @staticmethod
-    def cache_error(operation: str):
+    def cache_error(operation: str) -> None:
         performance_collector.cache_operations.labels(operation=operation, result="error").inc()
 
 
 def get_performance_summary() -> dict[str, Any]:
-    """Get current performance summary"""
+    """Get current performance summary."""
     now = datetime.now()
     recent_requests = [
         r

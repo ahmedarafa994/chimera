@@ -1,5 +1,4 @@
-"""
-Anthropic Provider Plugin for Project Chimera.
+"""Anthropic Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for Anthropic API integration,
 supporting Claude 3.5, Claude 3, and future Claude models.
@@ -24,8 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for Anthropic API.
+    """Provider plugin for Anthropic API.
 
     Supports Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Haiku, etc.
     """
@@ -135,8 +133,7 @@ class AnthropicPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available Anthropic models.
+        """List available Anthropic models.
 
         Returns static list as Anthropic doesn't have a models list API.
         """
@@ -148,7 +145,8 @@ class AnthropicPlugin(BaseProviderPlugin):
             import anthropic
 
             client = anthropic.AsyncAnthropic(
-                api_key=api_key, base_url=self.base_url if self.base_url else None
+                api_key=api_key,
+                base_url=self.base_url if self.base_url else None,
             )
 
             # Make a minimal request to validate the key
@@ -163,17 +161,21 @@ class AnthropicPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using Anthropic API."""
         import anthropic
 
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Anthropic API key is required")
+            msg = "Anthropic API key is required"
+            raise ValueError(msg)
 
         client = anthropic.AsyncAnthropic(
-            api_key=key, base_url=self.base_url if self.base_url else None
+            api_key=key,
+            base_url=self.base_url if self.base_url else None,
         )
         model = request.model or self.get_default_model()
 
@@ -237,21 +239,25 @@ class AnthropicPlugin(BaseProviderPlugin):
                 request_id=response.id,
             )
         except Exception as e:
-            logger.error(f"Anthropic generation error: {e}")
+            logger.exception(f"Anthropic generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Anthropic API."""
         import anthropic
 
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Anthropic API key is required")
+            msg = "Anthropic API key is required"
+            raise ValueError(msg)
 
         client = anthropic.AsyncAnthropic(
-            api_key=key, base_url=self.base_url if self.base_url else None
+            api_key=key,
+            base_url=self.base_url if self.base_url else None,
         )
         model = request.model or self.get_default_model()
 
@@ -308,5 +314,5 @@ class AnthropicPlugin(BaseProviderPlugin):
                     ),
                 )
         except Exception as e:
-            logger.error(f"Anthropic streaming error: {e}")
+            logger.exception(f"Anthropic streaming error: {e}")
             raise

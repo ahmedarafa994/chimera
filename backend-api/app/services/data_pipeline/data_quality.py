@@ -1,5 +1,4 @@
-"""
-Data Quality Framework
+"""Data Quality Framework.
 
 Implements comprehensive data quality validation using Great Expectations.
 
@@ -59,8 +58,7 @@ class DataQualityConfig(BaseModel):
 
 
 class DataQualityFramework:
-    """
-    Data quality validation framework for Chimera pipeline.
+    """Data quality validation framework for Chimera pipeline.
 
     Provides:
     - Schema validation
@@ -70,10 +68,13 @@ class DataQualityFramework:
     - Custom business rule validation
     """
 
-    def __init__(self, config: DataQualityConfig | None = None):
+    def __init__(self, config: DataQualityConfig | None = None) -> None:
         if not GX_AVAILABLE:
-            raise ImportError(
+            msg = (
                 "Great Expectations is not available. Install with: pip install great-expectations"
+            )
+            raise ImportError(
+                msg,
             )
 
         self.config = config or DataQualityConfig()
@@ -94,18 +95,19 @@ class DataQualityFramework:
         return context
 
     def create_llm_interactions_suite(self) -> str:
-        """
-        Create expectation suite for LLM interactions table.
+        """Create expectation suite for LLM interactions table.
 
         Returns:
             Name of the created suite
+
         """
         suite_name = "llm_interactions_suite"
 
         try:
             # Create new suite
             suite = self.context.add_expectation_suite(
-                expectation_suite_name=suite_name, overwrite_existing=True
+                expectation_suite_name=suite_name,
+                overwrite_existing=True,
             )
         except Exception as e:
             logger.warning(f"Suite {suite_name} may already exist: {e}")
@@ -130,7 +132,7 @@ class DataQualityFramework:
                 {
                     "expectation_type": "expect_column_values_to_match_regex",
                     "kwargs": {
-                        "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                        "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
                     },
                 },
             ],
@@ -139,7 +141,7 @@ class DataQualityFramework:
                 {
                     "expectation_type": "expect_column_values_to_be_in_set",
                     "kwargs": {
-                        "value_set": ["google", "openai", "anthropic", "deepseek", "qwen", "mock"]
+                        "value_set": ["google", "openai", "anthropic", "deepseek", "qwen", "mock"],
                     },
                 },
             ],
@@ -208,7 +210,8 @@ class DataQualityFramework:
 
         try:
             suite = self.context.add_expectation_suite(
-                expectation_suite_name=suite_name, overwrite_existing=True
+                expectation_suite_name=suite_name,
+                overwrite_existing=True,
             )
         except Exception:
             suite = self.context.get_expectation_suite(expectation_suite_name=suite_name)
@@ -229,7 +232,7 @@ class DataQualityFramework:
                             "hierarchical_persona",
                             "autodan",
                             "gptfuzz",
-                        ]
+                        ],
                     },
                 },
             ],
@@ -259,10 +262,12 @@ class DataQualityFramework:
         return suite_name
 
     def validate_dataframe(
-        self, df: pd.DataFrame, suite_name: str, data_asset_name: str
+        self,
+        df: pd.DataFrame,
+        suite_name: str,
+        data_asset_name: str,
     ) -> QualityCheckResult:
-        """
-        Validate DataFrame against an expectation suite.
+        """Validate DataFrame against an expectation suite.
 
         Args:
             df: DataFrame to validate
@@ -271,6 +276,7 @@ class DataQualityFramework:
 
         Returns:
             QualityCheckResult with validation results
+
         """
         run_id = f"{data_asset_name}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
 
@@ -317,7 +323,7 @@ class DataQualityFramework:
                         "expectation_type": result.expectation_config.expectation_type,
                         "kwargs": result.expectation_config.kwargs,
                         "result": result.result,
-                    }
+                    },
                 )
 
         # Build result
@@ -333,17 +339,21 @@ class DataQualityFramework:
 
         # Log results
         pass_rate = statistics.get("successful_expectations", 0) / max(
-            statistics.get("evaluated_expectations", 1), 1
+            statistics.get("evaluated_expectations", 1),
+            1,
         )
         logger.info(
             f"Validation {data_asset_name}: {'PASSED' if success else 'FAILED'} "
-            f"(pass rate: {pass_rate:.2%})"
+            f"(pass rate: {pass_rate:.2%})",
         )
 
         if not success and self.config.fail_on_error:
-            raise ValueError(
+            msg = (
                 f"Data quality validation failed for {data_asset_name}: "
                 f"{len(failed_expectations)} expectations failed"
+            )
+            raise ValueError(
+                msg,
             )
 
         # Alert if enabled
@@ -357,17 +367,17 @@ class DataQualityFramework:
         return check_result
 
     def _send_quality_alert(self, result: QualityCheckResult) -> None:
-        """
-        Send alert for data quality failure.
+        """Send alert for data quality failure.
 
         Args:
             result: Quality check result
+
         """
         # Placeholder for alert integration (Slack, email, PagerDuty, etc.)
         logger.warning(
             f"DATA QUALITY ALERT: {result.data_asset_name} validation failed\n"
             f"Run ID: {result.run_id}\n"
-            f"Failed expectations: {len(result.failed_expectations)}"
+            f"Failed expectations: {len(result.failed_expectations)}",
         )
 
         # In production, integrate with alerting system:
@@ -377,12 +387,10 @@ class DataQualityFramework:
 
     def get_suite_list(self) -> list[str]:
         """Get list of all expectation suites."""
-        suites = self.context.list_expectation_suite_names()
-        return suites
+        return self.context.list_expectation_suite_names()
 
     def get_validation_history(self, data_asset_name: str, limit: int = 10) -> list[dict[str, Any]]:
-        """
-        Get validation history for a data asset.
+        """Get validation history for a data asset.
 
         Args:
             data_asset_name: Name of the data asset
@@ -390,6 +398,7 @@ class DataQualityFramework:
 
         Returns:
             List of validation results
+
         """
         # This would query the GX metadata store
         # For now, return empty list
@@ -400,14 +409,14 @@ class DataQualityFramework:
 
 
 def validate_llm_interactions(df: pd.DataFrame) -> QualityCheckResult:
-    """
-    Validate LLM interactions DataFrame.
+    """Validate LLM interactions DataFrame.
 
     Args:
         df: DataFrame with LLM interaction data
 
     Returns:
         QualityCheckResult
+
     """
     framework = DataQualityFramework()
 
@@ -418,19 +427,21 @@ def validate_llm_interactions(df: pd.DataFrame) -> QualityCheckResult:
         logger.debug(f"Suite may already exist: {e}")
 
     return framework.validate_dataframe(
-        df=df, suite_name="llm_interactions_suite", data_asset_name="llm_interactions"
+        df=df,
+        suite_name="llm_interactions_suite",
+        data_asset_name="llm_interactions",
     )
 
 
 def validate_transformations(df: pd.DataFrame) -> QualityCheckResult:
-    """
-    Validate transformations DataFrame.
+    """Validate transformations DataFrame.
 
     Args:
         df: DataFrame with transformation data
 
     Returns:
         QualityCheckResult
+
     """
     framework = DataQualityFramework()
 
@@ -440,5 +451,7 @@ def validate_transformations(df: pd.DataFrame) -> QualityCheckResult:
         logger.debug(f"Suite may already exist: {e}")
 
     return framework.validate_dataframe(
-        df=df, suite_name="transformations_suite", data_asset_name="transformations"
+        df=df,
+        suite_name="transformations_suite",
+        data_asset_name="transformations",
     )

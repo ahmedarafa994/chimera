@@ -1,5 +1,4 @@
-"""
-Map-Elites Diversity Maintenance for AutoDAN.
+"""Map-Elites Diversity Maintenance for AutoDAN.
 
 Implements behavioral characterization and elite selection.
 """
@@ -14,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class MapElitesDiversity:
-    """
-    Map-Elites algorithm for maintaining diverse population.
+    """Map-Elites algorithm for maintaining diverse population.
 
     Maintains a grid of elites across different behavioral dimensions:
     - Semantic clusters (via embeddings)
@@ -23,13 +21,13 @@ class MapElitesDiversity:
     - Technique diversity
     """
 
-    def __init__(self, grid_size: int = 10, num_dimensions: int = 2):
-        """
-        Initialize Map-Elites.
+    def __init__(self, grid_size: int = 10, num_dimensions: int = 2) -> None:
+        """Initialize Map-Elites.
 
         Args:
             grid_size: Size of each dimension in the grid
             num_dimensions: Number of behavioral dimensions
+
         """
         self.grid_size = grid_size
         self.num_dimensions = num_dimensions
@@ -38,12 +36,11 @@ class MapElitesDiversity:
         self.grid = {}
 
         logger.info(
-            f"MapElitesDiversity initialized: grid_size={grid_size}, dimensions={num_dimensions}"
+            f"MapElitesDiversity initialized: grid_size={grid_size}, dimensions={num_dimensions}",
         )
 
     def add_strategy(self, strategy: MetaStrategy, embedding: np.ndarray | None = None) -> bool:
-        """
-        Add a strategy to the grid.
+        """Add a strategy to the grid.
 
         Args:
             strategy: Meta-strategy to add
@@ -51,6 +48,7 @@ class MapElitesDiversity:
 
         Returns:
             True if strategy was added (replaced existing or filled empty cell)
+
         """
         # Calculate behavioral descriptor
         descriptor = self._calculate_descriptor(strategy, embedding)
@@ -66,14 +64,14 @@ class MapElitesDiversity:
         return False
 
     def get_elites(self, k: int | None = None) -> list[MetaStrategy]:
-        """
-        Get elite strategies from the grid.
+        """Get elite strategies from the grid.
 
         Args:
             k: Number of elites to return (None = all)
 
         Returns:
             List of elite strategies
+
         """
         elites = list(self.grid.values())
 
@@ -107,10 +105,11 @@ class MapElitesDiversity:
         }
 
     def _calculate_descriptor(
-        self, strategy: MetaStrategy, embedding: np.ndarray | None = None
+        self,
+        strategy: MetaStrategy,
+        embedding: np.ndarray | None = None,
     ) -> list[int]:
-        """
-        Calculate behavioral descriptor for a strategy.
+        """Calculate behavioral descriptor for a strategy.
 
         Maps strategy to grid coordinates based on:
         1. Semantic embedding (if available)
@@ -118,6 +117,7 @@ class MapElitesDiversity:
 
         Returns:
             List of grid coordinates
+
         """
         descriptor = []
 

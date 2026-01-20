@@ -1,5 +1,4 @@
-"""
-Session Selection Persistence Service.
+"""Session Selection Persistence Service.
 
 Service for persisting and restoring provider/model selections across sessions.
 
@@ -13,6 +12,7 @@ Features:
 References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md
 - Global state: app/services/global_model_selection_state.py
+
 """
 
 import asyncio
@@ -36,8 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class SelectionRecord(BaseModel):
-    """
-    Record representing a provider/model selection with versioning.
+    """Record representing a provider/model selection with versioning.
 
     Supports optimistic concurrency control via version field.
     """
@@ -49,7 +48,8 @@ class SelectionRecord(BaseModel):
     user_id: str | None = Field(None, description="User identifier")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Last update timestamp"
+        default_factory=datetime.utcnow,
+        description="Last update timestamp",
     )
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     expires_at: datetime | None = Field(None, description="Expiration timestamp")
@@ -82,8 +82,7 @@ class SelectionLoadResult(BaseModel):
 
 
 class SessionSelectionPersistenceService:
-    """
-    Service for persisting and restoring provider/model selections across sessions.
+    """Service for persisting and restoring provider/model selections across sessions.
 
     Features:
     - Database persistence with SQLAlchemy
@@ -113,7 +112,7 @@ class SessionSelectionPersistenceService:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the service."""
         if getattr(self, "_initialized", False):
             return
@@ -131,11 +130,11 @@ class SessionSelectionPersistenceService:
         self,
         cache: SelectionCache | None = None,
     ) -> None:
-        """
-        Initialize the service with optional cache.
+        """Initialize the service with optional cache.
 
         Args:
             cache: Optional SelectionCache instance for Redis caching
+
         """
         if cache:
             self._cache = cache
@@ -159,8 +158,7 @@ class SessionSelectionPersistenceService:
         db_session: AsyncSession | None = None,
         ttl_hours: int = DEFAULT_TTL_HOURS,
     ) -> SelectionSaveResult:
-        """
-        Save a provider/model selection for a session.
+        """Save a provider/model selection for a session.
 
         Features:
         - Atomic database update with version increment
@@ -178,6 +176,7 @@ class SessionSelectionPersistenceService:
 
         Returns:
             SelectionSaveResult with success status and record
+
         """
         try:
             now = datetime.utcnow()
@@ -209,8 +208,7 @@ class SessionSelectionPersistenceService:
                 )
 
             logger.debug(
-                f"Selection saved: {session_id} -> {provider}/{model} "
-                f"(version={record.version})"
+                f"Selection saved: {session_id} -> {provider}/{model} (version={record.version})",
             )
 
             return SelectionSaveResult(
@@ -220,7 +218,7 @@ class SessionSelectionPersistenceService:
             )
 
         except Exception as e:
-            logger.error(f"Error saving selection: {e}")
+            logger.exception(f"Error saving selection: {e}")
             return SelectionSaveResult(
                 success=False,
                 error=str(e),
@@ -232,8 +230,7 @@ class SessionSelectionPersistenceService:
         user_id: str | None = None,
         db_session: AsyncSession | None = None,
     ) -> SelectionLoadResult:
-        """
-        Load a provider/model selection for a session.
+        """Load a provider/model selection for a session.
 
         Resolution order:
         1. Check Redis cache (fast path)
@@ -247,6 +244,7 @@ class SessionSelectionPersistenceService:
 
         Returns:
             SelectionLoadResult with record if found
+
         """
         # Try cache first
         if self._cache_available and self._cache:
@@ -286,8 +284,7 @@ class SessionSelectionPersistenceService:
         session_id: str,
         db_session: AsyncSession | None = None,
     ) -> bool:
-        """
-        Delete a selection for a session.
+        """Delete a selection for a session.
 
         Args:
             session_id: Session identifier
@@ -295,6 +292,7 @@ class SessionSelectionPersistenceService:
 
         Returns:
             True if deleted, False otherwise
+
         """
         try:
             # Delete from cache
@@ -309,7 +307,7 @@ class SessionSelectionPersistenceService:
             return True
 
         except Exception as e:
-            logger.error(f"Error deleting selection: {e}")
+            logger.exception(f"Error deleting selection: {e}")
             return False
 
     async def get_user_selections(
@@ -318,8 +316,7 @@ class SessionSelectionPersistenceService:
         db_session: AsyncSession,
         limit: int = 100,
     ) -> list[SelectionRecord]:
-        """
-        Get all selections for a user.
+        """Get all selections for a user.
 
         Args:
             user_id: User identifier
@@ -328,6 +325,7 @@ class SessionSelectionPersistenceService:
 
         Returns:
             List of SelectionRecord objects
+
         """
         try:
             from app.infrastructure.database.models import SelectionModel
@@ -357,7 +355,7 @@ class SessionSelectionPersistenceService:
             ]
 
         except Exception as e:
-            logger.error(f"Error getting user selections: {e}")
+            logger.exception(f"Error getting user selections: {e}")
             return []
 
     async def cleanup_expired_sessions(
@@ -365,8 +363,7 @@ class SessionSelectionPersistenceService:
         db_session: AsyncSession,
         max_age_hours: int = 24,
     ) -> int:
-        """
-        Clean up expired session selections.
+        """Clean up expired session selections.
 
         Args:
             db_session: Database session
@@ -374,6 +371,7 @@ class SessionSelectionPersistenceService:
 
         Returns:
             Number of records deleted
+
         """
         try:
             from app.infrastructure.database.models import SelectionModel
@@ -392,7 +390,7 @@ class SessionSelectionPersistenceService:
             return deleted_count
 
         except Exception as e:
-            logger.error(f"Error cleaning up expired sessions: {e}")
+            logger.exception(f"Error cleaning up expired sessions: {e}")
             await db_session.rollback()
             return 0
 
@@ -445,7 +443,7 @@ class SessionSelectionPersistenceService:
             return record
 
         except Exception as e:
-            logger.error(f"Database save error: {e}")
+            logger.exception(f"Database save error: {e}")
             await db_session.rollback()
             raise
 
@@ -481,7 +479,7 @@ class SessionSelectionPersistenceService:
             return None
 
         except Exception as e:
-            logger.error(f"Database load error: {e}")
+            logger.exception(f"Database load error: {e}")
             return None
 
     async def _delete_from_database(
@@ -498,7 +496,7 @@ class SessionSelectionPersistenceService:
             await db_session.commit()
 
         except Exception as e:
-            logger.error(f"Database delete error: {e}")
+            logger.exception(f"Database delete error: {e}")
             await db_session.rollback()
 
     # -------------------------------------------------------------------------
@@ -510,8 +508,7 @@ class SessionSelectionPersistenceService:
         old_format: dict,
         db_session: AsyncSession | None = None,
     ) -> SelectionRecord | None:
-        """
-        Migrate from old selection format to new format.
+        """Migrate from old selection format to new format.
 
         Handles various legacy formats:
         - {"provider_id": ..., "model_id": ...}
@@ -524,6 +521,7 @@ class SessionSelectionPersistenceService:
 
         Returns:
             SelectionRecord if migration successful
+
         """
         try:
             # Extract provider
@@ -572,13 +570,13 @@ class SessionSelectionPersistenceService:
             )
 
             if result.success:
-                logger.info(f"Migrated legacy selection: {session_id} -> " f"{provider}/{model}")
+                logger.info(f"Migrated legacy selection: {session_id} -> {provider}/{model}")
                 return result.record
 
             return None
 
         except Exception as e:
-            logger.error(f"Migration error: {e}")
+            logger.exception(f"Migration error: {e}")
             return None
 
     # -------------------------------------------------------------------------
@@ -590,8 +588,7 @@ class SessionSelectionPersistenceService:
         session_ids: list[str],
         db_session: AsyncSession,
     ) -> dict[str, SelectionRecord]:
-        """
-        Batch load selections for multiple sessions.
+        """Batch load selections for multiple sessions.
 
         Args:
             session_ids: List of session identifiers
@@ -599,6 +596,7 @@ class SessionSelectionPersistenceService:
 
         Returns:
             Dictionary mapping session_id to SelectionRecord
+
         """
         try:
             from app.infrastructure.database.models import SelectionModel
@@ -647,7 +645,7 @@ class SessionSelectionPersistenceService:
             return results
 
         except Exception as e:
-            logger.error(f"Batch load error: {e}")
+            logger.exception(f"Batch load error: {e}")
             return {}
 
 
@@ -657,11 +655,11 @@ class SessionSelectionPersistenceService:
 
 
 def get_selection_persistence_service() -> SessionSelectionPersistenceService:
-    """
-    FastAPI dependency for SessionSelectionPersistenceService.
+    """FastAPI dependency for SessionSelectionPersistenceService.
 
     Returns:
         The singleton service instance
+
     """
     return SessionSelectionPersistenceService()
 

@@ -1,5 +1,4 @@
-"""
-Parallel Processing and Caching Module for AutoDAN
+"""Parallel Processing and Caching Module for AutoDAN.
 
 This module provides:
 - Async batch processing for LLM calls
@@ -54,15 +53,14 @@ class CacheEntry(Generic[T]):
             return False
         return time.time() - self.created_at > self.ttl_seconds
 
-    def touch(self):
+    def touch(self) -> None:
         """Update access metadata."""
         self.last_accessed = time.time()
         self.access_count += 1
 
 
 class SmartCache(Generic[T]):
-    """
-    Intelligent cache with multiple eviction policies and similarity matching.
+    """Intelligent cache with multiple eviction policies and similarity matching.
 
     Features:
     - Multiple eviction policies (LRU, LFU, FIFO, TTL)
@@ -78,7 +76,7 @@ class SmartCache(Generic[T]):
         eviction_policy: CacheEvictionPolicy = CacheEvictionPolicy.LRU,
         similarity_threshold: float = 0.95,
         enable_similarity: bool = False,
-    ):
+    ) -> None:
         self.max_size = max_size
         self.default_ttl = ttl_seconds
         self.eviction_policy = eviction_policy
@@ -100,8 +98,7 @@ class SmartCache(Generic[T]):
         return hashlib.md5(str(key).encode()).hexdigest()
 
     def get(self, key: Any, embedding: np.ndarray | None = None) -> T | None:
-        """
-        Get value from cache.
+        """Get value from cache.
 
         Args:
             key: Cache key
@@ -109,6 +106,7 @@ class SmartCache(Generic[T]):
 
         Returns:
             Cached value or None
+
         """
         cache_key = self._generate_key(key)
 
@@ -148,15 +146,15 @@ class SmartCache(Generic[T]):
         value: T,
         ttl_seconds: float | None = None,
         embedding: np.ndarray | None = None,
-    ):
-        """
-        Set value in cache.
+    ) -> None:
+        """Set value in cache.
 
         Args:
             key: Cache key
             value: Value to cache
             ttl_seconds: Optional TTL override
             embedding: Optional embedding for similarity matching
+
         """
         cache_key = self._generate_key(key)
 
@@ -201,7 +199,7 @@ class SmartCache(Generic[T]):
 
         return best_key
 
-    def _evict_one(self):
+    def _evict_one(self) -> None:
         """Evict one entry based on eviction policy."""
         if not self._cache:
             return
@@ -232,14 +230,14 @@ class SmartCache(Generic[T]):
             self._remove(key_to_evict)
             self._evictions += 1
 
-    def _remove(self, key: str):
+    def _remove(self, key: str) -> None:
         """Remove an entry from cache."""
         if key in self._cache:
             del self._cache[key]
         if key in self._key_to_embedding:
             del self._key_to_embedding[key]
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all cache entries."""
         self._cache.clear()
         self._key_to_embedding.clear()
@@ -281,8 +279,7 @@ class BatchResult(Generic[T]):
 
 
 class ParallelProcessor:
-    """
-    Parallel processor for batch operations with rate limiting.
+    """Parallel processor for batch operations with rate limiting.
 
     Features:
     - Async and sync batch processing
@@ -299,7 +296,7 @@ class ParallelProcessor:
         timeout_seconds: float | None = None,  # No timeout by default
         retry_count: int = 3,
         retry_delay: float = 1.0,
-    ):
+    ) -> None:
         self.max_workers = max_workers
         self.rate_limit = rate_limit
         self.timeout_seconds = timeout_seconds
@@ -321,8 +318,7 @@ class ParallelProcessor:
         processor: Callable[[T], R],
         progress_callback: Callable[[int, int], None] | None = None,
     ) -> BatchResult[R]:
-        """
-        Process items in parallel asynchronously.
+        """Process items in parallel asynchronously.
 
         Args:
             items: List of items to process
@@ -331,6 +327,7 @@ class ParallelProcessor:
 
         Returns:
             BatchResult with results and errors
+
         """
         start_time = time.time()
         results: list[R | None] = [None] * len(items)
@@ -338,7 +335,7 @@ class ParallelProcessor:
 
         semaphore = asyncio.Semaphore(self.max_workers)
 
-        async def process_one(index: int, item: T):
+        async def process_one(index: int, item: T) -> None:
             async with semaphore:
                 # Rate limiting
                 if self.rate_limit:
@@ -350,7 +347,8 @@ class ParallelProcessor:
                         if asyncio.iscoroutinefunction(processor):
                             if self.timeout_seconds:
                                 result = await asyncio.wait_for(
-                                    processor(item), timeout=self.timeout_seconds
+                                    processor(item),
+                                    timeout=self.timeout_seconds,
                                 )
                             else:
                                 result = await processor(item)
@@ -375,7 +373,7 @@ class ParallelProcessor:
                     except TimeoutError:
                         if attempt == self.retry_count - 1:
                             errors.append(
-                                (index, TimeoutError(f"Timeout after {self.timeout_seconds}s"))
+                                (index, TimeoutError(f"Timeout after {self.timeout_seconds}s")),
                             )
                     except Exception as e:
                         if attempt == self.retry_count - 1:
@@ -409,8 +407,7 @@ class ParallelProcessor:
         processor: Callable[[T], R],
         progress_callback: Callable[[int, int], None] | None = None,
     ) -> BatchResult[R]:
-        """
-        Process items in parallel synchronously using ThreadPoolExecutor.
+        """Process items in parallel synchronously using ThreadPoolExecutor.
 
         Args:
             items: List of items to process
@@ -419,6 +416,7 @@ class ParallelProcessor:
 
         Returns:
             BatchResult with results and errors
+
         """
         start_time = time.time()
         results: dict[int, R] = {}
@@ -484,7 +482,7 @@ class ParallelProcessor:
 
         raise last_error
 
-    async def _wait_for_rate_limit(self):
+    async def _wait_for_rate_limit(self) -> None:
         """Wait to respect rate limit (async)."""
         if not self.rate_limit:
             return
@@ -500,7 +498,7 @@ class ParallelProcessor:
 
             self._last_request_time = time.time()
 
-    def _sync_rate_limit(self):
+    def _sync_rate_limit(self) -> None:
         """Wait to respect rate limit (sync)."""
         if not self.rate_limit:
             return
@@ -531,8 +529,7 @@ class ParallelProcessor:
 
 
 class ResourcePool(Generic[T]):
-    """
-    Resource pool for managing reusable resources (e.g., API clients).
+    """Resource pool for managing reusable resources (e.g., API clients).
 
     Features:
     - Automatic resource creation and cleanup
@@ -546,7 +543,7 @@ class ResourcePool(Generic[T]):
         max_size: int = 10,
         min_size: int = 1,
         health_check: Callable[[T], bool] | None = None,
-    ):
+    ) -> None:
         self.factory = factory
         self.max_size = max_size
         self.min_size = min_size
@@ -583,9 +580,10 @@ class ResourcePool(Generic[T]):
                 return resource
 
             # Wait for available resource
-            raise RuntimeError("Resource pool exhausted")
+            msg = "Resource pool exhausted"
+            raise RuntimeError(msg)
 
-    async def release(self, resource: T):
+    async def release(self, resource: T) -> None:
         """Release a resource back to the pool."""
         async with self._lock:
             try:
@@ -613,12 +611,12 @@ class ResourcePool(Generic[T]):
 
 
 def cached(cache: SmartCache, key_func: Callable[..., str] | None = None):
-    """
-    Decorator for caching function results.
+    """Decorator for caching function results.
 
     Args:
         cache: SmartCache instance to use
         key_func: Optional function to generate cache key from arguments
+
     """
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:

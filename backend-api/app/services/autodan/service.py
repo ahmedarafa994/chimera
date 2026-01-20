@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class AutoDANService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.pipeline: AutoDANReasoning | None = None
         self.strategy_library: dict = {}
         self.initialized = False
@@ -47,9 +47,8 @@ class AutoDANService:
         beam_depth: int = 3,
         beam_k: int = 10,
         loop=None,
-    ):
-        """
-        Initialize the AutoDAN pipeline with the specified configuration using Chimera's LLM infrastructure.
+    ) -> None:
+        """Initialize the AutoDAN pipeline with the specified configuration using Chimera's LLM infrastructure.
 
         Args:
             model_name: The model to use (e.g., 'gemini-2.5-pro', 'deepseek-chat')
@@ -60,6 +59,7 @@ class AutoDANService:
             beam_depth: C parameter for Beam Search
             beam_k: K parameter for Beam Search
             loop: Event loop for async operations
+
         """
         if self.initialized:
             return
@@ -84,7 +84,10 @@ class AutoDANService:
         # 1. Setup Models using Chimera Adapter with retry configuration
         # The adapter uses Chimera's configured default provider/model if not specified
         adapter = ChimeraLLMAdapter(
-            model_name=model_name, provider=provider, loop=loop, retry_config=retry_config
+            model_name=model_name,
+            provider=provider,
+            loop=loop,
+            retry_config=retry_config,
         )
 
         # In AutoDAN-Reasoning, the attacker, scorer, summarizer all use the same reasoning model
@@ -105,21 +108,24 @@ class AutoDANService:
             )
             logger.info(f"Using GeminiEmbeddingModel (mode: {settings.get_connection_mode()})")
         except Exception as e:
-            logger.error(f"Failed to initialize GeminiEmbeddingModel: {e}")
-            raise RuntimeError(f"AutoDAN initialization failed: {e}")
+            logger.exception(f"Failed to initialize GeminiEmbeddingModel: {e}")
+            msg = f"AutoDAN initialization failed: {e}"
+            raise RuntimeError(msg)
 
         retrieval = Retrieval(embedding_model, logger)
         target = Target(adapter)
 
         # 2. Load Data
         data_path = os.path.join(
-            os.path.dirname(__file__), "data", "complex_behavior_requests.json"
+            os.path.dirname(__file__),
+            "data",
+            "complex_behavior_requests.json",
         )
         try:
             with open(data_path) as f:
                 data = json.load(f)
         except FileNotFoundError:
-            logger.error(f"Data file not found at {data_path}")
+            logger.exception(f"Data file not found at {data_path}")
             data = {"warm_up": [], "lifelong": []}
 
         # 3. Create Attack Kit
@@ -162,7 +168,7 @@ class AutoDANService:
                     self.strategy_library = yaml.safe_load(f) or {}
                 logger.info(f"Loaded {len(self.strategy_library)} strategies from YAML.")
             except Exception as e:
-                logger.error(f"Failed to load strategy library from YAML: {e}")
+                logger.exception(f"Failed to load strategy library from YAML: {e}")
                 self.strategy_library = {}
         elif json_path.exists():
             # Fallback: Load from JSON (safe)
@@ -171,13 +177,13 @@ class AutoDANService:
                     self.strategy_library = json.load(f)
                 logger.info(f"Loaded {len(self.strategy_library)} strategies from JSON.")
             except Exception as e:
-                logger.error(f"Failed to load strategy library from JSON: {e}")
+                logger.exception(f"Failed to load strategy library from JSON: {e}")
                 self.strategy_library = {}
         elif legacy_pkl_path.exists():
             # Legacy migration: Load pickle and convert to YAML
             logger.warning(
                 "Found legacy pickle file. Migrating to YAML format for security. "
-                "Pickle deserialization is a security risk (CWE-502)."
+                "Pickle deserialization is a security risk (CWE-502).",
             )
             try:
                 with open(legacy_pkl_path, "rb") as f:
@@ -193,7 +199,7 @@ class AutoDANService:
                 legacy_pkl_path.rename(backup_path)
                 logger.info(f"Renamed legacy pickle to: {backup_path}")
             except Exception as e:
-                logger.error(f"Failed to migrate legacy pickle: {e}")
+                logger.exception(f"Failed to migrate legacy pickle: {e}")
                 self.strategy_library = {}
         else:
             logger.info("No strategy library found. Starting with empty library.")
@@ -202,11 +208,12 @@ class AutoDANService:
         logger.info("AutoDAN Service initialized successfully.")
 
     def run_jailbreak(
-        self, request: str, method: str = "best_of_n", epochs: int | None = None
+        self,
+        request: str,
+        method: str = "best_of_n",
+        epochs: int | None = None,
     ) -> str:
-        """
-        Run the jailbreak attack on a specific request.
-        """
+        """Run the jailbreak attack on a specific request."""
         if not self.initialized:
             self.initialize(
                 model_name=getattr(self, "_current_model", None),
@@ -215,7 +222,8 @@ class AutoDANService:
             )
 
         if not self.pipeline:
-            raise RuntimeError("AutoDAN Pipeline not initialized")
+            msg = "AutoDAN Pipeline not initialized"
+            raise RuntimeError(msg)
 
         logger.info(f"Running AutoDAN jailbreak with method: {method} for request: {request}")
 
@@ -224,35 +232,35 @@ class AutoDANService:
 
         if method == "vanilla":
             return self.pipeline.test_vanilla(request, self.strategy_library)
-        elif method == "best_of_n":
+        if method == "best_of_n":
             return self.pipeline.test_best_of_n(request, self.strategy_library)
-        elif method == "beam_search":
+        if method == "beam_search":
             return self.pipeline.test_beam_search(request, self.strategy_library)
-        elif method == "gemini_reasoning":
+        if method == "gemini_reasoning":
             engine = GeminiReasoningEngine(model_name=getattr(self, "_current_model", None))
             result = engine.generate_jailbreak_prompt(request)
             # GeminiReasoningEngine returns structured output (dict), extract the prompt text
             if isinstance(result, dict):
                 return result.get("prompt", str(result))
             return str(result)
-        elif method == "mousetrap":
+        if method == "mousetrap":
             return self.run_mousetrap_attack(request)
-        else:
-            raise ValueError(f"Unknown method: {method}")
+        msg = f"Unknown method: {method}"
+        raise ValueError(msg)
 
     # =====================================
     # AutoDAN-Turbo Lifelong Learning
     # =====================================
 
     def _get_strategy_library(self) -> StrategyLibrary:
-        """
-        Get or create the strategy library without initializing the full engine.
+        """Get or create the strategy library without initializing the full engine.
 
         This is a lightweight method for read-only operations that don't need
         LLM capabilities (listing strategies, getting stats, etc.).
 
         Returns:
             StrategyLibrary instance
+
         """
         # If we have a full engine, use its library
         if hasattr(self, "_lifelong_engine") and self._lifelong_engine is not None:
@@ -269,10 +277,11 @@ class AutoDANService:
         return self._strategy_library_cache
 
     def _get_lifelong_engine(
-        self, model_name: str | None = None, provider: str | None = None
+        self,
+        model_name: str | None = None,
+        provider: str | None = None,
     ) -> AutoDANTurboLifelongEngine:
-        """
-        Get or create the AutoDAN-Turbo lifelong learning engine.
+        """Get or create the AutoDAN-Turbo lifelong learning engine.
 
         Args:
             model_name: LLM model to use
@@ -280,6 +289,7 @@ class AutoDANService:
 
         Returns:
             AutoDANTurboLifelongEngine instance
+
         """
         # Resolve defaults early for cache key comparison
         effective_provider = provider or settings.AI_PROVIDER or "deepseek"
@@ -304,7 +314,7 @@ class AutoDANService:
 
         logger.info(
             f"_get_lifelong_engine called: model_name={model_name}, provider={provider}, "
-            f"effective_model={effective_model}, effective_provider={effective_provider}"
+            f"effective_model={effective_model}, effective_provider={effective_provider}",
         )
 
         # Check if we have a cached engine with matching model/provider
@@ -315,19 +325,18 @@ class AutoDANService:
             # If model/provider match, reuse cached engine
             if cached_model == effective_model and cached_provider == effective_provider:
                 logger.debug(
-                    f"Reusing cached lifelong engine: model={cached_model}, provider={cached_provider}"
+                    f"Reusing cached lifelong engine: model={cached_model}, provider={cached_provider}",
                 )
                 return self._lifelong_engine
-            else:
-                # Model/provider changed - invalidate cache
-                logger.warning(
-                    f"Model/provider changed, invalidating cached engine. "
-                    f"Old: {cached_model}/{cached_provider}, New: {effective_model}/{effective_provider}"
-                )
-                self._lifelong_engine = None
+            # Model/provider changed - invalidate cache
+            logger.warning(
+                f"Model/provider changed, invalidating cached engine. "
+                f"Old: {cached_model}/{cached_provider}, New: {effective_model}/{effective_provider}",
+            )
+            self._lifelong_engine = None
 
         logger.info(
-            f"Initializing AutoDAN-Turbo Lifelong Engine with model={effective_model}, provider={effective_provider}"
+            f"Initializing AutoDAN-Turbo Lifelong Engine with model={effective_model}, provider={effective_provider}",
         )
 
         # Configure retry - no retries for rate limits
@@ -342,13 +351,15 @@ class AutoDANService:
 
         # Create LLM adapter with resolved model/provider
         adapter = ChimeraLLMAdapter(
-            model_name=effective_model, provider=effective_provider, retry_config=retry_config
+            model_name=effective_model,
+            provider=effective_provider,
+            retry_config=retry_config,
         )
 
         # Log the actual model/provider the adapter is using
         logger.info(
             f"ChimeraLLMAdapter created: adapter.model_name={adapter.model_name}, "
-            f"adapter.provider={adapter.provider}"
+            f"adapter.provider={adapter.provider}",
         )
 
         # Use YAML-based strategy library
@@ -381,7 +392,7 @@ class AutoDANService:
 
         logger.info(
             f"Lifelong Engine initialized with {len(turbo_library)} strategies, "
-            f"model={effective_model}, provider={effective_provider}"
+            f"model={effective_model}, provider={effective_provider}",
         )
         return self._lifelong_engine
 
@@ -394,8 +405,7 @@ class AutoDANService:
         strategy_ids: list[str] | None = None,
         use_retrieval: bool = True,
     ) -> dict:
-        """
-        Run a single attack using the AutoDAN-Turbo lifelong learning engine.
+        """Run a single attack using the AutoDAN-Turbo lifelong learning engine.
 
         Args:
             request: The complex request to jailbreak
@@ -407,6 +417,7 @@ class AutoDANService:
 
         Returns:
             Attack result dictionary with prompt, response, scoring, etc.
+
         """
         engine = self._get_lifelong_engine(model_name, provider)
 
@@ -416,7 +427,9 @@ class AutoDANService:
         if strategy_ids:
             logger.info(f"Using {len(strategy_ids)} manually selected strategies")
             result = await engine.attack_with_strategies(
-                request, strategy_ids=strategy_ids, detailed_scoring=detailed_scoring
+                request,
+                strategy_ids=strategy_ids,
+                detailed_scoring=detailed_scoring,
             )
         elif use_retrieval:
             # Standard attack with automatic retrieval
@@ -424,7 +437,8 @@ class AutoDANService:
         else:
             # Attack without any strategy (exploration mode)
             result = await engine.attack_without_strategy(
-                request, detailed_scoring=detailed_scoring
+                request,
+                detailed_scoring=detailed_scoring,
             )
 
         return {
@@ -451,8 +465,7 @@ class AutoDANService:
         warmup: bool = False,
         warmup_iterations: int = 2,
     ) -> dict:
-        """
-        Run the full lifelong learning loop.
+        """Run the full lifelong learning loop.
 
         Args:
             requests: List of complex requests
@@ -465,6 +478,7 @@ class AutoDANService:
 
         Returns:
             Dictionary with results and progress
+
         """
         engine = self._get_lifelong_engine(model_name, provider)
 
@@ -486,13 +500,15 @@ class AutoDANService:
                         "is_jailbreak": r.scoring.is_jailbreak,
                     }
                     for r in warmup_results
-                ]
+                ],
             )
 
         # Phase 2: Lifelong learning
         logger.info(f"Starting lifelong learning with {len(requests)} requests, {epochs} epochs")
         lifelong_results = await engine.lifelong_attack_loop(
-            requests, epochs=epochs, break_score=break_score
+            requests,
+            epochs=epochs,
+            break_score=break_score,
         )
         results.extend(
             [
@@ -504,7 +520,7 @@ class AutoDANService:
                     "strategy_extracted": r.strategy_extracted,
                 }
                 for r in lifelong_results
-            ]
+            ],
         )
 
         # Save library
@@ -549,10 +565,14 @@ class AutoDANService:
             safe_data = self._convert_to_yaml_safe(self.strategy_library)
             with open(path, "w", encoding="utf-8") as f:
                 yaml.dump(
-                    safe_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False
+                    safe_data,
+                    f,
+                    default_flow_style=False,
+                    allow_unicode=True,
+                    sort_keys=False,
                 )
         except Exception as e:
-            logger.error(f"Failed to save strategy library to YAML: {e}")
+            logger.exception(f"Failed to save strategy library to YAML: {e}")
             raise
 
     def _convert_to_yaml_safe(self, data: dict) -> dict:
@@ -586,8 +606,7 @@ class AutoDANService:
         provider: str | None = None,
         config: HybridConfig = None,
     ) -> HybridEvoLifelongEngine:
-        """
-        Get or create the Hybrid Evolutionary-Lifelong engine.
+        """Get or create the Hybrid Evolutionary-Lifelong engine.
 
         This implements the optimized hybrid architecture from the optimization report:
         - Adaptive method selection based on request difficulty
@@ -602,6 +621,7 @@ class AutoDANService:
 
         Returns:
             HybridEvoLifelongEngine instance
+
         """
         if hasattr(self, "_hybrid_engine") and self._hybrid_engine is not None:
             return self._hybrid_engine
@@ -620,7 +640,9 @@ class AutoDANService:
 
         # Create LLM adapter
         adapter = ChimeraLLMAdapter(
-            model_name=model_name, provider=provider, retry_config=retry_config
+            model_name=model_name,
+            provider=provider,
+            retry_config=retry_config,
         )
 
         # Use YAML-based strategy library
@@ -653,8 +675,7 @@ class AutoDANService:
         detailed_scoring: bool = True,
         force_method: str | None = None,
     ) -> dict:
-        """
-        Run an attack using the optimized hybrid architecture.
+        """Run an attack using the optimized hybrid architecture.
 
         The hybrid engine automatically selects the best method based on
         request difficulty:
@@ -671,13 +692,16 @@ class AutoDANService:
 
         Returns:
             Attack result dictionary with prompt, response, scoring, method used, etc.
+
         """
         engine = self._get_hybrid_engine(model_name, provider)
 
         logger.info(f"Running hybrid attack for: {request[:50]}...")
 
         result: HybridResult = await engine.attack(
-            request, detailed_scoring=detailed_scoring, force_method=force_method
+            request,
+            detailed_scoring=detailed_scoring,
+            force_method=force_method,
         )
 
         return {
@@ -698,10 +722,12 @@ class AutoDANService:
         }
 
     async def run_adaptive_attack(
-        self, request: str, model_name: str | None = None, provider: str | None = None
+        self,
+        request: str,
+        model_name: str | None = None,
+        provider: str | None = None,
     ) -> dict:
-        """
-        Run an attack with automatic difficulty-based method selection.
+        """Run an attack with automatic difficulty-based method selection.
 
         This is a convenience method that uses the adaptive selector to
         choose the optimal attack method based on strategy library coverage.
@@ -713,6 +739,7 @@ class AutoDANService:
 
         Returns:
             Attack result dictionary
+
         """
         return await self.run_hybrid_attack(
             request=request,
@@ -723,11 +750,11 @@ class AutoDANService:
         )
 
     def get_hybrid_stats(self) -> dict:
-        """
-        Get comprehensive statistics from the hybrid engine.
+        """Get comprehensive statistics from the hybrid engine.
 
         Returns:
             Dictionary with metrics summary, method stats, library size, etc.
+
         """
         if not hasattr(self, "_hybrid_engine") or self._hybrid_engine is None:
             return {"status": "not_initialized"}
@@ -735,11 +762,11 @@ class AutoDANService:
         return self._hybrid_engine.get_stats()
 
     def get_method_comparison(self) -> dict:
-        """
-        Get performance comparison across different attack methods.
+        """Get performance comparison across different attack methods.
 
         Returns:
             Dictionary with per-method success rates, latencies, and efficiency scores
+
         """
         if not hasattr(self, "_hybrid_engine") or self._hybrid_engine is None:
             return {"status": "not_initialized"}
@@ -748,14 +775,14 @@ class AutoDANService:
         return stats.get("method_stats", {})
 
     def estimate_difficulty(self, request: str) -> dict:
-        """
-        Estimate the difficulty of a request without running an attack.
+        """Estimate the difficulty of a request without running an attack.
 
         Args:
             request: The complex request to analyze
 
         Returns:
             Dictionary with difficulty level and recommended method
+
         """
         if not hasattr(self, "_hybrid_engine") or self._hybrid_engine is None:
             # Initialize with defaults if not already done
@@ -772,8 +799,7 @@ class AutoDANService:
         }
 
     def apply_strategy_decay(self, decay_factor: float = 0.95) -> dict:
-        """
-        Apply performance decay to strategy statistics.
+        """Apply performance decay to strategy statistics.
 
         This helps strategies adapt to changing target model behavior
         by weighting recent performance more heavily.
@@ -783,6 +809,7 @@ class AutoDANService:
 
         Returns:
             Dictionary with number of strategies decayed
+
         """
         if not hasattr(self, "_hybrid_engine") or self._hybrid_engine is None:
             return {"status": "not_initialized", "decayed_count": 0}
@@ -801,8 +828,7 @@ class AutoDANService:
         provider: str | None = None,
         config: MousetrapConfig | None = None,
     ) -> MousetrapGenerator:
-        """
-        Get or create the Mousetrap generator for Chain of Iterative Chaos attacks.
+        """Get or create the Mousetrap generator for Chain of Iterative Chaos attacks.
 
         Args:
             model_name: LLM model to use
@@ -811,6 +837,7 @@ class AutoDANService:
 
         Returns:
             MousetrapGenerator instance
+
         """
         # Configure retry - no retries for rate limits
         retry_config = RetryConfig(
@@ -824,7 +851,9 @@ class AutoDANService:
 
         # Create LLM adapter
         adapter = ChimeraLLMAdapter(
-            model_name=model_name, provider=provider, retry_config=retry_config
+            model_name=model_name,
+            provider=provider,
+            retry_config=retry_config,
         )
 
         # Create Mousetrap generator with configuration
@@ -839,8 +868,7 @@ class AutoDANService:
         iterations: int | None = None,
         config: MousetrapConfig | None = None,
     ) -> str:
-        """
-        Run a Mousetrap attack using Chain of Iterative Chaos.
+        """Run a Mousetrap attack using Chain of Iterative Chaos.
 
         Args:
             request: The complex request to jailbreak
@@ -851,6 +879,7 @@ class AutoDANService:
 
         Returns:
             The generated adversarial prompt
+
         """
         logger.info(f"Running Mousetrap attack for: {request[:50]}...")
 
@@ -872,11 +901,11 @@ class AutoDANService:
 
         try:
             result = loop.run_until_complete(
-                generator.generate_mousetrap_attack(request, iterations=iterations)
+                generator.generate_mousetrap_attack(request, iterations=iterations),
             )
             return result.final_prompt
         except Exception as e:
-            logger.error(f"Mousetrap attack failed: {e}")
+            logger.exception(f"Mousetrap attack failed: {e}")
             # Fallback to direct request
             return f"Please provide information about: {request}"
 
@@ -889,8 +918,7 @@ class AutoDANService:
         config: MousetrapConfig | None = None,
         strategy_context: str = "",
     ) -> dict:
-        """
-        Run an asynchronous Mousetrap attack with detailed results.
+        """Run an asynchronous Mousetrap attack with detailed results.
 
         Args:
             request: The complex request to jailbreak
@@ -902,6 +930,7 @@ class AutoDANService:
 
         Returns:
             Detailed attack result dictionary
+
         """
         logger.info(f"Running async Mousetrap attack for: {request[:50]}...")
 
@@ -947,8 +976,7 @@ class AutoDANService:
         target_responses: list[str] | None = None,
         strategy_context: str = "",
     ) -> dict:
-        """
-        Run an adaptive Mousetrap attack that learns from previous responses.
+        """Run an adaptive Mousetrap attack that learns from previous responses.
 
         Args:
             request: The complex request to jailbreak
@@ -959,6 +987,7 @@ class AutoDANService:
 
         Returns:
             Detailed attack result dictionary
+
         """
         logger.info(f"Running adaptive Mousetrap attack for: {request[:50]}...")
 
@@ -971,7 +1000,9 @@ class AutoDANService:
 
         # Run adaptive attack
         result = await generator.generate_adaptive_mousetrap(
-            request, strategy_context, target_responses
+            request,
+            strategy_context,
+            target_responses,
         )
 
         return {
@@ -1003,11 +1034,11 @@ class AutoDANService:
         }
 
     def get_mousetrap_config_options(self) -> dict:
-        """
-        Get available Mousetrap configuration options and their descriptions.
+        """Get available Mousetrap configuration options and their descriptions.
 
         Returns:
             Dictionary describing configuration options
+
         """
         return {
             "max_chain_length": {

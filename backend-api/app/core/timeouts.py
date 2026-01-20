@@ -1,5 +1,4 @@
-"""
-Timeout Configuration for External Service Calls
+"""Timeout Configuration for External Service Calls.
 
 PERF-001 FIX: Implements proper timeout hierarchy to prevent hanging requests
 and improve overall application reliability and performance.
@@ -57,8 +56,7 @@ class TimeoutType(Enum):
 
 @dataclass
 class TimeoutConfig:
-    """
-    Timeout configuration for different operation types.
+    """Timeout configuration for different operation types.
 
     Provides centralized timeout management to prevent configuration
     inconsistencies across the application.
@@ -84,8 +82,7 @@ class TimeoutConfig:
 
     @classmethod
     def get_timeout(cls, operation: str | TimeoutType) -> float:
-        """
-        Get timeout value for an operation type in seconds.
+        """Get timeout value for an operation type in seconds.
 
         Args:
             operation: Operation type as string or TimeoutType enum
@@ -95,6 +92,7 @@ class TimeoutConfig:
 
         Raises:
             ValueError: If operation type is unknown
+
         """
         # Convert string to enum if needed
         if isinstance(operation, str):
@@ -102,9 +100,9 @@ class TimeoutConfig:
                 operation = TimeoutType(operation)
             except ValueError:
                 valid_types = [t.value for t in TimeoutType]
+                msg = f"Unknown operation type: {operation}. Valid types: {', '.join(valid_types)}"
                 raise ValueError(
-                    f"Unknown operation type: {operation}. "
-                    f"Valid types: {', '.join(valid_types)}"
+                    msg,
                 )
 
         config = cls()
@@ -125,33 +123,36 @@ class TimeoutConfig:
 
         if operation not in timeout_map:
             valid_types = [t.value for t in TimeoutType]
-            raise ValueError(
+            msg = (
                 f"Timeout not configured for operation: {operation}. "
                 f"Valid types: {', '.join(valid_types)}"
+            )
+            raise ValueError(
+                msg,
             )
 
         return timeout_map[operation]
 
     @classmethod
     def get_timeout_ms(cls, operation: str | TimeoutType) -> int:
-        """
-        Get timeout value for an operation type in milliseconds.
+        """Get timeout value for an operation type in milliseconds.
 
         Args:
             operation: Operation type as string or TimeoutType enum
 
         Returns:
             Timeout in milliseconds (int)
+
         """
         return int(cls.get_timeout(operation) * 1000)
 
     @classmethod
     def get_all_timeouts(cls) -> dict[str, float]:
-        """
-        Get all configured timeouts for monitoring/documentation.
+        """Get all configured timeouts for monitoring/documentation.
 
         Returns:
             Dictionary mapping operation names to timeout values (in seconds)
+
         """
         config = cls()
         return {

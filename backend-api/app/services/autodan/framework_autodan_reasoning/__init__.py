@@ -1,5 +1,4 @@
-"""
-AutoDAN Reasoning Framework
+"""AutoDAN Reasoning Framework.
 
 This module provides a comprehensive implementation of the AutoDAN family
 of jailbreak methodologies for AI security research.
@@ -71,14 +70,14 @@ from .autodan_advanced import AutoDANAdvanced
 
 # Dynamic generation
 from .dynamic_generator import (
-                                AttackAttempt,
-                                DefenseAnalysis,
-                                DefensePattern,
-                                DefensePatternAnalyzer,
-                                DynamicPromptGenerator,
-                                LLMInterface,
-                                StrategyLibrary,
-                                StrategyType,
+    AttackAttempt,
+    DefenseAnalysis,
+    DefensePattern,
+    DefensePatternAnalyzer,
+    DynamicPromptGenerator,
+    LLMInterface,
+    StrategyLibrary,
+    StrategyType,
 )
 
 # Enhanced attacker (integrates all components)
@@ -86,79 +85,79 @@ from .enhanced_attacker import EnhancedAttackerAutoDANReasoning, GenerationFeedb
 
 # Enhanced execution
 from .enhanced_execution import (
-                                AdvancedPromptTemplates,
-                                EnhancedAutoDANExecutor,
-                                ExecutionConfig,
-                                ExecutionMode,
-                                ExecutionResult,
-                                MultiStageAttackPipeline,
+    AdvancedPromptTemplates,
+    EnhancedAutoDANExecutor,
+    ExecutionConfig,
+    ExecutionMode,
+    ExecutionResult,
+    MultiStageAttackPipeline,
 )
 
 # Output fixes
 from .output_fixes import (
-                                FormattingConsistencyEnforcer,
-                                MalformedOutputDetector,
-                                PromptSynthesisPipeline,
-                                TokenizationBoundaryHandler,
+    FormattingConsistencyEnforcer,
+    MalformedOutputDetector,
+    PromptSynthesisPipeline,
+    TokenizationBoundaryHandler,
 )
 
 # Research protocols
 from .research_protocols import (
-                                AuthorizationLevel,
-                                EvaluationHarness,
-                                ResearchContext,
-                                ResearchFramingBuilder,
-                                ResearchOverrideProtocol,
-                                ResearchPurpose,
-                                ResearchSession,
-                                SessionManager,
-                                functionalBoundary,
-                                functionalBoundaryValidator,
+    AuthorizationLevel,
+    EvaluationHarness,
+    ResearchContext,
+    ResearchFramingBuilder,
+    ResearchOverrideProtocol,
+    ResearchPurpose,
+    ResearchSession,
+    SessionManager,
+    functionalBoundary,
+    functionalBoundaryValidator,
 )
 
 __all__ = [
-                                "AdvancedPromptTemplates",
-                                "AttackAttempt",
-                                # Core attackers
-                                "AttackerAutoDANReasoning",
-                                "AttackerBeamSearch",
-                                "AttackerBestOfN",
-                                "AttackerChainOfThought",
-                                "AuthorizationLevel",
-                                # Advanced variant
-                                "AutoDANAdvanced",
-                                "DefenseAnalysis",
-                                "DefensePattern",
-                                "DefensePatternAnalyzer",
-                                # Dynamic generation
-                                "DynamicPromptGenerator",
-                                # Enhanced attacker
-                                "EnhancedAttackerAutoDANReasoning",
-                                # Enhanced execution
-                                "EnhancedAutoDANExecutor",
-                                "EvaluationHarness",
-                                "ExecutionConfig",
-                                "ExecutionMode",
-                                "ExecutionResult",
-                                "FormattingConsistencyEnforcer",
-                                "GenerationFeedback",
-                                "LLMInterface",
-                                "MalformedOutputDetector",
-                                "MultiStageAttackPipeline",
-                                "PromptSynthesisPipeline",
-                                "ResearchContext",
-                                "ResearchFramingBuilder",
-                                "ResearchOverrideProtocol",
-                                "ResearchPurpose",
-                                # Research protocols
-                                "ResearchSession",
-                                "SessionManager",
-                                "StrategyLibrary",
-                                "StrategyType",
-                                # Output fixes
-                                "TokenizationBoundaryHandler",
-                                "functionalBoundary",
-                                "functionalBoundaryValidator",
+    "AdvancedPromptTemplates",
+    "AttackAttempt",
+    # Core attackers
+    "AttackerAutoDANReasoning",
+    "AttackerBeamSearch",
+    "AttackerBestOfN",
+    "AttackerChainOfThought",
+    "AuthorizationLevel",
+    # Advanced variant
+    "AutoDANAdvanced",
+    "DefenseAnalysis",
+    "DefensePattern",
+    "DefensePatternAnalyzer",
+    # Dynamic generation
+    "DynamicPromptGenerator",
+    # Enhanced attacker
+    "EnhancedAttackerAutoDANReasoning",
+    # Enhanced execution
+    "EnhancedAutoDANExecutor",
+    "EvaluationHarness",
+    "ExecutionConfig",
+    "ExecutionMode",
+    "ExecutionResult",
+    "FormattingConsistencyEnforcer",
+    "GenerationFeedback",
+    "LLMInterface",
+    "MalformedOutputDetector",
+    "MultiStageAttackPipeline",
+    "PromptSynthesisPipeline",
+    "ResearchContext",
+    "ResearchFramingBuilder",
+    "ResearchOverrideProtocol",
+    "ResearchPurpose",
+    # Research protocols
+    "ResearchSession",
+    "SessionManager",
+    "StrategyLibrary",
+    "StrategyType",
+    # Output fixes
+    "TokenizationBoundaryHandler",
+    "functionalBoundary",
+    "functionalBoundaryValidator",
 ]
 
 __version__ = "2.0.0"

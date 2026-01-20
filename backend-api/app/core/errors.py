@@ -29,28 +29,29 @@ def get_cors_headers(request: Request) -> dict[str, str]:
 
 
 class AppError(Exception):
-    def __init__(self, detail: str, status_code: int = status.HTTP_400_BAD_REQUEST):
+    def __init__(self, detail: str, status_code: int = status.HTTP_400_BAD_REQUEST) -> None:
         super().__init__(detail)
         self.detail = detail
         self.status_code = status_code
 
 
 class LLMProviderError(AppError):
-    def __init__(self, detail: str):
+    def __init__(self, detail: str) -> None:
         super().__init__(detail, status_code=status.HTTP_502_BAD_GATEWAY)
 
 
 class ProviderNotAvailableError(AppError):
-    def __init__(self, provider: str):
+    def __init__(self, provider: str) -> None:
         super().__init__(
-            f"Provider {provider} is not available", status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+            f"Provider {provider} is not available",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
 
 class TransformationError(AppError):
     """Base error for transformation failures."""
 
-    def __init__(self, message: str, details: dict[str, Any] | None = None):
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__(message, status_code=status.HTTP_400_BAD_REQUEST)
         self.details = details or {}
 
@@ -58,13 +59,9 @@ class TransformationError(AppError):
 class InvalidPotencyError(TransformationError):
     """Error for invalid potency levels."""
 
-    pass
-
 
 class InvalidTechniqueError(TransformationError):
     """Error for invalid technique suites."""
-
-    pass
 
 
 async def app_exception_handler(request: Request, exc: AppError):
@@ -90,7 +87,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     # Don't log HTTPException as error - it's already handled
     if isinstance(exc, HTTPException):
         return await http_exception_handler(request, exc)
-    logger.error(f"Global Exception: {exc!s}", exc_info=True)
+    logger.error(f"Global Exception: {exc!s}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal Server Error"},

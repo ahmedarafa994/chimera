@@ -1,5 +1,4 @@
-"""
-Logging utilities for the backend API.
+"""Logging utilities for the backend API.
 Provides consistent logging configuration and utilities.
 """
 
@@ -28,7 +27,7 @@ class ColoredFormatter(logging.Formatter):
     }
     RESET: ClassVar[str] = "\033[0m"
 
-    def __init__(self, *args, use_colors: bool = True, **kwargs):
+    def __init__(self, *args, use_colors: bool = True, **kwargs) -> None:
         """Initialize the colored formatter."""
         super().__init__(*args, **kwargs)
         self.use_colors = use_colors and sys.stdout.isatty()
@@ -142,7 +141,7 @@ class SensitiveDataFilter(logging.Filter):
 class RequestLogger:
     """Logger for HTTP requests with timing and metadata."""
 
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger) -> None:
         """Initialize the request logger."""
         self.logger = logger
 
@@ -156,7 +155,7 @@ class RequestLogger:
         user_id: str | None = None,
         error: str | None = None,
         **extra,
-    ):
+    ) -> None:
         """Log an HTTP request with metadata."""
         log_data = {
             "request_id": request_id,
@@ -190,8 +189,7 @@ def setup_logging(
     max_bytes: int = 10 * 1024 * 1024,  # 10MB
     backup_count: int = 5,
 ) -> logging.Logger:
-    """
-    Set up logging configuration for the application.
+    """Set up logging configuration for the application.
 
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -204,6 +202,7 @@ def setup_logging(
 
     Returns:
         Configured logger instance
+
     """
     # Get root logger
     root_logger = logging.getLogger()
@@ -230,7 +229,9 @@ def setup_logging(
         log_path.parent.mkdir(parents=True, exist_ok=True)
 
         file_handler = logging.handlers.RotatingFileHandler(
-            log_file, maxBytes=max_bytes, backupCount=backup_count
+            log_file,
+            maxBytes=max_bytes,
+            backupCount=backup_count,
         )
 
         # Always use JSON format for file logging
@@ -247,24 +248,24 @@ def setup_logging(
 
 
 def get_logger(name: str) -> logging.Logger:
-    """
-    Get a logger instance with the given name.
+    """Get a logger instance with the given name.
 
     Args:
         name: Logger name (usually __name__)
 
     Returns:
         Logger instance
+
     """
     return logging.getLogger(name)
 
 
 def log_execution_time(logger: logging.Logger | None = None):
-    """
-    Decorator to log function execution time.
+    """Decorator to log function execution time.
 
     Args:
         logger: Logger instance to use (optional)
+
     """
 
     def decorator(func):
@@ -317,14 +318,14 @@ def log_api_call(
     log_response: bool = True,
     mask_sensitive: bool = True,
 ):
-    """
-    Decorator to log API calls with request and response data.
+    """Decorator to log API calls with request and response data.
 
     Args:
         logger: Logger instance to use
         log_request: Whether to log request data
         log_response: Whether to log response data
         mask_sensitive: Whether to mask sensitive data
+
     """
 
     def decorator(func):
@@ -402,7 +403,7 @@ def log_api_call(
 class LogContext:
     """Context manager for adding context to log messages."""
 
-    def __init__(self, logger: logging.Logger, **context):
+    def __init__(self, logger: logging.Logger, **context) -> None:
         """Initialize the log context."""
         self.logger = logger
         self.context = context
@@ -426,14 +427,14 @@ class LogContext:
 
 
 def create_audit_logger(name: str = "audit") -> logging.Logger:
-    """
-    Create a specialized audit logger.
+    """Create a specialized audit logger.
 
     Args:
         name: Logger name
 
     Returns:
         Configured audit logger
+
     """
     audit_logger = logging.getLogger(name)
     audit_logger.setLevel(logging.INFO)

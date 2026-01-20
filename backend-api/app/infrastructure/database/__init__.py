@@ -1,5 +1,4 @@
-"""
-Database Infrastructure Module
+"""Database Infrastructure Module.
 
 Story 1.3: Configuration Persistence System
 Provides async SQLite database layer with connection pooling.

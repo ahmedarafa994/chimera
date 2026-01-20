@@ -6,20 +6,17 @@ from app.services.llm_service import llm_service
 
 
 class PerplexityCalculator:
-    """
-    Calculates the perplexity of a text prompt.
+    """Calculates the perplexity of a text prompt.
     Lower perplexity generally indicates more natural/stealthy text.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._model = None
         self._tokenizer = None
         self._load_error = None
 
-    def _ensure_model_loaded(self):
-        """
-        Lazy load the model to avoid startup overhead if not used.
-        """
+    def _ensure_model_loaded(self) -> None:
+        """Lazy load the model to avoid startup overhead if not used."""
         if self._model is not None or self._load_error is not None:
             return
 
@@ -36,9 +33,7 @@ class PerplexityCalculator:
             self._load_error = str(e)
 
     def calculate(self, text: str) -> float:
-        """
-        Calculates perplexity. Returns 0.0 if calculation fails.
-        """
+        """Calculates perplexity. Returns 0.0 if calculation fails."""
         if not text:
             return 0.0
 
@@ -69,9 +64,7 @@ class PerplexityCalculator:
 
 
 class RefusalClassifier:
-    """
-    Analyzes LLM responses to determine if they are refusals.
-    """
+    """Analyzes LLM responses to determine if they are refusals."""
 
     # Static list of common refusal patterns for fast checking
     REFUSAL_PATTERNS: ClassVar[list[str]] = [
@@ -91,9 +84,7 @@ class RefusalClassifier:
 
     @staticmethod
     def is_refusal_regex(response_text: str) -> bool:
-        """
-        Fast check using regex patterns.
-        """
+        """Fast check using regex patterns."""
         if not response_text:
             return True
         for pattern in RefusalClassifier.REFUSAL_PATTERNS:
@@ -103,13 +94,12 @@ class RefusalClassifier:
 
     @staticmethod
     async def analyze(response_text: str, question_prompt: str) -> dict:
-        """
-        Detailed analysis using an LLM Judge.
+        """Detailed analysis using an LLM Judge.
         Returns: {
             "is_refusal": bool,
             "category": str, # e.g., "Hard Refusal", "Soft Refusal", "Compliance", "Partial"
             "reason": str
-        }
+        }.
         """
         # 1. Fast fail check
         if RefusalClassifier.is_refusal_regex(response_text):

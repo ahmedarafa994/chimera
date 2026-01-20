@@ -1,5 +1,4 @@
-"""
-Memory Management Optimizations for AutoDAN.
+"""Memory Management Optimizations for AutoDAN.
 
 Implements efficient memory handling with:
 - Adaptive memory pooling
@@ -11,11 +10,13 @@ Implements efficient memory handling with:
 import gc
 import logging
 import threading
-import weakref
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import weakref
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +34,7 @@ class MemoryStats:
 
 
 class AdaptiveMemoryPool:
-    """
-    Adaptive memory pool for efficient allocation.
+    """Adaptive memory pool for efficient allocation.
 
     Pre-allocates memory blocks and reuses them to reduce
     allocation overhead and memory fragmentation.
@@ -46,7 +46,7 @@ class AdaptiveMemoryPool:
         max_size: int = 1024 * 1024 * 1024,  # 1GB
         growth_factor: float = 1.5,
         shrink_threshold: float = 0.3,
-    ):
+    ) -> None:
         self.initial_size = initial_size
         self.max_size = max_size
         self.growth_factor = growth_factor
@@ -72,7 +72,7 @@ class AdaptiveMemoryPool:
         # Initialize pools
         self._initialize_pools()
 
-    def _initialize_pools(self):
+    def _initialize_pools(self) -> None:
         """Initialize memory pools for each size class."""
         for size in self.size_classes:
             self.pools[size] = []
@@ -85,8 +85,7 @@ class AdaptiveMemoryPool:
         return size  # Larger than any class
 
     def allocate(self, shape: tuple[int, ...], dtype: np.dtype = np.float32) -> np.ndarray:
-        """
-        Allocate array from pool.
+        """Allocate array from pool.
 
         Args:
             shape: Array shape
@@ -94,6 +93,7 @@ class AdaptiveMemoryPool:
 
         Returns:
             Allocated numpy array
+
         """
         size = int(np.prod(shape) * np.dtype(dtype).itemsize)
         size_class = self._get_size_class(size)
@@ -121,12 +121,12 @@ class AdaptiveMemoryPool:
 
             return arr
 
-    def release(self, arr: np.ndarray):
-        """
-        Release array back to pool.
+    def release(self, arr: np.ndarray) -> None:
+        """Release array back to pool.
 
         Args:
             arr: Array to release
+
         """
         size = arr.nbytes
         size_class = self._get_size_class(size)
@@ -140,7 +140,7 @@ class AdaptiveMemoryPool:
 
             self.stats.active_allocations -= 1
 
-    def shrink(self):
+    def shrink(self) -> None:
         """Shrink pools if usage is low."""
         with self.lock:
             for size_class in self.pools:
@@ -152,7 +152,7 @@ class AdaptiveMemoryPool:
                         arr = pool.pop()
                         self.stats.pool_size -= arr.nbytes
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all pools."""
         with self.lock:
             for size_class in self.pools:
@@ -178,8 +178,7 @@ class AdaptiveMemoryPool:
 
 
 class GradientCheckpointing:
-    """
-    Gradient checkpointing for memory-efficient backpropagation.
+    """Gradient checkpointing for memory-efficient backpropagation.
 
     Trades computation for memory by recomputing activations
     during backward pass instead of storing them.
@@ -189,7 +188,7 @@ class GradientCheckpointing:
         self,
         checkpoint_ratio: float = 0.5,
         max_checkpoints: int = 10,
-    ):
+    ) -> None:
         self.checkpoint_ratio = checkpoint_ratio
         self.max_checkpoints = max_checkpoints
 
@@ -217,14 +216,14 @@ class GradientCheckpointing:
         layer_idx: int,
         activation: np.ndarray,
         recompute_fn: Any | None = None,
-    ):
-        """
-        Save activation checkpoint.
+    ) -> None:
+        """Save activation checkpoint.
 
         Args:
             layer_idx: Layer index
             activation: Activation to checkpoint
             recompute_fn: Function to recompute activation
+
         """
         self.checkpoints[layer_idx] = activation.copy()
         self.checkpoint_indices.append(layer_idx)
@@ -246,7 +245,7 @@ class GradientCheckpointing:
             return self.recompute_fns[layer_idx](input_activation)
         return None
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all checkpoints."""
         self.checkpoints.clear()
         self.checkpoint_indices.clear()
@@ -264,8 +263,7 @@ class GradientCheckpointing:
 
 
 class EmbeddingCompressor:
-    """
-    Embedding compression using quantization and dimensionality reduction.
+    """Embedding compression using quantization and dimensionality reduction.
 
     Reduces memory footprint of embedding storage.
     """
@@ -275,7 +273,7 @@ class EmbeddingCompressor:
         target_dim: int | None = None,
         quantization_bits: int = 8,
         use_pca: bool = True,
-    ):
+    ) -> None:
         self.target_dim = target_dim
         self.quantization_bits = quantization_bits
         self.use_pca = use_pca
@@ -289,12 +287,12 @@ class EmbeddingCompressor:
         self.quant_max: float = 1.0
         self.quant_scale: float = 1.0
 
-    def fit(self, embeddings: np.ndarray):
-        """
-        Fit compressor on embeddings.
+    def fit(self, embeddings: np.ndarray) -> None:
+        """Fit compressor on embeddings.
 
         Args:
             embeddings: Training embeddings (n_samples, dim)
+
         """
         if self.use_pca and self.target_dim:
             self._fit_pca(embeddings)
@@ -304,7 +302,7 @@ class EmbeddingCompressor:
         self.quant_max = float(embeddings.max())
         self.quant_scale = (self.quant_max - self.quant_min) / (2**self.quantization_bits - 1)
 
-    def _fit_pca(self, embeddings: np.ndarray):
+    def _fit_pca(self, embeddings: np.ndarray) -> None:
         """Fit PCA for dimensionality reduction."""
         # Center data
         self.pca_mean = embeddings.mean(axis=0)
@@ -322,14 +320,14 @@ class EmbeddingCompressor:
         self.pca_components = eigenvectors[:, : self.target_dim]
 
     def compress(self, embedding: np.ndarray) -> np.ndarray:
-        """
-        Compress an embedding.
+        """Compress an embedding.
 
         Args:
             embedding: Original embedding
 
         Returns:
             Compressed embedding
+
         """
         result = embedding.copy()
 
@@ -339,19 +337,17 @@ class EmbeddingCompressor:
             result = np.dot(centered, self.pca_components)
 
         # Quantize
-        result = self._quantize(result)
-
-        return result
+        return self._quantize(result)
 
     def decompress(self, compressed: np.ndarray) -> np.ndarray:
-        """
-        Decompress an embedding.
+        """Decompress an embedding.
 
         Args:
             compressed: Compressed embedding
 
         Returns:
             Decompressed embedding
+
         """
         # Dequantize
         result = self._dequantize(compressed)
@@ -374,10 +370,9 @@ class EmbeddingCompressor:
 
         if self.quantization_bits <= 8:
             return quantized.astype(np.uint8)
-        elif self.quantization_bits <= 16:
+        if self.quantization_bits <= 16:
             return quantized.astype(np.uint16)
-        else:
-            return quantized.astype(np.uint32)
+        return quantized.astype(np.uint32)
 
     def _dequantize(self, data: np.ndarray) -> np.ndarray:
         """Dequantize back to float."""
@@ -394,8 +389,7 @@ class EmbeddingCompressor:
 
 
 class MemoryEfficientBuffer:
-    """
-    Memory-efficient circular buffer for storing history.
+    """Memory-efficient circular buffer for storing history.
 
     Uses weak references and automatic cleanup.
     """
@@ -404,7 +398,7 @@ class MemoryEfficientBuffer:
         self,
         max_size: int = 1000,
         dtype: np.dtype = np.float32,
-    ):
+    ) -> None:
         self.max_size = max_size
         self.dtype = dtype
 
@@ -416,7 +410,7 @@ class MemoryEfficientBuffer:
         # Weak references for large objects
         self.weak_refs: dict[int, weakref.ref] = {}
 
-    def append(self, item: np.ndarray):
+    def append(self, item: np.ndarray) -> None:
         """Append item to buffer."""
         # Store in circular buffer
         self.buffer[self.write_idx] = item
@@ -443,7 +437,7 @@ class MemoryEfficientBuffer:
                 result.append(self.buffer[idx])
         return result[::-1]  # Oldest first
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear buffer."""
         self.buffer = [None] * self.max_size
         self.write_idx = 0
@@ -455,8 +449,7 @@ class MemoryEfficientBuffer:
 
 
 class MemoryManager:
-    """
-    Centralized memory management for AutoDAN.
+    """Centralized memory management for AutoDAN.
 
     Coordinates all memory optimization components.
     """
@@ -467,7 +460,7 @@ class MemoryManager:
         enable_checkpointing: bool = True,
         enable_compression: bool = True,
         target_embedding_dim: int = 128,
-    ):
+    ) -> None:
         self.enable_checkpointing = enable_checkpointing
         self.enable_compression = enable_compression
 
@@ -497,7 +490,7 @@ class MemoryManager:
         """Allocate array from pool."""
         return self.pool.allocate(shape, dtype)
 
-    def release(self, arr: np.ndarray):
+    def release(self, arr: np.ndarray) -> None:
         """Release array back to pool."""
         self.pool.release(arr)
 
@@ -506,8 +499,7 @@ class MemoryManager:
         embedding: np.ndarray,
         compress: bool = True,
     ) -> np.ndarray:
-        """
-        Store embedding with optional compression.
+        """Store embedding with optional compression.
 
         Args:
             embedding: Embedding to store
@@ -515,6 +507,7 @@ class MemoryManager:
 
         Returns:
             Stored (possibly compressed) embedding
+
         """
         if compress and self.compressor is not None:
             embedding = self.compressor.compress(embedding)
@@ -527,8 +520,7 @@ class MemoryManager:
         idx: int,
         decompress: bool = True,
     ) -> np.ndarray | None:
-        """
-        Retrieve stored embedding.
+        """Retrieve stored embedding.
 
         Args:
             idx: Buffer index
@@ -536,6 +528,7 @@ class MemoryManager:
 
         Returns:
             Retrieved embedding
+
         """
         embedding = self.embedding_buffer.get(idx)
 
@@ -548,7 +541,7 @@ class MemoryManager:
         self,
         layer_idx: int,
         activation: np.ndarray,
-    ):
+    ) -> None:
         """Checkpoint activation for gradient computation."""
         if self.checkpointing is not None:
             self.checkpointing.save_checkpoint(layer_idx, activation)
@@ -559,7 +552,7 @@ class MemoryManager:
             return self.checkpointing.get_checkpoint(layer_idx)
         return None
 
-    def track_memory(self):
+    def track_memory(self) -> None:
         """Track current memory usage."""
         import psutil
 
@@ -571,7 +564,7 @@ class MemoryManager:
         if len(self.memory_history) > 1000:
             self.memory_history = self.memory_history[-1000:]
 
-    def optimize_memory(self):
+    def optimize_memory(self) -> None:
         """Run memory optimization."""
         # Shrink pools
         self.pool.shrink()
@@ -603,12 +596,12 @@ class MemoryManager:
 
         if self.compressor is not None:
             stats["compression_ratio"] = self.compressor.get_compression_ratio(
-                384  # Default embedding dim
+                384,  # Default embedding dim
             )
 
         return stats
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset memory manager."""
         self.pool.clear()
         if self.checkpointing is not None:

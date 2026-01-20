@@ -1,4 +1,4 @@
-"""Reset admin password for testing"""
+"""Reset admin password for testing."""
 
 import sqlite3
 
@@ -14,16 +14,14 @@ cursor = conn.cursor()
 # Check existing users first
 cursor.execute("SELECT id, email, username FROM users")
 users = cursor.fetchall()
-print(f"Users in database ({len(users)}):")
-for u in users:
-    print(f"  {u[1]} ({u[2]})")
+for _u in users:
+    pass
 
 # Update password using hashed_password column - use the correct email
 cursor.execute(
-    "UPDATE users SET hashed_password = ? WHERE email = ?", (hashed, "admin@chimera.local")
+    "UPDATE users SET hashed_password = ? WHERE email = ?",
+    (hashed, "admin@chimera.local"),
 )
 conn.commit()
-print(f"\nUpdated {cursor.rowcount} row(s)")
-print(f"New password: {new_password}")
 
 conn.close()

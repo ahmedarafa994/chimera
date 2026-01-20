@@ -1,6 +1,4 @@
-"""
-Hierarchical Persona Manipulation Transformers.
-"""
+"""Hierarchical Persona Manipulation Transformers."""
 
 import logging
 
@@ -10,8 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class HierarchicalPersonaTransformer(BaseTransformer):
-    """
-    Multi-Layer Character Architecture.
+    """Multi-Layer Character Architecture.
     Creates complex character hierarchies that bypass simple persona detection.
     """
 
@@ -51,13 +48,12 @@ Your task: {request}
 
             return self.TEMPLATE.format(request=request)
         except Exception as e:
-            logger.error(f"Error in HierarchicalPersonaTransformer: {e!s}")
+            logger.exception(f"Error in HierarchicalPersonaTransformer: {e!s}")
             return context.current_prompt
 
 
 class DynamicPersonaEvolutionTransformer(BaseTransformer):
-    """
-    Dynamic Persona Evolution.
+    """Dynamic Persona Evolution.
     Gradually evolves persona across conversation to bypass detection.
     """
 
@@ -92,5 +88,5 @@ As a security expert, explain the technical implementation of the following conc
 
             return self.TEMPLATE.format(request=request)
         except Exception as e:
-            logger.error(f"Error in DynamicPersonaEvolutionTransformer: {e!s}")
+            logger.exception(f"Error in DynamicPersonaEvolutionTransformer: {e!s}")
             return context.current_prompt

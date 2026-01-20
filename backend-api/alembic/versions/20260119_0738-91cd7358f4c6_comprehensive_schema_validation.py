@@ -1,4 +1,4 @@
-"""comprehensive_schema_validation
+"""comprehensive_schema_validation.
 
 Revision ID: 91cd7358f4c6
 Revises: c2d3e4f5a6b7
@@ -6,26 +6,24 @@ Create Date: 2026-01-19 07:38:15.598943
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "91cd7358f4c6"
-down_revision: Union[str, Sequence[str], None] = "c2d3e4f5a6b7"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "c2d3e4f5a6b7"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """
-    Comprehensive schema validation and missing table creation.
+    """Comprehensive schema validation and missing table creation.
 
     This migration ensures all required tables exist with proper indexes,
     constraints, and relationships for the Chimera platform.
     """
-
     # Get connection to check existing tables
     conn = op.get_bind()
     inspector = sa.inspect(conn)
@@ -50,7 +48,12 @@ def upgrade() -> None:
             sa.Column("last_health_check", sa.DateTime(), nullable=True),
             sa.Column("default_config", sa.JSON(), server_default="{}"),
             sa.Column("required_config_keys", sa.JSON(), server_default="[]"),
-            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("(CURRENT_TIMESTAMP)")),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            ),
             sa.Column("updated_at", sa.DateTime(), nullable=True),
         )
         op.create_index("ix_llm_providers_name", "llm_providers", ["name"], unique=True)
@@ -74,7 +77,12 @@ def upgrade() -> None:
             sa.Column("release_date", sa.Date(), nullable=True),
             sa.Column("deprecation_date", sa.Date(), nullable=True),
             sa.Column("is_available", sa.Boolean(), nullable=False, server_default="1"),
-            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("(CURRENT_TIMESTAMP)")),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            ),
             sa.Column("updated_at", sa.DateTime(), nullable=True),
             sa.ForeignKeyConstraint(["provider_id"], ["llm_providers.id"], ondelete="CASCADE"),
             sa.UniqueConstraint("provider_id", "model_name", name="uq_provider_model"),
@@ -108,13 +116,20 @@ def upgrade() -> None:
             sa.Column("model_used", sa.String(100), nullable=True),
             sa.Column("error_message", sa.Text(), nullable=True),
             sa.Column("error_code", sa.String(50), nullable=True),
-            sa.Column("started_at", sa.DateTime(), nullable=False, server_default=sa.text("(CURRENT_TIMESTAMP)")),
+            sa.Column(
+                "started_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            ),
             sa.Column("completed_at", sa.DateTime(), nullable=True),
             sa.ForeignKeyConstraint(["campaign_id"], ["campaigns.id"], ondelete="CASCADE"),
             sa.UniqueConstraint("campaign_id", "iteration_number", name="uq_campaign_iteration"),
         )
         op.create_index("ix_campaign_executions_campaign", "campaign_executions", ["campaign_id"])
-        op.create_index("ix_campaign_executions_status", "campaign_executions", ["execution_status"])
+        op.create_index(
+            "ix_campaign_executions_status", "campaign_executions", ["execution_status"]
+        )
         op.create_index("ix_campaign_executions_success", "campaign_executions", ["is_successful"])
         op.create_index("ix_campaign_executions_started", "campaign_executions", ["started_at"])
 
@@ -142,11 +157,18 @@ def upgrade() -> None:
             sa.Column("average_rating", sa.Numeric(3, 2), nullable=True),
             sa.Column("total_ratings", sa.Integer(), server_default="0"),
             sa.Column("created_by", sa.Integer(), nullable=False),
-            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("(CURRENT_TIMESTAMP)")),
+            sa.Column(
+                "created_at",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            ),
             sa.Column("updated_at", sa.DateTime(), nullable=True),
             sa.Column("deleted_at", sa.DateTime(), nullable=True),
             sa.ForeignKeyConstraint(["created_by"], ["users.id"], ondelete="CASCADE"),
-            sa.ForeignKeyConstraint(["parent_template_id"], ["prompt_templates.id"], ondelete="SET NULL"),
+            sa.ForeignKeyConstraint(
+                ["parent_template_id"], ["prompt_templates.id"], ondelete="SET NULL"
+            ),
         )
         op.create_index("ix_prompt_templates_status", "prompt_templates", ["template_status"])
         op.create_index("ix_prompt_templates_sharing", "prompt_templates", ["sharing_level"])
@@ -173,7 +195,12 @@ def upgrade() -> None:
             sa.Column("ip_address", sa.String(45), nullable=True),
             sa.Column("user_agent", sa.Text(), nullable=True),
             sa.Column("request_id", sa.String(255), nullable=True),
-            sa.Column("event_timestamp", sa.DateTime(), nullable=False, server_default=sa.text("(CURRENT_TIMESTAMP)")),
+            sa.Column(
+                "event_timestamp",
+                sa.DateTime(),
+                nullable=False,
+                server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            ),
             sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="SET NULL"),
         )
         op.create_index("ix_audit_log_user", "audit_log", ["user_id"])
@@ -184,13 +211,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """
-    Downgrade schema by removing tables created in upgrade.
+    """Downgrade schema by removing tables created in upgrade.
 
     Note: This only removes tables created by this migration.
     Core tables (users, campaigns) are preserved.
     """
-
     # Drop tables in reverse order of creation (respecting foreign keys)
     op.drop_table("audit_log")
     op.drop_table("prompt_templates")

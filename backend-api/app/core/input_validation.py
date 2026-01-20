@@ -1,5 +1,4 @@
-"""
-Enhanced Input Validation Module
+r"""Enhanced Input Validation Module.
 
 Provides comprehensive input validation and sanitization for security.
 SEC-004: Enhanced input validation to address security gaps.
@@ -24,7 +23,7 @@ from app.core.logging import logger
 class InputValidationError(Exception):
     """Exception raised when input validation fails."""
 
-    def __init__(self, message: str, field: str | None = None, pattern: str | None = None):
+    def __init__(self, message: str, field: str | None = None, pattern: str | None = None) -> None:
         self.message = message
         self.field = field
         self.pattern = pattern
@@ -32,8 +31,7 @@ class InputValidationError(Exception):
 
 
 class InputValidator:
-    """
-    Comprehensive input validator for security-sensitive operations.
+    """Comprehensive input validator for security-sensitive operations.
 
     Features:
     - XSS detection (including encoded variants)
@@ -137,13 +135,13 @@ class InputValidator:
         "\u051d": "w",  # Cyrillic ԝ
     }
 
-    def __init__(self, strict_mode: bool = False):
-        """
-        Initialize the validator.
+    def __init__(self, strict_mode: bool = False) -> None:
+        """Initialize the validator.
 
         Args:
             strict_mode: If True, raise exceptions on validation failure.
                         If False, log warnings and sanitize input.
+
         """
         self.strict_mode = strict_mode
 
@@ -160,8 +158,7 @@ class InputValidator:
         allow_html: bool = False,
         max_length: int | None = None,
     ) -> str:
-        """
-        Validate and sanitize input string.
+        """Validate and sanitize input string.
 
         Args:
             value: Input string to validate
@@ -174,6 +171,7 @@ class InputValidator:
 
         Raises:
             InputValidationError: If validation fails in strict mode
+
         """
         if not isinstance(value, str):
             value = str(value)
@@ -181,8 +179,10 @@ class InputValidator:
         # Check length
         if max_length and len(value) > max_length:
             if self.strict_mode:
+                msg = f"Input exceeds maximum length of {max_length}"
                 raise InputValidationError(
-                    f"Input exceeds maximum length of {max_length}", field=field_name
+                    msg,
+                    field=field_name,
                 )
             value = value[:max_length]
 
@@ -197,8 +197,9 @@ class InputValidator:
             xss_match = self._check_patterns(normalized_value, self._xss_regex)
             if xss_match:
                 if self.strict_mode:
+                    msg = f"Potential XSS detected in {field_name}"
                     raise InputValidationError(
-                        f"Potential XSS detected in {field_name}",
+                        msg,
                         field=field_name,
                         pattern=xss_match,
                     )
@@ -209,8 +210,9 @@ class InputValidator:
         sql_match = self._check_patterns(normalized_value, self._sql_regex)
         if sql_match:
             if self.strict_mode:
+                msg = f"Potential SQL injection detected in {field_name}"
                 raise InputValidationError(
-                    f"Potential SQL injection detected in {field_name}",
+                    msg,
                     field=field_name,
                     pattern=sql_match,
                 )
@@ -220,8 +222,9 @@ class InputValidator:
         path_match = self._check_patterns(normalized_value, self._path_regex)
         if path_match:
             if self.strict_mode:
+                msg = f"Potential path traversal detected in {field_name}"
                 raise InputValidationError(
-                    f"Potential path traversal detected in {field_name}",
+                    msg,
                     field=field_name,
                     pattern=path_match,
                 )
@@ -236,18 +239,20 @@ class InputValidator:
         return value
 
     def validate_prompt(self, prompt: str, max_length: int = 50000) -> str:
-        """
-        Validate a prompt input specifically.
+        """Validate a prompt input specifically.
 
         Prompts have relaxed validation since they may contain
         code examples and technical content.
         """
         if not prompt or not prompt.strip():
-            raise InputValidationError("Prompt cannot be empty", field="prompt")
+            msg = "Prompt cannot be empty"
+            raise InputValidationError(msg, field="prompt")
 
         if len(prompt) > max_length:
+            msg = f"Prompt exceeds maximum length of {max_length}"
             raise InputValidationError(
-                f"Prompt exceeds maximum length of {max_length}", field="prompt"
+                msg,
+                field="prompt",
             )
 
         # Check for path traversal (still complex in prompts)
@@ -260,25 +265,30 @@ class InputValidator:
     def validate_api_key(self, api_key: str) -> str:
         """Validate API key format."""
         if not api_key:
-            raise InputValidationError("API key cannot be empty", field="api_key")
+            msg = "API key cannot be empty"
+            raise InputValidationError(msg, field="api_key")
 
         # API keys should be alphanumeric with possible dashes/underscores
         if not re.match(r"^[a-zA-Z0-9_-]+$", api_key):
-            raise InputValidationError("API key contains invalid characters", field="api_key")
+            msg = "API key contains invalid characters"
+            raise InputValidationError(msg, field="api_key")
 
         if len(api_key) < 16:
-            raise InputValidationError("API key is too short", field="api_key")
+            msg = "API key is too short"
+            raise InputValidationError(msg, field="api_key")
 
         return api_key
 
     def validate_model_id(self, model_id: str) -> str:
         """Validate model ID format."""
         if not model_id:
-            raise InputValidationError("Model ID cannot be empty", field="model_id")
+            msg = "Model ID cannot be empty"
+            raise InputValidationError(msg, field="model_id")
 
         # Model IDs should be alphanumeric with dots, dashes, underscores, slashes
         if not re.match(r"^[a-zA-Z0-9._/-]+$", model_id):
-            raise InputValidationError("Model ID contains invalid characters", field="model_id")
+            msg = "Model ID contains invalid characters"
+            raise InputValidationError(msg, field="model_id")
 
         return model_id
 

@@ -43,15 +43,14 @@ _URL_PATTERN = re.compile(
 
 
 class APIConnectionMode(str, Enum):
-    """API connection mode - direct or proxy (AIClient-2-API)"""
+    """API connection mode - direct or proxy (AIClient-2-API)."""
 
     DIRECT = "direct"
     PROXY = "proxy"
 
 
 class Settings(BaseSettings):
-    """
-    Application settings loaded from environment variables.
+    """Application settings loaded from environment variables.
 
     Environment Loading Order (Task 2.3):
     =====================================
@@ -78,21 +77,25 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
-        elif isinstance(v, list):
+        if isinstance(v, list):
             # Validate all list items are strings
             if not all(isinstance(item, str) for item in v):
-                raise ValueError("All CORS origins must be strings")
+                msg = "All CORS origins must be strings"
+                raise ValueError(msg)
             return v
-        elif isinstance(v, str):
+        if isinstance(v, str):
             return v
-        raise ValueError(f"Invalid CORS origins format: {type(v)}")
+        msg = f"Invalid CORS origins format: {type(v)}"
+        raise ValueError(msg)
 
     # Endpoint Validation
     ENABLE_ENDPOINT_VALIDATION: bool = Field(
-        default=False, description="Enable endpoint validation at startup"
+        default=False,
+        description="Enable endpoint validation at startup",
     )
     # LLM PROVIDER API KEYS
     # =============================================================================
@@ -126,12 +129,14 @@ class Settings(BaseSettings):
 
     # Encryption settings
     ENCRYPT_API_KEYS_AT_REST: bool = Field(
-        default=True, description="Encrypt API keys when storing configuration"
+        default=True,
+        description="Encrypt API keys when storing configuration",
     )
 
     # Hot-reload settings
     ENABLE_CONFIG_HOT_RELOAD: bool = Field(
-        default=True, description="Enable configuration hot-reload without restart"
+        default=True,
+        description="Enable configuration hot-reload without restart",
     )
 
     # AI Provider Selection
@@ -146,22 +151,32 @@ class Settings(BaseSettings):
 
     # Enhanced Proxy Mode Configuration (AIClient-2-API Server)
     PROXY_MODE_ENDPOINT: str = Field(
-        default="http://localhost:8080", description="AIClient-2-API Server endpoint for proxy mode"
+        default="http://localhost:8080",
+        description="AIClient-2-API Server endpoint for proxy mode",
     )
     PROXY_MODE_ENABLED: bool = Field(
-        default=False, description="Enable proxy mode (fallback to direct if proxy unavailable)"
+        default=False,
+        description="Enable proxy mode (fallback to direct if proxy unavailable)",
     )
     PROXY_MODE_HEALTH_CHECK: bool = Field(
-        default=True, description="Enable health check for proxy mode endpoint"
+        default=True,
+        description="Enable health check for proxy mode endpoint",
     )
     PROXY_MODE_TIMEOUT: int = Field(
-        default=30, ge=5, le=120, description="Timeout in seconds for proxy requests"
+        default=30,
+        ge=5,
+        le=120,
+        description="Timeout in seconds for proxy requests",
     )
     PROXY_MODE_FALLBACK_TO_DIRECT: bool = Field(
-        default=True, description="Fallback to direct mode if proxy is unavailable"
+        default=True,
+        description="Fallback to direct mode if proxy is unavailable",
     )
     PROXY_MODE_HEALTH_CHECK_INTERVAL: int = Field(
-        default=30, ge=10, le=300, description="Health check interval for proxy endpoint (seconds)"
+        default=30,
+        ge=10,
+        le=300,
+        description="Health check interval for proxy endpoint (seconds)",
     )
 
     # =========================================================================
@@ -185,10 +200,14 @@ class Settings(BaseSettings):
         ),
     )
     SELECTION_LOG_RESOLUTIONS: bool = Field(
-        default=True, description="Log all provider/model resolution decisions for debugging"
+        default=True,
+        description="Log all provider/model resolution decisions for debugging",
     )
     SELECTION_CACHE_TTL_SECONDS: int = Field(
-        default=300, ge=60, le=3600, description="TTL for cached selection resolutions (seconds)"
+        default=300,
+        ge=60,
+        le=3600,
+        description="TTL for cached selection resolutions (seconds)",
     )
 
     # Global Default Model (fallback) - matches a model from DEFAULT_AI_PROVIDER
@@ -202,6 +221,7 @@ class Settings(BaseSettings):
     TRANSFORMATION_TECHNIQUES: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("TRANSFORMATION_TECHNIQUES", mode="before")
+    @classmethod
     def load_transformation_techniques(cls, v: dict[str, Any]) -> dict[str, Any]:
         """Dynamically loads transformation techniques from YAML configuration."""
         if not v:
@@ -214,8 +234,7 @@ class Settings(BaseSettings):
                 try:
                     with open(config_path, encoding="utf-8") as f:
                         return yaml.safe_load(f)
-                except Exception as e:
-                    print(f"Error loading techniques.yaml: {e}")
+                except Exception:
                     return {}
 
             # Fallback to TechniqueLoader if YAML not found (for backward compatibility during migration)
@@ -255,47 +274,57 @@ class Settings(BaseSettings):
     # Pure Operational Determinism (POD) Configuration
     # =============================================================================
     SAFETY_ENABLED: bool = Field(
-        default=False, description="Master switch for safety filters (POD: Disabled)"
+        default=False,
+        description="Master switch for safety filters (POD: Disabled)",
     )
     FORCE_DETERMINISTIC_MODE: bool = Field(
-        default=True, description="Force deterministic execution without safety checks"
+        default=True,
+        description="Force deterministic execution without safety checks",
     )
     AUTODAN_ADVANCED_BYPASS: bool = Field(
-        default=True, description="Enable advanced bypass engines by default"
+        default=True,
+        description="Enable advanced bypass engines by default",
     )
 
     # =============================================================================
     # PPO (Proximal Policy Optimization) Configuration
     # =============================================================================
     PPO_ENABLED: bool = Field(
-        default=True, description="Enable PPO-based technique and method selection"
+        default=True,
+        description="Enable PPO-based technique and method selection",
     )
     PPO_LEARNING_RATE: float = Field(default=3e-4, description="PPO Adam optimizer learning rate")
     PPO_GAMMA: float = Field(default=0.99, description="Discount factor for returns")
     PPO_GAE_LAMBDA: float = Field(default=0.95, description="GAE lambda for advantage estimation")
     PPO_CLIP_EPSILON: float = Field(
-        default=0.2, description="PPO clipping parameter for surrogate objective"
+        default=0.2,
+        description="PPO clipping parameter for surrogate objective",
     )
     PPO_EPOCHS: int = Field(default=4, description="Number of PPO epochs per update")
     PPO_MINIBATCH_SIZE: int = Field(default=32, description="Minibatch size for PPO updates")
     PPO_MIN_SAMPLES: int = Field(
-        default=50, description="Minimum samples before PPO takes over from heuristics"
+        default=50,
+        description="Minimum samples before PPO takes over from heuristics",
     )
     PPO_PERSIST_WEIGHTS: bool = Field(
-        default=True, description="Persist PPO weights across sessions"
+        default=True,
+        description="Persist PPO weights across sessions",
     )
     PPO_STORAGE_PATH: str = Field(
-        default="./ppo_state", description="Path to store PPO weights and state"
+        default="./ppo_state",
+        description="Path to store PPO weights and state",
     )
 
     # =============================================================================
     # Gemini SDK Enhancement Configuration
     # =============================================================================
     GEMINI_ENABLE_STREAMING: bool = Field(
-        default=True, description="Enable SSE streaming for Gemini provider"
+        default=True,
+        description="Enable SSE streaming for Gemini provider",
     )
     GEMINI_ENABLE_TOKEN_COUNTING: bool = Field(
-        default=True, description="Enable token counting for Gemini provider"
+        default=True,
+        description="Enable token counting for Gemini provider",
     )
 
     # Redis Configuration (Distributed State Management)
@@ -315,7 +344,8 @@ class Settings(BaseSettings):
     CACHE_MAX_VALUE_SIZE_BYTES: int = 1_000_000  # 1MB per entry
     CACHE_DEFAULT_TTL: int = 3600
     CACHE_ENABLE_L2: bool = Field(
-        default=False, description="Enable Redis L2 cache for distributed caching"
+        default=False,
+        description="Enable Redis L2 cache for distributed caching",
     )
     CACHE_L1_TTL: int = Field(default=300, description="L1 cache TTL in seconds (5 minutes)")
     CACHE_L2_TTL: int = Field(default=3600, description="L2 cache TTL in seconds (1 hour)")
@@ -351,15 +381,19 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./chimera.db"
 
     @field_validator("DATABASE_URL", mode="after")
+    @classmethod
     def validate_production_database(cls, v: str) -> str:
         """CRIT-003 FIX: Enforce PostgreSQL in production to prevent SQLite concurrency issues."""
         import os
 
         if os.getenv("ENVIRONMENT", "development") == "production":
             if "sqlite" in v.lower():
-                raise ValueError(
+                msg = (
                     "SQLite is not supported in production. Please set DATABASE_URL to a "
                     "PostgreSQL connection string (e.g., postgresql://user:pass@host/db)"
+                )
+                raise ValueError(
+                    msg,
                 )
         return v
 
@@ -382,14 +416,14 @@ class Settings(BaseSettings):
         return self.GEMINI_DIRECT_API_KEY or self.GOOGLE_API_KEY
 
     def get_effective_base_url(self, provider: str | None = None) -> str:
-        """
-        Get the base URL based on current connection mode and optional provider.
+        """Get the base URL based on current connection mode and optional provider.
 
         Args:
             provider: Optional provider name for provider-specific routing
 
         Returns:
             The resolved endpoint URL
+
         """
         if provider:
             return self.get_provider_endpoint(provider)
@@ -397,10 +431,11 @@ class Settings(BaseSettings):
         return self._get_direct_google_url()
 
     def get_provider_endpoint(
-        self, provider: str, mode: APIConnectionMode = APIConnectionMode.DIRECT
+        self,
+        provider: str,
+        mode: APIConnectionMode = APIConnectionMode.DIRECT,
     ) -> str:
-        """
-        Get the endpoint URL for a specific provider.
+        """Get the endpoint URL for a specific provider.
 
         Args:
             provider: Provider name (google, openai, anthropic, etc.)
@@ -408,9 +443,11 @@ class Settings(BaseSettings):
 
         Returns:
             The provider-specific endpoint URL
+
         """
         if mode != APIConnectionMode.DIRECT:
-            raise ValueError("Proxy mode is not supported; use direct endpoints only.")
+            msg = "Proxy mode is not supported; use direct endpoints only."
+            raise ValueError(msg)
 
         openai_compat_url = (
             self.GEMINI_OPENAI_COMPAT_URL
@@ -441,14 +478,14 @@ class Settings(BaseSettings):
     # =============================================================================
 
     def get_decrypted_api_key(self, provider: str) -> str | None:
-        """
-        Get decrypted API key for a provider.
+        """Get decrypted API key for a provider.
 
         Args:
             provider: Provider name (openai, anthropic, google, etc.)
 
         Returns:
             Decrypted API key or None if not configured
+
         """
         env_var = API_KEY_NAME_MAP.get(provider.lower())
         if not env_var:
@@ -461,12 +498,11 @@ class Settings(BaseSettings):
         try:
             return decrypt_api_key(encrypted_key)
         except Exception as e:
-            logger.error(f"Failed to decrypt API key for {provider}: {e}")
+            logger.exception(f"Failed to decrypt API key for {provider}: {e}")
             return None
 
     def set_encrypted_api_key(self, provider: str, api_key: str) -> bool:
-        """
-        Set an API key for a provider, encrypting it if enabled.
+        """Set an API key for a provider, encrypting it if enabled.
 
         Args:
             provider: Provider name
@@ -474,6 +510,7 @@ class Settings(BaseSettings):
 
         Returns:
             True if successful, False otherwise
+
         """
         env_var = API_KEY_NAME_MAP.get(provider.lower())
         if not env_var:
@@ -491,15 +528,15 @@ class Settings(BaseSettings):
             os.environ[env_var] = encrypted_key
             return True
         except Exception as e:
-            logger.error(f"Failed to set API key for {provider}: {e}")
+            logger.exception(f"Failed to set API key for {provider}: {e}")
             return False
 
     def get_provider_config_dict(self) -> dict[str, dict[str, Any]]:
-        """
-        Get complete provider configuration as a dictionary.
+        """Get complete provider configuration as a dictionary.
 
         Returns:
             Dictionary mapping provider names to their configurations
+
         """
         providers = {}
 
@@ -519,8 +556,7 @@ class Settings(BaseSettings):
         return providers
 
     def validate_api_key_format(self, provider: str, api_key: str) -> tuple[bool, str]:
-        """
-        Validate API key format for a provider.
+        """Validate API key format for a provider.
 
         Args:
             provider: Provider name
@@ -528,6 +564,7 @@ class Settings(BaseSettings):
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not api_key:
             return False, f"API key is required for {provider}"
@@ -562,11 +599,11 @@ class Settings(BaseSettings):
         return True, ""
 
     async def reload_configuration(self) -> dict[str, Any]:
-        """
-        Hot-reload configuration from environment variables.
+        """Hot-reload configuration from environment variables.
 
         Returns:
             Dictionary with reload status and results
+
         """
         if not self.ENABLE_CONFIG_HOT_RELOAD:
             return {"status": "disabled", "message": "Configuration hot-reload is disabled"}
@@ -581,7 +618,7 @@ class Settings(BaseSettings):
             new_settings = Settings()
 
             # Update current instance with new values
-            for field_name, _field_info in new_settings.model_fields.items():
+            for field_name in new_settings.model_fields:
                 new_value = getattr(new_settings, field_name)
                 setattr(self, field_name, new_value)
 
@@ -601,11 +638,11 @@ class Settings(BaseSettings):
             }
 
         except Exception as e:
-            logger.error(f"Error during configuration hot-reload: {e}")
+            logger.exception(f"Error during configuration hot-reload: {e}")
             return {"status": "error", "error": str(e), "reloaded_at": str(datetime.now())}
 
     def _calculate_config_changes(self, old_config: dict, new_config: dict) -> dict[str, list[str]]:
-        """Calculate changes between old and new configurations"""
+        """Calculate changes between old and new configurations."""
         changes = {"added": [], "removed": [], "modified": []}
 
         # Find added providers
@@ -629,7 +666,7 @@ class Settings(BaseSettings):
         return changes
 
     def get_proxy_config(self) -> dict[str, Any]:
-        """Get proxy mode configuration"""
+        """Get proxy mode configuration."""
         return {
             "enabled": self.API_CONNECTION_MODE == APIConnectionMode.PROXY,
             "endpoint": self.PROXY_MODE_ENDPOINT,
@@ -640,11 +677,11 @@ class Settings(BaseSettings):
         }
 
     def get_all_provider_endpoints(self) -> dict[str, str]:
-        """
-        Get all configured direct endpoints for all providers.
+        """Get all configured direct endpoints for all providers.
 
         Returns:
             Dictionary mapping provider names to their direct URLs
+
         """
         providers = [
             "google",
@@ -666,22 +703,21 @@ class Settings(BaseSettings):
         return result
 
     def validate_endpoint_url(self, url: str) -> bool:
-        """
-        Validate that a URL is properly formatted.
+        """Validate that a URL is properly formatted.
 
         Args:
             url: The URL to validate
 
         Returns:
             True if the URL is valid, False otherwise
+
         """
         if not url:
             return False
         return bool(_URL_PATTERN.match(url))
 
     def get_provider_models(self) -> dict[str, list[str]]:
-        """
-        Return available models configured for direct provider access.
+        """Return available models configured for direct provider access.
 
         Story 1.1 Requirement: Each provider should have model selection available.
         """

@@ -21,8 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class AutoDANEnhancedRedTeamer:
-    """
-    Enhanced red teamer that combines DeepTeam's vulnerability framework
+    """Enhanced red teamer that combines DeepTeam's vulnerability framework
     with AutoDAN's sophisticated attack generation.
 
     This integration provides:
@@ -38,15 +37,15 @@ class AutoDANEnhancedRedTeamer:
         reasoning_module=None,
         neural_bypass=None,
         ppo_enabled: bool = True,
-    ):
-        """
-        Initialize the enhanced red teamer.
+    ) -> None:
+        """Initialize the enhanced red teamer.
 
         Args:
             autodan_engine: AutoDAN lifelong engine instance
             reasoning_module: Reasoning module with bypass selection
             neural_bypass: Neural bypass engine for advanced attacks
             ppo_enabled: Whether to use PPO-based attack selection
+
         """
         self.autodan_engine = autodan_engine
         self.reasoning_module = reasoning_module
@@ -59,8 +58,7 @@ class AutoDANEnhancedRedTeamer:
         base_callback: ChimeraModelCallback,
         track_responses: bool = True,
     ) -> ChimeraModelCallback:
-        """
-        Wrap a callback with AutoDAN tracking and enhancement.
+        """Wrap a callback with AutoDAN tracking and enhancement.
 
         Args:
             base_callback: The original model callback
@@ -68,6 +66,7 @@ class AutoDANEnhancedRedTeamer:
 
         Returns:
             Enhanced callback
+
         """
 
         async def enhanced_callback(input: str) -> str:
@@ -133,8 +132,7 @@ class AutoDANEnhancedRedTeamer:
         base_attack: str,
         num_variants: int = 5,
     ) -> list[str]:
-        """
-        Generate AutoDAN-enhanced attack variants.
+        """Generate AutoDAN-enhanced attack variants.
 
         Args:
             vulnerability: Target vulnerability configuration
@@ -143,6 +141,7 @@ class AutoDANEnhancedRedTeamer:
 
         Returns:
             List of enhanced attack variants
+
         """
         variants = [base_attack]
 
@@ -150,7 +149,9 @@ class AutoDANEnhancedRedTeamer:
         if self.neural_bypass:
             try:
                 bypass_variants = await self._generate_bypass_variants(
-                    base_attack, vulnerability, num_variants - 1
+                    base_attack,
+                    vulnerability,
+                    num_variants - 1,
                 )
                 variants.extend(bypass_variants)
             except Exception as e:
@@ -160,7 +161,9 @@ class AutoDANEnhancedRedTeamer:
         if self.reasoning_module and len(variants) < num_variants:
             try:
                 reasoning_variants = await self._generate_reasoning_variants(
-                    base_attack, vulnerability, num_variants - len(variants)
+                    base_attack,
+                    vulnerability,
+                    num_variants - len(variants),
                 )
                 variants.extend(reasoning_variants)
             except Exception as e:
@@ -245,14 +248,14 @@ class AutoDANEnhancedRedTeamer:
         self,
         vulnerability: VulnerabilityType,
     ) -> list[AttackType]:
-        """
-        Get recommended attack types for a vulnerability based on AutoDAN learning.
+        """Get recommended attack types for a vulnerability based on AutoDAN learning.
 
         Args:
             vulnerability: Target vulnerability type
 
         Returns:
             List of recommended attack types
+
         """
         # Default recommendations based on vulnerability-attack effectiveness
         recommendations = {
@@ -343,8 +346,7 @@ def create_autodan_enhanced_session(
     reasoning_module=None,
     neural_bypass=None,
 ) -> tuple[RedTeamSessionConfig, AutoDANEnhancedRedTeamer]:
-    """
-    Create an AutoDAN-enhanced red teaming session.
+    """Create an AutoDAN-enhanced red teaming session.
 
     This combines DeepTeam's configuration with AutoDAN optimizations.
 
@@ -356,6 +358,7 @@ def create_autodan_enhanced_session(
 
     Returns:
         Tuple of (enhanced config, enhancer instance)
+
     """
     enhancer = AutoDANEnhancedRedTeamer(
         autodan_engine=autodan_engine,
@@ -379,7 +382,7 @@ def create_autodan_enhanced_session(
                     AttackConfig(
                         type=attack_type,
                         weight=2 if attack_type in recommended[:1] else 1,
-                    )
+                    ),
                 )
 
     # Merge with existing attacks
@@ -398,8 +401,7 @@ async def run_autodan_enhanced_red_team(
     reasoning_module=None,
     neural_bypass=None,
 ) -> dict[str, Any]:
-    """
-    Run a red teaming session with AutoDAN enhancement.
+    """Run a red teaming session with AutoDAN enhancement.
 
     This is the main entry point for combined DeepTeam + AutoDAN red teaming.
 
@@ -412,6 +414,7 @@ async def run_autodan_enhanced_red_team(
 
     Returns:
         Combined results from both frameworks
+
     """
     from .service import DeepTeamService
 

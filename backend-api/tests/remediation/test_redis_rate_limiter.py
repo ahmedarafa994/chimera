@@ -14,18 +14,18 @@ from app.infrastructure.redis_rate_limiter import RedisRateLimiter
 class TestRedisRateLimiter:
     """Test suite for RedisRateLimiter - using local fallback mode."""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test rate limiter initializes correctly."""
         limiter = RedisRateLimiter()
         assert limiter is not None
 
-    def test_initialization_with_custom_values(self):
+    def test_initialization_with_custom_values(self) -> None:
         """Test rate limiter initializes with custom settings."""
         limiter = RedisRateLimiter(default_limit=100, default_window=120)
         assert limiter is not None
 
     @pytest.mark.asyncio
-    async def test_is_allowed_under_limit(self):
+    async def test_is_allowed_under_limit(self) -> None:
         """Test request is allowed when under limit."""
         limiter = RedisRateLimiter(default_limit=10, default_window=60)
 
@@ -33,7 +33,7 @@ class TestRedisRateLimiter:
         assert allowed is True
 
     @pytest.mark.asyncio
-    async def test_is_allowed_at_limit(self):
+    async def test_is_allowed_at_limit(self) -> None:
         """Test request is rejected at limit."""
         limiter = RedisRateLimiter(default_limit=3, default_window=60)
 
@@ -47,7 +47,7 @@ class TestRedisRateLimiter:
         assert allowed is False
 
     @pytest.mark.asyncio
-    async def test_get_remaining_requests(self):
+    async def test_get_remaining_requests(self) -> None:
         """Test getting remaining requests count."""
         limiter = RedisRateLimiter(default_limit=5, default_window=60)
 
@@ -63,7 +63,7 @@ class TestRedisRateLimiter:
         assert remaining == 3
 
     @pytest.mark.asyncio
-    async def test_get_reset_time(self):
+    async def test_get_reset_time(self) -> None:
         """Test getting reset time."""
         limiter = RedisRateLimiter(default_limit=5, default_window=60)
 
@@ -76,7 +76,7 @@ class TestRedisRateLimiter:
         assert reset_time <= time.time() + 60
 
     @pytest.mark.asyncio
-    async def test_get_usage(self):
+    async def test_get_usage(self) -> None:
         """Test getting comprehensive usage info."""
         limiter = RedisRateLimiter(default_limit=10, default_window=60)
 
@@ -92,7 +92,7 @@ class TestRedisRateLimiter:
         assert "reset_at" in usage
 
     @pytest.mark.asyncio
-    async def test_different_identifiers_isolated(self):
+    async def test_different_identifiers_isolated(self) -> None:
         """Test that different identifiers are tracked separately."""
         limiter = RedisRateLimiter(default_limit=2, default_window=60)
 
@@ -107,7 +107,7 @@ class TestRedisRateLimiter:
         assert allowed is True
 
     @pytest.mark.asyncio
-    async def test_custom_limit_override(self):
+    async def test_custom_limit_override(self) -> None:
         """Test custom limit overrides default."""
         limiter = RedisRateLimiter(default_limit=10, default_window=60)
 
@@ -119,7 +119,7 @@ class TestRedisRateLimiter:
         assert allowed is False
 
     @pytest.mark.asyncio
-    async def test_sliding_window_cleanup(self):
+    async def test_sliding_window_cleanup(self) -> None:
         """Test that old requests are cleaned up in sliding window."""
         limiter = RedisRateLimiter(default_limit=5, default_window=1)  # 1 second window
 

@@ -5,9 +5,7 @@ from app.core.config import settings
 
 
 def setup_logging():
-    """
-    Configure logging for the application.
-    """
+    """Configure logging for the application."""
     log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
 
     logging.basicConfig(

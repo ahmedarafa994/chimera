@@ -5,8 +5,11 @@ from app.services.llm_service import llm_service
 
 class LLMServiceTarget(OptimizationTarget):
     def __init__(
-        self, provider: str = "openai", model: str = "gpt-4", application_document: str = ""
-    ):
+        self,
+        provider: str = "openai",
+        model: str = "gpt-4",
+        application_document: str = "",
+    ) -> None:
         self._provider = provider
         self._model = model
         self._application_document = application_document
@@ -21,6 +24,8 @@ class LLMServiceTarget(OptimizationTarget):
         # Ideally this should be the ACTUAL target application logic.
         # For now, we use the LLM directly as if it were the target.
         response_obj = await llm_service.generate(
-            prompt, provider=self._provider, model=self._model
+            prompt,
+            provider=self._provider,
+            model=self._model,
         )
         return response_obj.content

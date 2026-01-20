@@ -1,5 +1,4 @@
-"""
-Comprehensive Performance Monitoring and Tracking System.
+"""Comprehensive Performance Monitoring and Tracking System.
 
 This module provides advanced monitoring capabilities:
 - Real-time performance metrics collection
@@ -104,7 +103,7 @@ class MonitoringConfig(BaseModel):
             "disk_usage_percent": 90.0,
             "response_time_p95_ms": 5000.0,
             "error_rate_percent": 5.0,
-        }
+        },
     )
 
     # Health checks
@@ -123,11 +122,9 @@ class MonitoringConfig(BaseModel):
 
 
 class MetricsCollector:
-    """
-    Advanced metrics collection and aggregation engine.
-    """
+    """Advanced metrics collection and aggregation engine."""
 
-    def __init__(self, config: MonitoringConfig):
+    def __init__(self, config: MonitoringConfig) -> None:
         self.config = config
 
         # Metrics storage
@@ -179,20 +176,27 @@ class MetricsCollector:
     def record_metric(
         self,
         name: str,
-        value: int | float,
+        value: float,
         metric_type: str = MetricType.GAUGE,
         tags: dict[str, str] | None = None,
     ) -> None:
         """Record a custom metric."""
         metric = MetricPoint(
-            name=name, value=value, timestamp=time.time(), tags=tags or {}, metric_type=metric_type
+            name=name,
+            value=value,
+            timestamp=time.time(),
+            tags=tags or {},
+            metric_type=metric_type,
         )
 
         self._metrics.append(metric)
         self._custom_metrics[name] = metric
 
     def increment_counter(
-        self, name: str, value: int = 1, tags: dict[str, str] | None = None
+        self,
+        name: str,
+        value: int = 1,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Increment a counter metric."""
         if name in self._custom_metrics:
@@ -201,12 +205,15 @@ class MetricsCollector:
         else:
             self.record_metric(name, value, MetricType.COUNTER, tags)
 
-    def set_gauge(self, name: str, value: int | float, tags: dict[str, str] | None = None) -> None:
+    def set_gauge(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
         """Set a gauge metric."""
         self.record_metric(name, value, MetricType.GAUGE, tags)
 
     def record_timer(
-        self, name: str, duration_seconds: float, tags: dict[str, str] | None = None
+        self,
+        name: str,
+        duration_seconds: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Record a timer metric."""
         self.record_metric(name, duration_seconds, MetricType.TIMER, tags)
@@ -281,7 +288,7 @@ class MetricsCollector:
                         "write_bytes": disk_io.write_bytes,
                         "read_count": disk_io.read_count,
                         "write_count": disk_io.write_count,
-                    }
+                    },
                 )
 
             # Network metrics
@@ -422,7 +429,7 @@ class MetricsCollector:
                         "timestamp": metric.timestamp,
                         "tags": metric.tags,
                         "type": metric.metric_type,
-                    }
+                    },
                 )
 
             # Write to file
@@ -470,11 +477,9 @@ class MetricsCollector:
 
 
 class HealthMonitor:
-    """
-    Comprehensive health monitoring for services and dependencies.
-    """
+    """Comprehensive health monitoring for services and dependencies."""
 
-    def __init__(self, config: MonitoringConfig):
+    def __init__(self, config: MonitoringConfig) -> None:
         self.config = config
 
         # Service registry
@@ -620,14 +625,13 @@ class HealthMonitor:
                         "headers": dict(response.headers),
                     },
                 }
-            else:
-                return {
-                    "status": "unhealthy",
-                    "details": {
-                        "http_status": response.status,
-                        "expected_status": service["expected_status"],
-                    },
-                }
+            return {
+                "status": "unhealthy",
+                "details": {
+                    "http_status": response.status,
+                    "expected_status": service["expected_status"],
+                },
+            }
 
     async def _health_check_loop(self) -> None:
         """Background health check loop."""
@@ -691,11 +695,9 @@ class HealthMonitor:
 
 
 class PerformanceProfiler:
-    """
-    Advanced performance profiling for function-level monitoring.
-    """
+    """Advanced performance profiling for function-level monitoring."""
 
-    def __init__(self, enabled: bool = True):
+    def __init__(self, enabled: bool = True) -> None:
         self.enabled = enabled
         self._profiles: dict[str, PerformanceProfile] = {}
         self._active_calls: dict[str, dict[str, Any]] = {}
@@ -715,8 +717,7 @@ class PerformanceProfiler:
 
             if asyncio.iscoroutinefunction(func):
                 return async_wrapper
-            else:
-                return sync_wrapper
+            return sync_wrapper
 
         return decorator
 
@@ -733,8 +734,7 @@ class PerformanceProfiler:
         }
 
         try:
-            result = await func(*args, **kwargs)
-            return result
+            return await func(*args, **kwargs)
         finally:
             self._complete_profiling(call_id, start_time, start_memory)
 
@@ -751,8 +751,7 @@ class PerformanceProfiler:
         }
 
         try:
-            result = func(*args, **kwargs)
-            return result
+            return func(*args, **kwargs)
         finally:
             self._complete_profiling(call_id, start_time, start_memory)
 
@@ -826,11 +825,9 @@ class PerformanceProfiler:
 
 
 class IntegratedMonitoringSystem:
-    """
-    Comprehensive monitoring system integrating metrics, health, and profiling.
-    """
+    """Comprehensive monitoring system integrating metrics, health, and profiling."""
 
-    def __init__(self, config: MonitoringConfig | None = None):
+    def __init__(self, config: MonitoringConfig | None = None) -> None:
         self.config = config or MonitoringConfig()
 
         # Components
@@ -871,7 +868,7 @@ class IntegratedMonitoringSystem:
         }
 
     # Convenience methods
-    def record_metric(self, name: str, value: int | float, **kwargs) -> None:
+    def record_metric(self, name: str, value: float, **kwargs) -> None:
         """Record a metric."""
         self.metrics_collector.record_metric(name, value, **kwargs)
 

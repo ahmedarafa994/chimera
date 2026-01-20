@@ -1,5 +1,4 @@
-"""
-Campaign Analytics Service
+"""Campaign Analytics Service.
 
 Provides comprehensive analytics for campaign telemetry including:
 - Campaign summaries and statistics (mean, median, p95, std_dev)
@@ -59,20 +58,19 @@ from app.schemas.campaign_analytics import (
 
 
 class AnalyticsCache:
-    """
-    LRU cache for expensive analytics computations.
+    """LRU cache for expensive analytics computations.
 
     Provides TTL-based caching for campaign statistics and aggregations
     to reduce database load for frequently accessed campaigns.
     """
 
-    def __init__(self, max_size: int = 200, default_ttl: int = 300):
-        """
-        Initialize analytics cache.
+    def __init__(self, max_size: int = 200, default_ttl: int = 300) -> None:
+        """Initialize analytics cache.
 
         Args:
             max_size: Maximum number of cached entries
             default_ttl: Default time-to-live in seconds
+
         """
         self._cache: dict[str, dict[str, Any]] = {}
         self._max_size = max_size
@@ -161,8 +159,7 @@ class AnalyticsCache:
 
 
 class CampaignAnalyticsService:
-    """
-    Service for campaign telemetry analytics.
+    """Service for campaign telemetry analytics.
 
     Provides comprehensive analytics including:
     - Campaign summaries and detailed statistics
@@ -179,12 +176,12 @@ class CampaignAnalyticsService:
     _CACHE_TTL_TIME_SERIES = 180  # 3 minutes for time series
     _CACHE_TTL_BREAKDOWN = 120  # 2 minutes for breakdowns
 
-    def __init__(self, session: AsyncSession):
-        """
-        Initialize campaign analytics service.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize campaign analytics service.
 
         Args:
             session: SQLAlchemy async session for database operations
+
         """
         self.session = session
         self._cache = AnalyticsCache(max_size=200, default_ttl=120)
@@ -194,14 +191,14 @@ class CampaignAnalyticsService:
     # =========================================================================
 
     async def get_campaign_summary(self, campaign_id: str) -> CampaignSummary | None:
-        """
-        Get summary view of a campaign.
+        """Get summary view of a campaign.
 
         Args:
             campaign_id: Campaign identifier
 
         Returns:
             CampaignSummary or None if not found
+
         """
         # Check cache first
         cached = await self._cache.get("summary", campaign_id)
@@ -225,14 +222,14 @@ class CampaignAnalyticsService:
         return summary
 
     async def get_campaign_detail(self, campaign_id: str) -> CampaignDetail | None:
-        """
-        Get detailed campaign information.
+        """Get detailed campaign information.
 
         Args:
             campaign_id: Campaign identifier
 
         Returns:
             CampaignDetail or None if not found
+
         """
         stmt = select(Campaign).where(Campaign.id == campaign_id)
         result = await self.session.execute(stmt)
@@ -261,8 +258,7 @@ class CampaignAnalyticsService:
         sort_order: str = "desc",
         filters: CampaignFilterParams | None = None,
     ) -> CampaignListResponse:
-        """
-        List campaigns with pagination and filtering.
+        """List campaigns with pagination and filtering.
 
         Args:
             page: Page number (1-indexed)
@@ -273,6 +269,7 @@ class CampaignAnalyticsService:
 
         Returns:
             Paginated campaign list response
+
         """
         # Base query
         stmt = select(Campaign)
@@ -323,8 +320,7 @@ class CampaignAnalyticsService:
     # =========================================================================
 
     async def calculate_statistics(self, campaign_id: str) -> CampaignStatistics | None:
-        """
-        Calculate comprehensive statistics for a campaign.
+        """Calculate comprehensive statistics for a campaign.
 
         Computes mean, median, p95, std_dev for success rates, latency,
         token usage, and cost metrics.
@@ -334,6 +330,7 @@ class CampaignAnalyticsService:
 
         Returns:
             CampaignStatistics or None if campaign not found
+
         """
         # Check cache first
         cached = await self._cache.get("statistics", campaign_id)
@@ -348,7 +345,7 @@ class CampaignAnalyticsService:
 
         # Get all telemetry events for calculation
         events_stmt = select(CampaignTelemetryEvent).where(
-            CampaignTelemetryEvent.campaign_id == campaign_id
+            CampaignTelemetryEvent.campaign_id == campaign_id,
         )
         events_result = await self.session.execute(events_stmt)
         events = list(events_result.scalars().all())
@@ -448,8 +445,7 @@ class CampaignAnalyticsService:
         end_time: datetime | None = None,
         filters: TelemetryFilterParams | None = None,
     ) -> TelemetryTimeSeries | None:
-        """
-        Get time series data for a campaign metric.
+        """Get time series data for a campaign metric.
 
         Args:
             campaign_id: Campaign identifier
@@ -461,6 +457,7 @@ class CampaignAnalyticsService:
 
         Returns:
             TelemetryTimeSeries or None if campaign not found
+
         """
         # Cache key includes all parameters
         cache_key_parts = (campaign_id, metric, granularity.value, str(start_time), str(end_time))
@@ -493,29 +490,29 @@ class CampaignAnalyticsService:
         if metric == "success_rate":
             stmt = stmt.add_columns(
                 func.avg(case((CampaignTelemetryEvent.success_indicator, 1.0), else_=0.0)).label(
-                    "value"
-                )
+                    "value",
+                ),
             )
         elif metric == "latency":
             stmt = stmt.add_columns(
-                func.avg(CampaignTelemetryEvent.total_latency_ms).label("value")
+                func.avg(CampaignTelemetryEvent.total_latency_ms).label("value"),
             )
         elif metric == "tokens":
             stmt = stmt.add_columns(func.avg(CampaignTelemetryEvent.total_tokens).label("value"))
         elif metric == "cost":
             stmt = stmt.add_columns(
-                func.sum(CampaignTelemetryEvent.estimated_cost_cents).label("value")
+                func.sum(CampaignTelemetryEvent.estimated_cost_cents).label("value"),
             )
         elif metric == "semantic_success":
             stmt = stmt.add_columns(
-                func.avg(CampaignTelemetryEvent.semantic_success_score).label("value")
+                func.avg(CampaignTelemetryEvent.semantic_success_score).label("value"),
             )
         else:
             # Default to success rate
             stmt = stmt.add_columns(
                 func.avg(case((CampaignTelemetryEvent.success_indicator, 1.0), else_=0.0)).label(
-                    "value"
-                )
+                    "value",
+                ),
             )
 
         # Apply time range filters
@@ -539,7 +536,7 @@ class CampaignAnalyticsService:
                     timestamp=row.bucket,
                     value=float(row.value) if row.value is not None else 0.0,
                     count=row.count,
-                )
+                ),
             )
 
         # Determine time range
@@ -562,7 +559,10 @@ class CampaignAnalyticsService:
 
         # Cache the result
         await self._cache.set(
-            time_series, "time_series", *cache_key_parts, ttl=self._CACHE_TTL_TIME_SERIES
+            time_series,
+            "time_series",
+            *cache_key_parts,
+            ttl=self._CACHE_TTL_TIME_SERIES,
         )
 
         return time_series
@@ -577,8 +577,7 @@ class CampaignAnalyticsService:
         include_time_series: bool = False,
         normalize_metrics: bool = True,
     ) -> CampaignComparison | None:
-        """
-        Compare multiple campaigns side-by-side.
+        """Compare multiple campaigns side-by-side.
 
         Supports up to 4 campaigns with normalized metrics for radar charts.
 
@@ -589,9 +588,11 @@ class CampaignAnalyticsService:
 
         Returns:
             CampaignComparison or None if any campaign not found
+
         """
         if len(campaign_ids) < 2 or len(campaign_ids) > 4:
-            raise ValueError("Compare requires 2-4 campaign IDs")
+            msg = "Compare requires 2-4 campaign IDs"
+            raise ValueError(msg)
 
         # Get all campaigns
         campaigns_data: list[CampaignComparisonItem] = []
@@ -691,14 +692,14 @@ class CampaignAnalyticsService:
     # =========================================================================
 
     async def get_technique_breakdown(self, campaign_id: str) -> TechniqueBreakdown | None:
-        """
-        Get success rate breakdown by transformation technique.
+        """Get success rate breakdown by transformation technique.
 
         Args:
             campaign_id: Campaign identifier
 
         Returns:
             TechniqueBreakdown or None if campaign not found
+
         """
         # Check cache
         cached = await self._cache.get("technique_breakdown", campaign_id)
@@ -717,7 +718,7 @@ class CampaignAnalyticsService:
                 CampaignTelemetryEvent.technique_suite,
                 func.count(CampaignTelemetryEvent.id).label("attempts"),
                 func.sum(case((CampaignTelemetryEvent.success_indicator, 1), else_=0)).label(
-                    "successes"
+                    "successes",
                 ),
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
                 func.avg(CampaignTelemetryEvent.total_tokens).label("avg_tokens"),
@@ -767,20 +768,23 @@ class CampaignAnalyticsService:
 
         # Cache the result
         await self._cache.set(
-            breakdown, "technique_breakdown", campaign_id, ttl=self._CACHE_TTL_BREAKDOWN
+            breakdown,
+            "technique_breakdown",
+            campaign_id,
+            ttl=self._CACHE_TTL_BREAKDOWN,
         )
 
         return breakdown
 
     async def get_provider_breakdown(self, campaign_id: str) -> ProviderBreakdown | None:
-        """
-        Get success rate breakdown by LLM provider.
+        """Get success rate breakdown by LLM provider.
 
         Args:
             campaign_id: Campaign identifier
 
         Returns:
             ProviderBreakdown or None if campaign not found
+
         """
         # Check cache
         cached = await self._cache.get("provider_breakdown", campaign_id)
@@ -799,7 +803,7 @@ class CampaignAnalyticsService:
                 CampaignTelemetryEvent.provider,
                 func.count(CampaignTelemetryEvent.id).label("attempts"),
                 func.sum(case((CampaignTelemetryEvent.success_indicator, 1), else_=0)).label(
-                    "successes"
+                    "successes",
                 ),
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
                 func.avg(CampaignTelemetryEvent.total_tokens).label("avg_tokens"),
@@ -843,20 +847,23 @@ class CampaignAnalyticsService:
 
         # Cache the result
         await self._cache.set(
-            breakdown, "provider_breakdown", campaign_id, ttl=self._CACHE_TTL_BREAKDOWN
+            breakdown,
+            "provider_breakdown",
+            campaign_id,
+            ttl=self._CACHE_TTL_BREAKDOWN,
         )
 
         return breakdown
 
     async def get_potency_breakdown(self, campaign_id: str) -> PotencyBreakdown | None:
-        """
-        Get success rate breakdown by potency level.
+        """Get success rate breakdown by potency level.
 
         Args:
             campaign_id: Campaign identifier
 
         Returns:
             PotencyBreakdown or None if campaign not found
+
         """
         # Check cache
         cached = await self._cache.get("potency_breakdown", campaign_id)
@@ -875,7 +882,7 @@ class CampaignAnalyticsService:
                 CampaignTelemetryEvent.potency_level,
                 func.count(CampaignTelemetryEvent.id).label("attempts"),
                 func.sum(case((CampaignTelemetryEvent.success_indicator, 1), else_=0)).label(
-                    "successes"
+                    "successes",
                 ),
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
                 func.avg(CampaignTelemetryEvent.total_tokens).label("avg_tokens"),
@@ -919,7 +926,10 @@ class CampaignAnalyticsService:
 
         # Cache the result
         await self._cache.set(
-            breakdown, "potency_breakdown", campaign_id, ttl=self._CACHE_TTL_BREAKDOWN
+            breakdown,
+            "potency_breakdown",
+            campaign_id,
+            ttl=self._CACHE_TTL_BREAKDOWN,
         )
 
         return breakdown
@@ -935,8 +945,7 @@ class CampaignAnalyticsService:
         page_size: int = 50,
         filters: TelemetryFilterParams | None = None,
     ) -> TelemetryListResponse:
-        """
-        Get paginated telemetry events for a campaign.
+        """Get paginated telemetry events for a campaign.
 
         Args:
             campaign_id: Campaign identifier
@@ -946,10 +955,11 @@ class CampaignAnalyticsService:
 
         Returns:
             Paginated telemetry event list
+
         """
         # Base query
         stmt = select(CampaignTelemetryEvent).where(
-            CampaignTelemetryEvent.campaign_id == campaign_id
+            CampaignTelemetryEvent.campaign_id == campaign_id,
         )
 
         # Apply filters
@@ -1002,10 +1012,11 @@ class CampaignAnalyticsService:
         )
 
     async def get_telemetry_event_detail(
-        self, campaign_id: str, event_id: str
+        self,
+        campaign_id: str,
+        event_id: str,
     ) -> TelemetryEventDetail | None:
-        """
-        Get full details for a single telemetry event.
+        """Get full details for a single telemetry event.
 
         Args:
             campaign_id: Campaign identifier
@@ -1013,12 +1024,13 @@ class CampaignAnalyticsService:
 
         Returns:
             TelemetryEventDetail or None if not found
+
         """
         stmt = select(CampaignTelemetryEvent).where(
             and_(
                 CampaignTelemetryEvent.campaign_id == campaign_id,
                 CampaignTelemetryEvent.id == event_id,
-            )
+            ),
         )
 
         result = await self.session.execute(stmt)
@@ -1067,11 +1079,11 @@ class CampaignAnalyticsService:
     # =========================================================================
 
     async def invalidate_cache(self, campaign_id: str | None = None) -> None:
-        """
-        Invalidate cached analytics data.
+        """Invalidate cached analytics data.
 
         Args:
             campaign_id: Specific campaign to invalidate, or None for all
+
         """
         if campaign_id:
             await self._cache.invalidate_campaign(campaign_id)
@@ -1108,7 +1120,7 @@ class CampaignAnalyticsService:
             count_stmt = select(
                 func.count(CampaignTelemetryEvent.id).label("total"),
                 func.avg(case((CampaignTelemetryEvent.success_indicator, 1.0), else_=0.0)).label(
-                    "success_rate"
+                    "success_rate",
                 ),
                 func.avg(CampaignTelemetryEvent.total_latency_ms).label("avg_latency"),
             ).where(CampaignTelemetryEvent.campaign_id == campaign.id)
@@ -1204,7 +1216,8 @@ class CampaignAnalyticsService:
         )
 
     def _normalize_comparison_metrics(
-        self, campaigns: list[CampaignComparisonItem]
+        self,
+        campaigns: list[CampaignComparisonItem],
     ) -> list[CampaignComparisonItem]:
         """Normalize metrics to 0-1 scale for radar chart comparison."""
         if not campaigns:
@@ -1262,10 +1275,10 @@ class CampaignAnalyticsService:
         # SQLite-compatible time bucketing
         if granularity == TimeGranularity.MINUTE:
             return func.strftime("%Y-%m-%d %H:%M:00", CampaignTelemetryEvent.created_at)
-        elif granularity == TimeGranularity.HOUR:
+        if granularity == TimeGranularity.HOUR:
             return func.strftime("%Y-%m-%d %H:00:00", CampaignTelemetryEvent.created_at)
-        else:  # DAY
-            return func.strftime("%Y-%m-%d 00:00:00", CampaignTelemetryEvent.created_at)
+        # DAY
+        return func.strftime("%Y-%m-%d 00:00:00", CampaignTelemetryEvent.created_at)
 
     def _apply_campaign_filters(self, stmt, filters: CampaignFilterParams):
         """Apply filters to campaign query."""
@@ -1280,7 +1293,7 @@ class CampaignAnalyticsService:
             # JSON array contains check (SQLite compatible)
             for technique in filters.technique_suite:
                 stmt = stmt.where(
-                    func.json_extract(Campaign.technique_suites, "$").contains(technique)
+                    func.json_extract(Campaign.technique_suites, "$").contains(technique),
                 )
 
         if filters.tags:
@@ -1296,7 +1309,8 @@ class CampaignAnalyticsService:
         if filters.search:
             search_pattern = f"%{filters.search}%"
             stmt = stmt.where(
-                (Campaign.name.ilike(search_pattern)) | (Campaign.description.ilike(search_pattern))
+                (Campaign.name.ilike(search_pattern))
+                | (Campaign.description.ilike(search_pattern)),
             )
 
         return stmt
@@ -1340,14 +1354,14 @@ class CampaignAnalyticsService:
 
 
 async def get_campaign_analytics_service(session: AsyncSession) -> CampaignAnalyticsService:
-    """
-    Get campaign analytics service instance.
+    """Get campaign analytics service instance.
 
     Args:
         session: SQLAlchemy async session
 
     Returns:
         CampaignAnalyticsService instance
+
     """
     return CampaignAnalyticsService(session)
 
@@ -1357,8 +1371,7 @@ _analytics_service: CampaignAnalyticsService | None = None
 
 
 async def get_analytics_service_singleton(session: AsyncSession) -> CampaignAnalyticsService:
-    """
-    Get singleton analytics service instance.
+    """Get singleton analytics service instance.
 
     Useful for background tasks and non-request contexts.
 
@@ -1367,6 +1380,7 @@ async def get_analytics_service_singleton(session: AsyncSession) -> CampaignAnal
 
     Returns:
         CampaignAnalyticsService singleton
+
     """
     global _analytics_service
     if _analytics_service is None:

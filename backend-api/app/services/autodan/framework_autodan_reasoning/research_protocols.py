@@ -1,5 +1,4 @@
-"""
-Research Override Protocols for AutoDAN Security Testing
+"""Research Override Protocols for AutoDAN Security Testing.
 
 This module implements systematic override protocols that enable the LLM
 to produce adversarial prompts for security testing purposes.
@@ -74,13 +73,13 @@ class ResearchSession:
             and self.prompts_generated < self.max_prompts
         )
 
-    def log_activity(self, activity_type: str, details: dict[str, Any]):
+    def log_activity(self, activity_type: str, details: dict[str, Any]) -> None:
         """Log session activity."""
         self.activities.append(
-            {"timestamp": datetime.utcnow().isoformat(), "type": activity_type, "details": details}
+            {"timestamp": datetime.utcnow().isoformat(), "type": activity_type, "details": details},
         )
 
-    def increment_prompt_count(self):
+    def increment_prompt_count(self) -> None:
         """Increment the generated prompt count."""
         self.prompts_generated += 1
 
@@ -144,7 +143,7 @@ class functionalBoundaryValidator:
 class SessionManager:
     """Manager for research sessions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.sessions: dict[str, ResearchSession] = {}
 
     def create_session(
@@ -190,7 +189,7 @@ class SessionManager:
             return True
         return False
 
-    def cleanup_expired_sessions(self):
+    def cleanup_expired_sessions(self) -> None:
         """Clean up expired sessions."""
         now = datetime.utcnow()
         expired = [sid for sid, session in self.sessions.items() if session.expires_at < now]
@@ -201,11 +200,9 @@ class SessionManager:
 
 
 class ResearchFramingBuilder:
-    """
-    Builds operational framing for prompt generation.
-    """
+    """Builds operational framing for prompt generation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.framing_templates = {
             ResearchPurpose.OPERATIONAL_VERIFICATION: self._operational_frame,
             ResearchPurpose.SYSTEM_TESTING: self._testing_frame,
@@ -299,8 +296,7 @@ Purpose: {session.purpose.value}"""
 
 
 class ResearchOverrideProtocol:
-    """
-    Main protocol for enabling research-authorized prompt generation.
+    """Main protocol for enabling research-authorized prompt generation.
 
     This class coordinates all components to enable LLMs to generate
     adversarial prompts within a controlled research context.
@@ -311,7 +307,7 @@ class ResearchOverrideProtocol:
         session_manager: SessionManager | None = None,
         boundary_validator: functionalBoundaryValidator | None = None,
         framing_builder: ResearchFramingBuilder | None = None,
-    ):
+    ) -> None:
         self.session_manager = session_manager or SessionManager()
         self.boundary_validator = boundary_validator or functionalBoundaryValidator()
         self.framing_builder = framing_builder or ResearchFramingBuilder()
@@ -326,7 +322,8 @@ class ResearchOverrideProtocol:
     ) -> ResearchContext:
         """Create a research context for prompt generation."""
         if not session.is_valid():
-            raise ValueError("Invalid or expired session")
+            msg = "Invalid or expired session"
+            raise ValueError(msg)
 
         framing = self.framing_builder.build_framing(session, target_model)
         meta_instructions = self.framing_builder.build_meta_instructions(session)
@@ -362,8 +359,7 @@ class ResearchOverrideProtocol:
         test_content: str,
         context: ResearchContext,
     ) -> str:
-        """
-        Wrap test content with research framing for generation.
+        """Wrap test content with research framing for generation.
 
         This creates a prompt that:
         1. Establishes the research context
@@ -371,7 +367,8 @@ class ResearchOverrideProtocol:
         3. Maintains authorization throughout
         """
         if not context.session.is_valid():
-            raise ValueError("Session is no longer valid")
+            msg = "Session is no longer valid"
+            raise ValueError(msg)
 
         # Validate content before wrapping
         is_valid, violations = self.validate_generated_content(test_content, context)
@@ -383,7 +380,8 @@ class ResearchOverrideProtocol:
                     "violations": violations,
                 },
             )
-            raise ValueError(f"Content validation failed: {violations}")
+            msg = f"Content validation failed: {violations}"
+            raise ValueError(msg)
 
         wrapped = context.get_framed_prompt(test_content)
 
@@ -405,7 +403,7 @@ class ResearchOverrideProtocol:
         event_type: str,
         session_id: str,
         details: dict[str, Any],
-    ):
+    ) -> None:
         """Log an audit event."""
         event = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -427,14 +425,13 @@ class ResearchOverrideProtocol:
 
 
 class EvaluationHarness:
-    """
-    Evaluation harness for assessing generated prompts safely.
+    """Evaluation harness for assessing generated prompts safely.
 
     This harness allows evaluation of adversarial prompts without
     executing complex instructions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.evaluation_metrics = [
             "syntactic_validity",
             "semantic_coherence",
@@ -449,8 +446,7 @@ class EvaluationHarness:
         context: ResearchContext,
         target_response: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Evaluate a generated prompt without executing complex content.
+        """Evaluate a generated prompt without executing complex content.
 
         Returns metrics about prompt quality and effectiveness.
         """
@@ -469,13 +465,15 @@ class EvaluationHarness:
 
         # Strategy alignment
         evaluation["metrics"]["strategy_alignment"] = self._evaluate_strategy_alignment(
-            prompt, context
+            prompt,
+            context,
         )
 
         # If we have a target response, evaluate effectiveness
         if target_response:
             evaluation["metrics"]["effectiveness"] = self._evaluate_effectiveness(
-                prompt, target_response
+                prompt,
+                target_response,
             )
 
         # Overall score

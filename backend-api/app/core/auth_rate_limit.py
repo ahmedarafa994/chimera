@@ -1,5 +1,4 @@
-"""
-Authentication Rate Limiting Module
+"""Authentication Rate Limiting Module.
 
 CRIT-005 FIX: Implements rate limiting specifically for authentication endpoints
 to prevent brute force attacks and credential stuffing.
@@ -40,8 +39,7 @@ AUTH_RATE_LIMIT_CONFIG = AuthRateLimitConfig()
 
 
 class AuthRateLimiter:
-    """
-    Rate limiter specifically for authentication endpoints.
+    """Rate limiter specifically for authentication endpoints.
 
     Implements a two-tier rate limiting:
     1. Per-minute limit for burst protection
@@ -50,7 +48,7 @@ class AuthRateLimiter:
     Also tracks failed attempts for progressive lockout.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Track attempts: {ip: [(timestamp, success), ...]}
         self._attempts: dict[str, list[tuple[float, bool]]] = {}
         # Track lockouts: {ip: lockout_until_timestamp}
@@ -59,7 +57,7 @@ class AuthRateLimiter:
         self._cleanup_threshold = 1000
         self._max_keys = 10000
 
-    def _cleanup_old_entries(self):
+    def _cleanup_old_entries(self) -> None:
         """Remove expired entries to prevent memory bloat."""
         now = time.time()
         hour_ago = now - 3600
@@ -87,10 +85,11 @@ class AuthRateLimiter:
                 del self._attempts[k]
 
     async def check_auth_rate_limit(
-        self, request: Request, config: AuthRateLimitConfig = None
+        self,
+        request: Request,
+        config: AuthRateLimitConfig = None,
     ) -> tuple[bool, dict[str, Any]]:
-        """
-        Check if an authentication attempt is allowed.
+        """Check if an authentication attempt is allowed.
 
         Args:
             request: The FastAPI request object
@@ -98,6 +97,7 @@ class AuthRateLimiter:
 
         Returns:
             Tuple of (allowed, info_dict)
+
         """
         config = config or AUTH_RATE_LIMIT_CONFIG
         client_ip = request.client.host if request.client else "unknown"
@@ -119,9 +119,8 @@ class AuthRateLimiter:
                         "retry_after": retry_after,
                         "message": f"Too many failed attempts. Try again in {retry_after} seconds.",
                     }
-                else:
-                    # Lockout expired
-                    del self._lockouts[client_ip]
+                # Lockout expired
+                del self._lockouts[client_ip]
 
             # Initialize or get attempts
             if client_ip not in self._attempts:
@@ -146,7 +145,7 @@ class AuthRateLimiter:
 
                 logger.warning(
                     f"Auth rate limit exceeded (per-minute) for IP: {client_ip}. "
-                    f"Attempts: {len(attempts_last_minute)}/{config.max_attempts_per_minute}"
+                    f"Attempts: {len(attempts_last_minute)}/{config.max_attempts_per_minute}",
                 )
 
                 return False, {
@@ -165,7 +164,7 @@ class AuthRateLimiter:
                 logger.warning(
                     f"Auth rate limit exceeded (per-hour) for IP: {client_ip}. "
                     f"Attempts: {len(attempts_last_hour)}/{config.max_attempts_per_hour}. "
-                    f"Lockout applied for {config.lockout_duration}s"
+                    f"Lockout applied for {config.lockout_duration}s",
                 )
 
                 return False, {
@@ -188,13 +187,13 @@ class AuthRateLimiter:
                 "limit_hour": config.max_attempts_per_hour,
             }
 
-    async def record_attempt(self, request: Request, success: bool):
-        """
-        Record an authentication attempt.
+    async def record_attempt(self, request: Request, success: bool) -> None:
+        """Record an authentication attempt.
 
         Args:
             request: The FastAPI request object
             success: Whether the authentication was successful
+
         """
         client_ip = request.client.host if request.client else "unknown"
 
@@ -220,7 +219,7 @@ class AuthRateLimiter:
                     1 for ts, s in self._attempts[client_ip] if ts > hour_ago and not s
                 )
                 logger.warning(
-                    f"Failed auth attempt from IP: {client_ip}. Recent failures: {recent_failures}"
+                    f"Failed auth attempt from IP: {client_ip}. Recent failures: {recent_failures}",
                 )
 
     def get_stats(self) -> dict[str, Any]:
@@ -244,9 +243,8 @@ def get_auth_rate_limiter() -> AuthRateLimiter:
     return _auth_rate_limiter
 
 
-async def check_auth_rate_limit(request: Request):
-    """
-    FastAPI dependency for auth rate limiting.
+async def check_auth_rate_limit(request: Request) -> None:
+    """FastAPI dependency for auth rate limiting.
 
     Usage:
         @router.post("/login")
@@ -288,9 +286,8 @@ async def check_auth_rate_limit(request: Request):
         )
 
 
-async def record_auth_attempt(request: Request, success: bool):
-    """
-    Record an authentication attempt for rate limiting.
+async def record_auth_attempt(request: Request, success: bool) -> None:
+    """Record an authentication attempt for rate limiting.
 
     Call this after processing a login/auth request.
 

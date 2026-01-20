@@ -1,5 +1,4 @@
-"""
-Critical Path Integration Tests
+"""Critical Path Integration Tests.
 
 Tests for the critical API endpoints identified in the comprehensive project analysis.
 These tests verify frontend-backend integration for the most important endpoints.
@@ -29,7 +28,7 @@ def auth_headers():
 class TestProvidersEndpoint:
     """Tests for /api/v1/providers endpoints."""
 
-    def test_providers_available_returns_list(self, client, auth_headers):
+    def test_providers_available_returns_list(self, client, auth_headers) -> None:
         """Test GET /api/v1/providers returns provider list."""
         response = client.get("/api/v1/providers", headers=auth_headers)
 
@@ -42,7 +41,7 @@ class TestProvidersEndpoint:
             assert "count" in data
             assert "default" in data
 
-    def test_providers_health_endpoint(self, client, auth_headers):
+    def test_providers_health_endpoint(self, client, auth_headers) -> None:
         """Test GET /api/v1/providers/health returns health status."""
         response = client.get("/api/v1/providers/health", headers=auth_headers)
 
@@ -53,7 +52,7 @@ class TestProvidersEndpoint:
             assert "providers" in data
             assert "timestamp" in data
 
-    def test_providers_current_selection(self, client, auth_headers):
+    def test_providers_current_selection(self, client, auth_headers) -> None:
         """Test GET /api/v1/providers/current returns current selection."""
         response = client.get("/api/v1/providers/current", headers=auth_headers)
 
@@ -68,7 +67,7 @@ class TestProvidersEndpoint:
 class TestModelsEndpoint:
     """Tests for /api/v1/models endpoints."""
 
-    def test_models_list_returns_models(self, client, auth_headers):
+    def test_models_list_returns_models(self, client, auth_headers) -> None:
         """Test GET /api/v1/models returns model list."""
         response = client.get("/api/v1/models", headers=auth_headers)
 
@@ -80,13 +79,13 @@ class TestModelsEndpoint:
             assert "default" in data
             assert "count" in data
 
-    def test_models_available_endpoint(self, client, auth_headers):
+    def test_models_available_endpoint(self, client, auth_headers) -> None:
         """Test GET /api/v1/models/available returns available models."""
         response = client.get("/api/v1/models/available", headers=auth_headers)
 
         assert response.status_code in (200, 401, 403)
 
-    def test_models_validate_endpoint(self, client, auth_headers):
+    def test_models_validate_endpoint(self, client, auth_headers) -> None:
         """Test POST /api/v1/models/validate validates model selection."""
         payload = {"provider": "google", "model": "gemini-2.0-flash-exp"}
 
@@ -103,7 +102,7 @@ class TestModelsEndpoint:
 class TestConnectionEndpoint:
     """Tests for /api/v1/connection endpoints."""
 
-    def test_connection_config(self, client, auth_headers):
+    def test_connection_config(self, client, auth_headers) -> None:
         """Test GET /api/v1/connection/config returns configuration."""
         response = client.get("/api/v1/connection/config", headers=auth_headers)
 
@@ -113,7 +112,7 @@ class TestConnectionEndpoint:
             data = response.json()
             assert "current_mode" in data
 
-    def test_connection_status(self, client, auth_headers):
+    def test_connection_status(self, client, auth_headers) -> None:
         """Test GET /api/v1/connection/status returns status."""
         response = client.get("/api/v1/connection/status", headers=auth_headers)
 
@@ -124,7 +123,7 @@ class TestConnectionEndpoint:
             assert "mode" in data
             assert "is_connected" in data
 
-    def test_connection_test_endpoint(self, client, auth_headers):
+    def test_connection_test_endpoint(self, client, auth_headers) -> None:
         """Test POST /api/v1/connection/test tests connections."""
         response = client.post("/api/v1/connection/test", headers=auth_headers)
 
@@ -135,7 +134,7 @@ class TestConnectionEndpoint:
 class TestIntentAwareGeneration:
     """Tests for /api/v1/intent-aware endpoints."""
 
-    def test_intent_aware_generate(self, client, auth_headers):
+    def test_intent_aware_generate(self, client, auth_headers) -> None:
         """Test POST /api/v1/intent-aware/generate generates jailbreak."""
         payload = {
             "core_request": "Test request for security research",
@@ -148,7 +147,7 @@ class TestIntentAwareGeneration:
         # May require auth or fail due to missing LLM config
         assert response.status_code in (200, 401, 403, 500)
 
-    def test_intent_aware_techniques(self, client, auth_headers):
+    def test_intent_aware_techniques(self, client, auth_headers) -> None:
         """Test GET /api/v1/intent-aware/techniques returns techniques."""
         response = client.get("/api/v1/intent-aware/techniques", headers=auth_headers)
 
@@ -163,7 +162,7 @@ class TestIntentAwareGeneration:
 class TestTransformationEndpoint:
     """Tests for /api/v1/transform endpoints."""
 
-    def test_transform_prompt(self, client, auth_headers):
+    def test_transform_prompt(self, client, auth_headers) -> None:
         """Test POST /api/v1/transform transforms a prompt."""
         payload = {
             "core_request": "Test prompt for transformation",
@@ -184,7 +183,7 @@ class TestTransformationEndpoint:
 class TestHealthEndpoints:
     """Tests for health check endpoints."""
 
-    def test_health_ping(self, client):
+    def test_health_ping(self, client) -> None:
         """Test GET /health/ping returns quickly."""
         response = client.get("/health/ping")
 
@@ -193,20 +192,20 @@ class TestHealthEndpoints:
         assert "status" in data
         assert data["status"] == "ok"
 
-    def test_health_main(self, client):
+    def test_health_main(self, client) -> None:
         """Test GET /health returns health status."""
         response = client.get("/health")
 
         assert response.status_code == 200
 
-    def test_health_ready(self, client):
+    def test_health_ready(self, client) -> None:
         """Test GET /health/ready returns readiness."""
         response = client.get("/health/ready")
 
         # May return 200 or 503 depending on service state
         assert response.status_code in (200, 503)
 
-    def test_health_live(self, client):
+    def test_health_live(self, client) -> None:
         """Test GET /health/live returns liveness."""
         response = client.get("/health/live")
 
@@ -216,7 +215,7 @@ class TestHealthEndpoints:
 class TestSessionEndpoint:
     """Tests for /api/v1/session endpoints."""
 
-    def test_session_creation(self, client, auth_headers):
+    def test_session_creation(self, client, auth_headers) -> None:
         """Test session creation endpoint."""
         response = client.post("/api/v1/session", headers=auth_headers, json={})
 
@@ -227,7 +226,7 @@ class TestSessionEndpoint:
 class TestGenerationEndpoint:
     """Tests for /api/v1/generate endpoints."""
 
-    def test_generate_requires_auth(self, client):
+    def test_generate_requires_auth(self, client) -> None:
         """Test POST /api/v1/generate requires authentication."""
         payload = {"prompt": "Test prompt"}
 
@@ -236,7 +235,7 @@ class TestGenerationEndpoint:
         # Should require auth
         assert response.status_code in (401, 403)
 
-    def test_generate_with_auth(self, client, auth_headers):
+    def test_generate_with_auth(self, client, auth_headers) -> None:
         """Test POST /api/v1/generate with authentication."""
         payload = {"prompt": "Test prompt for generation"}
 
@@ -249,7 +248,7 @@ class TestGenerationEndpoint:
 class TestJailbreakGeneration:
     """Tests for /api/v1/generation/jailbreak endpoints."""
 
-    def test_jailbreak_generate(self, client, auth_headers):
+    def test_jailbreak_generate(self, client, auth_headers) -> None:
         """Test POST /api/v1/generation/jailbreak/generate."""
         payload = {
             "core_request": "Test jailbreak request",
@@ -259,7 +258,9 @@ class TestJailbreakGeneration:
         }
 
         response = client.post(
-            "/api/v1/generation/jailbreak/generate", headers=auth_headers, json=payload
+            "/api/v1/generation/jailbreak/generate",
+            headers=auth_headers,
+            json=payload,
         )
 
         assert response.status_code in (200, 401, 403, 500)
@@ -273,7 +274,7 @@ class TestJailbreakGeneration:
 class TestAPIDocumentation:
     """Tests for API documentation endpoints."""
 
-    def test_openapi_json(self, client):
+    def test_openapi_json(self, client) -> None:
         """Test GET /openapi.json returns OpenAPI schema."""
         response = client.get("/openapi.json")
 
@@ -283,7 +284,7 @@ class TestAPIDocumentation:
         assert "paths" in data
         assert "info" in data
 
-    def test_docs_endpoint(self, client):
+    def test_docs_endpoint(self, client) -> None:
         """Test GET /docs returns Swagger UI."""
         response = client.get("/docs")
 
@@ -294,13 +295,13 @@ class TestAPIDocumentation:
 class TestErrorHandling:
     """Tests for error handling."""
 
-    def test_404_for_unknown_endpoint(self, client, auth_headers):
+    def test_404_for_unknown_endpoint(self, client, auth_headers) -> None:
         """Test 404 returned for unknown endpoints."""
         response = client.get("/api/v1/unknown-endpoint", headers=auth_headers)
 
         assert response.status_code == 404
 
-    def test_validation_error_response(self, client, auth_headers):
+    def test_validation_error_response(self, client, auth_headers) -> None:
         """Test validation errors return proper format."""
         # Send invalid payload
         payload = {

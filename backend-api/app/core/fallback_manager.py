@@ -1,5 +1,4 @@
-"""
-Fallback Manager for AI Provider Integration
+"""Fallback Manager for AI Provider Integration.
 
 Manages fallback logic for AI provider operations including:
 - Chain fallback through provider failover chains
@@ -99,8 +98,7 @@ class ProviderFailureRecord:
         skip_threshold: int = 3,
         skip_window_seconds: int = 300,
     ) -> bool:
-        """
-        Determine if provider should be skipped.
+        """Determine if provider should be skipped.
 
         Args:
             skip_threshold: Number of consecutive failures to skip
@@ -108,6 +106,7 @@ class ProviderFailureRecord:
 
         Returns:
             True if provider should be skipped
+
         """
         if self.consecutive_failures < skip_threshold:
             return False
@@ -163,8 +162,7 @@ class FallbackStats:
 
 
 class FallbackManager:
-    """
-    Manages fallback logic for AI provider operations.
+    """Manages fallback logic for AI provider operations.
 
     Features:
     - Execute operations with automatic fallback through provider chain
@@ -181,6 +179,7 @@ class FallbackManager:
             chain_name="premium",
             max_attempts=3,
         )
+
     """
 
     def __init__(
@@ -188,14 +187,14 @@ class FallbackManager:
         skip_threshold: int = 3,
         skip_window_seconds: int = 300,
         reset_window_seconds: int = 600,
-    ):
-        """
-        Initialize the FallbackManager.
+    ) -> None:
+        """Initialize the FallbackManager.
 
         Args:
             skip_threshold: Consecutive failures before skipping provider
             skip_window_seconds: Time window for failure tracking
             reset_window_seconds: Time after which failure counts reset
+
         """
         self._config_manager = None
         self._stats = FallbackStats()
@@ -206,7 +205,7 @@ class FallbackManager:
 
         logger.info(
             f"FallbackManager initialized (skip_threshold={skip_threshold}, "
-            f"skip_window={skip_window_seconds}s)"
+            f"skip_window={skip_window_seconds}s)",
         )
 
     def _get_config_manager(self):
@@ -231,8 +230,7 @@ class FallbackManager:
         required_capabilities: list[str] | None = None,
         **kwargs,
     ) -> tuple[Any, FallbackResult]:
-        """
-        Execute operation with automatic fallback through provider chain.
+        """Execute operation with automatic fallback through provider chain.
 
         Args:
             operation: Async callable to execute (should accept provider_id)
@@ -245,6 +243,7 @@ class FallbackManager:
 
         Returns:
             Tuple of (operation result, FallbackResult metadata)
+
         """
         start_time = time.perf_counter()
         error_history = []
@@ -297,7 +296,7 @@ class FallbackManager:
 
             try:
                 logger.info(
-                    f"Attempt {attempt}/{len(chain)}: " f"Trying provider '{current_provider}'"
+                    f"Attempt {attempt}/{len(chain)}: Trying provider '{current_provider}'",
                 )
 
                 # Execute the operation
@@ -365,8 +364,7 @@ class FallbackManager:
         strategy: FallbackStrategy = FallbackStrategy.CHAIN,
         required_capabilities: list[str] | None = None,
     ) -> list[str]:
-        """
-        Get the provider chain based on strategy.
+        """Get the provider chain based on strategy.
 
         Args:
             chain_name: Named failover chain
@@ -376,6 +374,7 @@ class FallbackManager:
 
         Returns:
             List of provider IDs in fallback order
+
         """
         config_manager = self._get_config_manager()
         if not config_manager.is_loaded():
@@ -386,12 +385,12 @@ class FallbackManager:
         if strategy == FallbackStrategy.CHAIN:
             return self.get_fallback_chain(chain_name, provider_id)
 
-        elif strategy == FallbackStrategy.PRIORITY:
+        if strategy == FallbackStrategy.PRIORITY:
             # Get all enabled providers sorted by priority
             enabled = config.get_enabled_providers()
             return [p.provider_id for p in enabled]
 
-        elif strategy == FallbackStrategy.CAPABILITY:
+        if strategy == FallbackStrategy.CAPABILITY:
             # Filter by required capabilities
             if not required_capabilities:
                 return self.get_fallback_chain(chain_name, provider_id)
@@ -408,7 +407,7 @@ class FallbackManager:
                     matching.append(provider.provider_id)
             return matching
 
-        elif strategy == FallbackStrategy.COST:
+        if strategy == FallbackStrategy.COST:
             # Sort by cost (economy tier first)
             from app.config.ai_provider_settings import ModelTier
 
@@ -436,20 +435,19 @@ class FallbackManager:
 
         if "timeout" in error_str:
             return FallbackReason.TIMEOUT
-        elif "rate" in error_str or "429" in error_str:
+        if "rate" in error_str or "429" in error_str:
             return FallbackReason.RATE_LIMITED
-        elif "circuit" in error_str:
+        if "circuit" in error_str:
             return FallbackReason.CIRCUIT_OPEN
-        elif "auth" in error_str or "401" in error_str or "403" in error_str:
+        if "auth" in error_str or "401" in error_str or "403" in error_str:
             return FallbackReason.AUTHENTICATION
-        elif "quota" in error_str:
+        if "quota" in error_str:
             return FallbackReason.QUOTA_EXCEEDED
-        elif "model" in error_str and "not found" in error_str:
+        if "model" in error_str and "not found" in error_str:
             return FallbackReason.MODEL_UNAVAILABLE
-        elif "api" in error_str or "500" in error_str or "502" in error_str:
+        if "api" in error_str or "500" in error_str or "502" in error_str:
             return FallbackReason.API_ERROR
-        else:
-            return FallbackReason.UNKNOWN
+        return FallbackReason.UNKNOWN
 
     # =========================================================================
     # Fallback Chain Management
@@ -460,8 +458,7 @@ class FallbackManager:
         name: str | None = None,
         provider_id: str | None = None,
     ) -> list[str]:
-        """
-        Get fallback chain from config or use default.
+        """Get fallback chain from config or use default.
 
         Args:
             name: Named chain name (e.g., "premium", "cost_optimized")
@@ -469,6 +466,7 @@ class FallbackManager:
 
         Returns:
             List of provider IDs in fallback order
+
         """
         config_manager = self._get_config_manager()
         if not config_manager.is_loaded():
@@ -485,15 +483,13 @@ class FallbackManager:
             provider = config.get_provider(provider_id)
             if provider:
                 # Start with the provider itself, then its chain
-                chain = [provider_id, *list(provider.failover_chain)]
-                return chain
+                return [provider_id, *list(provider.failover_chain)]
 
         # Use default provider's chain
         default_provider_id = config.global_config.default_provider
         default_provider = config.get_provider(default_provider_id)
         if default_provider:
-            chain = [default_provider_id, *list(default_provider.failover_chain)]
-            return chain
+            return [default_provider_id, *list(default_provider.failover_chain)]
 
         # Last resort: all enabled providers by priority
         return [p.provider_id for p in config.get_enabled_providers()]
@@ -508,13 +504,13 @@ class FallbackManager:
         error: str,
         reason: FallbackReason = FallbackReason.UNKNOWN,
     ) -> None:
-        """
-        Record a provider failure for statistics.
+        """Record a provider failure for statistics.
 
         Args:
             provider: Provider ID that failed
             error: Error message
             reason: Classified reason for failure
+
         """
         if provider not in self._stats.provider_failures:
             self._stats.provider_failures[provider] = ProviderFailureRecord()
@@ -535,15 +531,15 @@ class FallbackManager:
         logger.debug(
             f"Recorded failure for {provider}: "
             f"consecutive={record.consecutive_failures}, "
-            f"reason={reason.value}"
+            f"reason={reason.value}",
         )
 
     def record_success(self, provider: str) -> None:
-        """
-        Record a successful provider operation.
+        """Record a successful provider operation.
 
         Args:
             provider: Provider ID that succeeded
+
         """
         if provider not in self._stats.provider_failures:
             self._stats.provider_failures[provider] = ProviderFailureRecord()
@@ -556,14 +552,14 @@ class FallbackManager:
         logger.debug(f"Recorded success for {provider}")
 
     def should_skip_provider(self, provider: str) -> bool:
-        """
-        Check if provider should be skipped based on recent failures.
+        """Check if provider should be skipped based on recent failures.
 
         Args:
             provider: Provider ID to check
 
         Returns:
             True if provider should be skipped
+
         """
         if provider not in self._stats.provider_failures:
             return False
@@ -575,11 +571,11 @@ class FallbackManager:
         )
 
     def reset_provider_status(self, provider: str) -> None:
-        """
-        Reset failure count for a provider.
+        """Reset failure count for a provider.
 
         Args:
             provider: Provider ID to reset
+
         """
         if provider in self._stats.provider_failures:
             record = self._stats.provider_failures[provider]
@@ -598,23 +594,23 @@ class FallbackManager:
     # =========================================================================
 
     def get_fallback_stats(self) -> dict[str, Any]:
-        """
-        Get statistics about fallback operations.
+        """Get statistics about fallback operations.
 
         Returns:
             Dictionary with fallback statistics
+
         """
         return self._stats.to_dict()
 
     def get_provider_health(self, provider: str) -> dict[str, Any]:
-        """
-        Get health information for a specific provider.
+        """Get health information for a specific provider.
 
         Args:
             provider: Provider ID
 
         Returns:
             Dictionary with provider health information
+
         """
         if provider not in self._stats.provider_failures:
             return {
@@ -653,11 +649,11 @@ class FallbackManager:
         }
 
     def get_all_providers_health(self) -> dict[str, dict[str, Any]]:
-        """
-        Get health information for all tracked providers.
+        """Get health information for all tracked providers.
 
         Returns:
             Dictionary mapping provider IDs to health information
+
         """
         config_manager = self._get_config_manager()
         health = {}

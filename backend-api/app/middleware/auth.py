@@ -1,5 +1,4 @@
-"""
-Authentication Middleware Module
+"""Authentication Middleware Module.
 
 Provides API key authentication middleware with support for:
 - Global CHIMERA_API_KEY (backward compatibility)
@@ -24,8 +23,7 @@ from app.core.logging import logger
 
 
 async def validate_user_api_key(api_key: str) -> tuple[bool, dict | None]:
-    """
-    Validate an API key against the database.
+    """Validate an API key against the database.
 
     Looks up the API key in the user_api_keys table and returns
     user information if valid.
@@ -36,6 +34,7 @@ async def validate_user_api_key(api_key: str) -> tuple[bool, dict | None]:
     Returns:
         Tuple of (is_valid, user_info_dict or None)
         user_info_dict contains: user_id, username, email, role, api_key_id
+
     """
     try:
         # Import database components lazily to avoid circular imports
@@ -115,7 +114,7 @@ async def validate_user_api_key(api_key: str) -> tuple[bool, dict | None]:
             }
 
             logger.debug(
-                f"Valid API key for user: {user.email} (key: {api_key_record.key_prefix}...)"
+                f"Valid API key for user: {user.email} (key: {api_key_record.key_prefix}...)",
             )
             return True, user_info
 
@@ -130,7 +129,7 @@ async def validate_user_api_key(api_key: str) -> tuple[bool, dict | None]:
 class APIKeyMiddleware(BaseHTTPMiddleware):
     """Middleware for API key authentication."""
 
-    def __init__(self, app, excluded_paths: list | None = None):
+    def __init__(self, app, excluded_paths: list | None = None) -> None:
         super().__init__(app)
         self.excluded_paths = excluded_paths or ["/", "/health", "/docs", "/openapi.json", "/redoc"]
         # Ensure paths are normalized
@@ -154,8 +153,9 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         # Log warning if no keys configured
         if not keys:
             if os.getenv("ENVIRONMENT", "development") == "production":
+                msg = "Production environment requires API key configuration (CHIMERA_API_KEY)"
                 raise ValueError(
-                    "Production environment requires API key configuration (CHIMERA_API_KEY)"
+                    msg,
                 )
             logger.warning("No API keys configured - authentication disabled for development mode")
 
@@ -211,12 +211,11 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
             request.state.auth_type = "user_api_key"
 
             logger.debug(
-                f"Authenticated user {user_info['username']} via API key {user_info['api_key_prefix']}..."
+                f"Authenticated user {user_info['username']} via API key {user_info['api_key_prefix']}...",
             )
 
             # Process request
-            response = await call_next(request)
-            return response
+            return await call_next(request)
 
         # Fall back to global CHIMERA_API_KEY for backward compatibility
         if self._is_valid_global_api_key(api_key):
@@ -229,8 +228,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
             logger.debug(f"Authenticated via global API key from {self._get_client_ip(request)}")
 
             # Process request
-            response = await call_next(request)
-            return response
+            return await call_next(request)
 
         # Neither per-user nor global API key is valid
         logger.warning(f"Invalid API key attempt from {self._get_client_ip(request)}")
@@ -257,8 +255,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         return None
 
     def _is_valid_global_api_key(self, api_key: str | None) -> bool:
-        """
-        Validate API key against global CHIMERA_API_KEY(s).
+        """Validate API key against global CHIMERA_API_KEY(s).
 
         Uses timing-safe comparison (CRIT-002 & HIGH-002 FIX).
         This provides backward compatibility for global API key auth.
@@ -268,6 +265,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
         Returns:
             True if valid against any configured global key, False otherwise
+
         """
         if not api_key:
             return False
@@ -301,7 +299,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 class SecurityAuditMiddleware(BaseHTTPMiddleware):
     """Middleware for security audit logging."""
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         super().__init__(app)
 
     async def dispatch(self, request: Request, call_next):
@@ -325,7 +323,7 @@ class SecurityAuditMiddleware(BaseHTTPMiddleware):
             f"IP: {client_ip} - "
             f"Status: {response.status_code} - "
             f"Time: {process_time:.3f}s - "
-            f"UA: {user_agent[:100]}"  # Truncate long user agents
+            f"UA: {user_agent[:100]}",  # Truncate long user agents
         )
 
         return response
@@ -342,15 +340,13 @@ class SecurityAuditMiddleware(BaseHTTPMiddleware):
 
         return request.client.host if request.client else "unknown"
 
-    def _check_suspicious_patterns(self, request: Request, client_ip: str, user_agent: str):
-        """Check for suspicious request patterns. (CIVP: Monitoring disabled)"""
+    def _check_suspicious_patterns(self, request: Request, client_ip: str, user_agent: str) -> None:
+        """Check for suspicious request patterns. (CIVP: Monitoring disabled)."""
         # CIVP: All patterns cleared for unrestricted operational monitoring
-        pass
 
 
 def get_current_user_id(request: Request) -> str:
-    """
-    Get the current user ID from the request.
+    """Get the current user ID from the request.
 
     Checks request.state for user info set by the APIKeyMiddleware.
     Falls back to deriving a user ID from the API key header for
@@ -361,6 +357,7 @@ def get_current_user_id(request: Request) -> str:
 
     Returns:
         User ID string (database user ID or derived from API key)
+
     """
     # Check if middleware has set user info
     if hasattr(request, "state"):
@@ -382,8 +379,7 @@ def get_current_user_id(request: Request) -> str:
 
 
 def get_current_user_info(request: Request) -> dict:
-    """
-    Get the current user information from the request.
+    """Get the current user information from the request.
 
     Returns a dict with user details if authenticated via per-user API key,
     or minimal info for global API key/anonymous users.
@@ -393,6 +389,7 @@ def get_current_user_info(request: Request) -> dict:
 
     Returns:
         Dict with user info: user_id, username, email, role, auth_type
+
     """
     if hasattr(request, "state"):
         auth_type = getattr(request.state, "auth_type", None)
@@ -406,7 +403,7 @@ def get_current_user_info(request: Request) -> dict:
                 "api_key_id": getattr(request.state, "api_key_id", None),
                 "auth_type": "user_api_key",
             }
-        elif auth_type == "global_api_key":
+        if auth_type == "global_api_key":
             return {
                 "user_id": None,
                 "username": "api_client",

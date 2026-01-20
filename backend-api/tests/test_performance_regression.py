@@ -1,5 +1,4 @@
-"""
-Performance Regression Tests for Chimera Backend
+"""Performance Regression Tests for Chimera Backend.
 
 PERF-007: Automated tests that track key performance metrics over time
 and alert when performance degrades beyond acceptable thresholds.
@@ -130,7 +129,7 @@ class PerformanceMetrics:
 
         if "error_rate" in thresholds and self.error_rate > thresholds["error_rate"]:
             violations.append(
-                f"Error rate ({self.error_rate:.1%}) exceeds threshold ({thresholds['error_rate']:.1%})"
+                f"Error rate ({self.error_rate:.1%}) exceeds threshold ({thresholds['error_rate']:.1%})",
             )
 
         if "max_rps" in thresholds and self.rps < thresholds["max_rps"]:
@@ -169,7 +168,7 @@ class PerformanceBaseline:
 class PerformanceTestRunner:
     """Helper class for running performance tests."""
 
-    def __init__(self, base_url: str = "http://localhost:8001"):
+    def __init__(self, base_url: str = "http://localhost:8001") -> None:
         self.base_url = base_url
         self.api_key = os.getenv("CHIMERA_API_KEY", "test-api-key")
         self.headers = {"X-API-Key": self.api_key}
@@ -375,7 +374,7 @@ async def test_performance_regression(
                     pytest.fail(
                         f"Performance regression in {operation}: "
                         f"p95 went from {base['p95_ms']}ms to {current.p95_ms}ms "
-                        f"({regression:.1%} increase)"
+                        f"({regression:.1%} increase)",
                     )
 
             if base["error_rate"] > 0:
@@ -383,7 +382,7 @@ async def test_performance_regression(
                 if error_regression > 0.05:  # 5% absolute increase
                     pytest.fail(
                         f"Error rate regression in {operation}: "
-                        f"went from {base['error_rate']:.1%} to {current.error_rate:.1%}"
+                        f"went from {base['error_rate']:.1%} to {current.error_rate:.1%}",
                     )
     else:
         pytest.skip(f"No baseline file found at {baseline_file}")

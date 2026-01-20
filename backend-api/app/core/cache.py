@@ -1,6 +1,4 @@
-"""
-High-performance caching system with Redis and in-memory fallback.
-"""
+"""High-performance caching system with Redis and in-memory fallback."""
 
 import asyncio
 import hashlib
@@ -36,7 +34,7 @@ class CacheConfig:
 class MemoryCache:
     """High-performance in-memory cache with LRU eviction."""
 
-    def __init__(self, max_items: int = 10000):
+    def __init__(self, max_items: int = 10000) -> None:
         self.max_items = max_items
         self._cache: dict[str, dict[str, Any]] = {}
         self._access_times: dict[str, float] = {}
@@ -107,7 +105,7 @@ class MemoryCache:
 class RedisCache:
     """Redis-based distributed cache."""
 
-    def __init__(self, redis_url: str, key_prefix: str = "chimera:"):
+    def __init__(self, redis_url: str, key_prefix: str = "chimera:") -> None:
         self.redis_url = redis_url
         self.key_prefix = key_prefix
         self._redis: redis.Redis | None = None
@@ -146,7 +144,7 @@ class RedisCache:
                 return json.loads(value)
             return None
         except Exception as e:
-            logger.error(f"Redis get error: {e}")
+            logger.exception(f"Redis get error: {e}")
             return None
 
     async def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
@@ -160,7 +158,7 @@ class RedisCache:
             await self._redis.setex(self._make_key(key), ttl, serialized_value)
             return True
         except Exception as e:
-            logger.error(f"Redis set error: {e}")
+            logger.exception(f"Redis set error: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -172,7 +170,7 @@ class RedisCache:
             result = await self._redis.delete(self._make_key(key))
             return result > 0
         except Exception as e:
-            logger.error(f"Redis delete error: {e}")
+            logger.exception(f"Redis delete error: {e}")
             return False
 
     async def clear(self) -> bool:
@@ -187,7 +185,7 @@ class RedisCache:
                 await self._redis.delete(*keys)
             return True
         except Exception as e:
-            logger.error(f"Redis clear error: {e}")
+            logger.exception(f"Redis clear error: {e}")
             return False
 
     async def get_stats(self) -> dict[str, Any]:
@@ -205,14 +203,14 @@ class RedisCache:
                 "misses": info.get("keyspace_misses", 0),
             }
         except Exception as e:
-            logger.error(f"Redis stats error: {e}")
+            logger.exception(f"Redis stats error: {e}")
             return {"connected": False, "error": str(e)}
 
 
 class HybridCache:
     """Hybrid cache that uses Redis with memory fallback."""
 
-    def __init__(self, config: CacheConfig = None):
+    def __init__(self, config: CacheConfig = None) -> None:
         self.config = config or CacheConfig()
         self.memory_cache = MemoryCache(self.config.max_memory_items)
         self.redis_cache = RedisCache(self.config.redis_url, self.config.key_prefix)
@@ -286,7 +284,9 @@ class HybridCache:
     async def clear(self) -> None:
         """Clear all caches."""
         await asyncio.gather(
-            self.memory_cache.clear(), self.redis_cache.clear(), return_exceptions=True
+            self.memory_cache.clear(),
+            self.redis_cache.clear(),
+            return_exceptions=True,
         )
 
     async def get_stats(self) -> dict[str, Any]:
@@ -332,7 +332,7 @@ def cached(prefix: str, ttl: int | None = None, key_args: list[str] | None = Non
                 logger.debug(f"Cached result for key: {cache_key[:50]}...")
                 return result
             except Exception as e:
-                logger.error(f"Function execution error for {func.__name__}: {e}")
+                logger.exception(f"Function execution error for {func.__name__}: {e}")
                 raise
 
         return wrapper
@@ -342,27 +342,27 @@ def cached(prefix: str, ttl: int | None = None, key_args: list[str] | None = Non
 
 # Specialized cache decorators
 @cached(prefix="transformation", ttl=CacheConfig.transformation_ttl)
-async def cache_transformation(prompt: str, potency: int, technique: str, **kwargs):
+async def cache_transformation(prompt: str, potency: int, technique: str, **kwargs) -> None:
     """Cache transformation results."""
-    pass  # Decorator handles caching
+    # Decorator handles caching
 
 
 @cached(prefix="api_response", ttl=CacheConfig.api_response_ttl)
-async def cache_api_response(endpoint: str, params: dict | None = None):
+async def cache_api_response(endpoint: str, params: dict | None = None) -> None:
     """Cache API responses."""
-    pass  # Decorator handles caching
+    # Decorator handles caching
 
 
 @cached(prefix="metrics", ttl=CacheConfig.metrics_ttl)
-async def cache_metrics(metric_type: str, filters: dict | None = None):
+async def cache_metrics(metric_type: str, filters: dict | None = None) -> None:
     """Cache metrics data."""
-    pass  # Decorator handles caching
+    # Decorator handles caching
 
 
 class CacheWarmer:
     """Preloads frequently accessed data into cache."""
 
-    def __init__(self, cache_instance: HybridCache):
+    def __init__(self, cache_instance: HybridCache) -> None:
         self.cache = cache_instance
 
     async def warm_technique_suites(self) -> None:
@@ -378,7 +378,7 @@ class CacheWarmer:
 
             logger.info(f"Warmed cache with {len(suites)} technique suites")
         except Exception as e:
-            logger.error(f"Cache warming failed: {e}")
+            logger.exception(f"Cache warming failed: {e}")
 
     async def warm_provider_configs(self) -> None:
         """Warm cache with provider configurations."""
@@ -403,25 +403,25 @@ class CacheWarmer:
 
             logger.info("Warmed cache with provider configurations")
         except Exception as e:
-            logger.error(f"Provider cache warming failed: {e}")
+            logger.exception(f"Provider cache warming failed: {e}")
 
 
 # Global cache warmer
 cache_warmer = CacheWarmer(cache)
 
 
-async def initialize_cache():
+async def initialize_cache() -> None:
     """Initialize the cache system and warm essential data."""
     await cache.initialize()
 
     # MED-003 FIX: Wrap background tasks with error handling
-    async def safe_warm_task(task_coro, task_name: str):
+    async def safe_warm_task(task_coro, task_name: str) -> None:
         """Wrapper to safely run cache warming tasks with error logging."""
         try:
             await task_coro
             logger.info(f"Cache warming task '{task_name}' completed successfully")
         except Exception as e:
-            logger.error(f"Cache warming task '{task_name}' failed: {e}")
+            logger.exception(f"Cache warming task '{task_name}' failed: {e}")
 
     # Warm essential data in background with error handling
     asyncio.create_task(safe_warm_task(cache_warmer.warm_technique_suites(), "technique_suites"))
@@ -431,7 +431,7 @@ async def initialize_cache():
 
 
 # Cache cleanup task
-async def cleanup_expired_cache():
+async def cleanup_expired_cache() -> None:
     """Periodic cleanup of expired cache entries."""
     try:
         # Memory cache already handles TTL, but we can force cleanup
@@ -444,4 +444,4 @@ async def cleanup_expired_cache():
             logger.info("Cleared memory cache to prevent overflow")
 
     except Exception as e:
-        logger.error(f"Cache cleanup failed: {e}")
+        logger.exception(f"Cache cleanup failed: {e}")

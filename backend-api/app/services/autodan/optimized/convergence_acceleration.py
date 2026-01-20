@@ -1,5 +1,4 @@
-"""
-Convergence Acceleration for AutoDAN.
+"""Convergence Acceleration for AutoDAN.
 
 Implements techniques to speed up convergence:
 - Warm start optimization
@@ -57,8 +56,7 @@ class CurriculumStage:
 
 
 class WarmStartOptimizer:
-    """
-    Warm start optimization using transfer learning.
+    """Warm start optimization using transfer learning.
 
     Initializes optimization from previously successful strategies.
     """
@@ -68,7 +66,7 @@ class WarmStartOptimizer:
         embedding_dim: int = 384,
         n_clusters: int = 10,
         similarity_threshold: float = 0.7,
-    ):
+    ) -> None:
         self.embedding_dim = embedding_dim
         self.n_clusters = n_clusters
         self.similarity_threshold = similarity_threshold
@@ -86,14 +84,14 @@ class WarmStartOptimizer:
         embedding: np.ndarray,
         score: float,
         metadata: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Add a successful strategy to the bank."""
         self.successful_strategies.append(
             {
                 "strategy": strategy,
                 "score": score,
                 "metadata": metadata or {},
-            }
+            },
         )
         self.strategy_embeddings.append(embedding)
 
@@ -106,8 +104,7 @@ class WarmStartOptimizer:
         target_embedding: np.ndarray,
         top_k: int = 3,
     ) -> list[dict[str, Any]]:
-        """
-        Get warm start strategies similar to target.
+        """Get warm start strategies similar to target.
 
         Args:
             target_embedding: Embedding of target task
@@ -115,6 +112,7 @@ class WarmStartOptimizer:
 
         Returns:
             List of similar successful strategies
+
         """
         if not self.strategy_embeddings:
             return []
@@ -133,7 +131,7 @@ class WarmStartOptimizer:
                     {
                         **self.successful_strategies[idx],
                         "similarity": float(similarities[idx]),
-                    }
+                    },
                 )
 
         return results
@@ -143,8 +141,7 @@ class WarmStartOptimizer:
         target_embedding: np.ndarray,
         blend_ratio: float = 0.7,
     ) -> np.ndarray | None:
-        """
-        Initialize parameters from similar strategies.
+        """Initialize parameters from similar strategies.
 
         Args:
             target_embedding: Target task embedding
@@ -152,6 +149,7 @@ class WarmStartOptimizer:
 
         Returns:
             Blended initialization or None
+
         """
         similar = self.get_warm_start(target_embedding, top_k=5)
 
@@ -184,7 +182,7 @@ class WarmStartOptimizer:
         b_norm = b / (np.linalg.norm(b, axis=1, keepdims=True) + 1e-10)
         return np.dot(b_norm, a_norm)
 
-    def _update_clusters(self):
+    def _update_clusters(self) -> None:
         """Update cluster centers using k-means."""
         if len(self.strategy_embeddings) < self.n_clusters:
             return
@@ -222,8 +220,7 @@ class WarmStartOptimizer:
 
 
 class EarlyStoppingController:
-    """
-    Early stopping with confidence-based termination.
+    """Early stopping with confidence-based termination.
 
     Stops optimization when confident that further iterations
     won't improve results significantly.
@@ -238,7 +235,7 @@ class EarlyStoppingController:
         max_iterations: int = 150,
         time_limit: float | None = None,
         divergence_threshold: float = 0.5,
-    ):
+    ) -> None:
         self.patience = patience
         self.min_delta = min_delta
         self.target_score = target_score
@@ -251,20 +248,20 @@ class EarlyStoppingController:
         self.state = ConvergenceState()
         self.start_time: float | None = None
 
-    def start(self):
+    def start(self) -> None:
         """Start the stopping controller."""
         self.state = ConvergenceState()
         self.start_time = time.time()
 
     def step(self, score: float) -> bool:
-        """
-        Record a score and check if should stop.
+        """Record a score and check if should stop.
 
         Args:
             score: Current iteration score
 
         Returns:
             True if should stop, False otherwise
+
         """
         self.state.iteration += 1
         self.state.scores_history.append(score)
@@ -388,8 +385,7 @@ class EarlyStoppingController:
 
 
 class CurriculumScheduler:
-    """
-    Curriculum learning scheduler for progressive difficulty.
+    """Curriculum learning scheduler for progressive difficulty.
 
     Starts with easier tasks and gradually increases difficulty.
     """
@@ -399,7 +395,7 @@ class CurriculumScheduler:
         stages: list[CurriculumStage] | None = None,
         auto_advance: bool = True,
         min_stage_iterations: int = 10,
-    ):
+    ) -> None:
         self.auto_advance = auto_advance
         self.min_stage_iterations = min_stage_iterations
 
@@ -472,14 +468,14 @@ class CurriculumScheduler:
         return self.stages[self.current_stage_idx]
 
     def step(self, score: float) -> bool:
-        """
-        Record score and potentially advance stage.
+        """Record score and potentially advance stage.
 
         Args:
             score: Current iteration score
 
         Returns:
             True if stage advanced, False otherwise
+
         """
         self.stage_iteration += 1
         self.stage_scores.append(score)
@@ -565,7 +561,7 @@ class CurriculumScheduler:
             "completed_stages": self.completed_stages,
         }
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset scheduler to initial state."""
         self.current_stage_idx = 0
         self.stage_iteration = 0
@@ -574,8 +570,7 @@ class CurriculumScheduler:
 
 
 class ConvergenceAccelerator:
-    """
-    Combined convergence acceleration system.
+    """Combined convergence acceleration system.
 
     Integrates warm start, early stopping, and curriculum learning.
     """
@@ -588,7 +583,7 @@ class ConvergenceAccelerator:
         max_iterations: int = 150,
         use_curriculum: bool = True,
         use_warm_start: bool = True,
-    ):
+    ) -> None:
         self.use_curriculum = use_curriculum
         self.use_warm_start = use_warm_start
 
@@ -607,11 +602,11 @@ class ConvergenceAccelerator:
         self.convergence_history: list[dict[str, Any]] = []
 
     def start(self, target_embedding: np.ndarray | None = None):
-        """
-        Start a new optimization run.
+        """Start a new optimization run.
 
         Args:
             target_embedding: Optional embedding for warm start
+
         """
         self.early_stopping.start()
         if self.curriculum:
@@ -625,14 +620,14 @@ class ConvergenceAccelerator:
         return warm_start_strategies
 
     def step(self, score: float) -> dict[str, Any]:
-        """
-        Process an iteration step.
+        """Process an iteration step.
 
         Args:
             score: Current iteration score
 
         Returns:
             Dict with should_stop, stage_advanced, and parameters
+
         """
         self.total_iterations += 1
 
@@ -656,7 +651,7 @@ class ConvergenceAccelerator:
                 "score": score,
                 "should_stop": should_stop,
                 "stage_advanced": stage_advanced,
-            }
+            },
         )
 
         return {
@@ -671,7 +666,7 @@ class ConvergenceAccelerator:
         strategy: str,
         embedding: np.ndarray,
         score: float,
-    ):
+    ) -> None:
         """Record a successful strategy for future warm starts."""
         if self.use_warm_start:
             self.warm_start.add_successful_strategy(
@@ -695,7 +690,7 @@ class ConvergenceAccelerator:
 
         return stats
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset accelerator state."""
         self.early_stopping.start()
         if self.curriculum:

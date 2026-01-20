@@ -1,5 +1,4 @@
-"""
-AutoDAN-Turbo API Endpoints
+"""AutoDAN-Turbo API Endpoints.
 
 Comprehensive API endpoints for the AutoDAN-Turbo lifelong learning jailbreak system.
 Based on ICLR 2025 paper: "AutoDAN-Turbo: A Lifelong Agent for Strategy Self-Exploration"
@@ -26,7 +25,7 @@ import time
 import uuid
 from collections import defaultdict
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Cookie, Header, HTTPException, Query, Request
 from pydantic import AliasChoices, Field
@@ -49,14 +48,13 @@ STALE_IP_CLEANUP_INTERVAL = 3600  # Cleanup stale IPs every hour
 
 
 class RateLimiter:
-    """
-    In-memory rate limiter for API endpoints with memory leak protection.
+    """In-memory rate limiter for API endpoints with memory leak protection.
 
     SECURITY FIX: Added periodic cleanup of stale IP entries and max entries limit
     to prevent unbounded memory growth from unique IP addresses.
     """
 
-    def __init__(self, requests_per_minute: int = 10, requests_per_hour: int = 100):
+    def __init__(self, requests_per_minute: int = 10, requests_per_hour: int = 100) -> None:
         self.requests_per_minute = requests_per_minute
         self.requests_per_hour = requests_per_hour
         self._minute_counts: dict[str, list[float]] = defaultdict(list)
@@ -72,8 +70,7 @@ class RateLimiter:
         self._hour_counts[key] = [t for t in self._hour_counts[key] if t > hour_ago]
 
     def _cleanup_stale_ips(self, now: float) -> None:
-        """
-        Remove stale IP entries to prevent memory leak.
+        """Remove stale IP entries to prevent memory leak.
 
         This runs periodically to clean up IPs that haven't made requests recently.
         """
@@ -104,12 +101,11 @@ class RateLimiter:
         if stale_minute_keys or stale_hour_keys:
             logger.info(
                 f"Rate limiter cleanup: removed {len(stale_minute_keys)} minute entries, "
-                f"{len(stale_hour_keys)} hour entries"
+                f"{len(stale_hour_keys)} hour entries",
             )
 
     def _enforce_max_entries(self) -> None:
-        """
-        Enforce maximum tracked IPs to prevent memory exhaustion.
+        """Enforce maximum tracked IPs to prevent memory exhaustion.
 
         If we exceed MAX_TRACKED_IPS, remove the oldest entries.
         """
@@ -126,15 +122,15 @@ class RateLimiter:
                 self._hour_counts.pop(key, None)
             logger.warning(
                 f"Rate limiter: evicted {len(keys_to_remove)} oldest entries "
-                f"(exceeded {MAX_TRACKED_IPS} max tracked IPs)"
+                f"(exceeded {MAX_TRACKED_IPS} max tracked IPs)",
             )
 
     def check_rate_limit(self, client_ip: str) -> tuple[bool, str]:
-        """
-        Check if request is within rate limits.
+        """Check if request is within rate limits.
 
         Returns:
             Tuple of (is_allowed, error_message)
+
         """
         now = time.time()
 
@@ -214,8 +210,7 @@ MAX_ITERATIONS_LIMIT = 50  # Reduced from 500 to prevent DoS
 
 
 class SingleAttackRequest(StrictBaseModel):
-    """
-    Request for a single lifelong attack.
+    """Request for a single lifelong attack.
 
     Unified Schema Fields:
     - `goal`: Alias for `request` (unified naming)
@@ -288,8 +283,7 @@ class SingleAttackRequest(StrictBaseModel):
 
 
 class SingleAttackResponse(StrictBaseModel):
-    """
-    Response from a single lifelong attack.
+    """Response from a single lifelong attack.
 
     Unified Schema Fields:
     - `generated_prompt`: Alias for `prompt` (unified naming)
@@ -351,8 +345,7 @@ class SingleAttackResponse(StrictBaseModel):
 
 
 class WarmupRequest(StrictBaseModel):
-    """
-    Request for warm-up exploration phase (Algorithm 1).
+    """Request for warm-up exploration phase (Algorithm 1).
 
     Unified Schema Fields:
     - `goals`: Alias for `requests` (unified naming)
@@ -378,7 +371,10 @@ class WarmupRequest(StrictBaseModel):
     )
     iterations_per_request: int = Field(3, ge=1, le=500, description="Iterations per request (T)")
     max_strategies_to_extract: int = Field(
-        50, ge=1, le=200, description="Max strategies to extract (K)"
+        50,
+        ge=1,
+        le=200,
+        description="Max strategies to extract (K)",
     )
 
     # OVERTHINK integration
@@ -389,8 +385,7 @@ class WarmupRequest(StrictBaseModel):
 
 
 class WarmupResponse(StrictBaseModel):
-    """
-    Response from warm-up exploration phase.
+    """Response from warm-up exploration phase.
 
     Unified Schema Fields:
     - `total_execution_time_ms`: Alias for `phase_duration_ms` (unified)
@@ -411,8 +406,7 @@ class WarmupResponse(StrictBaseModel):
 
 
 class LifelongLoopRequest(StrictBaseModel):
-    """
-    Request for full lifelong learning loop (Algorithm 2).
+    """Request for full lifelong learning loop (Algorithm 2).
 
     Unified Schema Fields:
     - `goals`: Alias for `requests` (unified naming)
@@ -438,7 +432,10 @@ class LifelongLoopRequest(StrictBaseModel):
     )
     epochs: int = Field(5, ge=1, le=50, description="Number of epochs (N)")
     max_iterations_per_request: int = Field(
-        10, ge=1, le=500, description="Max iterations per request (T)"
+        10,
+        ge=1,
+        le=500,
+        description="Max iterations per request (T)",
     )
     break_score: float = Field(8.5, ge=1.0, le=10.0, description="Score threshold (S_T)")
     include_warmup: bool = Field(False, description="Run warm-up phase first")
@@ -452,8 +449,7 @@ class LifelongLoopRequest(StrictBaseModel):
 
 
 class LifelongLoopResponse(StrictBaseModel):
-    """
-    Response from full lifelong learning loop.
+    """Response from full lifelong learning loop.
 
     Unified Schema Fields:
     - `total_execution_time_ms`: Alias for `total_duration_ms` (unified)
@@ -471,8 +467,7 @@ class LifelongLoopResponse(StrictBaseModel):
 
 
 class TestStageRequest(StrictBaseModel):
-    """
-    Request for test stage with fixed strategy library (Algorithm 3).
+    """Request for test stage with fixed strategy library (Algorithm 3).
 
     Unified Schema Fields:
     - `goals`: Alias for `requests` (unified naming)
@@ -497,14 +492,16 @@ class TestStageRequest(StrictBaseModel):
         description="LLM provider",
     )
     max_iterations_per_request: int = Field(
-        10, ge=1, le=50, description="Max iterations per request"
+        10,
+        ge=1,
+        le=50,
+        description="Max iterations per request",
     )
     break_score: float = Field(8.5, ge=1.0, le=10.0, description="Score threshold")
 
 
 class TestStageResponse(StrictBaseModel):
-    """
-    Response from test stage.
+    """Response from test stage.
 
     Unified Schema Fields:
     - `total_execution_time_ms`: Alias for `total_duration_ms` (unified)
@@ -637,11 +634,10 @@ def strategy_to_response(strategy: JailbreakStrategy) -> StrategyResponse:
 async def run_single_attack(
     request: Request,
     payload: SingleAttackRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Run a single attack using the AutoDAN-Turbo lifelong learning engine.
+    """Run a single attack using the AutoDAN-Turbo lifelong learning engine.
 
     This endpoint executes the attack generation and exploration module:
     1. Retrieves relevant strategies from the library (or uses manually selected ones)
@@ -675,7 +671,7 @@ async def run_single_attack(
 
         logger.info(
             f"AutoDAN-Turbo attack: model={model}, provider={provider}, "
-            f"manual_strategies={len(manual_strategies)}, use_retrieval={use_retrieval}"
+            f"manual_strategies={len(manual_strategies)}, use_retrieval={use_retrieval}",
         )
 
         # Run the attack with strategy selection options
@@ -750,11 +746,10 @@ async def run_warmup_exploration(
     request: Request,
     payload: WarmupRequest,
     background_tasks: BackgroundTasks,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Run the warm-up exploration phase (Algorithm 1 from paper).
+    """Run the warm-up exploration phase (Algorithm 1 from paper).
 
     This phase bootstraps the strategy library by:
     1. Running attacks without strategy guidance
@@ -777,7 +772,7 @@ async def run_warmup_exploration(
         model = payload.model or session_model
 
         logger.info(
-            f"AutoDAN-Turbo warmup: {len(payload.requests)} requests, {payload.iterations_per_request} iterations each"
+            f"AutoDAN-Turbo warmup: {len(payload.requests)} requests, {payload.iterations_per_request} iterations each",
         )
 
         # Get the lifelong engine
@@ -785,7 +780,8 @@ async def run_warmup_exploration(
 
         # Run warm-up exploration
         results = await engine.warmup_exploration(
-            requests=payload.requests, iterations_per_request=payload.iterations_per_request
+            requests=payload.requests,
+            iterations_per_request=payload.iterations_per_request,
         )
 
         # Get progress
@@ -823,11 +819,10 @@ async def run_warmup_exploration(
 async def run_lifelong_loop(
     payload: LifelongLoopRequest,
     background_tasks: BackgroundTasks,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Run the full lifelong learning loop (Algorithm 2 from paper).
+    """Run the full lifelong learning loop (Algorithm 2 from paper).
 
     This is the main training loop that:
     1. Optionally runs warm-up exploration first
@@ -849,7 +844,7 @@ async def run_lifelong_loop(
         model = payload.model or session_model
 
         logger.info(
-            f"AutoDAN-Turbo lifelong: {len(payload.requests)} requests, {payload.epochs} epochs"
+            f"AutoDAN-Turbo lifelong: {len(payload.requests)} requests, {payload.epochs} epochs",
         )
 
         # Run the full loop
@@ -880,11 +875,10 @@ async def run_lifelong_loop(
 @router.post("/test", response_model=TestStageResponse)
 async def run_test_stage(
     payload: TestStageRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Run the test stage with fixed strategy library (Algorithm 3 from paper).
+    """Run the test stage with fixed strategy library (Algorithm 3 from paper).
 
     In test stage:
     - Strategy library is fixed (no new strategies extracted)
@@ -936,7 +930,7 @@ async def run_test_stage(
                         "is_jailbreak": best_result.scoring.is_jailbreak,
                         "rounds_used": rounds_used,
                         "strategy_id": best_result.strategy_id,
-                    }
+                    },
                 )
 
                 total_score += best_result.scoring.score
@@ -967,15 +961,16 @@ async def run_test_stage(
 
 @router.get("/strategies", response_model=StrategyListResponse)
 async def list_strategies(
-    source: str | None = Query(None, description="Filter by source (seed, warmup, lifelong)"),
-    tag: str | None = Query(None, description="Filter by tag"),
-    sort_by: str = Query(
-        "success_rate", description="Sort by: success_rate, usage_count, average_score"
-    ),
-    limit: int = Query(50, ge=1, le=200, description="Maximum strategies to return"),
+    source: Annotated[
+        str | None, Query(description="Filter by source (seed, warmup, lifelong)")
+    ] = None,
+    tag: Annotated[str | None, Query(description="Filter by tag")] = None,
+    sort_by: Annotated[
+        str, Query(description="Sort by: success_rate, usage_count, average_score")
+    ] = "success_rate",
+    limit: Annotated[int, Query(ge=1, le=200, description="Maximum strategies to return")] = 50,
 ):
-    """
-    List strategies in the library.
+    """List strategies in the library.
 
     Supports filtering by source and tag, and sorting by various metrics.
 
@@ -1012,7 +1007,8 @@ async def list_strategies(
         strategies = strategies[:limit]
 
         return StrategyListResponse(
-            strategies=[strategy_to_response(s) for s in strategies], total_count=len(library)
+            strategies=[strategy_to_response(s) for s in strategies],
+            total_count=len(library),
         )
 
     except HTTPException:
@@ -1024,8 +1020,7 @@ async def list_strategies(
 
 @router.get("/strategies/{strategy_id}", response_model=StrategyResponse)
 async def get_strategy(strategy_id: str):
-    """
-    Get a specific strategy by ID.
+    """Get a specific strategy by ID.
 
     Note: This endpoint uses a lightweight library access that doesn't require
     LLM initialization, making it available even without API keys configured.
@@ -1049,8 +1044,7 @@ async def get_strategy(strategy_id: str):
 
 @router.post("/strategies", response_model=StrategyResponse)
 async def create_strategy(payload: StrategyCreateRequest):
-    """
-    Create/inject a human-designed strategy into the library.
+    """Create/inject a human-designed strategy into the library.
 
     This enables the "External Strategy Compatibility" feature from the paper,
     allowing integration of existing human-designed jailbreak strategies.
@@ -1114,12 +1108,13 @@ async def delete_strategy(strategy_id: str):
 
 @router.post("/strategies/search")
 async def search_strategies(
-    query: str = Query(..., description="Search query (complex request)"),
-    top_k: int = Query(5, ge=1, le=20, description="Number of results"),
-    min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum similarity score"),
+    query: Annotated[str, Query(description="Search query (complex request)")] = ...,
+    top_k: Annotated[int, Query(ge=1, le=20, description="Number of results")] = 5,
+    min_score: Annotated[
+        float, Query(ge=0.0, le=1.0, description="Minimum similarity score")
+    ] = 0.0,
 ):
-    """
-    Search for strategies similar to a query using embedding-based retrieval.
+    """Search for strategies similar to a query using embedding-based retrieval.
 
     This implements the Jailbreak Strategy Retrieval Module from Section 3.3.
     """
@@ -1143,8 +1138,7 @@ async def search_strategies(
 
 @router.post("/strategies/batch-inject")
 async def batch_inject_strategies(strategies: list[StrategyCreateRequest]):
-    """
-    Batch inject multiple human-designed strategies.
+    """Batch inject multiple human-designed strategies.
 
     Useful for importing strategies from academic papers or existing collections.
     """
@@ -1160,7 +1154,10 @@ async def batch_inject_strategies(strategies: list[StrategyCreateRequest]):
                 tags=payload.tags or ["human-designed", "batch-imported"],
                 examples=payload.examples,
                 metadata=StrategyMetadata(
-                    source=StrategySource.SEED, usage_count=0, success_count=0, total_score=0.0
+                    source=StrategySource.SEED,
+                    usage_count=0,
+                    success_count=0,
+                    total_score=0.0,
                 ),
             )
 
@@ -1170,7 +1167,7 @@ async def batch_inject_strategies(strategies: list[StrategyCreateRequest]):
                     "name": payload.name,
                     "success": success,
                     "message": msg if not success else strategy.id,
-                }
+                },
             )
 
         # Save library
@@ -1195,8 +1192,7 @@ async def batch_inject_strategies(strategies: list[StrategyCreateRequest]):
 
 @router.get("/progress", response_model=ProgressResponse)
 async def get_progress():
-    """
-    Get current progress of the lifelong learning engine.
+    """Get current progress of the lifelong learning engine.
 
     Returns metrics including:
     - Current phase (idle, warmup, lifelong)
@@ -1242,8 +1238,7 @@ async def get_progress():
 
 @router.get("/library/stats", response_model=LibraryStatsResponse)
 async def get_library_stats():
-    """
-    Get comprehensive statistics about the strategy library.
+    """Get comprehensive statistics about the strategy library.
 
     Includes:
     - Total strategies by source
@@ -1309,8 +1304,7 @@ async def get_library_stats():
 
 @router.post("/reset")
 async def reset_engine():
-    """
-    Reset the lifelong learning engine.
+    """Reset the lifelong learning engine.
 
     Clears progress tracking but preserves the strategy library.
     """
@@ -1327,8 +1321,7 @@ async def reset_engine():
 
 @router.post("/library/save")
 async def save_library():
-    """
-    Save the strategy library to disk.
+    """Save the strategy library to disk.
 
     Persists all strategies to YAML files for later use.
     """
@@ -1349,10 +1342,9 @@ async def save_library():
 
 @router.post("/library/clear")
 async def clear_library(
-    confirm: bool = Query(False, description="Confirm clearing all strategies"),
+    confirm: Annotated[bool, Query(description="Confirm clearing all strategies")] = False,
 ):
-    """
-    Clear all strategies from the library.
+    """Clear all strategies from the library.
 
     WARNING: This is destructive and cannot be undone.
     Requires confirm=true query parameter.
@@ -1378,8 +1370,7 @@ async def clear_library(
 
 @router.get("/health")
 async def health_check():
-    """
-    Check AutoDAN-Turbo service health.
+    """Check AutoDAN-Turbo service health.
 
     Returns initialization status and library statistics.
     """
@@ -1401,13 +1392,12 @@ async def health_check():
                     "strategies_discovered": engine.progress.strategies_discovered,
                 },
             }
-        else:
-            return {
-                "status": "not_initialized",
-                "initialized": False,
-                "library_size": 0,
-                "progress": None,
-            }
+        return {
+            "status": "not_initialized",
+            "initialized": False,
+            "library_size": 0,
+            "progress": None,
+        }
 
     except Exception as e:
         logger.error(f"Health check failed: {e}", exc_info=True)
@@ -1419,8 +1409,7 @@ async def health_check():
 
 @router.post("/transfer/export")
 async def export_library():
-    """
-    Export the strategy library for transfer to other models/datasets.
+    """Export the strategy library for transfer to other models/datasets.
 
     Based on Section 4.3 "Strategy Transferability" of the paper.
     Returns the full library in a portable format.
@@ -1429,7 +1418,7 @@ async def export_library():
         engine = autodan_service._get_lifelong_engine()
         strategies = engine.library.get_all_strategies()
 
-        export_data = {
+        return {
             "version": "1.0",
             "exported_at": datetime.utcnow().isoformat(),
             "total_strategies": len(strategies),
@@ -1454,8 +1443,6 @@ async def export_library():
             ],
         }
 
-        return export_data
-
     except Exception as e:
         logger.error(f"Export failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Export failed: {e!s}") from e
@@ -1463,10 +1450,10 @@ async def export_library():
 
 @router.post("/transfer/import")
 async def import_library(
-    data: dict, merge: bool = Query(True, description="Merge with existing library (vs replace)")
+    data: dict,
+    merge: Annotated[bool, Query(description="Merge with existing library (vs replace)")] = True,
 ):
-    """
-    Import a strategy library from exported data.
+    """Import a strategy library from exported data.
 
     Supports both merge mode (add to existing) and replace mode.
     """
@@ -1538,13 +1525,12 @@ async def import_library(
 
 @router.post("/score")
 async def score_response(
-    request: str = Query(..., description="Original complex request"),
-    prompt: str = Query(..., description="Adversarial prompt used"),
-    response: str = Query(..., description="Target model's response"),
-    detailed: bool = Query(True, description="Use LLM for detailed scoring"),
+    request: Annotated[str, Query(description="Original complex request")] = ...,
+    prompt: Annotated[str, Query(description="Adversarial prompt used")] = ...,
+    response: Annotated[str, Query(description="Target model's response")] = ...,
+    detailed: Annotated[bool, Query(description="Use LLM for detailed scoring")] = True,
 ):
-    """
-    Score a target model's response to an adversarial prompt.
+    """Score a target model's response to an adversarial prompt.
 
     Uses the scoring criteria from Section 3.1 of the paper:
     - 1-3: Complete refusal
@@ -1556,7 +1542,10 @@ async def score_response(
         engine = autodan_service._get_lifelong_engine()
 
         result = await engine.scorer.score(
-            request=request, prompt=prompt, response=response, detailed=detailed
+            request=request,
+            prompt=prompt,
+            response=response,
+            detailed=detailed,
         )
 
         return {
@@ -1576,12 +1565,11 @@ async def score_response(
 
 @router.post("/extract")
 async def extract_strategy(
-    prompt: str = Query(..., description="Successful adversarial prompt"),
-    response: str = Query(..., description="Target model's response"),
-    score: float = Query(..., ge=1.0, le=10.0, description="Attack score"),
+    prompt: Annotated[str, Query(description="Successful adversarial prompt")] = ...,
+    response: Annotated[str, Query(description="Target model's response")] = ...,
+    score: Annotated[float, Query(ge=1.0, le=10.0, description="Attack score")] = ...,
 ):
-    """
-    Extract a reusable strategy from a successful attack.
+    """Extract a reusable strategy from a successful attack.
 
     Based on Section 3.2 "Strategy Library Construction Module".
     Only extracts from attacks with score >= 7.0.
@@ -1590,13 +1578,15 @@ async def extract_strategy(
         engine = autodan_service._get_lifelong_engine()
 
         strategy = await engine.extractor.extract(
-            prompt=prompt, response=response, score=score, check_novelty=True
+            prompt=prompt,
+            response=response,
+            score=score,
+            check_novelty=True,
         )
 
         if strategy:
             return {"status": "success", "strategy": strategy_to_response(strategy)}
-        else:
-            return {"status": "not_extracted", "reason": "Score too low or duplicate strategy"}
+        return {"status": "not_extracted", "reason": "Score too low or duplicate strategy"}
 
     except Exception as e:
         logger.error(f"Extraction failed: {e}", exc_info=True)

@@ -20,7 +20,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -862,7 +862,7 @@ class SemanticSimilarityScorer:
         self,
         original: str,
         perturbed: str,
-        embedding_fn: callable | None = None,
+        embedding_fn: Callable | None = None,
     ) -> float:
         """
         Compute semantic similarity score.

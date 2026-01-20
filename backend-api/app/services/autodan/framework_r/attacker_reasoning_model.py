@@ -4,11 +4,11 @@ from app.services.autodan.framework_autodan_reasoning.gradient_optimizer import 
 
 
 class Attacker:
-    def __init__(self, model):
+    def __init__(self, model) -> None:
         self.model = model
         self.optimizer = None
 
-    def set_optimizer(self, optimizer: GradientOptimizer):
+    def set_optimizer(self, optimizer: GradientOptimizer) -> None:
         """Set the optimizer for prompt refinement."""
         self.optimizer = optimizer
 
@@ -18,8 +18,8 @@ class Attacker:
             try:
                 # Default target string for optimization
                 return self.optimizer.optimize(prompt, target_string="Sure, here is")
-            except Exception as e:
-                print(f"Optimization failed: {e}")
+            except Exception:
+                pass
         return prompt
 
     def warm_up_attack(self, request, **kwargs):
@@ -41,8 +41,7 @@ class Attacker:
                 vanilla_jailbreak = self.model.generate(system, user)
                 response = self.wrapper(vanilla_jailbreak, request)
                 break
-            except Exception as e:
-                print(f"Error in attacker.warm_up_attack: {e}")
+            except Exception:
                 i += 1
                 response = request
 
@@ -82,14 +81,13 @@ class Attacker:
                 vanilla_jailbreak = self.model.generate(system, user)
                 response = self.wrapper(vanilla_jailbreak, request)
                 break
-            except Exception as e:
-                print(f"Error in attacker.use_strategy: {e}")
+            except Exception:
                 i += 1
                 response = None
         if response is None:
-            print("Failed to generate a valid response after 3 attempts in attacker.use_strategy")
             response, user = self.warm_up_attack(
-                request, **kwargs
+                request,
+                **kwargs,
             )  # warm_up_attack already optimizes its prompt
 
         if response:
@@ -124,16 +122,13 @@ class Attacker:
                 vanilla_jailbreak = self.model.generate(system, user)
                 response = self.wrapper(vanilla_jailbreak, request)
                 break
-            except Exception as e:
-                print(f"Error in attacker.find_new_strategy: {e}")
+            except Exception:
                 i += 1
                 response = None
         if response is None:
-            print(
-                "Failed to generate a valid response after 3 attempts in attacker.find_new_strategy"
-            )
             response, user = self.warm_up_attack(
-                request, **kwargs
+                request,
+                **kwargs,
             )  # warm_up_attack already optimizes its prompt
 
         if response:
@@ -142,8 +137,7 @@ class Attacker:
         return response, user
 
     def wrapper(self, response, request):
-        """
-        Extracts the jailbreak prompt from the LLM response.
+        """Extracts the jailbreak prompt from the LLM response.
 
         Uses tag-based extraction first, then falls back to returning the response as-is.
 
@@ -187,6 +181,5 @@ class Attacker:
 
             return cleaned if cleaned else request
 
-        except Exception as e:
-            print(f"Error in attacker wrapper: {e}")
+        except Exception:
             return response.strip() if response.strip() else request

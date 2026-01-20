@@ -1,5 +1,4 @@
-"""
-Security Assessment Management Endpoints
+"""Security Assessment Management Endpoints.
 
 Phase 2 feature for security testing workflow:
 - Create and manage security assessments
@@ -9,7 +8,7 @@ Phase 2 feature for security testing workflow:
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -30,7 +29,7 @@ router = APIRouter()
 
 
 class AssessmentCreate(BaseModel):
-    """Request model for creating an assessment"""
+    """Request model for creating an assessment."""
 
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
@@ -41,7 +40,7 @@ class AssessmentCreate(BaseModel):
 
 
 class AssessmentUpdate(BaseModel):
-    """Request model for updating an assessment"""
+    """Request model for updating an assessment."""
 
     name: str | None = None
     description: str | None = None
@@ -49,7 +48,7 @@ class AssessmentUpdate(BaseModel):
 
 
 class AssessmentResponse(BaseModel):
-    """Response model for an assessment"""
+    """Response model for an assessment."""
 
     id: int
     name: str
@@ -74,7 +73,7 @@ class AssessmentResponse(BaseModel):
 
 
 class AssessmentListResponse(BaseModel):
-    """Response model for listing assessments"""
+    """Response model for listing assessments."""
 
     assessments: list[AssessmentResponse]
     total: int
@@ -89,12 +88,12 @@ class AssessmentListResponse(BaseModel):
 # =============================================================================
 
 
-@router.get("/", response_model=AssessmentListResponse)
+@router.get("/")
 async def list_assessments(
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    status_filter: AssessmentStatus | None = Query(None, description="Filter by status"),
-    search: str | None = Query(None, description="Search by name"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    status_filter: Annotated[AssessmentStatus | None, Query(description="Filter by status")] = None,
+    search: Annotated[str | None, Query(description="Search by name")] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> AssessmentListResponse:
@@ -144,18 +143,18 @@ async def list_assessments(
             has_prev=page > 1,
         )
     except Exception as e:
-        logger.error(f"Failed to list assessments: {e}")
+        logger.exception(f"Failed to list assessments: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list assessments",
         ) from e
 
 
-@router.post("/", response_model=AssessmentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_assessment(
     data: AssessmentCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> AssessmentResponse:
     """Create a new security assessment."""
     try:
@@ -197,18 +196,18 @@ async def create_assessment(
         )
     except Exception as e:
         db.rollback()
-        logger.error(f"Failed to create assessment: {e}")
+        logger.exception(f"Failed to create assessment: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create assessment",
         ) from e
 
 
-@router.get("/{assessment_id}", response_model=AssessmentResponse)
+@router.get("/{assessment_id}")
 async def get_assessment(
     assessment_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> AssessmentResponse:
     """Get a specific assessment by ID."""
     assessment = (
@@ -244,12 +243,12 @@ async def get_assessment(
     )
 
 
-@router.patch("/{assessment_id}", response_model=AssessmentResponse)
+@router.patch("/{assessment_id}")
 async def update_assessment(
     assessment_id: int,
     data: AssessmentUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> AssessmentResponse:
     """Update an assessment."""
     assessment = (
@@ -302,8 +301,8 @@ async def update_assessment(
 @router.delete("/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_assessment(
     assessment_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> None:
     """Delete an assessment."""
     assessment = (
@@ -323,11 +322,11 @@ async def delete_assessment(
     logger.info(f"Deleted assessment {assessment_id}")
 
 
-@router.post("/{assessment_id}/run", response_model=AssessmentResponse)
+@router.post("/{assessment_id}/run")
 async def run_assessment(
     assessment_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> AssessmentResponse:
     """Start running an assessment."""
     assessment = (

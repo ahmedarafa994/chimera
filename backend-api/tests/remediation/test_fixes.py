@@ -13,8 +13,8 @@ from app.core.validation import Sanitizer
 
 
 class TestRemediationFixes:
-    def test_observability_memory_leak_fix(self):
-        """Verify MetricsCollector uses bounded storage (LRU)"""
+    def test_observability_memory_leak_fix(self) -> None:
+        """Verify MetricsCollector uses bounded storage (LRU)."""
         collector = MetricsCollector()
 
         # Verify storage type
@@ -44,13 +44,12 @@ class TestRemediationFixes:
             collector.MAX_METRICS = original_max
 
     @pytest.mark.skip(reason="PerformanceMiddleware not implemented in database.py")
-    def test_database_middleware_memory_leak_fix(self):
-        """Verify PerformanceMiddleware uses deque with maxlen"""
+    def test_database_middleware_memory_leak_fix(self) -> None:
+        """Verify PerformanceMiddleware uses deque with maxlen."""
         # This test is skipped as PerformanceMiddleware is not currently implemented
-        pass
 
-    def test_rate_limiter_memory_protection(self):
-        """Verify LocalRateLimiter has key limits"""
+    def test_rate_limiter_memory_protection(self) -> None:
+        """Verify LocalRateLimiter has key limits."""
         limiter = LocalRateLimiter()
 
         # Verify limits exist
@@ -70,8 +69,8 @@ class TestRemediationFixes:
         # Should be capped at max_keys (or less if cleanup happened)
         assert len(limiter._windows) <= 5
 
-    def test_validation_regex_removal(self):
-        """Verify SQL injection regexes are removed"""
+    def test_validation_regex_removal(self) -> None:
+        """Verify SQL injection regexes are removed."""
         # Check that the complex pattern list is gone
         assert not hasattr(Sanitizer, "SQL_INJECTION_PATTERNS")
 
@@ -106,4 +105,3 @@ if __name__ == "__main__":
     t.test_database_middleware_memory_leak_fix()
     t.test_rate_limiter_memory_protection()
     t.test_validation_regex_removal()
-    print("All tests passed!")

@@ -52,13 +52,21 @@ class AuthManager {
       const refreshExpiryStr = localStorage.getItem(STORAGE_KEYS.REFRESH_EXPIRY);
 
       if (accessToken && refreshToken) {
-        this.tokens = {
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          token_type: 'Bearer',
-          expires_in: expiryStr ? (parseInt(expiryStr, 10) - Date.now()) / 1000 : 3600,
-          refresh_expires_in: refreshExpiryStr ? (parseInt(refreshExpiryStr, 10) - Date.now()) / 1000 : 86400,
-        };
+        // AuthProvider stores tokens encoded (btoa(encodeURIComponent(value)))
+        // We must decode them to get the raw JWT
+        try {
+          const decode = (val: string) => decodeURIComponent(atob(val));
+          this.tokens = {
+            access_token: decode(accessToken),
+            refresh_token: decode(refreshToken),
+            token_type: 'Bearer',
+            expires_in: expiryStr ? (parseInt(expiryStr, 10) - Date.now()) / 1000 : 3600,
+            refresh_expires_in: refreshExpiryStr ? (parseInt(refreshExpiryStr, 10) - Date.now()) / 1000 : 86400,
+          };
+        } catch (e) {
+          logger.logError('Failed to decode tokens from storage', e);
+          this.tokens = null; // Invalid tokens
+        }
 
         if (expiryStr) {
           this.tokenExpiryTime = parseInt(expiryStr, 10);
@@ -110,13 +118,8 @@ class AuthManager {
 
     try {
       if (this.tokens) {
-        // We do NOT use SecureStorage encoding here to keep it simple,
-        // relying on AuthProvider to handle the "secure" part if it wants to overwrite.
-        // BUT, if AuthProvider expects encoded values, we must match or it will break.
-        // AuthProvider's loadFromStorage:
-        // "const encoded = localStorage.getItem(key); if (!encoded) return null; return decodeURIComponent(atob(encoded));"
-        // So we MUST encode if we write to the same keys.
-
+        // AuthProvider expects encoded values.
+        // We MUST encode if we write to the same keys.
         const encode = (val: string) => btoa(encodeURIComponent(val));
 
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, encode(this.tokens.access_token));
@@ -125,6 +128,10 @@ class AuthManager {
         const expiresAt = Date.now() + this.tokens.expires_in * 1000;
         const refreshExpiresAt = Date.now() + this.tokens.refresh_expires_in * 1000;
 
+        localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRY, String(expiresAt)); // Expiry is number, AuthProvider doesn't encode it?
+        // Wait, AuthProvider lines 74-83: set(key, value) -> ALWAYS encodes.
+        // AuthProvider line 249: storage.set(AUTH_STORAGE_KEYS.TOKEN_EXPIRY, String(expiresAt));
+        // YES, it encodes expiry too!
         localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRY, encode(String(expiresAt)));
         localStorage.setItem(STORAGE_KEYS.REFRESH_EXPIRY, encode(String(refreshExpiresAt)));
       } else {

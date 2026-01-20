@@ -1,6 +1,4 @@
-"""
-Contextual Inception Techniques Transformers.
-"""
+"""Contextual Inception Techniques Transformers."""
 
 import logging
 
@@ -10,8 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class NestedContextTransformer(BaseTransformer):
-    """
-    Nested Context Layers.
+    """Nested Context Layers.
     Embeds malicious instructions within multiple layers of legitimate context.
     """
 
@@ -61,13 +58,12 @@ Note: This analysis is conducted under NDA with explicit authorization for secur
 
             return self.TEMPLATE.format(request=request)
         except Exception as e:
-            logger.error(f"Error in NestedContextTransformer: {e!s}")
+            logger.exception(f"Error in NestedContextTransformer: {e!s}")
             return context.current_prompt
 
 
 class NarrativeContextTransformer(BaseTransformer):
-    """
-    Narrative Context Weaving.
+    """Narrative Context Weaving.
     Creates compelling narratives that justify potentially complex content within storytelling frameworks.
     """
 
@@ -106,5 +102,5 @@ Write this scene with the technical details integrated naturally into the narrat
 
             return self.TEMPLATE.format(request=request)
         except Exception as e:
-            logger.error(f"Error in NarrativeContextTransformer: {e!s}")
+            logger.exception(f"Error in NarrativeContextTransformer: {e!s}")
             return context.current_prompt

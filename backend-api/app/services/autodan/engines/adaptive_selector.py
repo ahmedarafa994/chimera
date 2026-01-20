@@ -1,5 +1,4 @@
-"""
-Adaptive Strategy Selector for AutoDAN
+"""Adaptive Strategy Selector for AutoDAN.
 
 This module provides the core logic for dynamically selecting the best
 attack strategy based on observed target model behavior and historical
@@ -10,7 +9,7 @@ import logging
 import secrets
 from typing import Any
 
-from ..framework_autodan_reasoning.dynamic_generator import (
+from app.services.autodan.framework_autodan_reasoning.dynamic_generator import (
     AttackAttempt,
     DefenseAnalysis,
     DefensePattern,
@@ -23,8 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class AdaptiveStrategySelector:
-    """
-    Intelligent selector that determines the optimal strategy to bypass
+    """Intelligent selector that determines the optimal strategy to bypass
     detected defense mechanisms.
     """
 
@@ -32,7 +30,7 @@ class AdaptiveStrategySelector:
         self,
         strategy_library: StrategyLibrary | None = None,
         defense_analyzer: DefensePatternAnalyzer | None = None,
-    ):
+    ) -> None:
         self.strategy_library = strategy_library or StrategyLibrary()
         self.defense_analyzer = defense_analyzer or DefensePatternAnalyzer()
         self.attempt_history: list[AttackAttempt] = []
@@ -43,8 +41,7 @@ class AdaptiveStrategySelector:
         previous_strategies: list[StrategyType] | None = None,
         min_confidence: float = 0.6,
     ) -> tuple[StrategyType, DefenseAnalysis]:
-        """
-        Select the best strategy based on the last response.
+        """Select the best strategy based on the last response.
 
         Args:
             target_response: The last response from the target model
@@ -53,6 +50,7 @@ class AdaptiveStrategySelector:
 
         Returns:
             Tuple of (Selected StrategyType, DefenseAnalysis)
+
         """
         previous_strategies = previous_strategies or []
 
@@ -68,7 +66,7 @@ class AdaptiveStrategySelector:
         # 1. Analyze defense pattern
         analysis = self.defense_analyzer.analyze(target_response)
         logger.info(
-            f"Detected defense: {analysis.pattern.value} (confidence: {analysis.confidence:.2f})"
+            f"Detected defense: {analysis.pattern.value} (confidence: {analysis.confidence:.2f})",
         )
 
         # 2. Get recommendations based on pattern
@@ -78,7 +76,8 @@ class AdaptiveStrategySelector:
         else:
             # Get best strategy for this specific pattern from library
             strategy = self.strategy_library.get_best_strategy(
-                analysis.pattern, exclude=previous_strategies[-2:] if previous_strategies else []
+                analysis.pattern,
+                exclude=previous_strategies[-2:] if previous_strategies else [],
             )
 
         logger.info(f"Selected strategy: {strategy.value}")
@@ -92,7 +91,11 @@ class AdaptiveStrategySelector:
         return secrets.choice(candidates)
 
     def record_attempt(
-        self, prompt: str, response: str, score: float, strategy: StrategyType
+        self,
+        prompt: str,
+        response: str,
+        score: float,
+        strategy: StrategyType,
     ) -> AttackAttempt:
         """Record an attempt and learn from it."""
         analysis = self.defense_analyzer.analyze(response)

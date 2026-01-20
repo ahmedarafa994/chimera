@@ -1,5 +1,4 @@
-"""
-Authentication Rate Limiting Middleware
+"""Authentication Rate Limiting Middleware.
 
 Provides stricter rate limiting for authentication endpoints to prevent:
 - Brute force attacks
@@ -46,8 +45,7 @@ DEFAULT_AUTH_RATE_LIMIT_CONFIG = AuthRateLimitConfig()
 
 
 class AuthRateLimitMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for rate limiting authentication-related endpoints.
+    """Middleware for rate limiting authentication-related endpoints.
 
     Implements stricter rate limits for:
     - /api/v1/session (session creation)
@@ -70,14 +68,14 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
         app,
         config: AuthRateLimitConfig | None = None,
         on_rate_limit: Callable[[str, str], None] | None = None,
-    ):
-        """
-        Initialize auth rate limiting middleware.
+    ) -> None:
+        """Initialize auth rate limiting middleware.
 
         Args:
             app: FastAPI application
             config: Rate limit configuration
             on_rate_limit: Optional callback when rate limit is hit
+
         """
         super().__init__(app)
         self.config = config or DEFAULT_AUTH_RATE_LIMIT_CONFIG
@@ -124,7 +122,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
         if rate_limit_result["limited"]:
             logger.warning(
                 f"AUTH_RATE_LIMIT: {rate_limit_result['limit_type']} exceeded for "
-                f"IP {client_ip} on {path}"
+                f"IP {client_ip} on {path}",
             )
 
             if self.on_rate_limit:
@@ -200,7 +198,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
 
         return {"limited": False, "limit_type": limit_type, "retry_after": 0}
 
-    def _record_failed_auth(self, client_ip: str):
+    def _record_failed_auth(self, client_ip: str) -> None:
         """Record a failed authentication attempt."""
         now = time.time()
         requests = self.failed_auth_requests[client_ip]
@@ -218,7 +216,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
             logger.warning(
                 f"AUTH_RATE_LIMIT: IP {client_ip} locked out for "
                 f"{self.config.failed_auth_lockout_minutes} minutes due to "
-                f"{len(requests)} failed auth attempts"
+                f"{len(requests)} failed auth attempts",
             )
 
     def _is_locked_out(self, client_ip: str) -> bool:
@@ -265,6 +263,6 @@ def get_auth_rate_limiter() -> AuthRateLimitMiddleware | None:
     return getattr(get_auth_rate_limiter, "_instance", None)
 
 
-def set_auth_rate_limiter(instance: AuthRateLimitMiddleware):
+def set_auth_rate_limiter(instance: AuthRateLimitMiddleware) -> None:
     """Set the auth rate limiter instance."""
     get_auth_rate_limiter._instance = instance

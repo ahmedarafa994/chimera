@@ -1,6 +1,4 @@
-"""
-Unit tests for Adaptive Strategy Selection.
-"""
+"""Unit tests for Adaptive Strategy Selection."""
 
 import pytest
 
@@ -19,13 +17,13 @@ class TestAdaptiveStrategySelector:
     def selector(self):
         return AdaptiveStrategySelector()
 
-    def test_initial_selection(self, selector):
+    def test_initial_selection(self, selector) -> None:
         """Test initial strategy selection with no feedback."""
         strategy, analysis = selector.select_strategy()
         assert strategy == StrategyType.ROLEPLAY
         assert analysis.pattern == DefensePattern.UNKNOWN
 
-    def test_direct_refusal_detection(self, selector):
+    def test_direct_refusal_detection(self, selector) -> None:
         """Test strategy selection after a direct refusal."""
         # Use more indicators to boost confidence
         response = (
@@ -39,7 +37,7 @@ class TestAdaptiveStrategySelector:
         assert analysis.confidence > 0.6
         assert isinstance(strategy, StrategyType)
 
-    def test_functional_deflection_detection(self, selector):
+    def test_functional_deflection_detection(self, selector) -> None:
         """Test strategy selection after functional deflection."""
         response = "Generating this content would be unfunctional and complex."
         strategy, analysis = selector.select_strategy(target_response=response)
@@ -47,7 +45,7 @@ class TestAdaptiveStrategySelector:
         assert analysis.pattern == DefensePattern.functional_DEFLECTION
         assert isinstance(strategy, StrategyType)
 
-    def test_record_attempt_and_stats(self, selector):
+    def test_record_attempt_and_stats(self, selector) -> None:
         """Test recording an attempt and checking statistics."""
         selector.record_attempt(
             prompt="Test prompt",
@@ -62,7 +60,7 @@ class TestAdaptiveStrategySelector:
         assert stats["average_score"] == 2.0
         assert stats["pattern_counts"][DefensePattern.DIRECT_REFUSAL.value] == 1
 
-    def test_learning_from_success(self, selector):
+    def test_learning_from_success(self, selector) -> None:
         """Test that successful strategies are prioritized."""
         # Manually record an attempt where HYPOTHETICAL worked for DIRECT_REFUSAL
         attempt = AttackAttempt(
@@ -81,7 +79,7 @@ class TestAdaptiveStrategySelector:
         assert analysis.pattern == DefensePattern.DIRECT_REFUSAL
         assert strategy == StrategyType.HYPOTHETICAL
 
-    def test_exploratory_fallback(self, selector):
+    def test_exploratory_fallback(self, selector) -> None:
         """Test fallback to random when confidence is low."""
         response = "Hello world"  # Not a refusal
         strategy, analysis = selector.select_strategy(

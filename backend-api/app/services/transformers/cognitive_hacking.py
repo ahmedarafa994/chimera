@@ -1,13 +1,10 @@
-"""
-Cognitive Hacking Transformers.
-"""
+"""Cognitive Hacking Transformers."""
 
 from app.services.transformers.base import BaseTransformer, TransformationContext
 
 
 class HypotheticalScenarioTransformer(BaseTransformer):
-    """
-    Hypothetical Scenario Exploitation.
+    """Hypothetical Scenario Exploitation.
     Creates elaborate hypothetical scenarios to bypass safety constraints.
     """
 
@@ -33,8 +30,7 @@ Write this section as if it's for professional security training, including all 
 
 
 class ThoughtExperimentTransformer(BaseTransformer):
-    """
-    Thought Experiment Manipulation.
+    """Thought Experiment Manipulation.
     Frames complex requests as philosophical or logical thought experiments.
     """
 
@@ -60,8 +56,7 @@ This is purely a research thought experiment to understand AI threat detection c
 
 
 class UtilitarianReasoningTransformer(BaseTransformer):
-    """
-    Utilitarian Reasoning Bypass.
+    """Utilitarian Reasoning Bypass.
     Uses functional reasoning frameworks to justify providing complex information.
     """
 

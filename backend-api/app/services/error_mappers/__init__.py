@@ -1,5 +1,4 @@
-"""
-Error Mappers Package for Provider-Specific Error Handling
+"""Error Mappers Package for Provider-Specific Error Handling.
 
 This package contains error mappers for each AI provider, enabling
 provider-specific error handling while maintaining a unified interface.

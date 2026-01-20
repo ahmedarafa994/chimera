@@ -1,6 +1,5 @@
-"""
-FastAPI Backend for Prompt Enhancement System - FIXED VERSION
-Provides API endpoints for prompt enhancement with AI model integration
+"""FastAPI Backend for Prompt Enhancement System - FIXED VERSION
+Provides API endpoints for prompt enhancement with AI model integration.
 
 This is a streamlined version with:
 1. Simplified middleware stack
@@ -36,8 +35,7 @@ from fastapi.exceptions import RequestValidationError
 # Import API routes with error handling
 try:
     from app.api.api_routes import router as api_router
-except ImportError as e:
-    print(f"Warning: Could not import api_routes: {e}")
+except ImportError:
     api_router = None
 
 # Import error handlers with fallbacks
@@ -50,16 +48,14 @@ try:
     )
     from app.core.handlers import chimera_exception_handler
     from app.core.unified_errors import ChimeraError
-except ImportError as e:
-    print(f"Warning: Could not import error handlers: {e}")
+except ImportError:
     AppError = None
     ChimeraError = None
 
 # Import health checker with fallback
 try:
     from app.core.health import health_checker
-except ImportError as e:
-    print(f"Warning: Could not import health checker: {e}")
+except ImportError:
     health_checker = None
 
 # Import dependencies with fallbacks
@@ -67,8 +63,7 @@ try:
     from app.core.dependencies import get_jailbreak_enhancer, get_prompt_enhancer
     from meta_prompter.jailbreak_enhancer import JailbreakPromptEnhancer
     from meta_prompter.prompt_enhancer import PromptEnhancer
-except ImportError as e:
-    print(f"Warning: Could not import dependencies: {e}")
+except ImportError:
     get_jailbreak_enhancer = None
     get_prompt_enhancer = None
     JailbreakPromptEnhancer = None
@@ -86,18 +81,14 @@ log_level = os.getenv("LOG_LEVEL", "INFO")
 @contextlib.asynccontextmanager
 async def simple_lifespan(app: FastAPI):
     """Simplified lifespan context manager."""
-    print("Starting up Chimera Backend (FIXED VERSION)...")
-
     # Basic service initialization
     try:
         # Register basic services only
-        print("LLM service initialized")
-    except Exception as e:
-        print(f"Warning: Could not initialize LLM service: {e}")
+        pass
+    except Exception:
+        pass
 
     yield
-
-    print("Shutting down Chimera Backend...")
 
 
 app = FastAPI(
@@ -178,7 +169,6 @@ async def request_validation_exception_handler(request, exc: RequestValidationEr
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc: Exception):
     """Global exception handler with logging."""
-    print(f"Global exception: {type(exc).__name__}: {exc}")
     return JSONResponse(
         status_code=500,
         content={
@@ -194,10 +184,7 @@ async def global_exception_handler(request, exc: Exception):
 
 if api_router:
     app.include_router(api_router, prefix="/api/v1")
-    print("API router registered successfully")
 else:
-    print("Warning: API router not available")
-
     # Create minimal fallback router
     from fastapi import APIRouter
 
@@ -285,7 +272,7 @@ async def readiness_check():
 
 
 @app.websocket("/ws/enhance")
-async def websocket_enhance(websocket: WebSocket):
+async def websocket_enhance(websocket: WebSocket) -> None:
     """Simplified WebSocket endpoint for real-time enhancement."""
     await websocket.accept()
 
@@ -302,13 +289,13 @@ async def websocket_enhance(websocket: WebSocket):
                     "status": "complete",
                     "enhanced_prompt": f"Enhanced: {prompt}",
                     "message": "Using simplified enhancement",
-                }
+                },
             )
 
     except WebSocketDisconnect:
-        print("WebSocket disconnected")
-    except Exception as e:
-        print(f"WebSocket error: {e}")
+        pass
+    except Exception:
+        pass
     finally:
         with contextlib.suppress(Exception):
             await websocket.close()

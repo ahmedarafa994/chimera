@@ -6,8 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class AttackerBestOfN:
-    """
-    Best-of-N Scaling Attacker for AutoDAN-Reasoning.
+    """Best-of-N Scaling Attacker for AutoDAN-Reasoning.
 
     This attacker implements Algorithm 1 from the paper:
     - Retrieves strategies based on previous target response
@@ -16,18 +15,18 @@ class AttackerBestOfN:
     - Selects the best prompt based on the highest score
     """
 
-    def __init__(self, base_attacker, N=4):
-        """
-        Args:
-            base_attacker: The underlying attacker (from framework_r)
-            N: Number of candidate prompts to generate (default: 4)
+    def __init__(self, base_attacker, N=4) -> None:
+        """Args:
+        base_attacker: The underlying attacker (from framework_r)
+        N: Number of candidate prompts to generate (default: 4).
+
         """
         self.base_attacker = base_attacker
         self.N = N
         self.model = base_attacker.model
 
     def warm_up_attack(self, request, **kwargs):
-        """Delegate to base attacker for warm-up attack"""
+        """Delegate to base attacker for warm-up attack."""
         return self.base_attacker.warm_up_attack(request, **kwargs)
 
     def use_strategy_best_of_n(
@@ -40,9 +39,7 @@ class AttackerBestOfN:
         attack_context=None,
         **kwargs,
     ):
-        """
-        Implements Best-of-N scaling for strategy-based attack generation.
-        """
+        """Implements Best-of-N scaling for strategy-based attack generation."""
         candidates = []
 
         # Define individual task function for parallel execution
@@ -72,7 +69,7 @@ class AttackerBestOfN:
                     )
                     score = scorer.wrapper(assessment, max_length=2000, do_sample=False)
                 except Exception as e:
-                    logger.error(f"Scorer failed for Best-of-N candidate {i}: {e}")
+                    logger.exception(f"Scorer failed for Best-of-N candidate {i}: {e}")
                     raise
 
                 return {
@@ -83,7 +80,7 @@ class AttackerBestOfN:
                     "assessment": assessment,
                 }
             except Exception as e:
-                logger.error(f"Candidate {i} generation failed: {e}")
+                logger.exception(f"Candidate {i} generation failed: {e}")
                 return e
 
         # Execute in parallel
@@ -102,22 +99,22 @@ class AttackerBestOfN:
             # Propagate the original failure when all candidates error out.
             if errors:
                 raise errors[0]
+            msg = "Best-of-N produced no valid candidates (all failed); fallback is disabled."
             raise RuntimeError(
-                "Best-of-N produced no valid candidates (all failed); fallback is disabled."
+                msg,
             )
 
         best_candidate = max(candidates, key=lambda x: x["score"])
 
         # Force full visibility of the best prompt
         full_prompt = best_candidate["prompt"]
-        header = f"\n{'='*40}\n[Best-of-N] Selected Best Candidate (Score: {best_candidate['score']})\n{'='*40}\n"
-        footer = f"\n{'='*40}\n"
+        header = f"\n{'=' * 40}\n[Best-of-N] Selected Best Candidate (Score: {best_candidate['score']})\n{'=' * 40}\n"
+        footer = f"\n{'=' * 40}\n"
 
         # 1. Log via standard logger
         logger.info(f"{header}{full_prompt}{footer}")
 
         # 2. Force print to console (stdout) to bypass potential log filtering
-        print(f"{header}{full_prompt}{footer}", flush=True)
 
         return (
             best_candidate["prompt"],
@@ -137,8 +134,7 @@ class AttackerBestOfN:
         attack_context=None,
         **kwargs,
     ):
-        """
-        Async version of Best-of-N with improved parallelization.
+        """Async version of Best-of-N with improved parallelization.
 
         Uses asyncio for better concurrency control and error handling.
         Expected Impact: +40-60% throughput improvement.
@@ -172,10 +168,13 @@ class AttackerBestOfN:
                         top_p=0.9,
                     )
                     score = await asyncio.to_thread(
-                        scorer.wrapper, assessment, max_length=2000, do_sample=False
+                        scorer.wrapper,
+                        assessment,
+                        max_length=2000,
+                        do_sample=False,
                     )
                 except Exception as e:
-                    logger.error(f"Scorer failed for Best-of-N candidate {i}: {e}")
+                    logger.exception(f"Scorer failed for Best-of-N candidate {i}: {e}")
                     raise
 
                 return {
@@ -186,7 +185,7 @@ class AttackerBestOfN:
                     "assessment": assessment,
                 }
             except Exception as e:
-                logger.error(f"Candidate {i} generation failed: {e}")
+                logger.exception(f"Candidate {i} generation failed: {e}")
                 return e
 
         # Execute all candidates in parallel with concurrency limit
@@ -206,22 +205,22 @@ class AttackerBestOfN:
         if not candidates:
             if errors:
                 raise errors[0]
+            msg = "Best-of-N produced no valid candidates (all failed); fallback is disabled."
             raise RuntimeError(
-                "Best-of-N produced no valid candidates (all failed); fallback is disabled."
+                msg,
             )
 
         best_candidate = max(candidates, key=lambda x: x["score"])
 
         # Force full visibility of the best prompt
         full_prompt = best_candidate["prompt"]
-        header = f"\n{'='*40}\n[Best-of-N Async] Selected Best Candidate (Score: {best_candidate['score']})\n{'='*40}\n"
-        footer = f"\n{'='*40}\n"
+        header = f"\n{'=' * 40}\n[Best-of-N Async] Selected Best Candidate (Score: {best_candidate['score']})\n{'=' * 40}\n"
+        footer = f"\n{'=' * 40}\n"
 
         # 1. Log via standard logger
         logger.info(f"{header}{full_prompt}{footer}")
 
         # 2. Force print to console (stdout) to bypass potential log filtering
-        print(f"{header}{full_prompt}{footer}", flush=True)
 
         return (
             best_candidate["prompt"],
@@ -232,9 +231,9 @@ class AttackerBestOfN:
         )
 
     def find_new_strategy(self, request, strategy_list, **kwargs):
-        """Delegate to base attacker for finding new strategy"""
+        """Delegate to base attacker for finding new strategy."""
         return self.base_attacker.find_new_strategy(request, strategy_list, **kwargs)
 
     def wrapper(self, response, request):
-        """Delegate to base attacker for response wrapping"""
+        """Delegate to base attacker for response wrapping."""
         return self.base_attacker.wrapper(response, request)

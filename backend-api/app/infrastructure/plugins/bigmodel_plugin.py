@@ -1,5 +1,4 @@
-"""
-BigModel Provider Plugin - Implementation for BigModel (Zhipu AI) models.
+"""BigModel Provider Plugin - Implementation for BigModel (Zhipu AI) models.
 
 This module implements the BigModel provider plugin, supporting GLM models
 through the unified provider interface.
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class BigModelClient(BaseLLMClient):
-    """
-    BigModel-specific LLM client implementation.
+    """BigModel-specific LLM client implementation.
 
     Wraps the existing BigModel client to implement the BaseLLMClient interface.
     """
@@ -30,15 +28,15 @@ class BigModelClient(BaseLLMClient):
         model_id: str,
         api_key: str,
         **kwargs: Any,
-    ):
-        """
-        Initialize BigModel client.
+    ) -> None:
+        """Initialize BigModel client.
 
         Args:
             provider_id: Provider identifier ('bigmodel')
             model_id: Model identifier (e.g., 'glm-4')
             api_key: BigModel API key
             **kwargs: Additional configuration
+
         """
         self._provider_id = provider_id
         self._model_id = model_id
@@ -104,13 +102,12 @@ class BigModelClient(BaseLLMClient):
 
 
 class BigModelPlugin(BaseProviderPlugin):
-    """
-    BigModel provider plugin implementation.
+    """BigModel provider plugin implementation.
 
     Provides factory methods and metadata for BigModel/GLM models.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize BigModel plugin."""
         super().__init__(
             provider_id="bigmodel",
@@ -133,7 +130,7 @@ class BigModelPlugin(BaseProviderPlugin):
 
     def _build_model_list(self) -> list[Model]:
         """Build list of available BigModel models (January 2026)."""
-        models = [
+        return [
             Model(
                 id="glm-4.7",
                 name="GLM-4.7 (Flagship)",
@@ -193,11 +190,8 @@ class BigModelPlugin(BaseProviderPlugin):
             ),
         ]
 
-        return models
-
     def create_client(self, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create a BigModel client for the specified model.
+        """Create a BigModel client for the specified model.
 
         Args:
             model_id: The model identifier
@@ -208,21 +202,28 @@ class BigModelPlugin(BaseProviderPlugin):
 
         Raises:
             ValueError: If model is not available or API key missing
+
         """
         # Validate model
         if not self.validate_model_id(model_id):
             available = [m.id for m in self.get_available_models()]
-            raise ValueError(
+            msg = (
                 f"Model '{model_id}' not available from BigModel. "
                 f"Available models: {', '.join(available)}"
+            )
+            raise ValueError(
+                msg,
             )
 
         # Get API key
         api_key = self._get_api_key()
         if not api_key:
-            raise ValueError(
+            msg = (
                 f"BigModel API key not configured. "
                 f"Set {self._api_key_env_var} environment variable."
+            )
+            raise ValueError(
+                msg,
             )
 
         # Create client

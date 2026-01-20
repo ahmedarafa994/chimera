@@ -1,5 +1,4 @@
-"""
-Ollama Provider Plugin for Project Chimera.
+"""Ollama Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for local Ollama integration,
 supporting locally-hosted open-source models like Llama, Mistral, etc.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class OllamaPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for Ollama local inference.
+    """Provider plugin for Ollama local inference.
 
     Ollama allows running open-source LLMs locally. This plugin
     connects to a local Ollama server for inference.
@@ -67,8 +65,7 @@ class OllamaPlugin(BaseProviderPlugin):
         return "llama3.2"
 
     def _get_static_models(self) -> list[ModelInfo]:
-        """
-        Return common Ollama model definitions.
+        """Return common Ollama model definitions.
 
         Note: Actual available models depend on what's pulled locally.
         """
@@ -212,8 +209,7 @@ class OllamaPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available Ollama models from the local server.
+        """List available Ollama models from the local server.
 
         Queries the Ollama server for actually installed models.
         """
@@ -261,7 +257,7 @@ class OllamaPlugin(BaseProviderPlugin):
                         supports_vision=model_info.supports_vision,
                         supports_reasoning=model_info.supports_reasoning,
                         capabilities=model_info.capabilities,
-                    )
+                    ),
                 )
             elif model_name in static_models:
                 models.append(static_models[model_name])
@@ -277,14 +273,13 @@ class OllamaPlugin(BaseProviderPlugin):
                         max_output_tokens=2048,
                         supports_streaming=True,
                         capabilities=["chat"],
-                    )
+                    ),
                 )
 
         return models if models else self._get_static_models()
 
     async def validate_api_key(self, api_key: str) -> bool:
-        """
-        Validate Ollama connection.
+        """Validate Ollama connection.
 
         For Ollama, this just checks if the server is reachable.
         """
@@ -304,7 +299,9 @@ class OllamaPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using Ollama API."""
         model = request.model or self.get_default_model()
@@ -380,14 +377,16 @@ class OllamaPlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Ollama API error: {e.response.status_code}")
+            logger.exception(f"Ollama API error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"Ollama generation error: {e}")
+            logger.exception(f"Ollama generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Ollama API."""
         model = request.model or self.get_default_model()
@@ -467,5 +466,5 @@ class OllamaPlugin(BaseProviderPlugin):
                         logger.warning(f"Parse error: {e}")
                         continue
         except Exception as e:
-            logger.error(f"Ollama streaming error: {e}")
+            logger.exception(f"Ollama streaming error: {e}")
             raise

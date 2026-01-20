@@ -25,7 +25,7 @@ def mock_settings():
 
 
 @pytest.mark.asyncio
-async def test_get_client_accepts_provider_name(mock_provider_factory, mock_settings):
+async def test_get_client_accepts_provider_name(mock_provider_factory, mock_settings) -> None:
     # Setup
     mock_provider_google = MagicMock()
     mock_provider_openai = MagicMock()
@@ -33,7 +33,7 @@ async def test_get_client_accepts_provider_name(mock_provider_factory, mock_sett
     def side_effect(provider_name):
         if provider_name == "google":
             return mock_provider_google
-        elif provider_name == "openai":
+        if provider_name == "openai":
             return mock_provider_openai
         return None
 
@@ -61,12 +61,15 @@ async def test_get_client_accepts_provider_name(mock_provider_factory, mock_sett
 
 @pytest.mark.asyncio
 async def test_generate_jailbreak_prompt_uses_provider_from_options(
-    mock_provider_factory, mock_settings
-):
+    mock_provider_factory,
+    mock_settings,
+) -> None:
     # Setup
     mock_provider_openai = AsyncMock()
     mock_provider_openai.generate.return_value = PromptResponse(
-        text="Jailbreak via OpenAI", model_used="gpt-4", provider="openai"
+        text="Jailbreak via OpenAI",
+        model_used="gpt-4",
+        provider="openai",
     )
 
     mock_provider_google = AsyncMock()

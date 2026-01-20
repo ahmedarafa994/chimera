@@ -1,5 +1,4 @@
-"""
-Redis L2 Cache Implementation
+"""Redis L2 Cache Implementation.
 
 PERF-001 FIX: Implements distributed L2 caching with Redis for multi-level
 caching strategy. Provides cache consistency, TTL management, and graceful
@@ -85,8 +84,7 @@ class RedisStats:
 
 
 class RedisL2Cache:
-    """
-    Redis L2 cache with async operations and graceful degradation.
+    """Redis L2 cache with async operations and graceful degradation.
 
     PERF-001 FIX: Provides distributed caching layer with automatic
     failover to L1 cache when Redis is unavailable.
@@ -97,14 +95,14 @@ class RedisL2Cache:
         config: RedisConfig | None = None,
         key_prefix: str = "chimera",
         default_ttl: int = 3600,
-    ):
-        """
-        Initialize Redis L2 cache.
+    ) -> None:
+        """Initialize Redis L2 cache.
 
         Args:
             config: Redis connection configuration
             key_prefix: Prefix for all cache keys
             default_ttl: Default TTL in seconds
+
         """
         self.config = config or RedisConfig(
             url=getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
@@ -143,7 +141,7 @@ class RedisL2Cache:
                         import aioredis
                     except ImportError:
                         logger.warning(
-                            "Redis library not found. Install with: pip install 'hiredis>=2.0.0,!=2.0.3,!=2.0.4' redis"
+                            "Redis library not found. Install with: pip install 'hiredis>=2.0.0,!=2.0.3,!=2.0.4' redis",
                         )
                         self.stats.is_healthy = False
                         return None
@@ -167,7 +165,7 @@ class RedisL2Cache:
                 logger.info(f"Redis L2 cache initialized: {self.config.url}")
 
             except Exception as e:
-                logger.error(f"Failed to initialize Redis L2 cache: {e}")
+                logger.exception(f"Failed to initialize Redis L2 cache: {e}")
                 self.stats.is_healthy = False
                 self.stats.last_error = str(e)
                 self.stats.last_error_time = time.time()
@@ -180,14 +178,14 @@ class RedisL2Cache:
         return f"{self.key_prefix}:{key}"
 
     async def get(self, key: str) -> Any | None:
-        """
-        Get value from Redis cache.
+        """Get value from Redis cache.
 
         Args:
             key: Cache key (without prefix)
 
         Returns:
             Cached value or None if not found/error
+
         """
         start_time = time.time()
         self.stats.total_requests += 1
@@ -229,8 +227,7 @@ class RedisL2Cache:
         value: Any,
         ttl: int | None = None,
     ) -> bool:
-        """
-        Set value in Redis cache.
+        """Set value in Redis cache.
 
         Args:
             key: Cache key (without prefix)
@@ -239,6 +236,7 @@ class RedisL2Cache:
 
         Returns:
             True if successful, False otherwise
+
         """
         start_time = time.time()
 
@@ -271,14 +269,14 @@ class RedisL2Cache:
             return False
 
     async def delete(self, key: str) -> bool:
-        """
-        Delete value from Redis cache.
+        """Delete value from Redis cache.
 
         Args:
             key: Cache key (without prefix)
 
         Returns:
             True if deleted, False otherwise
+
         """
         try:
             client = await self._get_client()
@@ -294,11 +292,11 @@ class RedisL2Cache:
             return False
 
     async def clear(self) -> bool:
-        """
-        Clear all keys with the configured prefix.
+        """Clear all keys with the configured prefix.
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             client = await self._get_client()
@@ -319,18 +317,18 @@ class RedisL2Cache:
             return True
 
         except Exception as e:
-            logger.error(f"Redis L2 cache clear failed: {e}")
+            logger.exception(f"Redis L2 cache clear failed: {e}")
             return False
 
     async def exists(self, key: str) -> bool:
-        """
-        Check if key exists in cache.
+        """Check if key exists in cache.
 
         Args:
             key: Cache key (without prefix)
 
         Returns:
             True if key exists, False otherwise
+
         """
         try:
             client = await self._get_client()
@@ -345,11 +343,11 @@ class RedisL2Cache:
             return False
 
     async def get_stats(self) -> dict[str, Any]:
-        """
-        Get cache statistics.
+        """Get cache statistics.
 
         Returns:
             Dictionary of cache statistics
+
         """
         # Also get Redis INFO if available
         redis_info = {}
@@ -391,8 +389,7 @@ class RedisL2Cache:
 
 
 class MultiLevelCache:
-    """
-    Multi-level cache combining L1 (in-memory) and L2 (Redis) caching.
+    """Multi-level cache combining L1 (in-memory) and L2 (Redis) caching.
 
     PERF-001 FIX: Implements tiered caching strategy:
     - L1: Fast in-memory cache with LRU eviction
@@ -408,9 +405,8 @@ class MultiLevelCache:
         l2_ttl: int = 3600,  # 1 hour
         l2_config: RedisConfig | None = None,
         enable_l2: bool = True,
-    ):
-        """
-        Initialize multi-level cache.
+    ) -> None:
+        """Initialize multi-level cache.
 
         Args:
             l1_max_size: Maximum size of L1 cache
@@ -418,6 +414,7 @@ class MultiLevelCache:
             l2_ttl: Default TTL for L2 cache entries
             l2_config: Redis configuration
             enable_l2: Whether to enable L2 cache
+
         """
         # Import L1 cache here to avoid circular imports
         from app.services.transformation_service import TransformationCache
@@ -437,14 +434,14 @@ class MultiLevelCache:
         }
 
     async def get(self, key: str) -> Any | None:
-        """
-        Get value from cache (checks L1, then L2).
+        """Get value from cache (checks L1, then L2).
 
         Args:
             key: Cache key
 
         Returns:
             Cached value or None
+
         """
         # Try L1 first (fastest)
         l1_result = self.l1.get_raw(key)
@@ -472,14 +469,14 @@ class MultiLevelCache:
         l1_ttl: int | None = None,
         l2_ttl: int | None = None,
     ) -> None:
-        """
-        Set value in both L1 and L2 cache.
+        """Set value in both L1 and L2 cache.
 
         Args:
             key: Cache key
             value: Value to cache
             l1_ttl: L1 TTL (uses default if None)
             l2_ttl: L2 TTL (uses default if None)
+
         """
         self.stats["writes"] += 1
 
@@ -491,11 +488,11 @@ class MultiLevelCache:
             await self.l2.set(key, value, ttl=l2_ttl)
 
     async def delete(self, key: str) -> None:
-        """
-        Delete value from both L1 and L2 cache.
+        """Delete value from both L1 and L2 cache.
 
         Args:
             key: Cache key
+
         """
         # Delete from L1
         self.l1.delete_raw(key)
@@ -518,11 +515,11 @@ class MultiLevelCache:
         }
 
     async def get_stats(self) -> dict[str, Any]:
-        """
-        Get statistics for both cache levels.
+        """Get statistics for both cache levels.
 
         Returns:
             Dictionary of combined statistics
+
         """
         l2_stats = {}
         if self.enable_l2 and self.l2:

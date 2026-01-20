@@ -1,5 +1,4 @@
-"""
-Password Strength Validation Module
+"""Password Strength Validation Module.
 
 Provides comprehensive password validation with:
 - Minimum length requirements (12 characters)
@@ -100,7 +99,7 @@ COMMON_PASSWORDS: frozenset[str] = frozenset(
         "password12",
         "passpass",
         "pass1234",
-    ]
+    ],
 )
 
 
@@ -110,7 +109,7 @@ COMMON_PASSWORDS: frozenset[str] = frozenset(
 
 
 class PasswordStrength(str, Enum):
-    """Password strength levels based on entropy"""
+    """Password strength levels based on entropy."""
 
     VERY_WEAK = "very_weak"  # Entropy < 28
     WEAK = "weak"  # Entropy 28-35
@@ -120,7 +119,7 @@ class PasswordStrength(str, Enum):
 
 
 class ValidationErrorType(str, Enum):
-    """Types of password validation errors"""
+    """Types of password validation errors."""
 
     TOO_SHORT = "too_short"
     NO_UPPERCASE = "no_uppercase"
@@ -148,7 +147,7 @@ SPECIAL_CHARACTERS = r"""!@#$%^&*()_+-=[]{}|;':",.<>?/`~"""
 
 @dataclass
 class ValidationError:
-    """A single validation error"""
+    """A single validation error."""
 
     error_type: ValidationErrorType
     message: str
@@ -157,8 +156,7 @@ class ValidationError:
 
 @dataclass
 class PasswordValidationResult:
-    """
-    Result of password validation.
+    """Result of password validation.
 
     Attributes:
         is_valid: Whether the password passes all requirements
@@ -168,6 +166,7 @@ class PasswordValidationResult:
         warnings: List of validation warnings
         suggestions: List of suggestions to improve the password
         score: Numeric score from 0-100
+
     """
 
     is_valid: bool
@@ -179,7 +178,7 @@ class PasswordValidationResult:
     score: int = 0
 
     def to_dict(self) -> dict:
-        """Convert to dictionary for API response"""
+        """Convert to dictionary for API response."""
         return {
             "is_valid": self.is_valid,
             "strength": self.strength.value,
@@ -197,8 +196,7 @@ class PasswordValidationResult:
 
 
 class PasswordValidator:
-    """
-    Password validation service with entropy checking and strength analysis.
+    """Password validation service with entropy checking and strength analysis.
 
     Validates passwords against security best practices:
     - Minimum length of 12 characters (NIST recommendation)
@@ -215,6 +213,7 @@ class PasswordValidator:
         else:
             for error in result.errors:
                 print(f"Error: {error.message}")
+
     """
 
     def __init__(
@@ -226,9 +225,8 @@ class PasswordValidator:
         require_digit: bool = True,
         require_special: bool = True,
         reject_common: bool = True,
-    ):
-        """
-        Initialize password validator with configurable requirements.
+    ) -> None:
+        """Initialize password validator with configurable requirements.
 
         Args:
             min_length: Minimum password length (default: 12)
@@ -238,6 +236,7 @@ class PasswordValidator:
             require_digit: Require at least one digit
             require_special: Require at least one special character
             reject_common: Reject passwords in common password list
+
         """
         self.min_length = min_length
         self.min_entropy = min_entropy
@@ -261,8 +260,7 @@ class PasswordValidator:
         )
 
     def calculate_entropy(self, password: str) -> float:
-        """
-        Calculate password entropy in bits.
+        """Calculate password entropy in bits.
 
         Entropy = L * log2(N)
         Where:
@@ -279,6 +277,7 @@ class PasswordValidator:
 
         Returns:
             Entropy in bits (higher is better)
+
         """
         if not password:
             return 0.0
@@ -331,8 +330,7 @@ class PasswordValidator:
         return max(0.0, base_entropy - penalty)
 
     def get_strength(self, entropy_bits: float) -> PasswordStrength:
-        """
-        Determine password strength level from entropy.
+        """Determine password strength level from entropy.
 
         Thresholds based on NIST and security research:
         - Very Weak: < 28 bits (trivially crackable)
@@ -346,21 +344,20 @@ class PasswordValidator:
 
         Returns:
             PasswordStrength enum value
+
         """
         if entropy_bits < 28:
             return PasswordStrength.VERY_WEAK
-        elif entropy_bits < 36:
+        if entropy_bits < 36:
             return PasswordStrength.WEAK
-        elif entropy_bits < 60:
+        if entropy_bits < 60:
             return PasswordStrength.FAIR
-        elif entropy_bits < 80:
+        if entropy_bits < 80:
             return PasswordStrength.STRONG
-        else:
-            return PasswordStrength.VERY_STRONG
+        return PasswordStrength.VERY_STRONG
 
     def calculate_score(self, entropy_bits: float, errors: list, warnings: list) -> int:
-        """
-        Calculate a 0-100 score for the password.
+        """Calculate a 0-100 score for the password.
 
         Args:
             entropy_bits: Calculated entropy
@@ -369,6 +366,7 @@ class PasswordValidator:
 
         Returns:
             Score from 0 to 100
+
         """
         # Base score from entropy (0-70 points)
         # 80+ bits entropy = full 70 points
@@ -393,8 +391,7 @@ class PasswordValidator:
         email: str | None = None,
         username: str | None = None,
     ) -> PasswordValidationResult:
-        """
-        Validate a password against all requirements.
+        """Validate a password against all requirements.
 
         Args:
             password: The password to validate
@@ -403,6 +400,7 @@ class PasswordValidator:
 
         Returns:
             PasswordValidationResult with validation status and feedback
+
         """
         errors: list[ValidationError] = []
         warnings: list[ValidationError] = []
@@ -422,7 +420,7 @@ class PasswordValidator:
                 ValidationError(
                     error_type=ValidationErrorType.TOO_SHORT,
                     message=f"Password must be at least {self.min_length} characters long",
-                )
+                ),
             )
             suggestions.append(f"Add {self.min_length - len(password)} more characters")
 
@@ -432,7 +430,7 @@ class PasswordValidator:
                 ValidationError(
                     error_type=ValidationErrorType.NO_UPPERCASE,
                     message="Password must contain at least one uppercase letter (A-Z)",
-                )
+                ),
             )
             suggestions.append("Add an uppercase letter (A-Z)")
 
@@ -442,7 +440,7 @@ class PasswordValidator:
                 ValidationError(
                     error_type=ValidationErrorType.NO_LOWERCASE,
                     message="Password must contain at least one lowercase letter (a-z)",
-                )
+                ),
             )
             suggestions.append("Add a lowercase letter (a-z)")
 
@@ -452,7 +450,7 @@ class PasswordValidator:
                 ValidationError(
                     error_type=ValidationErrorType.NO_DIGIT,
                     message="Password must contain at least one digit (0-9)",
-                )
+                ),
             )
             suggestions.append("Add a digit (0-9)")
 
@@ -462,7 +460,7 @@ class PasswordValidator:
                 ValidationError(
                     error_type=ValidationErrorType.NO_SPECIAL,
                     message=f"Password must contain at least one special character ({SPECIAL_CHARACTERS[:10]}...)",
-                )
+                ),
             )
             suggestions.append("Add a special character (!@#$%^&* etc.)")
 
@@ -472,7 +470,7 @@ class PasswordValidator:
                 ValidationError(
                     error_type=ValidationErrorType.COMMON_PASSWORD,
                     message="Password is too common and easily guessable",
-                )
+                ),
             )
             suggestions.append("Choose a more unique password")
 
@@ -483,7 +481,7 @@ class PasswordValidator:
                     error_type=ValidationErrorType.LOW_ENTROPY,
                     message=f"Password entropy is low ({entropy_bits:.1f} bits). Consider making it more complex.",
                     severity="warning",
-                )
+                ),
             )
             suggestions.append("Use a mix of random characters to increase strength")
 
@@ -497,7 +495,7 @@ class PasswordValidator:
                             error_type=ValidationErrorType.CONTAINS_EMAIL,
                             message="Password should not contain parts of your email address",
                             severity="warning",
-                        )
+                        ),
                     )
                     suggestions.append("Remove email-related content from password")
                     break
@@ -509,7 +507,7 @@ class PasswordValidator:
                     error_type=ValidationErrorType.CONTAINS_USERNAME,
                     message="Password should not contain your username",
                     severity="warning",
-                )
+                ),
             )
             suggestions.append("Remove your username from the password")
 
@@ -520,7 +518,7 @@ class PasswordValidator:
                     error_type=ValidationErrorType.SEQUENTIAL_CHARS,
                     message="Password contains sequential characters (abc, 123, etc.)",
                     severity="warning",
-                )
+                ),
             )
             suggestions.append("Avoid sequential patterns like 'abc' or '123'")
 
@@ -531,7 +529,7 @@ class PasswordValidator:
                     error_type=ValidationErrorType.REPEATED_CHARS,
                     message="Password contains repeated characters (aaa, 111, etc.)",
                     severity="warning",
-                )
+                ),
             )
             suggestions.append("Avoid repeating the same character multiple times")
 
@@ -567,8 +565,7 @@ class PasswordValidator:
         email: str | None = None,
         username: str | None = None,
     ) -> bool:
-        """
-        Simple validation check returning only True/False.
+        """Simple validation check returning only True/False.
 
         Args:
             password: The password to validate
@@ -577,6 +574,7 @@ class PasswordValidator:
 
         Returns:
             True if password meets all requirements, False otherwise
+
         """
         return self.validate(password, email, username).is_valid
 
@@ -599,8 +597,7 @@ def validate_password(
     email: str | None = None,
     username: str | None = None,
 ) -> PasswordValidationResult:
-    """
-    Validate a password using the default validator.
+    """Validate a password using the default validator.
 
     Args:
         password: The password to validate
@@ -609,6 +606,7 @@ def validate_password(
 
     Returns:
         PasswordValidationResult with validation status and feedback
+
     """
     return password_validator.validate(password, email, username)
 
@@ -618,8 +616,7 @@ def is_password_valid(
     email: str | None = None,
     username: str | None = None,
 ) -> bool:
-    """
-    Check if a password is valid using the default validator.
+    """Check if a password is valid using the default validator.
 
     Args:
         password: The password to validate
@@ -628,32 +625,33 @@ def is_password_valid(
 
     Returns:
         True if password meets all requirements, False otherwise
+
     """
     return password_validator.is_valid(password, email, username)
 
 
 def get_password_strength(password: str) -> PasswordStrength:
-    """
-    Get the strength level of a password.
+    """Get the strength level of a password.
 
     Args:
         password: The password to analyze
 
     Returns:
         PasswordStrength enum value
+
     """
     entropy = password_validator.calculate_entropy(password)
     return password_validator.get_strength(entropy)
 
 
 def calculate_password_entropy(password: str) -> float:
-    """
-    Calculate the entropy of a password in bits.
+    """Calculate the entropy of a password in bits.
 
     Args:
         password: The password to analyze
 
     Returns:
         Entropy in bits
+
     """
     return password_validator.calculate_entropy(password)

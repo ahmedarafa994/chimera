@@ -9,17 +9,13 @@ from app.domain.models import ProviderInfo, ProviderListResponse
 from app.services.llm_service import llm_service
 
 
-async def test_providers():
+async def test_providers() -> bool | None:
     try:
-        print("Testing providers endpoint...")
-
         # Test service methods
         providers = llm_service.get_available_providers()
-        print(f"Available providers: {providers}")
 
         if providers:
-            info = llm_service.get_provider_info(providers[0])
-            print(f"Provider info: {info}")
+            llm_service.get_provider_info(providers[0])
 
         # Test response model creation
         provider_models = settings.get_provider_models()
@@ -33,20 +29,18 @@ async def test_providers():
                     status="active",
                     model=available_models[0] if available_models else "unknown",
                     available_models=available_models,
-                )
+                ),
             )
 
-        response = ProviderListResponse(
+        ProviderListResponse(
             providers=providers_info,
             count=len(providers_info),
             default=llm_service._default_provider or "",
         )
 
-        print(f"Response: {response.dict()}")
         return True
 
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
         import traceback
 
         traceback.print_exc()
@@ -57,4 +51,3 @@ if __name__ == "__main__":
     import asyncio
 
     success = asyncio.run(test_providers())
-    print(f"Test {'PASSED' if success else 'FAILED'}")

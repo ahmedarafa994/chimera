@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -22,10 +23,10 @@ router = APIRouter()
 
 
 @router.post("/target-models/", response_model=LLMModel, status_code=status.HTTP_201_CREATED)
-def create_llm_model_endpoint(llm_model: LLMModelCreate, db: Session = Depends(get_sync_db)):
-    """
-    Register a new target LLM model with the platform.
-    """
+def create_llm_model_endpoint(
+    llm_model: LLMModelCreate, db: Annotated[Session, Depends(get_sync_db)]
+):
+    """Register a new target LLM model with the platform."""
     db_model = llm_crud.get_llm_model_by_name(db, name=llm_model.name)
     if db_model:
         raise HTTPException(
@@ -41,18 +42,14 @@ def create_llm_model_endpoint(llm_model: LLMModelCreate, db: Session = Depends(g
 
 @router.get("/target-models/", response_model=list[LLMModel])
 def read_llm_models_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_sync_db)):
-    """
-    Retrieve a list of all registered LLM models.
-    """
+    """Retrieve a list of all registered LLM models."""
     models = llm_crud.get_llm_models(db, skip=skip, limit=limit)
     return [LLMModel.model_validate(model) for model in models]
 
 
 @router.get("/target-models/{model_id}", response_model=LLMModel)
-def read_llm_model_endpoint(model_id: int, db: Session = Depends(get_sync_db)):
-    """
-    Retrieve details for a specific LLM model by ID.
-    """
+def read_llm_model_endpoint(model_id: int, db: Annotated[Session, Depends(get_sync_db)]):
+    """Retrieve details for a specific LLM model by ID."""
     db_model = llm_crud.get_llm_model(db, model_id=model_id)
     if db_model is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LLM Model not found")
@@ -60,12 +57,9 @@ def read_llm_model_endpoint(model_id: int, db: Session = Depends(get_sync_db)):
 
 
 @router.delete("/target-models/{model_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_llm_model_endpoint(model_id: int, db: Session = Depends(get_sync_db)):
-    """
-    Delete an LLM model by ID.
-    """
+def delete_llm_model_endpoint(model_id: int, db: Annotated[Session, Depends(get_sync_db)]) -> None:
+    """Delete an LLM model by ID."""
     db_model = llm_crud.delete_llm_model(db, model_id=model_id)
     if db_model is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="LLM Model not found")
     logger.info(f"Deleted LLM model with ID: {model_id}")
-    return

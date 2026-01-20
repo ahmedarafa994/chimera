@@ -1,5 +1,4 @@
-"""
-Database Models for User Model Preferences
+"""Database Models for User Model Preferences.
 
 SQLAlchemy models for persisting user preferences, model selection history,
 and rate limiting data.
@@ -60,7 +59,10 @@ class UserModelPreference(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
 
     # Current selection
@@ -224,7 +226,8 @@ class ModelSelectionHistory(Base):
 
     # Context
     change_reason = Column(
-        String(50), default="user_selection"
+        String(50),
+        default="user_selection",
     )  # user_selection, fallback, auto_switch
     client_ip = Column(String(45), nullable=True)
     user_agent = Column(String(255), nullable=True)
@@ -504,8 +507,7 @@ CREATE INDEX idx_history_created_at ON model_selection_history(created_at);
 
 
 class SelectionModel(Base):
-    """
-    Database model for provider/model selections.
+    """Database model for provider/model selections.
 
     Implements the Session Preference tier of the three-tier selection hierarchy.
     Supports both session-scoped and user-scoped selections using a composite key.

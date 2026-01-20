@@ -1,5 +1,4 @@
-"""
-Cursor Provider Implementation for Direct API Integration
+"""Cursor Provider Implementation for Direct API Integration.
 
 Story 1.2: Direct API Integration
 Implements native API format for Cursor with streaming support.
@@ -26,8 +25,7 @@ from app.infrastructure.providers.base import BaseProvider, is_retryable_error
 
 
 class CursorProvider(BaseProvider):
-    """
-    Cursor provider implementation using native Chat Completions API.
+    """Cursor provider implementation using native Chat Completions API.
 
     Features:
     - Direct API integration with Cursor
@@ -48,12 +46,12 @@ class CursorProvider(BaseProvider):
         "cursor-auto",  # Auto-selects based on request
     ]
 
-    def __init__(self, config: Settings | None = None):
-        """
-        Initialize the Cursor provider.
+    def __init__(self, config: Settings | None = None) -> None:
+        """Initialize the Cursor provider.
 
         Args:
             config: Optional configuration settings.
+
         """
         super().__init__("cursor", config)
         self._http_client: httpx.AsyncClient | None = None
@@ -63,14 +61,14 @@ class CursorProvider(BaseProvider):
     # =========================================================================
 
     def _initialize_client(self, api_key: str) -> httpx.AsyncClient:
-        """
-        Initialize the Cursor API HTTP client.
+        """Initialize the Cursor API HTTP client.
 
         Args:
             api_key: The API key for authentication.
 
         Returns:
             The initialized httpx async client.
+
         """
         return httpx.AsyncClient(
             base_url=self._BASE_URL,
@@ -83,21 +81,21 @@ class CursorProvider(BaseProvider):
         )
 
     def _get_default_model(self) -> str:
-        """
-        Get the default model name for Cursor.
+        """Get the default model name for Cursor.
 
         Returns:
             The default model name.
+
         """
         model = getattr(self.config, "cursor_model", None)
         return model or self._DEFAULT_MODEL
 
     def _get_api_key(self) -> str | None:
-        """
-        Get the Cursor API key from configuration.
+        """Get the Cursor API key from configuration.
 
         Returns:
             The API key, or None if not configured.
+
         """
         return getattr(self.config, "cursor_api_key", None)
 
@@ -107,8 +105,7 @@ class CursorProvider(BaseProvider):
         request: PromptRequest,
         model_name: str,
     ) -> PromptResponse:
-        """
-        Generate text using Cursor Chat Completions API.
+        """Generate text using Cursor Chat Completions API.
 
         Args:
             client: The httpx client instance.
@@ -120,6 +117,7 @@ class CursorProvider(BaseProvider):
 
         Raises:
             AppError: If generation fails.
+
         """
         # Build messages array
         messages = []
@@ -142,8 +140,9 @@ class CursorProvider(BaseProvider):
 
             # Parse response
             if "choices" not in data or not data["choices"]:
+                msg = "No choices in Cursor response"
                 raise AppError(
-                    "No choices in Cursor response",
+                    msg,
                     status_code=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -174,38 +173,41 @@ class CursorProvider(BaseProvider):
 
             status_code = e.response.status_code
             if status_code == 401:
+                msg = "Invalid Cursor API key"
                 raise AppError(
-                    "Invalid Cursor API key",
+                    msg,
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 ) from e
-            elif status_code == 429:
+            if status_code == 429:
+                msg = "Cursor rate limit exceeded"
                 raise AppError(
-                    "Cursor rate limit exceeded",
+                    msg,
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 ) from e
-            else:
-                raise AppError(
-                    f"Cursor API error: {e.response.text}",
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                ) from e
+            msg = f"Cursor API error: {e.response.text}"
+            raise AppError(
+                msg,
+                status_code=status.HTTP_502_BAD_GATEWAY,
+            ) from e
 
         except httpx.RequestError as e:
             if is_retryable_error(e):
+                msg = f"Cursor API connection error: {e}"
                 raise AppError(
-                    f"Cursor API connection error: {e}",
+                    msg,
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 ) from e
             raise
 
     async def _check_health_impl(self, client: httpx.AsyncClient) -> bool:
-        """
-        Check Cursor API health with a minimal request.
+        """Check Cursor API health with a minimal request.
 
         Args:
             client: The httpx client instance.
 
         Returns:
             True if the provider is healthy.
+
         """
         try:
             response = await client.post(
@@ -227,14 +229,14 @@ class CursorProvider(BaseProvider):
     # =========================================================================
 
     def _build_generation_config(self, request: PromptRequest) -> dict[str, Any]:
-        """
-        Build generation config from request parameters.
+        """Build generation config from request parameters.
 
         Args:
             request: The prompt request.
 
         Returns:
             Generation config dict for Cursor API.
+
         """
         config = {}
 
@@ -260,8 +262,7 @@ class CursorProvider(BaseProvider):
     # =========================================================================
 
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation from Cursor API.
+        """Stream text generation from Cursor API.
 
         Args:
             request: The prompt request.
@@ -271,6 +272,7 @@ class CursorProvider(BaseProvider):
 
         Raises:
             AppError: If streaming fails.
+
         """
         client = self._get_client(request.api_key)
         model_name = request.model or self._get_default_model()
@@ -335,13 +337,15 @@ class CursorProvider(BaseProvider):
                         continue
 
         except httpx.HTTPStatusError as e:
+            msg = f"Cursor streaming error: {e.response.text}"
             raise AppError(
-                f"Cursor streaming error: {e.response.text}",
+                msg,
                 status_code=e.response.status_code,
             ) from e
         except Exception as e:
+            msg = f"Cursor streaming failed: {e}"
             raise AppError(
-                f"Cursor streaming failed: {e}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             ) from e
 

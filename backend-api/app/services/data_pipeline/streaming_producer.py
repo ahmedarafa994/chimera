@@ -1,5 +1,4 @@
-"""
-Redis Streams Producer for Real-Time Event Publishing
+"""Redis Streams Producer for Real-Time Event Publishing.
 
 This module provides the streaming layer producer that publishes LLM interaction
 events to Redis Streams for real-time processing and analytics.
@@ -43,7 +42,7 @@ STREAM_HEALTH_CHECK = "chimera:health"
 
 @dataclass
 class StreamEvent:
-    """Base event structure for streaming"""
+    """Base event structure for streaming."""
 
     event_type: str
     event_id: str
@@ -52,7 +51,7 @@ class StreamEvent:
     metadata: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, str]:
-        """Convert to Redis-compatible dictionary (all values must be strings)"""
+        """Convert to Redis-compatible dictionary (all values must be strings)."""
         result = {
             "event_type": self.event_type,
             "event_id": self.event_id,
@@ -66,7 +65,7 @@ class StreamEvent:
 
 @dataclass
 class LLMInteractionEvent:
-    """LLM interaction event for streaming"""
+    """LLM interaction event for streaming."""
 
     event_type: str = "llm_interaction"
     interaction_id: str = ""
@@ -79,7 +78,7 @@ class LLMInteractionEvent:
     status: str = "success"
 
     def to_stream_event(self) -> StreamEvent:
-        """Convert to base StreamEvent"""
+        """Convert to base StreamEvent."""
         return StreamEvent(
             event_type=self.event_type,
             event_id=self.interaction_id,
@@ -99,7 +98,7 @@ class LLMInteractionEvent:
 
 @dataclass
 class TransformationEvent:
-    """Transformation event for streaming"""
+    """Transformation event for streaming."""
 
     event_type: str = "transformation"
     transformation_id: str = ""
@@ -110,7 +109,7 @@ class TransformationEvent:
     transformation_time_ms: int = 0
 
     def to_stream_event(self) -> StreamEvent:
-        """Convert to base StreamEvent"""
+        """Convert to base StreamEvent."""
         return StreamEvent(
             event_type=self.event_type,
             event_id=self.transformation_id,
@@ -128,7 +127,7 @@ class TransformationEvent:
 
 @dataclass
 class JailbreakEvent:
-    """Jailbreak experiment event for streaming"""
+    """Jailbreak experiment event for streaming."""
 
     event_type: str = "jailbreak_experiment"
     experiment_id: str = ""
@@ -139,7 +138,7 @@ class JailbreakEvent:
     judge_score: float | None = None
 
     def to_stream_event(self) -> StreamEvent:
-        """Convert to base StreamEvent"""
+        """Convert to base StreamEvent."""
         data = {
             "experiment_id": self.experiment_id,
             "framework": self.framework,
@@ -159,8 +158,7 @@ class JailbreakEvent:
 
 
 class StreamProducer:
-    """
-    Redis Streams Producer for real-time event publishing
+    """Redis Streams Producer for real-time event publishing.
 
     Features:
     - Async/await support with redis.asyncio
@@ -185,6 +183,7 @@ class StreamProducer:
         await producer.publish_llm_event(event)
 
         await producer.close()
+
     """
 
     def __init__(
@@ -192,14 +191,14 @@ class StreamProducer:
         redis_url: str | None = None,
         max_batch_size: int = 100,
         batch_flush_interval_ms: int = 1000,
-    ):
-        """
-        Initialize the stream producer
+    ) -> None:
+        """Initialize the stream producer.
 
         Args:
             redis_url: Redis connection URL (default: from settings)
             max_batch_size: Maximum events to batch before flushing
             batch_flush_interval_ms: Milliseconds between automatic flushes
+
         """
         self.redis_url = redis_url or self._get_redis_url()
         self.max_batch_size = max_batch_size
@@ -221,17 +220,17 @@ class StreamProducer:
 
     @staticmethod
     def _get_redis_url() -> str:
-        """Get Redis URL from settings with fallback"""
+        """Get Redis URL from settings with fallback."""
         if hasattr(settings, "REDIS_URL"):
             return settings.REDIS_URL
         return "redis://localhost:6379/0"
 
     async def initialize(self) -> None:
-        """
-        Initialize Redis connection and verify connectivity
+        """Initialize Redis connection and verify connectivity.
 
         Raises:
             RedisConnectionError: If connection fails
+
         """
         try:
             # Create connection pool
@@ -255,11 +254,12 @@ class StreamProducer:
             logger.info(f"Stream producer initialized: {self.redis_url}")
 
         except RedisError as e:
-            logger.error(f"Failed to initialize stream producer: {e}")
-            raise RedisConnectionError(f"Redis connection failed: {e}") from e
+            logger.exception(f"Failed to initialize stream producer: {e}")
+            msg = f"Redis connection failed: {e}"
+            raise RedisConnectionError(msg) from e
 
     async def close(self) -> None:
-        """Close Redis connection and cleanup resources"""
+        """Close Redis connection and cleanup resources."""
         if self._redis:
             await self._redis.close()
         if self._pool:
@@ -269,11 +269,11 @@ class StreamProducer:
         logger.info("Stream producer closed")
 
     async def health_check(self) -> bool:
-        """
-        Perform health check on Redis connection
+        """Perform health check on Redis connection.
 
         Returns:
             True if healthy, False otherwise
+
         """
         if not self._is_initialized or not self._redis:
             return False
@@ -293,8 +293,7 @@ class StreamProducer:
         event: LLMInteractionEvent,
         stream_key: str = STREAM_LLM_EVENTS,
     ) -> str | None:
-        """
-        Publish LLM interaction event to Redis Stream
+        """Publish LLM interaction event to Redis Stream.
 
         Args:
             event: LLM interaction event
@@ -313,6 +312,7 @@ class StreamProducer:
                 status="success"
             )
             entry_id = await producer.publish_llm_event(event)
+
         """
         if not self._is_initialized:
             logger.warning("Producer not initialized, cannot publish event")
@@ -332,7 +332,7 @@ class StreamProducer:
             return "buffered"
 
         except Exception as e:
-            logger.error(f"Failed to publish LLM event: {e}")
+            logger.exception(f"Failed to publish LLM event: {e}")
             return None
 
     async def publish_transformation_event(
@@ -340,8 +340,7 @@ class StreamProducer:
         event: TransformationEvent,
         stream_key: str = STREAM_TRANSFORMATION_EVENTS,
     ) -> str | None:
-        """
-        Publish transformation event to Redis Stream
+        """Publish transformation event to Redis Stream.
 
         Args:
             event: Transformation event
@@ -349,6 +348,7 @@ class StreamProducer:
 
         Returns:
             Stream entry ID if successful, None otherwise
+
         """
         if not self._is_initialized:
             logger.warning("Producer not initialized, cannot publish event")
@@ -368,7 +368,7 @@ class StreamProducer:
             return "buffered"
 
         except Exception as e:
-            logger.error(f"Failed to publish transformation event: {e}")
+            logger.exception(f"Failed to publish transformation event: {e}")
             return None
 
     async def publish_jailbreak_event(
@@ -376,8 +376,7 @@ class StreamProducer:
         event: JailbreakEvent,
         stream_key: str = STREAM_JAILBREAK_EVENTS,
     ) -> str | None:
-        """
-        Publish jailbreak experiment event to Redis Stream
+        """Publish jailbreak experiment event to Redis Stream.
 
         Args:
             event: Jailbreak experiment event
@@ -385,6 +384,7 @@ class StreamProducer:
 
         Returns:
             Stream entry ID if successful, None otherwise
+
         """
         if not self._is_initialized:
             logger.warning("Producer not initialized, cannot publish event")
@@ -404,14 +404,14 @@ class StreamProducer:
             return "buffered"
 
         except Exception as e:
-            logger.error(f"Failed to publish jailbreak event: {e}")
+            logger.exception(f"Failed to publish jailbreak event: {e}")
             return None
 
     async def _flush_llm_buffer(
         self,
         stream_key: str = STREAM_LLM_EVENTS,
     ) -> list[str]:
-        """Flush LLM event buffer to Redis Stream"""
+        """Flush LLM event buffer to Redis Stream."""
         if not self._llm_buffer:
             return []
 
@@ -433,14 +433,14 @@ class StreamProducer:
             return entry_ids
 
         except RedisError as e:
-            logger.error(f"Failed to flush LLM buffer: {e}")
+            logger.exception(f"Failed to flush LLM buffer: {e}")
             return []
 
     async def _flush_transformation_buffer(
         self,
         stream_key: str = STREAM_TRANSFORMATION_EVENTS,
     ) -> list[str]:
-        """Flush transformation event buffer to Redis Stream"""
+        """Flush transformation event buffer to Redis Stream."""
         if not self._transformation_buffer:
             return []
 
@@ -458,14 +458,14 @@ class StreamProducer:
             return entry_ids
 
         except RedisError as e:
-            logger.error(f"Failed to flush transformation buffer: {e}")
+            logger.exception(f"Failed to flush transformation buffer: {e}")
             return []
 
     async def _flush_jailbreak_buffer(
         self,
         stream_key: str = STREAM_JAILBREAK_EVENTS,
     ) -> list[str]:
-        """Flush jailbreak event buffer to Redis Stream"""
+        """Flush jailbreak event buffer to Redis Stream."""
         if not self._jailbreak_buffer:
             return []
 
@@ -483,15 +483,15 @@ class StreamProducer:
             return entry_ids
 
         except RedisError as e:
-            logger.error(f"Failed to flush jailbreak buffer: {e}")
+            logger.exception(f"Failed to flush jailbreak buffer: {e}")
             return []
 
     async def flush_all_buffers(self) -> dict[str, int]:
-        """
-        Flush all event buffers to Redis Streams
+        """Flush all event buffers to Redis Streams.
 
         Returns:
             Dictionary with stream key -> flushed count
+
         """
         if not self._is_initialized:
             return {}
@@ -516,14 +516,14 @@ class StreamProducer:
         self,
         stream_key: str = STREAM_LLM_EVENTS,
     ) -> dict[str, Any]:
-        """
-        Get information about a Redis Stream
+        """Get information about a Redis Stream.
 
         Args:
             stream_key: Redis stream key
 
         Returns:
             Dictionary with stream information
+
         """
         if not self._is_initialized or not self._redis:
             return {}
@@ -546,11 +546,11 @@ _producer: StreamProducer | None = None
 
 
 async def get_producer() -> StreamProducer:
-    """
-    Get or create singleton stream producer instance
+    """Get or create singleton stream producer instance.
 
     Returns:
         Initialized StreamProducer instance
+
     """
     global _producer
 
@@ -562,7 +562,7 @@ async def get_producer() -> StreamProducer:
 
 
 async def close_producer() -> None:
-    """Close singleton producer instance"""
+    """Close singleton producer instance."""
     global _producer
 
     if _producer:

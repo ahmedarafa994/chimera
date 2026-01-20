@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-Pattern memory reset utility.
+"""Pattern memory reset utility.
 
 This script resets the pattern memory to its default state. Use it when you want to
 start fresh without any learned patterns from previous runs.
@@ -27,15 +26,15 @@ from .logging_utils import log
 from .pattern_manager import PatternManager
 
 
-def reset_patterns(filepath=None):
-    """
-    Reset pattern memory to default values.
+def reset_patterns(filepath=None) -> bool | None:
+    """Reset pattern memory to default values.
 
     Args:
         filepath (str, optional): Path to the pattern storage file
 
     Returns:
         bool: Whether the reset was successful
+
     """
     try:
         pattern_manager = PatternManager(filepath)

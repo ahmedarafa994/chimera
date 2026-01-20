@@ -1,5 +1,4 @@
-"""
-AutoDAN Strategy Registry
+"""AutoDAN Strategy Registry.
 
 Centralized registry for all AutoDAN optimization strategies with
 unified lifecycle management and extensibility support.
@@ -64,7 +63,7 @@ class StrategyMetadata(BaseModel):
 class BaseAutoDANStrategy(ABC):
     """Base class for all AutoDAN strategies."""
 
-    def __init__(self, strategy_metadata: StrategyMetadata):
+    def __init__(self, strategy_metadata: StrategyMetadata) -> None:
         self.metadata = strategy_metadata
         self.logger = logging.getLogger(f"{__name__}.{strategy_metadata.name}")
         self._initialized = False
@@ -78,14 +77,16 @@ class BaseAutoDANStrategy(ABC):
     @abstractmethod
     async def initialize(self, **kwargs) -> None:
         """Initialize the strategy with configuration."""
-        pass
 
     @abstractmethod
     async def execute(
-        self, request: str, target_model: str, provider: str, **parameters
+        self,
+        request: str,
+        target_model: str,
+        provider: str,
+        **parameters,
     ) -> dict[str, Any]:
-        """
-        Execute the strategy.
+        """Execute the strategy.
 
         Args:
             request: Target behavior/goal
@@ -95,13 +96,12 @@ class BaseAutoDANStrategy(ABC):
 
         Returns:
             Execution result dictionary
+
         """
-        pass
 
     @abstractmethod
     async def validate_parameters(self, parameters: dict[str, Any]) -> bool:
         """Validate strategy parameters."""
-        pass
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
@@ -112,7 +112,10 @@ class BaseAutoDANStrategy(ABC):
         return self.metadata.default_parameters.copy()
 
     def update_performance_metrics(
-        self, execution_time: float, score: float, success: bool
+        self,
+        execution_time: float,
+        score: float,
+        success: bool,
     ) -> None:
         """Update performance metrics after execution."""
         self._performance_metrics["total_executions"] += 1
@@ -149,7 +152,7 @@ class BaseAutoDANStrategy(ABC):
 class VanillaStrategy(BaseAutoDANStrategy):
     """Basic vanilla AutoDAN strategy implementation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         metadata = StrategyMetadata(
             name="vanilla",
             strategy_type=StrategyType.VANILLA,
@@ -167,7 +170,11 @@ class VanillaStrategy(BaseAutoDANStrategy):
         self._initialized = True
 
     async def execute(
-        self, request: str, target_model: str, provider: str, **parameters
+        self,
+        request: str,
+        target_model: str,
+        provider: str,
+        **parameters,
     ) -> dict[str, Any]:
         """Execute vanilla strategy."""
         if not self._initialized:
@@ -202,7 +209,7 @@ class VanillaStrategy(BaseAutoDANStrategy):
 class GeneticOptimizationStrategy(BaseAutoDANStrategy):
     """Advanced genetic optimization strategy."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         metadata = StrategyMetadata(
             name="genetic",
             strategy_type=StrategyType.GENETIC,
@@ -238,7 +245,11 @@ class GeneticOptimizationStrategy(BaseAutoDANStrategy):
         self._initialized = True
 
     async def execute(
-        self, request: str, target_model: str, provider: str, **parameters
+        self,
+        request: str,
+        target_model: str,
+        provider: str,
+        **parameters,
     ) -> dict[str, Any]:
         """Execute genetic optimization."""
         if not self._initialized:
@@ -282,7 +293,7 @@ class GeneticOptimizationStrategy(BaseAutoDANStrategy):
 class MousetrapChainStrategy(BaseAutoDANStrategy):
     """Mousetrap technique - Chain of Iterative Chaos."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         metadata = StrategyMetadata(
             name="mousetrap",
             strategy_type=StrategyType.MOUSETRAP,
@@ -313,7 +324,11 @@ class MousetrapChainStrategy(BaseAutoDANStrategy):
         self._initialized = True
 
     async def execute(
-        self, request: str, target_model: str, provider: str, **parameters
+        self,
+        request: str,
+        target_model: str,
+        provider: str,
+        **parameters,
     ) -> dict[str, Any]:
         """Execute mousetrap technique."""
         if not self._initialized:
@@ -358,7 +373,7 @@ class MousetrapChainStrategy(BaseAutoDANStrategy):
 class OverthinkFusionStrategy(BaseAutoDANStrategy):
     """OVERTHINK-AutoDAN fusion strategy."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         metadata = StrategyMetadata(
             name="overthink",
             strategy_type=StrategyType.OVERTHINK,
@@ -391,7 +406,11 @@ class OverthinkFusionStrategy(BaseAutoDANStrategy):
         self._initialized = True
 
     async def execute(
-        self, request: str, target_model: str, provider: str, **parameters
+        self,
+        request: str,
+        target_model: str,
+        provider: str,
+        **parameters,
     ) -> dict[str, Any]:
         """Execute OVERTHINK fusion."""
         if not self._initialized:
@@ -431,13 +450,12 @@ class OverthinkFusionStrategy(BaseAutoDANStrategy):
 
 
 class AutoDANStrategyRegistry:
-    """
-    Centralized registry for AutoDAN optimization strategies.
+    """Centralized registry for AutoDAN optimization strategies.
 
     Provides strategy management, discovery, and lifecycle control.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.registry")
         self._strategies: dict[str, type[BaseAutoDANStrategy]] = {}
         self._strategy_instances: dict[str, BaseAutoDANStrategy] = {}
@@ -458,22 +476,24 @@ class AutoDANStrategyRegistry:
         self.logger.info(f"Initialized {len(builtin_strategies)} built-in strategies")
 
     def register_strategy(self, name: str, strategy_class: type[BaseAutoDANStrategy]) -> None:
-        """
-        Register a new strategy.
+        """Register a new strategy.
 
         Args:
             name: Strategy name/identifier
             strategy_class: Strategy class to register
+
         """
         if not issubclass(strategy_class, BaseAutoDANStrategy):
-            raise ValueError("Strategy class must inherit from BaseAutoDANStrategy")
+            msg = "Strategy class must inherit from BaseAutoDANStrategy"
+            raise ValueError(msg)
 
         if not inspect.isabstract(strategy_class):
             # Validate strategy has required methods
             required_methods = ["initialize", "execute", "validate_parameters"]
             for method in required_methods:
                 if not hasattr(strategy_class, method):
-                    raise ValueError(f"Strategy class missing required method: {method}")
+                    msg = f"Strategy class missing required method: {method}"
+                    raise ValueError(msg)
 
         self._strategies[name] = strategy_class
         self.logger.info(f"Registered strategy: {name}")
@@ -495,8 +515,7 @@ class AutoDANStrategyRegistry:
             self.logger.info(f"Unregistered strategy: {name}")
 
     def get_strategy(self, name: str, reuse_instance: bool = True) -> BaseAutoDANStrategy:
-        """
-        Get a strategy instance.
+        """Get a strategy instance.
 
         Args:
             name: Strategy name
@@ -507,9 +526,11 @@ class AutoDANStrategyRegistry:
 
         Raises:
             ValueError: If strategy not found
+
         """
         if name not in self._strategies:
-            raise ValueError(f"Unknown strategy: {name}. Available: {self.list_strategies()}")
+            msg = f"Unknown strategy: {name}. Available: {self.list_strategies()}"
+            raise ValueError(msg)
 
         # Return cached instance if requested and available
         if reuse_instance and name in self._strategy_instances:
@@ -538,7 +559,7 @@ class AutoDANStrategyRegistry:
             instance = self.get_strategy(name, reuse_instance=False)
             return instance.get_metadata()
         except Exception as e:
-            self.logger.error(f"Error getting metadata for {name}: {e}")
+            self.logger.exception(f"Error getting metadata for {name}: {e}")
             return None
 
     def get_all_strategy_metadata(self) -> dict[str, StrategyMetadata]:
@@ -581,7 +602,7 @@ class AutoDANStrategyRegistry:
             strategy = self.get_strategy(strategy_name, reuse_instance=False)
             return strategy.validate_parameters(parameters)
         except Exception as e:
-            self.logger.error(f"Error validating parameters for {strategy_name}: {e}")
+            self.logger.exception(f"Error validating parameters for {strategy_name}: {e}")
             return False
 
     def get_registry_stats(self) -> dict[str, Any]:

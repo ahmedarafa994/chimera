@@ -1,5 +1,4 @@
-"""
-Integration Health Service for Provider Health Monitoring.
+"""Integration Health Service for Provider Health Monitoring.
 
 STORY-1.4: Provider Health Monitoring
 
@@ -179,8 +178,7 @@ class HealthAlert:
 
 
 class IntegrationHealthService:
-    """
-    Integration Health Service for provider health monitoring.
+    """Integration Health Service for provider health monitoring.
 
     This service runs periodic health checks on all registered providers,
     tracks metrics, maintains history, and triggers alerts on degradation.
@@ -204,14 +202,14 @@ class IntegrationHealthService:
         check_interval_seconds: int = 30,
         check_timeout_seconds: int = 10,
         history_retention: int = 1000,
-    ):
-        """
-        Initialize the Integration Health Service.
+    ) -> None:
+        """Initialize the Integration Health Service.
 
         Args:
             check_interval_seconds: Interval between health checks (default: 30)
             check_timeout_seconds: Timeout for individual health checks (default: 10)
             history_retention: Number of history records to keep (default: 1000)
+
         """
         # Configuration
         self._check_interval = check_interval_seconds
@@ -252,7 +250,8 @@ class IntegrationHealthService:
         self._alert_callbacks.append(callback)
 
     def register_health_change_callback(
-        self, callback: Callable[[str, HealthStatus, HealthStatus], None]
+        self,
+        callback: Callable[[str, HealthStatus, HealthStatus], None],
     ) -> None:
         """Register a callback to be invoked when provider health status changes."""
         self._health_change_callbacks.append(callback)
@@ -293,11 +292,10 @@ class IntegrationHealthService:
 
     async def _initialize_provider_metrics(self) -> None:
         """Initialize health metrics for all registered providers."""
-
         # Get registered providers from llm_service
         providers = llm_service._providers
 
-        for provider_name, _provider in providers.items():
+        for provider_name in providers:
             if provider_name not in self._provider_metrics:
                 self._provider_metrics[provider_name] = ProviderHealthMetrics(
                     provider_name=provider_name,
@@ -345,8 +343,7 @@ class IntegrationHealthService:
                 )
 
     async def _check_provider_health(self, provider_name: str) -> dict[str, Any]:
-        """
-        Perform health check for a single provider.
+        """Perform health check for a single provider.
 
         Health check strategy: Make a lightweight API call to verify provider connectivity.
         - Success: Response within timeout with valid response format
@@ -357,7 +354,7 @@ class IntegrationHealthService:
             cb_status = CircuitBreakerRegistry.get_status(provider_name)
             if cb_status:
                 state = cb_status.get("state")
-                if state == CircuitState.OPEN or state == "open":
+                if state in (CircuitState.OPEN, "open"):
                     # Skip health check for open circuit breakers (quota exceeded)
                     return {
                         "provider": provider_name,
@@ -433,8 +430,7 @@ class IntegrationHealthService:
         latency_ms: float,
         error: str | None = None,
     ) -> None:
-        """
-        Record the results of a health check.
+        """Record the results of a health check.
 
         Updates provider metrics, history, and triggers alerts if needed.
         """
@@ -517,27 +513,26 @@ class IntegrationHealthService:
                 status=status_for_history,
                 latency_ms=latency_ms,
                 success=success,
-            )
+            ),
         )
 
         # Check for health status changes
         if old_status != new_status:
             logger.info(
-                f"Provider {provider_name} health status changed: {old_status.value} -> {new_status.value}"
+                f"Provider {provider_name} health status changed: {old_status.value} -> {new_status.value}",
             )
             # Trigger health change callbacks
             for callback in self._health_change_callbacks:
                 try:
                     callback(provider_name, old_status, new_status)
                 except Exception as e:
-                    logger.error(f"Error in health change callback: {e}")
+                    logger.exception(f"Error in health change callback: {e}")
 
         # Check for degradation and trigger alerts
         await self._check_for_degradation(provider_name, metrics)
 
     def _determine_health_status(self, metrics: ProviderHealthMetrics) -> HealthStatus:
-        """
-        Determine health status based on metrics.
+        """Determine health status based on metrics.
 
         Status determination:
         - HEALTHY: Error rate < warning threshold AND latency < warning threshold
@@ -546,16 +541,17 @@ class IntegrationHealthService:
         """
         if metrics.error_rate >= self._critical_error_rate:
             return HealthStatus.UNHEALTHY
-        elif (
+        if (
             metrics.error_rate >= self._warning_error_rate
             or metrics.latency_p95 >= self._warning_latency_ms
         ):
             return HealthStatus.DEGRADED
-        else:
-            return HealthStatus.HEALTHY
+        return HealthStatus.HEALTHY
 
     async def _check_for_degradation(
-        self, provider_name: str, metrics: ProviderHealthMetrics
+        self,
+        provider_name: str,
+        metrics: ProviderHealthMetrics,
     ) -> None:
         """Check for health degradation and trigger alerts if needed."""
         now = time.time()
@@ -611,11 +607,10 @@ class IntegrationHealthService:
                 try:
                     callback(alert)
                 except Exception as e:
-                    logger.error(f"Error in alert callback: {e}")
+                    logger.exception(f"Error in alert callback: {e}")
 
     async def get_health_status(self) -> dict[str, Any]:
-        """
-        Get current health status for all providers.
+        """Get current health status for all providers.
 
         Returns a dictionary with:
         - providers: Health metrics for each provider
@@ -667,10 +662,9 @@ class IntegrationHealthService:
 
         if any(s == HealthStatus.UNHEALTHY for s in statuses):
             return "unhealthy"
-        elif any(s == HealthStatus.DEGRADED for s in statuses):
+        if any(s == HealthStatus.DEGRADED for s in statuses):
             return "degraded"
-        else:
-            return "healthy"
+        return "healthy"
 
     async def get_provider_health(self, provider_name: str) -> dict[str, Any] | None:
         """Get health status for a specific provider."""
@@ -684,8 +678,7 @@ class IntegrationHealthService:
         provider_name: str | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
-        """
-        Get health history.
+        """Get health history.
 
         Args:
             provider_name: Filter by provider (None = all providers)
@@ -693,6 +686,7 @@ class IntegrationHealthService:
 
         Returns:
             List of health history entries
+
         """
         history = list(self._health_history)
 
@@ -711,8 +705,7 @@ class IntegrationHealthService:
         return [alert.to_dict() for alert in alerts]
 
     async def get_service_dependency_graph(self) -> dict[str, Any]:
-        """
-        Get service dependency graph.
+        """Get service dependency graph.
 
         Returns a graph showing provider dependencies and health status.
         """
@@ -732,7 +725,7 @@ class IntegrationHealthService:
                         "latency_p95_ms": round(metrics.latency_p95, 2),
                         "uptime_percent": round(metrics.uptime_percent, 2),
                     },
-                }
+                },
             )
 
         # Add edges (dependencies based on failover chains)
@@ -747,7 +740,7 @@ class IntegrationHealthService:
                                 "to": fallback,
                                 "type": "failover",
                                 "label": "failover",
-                            }
+                            },
                         )
 
         return {
@@ -756,8 +749,7 @@ class IntegrationHealthService:
         }
 
     async def check_now(self) -> dict[str, Any]:
-        """
-        Trigger an immediate health check for all providers.
+        """Trigger an immediate health check for all providers.
 
         Returns the health status after running checks.
         """

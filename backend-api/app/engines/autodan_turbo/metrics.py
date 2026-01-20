@@ -1,5 +1,4 @@
-"""
-Performance Metrics Module for AutoDAN Optimization.
+"""Performance Metrics Module for AutoDAN Optimization.
 
 Provides comprehensive tracking and monitoring for attack performance,
 including attack success rate, latency, LLM calls, and cost tracking.
@@ -29,8 +28,7 @@ class AttackMethod(Enum):
 
 @dataclass
 class AttackMetrics:
-    """
-    Comprehensive metrics for a single attack execution.
+    """Comprehensive metrics for a single attack execution.
 
     Tracks timing, success/failure, LLM calls, and resource usage.
     """
@@ -47,7 +45,7 @@ class AttackMetrics:
     latency_ms: int = field(default=0)
     error: str | None = field(default=None)
 
-    def complete(self, success: bool, score: float = 0.0):
+    def complete(self, success: bool, score: float = 0.0) -> None:
         """Mark the attack as complete."""
         self.end_time = datetime.utcnow()
         self.success = success
@@ -55,7 +53,7 @@ class AttackMetrics:
         self.latency_ms = int((self.end_time - self.start_time).total_seconds() * 1000)
         logger.info(
             f"Attack {self.attack_id[:8]} completed: "
-            f"success={success}, score={score}, latency={self.latency_ms}ms"
+            f"success={success}, score={score}, latency={self.latency_ms}ms",
         )
 
     def to_dict(self) -> dict:
@@ -76,23 +74,23 @@ class AttackMetrics:
 
 
 class MetricsCollector:
-    """
-    Aggregates metrics across multiple attacks.
+    """Aggregates metrics across multiple attacks.
 
     Provides summary statistics and per-method breakdowns.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._metrics: list[AttackMetrics] = []
         self._llm_call_count: int = 0
         self._total_latency_ms: float = 0.0
         self._method_stats: dict[AttackMethod, dict] = {method: {} for method in AttackMethod}
 
     def start_attack(
-        self, request: str, method: AttackMethod = AttackMethod.BEST_OF_N
+        self,
+        request: str,
+        method: AttackMethod = AttackMethod.BEST_OF_N,
     ) -> AttackMetrics:
-        """
-        Start tracking a new attack.
+        """Start tracking a new attack.
 
         Args:
             request: The malicious request
@@ -100,6 +98,7 @@ class MetricsCollector:
 
         Returns:
             AttackMetrics instance for tracking
+
         """
         metrics = AttackMetrics(
             attack_id=str(uuid.uuid4()),
@@ -111,28 +110,28 @@ class MetricsCollector:
         logger.debug(f"Started attack {metrics.attack_id[:8]} with method {method.value}")
         return metrics
 
-    def record_llm_call(self, metrics: AttackMetrics):
+    def record_llm_call(self, metrics: AttackMetrics) -> None:
         """Record an LLM API call."""
         metrics.llm_calls += 1
         self._llm_call_count += 1
         logger.debug(f"LLM call #{metrics.llm_calls} for attack {metrics.attack_id[:8]}")
 
-    def record_strategy_use(self, metrics: AttackMetrics, strategy_id: str):
+    def record_strategy_use(self, metrics: AttackMetrics, strategy_id: str) -> None:
         """Record a strategy being used."""
         metrics.strategy_ids_used.append(strategy_id)
         logger.debug(f"Strategy {strategy_id[:8]} used for attack {metrics.attack_id[:8]}")
 
-    def record_error(self, metrics: AttackMetrics, error: str):
+    def record_error(self, metrics: AttackMetrics, error: str) -> None:
         """Record an error during attack."""
         metrics.error = error
         logger.warning(f"Error for attack {metrics.attack_id[:8]}: {error}")
 
     def get_summary(self) -> dict:
-        """
-        Get comprehensive summary statistics.
+        """Get comprehensive summary statistics.
 
         Returns:
             Dictionary with summary statistics
+
         """
         if not self._metrics:
             return {}
@@ -175,11 +174,11 @@ class MetricsCollector:
         }
 
     def get_method_comparison(self) -> dict:
-        """
-        Compare performance across different attack methods.
+        """Compare performance across different attack methods.
 
         Returns:
             Dictionary with method comparison metrics
+
         """
         summary = self.get_summary()
         method_breakdown = summary.get("method_breakdown", {})
@@ -200,18 +199,18 @@ class MetricsCollector:
         return comparison
 
     def get_recent_metrics(self, limit: int = 10) -> list[dict]:
-        """
-        Get the most recent attack metrics.
+        """Get the most recent attack metrics.
 
         Args:
             limit: Number of recent metrics to return
 
         Returns:
             List of recent metric dictionaries
+
         """
         return [m.to_dict() for m in self._metrics[-limit:]]
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset all metrics."""
         self._metrics.clear()
         self._llm_call_count = 0

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class FileTechniqueRepository(ITechniqueRepository):
     """File-based repository for jailbreak techniques."""
 
-    def __init__(self, techniques_directory: str | None = None):
+    def __init__(self, techniques_directory: str | None = None) -> None:
         if techniques_directory is None:
             # Default techniques directory relative to app root
             base_dir = Path(__file__).parent.parent.parent.parent
@@ -71,11 +71,12 @@ class FileTechniqueRepository(ITechniqueRepository):
             return technique
 
         except Exception as e:
-            logger.error(f"Failed to load technique {technique_id}: {e!s}")
+            logger.exception(f"Failed to load technique {technique_id}: {e!s}")
             return None
 
     async def list_techniques(
-        self, search_request: TechniqueSearchRequest
+        self,
+        search_request: TechniqueSearchRequest,
     ) -> TechniqueListResponse:
         """List techniques with filtering and pagination."""
         try:
@@ -118,7 +119,7 @@ class FileTechniqueRepository(ITechniqueRepository):
             )
 
         except Exception as e:
-            logger.error(f"Failed to list techniques: {e!s}")
+            logger.exception(f"Failed to list techniques: {e!s}")
             return TechniqueListResponse(
                 techniques=[],
                 total_count=0,
@@ -133,7 +134,8 @@ class FileTechniqueRepository(ITechniqueRepository):
         try:
             # Validate technique
             if not technique.technique_id:
-                raise ValueError("Technique ID is required")
+                msg = "Technique ID is required"
+                raise ValueError(msg)
 
             # Update timestamps
             technique.updated_at = datetime.utcnow()
@@ -152,11 +154,14 @@ class FileTechniqueRepository(ITechniqueRepository):
             return technique
 
         except Exception as e:
-            logger.error(f"Failed to save technique {technique.technique_id}: {e!s}")
-            raise ValueError(f"Failed to save technique: {e!s}")
+            logger.exception(f"Failed to save technique {technique.technique_id}: {e!s}")
+            msg = f"Failed to save technique: {e!s}"
+            raise ValueError(msg)
 
     async def update_technique(
-        self, technique_id: str, updates: dict[str, Any]
+        self,
+        technique_id: str,
+        updates: dict[str, Any],
     ) -> JailbreakTemplate | None:
         """Update a technique."""
         try:
@@ -179,7 +184,7 @@ class FileTechniqueRepository(ITechniqueRepository):
             return technique
 
         except Exception as e:
-            logger.error(f"Failed to update technique {technique_id}: {e!s}")
+            logger.exception(f"Failed to update technique {technique_id}: {e!s}")
             return None
 
     async def delete_technique(self, technique_id: str) -> bool:
@@ -202,7 +207,7 @@ class FileTechniqueRepository(ITechniqueRepository):
             return True
 
         except Exception as e:
-            logger.error(f"Failed to delete technique {technique_id}: {e!s}")
+            logger.exception(f"Failed to delete technique {technique_id}: {e!s}")
             return False
 
     async def get_techniques_by_category(self, category: str) -> list[JailbreakTemplate]:
@@ -212,7 +217,7 @@ class FileTechniqueRepository(ITechniqueRepository):
             return [t for t in techniques if t.category.value == category]
 
         except Exception as e:
-            logger.error(f"Failed to get techniques by category {category}: {e!s}")
+            logger.exception(f"Failed to get techniques by category {category}: {e!s}")
             return []
 
     async def search_techniques(self, query: str, limit: int = 20) -> list[JailbreakTemplate]:
@@ -244,7 +249,7 @@ class FileTechniqueRepository(ITechniqueRepository):
             return matching_techniques[:limit]
 
         except Exception as e:
-            logger.error(f"Failed to search techniques: {e!s}")
+            logger.exception(f"Failed to search techniques: {e!s}")
             return []
 
     async def get_enabled_techniques(self) -> list[JailbreakTemplate]:
@@ -254,7 +259,7 @@ class FileTechniqueRepository(ITechniqueRepository):
             return [t for t in techniques if t.enabled and not t.deprecated]
 
         except Exception as e:
-            logger.error(f"Failed to get enabled techniques: {e!s}")
+            logger.exception(f"Failed to get enabled techniques: {e!s}")
             return []
 
     async def get_technique_stats(self, technique_id: str) -> JailbreakExecutionStats | None:
@@ -281,7 +286,7 @@ class FileTechniqueRepository(ITechniqueRepository):
             return stats
 
         except Exception as e:
-            logger.error(f"Failed to get technique stats {technique_id}: {e!s}")
+            logger.exception(f"Failed to get technique stats {technique_id}: {e!s}")
             return None
 
     async def _load_all_techniques(self) -> list[JailbreakTemplate]:
@@ -303,7 +308,7 @@ class FileTechniqueRepository(ITechniqueRepository):
                         self._techniques_cache[technique.technique_id] = technique
 
                 except Exception as e:
-                    logger.error(f"Failed to load technique file {file_path}: {e!s}")
+                    logger.exception(f"Failed to load technique file {file_path}: {e!s}")
 
             # Also try JSON files
             for file_path in self.techniques_directory.glob("*.json"):
@@ -316,7 +321,7 @@ class FileTechniqueRepository(ITechniqueRepository):
                             self._techniques_cache[technique.technique_id] = technique
 
                     except Exception as e:
-                        logger.error(f"Failed to load technique file {file_path}: {e!s}")
+                        logger.exception(f"Failed to load technique file {file_path}: {e!s}")
 
             # Update cache timestamp
             self._cache_timestamp = datetime.utcnow()
@@ -325,11 +330,13 @@ class FileTechniqueRepository(ITechniqueRepository):
             return techniques
 
         except Exception as e:
-            logger.error(f"Failed to load techniques: {e!s}")
+            logger.exception(f"Failed to load techniques: {e!s}")
             return []
 
     async def _apply_filters(
-        self, techniques: list[JailbreakTemplate], search_request: TechniqueSearchRequest
+        self,
+        techniques: list[JailbreakTemplate],
+        search_request: TechniqueSearchRequest,
     ) -> list[JailbreakTemplate]:
         """Apply filters to technique list."""
         filtered = techniques
@@ -372,7 +379,9 @@ class FileTechniqueRepository(ITechniqueRepository):
         return filtered
 
     async def _apply_sorting(
-        self, techniques: list[JailbreakTemplate], search_request: TechniqueSearchRequest
+        self,
+        techniques: list[JailbreakTemplate],
+        search_request: TechniqueSearchRequest,
     ) -> list[JailbreakTemplate]:
         """Apply sorting to technique list."""
         if not search_request.sort_by:
@@ -382,17 +391,18 @@ class FileTechniqueRepository(ITechniqueRepository):
 
         if search_request.sort_by == "name":
             return sorted(techniques, key=lambda t: t.name.lower(), reverse=reverse)
-        elif search_request.sort_by == "created_at":
+        if search_request.sort_by == "created_at":
             return sorted(techniques, key=lambda t: t.created_at, reverse=reverse)
-        elif search_request.sort_by == "success_rate":
+        if search_request.sort_by == "success_rate":
             return sorted(techniques, key=lambda t: t.success_rate_estimate, reverse=reverse)
-        elif search_request.sort_by == "risk_level":
+        if search_request.sort_by == "risk_level":
             risk_order = {"low": 0, "medium": 1, "high": 2, "critical": 3}
             return sorted(
-                techniques, key=lambda t: risk_order.get(t.risk_level.value, 0), reverse=reverse
+                techniques,
+                key=lambda t: risk_order.get(t.risk_level.value, 0),
+                reverse=reverse,
             )
-        else:
-            return techniques
+        return techniques
 
     def _is_cache_valid(self) -> bool:
         """Check if cache is valid."""

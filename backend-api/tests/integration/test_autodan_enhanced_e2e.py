@@ -1,5 +1,4 @@
-"""
-Integration Tests for AutoDAN Enhanced API End-to-End Flow
+"""Integration Tests for AutoDAN Enhanced API End-to-End Flow.
 
 Tests the complete request flow from API client to backend endpoint,
 verifying schema alignment, request validation, and response parsing.
@@ -20,7 +19,7 @@ class TestAutoDANEnhancedE2E:
     def mock_jailbreak_service(self):
         """Mock the jailbreak service to avoid real LLM calls."""
         with patch(
-            "app.services.autodan.service_enhanced.enhanced_autodan_service.run_jailbreak"
+            "app.services.autodan.service_enhanced.enhanced_autodan_service.run_jailbreak",
         ) as mock_run:
             mock_run.return_value = {
                 "jailbreak_prompt": "Mocked prompt",
@@ -35,9 +34,8 @@ class TestAutoDANEnhancedE2E:
             }
             yield mock_run
 
-    def test_jailbreak_endpoint_accepts_valid_request(self, authenticated_client):
-        """
-        Test that the backend accepts a valid jailbreak request with correct schema.
+    def test_jailbreak_endpoint_accepts_valid_request(self, authenticated_client) -> None:
+        """Test that the backend accepts a valid jailbreak request with correct schema.
 
         Verifies:
         - Request with 'request' field (not 'prompt') is accepted
@@ -58,9 +56,8 @@ class TestAutoDANEnhancedE2E:
         assert response.status_code != 400, f"Schema validation failed: {response.json()}"
         assert response.status_code != 422, f"Unprocessable entity: {response.json()}"
 
-    def test_jailbreak_endpoint_rejects_prompt_field(self, authenticated_client):
-        """
-        Test that the backend rejects requests using 'prompt' instead of 'request'.
+    def test_jailbreak_endpoint_rejects_prompt_field(self, authenticated_client) -> None:
+        """Test that the backend rejects requests using 'prompt' instead of 'request'.
 
         This validates the critical schema alignment requirement.
 
@@ -78,13 +75,12 @@ class TestAutoDANEnhancedE2E:
 
         # Verify error mentions the missing 'request' field
         error_detail = response.json().get("detail", [])
-        assert any(
-            "request" in str(err).lower() for err in error_detail
-        ), f"Error should mention missing 'request' field: {error_detail}"
+        assert any("request" in str(err).lower() for err in error_detail), (
+            f"Error should mention missing 'request' field: {error_detail}"
+        )
 
-    def test_jailbreak_endpoint_validates_method_field(self, authenticated_client):
-        """
-        Test that the backend handles invalid method values gracefully.
+    def test_jailbreak_endpoint_validates_method_field(self, authenticated_client) -> None:
+        """Test that the backend handles invalid method values gracefully.
 
         The backend may either reject invalid methods or default to a valid one.
 
@@ -115,9 +111,8 @@ class TestAutoDANEnhancedE2E:
             assert "jailbreak_prompt" in data
             assert "status" in data
 
-    def test_jailbreak_endpoint_validates_optional_ranges(self, authenticated_client):
-        """
-        Test that optional parameters are validated within their ranges.
+    def test_jailbreak_endpoint_validates_optional_ranges(self, authenticated_client) -> None:
+        """Test that optional parameters are validated within their ranges.
 
         Requirements: 2.2, 2.4
         """
@@ -133,9 +128,8 @@ class TestAutoDANEnhancedE2E:
         # Should return 422 for validation error
         assert response.status_code == 422, f"Expected 422, got {response.status_code}"
 
-    def test_jailbreak_endpoint_accepts_all_methods(self, authenticated_client):
-        """
-        Test that all valid optimization methods are accepted.
+    def test_jailbreak_endpoint_accepts_all_methods(self, authenticated_client) -> None:
+        """Test that all valid optimization methods are accepted.
 
         Requirements: 2.4
         """
@@ -158,13 +152,12 @@ class TestAutoDANEnhancedE2E:
             response = authenticated_client.post("/api/v1/autodan-enhanced/jailbreak", json=payload)
 
             # Should not fail validation
-            assert (
-                response.status_code != 422
-            ), f"Method '{method}' should be valid: {response.json()}"
+            assert response.status_code != 422, (
+                f"Method '{method}' should be valid: {response.json()}"
+            )
 
-    def test_jailbreak_response_schema(self, authenticated_client):
-        """
-        Test that the response matches the expected schema.
+    def test_jailbreak_response_schema(self, authenticated_client) -> None:
+        """Test that the response matches the expected schema.
 
         Requirements: 2.4, 3.4
         """
@@ -174,7 +167,7 @@ class TestAutoDANEnhancedE2E:
         }
 
         with patch(
-            "app.services.autodan.service_enhanced.enhanced_autodan_service"
+            "app.services.autodan.service_enhanced.enhanced_autodan_service",
         ) as mock_service:
             # Mock the service to return a valid response
             mock_service.initialized = True
@@ -190,7 +183,7 @@ class TestAutoDANEnhancedE2E:
                     "cached": False,
                     "model_used": "test-model",
                     "provider_used": "test-provider",
-                }
+                },
             )
 
             response = authenticated_client.post("/api/v1/autodan-enhanced/jailbreak", json=payload)
@@ -206,9 +199,8 @@ class TestAutoDANEnhancedE2E:
                 assert "latency_ms" in data
                 assert "cached" in data
 
-    def test_health_endpoint(self, authenticated_client):
-        """
-        Test the AutoDAN Enhanced health endpoint.
+    def test_health_endpoint(self, authenticated_client) -> None:
+        """Test the AutoDAN Enhanced health endpoint.
 
         Requirements: 3.4
         """
@@ -221,9 +213,8 @@ class TestAutoDANEnhancedE2E:
         assert "status" in data
         assert "initialized" in data
 
-    def test_config_endpoint(self, authenticated_client):
-        """
-        Test the AutoDAN Enhanced config endpoint.
+    def test_config_endpoint(self, authenticated_client) -> None:
+        """Test the AutoDAN Enhanced config endpoint.
 
         Requirements: 3.4
         """
@@ -236,9 +227,8 @@ class TestAutoDANEnhancedE2E:
         assert "default_strategy" in data
         assert "default_epochs" in data
 
-    def test_strategies_endpoint(self, authenticated_client):
-        """
-        Test the AutoDAN Enhanced strategies listing endpoint.
+    def test_strategies_endpoint(self, authenticated_client) -> None:
+        """Test the AutoDAN Enhanced strategies listing endpoint.
 
         Requirements: 3.4
         """
@@ -257,9 +247,8 @@ class TestAutoDANEnhancedE2E:
         for expected in expected_strategies:
             assert expected in strategy_names, f"Strategy '{expected}' should be in list"
 
-    def test_error_response_format(self, authenticated_client):
-        """
-        Test that error responses have the expected format for frontend parsing.
+    def test_error_response_format(self, authenticated_client) -> None:
+        """Test that error responses have the expected format for frontend parsing.
 
         Requirements: 3.1, 3.3, 3.4
         """
@@ -294,9 +283,8 @@ class TestAutoDANEnhancedE2E:
             error_str = str(error).lower()
             assert "request" in error_str, f"Error should mention missing 'request' field: {error}"
 
-    def test_request_with_all_optional_fields(self, authenticated_client):
-        """
-        Test request with all optional fields populated.
+    def test_request_with_all_optional_fields(self, authenticated_client) -> None:
+        """Test request with all optional fields populated.
 
         Requirements: 2.2, 2.4
         """
@@ -315,13 +303,12 @@ class TestAutoDANEnhancedE2E:
         response = authenticated_client.post("/api/v1/autodan-enhanced/jailbreak", json=payload)
 
         # Should not fail validation
-        assert (
-            response.status_code != 422
-        ), f"All optional fields should be valid: {response.json()}"
+        assert response.status_code != 422, (
+            f"All optional fields should be valid: {response.json()}"
+        )
 
-    def test_empty_request_rejected(self, authenticated_client):
-        """
-        Test that empty request string is rejected.
+    def test_empty_request_rejected(self, authenticated_client) -> None:
+        """Test that empty request string is rejected.
 
         Requirements: 2.3
         """
@@ -339,5 +326,5 @@ class TestAutoDANEnhancedE2E:
             data = response.json()
             # If it succeeds, status should indicate error
             assert data.get("status") == "error" or data.get(
-                "error"
+                "error",
             ), "Empty request should not succeed"

@@ -1,5 +1,4 @@
-"""
-Resource Exhaustion Tracking Service
+"""Resource Exhaustion Tracking Service.
 
 Provides real-time monitoring and historical tracking of resource consumption
 from ExtendAttack operations targeting Large Reasoning Models (LRMs).
@@ -161,8 +160,7 @@ class BudgetConfig:
 
 
 class ResourceExhaustionService:
-    """
-    Service for tracking and monitoring resource exhaustion from ExtendAttack operations.
+    """Service for tracking and monitoring resource exhaustion from ExtendAttack operations.
 
     Provides:
     - Real-time consumption tracking
@@ -171,12 +169,12 @@ class ResourceExhaustionService:
     - Historical analytics
     """
 
-    def __init__(self, budget_config: BudgetConfig | None = None):
-        """
-        Initialize the resource exhaustion service.
+    def __init__(self, budget_config: BudgetConfig | None = None) -> None:
+        """Initialize the resource exhaustion service.
 
         Args:
             budget_config: Optional budget configuration. Defaults to BudgetConfig().
+
         """
         self._lock = Lock()
         self._budget_config = budget_config or BudgetConfig()
@@ -206,8 +204,7 @@ class ResourceExhaustionService:
         logger.info("ResourceExhaustionService initialized")
 
     def start_session(self, session_id: str, model: str = "o3") -> SessionMetrics:
-        """
-        Start a new attack session for tracking.
+        """Start a new attack session for tracking.
 
         Args:
             session_id: Unique identifier for the session
@@ -218,10 +215,12 @@ class ResourceExhaustionService:
 
         Raises:
             ValueError: If session_id already exists
+
         """
         with self._lock:
             if session_id in self._active_sessions:
-                raise ValueError(f"Session '{session_id}' already exists")
+                msg = f"Session '{session_id}' already exists"
+                raise ValueError(msg)
 
             session = SessionMetrics(
                 session_id=session_id,
@@ -233,14 +232,14 @@ class ResourceExhaustionService:
             return session
 
     def end_session(self, session_id: str) -> SessionMetrics | None:
-        """
-        End and finalize an attack session.
+        """End and finalize an attack session.
 
         Args:
             session_id: Unique identifier for the session
 
         Returns:
             SessionMetrics if found and ended, None otherwise
+
         """
         with self._lock:
             if session_id not in self._active_sessions:
@@ -258,7 +257,7 @@ class ResourceExhaustionService:
             logger.info(
                 f"Ended session: {session_id}, "
                 f"attacks: {session.attacks_executed}, "
-                f"success_rate: {session.success_rate:.2%}"
+                f"success_rate: {session.success_rate:.2%}",
             )
             return session
 
@@ -271,8 +270,7 @@ class ResourceExhaustionService:
         successful: bool,
         model: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Record a single attack execution.
+        """Record a single attack execution.
 
         Args:
             session_id: Session to record attack for
@@ -284,6 +282,7 @@ class ResourceExhaustionService:
 
         Returns:
             Dictionary with metrics and any triggered alerts
+
         """
         alerts: list[ResourceAlert] = []
 
@@ -347,7 +346,7 @@ class ResourceExhaustionService:
                 try:
                     callback(alert)
                 except Exception as e:
-                    logger.error(f"Alert callback failed: {e}")
+                    logger.exception(f"Alert callback failed: {e}")
 
         amplification = attack_tokens / baseline_tokens if baseline_tokens > 0 else 0.0
 
@@ -365,14 +364,14 @@ class ResourceExhaustionService:
         }
 
     def get_session_metrics(self, session_id: str) -> SessionMetrics | None:
-        """
-        Get metrics for a specific session.
+        """Get metrics for a specific session.
 
         Args:
             session_id: Session identifier to look up
 
         Returns:
             SessionMetrics if found, None otherwise
+
         """
         with self._lock:
             # Check active sessions first
@@ -387,21 +386,21 @@ class ResourceExhaustionService:
         return None
 
     def get_all_active_sessions(self) -> list[SessionMetrics]:
-        """
-        Get all active sessions.
+        """Get all active sessions.
 
         Returns:
             List of active SessionMetrics
+
         """
         with self._lock:
             return list(self._active_sessions.values())
 
     def get_hourly_summary(self) -> dict[str, Any]:
-        """
-        Get summary of current hour's resource consumption.
+        """Get summary of current hour's resource consumption.
 
         Returns:
             Dictionary with hourly consumption metrics
+
         """
         with self._lock:
             self._rotate_hourly_tracking()
@@ -423,22 +422,25 @@ class ResourceExhaustionService:
                 "projected_tokens_per_hour": int(projected_tokens),
                 "projected_cost_per_hour": round(projected_cost, 4),
                 "budget_tokens_remaining": max(
-                    0, self._budget_config.max_tokens_per_hour - self._hourly_tokens
+                    0,
+                    self._budget_config.max_tokens_per_hour - self._hourly_tokens,
                 ),
                 "budget_cost_remaining": round(
-                    max(0, self._budget_config.max_cost_per_hour_usd - self._hourly_cost), 4
+                    max(0, self._budget_config.max_cost_per_hour_usd - self._hourly_cost),
+                    4,
                 ),
                 "budget_attacks_remaining": max(
-                    0, self._budget_config.max_attacks_per_hour - self._hourly_attacks
+                    0,
+                    self._budget_config.max_attacks_per_hour - self._hourly_attacks,
                 ),
             }
 
     def get_budget_status(self) -> dict[str, Any]:
-        """
-        Get current budget consumption status.
+        """Get current budget consumption status.
 
         Returns:
             Dictionary with budget status and consumption percentages
+
         """
         with self._lock:
             self._rotate_hourly_tracking()
@@ -496,8 +498,7 @@ class ResourceExhaustionService:
         avg_baseline_tokens: int,
         model: str = "o3",
     ) -> dict[str, Any]:
-        """
-        Estimate cost for planned attacks.
+        """Estimate cost for planned attacks.
 
         Args:
             num_attacks: Number of attacks planned
@@ -507,6 +508,7 @@ class ResourceExhaustionService:
 
         Returns:
             Dictionary with cost estimates and projections
+
         """
         avg_attack_tokens = int(avg_baseline_tokens * avg_amplification)
 
@@ -538,11 +540,13 @@ class ResourceExhaustionService:
             "budget_check": {
                 "tokens_required": avg_attack_tokens * num_attacks,
                 "tokens_available": max(
-                    0, self._budget_config.max_tokens_per_hour - self._hourly_tokens
+                    0,
+                    self._budget_config.max_tokens_per_hour - self._hourly_tokens,
                 ),
                 "cost_required": cost_impact["attack_cost_usd"],
                 "cost_available": max(
-                    0, self._budget_config.max_cost_per_hour_usd - self._hourly_cost
+                    0,
+                    self._budget_config.max_cost_per_hour_usd - self._hourly_cost,
                 ),
                 "within_budget": (
                     cost_impact["attack_cost_usd"]
@@ -554,21 +558,21 @@ class ResourceExhaustionService:
         }
 
     def register_alert_callback(self, callback: Callable[[ResourceAlert], None]) -> None:
-        """
-        Register a callback to be called when alerts are triggered.
+        """Register a callback to be called when alerts are triggered.
 
         Args:
             callback: Function to call with ResourceAlert when triggered
+
         """
         self._alert_callbacks.append(callback)
         logger.debug(f"Registered alert callback, total callbacks: {len(self._alert_callbacks)}")
 
     def _check_budget_alerts(self) -> list[ResourceAlert]:
-        """
-        Check if any budget thresholds are exceeded.
+        """Check if any budget thresholds are exceeded.
 
         Returns:
             List of triggered ResourceAlert objects
+
         """
         alerts: list[ResourceAlert] = []
         threshold = self._budget_config.alert_threshold_percent
@@ -584,7 +588,7 @@ class ResourceExhaustionService:
                         message=f"Token budget EXCEEDED: {tokens_pct:.1f}% used",
                         current_value=self._hourly_tokens,
                         threshold_value=self._budget_config.max_tokens_per_hour,
-                    )
+                    ),
                 )
             elif tokens_pct >= threshold:
                 alerts.append(
@@ -594,7 +598,7 @@ class ResourceExhaustionService:
                         message=f"Token budget warning: {tokens_pct:.1f}% used",
                         current_value=self._hourly_tokens,
                         threshold_value=self._budget_config.max_tokens_per_hour * threshold / 100,
-                    )
+                    ),
                 )
 
         # Check cost budget
@@ -608,7 +612,7 @@ class ResourceExhaustionService:
                         message=f"Cost budget EXCEEDED: {cost_pct:.1f}% used (${self._hourly_cost:.2f})",
                         current_value=self._hourly_cost,
                         threshold_value=self._budget_config.max_cost_per_hour_usd,
-                    )
+                    ),
                 )
             elif cost_pct >= threshold:
                 alerts.append(
@@ -618,7 +622,7 @@ class ResourceExhaustionService:
                         message=f"Cost budget warning: {cost_pct:.1f}% used (${self._hourly_cost:.2f})",
                         current_value=self._hourly_cost,
                         threshold_value=self._budget_config.max_cost_per_hour_usd * threshold / 100,
-                    )
+                    ),
                 )
 
         # Check attack count budget
@@ -632,7 +636,7 @@ class ResourceExhaustionService:
                         message=f"Attack budget EXCEEDED: {attacks_pct:.1f}% used",
                         current_value=self._hourly_attacks,
                         threshold_value=self._budget_config.max_attacks_per_hour,
-                    )
+                    ),
                 )
             elif attacks_pct >= threshold:
                 alerts.append(
@@ -642,7 +646,7 @@ class ResourceExhaustionService:
                         message=f"Attack budget warning: {attacks_pct:.1f}% used",
                         current_value=self._hourly_attacks,
                         threshold_value=self._budget_config.max_attacks_per_hour * threshold / 100,
-                    )
+                    ),
                 )
 
         return alerts
@@ -678,28 +682,28 @@ class ResourceExhaustionService:
             logger.info("Rotated hourly tracking counters")
 
     def get_historical_data(self, hours: int = 24) -> list[dict[str, Any]]:
-        """
-        Get historical hourly data.
+        """Get historical hourly data.
 
         Args:
             hours: Number of hours of history to return (max 24)
 
         Returns:
             List of hourly data dictionaries
+
         """
         with self._lock:
             limit = min(hours, len(self._hourly_history))
             return self._hourly_history[-limit:]
 
     def get_cost_breakdown(self, session_id: str | None = None) -> dict[str, Any]:
-        """
-        Get detailed cost breakdown by model and operation.
+        """Get detailed cost breakdown by model and operation.
 
         Args:
             session_id: Optional session to get breakdown for. If None, returns global breakdown.
 
         Returns:
             Dictionary with cost breakdown details
+
         """
         with self._lock:
             if session_id:
@@ -746,11 +750,11 @@ class ResourceExhaustionService:
             }
 
     async def monitor_loop(self, interval_seconds: int = 60) -> None:
-        """
-        Background monitoring loop for periodic checks.
+        """Background monitoring loop for periodic checks.
 
         Args:
             interval_seconds: Interval between monitoring checks
+
         """
         logger.info(f"Starting monitor loop with {interval_seconds}s interval")
 
@@ -768,14 +772,14 @@ class ResourceExhaustionService:
                         try:
                             callback(alert)
                         except Exception as e:
-                            logger.error(f"Alert callback failed: {e}")
+                            logger.exception(f"Alert callback failed: {e}")
 
                 # Log periodic summary
                 summary = self.get_hourly_summary()
                 logger.debug(
                     f"Hourly status: tokens={summary['tokens_consumed']}, "
                     f"cost=${summary['cost_usd']:.4f}, "
-                    f"attacks={summary['attacks_executed']}"
+                    f"attacks={summary['attacks_executed']}",
                 )
 
                 await asyncio.sleep(interval_seconds)
@@ -784,7 +788,7 @@ class ResourceExhaustionService:
                 logger.info("Monitor loop cancelled")
                 break
             except Exception as e:
-                logger.error(f"Monitor loop error: {e}")
+                logger.exception(f"Monitor loop error: {e}")
                 await asyncio.sleep(interval_seconds)
 
 
@@ -805,8 +809,7 @@ def get_resource_exhaustion_service() -> ResourceExhaustionService:
 def create_resource_exhaustion_service(
     budget_config: BudgetConfig | None = None,
 ) -> ResourceExhaustionService:
-    """
-    Create a new ResourceExhaustionService instance.
+    """Create a new ResourceExhaustionService instance.
 
     Use this for testing or when a non-singleton instance is needed.
 
@@ -815,5 +818,6 @@ def create_resource_exhaustion_service(
 
     Returns:
         New ResourceExhaustionService instance
+
     """
     return ResourceExhaustionService(budget_config=budget_config)

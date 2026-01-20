@@ -1,5 +1,4 @@
-"""
-Authentication API Endpoints
+"""Authentication API Endpoints.
 
 Provides user authentication endpoints:
 - POST /register - User registration with email verification
@@ -13,6 +12,7 @@ All endpoints follow security best practices for user authentication.
 
 import logging
 import time
+from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -36,8 +36,7 @@ router = APIRouter()
 
 
 async def get_db_session() -> AsyncSession:
-    """
-    Get an async database session for the request.
+    """Get an async database session for the request.
 
     Yields a session and ensures proper cleanup.
     """
@@ -83,10 +82,12 @@ class UserRegistrationRequest(BaseModel):
 
         # Allow alphanumeric, underscores, and hyphens
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError("Username can only contain letters, numbers, underscores, and hyphens")
+            msg = "Username can only contain letters, numbers, underscores, and hyphens"
+            raise ValueError(msg)
         # Cannot start with a number
         if v[0].isdigit():
-            raise ValueError("Username cannot start with a number")
+            msg = "Username cannot start with a number"
+            raise ValueError(msg)
         return v.lower()  # Normalize to lowercase
 
 
@@ -305,10 +306,9 @@ async def register_user(
     request_data: UserRegistrationRequest,
     http_request: Request,
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_db_session),
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> UserRegistrationResponse:
-    """
-    Register a new user with email verification.
+    """Register a new user with email verification.
 
     Creates a new user account with:
     - Password strength validation
@@ -420,8 +420,7 @@ Returns detailed feedback including:
 async def check_password_strength(
     request: PasswordStrengthRequest,
 ) -> PasswordStrengthResponse:
-    """
-    Check password strength without creating a user.
+    """Check password strength without creating a user.
 
     Returns detailed feedback for password improvement.
     """
@@ -487,10 +486,9 @@ Verify a user's email address using the verification token sent via email.
 async def verify_email(
     token: str,
     request: Request,
-    session: AsyncSession = Depends(get_db_session),
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> EmailVerificationResponse:
-    """
-    Verify user's email using verification token.
+    """Verify user's email using verification token.
 
     Validates the token, marks the user as verified,
     and clears the verification token.
@@ -604,10 +602,9 @@ async def resend_verification(
     request_data: ResendVerificationRequest,
     request: Request,
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_db_session),
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ResendVerificationResponse:
-    """
-    Resend verification email to a user.
+    """Resend verification email to a user.
 
     Rate limited to prevent abuse. Generates a new verification
     token and sends a new verification email.
@@ -619,7 +616,7 @@ async def resend_verification(
 
     # Resend verification email
     success, new_token, error = await user_service.resend_verification_email(
-        email=request_data.email
+        email=request_data.email,
     )
 
     if not success and error:
@@ -706,10 +703,9 @@ async def forgot_password(
     request_data: ForgotPasswordRequest,
     request: Request,
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_db_session),
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ForgotPasswordResponse:
-    """
-    Request a password reset link for a registered user.
+    """Request a password reset link for a registered user.
 
     Rate limited to prevent abuse. Generates a secure reset token
     and sends a password reset email to the user.
@@ -806,10 +802,9 @@ Reset a user's password using the token received via email.
 async def reset_password(
     request_data: ResetPasswordRequest,
     request: Request,
-    session: AsyncSession = Depends(get_db_session),
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ResetPasswordResponse:
-    """
-    Reset user's password using reset token from email.
+    """Reset user's password using reset token from email.
 
     Validates the reset token and new password strength,
     then updates the password if valid.
@@ -918,8 +913,7 @@ async def reset_password(
 
 
 async def _check_forgot_password_rate_limit(request: Request) -> None:
-    """
-    Check rate limit for forgot password endpoint.
+    """Check rate limit for forgot password endpoint.
 
     Stricter limits to prevent abuse and email bombing.
     """
@@ -952,8 +946,7 @@ async def _check_forgot_password_rate_limit(request: Request) -> None:
 
 
 async def _check_resend_rate_limit(request: Request) -> None:
-    """
-    Check rate limit for resend verification endpoint.
+    """Check rate limit for resend verification endpoint.
 
     Stricter limits to prevent abuse and email bombing.
     """
@@ -986,8 +979,7 @@ async def _check_resend_rate_limit(request: Request) -> None:
 
 
 async def _check_reset_password_rate_limit(request: Request) -> None:
-    """
-    Check rate limit for reset password endpoint.
+    """Check rate limit for reset password endpoint.
 
     Limits to prevent brute force attacks on reset tokens.
     """
@@ -1029,8 +1021,7 @@ async def _send_verification_email(
     username: str,
     verification_token: str,
 ) -> None:
-    """
-    Send verification email to user.
+    """Send verification email to user.
 
     This runs as a background task to avoid blocking the registration response.
     """
@@ -1057,8 +1048,7 @@ async def _send_password_reset_email(
     username: str,
     reset_token: str,
 ) -> None:
-    """
-    Send password reset email to user.
+    """Send password reset email to user.
 
     This runs as a background task to avoid blocking the forgot password response.
     """

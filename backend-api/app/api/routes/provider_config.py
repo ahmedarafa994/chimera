@@ -1,5 +1,4 @@
-"""
-Provider Configuration API Router
+"""Provider Configuration API Router.
 
 REST API endpoints for dynamic AI provider management including:
 - List available providers
@@ -13,6 +12,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -42,7 +42,7 @@ router = APIRouter(prefix="/provider-config", tags=["provider-config"])
 
 
 class ProviderSummary(BaseModel):
-    """Summary of a provider for list views"""
+    """Summary of a provider for list views."""
 
     id: str
     name: str
@@ -59,7 +59,7 @@ class ProviderSummary(BaseModel):
 
 
 class ProvidersListResponse(BaseModel):
-    """Response for listing all providers"""
+    """Response for listing all providers."""
 
     providers: list[ProviderSummary]
     total: int
@@ -68,7 +68,7 @@ class ProvidersListResponse(BaseModel):
 
 
 class ActiveProviderResponse(BaseModel):
-    """Response for active provider query"""
+    """Response for active provider query."""
 
     provider_id: str | None = None
     provider_name: str | None = None
@@ -80,7 +80,7 @@ class ActiveProviderResponse(BaseModel):
 
 
 class HealthStatusResponse(BaseModel):
-    """Response for health status of all providers"""
+    """Response for health status of all providers."""
 
     providers: dict[str, ProviderHealthInfo]
     overall_status: str
@@ -88,7 +88,7 @@ class HealthStatusResponse(BaseModel):
 
 
 class SetActiveRequest(BaseModel):
-    """Request to set active provider"""
+    """Request to set active provider."""
 
     provider_id: str
     model_id: str | None = None
@@ -97,7 +97,7 @@ class SetActiveRequest(BaseModel):
 
 
 class ApiKeyUpdateRequest(BaseModel):
-    """Request to update API key"""
+    """Request to update API key."""
 
     api_key: str = Field(..., min_length=10)
 
@@ -108,26 +108,26 @@ class ApiKeyUpdateRequest(BaseModel):
 
 
 class ConnectionManager:
-    """Manages WebSocket connections for real-time updates"""
+    """Manages WebSocket connections for real-time updates."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
         self._lock = asyncio.Lock()
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         async with self._lock:
             self.active_connections.append(websocket)
         logger.info(f"WebSocket connected. Total connections: {len(self.active_connections)}")
 
-    async def disconnect(self, websocket: WebSocket):
+    async def disconnect(self, websocket: WebSocket) -> None:
         async with self._lock:
             if websocket in self.active_connections:
                 self.active_connections.remove(websocket)
         logger.info(f"WebSocket disconnected. Total connections: {len(self.active_connections)}")
 
-    async def broadcast(self, message: dict):
-        """Broadcast message to all connected clients"""
+    async def broadcast(self, message: dict) -> None:
+        """Broadcast message to all connected clients."""
         if not self.active_connections:
             return
 
@@ -155,8 +155,8 @@ ws_manager = ConnectionManager()
 # =============================================================================
 
 
-async def on_provider_event(event: dict):
-    """Handle provider events and broadcast to WebSocket clients"""
+async def on_provider_event(event: dict) -> None:
+    """Handle provider events and broadcast to WebSocket clients."""
     await ws_manager.broadcast(event)
 
 
@@ -171,17 +171,17 @@ provider_management_service.register_event_callback(on_provider_event)
 
 @router.get("/providers", response_model=ProvidersListResponse)
 async def list_providers(
-    enabled_only: bool = Query(default=False, description="Only return enabled providers"),
-    include_health: bool = Query(default=True, description="Include health information"),
+    enabled_only: Annotated[bool, Query(description="Only return enabled providers")] = False,
+    include_health: Annotated[bool, Query(description="Include health information")] = True,
 ):
-    """
-    List all registered AI providers.
+    """List all registered AI providers.
 
     Returns a summary of all providers with their status and configuration.
     """
     try:
         result = provider_management_service.list_providers(
-            enabled_only=enabled_only, include_health=include_health
+            enabled_only=enabled_only,
+            include_health=include_health,
         )
 
         active_id = result.active_provider_id
@@ -200,7 +200,7 @@ async def list_providers(
                     is_active=(p.id == active_id),
                     has_api_key=bool(provider_management_service.get_api_key(p.id)),
                     model_count=len(p.models),
-                )
+                ),
             )
 
         return ProvidersListResponse(
@@ -211,7 +211,7 @@ async def list_providers(
         )
 
     except Exception as e:
-        logger.error(f"Failed to list providers: {e}")
+        logger.exception(f"Failed to list providers: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list providers: {e!s}",
@@ -220,8 +220,7 @@ async def list_providers(
 
 @router.get("/providers/active", response_model=ActiveProviderResponse)
 async def get_active_provider():
-    """
-    Get the currently active provider.
+    """Get the currently active provider.
 
     Returns details about the provider currently being used for AI requests.
     """
@@ -240,7 +239,7 @@ async def get_active_provider():
         )
 
     except Exception as e:
-        logger.error(f"Failed to get active provider: {e}")
+        logger.exception(f"Failed to get active provider: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get active provider: {e!s}",
@@ -249,14 +248,14 @@ async def get_active_provider():
 
 @router.post("/providers/active", response_model=ProviderSelectionResponse)
 async def set_active_provider(request: SetActiveRequest):
-    """
-    Set the active provider for AI requests.
+    """Set the active provider for AI requests.
 
     Switches the currently active provider to the specified one.
     """
     try:
         selection_request = ProviderSelectionRequest(
-            provider_id=request.provider_id, model_id=request.model_id
+            provider_id=request.provider_id,
+            model_id=request.model_id,
         )
 
         result = await provider_management_service.select_provider(selection_request)
@@ -272,7 +271,7 @@ async def set_active_provider(request: SetActiveRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to set active provider: {e}")
+        logger.exception(f"Failed to set active provider: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to set active provider: {e!s}",
@@ -281,15 +280,14 @@ async def set_active_provider(request: SetActiveRequest):
 
 @router.get("/providers/{provider_id}", response_model=ProviderInfo)
 async def get_provider(provider_id: str):
-    """
-    Get detailed information about a specific provider.
-    """
+    """Get detailed information about a specific provider."""
     try:
         provider = provider_management_service.get_provider(provider_id)
 
         if not provider:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"Provider '{provider_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Provider '{provider_id}' not found",
             )
 
         # Update health info
@@ -300,7 +298,7 @@ async def get_provider(provider_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get provider {provider_id}: {e}")
+        logger.exception(f"Failed to get provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get provider: {e!s}",
@@ -309,19 +307,17 @@ async def get_provider(provider_id: str):
 
 @router.post("/providers", response_model=ProviderInfo, status_code=status.HTTP_201_CREATED)
 async def register_provider(registration: ProviderRegistration):
-    """
-    Register a new AI provider.
+    """Register a new AI provider.
 
     Adds a new provider to the system with the specified configuration.
     """
     try:
-        provider = await provider_management_service.register_provider(registration)
-        return provider
+        return await provider_management_service.register_provider(registration)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Failed to register provider: {e}")
+        logger.exception(f"Failed to register provider: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to register provider: {e!s}",
@@ -330,17 +326,14 @@ async def register_provider(registration: ProviderRegistration):
 
 @router.patch("/providers/{provider_id}", response_model=ProviderInfo)
 async def update_provider(provider_id: str, update: ProviderUpdate):
-    """
-    Update an existing provider's configuration.
-    """
+    """Update an existing provider's configuration."""
     try:
-        provider = await provider_management_service.update_provider(provider_id, update)
-        return provider
+        return await provider_management_service.update_provider(provider_id, update)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Failed to update provider {provider_id}: {e}")
+        logger.exception(f"Failed to update provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update provider: {e!s}",
@@ -348,17 +341,15 @@ async def update_provider(provider_id: str, update: ProviderUpdate):
 
 
 @router.delete("/providers/{provider_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deregister_provider(provider_id: str):
-    """
-    Remove a provider from the system.
-    """
+async def deregister_provider(provider_id: str) -> None:
+    """Remove a provider from the system."""
     try:
         await provider_management_service.deregister_provider(provider_id)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Failed to deregister provider {provider_id}: {e}")
+        logger.exception(f"Failed to deregister provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to deregister provider: {e!s}",
@@ -366,10 +357,8 @@ async def deregister_provider(provider_id: str):
 
 
 @router.put("/providers/{provider_id}/api-key", status_code=status.HTTP_204_NO_CONTENT)
-async def update_api_key(provider_id: str, request: ApiKeyUpdateRequest):
-    """
-    Update the API key for a provider.
-    """
+async def update_api_key(provider_id: str, request: ApiKeyUpdateRequest) -> None:
+    """Update the API key for a provider."""
     try:
         update = ProviderUpdate(api_key=request.api_key)
         await provider_management_service.update_provider(provider_id, update)
@@ -377,7 +366,7 @@ async def update_api_key(provider_id: str, request: ApiKeyUpdateRequest):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Failed to update API key for {provider_id}: {e}")
+        logger.exception(f"Failed to update API key for {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update API key: {e!s}",
@@ -386,15 +375,12 @@ async def update_api_key(provider_id: str, request: ApiKeyUpdateRequest):
 
 @router.post("/providers/{provider_id}/test", response_model=ProviderTestResult)
 async def test_provider(provider_id: str):
-    """
-    Test a provider's connectivity and capabilities.
-    """
+    """Test a provider's connectivity and capabilities."""
     try:
-        result = await provider_management_service.test_provider(provider_id)
-        return result
+        return await provider_management_service.test_provider(provider_id)
 
     except Exception as e:
-        logger.error(f"Failed to test provider {provider_id}: {e}")
+        logger.exception(f"Failed to test provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to test provider: {e!s}",
@@ -402,17 +388,15 @@ async def test_provider(provider_id: str):
 
 
 @router.post("/providers/{provider_id}/default", status_code=status.HTTP_204_NO_CONTENT)
-async def set_default_provider(provider_id: str):
-    """
-    Set a provider as the default.
-    """
+async def set_default_provider(provider_id: str) -> None:
+    """Set a provider as the default."""
     try:
         await provider_management_service.set_default_provider(provider_id)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Failed to set default provider {provider_id}: {e}")
+        logger.exception(f"Failed to set default provider {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to set default provider: {e!s}",
@@ -421,9 +405,7 @@ async def set_default_provider(provider_id: str):
 
 @router.get("/health", response_model=HealthStatusResponse)
 async def get_health_status():
-    """
-    Get health status for all providers.
-    """
+    """Get health status for all providers."""
     try:
         result = provider_management_service.list_providers(include_health=True)
 
@@ -442,11 +424,13 @@ async def get_health_status():
             overall = "no_providers"
 
         return HealthStatusResponse(
-            providers=health_map, overall_status=overall, timestamp=datetime.utcnow()
+            providers=health_map,
+            overall_status=overall,
+            timestamp=datetime.utcnow(),
         )
 
     except Exception as e:
-        logger.error(f"Failed to get health status: {e}")
+        logger.exception(f"Failed to get health status: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get health status: {e!s}",
@@ -455,15 +439,14 @@ async def get_health_status():
 
 @router.get("/providers/{provider_id}/health", response_model=ProviderHealthResponse)
 async def get_provider_health(provider_id: str):
-    """
-    Get health status for a specific provider.
-    """
+    """Get health status for a specific provider."""
     try:
         provider = provider_management_service.get_provider(provider_id)
 
         if not provider:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"Provider '{provider_id}' not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Provider '{provider_id}' not found",
             )
 
         health = provider_management_service.get_health(provider_id)
@@ -480,13 +463,15 @@ async def get_provider_health(provider_id: str):
             recommendations.append("Consider upgrading API tier")
 
         return ProviderHealthResponse(
-            provider_id=provider_id, health=health, recommendations=recommendations
+            provider_id=provider_id,
+            health=health,
+            recommendations=recommendations,
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get health for {provider_id}: {e}")
+        logger.exception(f"Failed to get health for {provider_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get provider health: {e!s}",
@@ -495,14 +480,12 @@ async def get_provider_health(provider_id: str):
 
 @router.get("/routing", response_model=ProviderRoutingConfig)
 async def get_routing_config():
-    """
-    Get the current provider routing configuration.
-    """
+    """Get the current provider routing configuration."""
     try:
         return provider_management_service.get_routing_config()
 
     except Exception as e:
-        logger.error(f"Failed to get routing config: {e}")
+        logger.exception(f"Failed to get routing config: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get routing config: {e!s}",
@@ -511,15 +494,13 @@ async def get_routing_config():
 
 @router.put("/routing", response_model=ProviderRoutingConfig)
 async def update_routing_config(config: ProviderRoutingConfig):
-    """
-    Update the provider routing configuration.
-    """
+    """Update the provider routing configuration."""
     try:
         provider_management_service.set_routing_config(config)
         return provider_management_service.get_routing_config()
 
     except Exception as e:
-        logger.error(f"Failed to update routing config: {e}")
+        logger.exception(f"Failed to update routing config: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update routing config: {e!s}",
@@ -532,9 +513,8 @@ async def update_routing_config(config: ProviderRoutingConfig):
 
 
 @router.websocket("/ws/updates")
-async def websocket_updates(websocket: WebSocket):
-    """
-    WebSocket endpoint for real-time provider status updates.
+async def websocket_updates(websocket: WebSocket) -> None:
+    """WebSocket endpoint for real-time provider status updates.
 
     Clients receive events when:
     - Provider status changes
@@ -556,7 +536,7 @@ async def websocket_updates(websocket: WebSocket):
                     "default_provider_id": result.default_provider_id,
                 },
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         # Keep connection alive and handle incoming messages
@@ -581,6 +561,6 @@ async def websocket_updates(websocket: WebSocket):
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected")
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.exception(f"WebSocket error: {e}")
     finally:
         await ws_manager.disconnect(websocket)

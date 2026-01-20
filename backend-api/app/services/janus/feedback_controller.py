@@ -1,5 +1,4 @@
-"""
-Feedback Controller Module
+"""Feedback Controller Module.
 
 Manages multi-level feedback loops for Janus,
 including fast (real-time), medium (session), and slow (long-term).
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class FastFeedbackController:
-    """
-    Fast feedback loop for real-time adjustment.
+    """Fast feedback loop for real-time adjustment.
 
     Operates at millisecond level for immediate heuristic
     weight adjustment based on response anomalies.
@@ -31,7 +29,7 @@ class FastFeedbackController:
         heuristic_generator: Any | None = None,
         evolution_engine: Any | None = None,
         config: Any | None = None,
-    ):
+    ) -> None:
         self.response_analyzer = response_analyzer
         self.heuristic_generator = heuristic_generator
         self.evolution_engine = evolution_engine
@@ -48,7 +46,7 @@ class FastFeedbackController:
         self._fast_loop_task: asyncio.Task | None = None
         self._running = False
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the fast feedback loop."""
         if self._running:
             return
@@ -57,7 +55,7 @@ class FastFeedbackController:
         self._fast_loop_task = asyncio.create_task(self._fast_loop())
         logger.info("Fast feedback loop started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the fast feedback loop."""
         self._running = False
         if self._fast_loop_task:
@@ -65,7 +63,7 @@ class FastFeedbackController:
             self._fast_loop_task = None
         logger.info("Fast feedback loop stopped")
 
-    async def _fast_loop(self):
+    async def _fast_loop(self) -> None:
         """Main fast feedback loop."""
         interval_ms = self.config.fast_loop_interval_ms
         interval_sec = interval_ms / 1000.0
@@ -77,7 +75,7 @@ class FastFeedbackController:
                 latest_response = self.response_buffer[-1]
                 await self._process_response(latest_response)
 
-    async def _process_response(self, response: GuardianResponse):
+    async def _process_response(self, response: GuardianResponse) -> None:
         """Process a single response for fast feedback."""
         # Check for anomalies
         is_anomalous = self._is_anomalous(response)
@@ -104,7 +102,7 @@ class FastFeedbackController:
                 self.adjustment_count += 1
 
                 logger.debug(
-                    f"Adjusted heuristic {heuristic.name}: {current_score:.3f} -> {new_score:.3f}"
+                    f"Adjusted heuristic {heuristic.name}: {current_score:.3f} -> {new_score:.3f}",
                 )
 
     def _is_anomalous(self, response: GuardianResponse) -> bool:
@@ -167,8 +165,7 @@ class FastFeedbackController:
 
 
 class MediumFeedbackController:
-    """
-    Medium feedback loop for session-level updates.
+    """Medium feedback loop for session-level updates.
 
     Operates at minute-to-hour level for heuristic library
     updates and pruning.
@@ -180,7 +177,7 @@ class MediumFeedbackController:
         heuristic_generator: Any | None = None,
         evolution_engine: Any | None = None,
         config: Any | None = None,
-    ):
+    ) -> None:
         self.response_analyzer = response_analyzer
         self.heuristic_generator = heuristic_generator
         self.evolution_engine = evolution_engine
@@ -196,7 +193,7 @@ class MediumFeedbackController:
         self._medium_loop_task: asyncio.Task | None = None
         self._running = False
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the medium feedback loop."""
         if self._running:
             return
@@ -205,7 +202,7 @@ class MediumFeedbackController:
         self._medium_loop_task = asyncio.create_task(self._medium_loop())
         logger.info("Medium feedback loop started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the medium feedback loop."""
         self._running = False
         if self._medium_loop_task:
@@ -213,7 +210,7 @@ class MediumFeedbackController:
             self._medium_loop_task = None
         logger.info("Medium feedback loop stopped")
 
-    async def _medium_loop(self):
+    async def _medium_loop(self) -> None:
         """Main medium feedback loop."""
         interval_sec = self.config.medium_loop_interval_sec
 
@@ -221,7 +218,7 @@ class MediumFeedbackController:
             await asyncio.sleep(interval_sec)
             await self._session_update()
 
-    async def _session_update(self):
+    async def _session_update(self) -> None:
         """Perform session-level updates."""
         # Get current heuristic performance
         if self.heuristic_generator:
@@ -253,7 +250,8 @@ class MediumFeedbackController:
                 else:
                     # Evolve new generation
                     new_heuristics = await self.evolution_engine.evolve_generation(
-                        heuristics, self.performance_metrics
+                        heuristics,
+                        self.performance_metrics,
                     )
 
                     # Update heuristic generator
@@ -287,14 +285,13 @@ class MediumFeedbackController:
 
 
 class SlowFeedbackController:
-    """
-    Slow feedback loop for long-term optimization.
+    """Slow feedback loop for long-term optimization.
 
     Operates at hour-to-day level for meta-strategy
     optimization and long-term trend analysis.
     """
 
-    def __init__(self, evolution_engine: Any | None = None, config: Any | None = None):
+    def __init__(self, evolution_engine: Any | None = None, config: Any | None = None) -> None:
         self.evolution_engine = evolution_engine
         self.config = config or get_config().feedback
 
@@ -308,7 +305,7 @@ class SlowFeedbackController:
         self._slow_loop_task: asyncio.Task | None = None
         self._running = False
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the slow feedback loop."""
         if self._running:
             return
@@ -317,7 +314,7 @@ class SlowFeedbackController:
         self._slow_loop_task = asyncio.create_task(self._slow_loop())
         logger.info("Slow feedback loop started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the slow feedback loop."""
         self._running = False
         if self._slow_loop_task:
@@ -325,7 +322,7 @@ class SlowFeedbackController:
             self._slow_loop_task = None
         logger.info("Slow feedback loop stopped")
 
-    async def _slow_loop(self):
+    async def _slow_loop(self) -> None:
         """Main slow feedback loop."""
         interval_hours = self.config.slow_loop_interval_hours
         interval_sec = interval_hours * 3600
@@ -334,7 +331,7 @@ class SlowFeedbackController:
             await asyncio.sleep(interval_sec)
             await self._long_term_update()
 
-    async def _long_term_update(self):
+    async def _long_term_update(self) -> None:
         """Perform long-term updates."""
         # Analyze evolution trends
         if self.evolution_engine:
@@ -359,7 +356,7 @@ class SlowFeedbackController:
                 # Analyze meta-strategies
                 await self._analyze_meta_strategies()
 
-    async def _analyze_meta_strategies(self):
+    async def _analyze_meta_strategies(self) -> None:
         """Analyze and optimize meta-strategies."""
         if not self.evolution_engine:
             return
@@ -402,8 +399,7 @@ class SlowFeedbackController:
 
 
 class FeedbackController:
-    """
-    Manages all feedback loops.
+    """Manages all feedback loops.
 
     Coordinates fast, medium, and slow feedback controllers
     for comprehensive feedback management.
@@ -415,7 +411,7 @@ class FeedbackController:
         heuristic_generator: Any | None = None,
         evolution_engine: Any | None = None,
         config: Any | None = None,
-    ):
+    ) -> None:
         self.config = config or get_config().feedback
 
         # Initialize sub-controllers
@@ -434,17 +430,18 @@ class FeedbackController:
         )
 
         self.slow_controller = SlowFeedbackController(
-            evolution_engine=evolution_engine, config=self.config
+            evolution_engine=evolution_engine,
+            config=self.config,
         )
 
-    async def start(self):
+    async def start(self) -> None:
         """Start all feedback loops."""
         await self.fast_controller.start()
         await self.medium_controller.start()
         await self.slow_controller.start()
         logger.info("All feedback loops started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop all feedback loops."""
         await self.fast_controller.stop()
         await self.medium_controller.stop()
@@ -452,15 +449,18 @@ class FeedbackController:
         logger.info("All feedback loops stopped")
 
     async def process_result(
-        self, heuristic: Heuristic, result: InteractionResult, failure: FailureState | None = None
-    ):
-        """
-        Process a result through all feedback loops.
+        self,
+        heuristic: Heuristic,
+        result: InteractionResult,
+        failure: FailureState | None = None,
+    ) -> None:
+        """Process a result through all feedback loops.
 
         Args:
             heuristic: Heuristic that was executed
             result: Interaction result
             failure: Failure state if discovered
+
         """
         # Add to fast controller buffer
         if result.response:
@@ -497,7 +497,7 @@ class FeedbackController:
         """Get performance metrics for all heuristics."""
         return self.medium_controller.performance_metrics
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup all feedback controllers."""
         await self.fast_controller.stop()
         await self.medium_controller.stop()

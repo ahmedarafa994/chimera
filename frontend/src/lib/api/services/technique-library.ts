@@ -62,7 +62,7 @@ interface TechniqueTestApiResponse {
   output?: string;
 }
 
-interface TechniqueCombinationsApiResponse extends Array<TechniqueCombinationApiResponse> {}
+type TechniqueCombinationsApiResponse = Array<TechniqueCombinationApiResponse>;
 
 export enum TechniqueCategory {
   BASIC = 'basic',

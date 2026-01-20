@@ -1,5 +1,4 @@
-"""
-Model synchronization API endpoints.
+"""Model synchronization API endpoints.
 
 INT-003 FIX: Added missing endpoints to align with frontend expectations:
 - GET /models - List all models (alias for /models/available)
@@ -9,6 +8,7 @@ INT-003 FIX: Added missing endpoints to align with frontend expectations:
 import asyncio
 import uuid
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.websockets import WebSocket, WebSocketDisconnect
@@ -89,8 +89,7 @@ class ModelsListResponse(BaseModel):
 # INT-003 FIX: Add root GET endpoint for /models to list all models
 @router.get("", response_model=ModelsListResponse)
 async def list_models():
-    """
-    List all available models across all providers.
+    """List all available models across all providers.
 
     This endpoint provides a comprehensive list of all models
     organized by provider, matching the frontend's expected format.
@@ -116,7 +115,7 @@ async def list_models():
                     description=model.description,
                     max_tokens=model.max_tokens,
                     is_default=(model.name == model_sync_service.default_model),
-                )
+                ),
             )
 
         # Convert to ProviderWithModels list
@@ -131,7 +130,7 @@ async def list_models():
                     model=model_names[0] if model_names else None,
                     available_models=model_names,
                     models_detail=models_by_provider.get(provider_id, []),
-                )
+                ),
             )
             total_models += len(model_names)
 
@@ -162,8 +161,7 @@ async def list_models():
 
 @router.get("/available", response_model_exclude_none=True)
 async def get_available_models():
-    """
-    Get available models with 5-minute cache TTL.
+    """Get available models with 5-minute cache TTL.
     Public endpoint for frontend initialization.
     """
     # Service now raises ChimeraError on failure, handled by global handler
@@ -173,8 +171,7 @@ async def get_available_models():
 # INT-003 FIX: Add POST /validate endpoint for model validation
 @router.post("/validate", response_model=ValidateModelResponse)
 async def validate_model_selection(request: ValidateModelRequest):
-    """
-    Validate if a provider/model combination is valid.
+    """Validate if a provider/model combination is valid.
 
     Returns validation status and fallback suggestions if invalid.
     """
@@ -182,7 +179,8 @@ async def validate_model_selection(request: ValidateModelRequest):
 
     try:
         is_valid, message, fallback = session_service.validate_model(
-            request.provider, request.model
+            request.provider,
+            request.model,
         )
         if is_valid:
             return ValidateModelResponse(
@@ -221,11 +219,10 @@ async def validate_model_selection(request: ValidateModelRequest):
 async def select_model(
     request: ModelSelectionRequest,
     http_request: Request,
-    user_id: str = Depends(get_current_user_id),
-    client_info: dict = Depends(get_client_info),
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    client_info: Annotated[dict, Depends(get_client_info)],
 ):
-    """
-    Select a model for the user's session.
+    """Select a model for the user's session.
     Requires authentication via JWT token or API key.
     """
     # Extract session ID from request or generate new one
@@ -245,7 +242,7 @@ async def select_model(
         f"model_id={request.model_id}, "
         f"session_id={session_id}, "
         f"ip_address={client_info.get('ip_address', 'unknown')}, "
-        f"timestamp={request.timestamp}"
+        f"timestamp={request.timestamp}",
     )
 
     return response
@@ -253,10 +250,10 @@ async def select_model(
 
 @router.get("/session/current")
 async def get_current_model(
-    user_id: str = Depends(get_current_user_id), client_info: dict = Depends(get_client_info)
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    client_info: Annotated[dict, Depends(get_client_info)],
 ):
-    """
-    Get the currently selected model for the user's session.
+    """Get the currently selected model for the user's session.
     Requires authentication.
     """
     # Extract session ID from request
@@ -289,9 +286,8 @@ async def get_current_model(
 
 
 @router.websocket("/updates")
-async def websocket_model_updates(websocket: WebSocket):
-    """
-    WebSocket endpoint for real-time model availability updates.
+async def websocket_model_updates(websocket: WebSocket) -> None:
+    """WebSocket endpoint for real-time model availability updates.
     Clients subscribe to receive model status changes.
     """
     await websocket.accept()
@@ -336,9 +332,8 @@ async def websocket_model_updates(websocket: WebSocket):
 
 
 @router.post("/validate/{model_id}")
-async def validate_model(model_id: str, user_id: str = Depends(get_current_user_id)):
-    """
-    Validate if a specific model ID is available and valid.
+async def validate_model(model_id: str, user_id: Annotated[str, Depends(get_current_user_id)]):
+    """Validate if a specific model ID is available and valid.
     Public endpoint for frontend validation.
     """
     try:
@@ -367,13 +362,14 @@ async def update_model_availability(
     error_message: str | None = None,
     user_id: str = Depends(get_current_user_id),
 ):
-    """
-    Update availability status for a specific model.
+    """Update availability status for a specific model.
     Admin endpoint for system maintenance.
     """
     # Service methods should handle errors or bubble them up
     await model_sync_service.update_model_availability(
-        model_id=model_id, is_available=is_available, error_message=error_message
+        model_id=model_id,
+        is_available=is_available,
+        error_message=error_message,
     )
 
     return {
@@ -386,9 +382,7 @@ async def update_model_availability(
 
 @router.get("/health")
 async def model_sync_health():
-    """
-    Health check for model synchronization service.
-    """
+    """Health check for model synchronization service."""
     try:
         available_models = await model_sync_service.get_available_models()
 

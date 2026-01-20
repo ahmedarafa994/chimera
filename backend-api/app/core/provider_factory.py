@@ -1,5 +1,4 @@
-"""
-Unified Provider Factory for LLM clients.
+"""Unified Provider Factory for LLM clients.
 
 All providers use the modern async implementation pattern with:
 - Native async support
@@ -43,8 +42,7 @@ PROVIDER_ALIASES: dict[str, str] = {
 
 
 def _get_config_manager():
-    """
-    Get AIConfigManager instance with graceful fallback.
+    """Get AIConfigManager instance with graceful fallback.
 
     Returns None if config manager is not available (e.g., during startup).
     """
@@ -60,8 +58,7 @@ def _get_config_manager():
 
 
 class ProviderFactory:
-    """
-    Factory for creating LLM provider clients.
+    """Factory for creating LLM provider clients.
 
     Integrates with AIConfigManager for:
     - Config-driven provider settings
@@ -82,8 +79,7 @@ class ProviderFactory:
 
     @classmethod
     def resolve_provider_alias(cls, provider_name: str) -> str:
-        """
-        Resolve a provider alias to its canonical name.
+        """Resolve a provider alias to its canonical name.
 
         Uses AIConfigManager if available, falls back to hardcoded aliases.
 
@@ -92,6 +88,7 @@ class ProviderFactory:
 
         Returns:
             Canonical provider name
+
         """
         normalized = provider_name.lower().strip()
 
@@ -108,14 +105,14 @@ class ProviderFactory:
 
     @classmethod
     def get_provider_config(cls, provider_name: str) -> dict[str, Any] | None:
-        """
-        Get configuration for a provider from AIConfigManager.
+        """Get configuration for a provider from AIConfigManager.
 
         Args:
             provider_name: Provider name or alias
 
         Returns:
             Provider configuration dict or None if not available
+
         """
         config_manager = _get_config_manager()
         if not config_manager:
@@ -173,8 +170,7 @@ class ProviderFactory:
         provider_name: str,
         use_config: bool = True,
     ) -> LLMProviderInterface:
-        """
-        Create a provider instance by name.
+        """Create a provider instance by name.
 
         Args:
             provider_name: Provider name or alias
@@ -187,6 +183,7 @@ class ProviderFactory:
 
         Raises:
             ValueError: If provider name is not recognized
+
         """
         # Resolve alias using config or fallback
         resolved = cls.resolve_provider_alias(provider_name)
@@ -195,8 +192,9 @@ class ProviderFactory:
         provider_class = cls._providers.get(resolved)
         if not provider_class:
             available = ", ".join(sorted(cls._providers.keys()))
+            msg = f"Unknown provider: {provider_name}. Available providers: {available}"
             raise ValueError(
-                f"Unknown provider: {provider_name}. " f"Available providers: {available}"
+                msg,
             )
 
         # Get config-driven settings if available
@@ -209,18 +207,18 @@ class ProviderFactory:
                 if not provider_config.get("enabled", True):
                     logger.warning(
                         f"Provider '{resolved}' is disabled in config, "
-                        "creating anyway for backward compatibility"
+                        "creating anyway for backward compatibility",
                     )
 
                 api_cfg = provider_config["api"]
                 logger.info(
                     f"Creating provider: {resolved} "
                     f"(timeout={api_cfg['timeout_seconds']}s, "
-                    f"retries={api_cfg['max_retries']})"
+                    f"retries={api_cfg['max_retries']})",
                 )
             else:
                 logger.info(
-                    f"Creating provider: {resolved} " "(using defaults, config not available)"
+                    f"Creating provider: {resolved} (using defaults, config not available)",
                 )
         else:
             logger.info(f"Creating provider: {resolved} (config disabled)")
@@ -231,8 +229,7 @@ class ProviderFactory:
 
     @classmethod
     def get_available_providers(cls) -> list[str]:
-        """
-        Return list of available provider names.
+        """Return list of available provider names.
 
         Uses config if available, otherwise returns registered providers.
         """
@@ -250,14 +247,14 @@ class ProviderFactory:
 
     @classmethod
     def is_provider_enabled(cls, provider_name: str) -> bool:
-        """
-        Check if a provider is enabled in configuration.
+        """Check if a provider is enabled in configuration.
 
         Args:
             provider_name: Provider name or alias
 
         Returns:
             True if enabled or config not available (backward compatibility)
+
         """
         config = cls.get_provider_config(provider_name)
         if config is None:
@@ -267,14 +264,14 @@ class ProviderFactory:
 
     @classmethod
     def get_provider_timeout(cls, provider_name: str) -> int:
-        """
-        Get timeout setting for a provider.
+        """Get timeout setting for a provider.
 
         Args:
             provider_name: Provider name or alias
 
         Returns:
             Timeout in seconds (default 120 if not configured)
+
         """
         config = cls.get_provider_config(provider_name)
         if config:
@@ -283,14 +280,14 @@ class ProviderFactory:
 
     @classmethod
     def get_provider_retries(cls, provider_name: str) -> int:
-        """
-        Get max retries setting for a provider.
+        """Get max retries setting for a provider.
 
         Args:
             provider_name: Provider name or alias
 
         Returns:
             Max retries (default 3 if not configured)
+
         """
         config = cls.get_provider_config(provider_name)
         if config:
@@ -299,12 +296,12 @@ class ProviderFactory:
 
     @classmethod
     def register_provider(cls, name: str, provider_class: type[LLMProviderInterface]) -> None:
-        """
-        Register a custom provider.
+        """Register a custom provider.
 
         Args:
             name: Provider name for lookup
             provider_class: Class implementing LLMProviderInterface
+
         """
         cls._providers[name.lower()] = provider_class
         logger.info(f"Registered custom provider: {name}")

@@ -1,5 +1,4 @@
-"""
-AutoDAN-X Models - Pydantic models for the AutoDAN-X adversarial prompt engineering system.
+"""AutoDAN-X Models - Pydantic models for the AutoDAN-X adversarial prompt engineering system.
 
 This module defines all data models for:
 - Configuration and request/response schemas

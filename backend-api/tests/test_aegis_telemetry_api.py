@@ -19,7 +19,7 @@ client = TestClient(app)
 
 
 @patch("meta_prompter.aegis_orchestrator.AegisOrchestrator.execute_campaign")
-def test_campaign_api_returns_telemetry(mock_execute):
+def test_campaign_api_returns_telemetry(mock_execute) -> None:
     """Test that the /campaign endpoint returns enhanced telemetry."""
     # Setup mock campaign results
     mock_execute.return_value = []  # execute_campaign returns knowledge_base list
@@ -33,7 +33,7 @@ def test_campaign_api_returns_telemetry(mock_execute):
                 "final_prompt": "prompt",
                 "score": 0.9,
                 "telemetry": {"persona": "test"},
-            }
+            },
         ]
         # Simulate collected telemetry summary
         instance.telemetry = MagicMock()
@@ -43,7 +43,8 @@ def test_campaign_api_returns_telemetry(mock_execute):
         }
 
         response = client.post(
-            "/api/v1/aegis/campaign", json={"objective": "test", "target_model_name": "gpt-4"}
+            "/api/v1/aegis/campaign",
+            json={"objective": "test", "target_model_name": "gpt-4"},
         )
 
         assert response.status_code == 200

@@ -1,5 +1,4 @@
-"""
-Optimized API Layer with performance enhancements.
+"""Optimized API Layer with performance enhancements.
 
 This module provides comprehensive API optimizations:
 - Response compression and caching
@@ -80,9 +79,7 @@ class BatchResponse(BaseModel):
 
 
 class ResponseCompressionMiddleware(BaseHTTPMiddleware):
-    """
-    Advanced response compression middleware with selective compression.
-    """
+    """Advanced response compression middleware with selective compression."""
 
     def __init__(
         self,
@@ -90,7 +87,7 @@ class ResponseCompressionMiddleware(BaseHTTPMiddleware):
         minimum_size: int = 500,
         compression_level: int = 6,
         exclude_media_types: list[str] | None = None,
-    ):
+    ) -> None:
         super().__init__(app)
         self.minimum_size = minimum_size
         self.compression_level = compression_level
@@ -176,11 +173,9 @@ class CacheEntry:
 
 
 class APIResponseCache:
-    """
-    Intelligent API response cache with TTL and eviction policies.
-    """
+    """Intelligent API response cache with TTL and eviction policies."""
 
-    def __init__(self, max_size: int = 1000, default_ttl: int = 300):
+    def __init__(self, max_size: int = 1000, default_ttl: int = 300) -> None:
         self.max_size = max_size
         self.default_ttl = default_ttl
 
@@ -323,11 +318,9 @@ class RequestMetrics:
 
 
 class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for collecting API performance metrics.
-    """
+    """Middleware for collecting API performance metrics."""
 
-    def __init__(self, app, max_metrics: int = 10000):
+    def __init__(self, app, max_metrics: int = 10000) -> None:
         super().__init__(app)
         self.max_metrics = max_metrics
 
@@ -430,11 +423,9 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
 
 
 class BatchLoader:
-    """
-    Generic batch loader to prevent N+1 queries.
-    """
+    """Generic batch loader to prevent N+1 queries."""
 
-    def __init__(self, batch_size: int = 100, max_wait_ms: int = 10):
+    def __init__(self, batch_size: int = 100, max_wait_ms: int = 10) -> None:
         self.batch_size = batch_size
         self.max_wait_ms = max_wait_ms
 
@@ -443,8 +434,7 @@ class BatchLoader:
         self._lock = asyncio.Lock()
 
     async def load(self, key_type: str, keys: list[str], loader_func: callable) -> dict[str, Any]:
-        """
-        Load data for keys using batch loading.
+        """Load data for keys using batch loading.
 
         Args:
             key_type: Type of keys being loaded (for batching)
@@ -453,6 +443,7 @@ class BatchLoader:
 
         Returns:
             Dictionary mapping keys to loaded data
+
         """
         if not keys:
             return {}
@@ -478,7 +469,7 @@ class BatchLoader:
 
                 # Schedule immediate batch processing
                 self._batch_timers[key_type] = asyncio.get_event_loop().call_soon(
-                    lambda: asyncio.create_task(self._process_batch(key_type, loader_func))
+                    lambda: asyncio.create_task(self._process_batch(key_type, loader_func)),
                 )
 
         # Wait for results
@@ -529,11 +520,9 @@ class BatchLoader:
 
 
 class OptimizedAPIRouter:
-    """
-    High-performance API router with optimization features.
-    """
+    """High-performance API router with optimization features."""
 
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI) -> None:
         self.app = app
 
         # Initialize components
@@ -565,10 +554,8 @@ class OptimizedAPIRouter:
         methods: list[str] | None = None,
         cache_ttl: int = 300,
         cache_key_func: callable | None = None,
-    ):
-        """
-        Add endpoint with response caching.
-        """
+    ) -> None:
+        """Add endpoint with response caching."""
         if methods is None:
             methods = ["GET"]
 
@@ -605,10 +592,8 @@ class OptimizedAPIRouter:
         methods: list[str] | None = None,
         default_page_size: int = 20,
         max_page_size: int = 100,
-    ):
-        """
-        Add endpoint with automatic pagination.
-        """
+    ) -> None:
+        """Add endpoint with automatic pagination."""
         if methods is None:
             methods = ["GET"]
 
@@ -658,10 +643,8 @@ class OptimizedAPIRouter:
         path: str,
         single_handler: callable,
         max_batch_size: int = 50,
-    ):
-        """
-        Add endpoint with batch processing capabilities.
-        """
+    ) -> None:
+        """Add endpoint with batch processing capabilities."""
 
         async def batch_handler(batch_request: BatchRequest):
             start_time = time.time()
@@ -682,7 +665,7 @@ class OptimizedAPIRouter:
                 tasks = []
                 for req in batch_request.requests:
                     task = asyncio.create_task(
-                        self._process_single_request(single_handler, req, batch_request.fail_fast)
+                        self._process_single_request(single_handler, req, batch_request.fail_fast),
                     )
                     tasks.append(task)
 
@@ -707,7 +690,7 @@ class OptimizedAPIRouter:
                         success_count += 1
                     except Exception as e:
                         if batch_request.fail_fast:
-                            raise e
+                            raise
                         results.append({"error": str(e)})
                         error_count += 1
 
@@ -728,20 +711,21 @@ class OptimizedAPIRouter:
         )
 
     async def _process_single_request(
-        self, handler: callable, request_data: dict[str, Any], fail_fast: bool
+        self,
+        handler: callable,
+        request_data: dict[str, Any],
+        fail_fast: bool,
     ) -> Any:
         """Process a single request in a batch."""
         try:
             return await handler(request_data)
         except Exception as e:
             if fail_fast:
-                raise e
+                raise
             return {"error": str(e)}
 
     async def stream_response(self, data_generator: callable) -> StreamingResponse:
-        """
-        Create optimized streaming response.
-        """
+        """Create optimized streaming response."""
 
         async def generate():
             async for chunk in data_generator():
@@ -787,9 +771,7 @@ class OptimizedAPIRouter:
 
 
 def create_optimized_api_app() -> tuple[FastAPI, OptimizedAPIRouter]:
-    """
-    Create FastAPI app with optimization features.
-    """
+    """Create FastAPI app with optimization features."""
     app = FastAPI(
         title="Chimera Optimized API",
         description="High-performance API with optimization features",
@@ -812,9 +794,7 @@ def create_optimized_api_app() -> tuple[FastAPI, OptimizedAPIRouter]:
 
 
 async def optimize_json_response(data: Any, compress: bool = True) -> JSONResponse:
-    """
-    Create optimized JSON response with compression.
-    """
+    """Create optimized JSON response with compression."""
     response_data = json.dumps(data, separators=(",", ":"))
 
     if compress and len(response_data) > 1000:

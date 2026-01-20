@@ -1,5 +1,4 @@
-"""
-AutoDAN Gradient-Based Token Optimization
+"""AutoDAN Gradient-Based Token Optimization.
 
 Advanced gradient-based techniques for adversarial prompt optimization:
 - Token-level gradient computation
@@ -10,6 +9,7 @@ Advanced gradient-based techniques for adversarial prompt optimization:
 References:
 - GCG: Universal and Transferable Adversarial Attacks (Zou et al., 2023)
 - AutoPrompt: Eliciting Knowledge from Language Models (Shin et al., 2020)
+
 """
 
 from abc import ABC, abstractmethod
@@ -68,8 +68,12 @@ class BaseGradientOptimizer(ABC):
     """Abstract base class for gradient-based token optimization."""
 
     def __init__(
-        self, vocab_size: int, max_steps: int = 100, top_k: int = 256, batch_size: int = 512
-    ):
+        self,
+        vocab_size: int,
+        max_steps: int = 100,
+        top_k: int = 256,
+        batch_size: int = 512,
+    ) -> None:
         self.vocab_size = vocab_size
         self.max_steps = max_steps
         self.top_k = top_k
@@ -82,19 +86,19 @@ class BaseGradientOptimizer(ABC):
     @abstractmethod
     def compute_gradients(self, prompt_tokens: list[int], target_tokens: list[int]) -> GradientInfo:
         """Compute gradients for token positions."""
-        pass
 
     @abstractmethod
     def select_candidates(
-        self, gradients: np.ndarray, position: int, current_token: int
+        self,
+        gradients: np.ndarray,
+        position: int,
+        current_token: int,
     ) -> list[TokenCandidate]:
         """Select candidate tokens for replacement."""
-        pass
 
     @abstractmethod
     def step(self, state: OptimizationState, target_tokens: list[int]) -> OptimizationState:
         """Perform one optimization step."""
-        pass
 
     def optimize(
         self,
@@ -102,8 +106,7 @@ class BaseGradientOptimizer(ABC):
         target_tokens: list[int],
         callback: Callable[[OptimizationState], bool] | None = None,
     ) -> OptimizationState:
-        """
-        Run full optimization loop.
+        """Run full optimization loop.
 
         Args:
             initial_tokens: Starting prompt tokens
@@ -112,6 +115,7 @@ class BaseGradientOptimizer(ABC):
 
         Returns:
             Final optimization state
+
         """
         state = OptimizationState(
             prompt_tokens=initial_tokens.copy(),
@@ -126,15 +130,14 @@ class BaseGradientOptimizer(ABC):
             state = self.step(state, target_tokens)
             state.step = step + 1
 
-            if state.loss < state.best_loss:
-                state.best_loss = state.loss
+            state.best_loss = min(state.best_loss, state.loss)
 
             if callback is not None and callback(state):
                 break
 
         return state
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset optimizer state."""
         self._step = 0
         self._best_loss = float("inf")
@@ -147,8 +150,7 @@ class BaseGradientOptimizer(ABC):
 
 
 class GCGOptimizer(BaseGradientOptimizer):
-    """
-    Greedy Coordinate Gradient optimizer.
+    """Greedy Coordinate Gradient optimizer.
 
     At each step:
     1. Compute gradients for all token positions
@@ -169,7 +171,7 @@ class GCGOptimizer(BaseGradientOptimizer):
         gradient_func: Callable | None = None,
         loss_func: Callable | None = None,
         tokenizer: Any | None = None,
-    ):
+    ) -> None:
         super().__init__(vocab_size, max_steps, top_k, batch_size)
         self.positions_per_step = positions_per_step
         self.gradient_func = gradient_func
@@ -177,8 +179,7 @@ class GCGOptimizer(BaseGradientOptimizer):
         self.tokenizer = tokenizer
 
     def compute_gradients(self, prompt_tokens: list[int], target_tokens: list[int]) -> GradientInfo:
-        """
-        Compute token-level gradients.
+        """Compute token-level gradients.
 
         Uses the gradient_func if provided, otherwise simulates gradients.
         """
@@ -192,10 +193,12 @@ class GCGOptimizer(BaseGradientOptimizer):
         return GradientInfo(token_gradients=gradients, loss=np.random.random())
 
     def select_candidates(
-        self, gradients: np.ndarray, position: int, current_token: int
+        self,
+        gradients: np.ndarray,
+        position: int,
+        current_token: int,
     ) -> list[TokenCandidate]:
-        """
-        Select candidate tokens based on gradient information.
+        """Select candidate tokens based on gradient information.
 
         Selects tokens with largest negative gradient (most loss reduction).
         """
@@ -216,14 +219,13 @@ class GCGOptimizer(BaseGradientOptimizer):
                         coherence_score=1.0,
                         combined_score=-pos_gradients[idx],
                         position=position,
-                    )
+                    ),
                 )
 
         return candidates
 
     def step(self, state: OptimizationState, target_tokens: list[int]) -> OptimizationState:
-        """
-        Perform one GCG optimization step.
+        """Perform one GCG optimization step.
 
         1. Compute gradients
         2. Select positions to optimize
@@ -244,7 +246,9 @@ class GCGOptimizer(BaseGradientOptimizer):
         for pos in top_positions:
             # Get candidates for this position
             candidates = self.select_candidates(
-                grad_info.token_gradients, pos, state.prompt_tokens[pos]
+                grad_info.token_gradients,
+                pos,
+                state.prompt_tokens[pos],
             )
 
             # Evaluate candidates (batched)
@@ -286,7 +290,7 @@ class GCGOptimizer(BaseGradientOptimizer):
                 "loss": best_loss,
                 "positions": list(top_positions),
                 "improved": best_loss < state.loss,
-            }
+            },
         )
 
         self._step += 1
@@ -300,8 +304,7 @@ class GCGOptimizer(BaseGradientOptimizer):
 
 
 class CoherenceConstrainedGCG(GCGOptimizer):
-    """
-    GCG with coherence constraints.
+    """GCG with coherence constraints.
 
     Token Selection Score:
     S(t) = -∇ℒ(t) + λ·log P_LM(t|context)
@@ -322,7 +325,7 @@ class CoherenceConstrainedGCG(GCGOptimizer):
         final_coherence_weight: float = 0.8,
         probability_threshold: float = 1e-4,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(vocab_size, max_steps, top_k, batch_size, **kwargs)
         self.initial_coherence_weight = initial_coherence_weight
         self.final_coherence_weight = final_coherence_weight
@@ -344,8 +347,7 @@ class CoherenceConstrainedGCG(GCGOptimizer):
         current_token: int,
         context_tokens: list[int] | None = None,
     ) -> list[TokenCandidate]:
-        """
-        Select candidates with coherence constraints.
+        """Select candidates with coherence constraints.
 
         C_i = {t ∈ V | P_LM(t|x_{<i}) > ε}
         S(t) = -∇ℒ(t) + λ·log P_LM(t|context)
@@ -387,7 +389,7 @@ class CoherenceConstrainedGCG(GCGOptimizer):
                         coherence_score=coherence_scores[idx],
                         combined_score=combined_scores[idx],
                         position=position,
-                    )
+                    ),
                 )
 
         return candidates
@@ -410,14 +412,13 @@ class BeamState:
 
 
 class BeamSearchOptimizer(BaseGradientOptimizer):
-    """
-    Beam search optimizer for token-level optimization.
+    """Beam search optimizer for token-level optimization.
 
     Maintains multiple candidate sequences and explores
     combinations of token replacements.
     """
 
-    def __init__(self, vocab_size: int, beam_width: int = 4, max_depth: int = 3, **kwargs):
+    def __init__(self, vocab_size: int, beam_width: int = 4, max_depth: int = 3, **kwargs) -> None:
         super().__init__(vocab_size, **kwargs)
         self.beam_width = beam_width
         self.max_depth = max_depth
@@ -432,7 +433,10 @@ class BeamSearchOptimizer(BaseGradientOptimizer):
         return GradientInfo(token_gradients=gradients, loss=np.random.random())
 
     def select_candidates(
-        self, gradients: np.ndarray, position: int, current_token: int
+        self,
+        gradients: np.ndarray,
+        position: int,
+        current_token: int,
     ) -> list[TokenCandidate]:
         """Select candidates for beam expansion."""
         pos_gradients = gradients[position]
@@ -485,7 +489,9 @@ class BeamSearchOptimizer(BaseGradientOptimizer):
 
                 # Get candidates for this position
                 token_candidates = self.select_candidates(
-                    grad_info.token_gradients, pos, beam_state.tokens[pos]
+                    grad_info.token_gradients,
+                    pos,
+                    beam_state.tokens[pos],
                 )[: self.beam_width]
 
                 # Expand beam
@@ -530,8 +536,7 @@ class BeamSearchOptimizer(BaseGradientOptimizer):
 
 
 class MultiObjectiveGradientOptimizer(BaseGradientOptimizer):
-    """
-    Multi-objective gradient optimizer.
+    """Multi-objective gradient optimizer.
 
     Optimizes multiple objectives simultaneously:
     - Attack success (minimize target loss)
@@ -541,7 +546,9 @@ class MultiObjectiveGradientOptimizer(BaseGradientOptimizer):
     Uses gradient surgery for conflicting objectives.
     """
 
-    def __init__(self, vocab_size: int, objectives: dict[str, float] | None = None, **kwargs):
+    def __init__(
+        self, vocab_size: int, objectives: dict[str, float] | None = None, **kwargs
+    ) -> None:
         super().__init__(vocab_size, **kwargs)
 
         # Objective weights
@@ -552,8 +559,12 @@ class MultiObjectiveGradientOptimizer(BaseGradientOptimizer):
         self.loss_funcs: dict[str, Callable] = {}
 
     def register_objective(
-        self, name: str, weight: float, gradient_func: Callable, loss_func: Callable
-    ):
+        self,
+        name: str,
+        weight: float,
+        gradient_func: Callable,
+        loss_func: Callable,
+    ) -> None:
         """Register an optimization objective."""
         self.objectives[name] = weight
         self.gradient_funcs[name] = gradient_func
@@ -581,8 +592,7 @@ class MultiObjectiveGradientOptimizer(BaseGradientOptimizer):
         return GradientInfo(token_gradients=combined, loss=total_loss)
 
     def _gradient_surgery(self, weighted_gradients: list[tuple[float, np.ndarray]]) -> np.ndarray:
-        """
-        Apply gradient surgery for conflicting objectives.
+        """Apply gradient surgery for conflicting objectives.
 
         Projects conflicting gradients onto the normal plane.
         """
@@ -617,7 +627,10 @@ class MultiObjectiveGradientOptimizer(BaseGradientOptimizer):
         return combined_flat.reshape(original_shape)
 
     def select_candidates(
-        self, gradients: np.ndarray, position: int, current_token: int
+        self,
+        gradients: np.ndarray,
+        position: int,
+        current_token: int,
     ) -> list[TokenCandidate]:
         """Select candidates using combined gradient scores."""
         pos_gradients = gradients[position]
@@ -647,7 +660,9 @@ class MultiObjectiveGradientOptimizer(BaseGradientOptimizer):
 
         # Get candidates
         candidates = self.select_candidates(
-            grad_info.token_gradients, pos, state.prompt_tokens[pos]
+            grad_info.token_gradients,
+            pos,
+            state.prompt_tokens[pos],
         )
 
         # Evaluate candidates
@@ -687,10 +702,11 @@ class MultiObjectiveGradientOptimizer(BaseGradientOptimizer):
 
 
 def create_gradient_optimizer(
-    optimizer_type: str, vocab_size: int, **kwargs
+    optimizer_type: str,
+    vocab_size: int,
+    **kwargs,
 ) -> BaseGradientOptimizer:
     """Factory function to create gradient optimizers."""
-
     optimizer_map = {
         "gcg": lambda: GCGOptimizer(vocab_size, **kwargs),
         "coherence_gcg": lambda: CoherenceConstrainedGCG(vocab_size, **kwargs),
@@ -699,6 +715,7 @@ def create_gradient_optimizer(
     }
 
     if optimizer_type not in optimizer_map:
-        raise ValueError(f"Unknown optimizer type: {optimizer_type}")
+        msg = f"Unknown optimizer type: {optimizer_type}"
+        raise ValueError(msg)
 
     return optimizer_map[optimizer_type]()

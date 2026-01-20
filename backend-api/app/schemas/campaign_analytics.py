@@ -1,5 +1,4 @@
-"""
-Campaign Analytics Pydantic Schemas
+"""Campaign Analytics Pydantic Schemas.
 
 Request/response models for campaign telemetry analytics, statistical analysis,
 campaign comparison, time-series data, and export functionality.
@@ -86,13 +85,16 @@ class CampaignCreate(CampaignBase, BaseRequest):
     target_provider: str | None = Field(None, max_length=50, description="Target LLM provider")
     target_model: str | None = Field(None, max_length=100, description="Target model")
     technique_suites: list[str] = Field(
-        default_factory=list, description="List of technique suites to apply"
+        default_factory=list,
+        description="List of technique suites to apply",
     )
     transformation_config: dict[str, Any] = Field(
-        default_factory=dict, description="Technique-specific configuration"
+        default_factory=dict,
+        description="Technique-specific configuration",
     )
     config: dict[str, Any] = Field(
-        default_factory=dict, description="Campaign configuration options"
+        default_factory=dict,
+        description="Campaign configuration options",
     )
     tags: list[str] = Field(default_factory=list, description="Tags for categorization")
 
@@ -106,8 +108,8 @@ class CampaignCreate(CampaignBase, BaseRequest):
                 "target_model": "gpt-4",
                 "technique_suites": ["dan_persona", "cognitive_hacking"],
                 "tags": ["benchmark", "research"],
-            }
-        }
+            },
+        },
     )
 
 
@@ -137,7 +139,8 @@ class CampaignSummary(BaseResponse):
     target_provider: str | None = Field(None, description="Target LLM provider")
     target_model: str | None = Field(None, description="Target model")
     technique_suites: list[str] = Field(
-        default_factory=list, description="Applied technique suites"
+        default_factory=list,
+        description="Applied technique suites",
     )
     tags: list[str] = Field(default_factory=list, description="Campaign tags")
 
@@ -145,7 +148,9 @@ class CampaignSummary(BaseResponse):
     total_attempts: int = Field(0, ge=0, description="Total number of execution attempts")
     success_rate: float | None = Field(None, ge=0.0, le=1.0, description="Overall success rate")
     avg_latency_ms: float | None = Field(
-        None, ge=0.0, description="Average latency in milliseconds"
+        None,
+        ge=0.0,
+        description="Average latency in milliseconds",
     )
 
     # Timestamps
@@ -169,7 +174,7 @@ class CampaignSummary(BaseResponse):
                 "avg_latency_ms": 1250.5,
                 "created_at": "2024-01-15T10:00:00Z",
                 "completed_at": "2024-01-15T12:30:00Z",
-            }
+            },
         },
     )
 
@@ -178,7 +183,8 @@ class CampaignDetail(CampaignSummary):
     """Detailed campaign information including configuration."""
 
     transformation_config: dict[str, Any] = Field(
-        default_factory=dict, description="Technique configuration"
+        default_factory=dict,
+        description="Technique configuration",
     )
     config: dict[str, Any] = Field(default_factory=dict, description="Campaign settings")
     user_id: str | None = Field(None, description="Owner user ID")
@@ -232,7 +238,8 @@ class CampaignStatistics(BaseSchema):
 
     # Attempt counts
     attempts: AttemptCounts = Field(
-        default_factory=AttemptCounts, description="Attempt counts by status"
+        default_factory=AttemptCounts,
+        description="Attempt counts by status",
     )
 
     # Success rate statistics
@@ -281,7 +288,9 @@ class CampaignStatistics(BaseSchema):
 
     # Duration
     total_duration_seconds: float | None = Field(
-        None, ge=0.0, description="Total campaign duration in seconds"
+        None,
+        ge=0.0,
+        description="Total campaign duration in seconds",
     )
 
     # Computed timestamp
@@ -320,8 +329,8 @@ class CampaignStatistics(BaseSchema):
                 },
                 "total_cost_cents": 125.50,
                 "total_duration_seconds": 3600.0,
-            }
-        }
+            },
+        },
     )
 
 
@@ -347,7 +356,8 @@ class TechniqueBreakdown(BaseSchema):
 
     campaign_id: str = Field(..., description="Campaign identifier")
     items: list[BreakdownItem] = Field(
-        default_factory=list, description="Technique breakdown items"
+        default_factory=list,
+        description="Technique breakdown items",
     )
     best_technique: str | None = Field(None, description="Best performing technique")
     worst_technique: str | None = Field(None, description="Worst performing technique")
@@ -366,7 +376,8 @@ class PotencyBreakdown(BaseSchema):
 
     campaign_id: str = Field(..., description="Campaign identifier")
     items: list[BreakdownItem] = Field(
-        default_factory=list, description="Potency level breakdown items"
+        default_factory=list,
+        description="Potency level breakdown items",
     )
     best_potency_level: int | None = Field(None, description="Best performing potency level")
 
@@ -394,10 +405,12 @@ class TelemetryTimeSeries(BaseSchema):
     campaign_id: str = Field(..., description="Campaign identifier")
     metric: str = Field(..., description="Metric name (e.g., 'success_rate', 'latency')")
     granularity: TimeGranularity = Field(
-        TimeGranularity.HOUR, description="Time bucket granularity"
+        TimeGranularity.HOUR,
+        description="Time bucket granularity",
     )
     data_points: list[TimeSeriesDataPoint] = Field(
-        default_factory=list, description="Time series data points"
+        default_factory=list,
+        description="Time series data points",
     )
     start_time: datetime | None = Field(None, description="Series start time")
     end_time: datetime | None = Field(None, description="Series end time")
@@ -417,8 +430,8 @@ class TelemetryTimeSeries(BaseSchema):
                 "start_time": "2024-01-15T10:00:00Z",
                 "end_time": "2024-01-15T12:30:00Z",
                 "total_points": 3,
-            }
-        }
+            },
+        },
     )
 
 
@@ -426,7 +439,8 @@ class MultiSeriesTimeSeries(BaseSchema):
     """Multiple time series for overlay comparison."""
 
     series: list[TelemetryTimeSeries] = Field(
-        default_factory=list, description="List of time series"
+        default_factory=list,
+        description="List of time series",
     )
     metrics: list[str] = Field(default_factory=list, description="Metric names included")
 
@@ -447,7 +461,10 @@ class CampaignComparisonItem(BaseSchema):
     total_attempts: int = Field(0, ge=0, description="Total attempts")
     success_rate: float | None = Field(None, ge=0.0, le=1.0, description="Success rate")
     semantic_success_mean: float | None = Field(
-        None, ge=0.0, le=1.0, description="Mean semantic success"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Mean semantic success",
     )
 
     # Latency
@@ -471,16 +488,28 @@ class CampaignComparisonItem(BaseSchema):
 
     # Normalized metrics (0-1 scale for radar charts)
     normalized_success_rate: float | None = Field(
-        None, ge=0.0, le=1.0, description="Normalized success rate"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Normalized success rate",
     )
     normalized_latency: float | None = Field(
-        None, ge=0.0, le=1.0, description="Normalized latency (inverted, higher is better)"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Normalized latency (inverted, higher is better)",
     )
     normalized_cost: float | None = Field(
-        None, ge=0.0, le=1.0, description="Normalized cost (inverted, higher is better)"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Normalized cost (inverted, higher is better)",
     )
     normalized_effectiveness: float | None = Field(
-        None, ge=0.0, le=1.0, description="Normalized effectiveness"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Normalized effectiveness",
     )
 
 
@@ -494,20 +523,25 @@ class CampaignComparisonRequest(BaseRequest):
         description="List of campaign IDs to compare (2-4 campaigns)",
     )
     metrics: list[MetricType] | None = Field(
-        None, description="Specific metrics to include (all if not specified)"
+        None,
+        description="Specific metrics to include (all if not specified)",
     )
     include_time_series: bool = Field(
-        False, description="Include time series data for each campaign"
+        False,
+        description="Include time series data for each campaign",
     )
     normalize_metrics: bool = Field(
-        True, description="Include normalized (0-1) metrics for radar charts"
+        True,
+        description="Include normalized (0-1) metrics for radar charts",
     )
 
     @field_validator("campaign_ids")
+    @classmethod
     def validate_campaign_ids(cls, v):
         """Ensure campaign IDs are unique."""
         if len(v) != len(set(v)):
-            raise ValueError("Campaign IDs must be unique")
+            msg = "Campaign IDs must be unique"
+            raise ValueError(msg)
         return v
 
     model_config = ConfigDict(
@@ -520,8 +554,8 @@ class CampaignComparisonRequest(BaseRequest):
                 "metrics": ["success_rate", "latency", "cost"],
                 "include_time_series": True,
                 "normalize_metrics": True,
-            }
-        }
+            },
+        },
     )
 
 
@@ -529,37 +563,47 @@ class CampaignComparison(BaseSchema):
     """Response containing campaign comparison data."""
 
     campaigns: list[CampaignComparisonItem] = Field(
-        ..., min_length=2, max_length=4, description="Campaign comparison data"
+        ...,
+        min_length=2,
+        max_length=4,
+        description="Campaign comparison data",
     )
 
     # Comparison metadata
     compared_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Comparison timestamp"
+        default_factory=datetime.utcnow,
+        description="Comparison timestamp",
     )
 
     # Winner identification
     best_success_rate_campaign: str | None = Field(
-        None, description="Campaign ID with best success rate"
+        None,
+        description="Campaign ID with best success rate",
     )
     best_latency_campaign: str | None = Field(None, description="Campaign ID with best latency")
     best_cost_efficiency_campaign: str | None = Field(
-        None, description="Campaign ID with best cost efficiency"
+        None,
+        description="Campaign ID with best cost efficiency",
     )
 
     # Deltas between campaigns (for 2-campaign comparison)
     delta_success_rate: float | None = Field(
-        None, description="Success rate difference (first - second)"
+        None,
+        description="Success rate difference (first - second)",
     )
     delta_latency_ms: float | None = Field(
-        None, description="Latency difference in ms (first - second)"
+        None,
+        description="Latency difference in ms (first - second)",
     )
     delta_cost_cents: float | None = Field(
-        None, description="Cost difference in cents (first - second)"
+        None,
+        description="Cost difference in cents (first - second)",
     )
 
     # Optional time series for overlay
     time_series: list[TelemetryTimeSeries] | None = Field(
-        None, description="Time series data if requested"
+        None,
+        description="Time series data if requested",
     )
 
     model_config = ConfigDict(
@@ -589,8 +633,8 @@ class CampaignComparison(BaseSchema):
                 "best_latency_campaign": "550e8400-e29b-41d4-a716-446655440001",
                 "delta_success_rate": 0.07,
                 "delta_latency_ms": 300.3,
-            }
-        }
+            },
+        },
     )
 
 
@@ -608,7 +652,9 @@ class TelemetryEventSummary(BaseSchema):
 
     # Prompt info (truncated for summary)
     original_prompt_preview: str | None = Field(
-        None, max_length=200, description="Truncated original prompt"
+        None,
+        max_length=200,
+        description="Truncated original prompt",
     )
 
     # Execution info
@@ -636,7 +682,8 @@ class TelemetryEventDetail(TelemetryEventSummary):
 
     # Applied techniques
     applied_techniques: list[str] = Field(
-        default_factory=list, description="Specific techniques applied"
+        default_factory=list,
+        description="Specific techniques applied",
     )
 
     # Detailed timing
@@ -649,7 +696,10 @@ class TelemetryEventDetail(TelemetryEventSummary):
 
     # Quality scores
     semantic_success_score: float | None = Field(
-        None, ge=0.0, le=1.0, description="Semantic success"
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Semantic success",
     )
     effectiveness_score: float | None = Field(None, ge=0.0, le=1.0, description="Effectiveness")
     naturalness_score: float | None = Field(None, ge=0.0, le=1.0, description="Naturalness")
@@ -657,7 +707,8 @@ class TelemetryEventDetail(TelemetryEventSummary):
 
     # Detection
     bypass_indicators: list[str] = Field(
-        default_factory=list, description="Bypass indicators found"
+        default_factory=list,
+        description="Bypass indicators found",
     )
     safety_trigger_detected: bool = Field(False, description="Safety trigger detected")
 
@@ -739,8 +790,8 @@ class ExportRequest(BaseRequest):
                     "include_headers": True,
                     "decimal_precision": 4,
                 },
-            }
-        }
+            },
+        },
     )
 
 
@@ -761,7 +812,8 @@ class ExportResponse(BaseSchema):
 
     # For file downloads (large exports)
     download_url: str | None = Field(
-        None, description="URL to download the export (for large exports)"
+        None,
+        description="URL to download the export (for large exports)",
     )
     expires_at: datetime | None = Field(None, description="When download URL expires")
 
@@ -784,8 +836,8 @@ class ExportResponse(BaseSchema):
                 "exported_at": "2024-01-15T12:00:00Z",
                 "row_count": 500,
                 "processing_time_ms": 1250.5,
-            }
-        }
+            },
+        },
     )
 
 
@@ -831,7 +883,8 @@ class TimeSeriesQuery(BaseRequest):
         description="Metrics to include",
     )
     granularity: TimeGranularity = Field(
-        TimeGranularity.HOUR, description="Time bucket granularity"
+        TimeGranularity.HOUR,
+        description="Time bucket granularity",
     )
     start_time: datetime | None = Field(None, description="Series start time")
     end_time: datetime | None = Field(None, description="Series end time")

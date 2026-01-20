@@ -1,5 +1,4 @@
-"""
-Resource Monitoring Background Tasks
+"""Resource Monitoring Background Tasks.
 
 Provides background task management for continuous resource monitoring,
 periodic alerts, and data persistence.
@@ -21,8 +20,7 @@ logger = logging.getLogger("chimera.resource_monitoring")
 
 
 class ResourceMonitoringManager:
-    """
-    Manages background monitoring tasks for resource exhaustion tracking.
+    """Manages background monitoring tasks for resource exhaustion tracking.
 
     Features:
     - Periodic health checks
@@ -37,7 +35,7 @@ class ResourceMonitoringManager:
     METRICS_AGGREGATION_INTERVAL_SECONDS = 3600  # 1 hour
     STALE_SESSION_THRESHOLD_HOURS = 24
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the monitoring manager."""
         self._running = False
         self._tasks: dict[str, asyncio.Task] = {}
@@ -60,11 +58,11 @@ class ResourceMonitoringManager:
         return (datetime.utcnow() - self._startup_time).total_seconds()
 
     def get_status(self) -> dict[str, Any]:
-        """
-        Get current monitoring status.
+        """Get current monitoring status.
 
         Returns:
             Dictionary with status information
+
         """
         return {
             "running": self._running,
@@ -136,7 +134,7 @@ class ResourceMonitoringManager:
                 logger.debug(
                     f"Budget check: tokens={budget_status['tokens']['percent_used']:.1f}%, "
                     f"cost={budget_status['cost_usd']['percent_used']:.1f}%, "
-                    f"attacks={budget_status['attacks']['percent_used']:.1f}%"
+                    f"attacks={budget_status['attacks']['percent_used']:.1f}%",
                 )
 
                 # Check for threshold breaches
@@ -144,14 +142,14 @@ class ResourceMonitoringManager:
                     logger.warning(
                         f"Budget threshold exceeded: "
                         f"tokens={budget_status['tokens']['percent_used']:.1f}%, "
-                        f"cost=${budget_status['cost_usd']['consumed']:.4f}"
+                        f"cost=${budget_status['cost_usd']['consumed']:.4f}",
                     )
 
                 if budget_status["any_budget_exceeded"]:
                     logger.error(
                         f"BUDGET EXCEEDED: "
                         f"tokens={budget_status['tokens']['percent_used']:.1f}%, "
-                        f"cost=${budget_status['cost_usd']['consumed']:.4f}"
+                        f"cost=${budget_status['cost_usd']['consumed']:.4f}",
                     )
 
                 await asyncio.sleep(self.BUDGET_CHECK_INTERVAL_SECONDS)
@@ -160,7 +158,7 @@ class ResourceMonitoringManager:
                 logger.info("Budget monitor task cancelled")
                 break
             except Exception as e:
-                logger.error(f"Budget monitor task error: {e}")
+                logger.exception(f"Budget monitor task error: {e}")
                 await asyncio.sleep(self.BUDGET_CHECK_INTERVAL_SECONDS)
 
     async def _session_cleanup_task(self) -> None:
@@ -182,7 +180,7 @@ class ResourceMonitoringManager:
                     if session_age > threshold:
                         logger.info(
                             f"Cleaning up stale session: {session.session_id} "
-                            f"(age: {session_age.total_seconds() / 3600:.1f}h)"
+                            f"(age: {session_age.total_seconds() / 3600:.1f}h)",
                         )
                         self._service.end_session(session.session_id)
                         cleaned_count += 1
@@ -197,7 +195,7 @@ class ResourceMonitoringManager:
                 logger.info("Session cleanup task cancelled")
                 break
             except Exception as e:
-                logger.error(f"Session cleanup task error: {e}")
+                logger.exception(f"Session cleanup task error: {e}")
                 await asyncio.sleep(self.SESSION_CLEANUP_INTERVAL_SECONDS)
 
     async def _metrics_aggregation_task(self) -> None:
@@ -215,7 +213,7 @@ class ResourceMonitoringManager:
                     f"tokens={hourly_summary['tokens_consumed']}, "
                     f"cost=${hourly_summary['cost_usd']:.4f}, "
                     f"attacks={hourly_summary['attacks_executed']}, "
-                    f"projected_hourly_cost=${hourly_summary['projected_cost_per_hour']:.4f}"
+                    f"projected_hourly_cost=${hourly_summary['projected_cost_per_hour']:.4f}",
                 )
 
                 # Get cost breakdown
@@ -234,15 +232,15 @@ class ResourceMonitoringManager:
                 logger.info("Metrics aggregation task cancelled")
                 break
             except Exception as e:
-                logger.error(f"Metrics aggregation task error: {e}")
+                logger.exception(f"Metrics aggregation task error: {e}")
                 await asyncio.sleep(self.METRICS_AGGREGATION_INTERVAL_SECONDS)
 
     def _handle_alert(self, alert: ResourceAlert) -> None:
-        """
-        Handle triggered alerts (logging, notifications, etc.).
+        """Handle triggered alerts (logging, notifications, etc.).
 
         Args:
             alert: The triggered ResourceAlert
+
         """
         self._alerts_triggered += 1
 
@@ -250,17 +248,17 @@ class ResourceMonitoringManager:
         if alert.level == AlertLevel.CRITICAL:
             logger.critical(
                 f"CRITICAL ALERT [{alert.metric.value}]: {alert.message} "
-                f"(current={alert.current_value}, threshold={alert.threshold_value})"
+                f"(current={alert.current_value}, threshold={alert.threshold_value})",
             )
         elif alert.level == AlertLevel.WARNING:
             logger.warning(
                 f"WARNING ALERT [{alert.metric.value}]: {alert.message} "
-                f"(current={alert.current_value}, threshold={alert.threshold_value})"
+                f"(current={alert.current_value}, threshold={alert.threshold_value})",
             )
         else:
             logger.info(
                 f"INFO ALERT [{alert.metric.value}]: {alert.message} "
-                f"(current={alert.current_value}, threshold={alert.threshold_value})"
+                f"(current={alert.current_value}, threshold={alert.threshold_value})",
             )
 
         # Additional alert handling could be added here:
@@ -284,8 +282,7 @@ def get_monitoring_manager() -> ResourceMonitoringManager:
 
 @asynccontextmanager
 async def resource_monitoring_context():
-    """
-    Context manager for resource monitoring lifecycle.
+    """Context manager for resource monitoring lifecycle.
 
     Usage:
         async with resource_monitoring_context() as manager:
@@ -302,11 +299,11 @@ async def resource_monitoring_context():
 
 
 async def start_monitoring() -> ResourceMonitoringManager:
-    """
-    Start the resource monitoring manager.
+    """Start the resource monitoring manager.
 
     Returns:
         The started ResourceMonitoringManager instance
+
     """
     manager = get_monitoring_manager()
     await manager.start()
@@ -322,8 +319,7 @@ async def stop_monitoring() -> None:
 # FastAPI lifespan integration helper
 @asynccontextmanager
 async def lifespan_monitoring():
-    """
-    FastAPI lifespan context manager for automatic startup/shutdown.
+    """FastAPI lifespan context manager for automatic startup/shutdown.
 
     Usage in main.py:
         from app.services.resource_monitoring_background import lifespan_monitoring

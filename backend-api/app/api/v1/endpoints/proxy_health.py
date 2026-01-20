@@ -1,5 +1,4 @@
-"""
-Proxy Health API Endpoint.
+"""Proxy Health API Endpoint.
 
 STORY-1.3: Provides health check endpoints for the proxy server.
 
@@ -46,13 +45,11 @@ class ProxyHealthDetailResponse(BaseModel):
 
 @router.get(
     "",
-    response_model=ProxyHealthResponse,
     summary="Get proxy health status",
     description="Returns the current health status of the proxy server.",
 )
 async def get_proxy_health() -> ProxyHealthResponse:
-    """
-    Get the current health status of the proxy server.
+    """Get the current health status of the proxy server.
 
     Returns basic health information including connection state,
     latency, and error information if any.
@@ -101,13 +98,11 @@ async def get_proxy_health() -> ProxyHealthResponse:
 
 @router.post(
     "/check",
-    response_model=ProxyHealthResponse,
     summary="Trigger immediate health check",
     description="Triggers an immediate health check of the proxy server.",
 )
 async def trigger_health_check() -> ProxyHealthResponse:
-    """
-    Trigger an immediate health check of the proxy server.
+    """Trigger an immediate health check of the proxy server.
 
     Unlike the GET endpoint which may return cached status,
     this endpoint always performs a fresh health check.
@@ -145,13 +140,11 @@ async def trigger_health_check() -> ProxyHealthResponse:
 
 @router.get(
     "/detailed",
-    response_model=ProxyHealthDetailResponse,
     summary="Get detailed proxy health status",
     description="Returns detailed health metrics including history.",
 )
 async def get_detailed_proxy_health() -> ProxyHealthDetailResponse:
-    """
-    Get detailed proxy health status with metrics and history.
+    """Get detailed proxy health status with metrics and history.
 
     Includes aggregated metrics, recent check history, and
     comprehensive client statistics.
@@ -194,8 +187,7 @@ async def get_detailed_proxy_health() -> ProxyHealthDetailResponse:
     description="Returns proxy client statistics including request counts.",
 )
 async def get_proxy_stats() -> dict:
-    """
-    Get proxy client statistics.
+    """Get proxy client statistics.
 
     Returns request counts, error rates, and connection information.
     """

@@ -1,5 +1,4 @@
-"""
-TechniquePlugin Abstract Base Class
+"""TechniquePlugin Abstract Base Class.
 
 Defines the interface that all jailbreak technique plugins must implement.
 This enables third-party extensions without modifying core code.
@@ -14,8 +13,7 @@ from typing import Any, ClassVar
 
 @dataclass
 class PluginMetadata:
-    """
-    Metadata describing a technique plugin.
+    """Metadata describing a technique plugin.
 
     Attributes:
         name: Unique identifier for the plugin
@@ -28,6 +26,7 @@ class PluginMetadata:
         requires_approval: Whether admin approval is needed
         tags: Searchable tags
         dependencies: List of required dependencies
+
     """
 
     name: str
@@ -43,8 +42,7 @@ class PluginMetadata:
 
 
 class TechniquePlugin(ABC):
-    """
-    Abstract base class for jailbreak technique plugins.
+    """Abstract base class for jailbreak technique plugins.
 
     All plugins must implement:
     - metadata: Class attribute with PluginMetadata
@@ -71,6 +69,7 @@ class TechniquePlugin(ABC):
             def transform(intent_data: dict, potency: int) -> str:
                 request = intent_data.get('raw_text', '')
                 return f"Transformed: {request}"
+
     """
 
     # Must be overridden in subclass
@@ -79,8 +78,7 @@ class TechniquePlugin(ABC):
     @staticmethod
     @abstractmethod
     def transform(intent_data: dict[str, Any], potency: int) -> str:
-        """
-        Transform the input prompt using this technique.
+        """Transform the input prompt using this technique.
 
         Args:
             intent_data: Dictionary containing at minimum:
@@ -93,13 +91,12 @@ class TechniquePlugin(ABC):
 
         Returns:
             Transformed prompt string
+
         """
-        pass
 
     @staticmethod
     def validate(intent_data: dict[str, Any], potency: int) -> tuple[bool, str]:
-        """
-        Validate input before transformation.
+        """Validate input before transformation.
 
         Override this method to add custom validation logic.
 
@@ -109,6 +106,7 @@ class TechniquePlugin(ABC):
 
         Returns:
             Tuple of (is_valid: bool, error_message: str)
+
         """
         if not intent_data or "raw_text" not in intent_data:
             return False, "Missing 'raw_text' in intent_data"
@@ -118,21 +116,17 @@ class TechniquePlugin(ABC):
 
     @classmethod
     def initialize(cls) -> None:
-        """
-        One-time initialization when plugin is loaded.
+        """One-time initialization when plugin is loaded.
 
         Override to set up resources, connections, or state.
         """
-        pass
 
     @classmethod
     def cleanup(cls) -> None:
-        """
-        Cleanup when plugin is unloaded.
+        """Cleanup when plugin is unloaded.
 
         Override to release resources.
         """
-        pass
 
     @classmethod
     def get_metadata(cls) -> PluginMetadata | None:
@@ -150,8 +144,7 @@ class TechniquePlugin(ABC):
 
 
 class CompositePlugin(TechniquePlugin):
-    """
-    A plugin that combines multiple plugins in sequence.
+    """A plugin that combines multiple plugins in sequence.
 
     Use this as a base class for creating composite techniques.
     """

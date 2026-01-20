@@ -1,5 +1,4 @@
-"""
-OVERTHINK Engine Data Models.
+"""OVERTHINK Engine Data Models.
 
 This module defines all data models used by the OVERTHINK reasoning token
 exploitation engine, including request/response models, metrics, and results.

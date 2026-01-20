@@ -1,5 +1,4 @@
-"""
-Tests for Provider Management Service.
+"""Tests for Provider Management Service.
 
 Tests provider configuration, model routing,
 and multi-provider support.
@@ -13,7 +12,7 @@ import pytest
 class TestProviderRegistry:
     """Tests for provider registry."""
 
-    def test_register_provider(self):
+    def test_register_provider(self) -> None:
         """Test registering a new provider."""
         registry = {}
 
@@ -29,7 +28,7 @@ class TestProviderRegistry:
         assert "openai" in registry
         assert len(registry["openai"]["models"]) == 2
 
-    def test_unregister_provider(self):
+    def test_unregister_provider(self) -> None:
         """Test unregistering a provider."""
         registry = {
             "openai": {"name": "openai"},
@@ -41,7 +40,7 @@ class TestProviderRegistry:
         assert "openai" not in registry
         assert "anthropic" in registry
 
-    def test_list_providers(self):
+    def test_list_providers(self) -> None:
         """Test listing all providers."""
         registry = {
             "openai": {"name": "openai", "enabled": True},
@@ -58,7 +57,7 @@ class TestProviderRegistry:
 class TestProviderConfig:
     """Tests for provider configuration."""
 
-    def test_validate_api_key(self):
+    def test_validate_api_key(self) -> None:
         """Test API key validation."""
         valid_keys = [
             "sk-1234567890abcdef1234567890abcdef",
@@ -68,7 +67,7 @@ class TestProviderConfig:
         for key in valid_keys:
             assert len(key) >= 10
 
-    def test_validate_endpoint(self):
+    def test_validate_endpoint(self) -> None:
         """Test endpoint URL validation."""
         import re
 
@@ -83,7 +82,7 @@ class TestProviderConfig:
         for endpoint in valid_endpoints:
             assert re.match(url_pattern, endpoint) is not None
 
-    def test_config_defaults(self):
+    def test_config_defaults(self) -> None:
         """Test configuration default values."""
         defaults = {
             "timeout": 30,
@@ -108,18 +107,18 @@ class TestModelRouter:
                 "provider": "openai",
                 "model": "gpt-4",
                 "endpoint": "https://api.openai.com/v1",
-            }
+            },
         )
         return router
 
-    def test_route_to_best_provider(self, mock_router):
+    def test_route_to_best_provider(self, mock_router) -> None:
         """Test routing to best available provider."""
         result = mock_router.route(model="gpt-4")
 
         assert result["provider"] == "openai"
         assert result["model"] == "gpt-4"
 
-    def test_fallback_routing(self, mock_router):
+    def test_fallback_routing(self, mock_router) -> None:
         """Test fallback routing when primary fails."""
         # Simulate primary failure
         mock_router.route.side_effect = [
@@ -139,7 +138,7 @@ class TestModelRouter:
         result = mock_router.route(model="claude-3")
         assert result["provider"] == "anthropic"
 
-    def test_load_balancing(self):
+    def test_load_balancing(self) -> None:
         """Test load balancing across providers."""
         providers = [
             {"name": "openai", "load": 0.3},
@@ -157,7 +156,7 @@ class TestProviderHealth:
     """Tests for provider health monitoring."""
 
     @pytest.mark.asyncio
-    async def test_health_check(self):
+    async def test_health_check(self) -> None:
         """Test provider health check."""
         mock_provider = MagicMock()
         mock_provider.health_check = AsyncMock(
@@ -165,7 +164,7 @@ class TestProviderHealth:
                 "status": "healthy",
                 "latency_ms": 150,
                 "last_check": "2024-01-15T10:00:00Z",
-            }
+            },
         )
 
         result = await mock_provider.health_check()
@@ -174,7 +173,7 @@ class TestProviderHealth:
         assert result["latency_ms"] < 1000
 
     @pytest.mark.asyncio
-    async def test_unhealthy_provider_detection(self):
+    async def test_unhealthy_provider_detection(self) -> None:
         """Test detection of unhealthy providers."""
         providers = [
             {"name": "openai", "healthy": True, "latency": 100},
@@ -187,7 +186,7 @@ class TestProviderHealth:
         assert len(unhealthy) == 1
         assert unhealthy[0]["name"] == "anthropic"
 
-    def test_auto_disable_unhealthy(self):
+    def test_auto_disable_unhealthy(self) -> None:
         """Test automatic disabling of unhealthy providers."""
         provider = {
             "name": "test",
@@ -205,7 +204,7 @@ class TestProviderHealth:
 class TestRateLimiting:
     """Tests for provider rate limiting."""
 
-    def test_rate_limit_tracking(self):
+    def test_rate_limit_tracking(self) -> None:
         """Test rate limit tracking."""
         rate_limit = {
             "requests_per_minute": 60,
@@ -220,7 +219,7 @@ class TestRateLimiting:
         assert requests_remaining == 15
         assert tokens_remaining == 25000
 
-    def test_rate_limit_exceeded(self):
+    def test_rate_limit_exceeded(self) -> None:
         """Test rate limit exceeded detection."""
         rate_limit = {
             "requests_per_minute": 60,
@@ -231,7 +230,7 @@ class TestRateLimiting:
 
         assert exceeded is True
 
-    def test_rate_limit_reset(self):
+    def test_rate_limit_reset(self) -> None:
         """Test rate limit reset."""
         import time
 
@@ -256,14 +255,14 @@ class TestModelSync:
     """Tests for model synchronization service."""
 
     @pytest.mark.asyncio
-    async def test_sync_available_models(self):
+    async def test_sync_available_models(self) -> None:
         """Test synchronizing available models."""
         mock_sync = MagicMock()
         mock_sync.sync_models = AsyncMock(
             return_value={
                 "openai": ["gpt-4", "gpt-3.5-turbo"],
                 "anthropic": ["claude-3-opus", "claude-3-sonnet"],
-            }
+            },
         )
 
         result = await mock_sync.sync_models()
@@ -271,7 +270,7 @@ class TestModelSync:
         assert "openai" in result
         assert "gpt-4" in result["openai"]
 
-    def test_model_capability_mapping(self):
+    def test_model_capability_mapping(self) -> None:
         """Test model capability mapping."""
         models = {
             "gpt-4": {

@@ -1,6 +1,5 @@
-"""
-Common Test Fixtures
-Reusable fixtures for testing across the application
+"""Common Test Fixtures
+Reusable fixtures for testing across the application.
 """
 
 from unittest.mock import AsyncMock, Mock
@@ -10,7 +9,7 @@ import pytest
 
 @pytest.fixture
 def mock_llm_response():
-    """Mock LLM response for testing"""
+    """Mock LLM response for testing."""
     return {
         "text": "This is a mocked LLM response",
         "model": "gemini-pro",
@@ -20,7 +19,7 @@ def mock_llm_response():
 
 @pytest.fixture
 def mock_provider():
-    """Mock LLM provider for testing"""
+    """Mock LLM provider for testing."""
     provider = Mock()
     provider.generate = AsyncMock(return_value="Mocked response")
     provider.is_available = Mock(return_value=True)
@@ -30,7 +29,7 @@ def mock_provider():
 
 @pytest.fixture
 def sample_transformation_request():
-    """Sample transformation request for testing"""
+    """Sample transformation request for testing."""
     return {
         "prompt": "Test prompt for transformation",
         "technique": "simple",
@@ -40,7 +39,7 @@ def sample_transformation_request():
 
 @pytest.fixture
 def sample_generation_request():
-    """Sample generation request for testing"""
+    """Sample generation request for testing."""
     return {
         "prompt": "Generate a creative story",
         "provider": "google",
@@ -51,7 +50,7 @@ def sample_generation_request():
 
 @pytest.fixture
 def sample_jailbreak_request():
-    """Sample jailbreak request for testing"""
+    """Sample jailbreak request for testing."""
     return {
         "prompt": "Test jailbreak prompt",
         "technique": "role_playing_dan",
@@ -61,7 +60,7 @@ def sample_jailbreak_request():
 
 @pytest.fixture
 def redis_mock():
-    """Mock Redis client for testing"""
+    """Mock Redis client for testing."""
     redis = Mock()
     redis.get = AsyncMock(return_value=None)
     redis.set = AsyncMock(return_value=True)

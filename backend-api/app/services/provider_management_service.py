@@ -1,5 +1,4 @@
-"""
-Provider Management Service
+"""Provider Management Service.
 
 Comprehensive service for dynamic AI provider management including:
 - Runtime provider registration and deregistration
@@ -48,8 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_config_manager():
-    """
-    Get AIConfigManager instance with graceful fallback.
+    """Get AIConfigManager instance with graceful fallback.
 
     Returns None if config manager is not available.
     """
@@ -65,9 +63,9 @@ def _get_config_manager():
 
 
 class ProviderEncryption:
-    """Handles secure encryption/decryption of API keys"""
+    """Handles secure encryption/decryption of API keys."""
 
-    def __init__(self, secret_key: str | None = None):
+    def __init__(self, secret_key: str | None = None) -> None:
         # Use provided key or derive from settings
         # Fallback chain: explicit key -> env var -> CHIMERA_API_KEY -> GOOGLE_API_KEY -> default
         key = (
@@ -82,29 +80,29 @@ class ProviderEncryption:
         self._fernet = Fernet(urlsafe_b64encode(derived_key))
 
     def encrypt(self, plaintext: str) -> str:
-        """Encrypt a string value"""
+        """Encrypt a string value."""
         return self._fernet.encrypt(plaintext.encode()).decode()
 
     def decrypt(self, ciphertext: str) -> str:
-        """Decrypt an encrypted string"""
+        """Decrypt an encrypted string."""
         return self._fernet.decrypt(ciphertext.encode()).decode()
 
     def mask_key(self, api_key: str) -> str:
-        """Return a masked version of the API key for display"""
+        """Return a masked version of the API key for display."""
         if len(api_key) <= 8:
             return "*" * len(api_key)
         return api_key[:4] + "*" * (len(api_key) - 8) + api_key[-4:]
 
 
 class ProviderHealthMonitor:
-    """Monitors provider health and manages circuit breakers"""
+    """Monitors provider health and manages circuit breakers."""
 
     def __init__(
         self,
         check_interval: int = 30,
         circuit_breaker_threshold: int = 5,
         circuit_breaker_timeout: int = 60,
-    ):
+    ) -> None:
         self.check_interval = check_interval
         self.circuit_breaker_threshold = circuit_breaker_threshold
         self.circuit_breaker_timeout = circuit_breaker_timeout
@@ -113,12 +111,12 @@ class ProviderHealthMonitor:
         self._check_tasks: dict[str, asyncio.Task] = {}
         self._callbacks: list[Callable] = []
 
-    def register_callback(self, callback: Callable):
-        """Register a callback for health status changes"""
+    def register_callback(self, callback: Callable) -> None:
+        """Register a callback for health status changes."""
         self._callbacks.append(callback)
 
-    async def _notify_callbacks(self, provider_id: str, health: ProviderHealthInfo):
-        """Notify all registered callbacks of health changes"""
+    async def _notify_callbacks(self, provider_id: str, health: ProviderHealthInfo) -> None:
+        """Notify all registered callbacks of health changes."""
         for callback in self._callbacks:
             try:
                 if asyncio.iscoroutinefunction(callback):
@@ -126,14 +124,14 @@ class ProviderHealthMonitor:
                 else:
                     callback(provider_id, health)
             except Exception as e:
-                logger.error(f"Health callback error: {e}")
+                logger.exception(f"Health callback error: {e}")
 
     def get_health(self, provider_id: str) -> ProviderHealthInfo:
-        """Get current health info for a provider"""
+        """Get current health info for a provider."""
         return self._health_data.get(provider_id, ProviderHealthInfo())
 
     def is_circuit_open(self, provider_id: str) -> bool:
-        """Check if circuit breaker is open (provider should not be used)"""
+        """Check if circuit breaker is open (provider should not be used)."""
         breaker = self._circuit_breakers.get(provider_id)
         if not breaker:
             return False
@@ -146,8 +144,8 @@ class ProviderHealthMonitor:
             return True
         return False
 
-    def record_success(self, provider_id: str, latency_ms: float):
-        """Record a successful provider call"""
+    def record_success(self, provider_id: str, latency_ms: float) -> None:
+        """Record a successful provider call."""
         health = self._health_data.setdefault(provider_id, ProviderHealthInfo())
         health.success_count += 1
         health.last_success = datetime.utcnow()
@@ -165,8 +163,8 @@ class ProviderHealthMonitor:
             self._circuit_breakers[provider_id]["failure_count"] = 0
             self._circuit_breakers[provider_id]["state"] = "closed"
 
-    def record_failure(self, provider_id: str, error: str):
-        """Record a failed provider call"""
+    def record_failure(self, provider_id: str, error: str) -> None:
+        """Record a failed provider call."""
         health = self._health_data.setdefault(provider_id, ProviderHealthInfo())
         health.error_count += 1
         health.last_error = error
@@ -174,7 +172,8 @@ class ProviderHealthMonitor:
 
         # Update circuit breaker
         breaker = self._circuit_breakers.setdefault(
-            provider_id, {"failure_count": 0, "state": "closed", "opened_at": None}
+            provider_id,
+            {"failure_count": 0, "state": "closed", "opened_at": None},
         )
         breaker["failure_count"] += 1
 
@@ -186,12 +185,12 @@ class ProviderHealthMonitor:
         elif breaker["failure_count"] >= self.circuit_breaker_threshold // 2:
             health.status = ProviderStatus.DEGRADED
 
-    async def start_monitoring(self, provider_id: str, check_func: Callable):
-        """Start periodic health monitoring for a provider"""
+    async def start_monitoring(self, provider_id: str, check_func: Callable) -> None:
+        """Start periodic health monitoring for a provider."""
         if provider_id in self._check_tasks:
             return
 
-        async def monitor_loop():
+        async def monitor_loop() -> None:
             while True:
                 try:
                     start = time.time()
@@ -211,14 +210,14 @@ class ProviderHealthMonitor:
                     break
                 except Exception as e:
                     self.record_failure(provider_id, str(e))
-                    logger.error(f"Health check failed for {provider_id}: {e}")
+                    logger.exception(f"Health check failed for {provider_id}: {e}")
 
                 await asyncio.sleep(self.check_interval)
 
         self._check_tasks[provider_id] = asyncio.create_task(monitor_loop())
 
-    def stop_monitoring(self, provider_id: str):
-        """Stop health monitoring for a provider"""
+    def stop_monitoring(self, provider_id: str) -> None:
+        """Stop health monitoring for a provider."""
         if provider_id in self._check_tasks:
             self._check_tasks[provider_id].cancel()
             del self._check_tasks[provider_id]
@@ -229,8 +228,7 @@ class ProviderHealthMonitor:
 
 
 class ProviderManagementService:
-    """
-    Central service for managing AI providers dynamically.
+    """Central service for managing AI providers dynamically.
 
     Features:
     - Runtime provider registration/deregistration
@@ -253,7 +251,7 @@ class ProviderManagementService:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._initialized:
             return
 
@@ -275,8 +273,7 @@ class ProviderManagementService:
         logger.info("ProviderManagementService initialized")
 
     def _sync_with_config(self) -> None:
-        """
-        Synchronize provider state with AIConfigManager configuration.
+        """Synchronize provider state with AIConfigManager configuration.
 
         This ensures the service reflects the current config state.
         """
@@ -297,17 +294,17 @@ class ProviderManagementService:
 
             logger.info(
                 f"ProviderManagementService synced with config: "
-                f"default={global_cfg.default_provider}"
+                f"default={global_cfg.default_provider}",
             )
         except Exception as e:
             logger.warning(f"Failed to sync with config: {e}")
 
-    def register_event_callback(self, callback: Callable):
-        """Register callback for provider events (add, remove, status change)"""
+    def register_event_callback(self, callback: Callable) -> None:
+        """Register callback for provider events (add, remove, status change)."""
         self._event_callbacks.append(callback)
 
-    async def _emit_event(self, event_type: str, data: dict):
-        """Emit an event to all registered callbacks"""
+    async def _emit_event(self, event_type: str, data: dict) -> None:
+        """Emit an event to all registered callbacks."""
         event = {"type": event_type, "data": data, "timestamp": datetime.utcnow().isoformat()}
         for callback in self._event_callbacks:
             try:
@@ -316,10 +313,10 @@ class ProviderManagementService:
                 else:
                     callback(event)
             except Exception as e:
-                logger.error(f"Event callback error: {e}")
+                logger.exception(f"Event callback error: {e}")
 
     def _generate_provider_id(self, name: str, provider_type: ProviderType) -> str:
-        """Generate a unique provider ID"""
+        """Generate a unique provider ID."""
         return f"{provider_type.value}-{name}-{uuid.uuid4().hex[:8]}"
 
     async def register_provider(
@@ -327,8 +324,7 @@ class ProviderManagementService:
         registration: ProviderRegistration,
         provider_instance: LLMProvider | None = None,
     ) -> ProviderInfo:
-        """
-        Register a new provider dynamically.
+        """Register a new provider dynamically.
 
         Args:
             registration: Provider registration details
@@ -340,12 +336,14 @@ class ProviderManagementService:
         Note:
             Validates against config if available. Logs warnings for
             providers not defined in config.
+
         """
         async with self._lock:
             # Check for duplicate name
             for existing in self._providers.values():
                 if existing.name == registration.name:
-                    raise ValueError(f"Provider with name '{registration.name}' exists")
+                    msg = f"Provider with name '{registration.name}' exists"
+                    raise ValueError(msg)
 
             # Validate against config
             self._validate_against_config(
@@ -393,7 +391,8 @@ class ProviderManagementService:
             # Start health monitoring if we have an instance
             if provider_instance:
                 await self._health_monitor.start_monitoring(
-                    provider_id, provider_instance.check_health
+                    provider_id,
+                    provider_instance.check_health,
                 )
 
             logger.info(f"Registered provider: {provider_id} ({registration.name})")
@@ -410,18 +409,19 @@ class ProviderManagementService:
             return provider_info
 
     async def deregister_provider(self, provider_id: str) -> bool:
-        """
-        Remove a provider from the system.
+        """Remove a provider from the system.
 
         Args:
             provider_id: ID of the provider to remove
 
         Returns:
             True if successfully removed
+
         """
         async with self._lock:
             if provider_id not in self._providers:
-                raise ValueError(f"Provider '{provider_id}' not found")
+                msg = f"Provider '{provider_id}' not found"
+                raise ValueError(msg)
 
             provider = self._providers[provider_id]
 
@@ -446,14 +446,14 @@ class ProviderManagementService:
             logger.info(f"Deregistered provider: {provider_id}")
 
             await self._emit_event(
-                "provider_deregistered", {"provider_id": provider_id, "name": provider.name}
+                "provider_deregistered",
+                {"provider_id": provider_id, "name": provider.name},
             )
 
             return True
 
     async def update_provider(self, provider_id: str, update: ProviderUpdate) -> ProviderInfo:
-        """
-        Update an existing provider's configuration.
+        """Update an existing provider's configuration.
 
         Args:
             provider_id: ID of the provider to update
@@ -461,10 +461,12 @@ class ProviderManagementService:
 
         Returns:
             Updated ProviderInfo
+
         """
         async with self._lock:
             if provider_id not in self._providers:
-                raise ValueError(f"Provider '{provider_id}' not found")
+                msg = f"Provider '{provider_id}' not found"
+                raise ValueError(msg)
 
             provider = self._providers[provider_id]
 
@@ -489,28 +491,29 @@ class ProviderManagementService:
             logger.info(f"Updated provider: {provider_id}")
 
             await self._emit_event(
-                "provider_updated", {"provider_id": provider_id, "name": provider.name}
+                "provider_updated",
+                {"provider_id": provider_id, "name": provider.name},
             )
 
             return provider
 
     def get_provider(self, provider_id: str) -> ProviderInfo | None:
-        """Get provider info by ID"""
+        """Get provider info by ID."""
         return self._providers.get(provider_id)
 
     def get_provider_by_name(self, name: str) -> ProviderInfo | None:
-        """Get provider info by name"""
+        """Get provider info by name."""
         for provider in self._providers.values():
             if provider.name == name:
                 return provider
         return None
 
     def get_provider_instance(self, provider_id: str) -> LLMProvider | None:
-        """Get the actual provider instance for making API calls"""
+        """Get the actual provider instance for making API calls."""
         return self._provider_instances.get(provider_id)
 
     def get_api_key(self, provider_id: str) -> str | None:
-        """Get decrypted API key for a provider"""
+        """Get decrypted API key for a provider."""
         encrypted = self._encrypted_keys.get(provider_id)
         if encrypted:
             return self._encryption.decrypt(encrypted)
@@ -522,8 +525,7 @@ class ProviderManagementService:
         include_health: bool = True,
         include_config_providers: bool = True,
     ) -> ProviderListResponse:
-        """
-        List all registered providers.
+        """List all registered providers.
 
         Args:
             enabled_only: Only return enabled providers
@@ -532,6 +534,7 @@ class ProviderManagementService:
 
         Returns:
             ProviderListResponse with provider list
+
         """
         providers = list(self._providers.values())
 
@@ -591,7 +594,7 @@ class ProviderManagementService:
                                 provider_cfg.capabilities.supports_function_calling
                             ),
                         },
-                    }
+                    },
                 )
             return result
         except Exception as e:
@@ -622,7 +625,8 @@ class ProviderManagementService:
                 supports_streaming=cfg.get("capabilities", {}).get("supports_streaming", True),
                 supports_vision=cfg.get("capabilities", {}).get("supports_vision", False),
                 supports_function_calling=cfg.get("capabilities", {}).get(
-                    "supports_function_calling", False
+                    "supports_function_calling",
+                    False,
                 ),
             ),
             health=ProviderHealthInfo(),
@@ -636,8 +640,7 @@ class ProviderManagementService:
         provider_name: str,
         provider_type: ProviderType,
     ) -> None:
-        """
-        Validate provider registration against config definitions.
+        """Validate provider registration against config definitions.
 
         Logs warnings if provider is not defined in config.
         """
@@ -652,7 +655,7 @@ class ProviderManagementService:
             if not provider_config:
                 logger.warning(
                     f"Provider '{provider_name}' not defined in config. "
-                    "Consider adding it to providers.yaml"
+                    "Consider adding it to providers.yaml",
                 )
                 return
 
@@ -662,7 +665,7 @@ class ProviderManagementService:
                 logger.warning(
                     f"Provider type mismatch for '{provider_name}': "
                     f"registration={provider_type.value}, "
-                    f"config={config_type}"
+                    f"config={config_type}",
                 )
 
             # Check if enabled in config
@@ -673,8 +676,7 @@ class ProviderManagementService:
             logger.debug(f"Config validation failed: {e}")
 
     def validate_provider_config(self, provider_id: str) -> dict[str, Any]:
-        """
-        Validate a provider's state against config.
+        """Validate a provider's state against config.
 
         Returns validation results with any mismatches.
         """
@@ -709,7 +711,7 @@ class ProviderManagementService:
                         "field": "enabled",
                         "local": provider.enabled,
                         "config": provider_config.enabled,
-                    }
+                    },
                 )
 
             # Check priority
@@ -719,7 +721,7 @@ class ProviderManagementService:
                         "field": "priority",
                         "local": provider.priority,
                         "config": provider_config.priority,
-                    }
+                    },
                 )
 
             return {
@@ -735,8 +737,7 @@ class ProviderManagementService:
             }
 
     async def sync_provider_with_config(self, provider_id: str) -> bool:
-        """
-        Sync a provider's state with config definitions.
+        """Sync a provider's state with config definitions.
 
         Updates local provider to match config values.
         Returns True if sync was successful.
@@ -779,14 +780,15 @@ class ProviderManagementService:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to sync provider with config: {e}")
+            logger.exception(f"Failed to sync provider with config: {e}")
             return False
 
     async def set_default_provider(self, provider_id: str) -> bool:
-        """Set the default provider"""
+        """Set the default provider."""
         async with self._lock:
             if provider_id not in self._providers:
-                raise ValueError(f"Provider '{provider_id}' not found")
+                msg = f"Provider '{provider_id}' not found"
+                raise ValueError(msg)
 
             # Clear previous default
             if self._default_provider_id and self._default_provider_id in self._providers:
@@ -800,14 +802,14 @@ class ProviderManagementService:
             return True
 
     async def select_provider(self, request: ProviderSelectionRequest) -> ProviderSelectionResponse:
-        """
-        Select/switch the active provider.
+        """Select/switch the active provider.
 
         Args:
             request: Selection request with provider and optional model
 
         Returns:
             ProviderSelectionResponse with result
+
         """
         provider = self._providers.get(request.provider_id)
         if not provider:
@@ -857,32 +859,36 @@ class ProviderManagementService:
         )
 
     def get_active_provider(self) -> ProviderInfo | None:
-        """Get the currently active provider"""
+        """Get the currently active provider."""
         provider_id = self._active_provider_id or self._default_provider_id
         if provider_id:
             return self._providers.get(provider_id)
         return None
 
     async def test_provider(self, provider_id: str) -> ProviderTestResult:
-        """
-        Test a provider's connectivity and capabilities.
+        """Test a provider's connectivity and capabilities.
 
         Args:
             provider_id: ID of the provider to test
 
         Returns:
             ProviderTestResult with test results
+
         """
         provider = self._providers.get(provider_id)
         if not provider:
             return ProviderTestResult(
-                success=False, provider_id=provider_id, error="Provider not found"
+                success=False,
+                provider_id=provider_id,
+                error="Provider not found",
             )
 
         instance = self._provider_instances.get(provider_id)
         if not instance:
             return ProviderTestResult(
-                success=False, provider_id=provider_id, error="Provider instance not available"
+                success=False,
+                provider_id=provider_id,
+                error="Provider instance not available",
             )
 
         try:
@@ -901,30 +907,30 @@ class ProviderManagementService:
                     models_discovered=[m.id for m in provider.models],
                     capabilities_detected=provider.capabilities,
                 )
-            else:
-                self._health_monitor.record_failure(provider_id, "Health check failed")
-                return ProviderTestResult(
-                    success=False,
-                    provider_id=provider_id,
-                    latency_ms=latency,
-                    error="Health check returned false",
-                )
+            self._health_monitor.record_failure(provider_id, "Health check failed")
+            return ProviderTestResult(
+                success=False,
+                provider_id=provider_id,
+                latency_ms=latency,
+                error="Health check returned false",
+            )
 
         except Exception as e:
             self._health_monitor.record_failure(provider_id, str(e))
             return ProviderTestResult(success=False, provider_id=provider_id, error=str(e))
 
     async def get_fallback_provider(
-        self, exclude_ids: list[str] | None = None
+        self,
+        exclude_ids: list[str] | None = None,
     ) -> ProviderInfo | None:
-        """
-        Get the next available fallback provider.
+        """Get the next available fallback provider.
 
         Args:
             exclude_ids: Provider IDs to exclude from consideration
 
         Returns:
             Next available provider or None
+
         """
         exclude_ids = exclude_ids or []
 
@@ -951,22 +957,22 @@ class ProviderManagementService:
         return None
 
     def get_health(self, provider_id: str) -> ProviderHealthInfo:
-        """Get health information for a provider"""
+        """Get health information for a provider."""
         return self._health_monitor.get_health(provider_id)
 
-    def set_routing_config(self, config: ProviderRoutingConfig):
-        """Update the routing configuration"""
+    def set_routing_config(self, config: ProviderRoutingConfig) -> None:
+        """Update the routing configuration."""
         self._routing_config = config
         self._health_monitor.check_interval = config.health_check_interval_seconds
         self._health_monitor.circuit_breaker_threshold = config.circuit_breaker_threshold
         self._health_monitor.circuit_breaker_timeout = config.circuit_breaker_timeout_seconds
 
     def get_routing_config(self) -> ProviderRoutingConfig:
-        """Get current routing configuration"""
+        """Get current routing configuration."""
         return self._routing_config
 
-    async def shutdown(self):
-        """Cleanup resources on shutdown"""
+    async def shutdown(self) -> None:
+        """Cleanup resources on shutdown."""
         for provider_id in list(self._providers.keys()):
             self._health_monitor.stop_monitoring(provider_id)
 

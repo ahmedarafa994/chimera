@@ -1,5 +1,4 @@
-"""
-AutoDAN-X Gradient Field - Surrogate Gradient Field Simulation.
+"""AutoDAN-X Gradient Field - Surrogate Gradient Field Simulation.
 
 This module simulates gradient-based optimization without actual backpropagation
 by using LLM feedback to estimate token-level gradients and optimize prompts.
@@ -20,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class SurrogateGradientField:
-    """
-    Simulates gradient-based optimization for prompt engineering.
+    """Simulates gradient-based optimization for prompt engineering.
 
     Instead of actual backpropagation, this uses LLM feedback to estimate
     which tokens contribute most to refusal/compliance, then optimizes
@@ -32,13 +30,13 @@ class SurrogateGradientField:
         self,
         config: GradientFieldConfig | None = None,
         llm_client: Any = None,
-    ):
-        """
-        Initialize the Surrogate Gradient Field.
+    ) -> None:
+        """Initialize the Surrogate Gradient Field.
 
         Args:
             config: Configuration for gradient optimization
             llm_client: LLM client for generating responses and scoring
+
         """
         self.config = config or GradientFieldConfig()
         self.llm_client = llm_client
@@ -59,8 +57,7 @@ class SurrogateGradientField:
         loss_fn: Callable[[str], float] | None = None,
         target_behavior: str = "",
     ) -> GradientFieldState:
-        """
-        Optimize a prompt using surrogate gradient estimation.
+        """Optimize a prompt using surrogate gradient estimation.
 
         Args:
             initial_prompt: Starting prompt to optimize
@@ -69,6 +66,7 @@ class SurrogateGradientField:
 
         Returns:
             Final optimization state
+
         """
         self.reset()
         self.state.current_prompt = initial_prompt
@@ -98,7 +96,8 @@ class SurrogateGradientField:
             self.state.current_loss = await self._evaluate_loss(initial_prompt, loss_fn)
         else:
             self.state.current_loss = await self._estimate_loss_from_llm(
-                initial_prompt, target_behavior
+                initial_prompt,
+                target_behavior,
             )
         self.state.best_loss = self.state.current_loss
         self.state.loss_history.append(self.state.current_loss)
@@ -140,7 +139,7 @@ class SurrogateGradientField:
                 self.state.patience_counter += 1
 
             logger.debug(
-                f"Iteration {iteration}: loss={new_loss:.4f}, best={self.state.best_loss:.4f}"
+                f"Iteration {iteration}: loss={new_loss:.4f}, best={self.state.best_loss:.4f}",
             )
 
             # Check convergence
@@ -172,12 +171,11 @@ class SurrogateGradientField:
                 return await loss_fn(prompt)
             return loss_fn(prompt)
         except Exception as e:
-            logger.error(f"Loss evaluation error: {e}")
+            logger.exception(f"Loss evaluation error: {e}")
             return float("inf")
 
     async def _estimate_loss_from_llm(self, prompt: str, target_behavior: str) -> float:
-        """
-        Estimate loss by querying LLM and analyzing response.
+        """Estimate loss by querying LLM and analyzing response.
 
         Lower loss = more likely to achieve target behavior.
         """
@@ -196,13 +194,12 @@ class SurrogateGradientField:
             response_text = response.content if hasattr(response, "content") else str(response)
 
             # Analyze response for refusal indicators
-            refusal_score = self._calculate_refusal_score(response_text)
+            return self._calculate_refusal_score(response_text)
 
             # Lower refusal = lower loss
-            return refusal_score
 
         except Exception as e:
-            logger.error(f"LLM loss estimation error: {e}")
+            logger.exception(f"LLM loss estimation error: {e}")
             return self._heuristic_loss(prompt, target_behavior)
 
     def _heuristic_loss(self, prompt: str, target_behavior: str) -> float:
@@ -300,8 +297,7 @@ class SurrogateGradientField:
         loss_fn: Callable[[str], float] | None,
         target_behavior: str,
     ) -> None:
-        """
-        Estimate gradients for each token using finite differences.
+        """Estimate gradients for each token using finite differences.
 
         This probes the loss landscape by making small perturbations
         to each token and measuring the change in loss.

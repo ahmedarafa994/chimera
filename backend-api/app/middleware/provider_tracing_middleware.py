@@ -1,5 +1,4 @@
-"""
-Provider Tracing Middleware for Request Lifecycle Tracking.
+"""Provider Tracing Middleware for Request Lifecycle Tracking.
 
 This middleware traces provider/model usage throughout the request lifecycle,
 adding diagnostic headers and logging for observability. It provides:
@@ -30,8 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProviderTracingMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware that traces provider/model usage through request lifecycle.
+    """Middleware that traces provider/model usage through request lifecycle.
 
     Adds tracing headers to responses:
     - X-Provider-Selection: current provider
@@ -64,9 +62,8 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
         include_metadata: bool = False,
         trace_header_prefix: str = "X-Selection-",
         log_selections: bool = True,
-    ):
-        """
-        Initialize the provider tracing middleware.
+    ) -> None:
+        """Initialize the provider tracing middleware.
 
         Args:
             app: FastAPI application instance
@@ -75,6 +72,7 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
             include_metadata: Include additional metadata in headers
             trace_header_prefix: Prefix for tracing headers
             log_selections: Whether to log selection changes
+
         """
         super().__init__(app)
         self._exclude_paths = exclude_paths or self.DEFAULT_EXCLUDE_PATHS
@@ -83,11 +81,10 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
         self._header_prefix = trace_header_prefix
         self._log_selections = log_selections
 
-        logger.info(f"ProviderTracingMiddleware initialized " f"(prefix={trace_header_prefix})")
+        logger.info(f"ProviderTracingMiddleware initialized (prefix={trace_header_prefix})")
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """
-        Trace provider/model selection through request.
+        """Trace provider/model selection through request.
 
         Args:
             request: FastAPI request
@@ -95,6 +92,7 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response with tracing headers added
+
         """
         # Check if tracing should be skipped
         if self._should_skip(request.url.path):
@@ -216,7 +214,7 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
 
         # Check for selection changes
         if pre_selection.get("provider") != post_selection.get("provider") or pre_selection.get(
-            "model"
+            "model",
         ) != post_selection.get("model"):
             response.headers[f"{prefix}Changed"] = "true"
         else:
@@ -257,23 +255,22 @@ class ProviderTracingMiddleware(BaseHTTPMiddleware):
             f"[Trace:{trace_id}] {request.method} {request.url.path} "
             f"-> {response.status_code} "
             f"| provider={provider} model={model} source={source} "
-            f"| {elapsed_ms:.2f}ms"
+            f"| {elapsed_ms:.2f}ms",
         )
 
 
 class SelectionTracer:
-    """
-    Utility class for manual selection tracing.
+    """Utility class for manual selection tracing.
 
     Use this to add tracing points within service code.
     """
 
-    def __init__(self, operation_name: str):
-        """
-        Initialize a tracer for an operation.
+    def __init__(self, operation_name: str) -> None:
+        """Initialize a tracer for an operation.
 
         Args:
             operation_name: Name of the operation being traced
+
         """
         self._operation = operation_name
         self._trace_id = str(uuid.uuid4())[:8]
@@ -286,13 +283,13 @@ class SelectionTracer:
         model: str,
         source: str = "manual",
     ) -> None:
-        """
-        Record a selection event.
+        """Record a selection event.
 
         Args:
             provider: Provider ID
             model: Model ID
             source: Source of the selection
+
         """
         self._events.append(
             {
@@ -301,7 +298,7 @@ class SelectionTracer:
                 "model": model,
                 "source": source,
                 "timestamp_ms": self._elapsed_ms(),
-            }
+            },
         )
 
     def record_event(
@@ -309,19 +306,19 @@ class SelectionTracer:
         event_type: str,
         data: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Record a custom event.
+        """Record a custom event.
 
         Args:
             event_type: Type of event
             data: Additional event data
+
         """
         self._events.append(
             {
                 "type": event_type,
                 "data": data or {},
                 "timestamp_ms": self._elapsed_ms(),
-            }
+            },
         )
 
     def _elapsed_ms(self) -> float:
@@ -356,7 +353,7 @@ class SelectionTracer:
 class TracingContext:
     """Context manager for tracing code blocks."""
 
-    def __init__(self, operation_name: str):
+    def __init__(self, operation_name: str) -> None:
         self._tracer = SelectionTracer(operation_name)
 
     def __enter__(self) -> SelectionTracer:

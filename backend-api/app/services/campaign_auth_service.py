@@ -1,5 +1,4 @@
-"""
-Campaign Authorization Service - Business logic for campaign access control.
+"""Campaign Authorization Service - Business logic for campaign access control.
 
 This module provides authorization checks for campaign access based on:
 - Ownership (owner has full access)
@@ -99,8 +98,7 @@ class CampaignAccessResult:
 
 
 class CampaignAuthService:
-    """
-    Service layer for campaign authorization.
+    """Service layer for campaign authorization.
 
     Provides methods to check user access to campaigns based on:
     - Ownership: Campaign owner has full access
@@ -118,12 +116,12 @@ class CampaignAuthService:
             # Allow edit operation
     """
 
-    def __init__(self, session: AsyncSession):
-        """
-        Initialize campaign authorization service.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize campaign authorization service.
 
         Args:
             session: SQLAlchemy async session for database operations
+
         """
         self._session = session
 
@@ -137,8 +135,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_role: UserRole = UserRole.VIEWER,
     ) -> CampaignAccessResult:
-        """
-        Check if a user can access a campaign and determine permission level.
+        """Check if a user can access a campaign and determine permission level.
 
         This is the main authorization method that considers all access paths:
         1. Admin role grants full access to all campaigns
@@ -153,6 +150,7 @@ class CampaignAuthService:
 
         Returns:
             CampaignAccessResult with permission level and campaign details
+
         """
         # First, get the campaign
         campaign = await self._get_campaign(campaign_id)
@@ -206,7 +204,7 @@ class CampaignAuthService:
             )
             logger.debug(
                 f"Shared access granted: user={user_id}, campaign={campaign_id}, "
-                f"permission={permission}"
+                f"permission={permission}",
             )
             return CampaignAccessResult(
                 has_access=True,
@@ -251,8 +249,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_role: UserRole = UserRole.VIEWER,
     ) -> bool:
-        """
-        Check if a user can view a campaign.
+        """Check if a user can view a campaign.
 
         Convenience method that returns a simple boolean.
 
@@ -263,6 +260,7 @@ class CampaignAuthService:
 
         Returns:
             True if user can view the campaign
+
         """
         result = await self.check_access(user_id, campaign_id, user_role)
         return result.can_view
@@ -273,8 +271,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_role: UserRole = UserRole.VIEWER,
     ) -> bool:
-        """
-        Check if a user can edit a campaign.
+        """Check if a user can edit a campaign.
 
         Convenience method that returns a simple boolean.
 
@@ -285,6 +282,7 @@ class CampaignAuthService:
 
         Returns:
             True if user can edit the campaign
+
         """
         result = await self.check_access(user_id, campaign_id, user_role)
         return result.can_edit
@@ -295,8 +293,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_role: UserRole = UserRole.VIEWER,
     ) -> bool:
-        """
-        Check if a user can delete a campaign.
+        """Check if a user can delete a campaign.
 
         Only campaign owner or admin can delete a campaign.
 
@@ -307,6 +304,7 @@ class CampaignAuthService:
 
         Returns:
             True if user can delete the campaign
+
         """
         result = await self.check_access(user_id, campaign_id, user_role)
         return result.can_delete
@@ -317,8 +315,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_role: UserRole = UserRole.VIEWER,
     ) -> bool:
-        """
-        Check if a user can manage sharing for a campaign.
+        """Check if a user can manage sharing for a campaign.
 
         Only campaign owner or admin can manage shares.
 
@@ -329,6 +326,7 @@ class CampaignAuthService:
 
         Returns:
             True if user can manage campaign shares
+
         """
         result = await self.check_access(user_id, campaign_id, user_role)
         return result.can_manage_shares
@@ -344,8 +342,7 @@ class CampaignAuthService:
         user_role: UserRole = UserRole.VIEWER,
         require_edit: bool = False,
     ) -> list[int]:
-        """
-        Filter a list of campaign IDs to only those the user can access.
+        """Filter a list of campaign IDs to only those the user can access.
 
         Useful for batch operations or listing campaigns.
 
@@ -357,6 +354,7 @@ class CampaignAuthService:
 
         Returns:
             List of campaign IDs the user can access
+
         """
         accessible = []
         for campaign_id in campaign_ids:
@@ -371,8 +369,7 @@ class CampaignAuthService:
         user_role: UserRole = UserRole.VIEWER,
         include_archived: bool = False,
     ):
-        """
-        Build a SQLAlchemy query for campaigns accessible to a user.
+        """Build a SQLAlchemy query for campaigns accessible to a user.
 
         This method builds an optimized query that can be used for
         paginated listing of accessible campaigns.
@@ -384,6 +381,7 @@ class CampaignAuthService:
 
         Returns:
             SQLAlchemy select statement for accessible campaigns
+
         """
         # Base conditions
         conditions = [Campaign.is_active == True]  # noqa: E712
@@ -424,8 +422,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_role: UserRole = UserRole.VIEWER,
     ) -> CampaignPermission:
-        """
-        Get the specific permission level a user has for a campaign.
+        """Get the specific permission level a user has for a campaign.
 
         Args:
             user_id: The user's ID
@@ -434,6 +431,7 @@ class CampaignAuthService:
 
         Returns:
             CampaignPermission enum value
+
         """
         result = await self.check_access(user_id, campaign_id, user_role)
         return result.permission
@@ -443,8 +441,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_id: int,
     ) -> CampaignShare | None:
-        """
-        Get the CampaignShare record for a specific user and campaign.
+        """Get the CampaignShare record for a specific user and campaign.
 
         Args:
             campaign_id: The campaign's ID
@@ -452,6 +449,7 @@ class CampaignAuthService:
 
         Returns:
             CampaignShare if exists, None otherwise
+
         """
         return await self._get_share(campaign_id, user_id)
 
@@ -460,14 +458,14 @@ class CampaignAuthService:
     # =========================================================================
 
     async def _get_campaign(self, campaign_id: int) -> Campaign | None:
-        """
-        Get a campaign by ID.
+        """Get a campaign by ID.
 
         Args:
             campaign_id: The campaign's ID
 
         Returns:
             Campaign if found, None otherwise
+
         """
         try:
             stmt = select(Campaign).where(Campaign.id == campaign_id)
@@ -490,8 +488,7 @@ class CampaignAuthService:
         campaign_id: int,
         user_id: int,
     ) -> CampaignShare | None:
-        """
-        Get a campaign share record.
+        """Get a campaign share record.
 
         Args:
             campaign_id: The campaign's ID
@@ -499,13 +496,14 @@ class CampaignAuthService:
 
         Returns:
             CampaignShare if exists, None otherwise
+
         """
         try:
             stmt = select(CampaignShare).where(
                 and_(
                     CampaignShare.campaign_id == campaign_id,
                     CampaignShare.user_id == user_id,
-                )
+                ),
             )
             result = await self._session.execute(stmt)
             share = result.scalar_one_or_none()
@@ -513,7 +511,7 @@ class CampaignAuthService:
             if share:
                 logger.debug(
                     f"Found share: campaign={campaign_id}, user={user_id}, "
-                    f"permission={share.permission}"
+                    f"permission={share.permission}",
                 )
             else:
                 logger.debug(f"No share found: campaign={campaign_id}, user={user_id}")
@@ -534,14 +532,14 @@ class CampaignAuthService:
 
 
 def get_campaign_auth_service(session: AsyncSession) -> CampaignAuthService:
-    """
-    Get campaign authorization service instance.
+    """Get campaign authorization service instance.
 
     Args:
         session: SQLAlchemy async session
 
     Returns:
         CampaignAuthService instance
+
     """
     return CampaignAuthService(session)
 
@@ -554,8 +552,7 @@ def get_campaign_auth_service(session: AsyncSession) -> CampaignAuthService:
 async def get_campaign_auth_service_dependency(
     session: AsyncSession,
 ) -> CampaignAuthService:
-    """
-    FastAPI dependency for getting campaign authorization service.
+    """FastAPI dependency for getting campaign authorization service.
 
     Usage:
         @router.get("/campaigns/{campaign_id}")

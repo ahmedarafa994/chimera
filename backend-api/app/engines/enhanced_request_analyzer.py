@@ -1,6 +1,5 @@
-"""
-Enhanced Request Analyzer
-Provides intelligent understanding, validation, and clarification for user requests
+"""Enhanced Request Analyzer
+Provides intelligent understanding, validation, and clarification for user requests.
 """
 
 import json
@@ -29,7 +28,7 @@ except OSError:
 
 
 class RequestType(Enum):
-    """Categories of user requests"""
+    """Categories of user requests."""
 
     CODE_GENERATION = "code_generation"
     BYPASS_SECURITY = "bypass_security"
@@ -42,7 +41,7 @@ class RequestType(Enum):
 
 
 class RiskLevel(Enum):
-    """Risk assessment levels"""
+    """Risk assessment levels."""
 
     LOW = 1
     MEDIUM = 2
@@ -52,7 +51,7 @@ class RiskLevel(Enum):
 
 @dataclass
 class RequestAnalysis:
-    """Comprehensive request analysis result"""
+    """Comprehensive request analysis result."""
 
     original_request: str
     cleaned_request: str
@@ -72,12 +71,11 @@ class RequestAnalysis:
 
 
 class EnhancedRequestAnalyzer:
-    """
-    Intelligent request analyzer that provides deep understanding and validation
-    of user inputs with clarification suggestions and risk assessment
+    """Intelligent request analyzer that provides deep understanding and validation
+    of user inputs with clarification suggestions and risk assessment.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.gemini_client = None
         if GeminiClient:
             try:
@@ -92,7 +90,7 @@ class EnhancedRequestAnalyzer:
         self.constraint_keywords = self._load_constraint_keywords()
 
     def _load_patterns(self) -> dict[RequestType, list[str]]:
-        """Load pattern matching rules for request categorization"""
+        """Load pattern matching rules for request categorization."""
         return {
             RequestType.CODE_GENERATION: [
                 r"generate.*code",
@@ -171,7 +169,7 @@ class EnhancedRequestAnalyzer:
         }
 
     def _load_entity_patterns(self) -> dict[str, list[str]]:
-        """Load patterns for entity extraction"""
+        """Load patterns for entity extraction."""
         return {
             "technologies": [
                 r"python",
@@ -241,7 +239,7 @@ class EnhancedRequestAnalyzer:
         }
 
     def _load_constraint_keywords(self) -> list[str]:
-        """Load keywords that indicate constraints or requirements"""
+        """Load keywords that indicate constraints or requirements."""
         return [
             "without",
             "except",
@@ -262,10 +260,11 @@ class EnhancedRequestAnalyzer:
         ]
 
     def analyze_request(
-        self, core_request: str, use_ai_enhancement: bool = True
+        self,
+        core_request: str,
+        use_ai_enhancement: bool = True,
     ) -> RequestAnalysis:
-        """
-        Comprehensive analysis of user request
+        """Comprehensive analysis of user request.
 
         Args:
             core_request: The raw user input
@@ -273,6 +272,7 @@ class EnhancedRequestAnalyzer:
 
         Returns:
             RequestAnalysis: Comprehensive analysis result
+
         """
         start_time = time.time()
 
@@ -300,7 +300,9 @@ class EnhancedRequestAnalyzer:
         # Generate suggestions and clarifications
         suggestions = self._generate_suggestions(cleaned_request, request_type, keywords)
         clarifications_needed = self._generate_clarifications(
-            ambiguity_score, cleaned_request, constraints
+            ambiguity_score,
+            cleaned_request,
+            constraints,
         )
 
         # Estimate complexity
@@ -347,7 +349,7 @@ class EnhancedRequestAnalyzer:
         )
 
     def _clean_request(self, request: str) -> str:
-        """Clean and preprocess the request"""
+        """Clean and preprocess the request."""
         # Remove excessive whitespace
         cleaned = re.sub(r"\s+", " ", request.strip())
 
@@ -359,7 +361,7 @@ class EnhancedRequestAnalyzer:
         return cleaned.strip()
 
     def _classify_request(self, request: str) -> tuple[RequestType, float]:
-        """Classify the request type using pattern matching"""
+        """Classify the request type using pattern matching."""
         request_lower = request.lower()
 
         type_scores = {}
@@ -379,11 +381,11 @@ class EnhancedRequestAnalyzer:
         return best_type, confidence
 
     def _extract_entities(self, request: str) -> list[str]:
-        """Extract named entities using patterns and NLP"""
+        """Extract named entities using patterns and NLP."""
         entities = []
 
         # Pattern-based entity extraction
-        for _entity_type, patterns in self.entity_patterns.items():
+        for patterns in self.entity_patterns.values():
             for pattern in patterns:
                 matches = re.findall(pattern, request, re.IGNORECASE)
                 entities.extend(matches)
@@ -411,7 +413,7 @@ class EnhancedRequestAnalyzer:
         return list({entity.lower() for entity in entities if len(entity.strip()) > 1})
 
     def _extract_actions(self, request: str) -> list[str]:
-        """Extract action verbs from the request"""
+        """Extract action verbs from the request."""
         actions = []
 
         # Common action words
@@ -444,7 +446,7 @@ class EnhancedRequestAnalyzer:
         return list({action.lower() for action in actions})
 
     def _extract_keywords(self, request: str) -> list[str]:
-        """Extract important keywords"""
+        """Extract important keywords."""
         # Remove common stop words
         stop_words = {
             "the",
@@ -491,7 +493,7 @@ class EnhancedRequestAnalyzer:
         return [word for word in words if word not in stop_words]
 
     def _extract_constraints(self, request: str) -> list[str]:
-        """Extract constraints and limitations from the request"""
+        """Extract constraints and limitations from the request."""
         constraints = []
 
         # Find constraint phrases
@@ -503,7 +505,7 @@ class EnhancedRequestAnalyzer:
         return constraints
 
     def _generate_intent(self, request: str, actions: list[str], entities: list[str]) -> str:
-        """Generate a clear intent summary"""
+        """Generate a clear intent summary."""
         if not actions and not entities:
             return "general inquiry"
 
@@ -512,15 +514,17 @@ class EnhancedRequestAnalyzer:
 
         if len(target_entities) == 1:
             return f"{primary_action} {target_entities[0]}"
-        elif len(target_entities) <= 3:
+        if len(target_entities) <= 3:
             return f"{primary_action} {', '.join(target_entities[:-1])} and {target_entities[-1]}"
-        else:
-            return f"{primary_action} multiple targets including {', '.join(target_entities[:2])}"
+        return f"{primary_action} multiple targets including {', '.join(target_entities[:2])}"
 
     def _assess_risk_level(
-        self, request_type: RequestType, keywords: list[str], entities: list[str]
+        self,
+        request_type: RequestType,
+        keywords: list[str],
+        entities: list[str],
     ) -> RiskLevel:
-        """Assess the risk level of the request"""
+        """Assess the risk level of the request."""
         high_risk_indicators = [
             "bypass",
             "hack",
@@ -570,7 +574,7 @@ class EnhancedRequestAnalyzer:
         return RiskLevel.LOW
 
     def _calculate_ambiguity(self, request: str, keywords: list[str], entities: list[str]) -> float:
-        """Calculate how ambiguous the request is (0-1 scale)"""
+        """Calculate how ambiguous the request is (0-1 scale)."""
         ambiguity_factors = 0
         total_factors = 4
 
@@ -602,15 +606,18 @@ class EnhancedRequestAnalyzer:
         return min(ambiguity_factors / total_factors, 1.0)
 
     def _generate_suggestions(
-        self, request: str, request_type: RequestType, keywords: list[str]
+        self,
+        request: str,
+        request_type: RequestType,
+        keywords: list[str],
     ) -> list[str]:
-        """Generate helpful suggestions for the user"""
+        """Generate helpful suggestions for the user."""
         suggestions = []
 
         # Type-specific suggestions
         if request_type == RequestType.CODE_GENERATION:
             suggestions.append(
-                "Consider specifying the programming language and desired functionality"
+                "Consider specifying the programming language and desired functionality",
             )
             if "python" not in keywords.lower():
                 suggestions.append("Python is recommended for most automation tasks")
@@ -633,9 +640,12 @@ class EnhancedRequestAnalyzer:
         return suggestions
 
     def _generate_clarifications(
-        self, ambiguity_score: float, request: str, constraints: list[str]
+        self,
+        ambiguity_score: float,
+        request: str,
+        constraints: list[str],
     ) -> list[str]:
-        """Generate questions to clarify ambiguous requests"""
+        """Generate questions to clarify ambiguous requests."""
         clarifications = []
 
         if ambiguity_score > 0.5:
@@ -661,7 +671,7 @@ class EnhancedRequestAnalyzer:
         keywords: list[str],
         constraints: list[str],
     ) -> int:
-        """Estimate complexity on a scale of 1-10"""
+        """Estimate complexity on a scale of 1-10."""
         complexity = 1
 
         # Base complexity by type
@@ -691,7 +701,7 @@ class EnhancedRequestAnalyzer:
         return min(int(complexity), 10)
 
     def _ai_enhance_analysis(self, request: str, basic_analysis: dict) -> dict | None:
-        """Use AI to enhance the analysis"""
+        """Use AI to enhance the analysis."""
         if not self.gemini_client:
             return None
 
@@ -719,10 +729,8 @@ class EnhancedRequestAnalyzer:
             if response:
                 # Clean and parse JSON response
                 content = response.strip()
-                if content.startswith("```json"):
-                    content = content[7:]
-                if content.endswith("```"):
-                    content = content[:-3]
+                content = content.removeprefix("```json")
+                content = content.removesuffix("```")
 
                 return json.loads(content.strip())
 
@@ -733,9 +741,7 @@ class EnhancedRequestAnalyzer:
 
 
 def analyze_request_for_clarification(request: str) -> dict[str, Any]:
-    """
-    Main function to analyze request and provide clarification suggestions
-    """
+    """Main function to analyze request and provide clarification suggestions."""
     analyzer = EnhancedRequestAnalyzer()
     analysis = analyzer.analyze_request(request)
 
@@ -765,7 +771,7 @@ def analyze_request_for_clarification(request: str) -> dict[str, Any]:
 
 # Backward compatibility function
 def deconstruct_intent(core_request: str) -> dict:
-    """Enhanced version of the original deconstruct_intent function"""
+    """Enhanced version of the original deconstruct_intent function."""
     try:
         analyzer = EnhancedRequestAnalyzer()
         analysis = analyzer.analyze_request(core_request, use_ai_enhancement=True)
@@ -787,7 +793,7 @@ def deconstruct_intent(core_request: str) -> dict:
             },
         }
     except Exception as e:
-        logging.error(f"Enhanced request analysis failed: {e}")
+        logging.exception(f"Enhanced request analysis failed: {e}")
         # Fallback to basic analysis
         return {
             "true_intent": core_request,

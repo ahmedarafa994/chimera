@@ -1,5 +1,4 @@
-"""
-Provider Synchronization Service
+"""Provider Synchronization Service.
 
 Handles synchronization of provider and model configurations between
 backend and frontend with:
@@ -37,8 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProviderSyncService:
-    """
-    Service for synchronizing provider and model configurations.
+    """Service for synchronizing provider and model configurations.
 
     Provides:
     - Full sync for initial load
@@ -47,7 +45,7 @@ class ProviderSyncService:
     - Version tracking for conflict resolution
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._version = 1
         self._last_update = datetime.utcnow()
         self._event_callbacks: list[Callable[[SyncEvent], Any]] = []
@@ -59,17 +57,17 @@ class ProviderSyncService:
         return self._version
 
     def register_event_callback(self, callback: Callable[[SyncEvent], Any]) -> None:
-        """Register a callback for sync events"""
+        """Register a callback for sync events."""
         if callback not in self._event_callbacks:
             self._event_callbacks.append(callback)
 
     def unregister_event_callback(self, callback: Callable[[SyncEvent], Any]) -> None:
-        """Unregister an event callback"""
+        """Unregister an event callback."""
         if callback in self._event_callbacks:
             self._event_callbacks.remove(callback)
 
     async def _broadcast_event(self, event: SyncEvent) -> None:
-        """Broadcast an event to all registered callbacks"""
+        """Broadcast an event to all registered callbacks."""
         for callback in self._event_callbacks:
             try:
                 if asyncio.iscoroutinefunction(callback):
@@ -77,15 +75,15 @@ class ProviderSyncService:
                 else:
                     callback(event)
             except Exception as e:
-                logger.error(f"Error in sync event callback: {e}")
+                logger.exception(f"Error in sync event callback: {e}")
 
     def _compute_checksum(self, data: Any) -> str:
-        """Compute a checksum for change detection"""
+        """Compute a checksum for change detection."""
         json_str = json.dumps(data, sort_keys=True, default=str)
         return hashlib.md5(json_str.encode()).hexdigest()
 
     def _convert_model_to_spec(self, model: ModelInfo, provider_id: str) -> ModelSpecification:
-        """Convert ModelInfo to ModelSpecification"""
+        """Convert ModelInfo to ModelSpecification."""
         return ModelSpecification(
             id=model.id,
             name=model.name,
@@ -106,7 +104,7 @@ class ProviderSyncService:
         )
 
     def _convert_provider_to_sync_info(self, provider: ProviderInfo) -> ProviderSyncInfo:
-        """Convert ProviderInfo to ProviderSyncInfo"""
+        """Convert ProviderInfo to ProviderSyncInfo."""
         models = [self._convert_model_to_spec(m, provider.id) for m in provider.models]
 
         return ProviderSyncInfo(
@@ -148,7 +146,7 @@ class ProviderSyncService:
         active_model_id: str | None = None,
         default_provider_id: str | None = None,
     ) -> SyncState:
-        """Build complete sync state from provider list"""
+        """Build complete sync state from provider list."""
         async with self._lock:
             # Convert providers
             sync_providers = [self._convert_provider_to_sync_info(p) for p in providers]
@@ -201,7 +199,7 @@ class ProviderSyncService:
         active_model_id: str | None = None,
         default_provider_id: str | None = None,
     ) -> SyncResponse:
-        """Handle a sync request from the frontend"""
+        """Handle a sync request from the frontend."""
         try:
             # Check if full sync is needed
             needs_full_sync = (
@@ -253,7 +251,7 @@ class ProviderSyncService:
             )
 
         except Exception as e:
-            logger.error(f"Sync request failed: {e}")
+            logger.exception(f"Sync request failed: {e}")
             return SyncResponse(
                 success=False,
                 error=str(e),
@@ -261,7 +259,7 @@ class ProviderSyncService:
             )
 
     async def notify_provider_added(self, provider: ProviderInfo) -> None:
-        """Notify clients that a provider was added"""
+        """Notify clients that a provider was added."""
         async with self._lock:
             self._version += 1
             self._last_update = datetime.utcnow()
@@ -278,7 +276,7 @@ class ProviderSyncService:
         await self._broadcast_event(event)
 
     async def notify_provider_updated(self, provider: ProviderInfo) -> None:
-        """Notify clients that a provider was updated"""
+        """Notify clients that a provider was updated."""
         async with self._lock:
             self._version += 1
             self._last_update = datetime.utcnow()
@@ -295,7 +293,7 @@ class ProviderSyncService:
         await self._broadcast_event(event)
 
     async def notify_provider_removed(self, provider_id: str) -> None:
-        """Notify clients that a provider was removed"""
+        """Notify clients that a provider was removed."""
         async with self._lock:
             self._version += 1
             self._last_update = datetime.utcnow()
@@ -309,9 +307,12 @@ class ProviderSyncService:
         await self._broadcast_event(event)
 
     async def notify_provider_status_changed(
-        self, provider_id: str, new_status: str, old_status: str | None = None
+        self,
+        provider_id: str,
+        new_status: str,
+        old_status: str | None = None,
     ) -> None:
-        """Notify clients that a provider's status changed"""
+        """Notify clients that a provider's status changed."""
         async with self._lock:
             self._version += 1
             self._last_update = datetime.utcnow()
@@ -334,7 +335,7 @@ class ProviderSyncService:
         new_model_id: str | None = None,
         old_provider_id: str | None = None,
     ) -> None:
-        """Notify clients that the active provider changed"""
+        """Notify clients that the active provider changed."""
         async with self._lock:
             self._version += 1
             self._last_update = datetime.utcnow()
@@ -358,7 +359,7 @@ class ProviderSyncService:
         deprecation_date: datetime | None = None,
         replacement_model_id: str | None = None,
     ) -> None:
-        """Notify clients that a model has been deprecated"""
+        """Notify clients that a model has been deprecated."""
         async with self._lock:
             self._version += 1
             self._last_update = datetime.utcnow()
@@ -381,7 +382,7 @@ class ProviderSyncService:
         provider: ProviderInfo,
         fallback_provider: ProviderInfo | None = None,
     ) -> ProviderAvailabilityInfo:
-        """Get availability information for a provider"""
+        """Get availability information for a provider."""
         is_available = provider.enabled and provider.status == ProviderStatus.AVAILABLE
 
         reason = None
@@ -418,7 +419,7 @@ class ProviderSyncService:
         provider_available: bool = True,
         alternative_models: list[str] | None = None,
     ) -> ModelAvailabilityInfo:
-        """Get availability information for a model"""
+        """Get availability information for a model."""
         is_available = (
             model.is_available
             and provider_available
@@ -461,7 +462,7 @@ class ProviderSyncService:
         )
 
     async def send_heartbeat(self) -> None:
-        """Send a heartbeat event to all clients"""
+        """Send a heartbeat event to all clients."""
         event = SyncEvent(
             type=SyncEventType.HEARTBEAT,
             version=self._version,

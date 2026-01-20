@@ -1,5 +1,4 @@
-"""
-Configuration Validator for AI Provider Integration
+"""Configuration Validator for AI Provider Integration.
 
 Comprehensive validation module for AI provider configurations.
 Validates API keys, failover chains, model references, circuit breaker settings,
@@ -81,8 +80,7 @@ class ValidationReport:
 
 
 class ConfigValidator:
-    """
-    Comprehensive configuration validator for AI provider integration.
+    """Comprehensive configuration validator for AI provider integration.
 
     Validates:
     - API key environment variables
@@ -96,9 +94,10 @@ class ConfigValidator:
         validator = ConfigValidator()
         results = validator.validate_all()
         report = validator.get_validation_report()
+
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the configuration validator."""
         self._config_manager = None
         self._last_validation: ValidationReport | None = None
@@ -123,11 +122,11 @@ class ConfigValidator:
     # =========================================================================
 
     def validate_all(self) -> list[ValidationResult]:
-        """
-        Run all validation checks and return results.
+        """Run all validation checks and return results.
 
         Returns:
             List of ValidationResult objects from all checks
+
         """
         results = []
 
@@ -141,7 +140,7 @@ class ConfigValidator:
                     component="configuration",
                     message="Configuration not loaded",
                     suggestion="Call load_config() on AIConfigManager before validating",
-                )
+                ),
             )
             return results
 
@@ -161,14 +160,14 @@ class ConfigValidator:
         return results
 
     def validate_provider_config(self, provider_name: str) -> list[ValidationResult]:
-        """
-        Validate a specific provider's configuration.
+        """Validate a specific provider's configuration.
 
         Args:
             provider_name: Name of the provider to validate
 
         Returns:
             List of ValidationResult objects for this provider
+
         """
         results = []
         config = self._get_config()
@@ -180,7 +179,7 @@ class ConfigValidator:
                     severity=ValidationSeverity.ERROR,
                     component=f"provider.{provider_name}",
                     message="Configuration not loaded",
-                )
+                ),
             ]
 
         provider = config.get_provider(provider_name)
@@ -192,7 +191,7 @@ class ConfigValidator:
                     component=f"provider.{provider_name}",
                     message=f"Provider '{provider_name}' not found in configuration",
                     suggestion="Check provider name or add it to providers.yaml",
-                )
+                ),
             ]
 
         # Validate API configuration
@@ -204,7 +203,7 @@ class ConfigValidator:
                     component=f"provider.{provider_name}.api",
                     message="Missing base_url in API configuration",
                     suggestion="Add base_url to provider API configuration",
-                )
+                ),
             )
 
         # Validate API key environment variable
@@ -217,7 +216,7 @@ class ConfigValidator:
                     component=f"provider.{provider_name}.api",
                     message="Missing key_env_var in API configuration",
                     suggestion="Specify the environment variable name for the API key",
-                )
+                ),
             )
         elif not os.getenv(env_var):
             results.append(
@@ -228,7 +227,7 @@ class ConfigValidator:
                     message=f"API key environment variable '{env_var}' not set",
                     suggestion=f"Set {env_var} environment variable or disable provider",
                     details={"env_var": env_var},
-                )
+                ),
             )
 
         # Validate models exist
@@ -240,7 +239,7 @@ class ConfigValidator:
                     component=f"provider.{provider_name}.models",
                     message="No models configured for provider",
                     suggestion="Add model configurations to the provider",
-                )
+                ),
             )
         else:
             # Check for default model
@@ -253,7 +252,7 @@ class ConfigValidator:
                         component=f"provider.{provider_name}.models",
                         message="No default model marked, first model will be used",
                         suggestion="Mark a model with is_default: true",
-                    )
+                    ),
                 )
 
         # Validate timeout settings
@@ -266,17 +265,17 @@ class ConfigValidator:
                     message=f"Timeout {provider.api.timeout_seconds}s is very short",
                     suggestion="Consider increasing timeout to at least 30 seconds",
                     details={"timeout": provider.api.timeout_seconds},
-                )
+                ),
             )
 
         return results
 
     def validate_api_keys(self) -> list[ValidationResult]:
-        """
-        Validate all API key environment variables are set.
+        """Validate all API key environment variables are set.
 
         Returns:
             List of ValidationResult objects
+
         """
         results = []
         config = self._get_config()
@@ -307,7 +306,7 @@ class ConfigValidator:
                         message=f"Missing API key for enabled provider '{provider_id}'",
                         suggestion=f"Set environment variable: {env_var}",
                         details={"provider": provider_id, "env_var": env_var},
-                    )
+                    ),
                 )
 
         if not set_keys:
@@ -318,7 +317,7 @@ class ConfigValidator:
                     component="api_keys",
                     message="No API keys are set for any enabled provider",
                     suggestion="Set at least one provider API key",
-                )
+                ),
             )
         else:
             results.append(
@@ -328,17 +327,17 @@ class ConfigValidator:
                     component="api_keys",
                     message=f"API keys configured for {len(set_keys)} provider(s)",
                     details={"providers_with_keys": set_keys},
-                )
+                ),
             )
 
         return results
 
     def validate_failover_chains(self) -> list[ValidationResult]:
-        """
-        Validate failover chain references are valid.
+        """Validate failover chain references are valid.
 
         Returns:
             List of ValidationResult objects
+
         """
         results = []
         config = self._get_config()
@@ -363,7 +362,7 @@ class ConfigValidator:
                                 "provider": provider_id,
                                 "invalid_reference": failover_id,
                             },
-                        )
+                        ),
                     )
 
                 # Check for self-reference
@@ -375,7 +374,7 @@ class ConfigValidator:
                             component=f"failover.{provider_id}",
                             message="Failover chain contains self-reference",
                             suggestion="Remove self from failover chain",
-                        )
+                        ),
                     )
 
                 # Check if failover provider is enabled
@@ -388,7 +387,7 @@ class ConfigValidator:
                             component=f"failover.{provider_id}",
                             message=f"Failover provider '{resolved_id}' is disabled",
                             suggestion="Enable the provider or remove from chain",
-                        )
+                        ),
                     )
 
         # Validate named failover chains
@@ -407,7 +406,7 @@ class ConfigValidator:
                                 "chain": chain_name,
                                 "invalid_reference": provider_id,
                             },
-                        )
+                        ),
                     )
 
         if not results:
@@ -417,17 +416,17 @@ class ConfigValidator:
                     severity=ValidationSeverity.INFO,
                     component="failover_chains",
                     message="All failover chain references are valid",
-                )
+                ),
             )
 
         return results
 
     def validate_model_references(self) -> list[ValidationResult]:
-        """
-        Validate model references exist in provider configs.
+        """Validate model references exist in provider configs.
 
         Returns:
             List of ValidationResult objects
+
         """
         results = []
         config = self._get_config()
@@ -452,7 +451,7 @@ class ConfigValidator:
                             "provider": config.global_config.default_provider,
                             "available_models": list(default_provider.models.keys()),
                         },
-                    )
+                    ),
                 )
             else:
                 results.append(
@@ -461,7 +460,7 @@ class ConfigValidator:
                         severity=ValidationSeverity.INFO,
                         component="global.default_model",
                         message=f"Default model '{default_model}' found in provider",
-                    )
+                    ),
                 )
 
         # Check for duplicate model IDs across providers (potential confusion)
@@ -481,17 +480,17 @@ class ConfigValidator:
                         component="models",
                         message=f"Model '{model_id}' exists in multiple providers",
                         details={"model": model_id, "providers": providers},
-                    )
+                    ),
                 )
 
         return results
 
     def validate_circuit_breaker_settings(self) -> list[ValidationResult]:
-        """
-        Validate circuit breaker thresholds are sensible.
+        """Validate circuit breaker thresholds are sensible.
 
         Returns:
             List of ValidationResult objects
+
         """
         results = []
         config = self._get_config()
@@ -510,7 +509,7 @@ class ConfigValidator:
                         component=f"circuit_breaker.{provider_id}",
                         message="Circuit breaker disabled for provider",
                         suggestion="Enable circuit breaker for production resilience",
-                    )
+                    ),
                 )
                 continue
 
@@ -524,7 +523,7 @@ class ConfigValidator:
                         message=f"Low failure threshold ({cb.failure_threshold})",
                         suggestion="Consider increasing to at least 3 to avoid false trips",
                         details={"threshold": cb.failure_threshold},
-                    )
+                    ),
                 )
             elif cb.failure_threshold > 20:
                 results.append(
@@ -535,7 +534,7 @@ class ConfigValidator:
                         message=f"High failure threshold ({cb.failure_threshold})",
                         suggestion="Consider lowering to detect failures faster",
                         details={"threshold": cb.failure_threshold},
-                    )
+                    ),
                 )
 
             # Check recovery timeout
@@ -548,7 +547,7 @@ class ConfigValidator:
                         message=f"Short recovery timeout ({cb.recovery_timeout_seconds}s)",
                         suggestion="May cause aggressive retries on degraded services",
                         details={"timeout": cb.recovery_timeout_seconds},
-                    )
+                    ),
                 )
             elif cb.recovery_timeout_seconds > 300:
                 results.append(
@@ -559,17 +558,17 @@ class ConfigValidator:
                         message=f"Long recovery timeout ({cb.recovery_timeout_seconds}s)",
                         suggestion="Provider will be unavailable for extended periods",
                         details={"timeout": cb.recovery_timeout_seconds},
-                    )
+                    ),
                 )
 
         return results
 
     def validate_rate_limits(self) -> list[ValidationResult]:
-        """
-        Validate rate limit configurations.
+        """Validate rate limit configurations.
 
         Returns:
             List of ValidationResult objects
+
         """
         results = []
         config = self._get_config()
@@ -590,7 +589,7 @@ class ConfigValidator:
                         message=f"Low request limit ({rl.requests_per_minute}/min)",
                         suggestion="May cause throttling under normal load",
                         details={"rpm": rl.requests_per_minute},
-                    )
+                    ),
                 )
 
             # Check for very high rate limits (may exceed API limits)
@@ -603,7 +602,7 @@ class ConfigValidator:
                         message=f"High request limit ({rl.requests_per_minute}/min)",
                         suggestion="Verify this doesn't exceed provider API limits",
                         details={"rpm": rl.requests_per_minute},
-                    )
+                    ),
                 )
 
             # Check token limits
@@ -616,17 +615,17 @@ class ConfigValidator:
                         message=f"Low token limit ({rl.tokens_per_minute}/min)",
                         suggestion="May limit throughput for long-form generation",
                         details={"tpm": rl.tokens_per_minute},
-                    )
+                    ),
                 )
 
         return results
 
     def validate_capability_consistency(self) -> list[ValidationResult]:
-        """
-        Validate capability flags match actual provider features.
+        """Validate capability flags match actual provider features.
 
         Returns:
             List of ValidationResult objects
+
         """
         results = []
         config = self._get_config()
@@ -648,7 +647,7 @@ class ConfigValidator:
                             component=f"capabilities.{provider_id}.{model_id}",
                             message="Model claims vision support, provider doesn't",
                             suggestion="Verify and align capability flags",
-                        )
+                        ),
                     )
 
                 # Model claims function calling but provider doesn't support it
@@ -660,7 +659,7 @@ class ConfigValidator:
                             component=f"capabilities.{provider_id}.{model_id}",
                             message="Model claims function calling, provider doesn't",
                             suggestion="Verify and align capability flags",
-                        )
+                        ),
                     )
 
                 # Model claims streaming but provider doesn't support it
@@ -672,17 +671,17 @@ class ConfigValidator:
                             component=f"capabilities.{provider_id}.{model_id}",
                             message="Model claims streaming support, provider doesn't",
                             suggestion="Verify and align capability flags",
-                        )
+                        ),
                     )
 
         return results
 
     def validate_global_config(self) -> list[ValidationResult]:
-        """
-        Validate global configuration settings.
+        """Validate global configuration settings.
 
         Returns:
             List of ValidationResult objects
+
         """
         results = []
         config = self._get_config()
@@ -703,7 +702,7 @@ class ConfigValidator:
                     message=f"Default provider '{gc.default_provider}' not found",
                     suggestion="Set a valid provider as default",
                     details={"available": list(config.providers.keys())},
-                )
+                ),
             )
         elif not default_provider.enabled:
             results.append(
@@ -713,7 +712,7 @@ class ConfigValidator:
                     component="global.default_provider",
                     message=f"Default provider '{gc.default_provider}' is disabled",
                     suggestion="Enable the provider or choose a different default",
-                )
+                ),
             )
 
         # Validate failover settings
@@ -725,7 +724,7 @@ class ConfigValidator:
                     component="global.failover",
                     message="Failover enabled but max_attempts is 0",
                     suggestion="Set max_failover_attempts to at least 1",
-                )
+                ),
             )
 
         # Validate cost tracking
@@ -738,7 +737,7 @@ class ConfigValidator:
                         component="global.cost_tracking",
                         message=f"Low daily budget: ${gc.cost_tracking.daily_budget_usd}",
                         suggestion="May trigger alerts frequently",
-                    )
+                    ),
                 )
 
         return results
@@ -748,11 +747,11 @@ class ConfigValidator:
     # =========================================================================
 
     def get_validation_report(self) -> ValidationReport:
-        """
-        Generate a comprehensive validation report.
+        """Generate a comprehensive validation report.
 
         Returns:
             ValidationReport with all validation results
+
         """
         results = self.validate_all()
 
@@ -784,11 +783,11 @@ class ConfigValidator:
         return [r for r in results if r.severity == ValidationSeverity.WARNING]
 
     def is_config_valid(self) -> bool:
-        """
-        Quick check if configuration is valid (no errors).
+        """Quick check if configuration is valid (no errors).
 
         Returns:
             True if no error-level validation issues
+
         """
         return len(self.get_errors()) == 0
 

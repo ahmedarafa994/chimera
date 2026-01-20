@@ -1,5 +1,4 @@
-"""
-Base Schema Definitions
+"""Base Schema Definitions.
 
 This module provides base schema classes for all API requests and responses.
 It ensures consistent validation, serialization, and documentation across
@@ -26,8 +25,6 @@ class BaseSchema(BaseModel):
 class BaseRequest(BaseSchema):
     """Base request schema."""
 
-    pass
-
 
 class BaseResponse(BaseSchema):
     """Base response schema."""
@@ -49,7 +46,7 @@ class ErrorResponse(BaseSchema):
                 "message": "Invalid input",
                 "status_code": 422,
                 "details": {"field": "prompt"},
-            }
+            },
         ],
     )
 

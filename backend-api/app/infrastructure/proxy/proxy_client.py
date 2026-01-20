@@ -1,5 +1,4 @@
-"""
-ProxyClient for AIClient-2-API Server Communication.
+"""ProxyClient for AIClient-2-API Server Communication.
 
 STORY-1.3: Handles HTTP communication with the proxy server at localhost:8080.
 
@@ -68,7 +67,7 @@ class ProxyError(Exception):
         message: str,
         status_code: int | None = None,
         retry_after: float | None = None,
-    ):
+    ) -> None:
         super().__init__(message)
         self.message = message
         self.status_code = status_code
@@ -78,24 +77,17 @@ class ProxyError(Exception):
 class ProxyConnectionError(ProxyError):
     """Raised when connection to proxy server fails."""
 
-    pass
-
 
 class ProxyTimeoutError(ProxyError):
     """Raised when proxy request times out."""
-
-    pass
 
 
 class ProxyResponseError(ProxyError):
     """Raised when proxy returns an error response."""
 
-    pass
-
 
 class ProxyClient:
-    """
-    HTTP client for communicating with the AIClient-2-API proxy server.
+    """HTTP client for communicating with the AIClient-2-API proxy server.
 
     Implements connection pooling, configurable timeouts, and retry logic
     for reliable proxy communication.
@@ -115,14 +107,14 @@ class ProxyClient:
         endpoint: str | None = None,
         timeout: float | None = None,
         max_retries: int | None = None,
-    ):
-        """
-        Initialize the ProxyClient.
+    ) -> None:
+        """Initialize the ProxyClient.
 
         Args:
             endpoint: Proxy server endpoint (defaults to config setting)
             timeout: Request timeout in seconds (defaults to config setting)
             max_retries: Maximum retry attempts (defaults to 3)
+
         """
         self._endpoint = endpoint or settings.PROXY_MODE_ENDPOINT
         self._timeout = timeout or settings.PROXY_MODE_TIMEOUT
@@ -140,7 +132,7 @@ class ProxyClient:
 
         logger.info(
             f"ProxyClient initialized: endpoint={self._endpoint}, "
-            f"timeout={self._timeout}s, max_retries={self._max_retries}"
+            f"timeout={self._timeout}s, max_retries={self._max_retries}",
         )
 
     @property
@@ -206,8 +198,7 @@ class ProxyClient:
         config: dict[str, Any] | None = None,
         request_id: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Send a generation request through the proxy server.
+        """Send a generation request through the proxy server.
 
         Args:
             provider: Target LLM provider (e.g., 'openai', 'anthropic')
@@ -223,6 +214,7 @@ class ProxyClient:
             ProxyConnectionError: Connection to proxy failed
             ProxyTimeoutError: Request timed out
             ProxyResponseError: Proxy returned an error
+
         """
         client = await self._get_client()
         request_id = request_id or f"proxy_{int(time.time() * 1000)}"
@@ -251,7 +243,7 @@ class ProxyClient:
                 if response.status_code == 200:
                     result = response.json()
                     logger.debug(
-                        f"Proxy request successful: {request_id}, " f"latency={latency_ms:.2f}ms"
+                        f"Proxy request successful: {request_id}, latency={latency_ms:.2f}ms",
                     )
                     return result
 
@@ -261,8 +253,9 @@ class ProxyClient:
 
                 if response.status_code == 429:
                     retry_after = self._get_retry_after(response)
+                    msg = f"Rate limited by proxy: {error_msg}"
                     raise ProxyResponseError(
-                        f"Rate limited by proxy: {error_msg}",
+                        msg,
                         status_code=429,
                         retry_after=retry_after,
                     )
@@ -275,8 +268,9 @@ class ProxyClient:
                     await asyncio.sleep(self._calculate_retry_delay(attempt))
                     continue
 
+                msg = f"Proxy request failed: {error_msg}"
                 raise ProxyResponseError(
-                    f"Proxy request failed: {error_msg}",
+                    msg,
                     status_code=response.status_code,
                 )
 
@@ -285,7 +279,7 @@ class ProxyClient:
                 self._health_status.is_healthy = False
                 self._health_status.connection_state = ProxyConnectionState.ERROR
                 last_error = ProxyConnectionError(
-                    f"Failed to connect to proxy at {self._endpoint}: {e}"
+                    f"Failed to connect to proxy at {self._endpoint}: {e}",
                 )
                 if attempt < self._max_retries - 1:
                     await asyncio.sleep(self._calculate_retry_delay(attempt))
@@ -295,7 +289,7 @@ class ProxyClient:
             except httpx.TimeoutException as e:
                 self._error_count += 1
                 last_error = ProxyTimeoutError(
-                    f"Proxy request timed out after {self._timeout}s: {e}"
+                    f"Proxy request timed out after {self._timeout}s: {e}",
                 )
                 if attempt < self._max_retries - 1:
                     await asyncio.sleep(self._calculate_retry_delay(attempt))
@@ -305,7 +299,8 @@ class ProxyClient:
         # All retries exhausted
         if last_error:
             raise last_error
-        raise ProxyError("Proxy request failed after all retries")
+        msg = "Proxy request failed after all retries"
+        raise ProxyError(msg)
 
     def _parse_error_response(self, response: httpx.Response) -> str:
         """Parse error message from proxy response."""
@@ -324,11 +319,11 @@ class ProxyClient:
             return 60.0
 
     async def check_health(self) -> ProxyHealthStatus:
-        """
-        Check the health of the proxy server.
+        """Check the health of the proxy server.
 
         Returns:
             ProxyHealthStatus: Current health status
+
         """
         start_time = time.time()
         self._health_status.last_check = start_time

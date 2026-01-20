@@ -1,5 +1,4 @@
-"""
-Cost Tracking Middleware
+"""Cost Tracking Middleware.
 
 Middleware to track costs of AI operations:
 1. Records request start time
@@ -76,8 +75,7 @@ class CostAlert:
 
 
 class CostTracker:
-    """
-    Track and aggregate costs for AI operations.
+    """Track and aggregate costs for AI operations.
 
     Features:
     - Record costs per provider/model
@@ -92,15 +90,15 @@ class CostTracker:
         provider_budgets: dict[str, float] | None = None,
         alert_threshold_percent: float = 80.0,
         max_entries: int = 10000,
-    ):
-        """
-        Initialize cost tracker.
+    ) -> None:
+        """Initialize cost tracker.
 
         Args:
             daily_budget: Daily budget limit (USD)
             provider_budgets: Per-provider budget limits
             alert_threshold_percent: Percentage of budget to trigger alert
             max_entries: Maximum cost entries to keep in memory
+
         """
         self._entries: list[CostEntry] = []
         self._cumulative_by_provider: dict[str, float] = defaultdict(float)
@@ -135,8 +133,7 @@ class CostTracker:
         reasoning_tokens: int = 0,
         cached_tokens: int = 0,
     ) -> float:
-        """
-        Calculate cost for a request using config pricing.
+        """Calculate cost for a request using config pricing.
 
         Args:
             provider: Provider ID
@@ -148,6 +145,7 @@ class CostTracker:
 
         Returns:
             Calculated cost in USD
+
         """
         config_manager = self._get_config_manager()
         if config_manager and config_manager.is_loaded():
@@ -184,8 +182,7 @@ class CostTracker:
         output_tokens: int = 0,
         request_id: str | None = None,
     ) -> None:
-        """
-        Record a cost entry.
+        """Record a cost entry.
 
         Args:
             provider: Provider ID
@@ -195,6 +192,7 @@ class CostTracker:
             input_tokens: Number of input tokens
             output_tokens: Number of output tokens
             request_id: Optional request ID for correlation
+
         """
         timestamp = datetime.utcnow()
         day_key = timestamp.strftime("%Y-%m-%d")
@@ -228,7 +226,7 @@ class CostTracker:
 
         logger.debug(
             f"Recorded cost: provider={provider}, model={model}, "
-            f"cost=${cost:.6f}, tokens={input_tokens}+{output_tokens}"
+            f"cost=${cost:.6f}, tokens={input_tokens}+{output_tokens}",
         )
 
     def _check_alerts(self, provider: str, day_key: str) -> None:
@@ -249,7 +247,7 @@ class CostTracker:
                     timestamp=current_time,
                     message=(
                         f"Daily cost ${daily_cost:.2f} has reached "
-                        f"{(daily_cost/self._daily_budget)*100:.1f}% "
+                        f"{(daily_cost / self._daily_budget) * 100:.1f}% "
                         f"of budget ${self._daily_budget:.2f}"
                     ),
                 )
@@ -263,7 +261,7 @@ class CostTracker:
                     current_value=daily_cost,
                     timestamp=current_time,
                     message=(
-                        f"Daily budget EXCEEDED: ${daily_cost:.2f} " f"/ ${self._daily_budget:.2f}"
+                        f"Daily budget EXCEEDED: ${daily_cost:.2f} / ${self._daily_budget:.2f}"
                     ),
                 )
                 self._add_alert(alert)
@@ -283,7 +281,7 @@ class CostTracker:
                     timestamp=current_time,
                     message=(
                         f"Provider '{provider}' cost ${provider_cost:.2f} "
-                        f"has reached {(provider_cost/budget)*100:.1f}% "
+                        f"has reached {(provider_cost / budget) * 100:.1f}% "
                         f"of budget ${budget:.2f}"
                     ),
                 )
@@ -307,14 +305,14 @@ class CostTracker:
         self,
         since: datetime | None = None,
     ) -> dict[str, float]:
-        """
-        Get aggregated costs by provider.
+        """Get aggregated costs by provider.
 
         Args:
             since: Optional start datetime to filter
 
         Returns:
             Dict mapping provider to total cost
+
         """
         with self._lock:
             if not since:
@@ -332,14 +330,14 @@ class CostTracker:
         self,
         since: datetime | None = None,
     ) -> dict[str, float]:
-        """
-        Get aggregated costs by model.
+        """Get aggregated costs by model.
 
         Args:
             since: Optional start datetime to filter
 
         Returns:
             Dict mapping provider:model to total cost
+
         """
         with self._lock:
             if not since:
@@ -358,14 +356,14 @@ class CostTracker:
         self,
         days: int = 7,
     ) -> dict[str, float]:
-        """
-        Get daily costs for the last N days.
+        """Get daily costs for the last N days.
 
         Args:
             days: Number of days to retrieve
 
         Returns:
             Dict mapping date string to total cost
+
         """
         with self._lock:
             cutoff = datetime.utcnow() - timedelta(days=days)
@@ -374,11 +372,11 @@ class CostTracker:
             return {k: v for k, v in self._daily_costs.items() if k >= cutoff_key}
 
     def get_cost_alerts(self) -> list[dict[str, Any]]:
-        """
-        Check for cost threshold alerts.
+        """Check for cost threshold alerts.
 
         Returns:
             List of alert dictionaries
+
         """
         with self._lock:
             return [alert.to_dict() for alert in self._alerts[-20:]]
@@ -387,14 +385,14 @@ class CostTracker:
         self,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
-        """
-        Get recent cost entries.
+        """Get recent cost entries.
 
         Args:
             limit: Maximum number of entries to return
 
         Returns:
             List of cost entry dictionaries
+
         """
         with self._lock:
             return [entry.to_dict() for entry in self._entries[-limit:]]
@@ -403,14 +401,14 @@ class CostTracker:
         self,
         since: datetime | None = None,
     ) -> float:
-        """
-        Get total cost.
+        """Get total cost.
 
         Args:
             since: Optional start datetime
 
         Returns:
             Total cost in USD
+
         """
         with self._lock:
             if not since:
@@ -456,8 +454,7 @@ def get_cost_tracker() -> CostTracker:
 
 
 class CostTrackingMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to track costs of AI operations.
+    """Middleware to track costs of AI operations.
 
     This middleware:
     1. Records request start time
@@ -498,15 +495,15 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
         enabled: bool = True,
         tracker: CostTracker | None = None,
         track_all_paths: bool = False,
-    ):
-        """
-        Initialize cost tracking middleware.
+    ) -> None:
+        """Initialize cost tracking middleware.
 
         Args:
             app: ASGI application
             enabled: Whether cost tracking is enabled
             tracker: Optional custom cost tracker
             track_all_paths: Track all paths, not just COST_PATHS
+
         """
         super().__init__(app)
         self._enabled = enabled
@@ -518,8 +515,7 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next,
     ) -> Response:
-        """
-        Process request with cost tracking.
+        """Process request with cost tracking.
 
         Args:
             request: Incoming request
@@ -527,6 +523,7 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response from next handler
+
         """
         if not self._enabled:
             return await call_next(request)
@@ -583,14 +580,14 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
         request_id: str,
         elapsed_ms: float,
     ) -> None:
-        """
-        Extract token usage from response and track cost.
+        """Extract token usage from response and track cost.
 
         Args:
             request: Original request
             response: Response object
             request_id: Request ID for correlation
             elapsed_ms: Request duration in milliseconds
+
         """
         try:
             # Get provider context
@@ -649,8 +646,7 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
         self,
         response: Response,
     ) -> dict[str, int] | None:
-        """
-        Extract token usage from response body.
+        """Extract token usage from response body.
 
         Supports both OpenAI and Anthropic response formats.
 
@@ -659,6 +655,7 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Dict with token counts or None
+
         """
         # Check content type
         content_type = response.headers.get("content-type", "")
@@ -709,8 +706,7 @@ def create_cost_tracking_middleware(
     tracker: CostTracker | None = None,
     track_all_paths: bool = False,
 ) -> type:
-    """
-    Factory function to create cost tracking middleware.
+    """Factory function to create cost tracking middleware.
 
     Args:
         enabled: Whether cost tracking is enabled
@@ -730,10 +726,11 @@ def create_cost_tracking_middleware(
         app.add_middleware(
             create_cost_tracking_middleware(enabled=True)
         )
+
     """
 
     class ConfiguredCostTrackingMiddleware(CostTrackingMiddleware):
-        def __init__(self, app):
+        def __init__(self, app) -> None:
             super().__init__(
                 app,
                 enabled=enabled,

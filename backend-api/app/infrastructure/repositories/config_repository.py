@@ -255,9 +255,7 @@ class ConfigRepository(BaseRepository[ProviderConfigEntity]):
                 (name, provider_type),
             )
         else:
-            row = await self._db.fetchone(
-                "SELECT * FROM provider_configs WHERE name = ?", (name,)
-            )
+            row = await self._db.fetchone("SELECT * FROM provider_configs WHERE name = ?", (name,))
 
         return ProviderConfigEntity.from_dict(row) if row else None
 

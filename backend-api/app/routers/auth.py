@@ -1,5 +1,4 @@
-"""
-Authentication Router
+"""Authentication Router
 Provides login, refresh, and logout endpoints for frontend authentication.
 
 Supports two authentication modes:
@@ -8,6 +7,7 @@ Supports two authentication modes:
 """
 
 import os
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -30,29 +30,22 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
 async def get_db_session() -> AsyncSession:
-    """
-    Get an async database session for the request.
+    """Get an async database session for the request.
 
     Yields a session and ensures proper cleanup.
     """
-    print("[AUTH_DEBUG] get_db_session: Creating session factory", flush=True)
     logger.debug("[AUTH_DEBUG] get_db_session: Creating session factory")
     session = get_async_session_factory()()
-    print(f"[AUTH_DEBUG] get_db_session: Session created {session}", flush=True)
     logger.debug(f"[AUTH_DEBUG] get_db_session: Session created {session}")
     try:
-        print("[AUTH_DEBUG] get_db_session: Yielding session", flush=True)
         logger.debug("[AUTH_DEBUG] get_db_session: Yielding session")
         yield session
     except Exception as e:
-        print(f"[AUTH_DEBUG] get_db_session: Error during session yield: {e}", flush=True)
-        logger.error(f"[AUTH_DEBUG] get_db_session: Error during session yield: {e}")
+        logger.exception(f"[AUTH_DEBUG] get_db_session: Error during session yield: {e}")
         raise
     finally:
-        print("[AUTH_DEBUG] get_db_session: Closing session", flush=True)
         logger.debug("[AUTH_DEBUG] get_db_session: Closing session")
         await session.close()
-        print("[AUTH_DEBUG] get_db_session: Session closed", flush=True)
         logger.debug("[AUTH_DEBUG] get_db_session: Session closed")
 
 
@@ -105,10 +98,9 @@ class RefreshResponse(BaseModel):
 async def login(
     request: LoginRequest,
     http_request: Request,
-    session: AsyncSession = Depends(get_db_session),
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ):
-    """
-    Authenticate user and return access/refresh tokens.
+    """Authenticate user and return access/refresh tokens.
 
     **Authentication Modes**:
     1. Database users (primary) - Registered users in the database
@@ -269,8 +261,7 @@ async def _authenticate_env_admin(
     username: str,
     password: str,
 ) -> tuple | None:
-    """
-    Authenticate against environment-configured admin credentials.
+    """Authenticate against environment-configured admin credentials.
 
     This is a fallback for backward compatibility with deployments
     that use CHIMERA_ADMIN_USER and CHIMERA_ADMIN_PASSWORD.
@@ -281,6 +272,7 @@ async def _authenticate_env_admin(
 
     Returns:
         Tuple of (TokenResponse, Role) if authenticated, None otherwise
+
     """
     admin_username = os.getenv("CHIMERA_ADMIN_USER", "admin")
     admin_password = os.getenv("CHIMERA_ADMIN_PASSWORD")
@@ -308,8 +300,7 @@ async def _authenticate_env_admin(
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh_token(request: RefreshRequest):
-    """
-    Refresh access token using a valid refresh token.
+    """Refresh access token using a valid refresh token.
 
     The old refresh token is invalidated after use.
     """
@@ -327,30 +318,27 @@ async def refresh_token(request: RefreshRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Token refresh error: {e}")
+        logger.exception(f"Token refresh error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
         )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(current_user: TokenPayload = Depends(get_current_user)):
-    """
-    Logout user by revoking the current token.
+async def logout(current_user: Annotated[TokenPayload, Depends(get_current_user)]) -> None:
+    """Logout user by revoking the current token.
 
     Requires valid authentication.
     """
     # Revoke the current token
     auth_service.revoke_token(current_user.jti)
     logger.info(f"User logged out: {current_user.sub}")
-    return None
 
 
 @router.get("/me")
-async def get_current_user_info(current_user: TokenPayload = Depends(get_current_user)):
-    """
-    Get current authenticated user information.
-    """
+async def get_current_user_info(current_user: Annotated[TokenPayload, Depends(get_current_user)]):
+    """Get current authenticated user information."""
     return {
         "id": current_user.sub,
         "username": current_user.sub,

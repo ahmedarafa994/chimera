@@ -22,7 +22,8 @@ class ModelSelectionRequest(BaseModel):
     def validate_non_empty(cls, v: str, info) -> str:
         """Validate that provider and model are non-empty strings."""
         if not v or not v.strip():
-            raise ValueError(f"{info.field_name} cannot be empty")
+            msg = f"{info.field_name} cannot be empty"
+            raise ValueError(msg)
         return v.strip()
 
 

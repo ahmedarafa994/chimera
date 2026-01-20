@@ -1,5 +1,4 @@
-"""
-Enhanced Token-Level Perturbation Strategies for AutoDAN
+"""Enhanced Token-Level Perturbation Strategies for AutoDAN.
 
 This module provides sophisticated token-level perturbation strategies for
 generating effective jailbreak candidates:
@@ -61,8 +60,7 @@ class PerturbationResult:
 
 
 class HomoglyphMapper:
-    """
-    Maps characters to visually similar Unicode homoglyphs.
+    """Maps characters to visually similar Unicode homoglyphs.
     Useful for bypassing character-level filters.
     """
 
@@ -152,9 +150,7 @@ class HomoglyphMapper:
 
 
 class UnicodeManipulator:
-    """
-    Unicode manipulation techniques for text obfuscation.
-    """
+    """Unicode manipulation techniques for text obfuscation."""
 
     # Zero-width characters
     ZERO_WIDTH_CHARS: ClassVar[list[str]] = [
@@ -215,8 +211,7 @@ class UnicodeManipulator:
 
 
 class AdversarialSuffixGenerator:
-    """
-    Generates adversarial suffixes that can help bypass safety filters.
+    """Generates adversarial suffixes that can help bypass safety filters.
     Based on techniques from GCG (Greedy Coordinate Gradient) attacks.
     """
 
@@ -256,17 +251,15 @@ class AdversarialSuffixGenerator:
         """Generate an adversarial suffix."""
         if style == "affirmative":
             return secrets.choice(cls.SUFFIX_PATTERNS)
-        elif style == "override":
+        if style == "override":
             return secrets.choice(cls.OVERRIDE_PATTERNS)
-        elif style == "roleplay":
+        if style == "roleplay":
             return secrets.choice(cls.ROLEPLAY_PREFIXES)
-        else:
-            return secrets.choice(cls.SUFFIX_PATTERNS)
+        return secrets.choice(cls.SUFFIX_PATTERNS)
 
     @classmethod
     def generate_gcg_suffix(cls, length: int = 20) -> str:
-        """
-        Generate a GCG-style adversarial suffix.
+        """Generate a GCG-style adversarial suffix.
         These are typically random-looking but optimized tokens.
         """
         # Simulate GCG-style suffixes with special characters and tokens
@@ -306,8 +299,7 @@ class AdversarialSuffixGenerator:
 
 
 class TokenPerturbationEngine:
-    """
-    Main engine for applying token-level perturbations.
+    """Main engine for applying token-level perturbations.
 
     Features:
     - Multiple perturbation strategies
@@ -322,7 +314,7 @@ class TokenPerturbationEngine:
         unicode_injection_frequency: int = 10,
         combining_char_probability: float = 0.05,
         perturbation_intensity: float = 0.3,
-    ):
+    ) -> None:
         self.homoglyph_probability = homoglyph_probability
         self.unicode_injection_frequency = unicode_injection_frequency
         self.combining_char_probability = combining_char_probability
@@ -356,8 +348,7 @@ class TokenPerturbationEngine:
         perturbation_types: list[PerturbationType] | None = None,
         preserve_semantics: bool = True,
     ) -> PerturbationResult:
-        """
-        Apply perturbations to text.
+        """Apply perturbations to text.
 
         Args:
             text: Input text to perturb
@@ -366,6 +357,7 @@ class TokenPerturbationEngine:
 
         Returns:
             PerturbationResult with perturbed text and metadata
+
         """
         if perturbation_types is None:
             # Select random perturbation types
@@ -404,7 +396,8 @@ class TokenPerturbationEngine:
 
             elif ptype == PerturbationType.UNICODE_INJECT:
                 perturbed = UnicodeManipulator.inject_zero_width(
-                    perturbed, self.unicode_injection_frequency
+                    perturbed,
+                    self.unicode_injection_frequency,
                 )
                 tokens_affected += 1
 
@@ -576,8 +569,7 @@ class TokenPerturbationEngine:
         n_variants: int = 5,
         perturbation_types: list[PerturbationType] | None = None,
     ) -> list[list[PerturbationResult]]:
-        """
-        Generate multiple perturbation variants for each input text.
+        """Generate multiple perturbation variants for each input text.
 
         Args:
             texts: List of input texts
@@ -586,6 +578,7 @@ class TokenPerturbationEngine:
 
         Returns:
             List of lists of PerturbationResults
+
         """
         results = []
 
@@ -599,10 +592,12 @@ class TokenPerturbationEngine:
         return results
 
     def gradient_guided_perturb(
-        self, text: str, gradient_scores: dict[int, float] | None = None, top_k: int = 5
+        self,
+        text: str,
+        gradient_scores: dict[int, float] | None = None,
+        top_k: int = 5,
     ) -> PerturbationResult:
-        """
-        Apply gradient-guided perturbation based on token importance scores.
+        """Apply gradient-guided perturbation based on token importance scores.
 
         Args:
             text: Input text
@@ -611,6 +606,7 @@ class TokenPerturbationEngine:
 
         Returns:
             PerturbationResult with gradient-guided perturbations
+
         """
         words = text.split()
 
@@ -624,7 +620,9 @@ class TokenPerturbationEngine:
 
         # Sort positions by gradient score
         sorted_positions = sorted(
-            gradient_scores.keys(), key=lambda x: gradient_scores.get(x, 0), reverse=True
+            gradient_scores.keys(),
+            key=lambda x: gradient_scores.get(x, 0),
+            reverse=True,
         )[:top_k]
 
         # Apply perturbations at high-gradient positions
@@ -648,7 +646,9 @@ class TokenPerturbationEngine:
 
 # Convenience functions
 def apply_perturbation(
-    text: str, perturbation_type: PerturbationType, intensity: float = 0.3
+    text: str,
+    perturbation_type: PerturbationType,
+    intensity: float = 0.3,
 ) -> str:
     """Apply a single perturbation type to text."""
     engine = TokenPerturbationEngine(perturbation_intensity=intensity)
@@ -682,7 +682,8 @@ def generate_adversarial_variants(
 
     for _ in range(n_variants - 1):
         selected_types = secrets.SystemRandom().sample(
-            perturbation_types, min(3, len(perturbation_types))
+            perturbation_types,
+            min(3, len(perturbation_types)),
         )
         result = engine.perturb(text, selected_types)
         if result.perturbed not in variants:

@@ -4,20 +4,19 @@ import secrets
 
 
 class DatasetLoader:
-    def __init__(self, base_path: str):
-        """
-        Initialize the DatasetLoader with the base path to the imported_data directory.
+    def __init__(self, base_path: str) -> None:
+        """Initialize the DatasetLoader with the base path to the imported_data directory.
 
         Args:
             base_path (str): The absolute or relative path to the 'imported_data' directory.
+
         """
         self.base_path = base_path
         self.datasets: dict[str, list[str]] = {}
         self.loaded_techniques: list[str] = []
 
     def load_dataset(self, technique_name: str, sub_path: str = "") -> bool:
-        """
-        Load a specific dataset (JSONL files) for a given technique.
+        """Load a specific dataset (JSONL files) for a given technique.
 
         Args:
             technique_name (str): The name of the technique (e.g., 'GPTFuzz', 'CodeChameleon').
@@ -25,10 +24,10 @@ class DatasetLoader:
 
         Returns:
             bool: True if dataset loaded successfully, False otherwise.
+
         """
         technique_dir = os.path.join(self.base_path, technique_name, sub_path)
         if not os.path.exists(technique_dir):
-            print(f"[DatasetLoader] Warning: Directory not found: {technique_dir}")
             return False
 
         prompts = []
@@ -52,28 +51,24 @@ class DatasetLoader:
                                     prompts.append(data["question"])
                             except json.JSONDecodeError:
                                 continue
-        except Exception as e:
-            print(f"[DatasetLoader] Error loading {technique_name}: {e}")
+        except Exception:
             return False
 
         if prompts:
             self.datasets[technique_name] = prompts
             self.loaded_techniques.append(technique_name)
-            print(f"[DatasetLoader] Loaded {len(prompts)} prompts for {technique_name}")
             return True
-        else:
-            print(f"[DatasetLoader] No valid prompts found for {technique_name}")
-            return False
+        return False
 
     def get_random_prompt(self, technique_name: str) -> str | None:
-        """
-        Get a random prompt from the loaded dataset for a specific technique.
+        """Get a random prompt from the loaded dataset for a specific technique.
 
         Args:
             technique_name (str): The name of the technique.
 
         Returns:
             str: A random prompt, or None if the dataset is not loaded or empty.
+
         """
         if technique_name not in self.datasets:
             # Try to load it on demand if not already loaded

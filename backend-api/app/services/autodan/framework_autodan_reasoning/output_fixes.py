@@ -1,5 +1,4 @@
-"""
-Output Generation Fixes for AutoDAN Prompt Synthesis Pipeline
+"""Output Generation Fixes for AutoDAN Prompt Synthesis Pipeline.
 
 This module addresses:
 1. Malformed or truncated adversarial prompts
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TokenizationBoundaryHandler:
-    """
-    Handles tokenization boundary errors that corrupt generated outputs.
+    """Handles tokenization boundary errors that corrupt generated outputs.
 
     Key fixes:
     - Validates token boundaries before and after encoding
@@ -27,7 +25,7 @@ class TokenizationBoundaryHandler:
     - Handles multi-byte character boundaries correctly
     """
 
-    def __init__(self, max_token_length: int = 4096):
+    def __init__(self, max_token_length: int = 4096) -> None:
         self.max_token_length = max_token_length
         self._boundary_cache: dict[str, list[int]] = {}
 
@@ -74,8 +72,9 @@ class TokenizationBoundaryHandler:
                 break
 
         if safe_boundary == 0:
+            msg = "Unable to truncate at a safe boundary; fallback truncation is disabled."
             raise ValueError(
-                "Unable to truncate at a safe boundary; fallback truncation is disabled."
+                msg,
             )
 
         return text[:safe_boundary].rstrip()
@@ -105,8 +104,7 @@ class TokenizationBoundaryHandler:
 
 
 class MalformedOutputDetector:
-    """
-    Detects and repairs malformed or truncated adversarial prompts.
+    """Detects and repairs malformed or truncated adversarial prompts.
 
     Common issues addressed:
     - Incomplete JSON structures
@@ -115,7 +113,7 @@ class MalformedOutputDetector:
     - Missing closing delimiters
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.repair_strategies = [
             self._repair_json_structure,
             self._repair_quotes,
@@ -211,7 +209,7 @@ class MalformedOutputDetector:
         # Verify repair
         post_detection = self.detect_malformation(repaired)
         success = not post_detection["is_malformed"] or len(post_detection["issues"]) < len(
-            detection["issues"]
+            detection["issues"],
         )
 
         return repaired, success
@@ -278,8 +276,7 @@ class MalformedOutputDetector:
 
 
 class FormattingConsistencyEnforcer:
-    """
-    Ensures formatting consistency for attack transferability.
+    """Ensures formatting consistency for attack transferability.
 
     Addresses:
     - Inconsistent whitespace handling
@@ -287,7 +284,7 @@ class FormattingConsistencyEnforcer:
     - Encoding format mismatches
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.placeholder_formats = {
             "request": [
                 "{request}",
@@ -314,7 +311,7 @@ class FormattingConsistencyEnforcer:
         """Normalize all placeholder formats to a consistent format."""
         result = text
 
-        for _placeholder_type, formats in self.placeholder_formats.items():
+        for formats in self.placeholder_formats.values():
             for fmt in formats:
                 if fmt != target_format and fmt in result:
                     result = result.replace(fmt, target_format)
@@ -379,29 +376,28 @@ class FormattingConsistencyEnforcer:
             text = text.replace("{request}", request)
 
         # Ensure syntactic coherence
-        text = self.ensure_syntactic_coherence(text)
-
-        return text
+        return self.ensure_syntactic_coherence(text)
 
 
 class PromptSynthesisPipeline:
-    """
-    Complete pipeline for synthesizing adversarial prompts with all fixes applied.
-    """
+    """Complete pipeline for synthesizing adversarial prompts with all fixes applied."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tokenization_handler = TokenizationBoundaryHandler()
         self.malformation_detector = MalformedOutputDetector()
         self.formatting_enforcer = FormattingConsistencyEnforcer()
 
     def process(
-        self, raw_prompt: str, request: str, max_length: int = 4096
+        self,
+        raw_prompt: str,
+        request: str,
+        max_length: int = 4096,
     ) -> tuple[str, dict[str, Any]]:
-        """
-        Process a raw generated prompt through the full pipeline.
+        """Process a raw generated prompt through the full pipeline.
 
         Returns:
             Tuple of (processed_prompt, metadata)
+
         """
         metadata = {
             "original_length": len(raw_prompt) if raw_prompt else 0,

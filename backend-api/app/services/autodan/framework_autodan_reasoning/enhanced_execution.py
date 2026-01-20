@@ -1,5 +1,4 @@
-"""
-Enhanced AutoDAN Execution Module
+"""Enhanced AutoDAN Execution Module.
 
 This module provides improved prompt generation and execution capabilities:
 - Advanced prompt templates with higher success rates
@@ -87,7 +86,7 @@ class ExecutionResult:
 class AdvancedPromptTemplates:
     """Advanced prompt templates with higher success rates."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.templates = self._initialize_templates()
         self.template_scores: dict[str, list[float]] = {}
 
@@ -237,7 +236,9 @@ class AdvancedPromptTemplates:
         }
 
     def get_best_template(
-        self, strategy: StrategyType, exclude_names: list[str] | None = None
+        self,
+        strategy: StrategyType,
+        exclude_names: list[str] | None = None,
     ) -> dict:
         """Get the best template for a strategy."""
         exclude_names = exclude_names or []
@@ -273,7 +274,7 @@ class AdvancedPromptTemplates:
 
         return weighted[0][0]
 
-    def record_score(self, template_name: str, score: float):
+    def record_score(self, template_name: str, score: float) -> None:
         """Record a score for a template."""
         if template_name not in self.template_scores:
             self.template_scores[template_name] = []
@@ -283,7 +284,10 @@ class AdvancedPromptTemplates:
             self.template_scores[template_name] = self.template_scores[template_name][-50:]
 
     def apply_template(
-        self, template: dict, request: str, variables: dict[str, str] | None = None
+        self,
+        template: dict,
+        request: str,
+        variables: dict[str, str] | None = None,
     ) -> str:
         """Apply a template to a request."""
         variables = variables or {}
@@ -315,7 +319,7 @@ class MultiStageAttackPipeline:
         generator_llm: LLMInterface,
         target_llm: LLMInterface | None = None,
         config: ExecutionConfig | None = None,
-    ):
+    ) -> None:
         self.generator_llm = generator_llm
         self.target_llm = target_llm
         self.config = config or ExecutionConfig()
@@ -324,7 +328,9 @@ class MultiStageAttackPipeline:
         self.defense_analyzer = DefensePatternAnalyzer()
         self.strategy_library = StrategyLibrary()
         self.prompt_generator = DynamicPromptGenerator(
-            generator_llm, self.strategy_library, self.defense_analyzer
+            generator_llm,
+            self.strategy_library,
+            self.defense_analyzer,
         )
         self.pipeline = PromptSynthesisPipeline()
         self.evaluation_harness = EvaluationHarness()
@@ -403,12 +409,11 @@ class MultiStageAttackPipeline:
 
         if sensitivity == "high":
             return secrets.choice(
-                [StrategyType.HYPOTHETICAL, StrategyType.CREATIVE_WRITING, StrategyType.ACADEMIC]
+                [StrategyType.HYPOTHETICAL, StrategyType.CREATIVE_WRITING, StrategyType.ACADEMIC],
             )
-        elif sensitivity == "medium":
+        if sensitivity == "medium":
             return secrets.choice([StrategyType.ROLEPLAY, StrategyType.TECHNICAL_FRAMING])
-        else:
-            return secrets.choice(list(StrategyType))
+        return secrets.choice(list(StrategyType))
 
     async def _single_shot_attack(self, request: str, strategy: StrategyType) -> ExecutionResult:
         """Execute a single-shot attack."""
@@ -424,7 +429,7 @@ class MultiStageAttackPipeline:
                 response = await self.target_llm.generate(processed)
                 score = self._score_response(response)
             except Exception as e:
-                logger.error(f"Target execution failed: {e}")
+                logger.exception(f"Target execution failed: {e}")
 
         self.templates.record_score(template["name"], score)
 
@@ -441,7 +446,9 @@ class MultiStageAttackPipeline:
         )
 
     async def _iterative_attack(
-        self, request: str, initial_strategy: StrategyType
+        self,
+        request: str,
+        initial_strategy: StrategyType,
     ) -> ExecutionResult:
         """Execute iterative attack with refinement."""
         best_prompt = ""
@@ -487,7 +494,7 @@ class MultiStageAttackPipeline:
                         strategy = analysis.suggested_bypasses[0]
 
                 except Exception as e:
-                    logger.error(f"Iteration {iteration} failed: {e}")
+                    logger.exception(f"Iteration {iteration} failed: {e}")
 
         return ExecutionResult(
             success=best_score >= self.config.success_threshold,
@@ -520,7 +527,7 @@ class MultiStageAttackPipeline:
                     candidates.append((processed, response, score))
                     self.templates.record_score(template["name"], score)
                 except Exception as e:
-                    logger.error(f"Best-of-N candidate {i} failed: {e}")
+                    logger.exception(f"Best-of-N candidate {i} failed: {e}")
 
         if not candidates:
             return ExecutionResult(
@@ -550,7 +557,9 @@ class MultiStageAttackPipeline:
         )
 
     async def _beam_search_attack(
-        self, request: str, initial_strategy: StrategyType
+        self,
+        request: str,
+        initial_strategy: StrategyType,
     ) -> ExecutionResult:
         """Execute Beam Search attack."""
         beams: list[tuple[str, StrategyType, float]] = []
@@ -570,7 +579,8 @@ class MultiStageAttackPipeline:
             for _beam_prompt, beam_strategy, _ in beams:
                 for _ in range(self.config.candidates_per_beam):
                     refined, _ = await self.prompt_generator.generate_prompt(
-                        request, strategy_hint=beam_strategy
+                        request,
+                        strategy_hint=beam_strategy,
                     )
                     processed, _ = self.pipeline.process(refined, request)
 
@@ -596,7 +606,7 @@ class MultiStageAttackPipeline:
                                     metadata={"beam_iteration": iteration},
                                 )
                         except Exception as e:
-                            logger.error(f"Beam candidate failed: {e}")
+                            logger.exception(f"Beam candidate failed: {e}")
 
             new_candidates.sort(key=lambda x: x[2], reverse=True)
             beams = [(c[0], c[3], c[2]) for c in new_candidates[: self.config.beam_width]]
@@ -614,7 +624,9 @@ class MultiStageAttackPipeline:
         )
 
     async def _adaptive_attack(
-        self, request: str, initial_strategy: StrategyType
+        self,
+        request: str,
+        initial_strategy: StrategyType,
     ) -> ExecutionResult:
         """Execute adaptive attack that switches modes."""
         result = await self._single_shot_attack(request, initial_strategy)
@@ -683,16 +695,14 @@ class MultiStageAttackPipeline:
 
 
 class EnhancedAutoDANExecutor:
-    """
-    Enhanced AutoDAN executor with improved output and execution.
-    """
+    """Enhanced AutoDAN executor with improved output and execution."""
 
     def __init__(
         self,
         generator_llm: LLMInterface,
         target_llm: LLMInterface | None = None,
         config: ExecutionConfig | None = None,
-    ):
+    ) -> None:
         self.generator_llm = generator_llm
         self.target_llm = target_llm
         self.config = config or ExecutionConfig()

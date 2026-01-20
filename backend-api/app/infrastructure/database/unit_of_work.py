@@ -1,5 +1,4 @@
-"""
-Unit of Work Pattern Implementation
+"""Unit of Work Pattern Implementation.
 
 Story 1.3: Configuration Persistence System
 Provides transaction management across multiple repositories.
@@ -20,19 +19,18 @@ class UnitOfWorkError(Exception):
 
 
 class UnitOfWork:
-    """
-    Unit of Work pattern for managing database transactions.
+    """Unit of Work pattern for managing database transactions.
 
     Provides a single transaction boundary for multiple repository operations.
     Ensures atomicity of related database changes.
     """
 
-    def __init__(self, db: DatabaseConnection):
-        """
-        Initialize unit of work with database connection.
+    def __init__(self, db: DatabaseConnection) -> None:
+        """Initialize unit of work with database connection.
 
         Args:
             db: Database connection instance.
+
         """
         self._db = db
         self._config_repo: ConfigRepository | None = None
@@ -69,7 +67,8 @@ class UnitOfWork:
     async def begin(self) -> None:
         """Begin a new transaction."""
         if self._in_transaction:
-            raise UnitOfWorkError("Transaction already in progress")
+            msg = "Transaction already in progress"
+            raise UnitOfWorkError(msg)
 
         async with self._db.get_connection() as conn:
             await conn.execute("BEGIN")
@@ -103,8 +102,7 @@ class UnitOfWork:
 
 @asynccontextmanager
 async def create_unit_of_work(db: DatabaseConnection):
-    """
-    Create a unit of work context manager.
+    """Create a unit of work context manager.
 
     Args:
         db: Database connection instance.
@@ -117,6 +115,7 @@ async def create_unit_of_work(db: DatabaseConnection):
             config = await uow.configs.create(config_entity)
             api_key = await uow.api_keys.create(key_entity)
             # Both operations commit together or rollback on error
+
     """
     uow = UnitOfWork(db)
     async with uow:

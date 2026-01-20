@@ -1,6 +1,4 @@
-"""
-Model synchronization service with Redis caching and routing.
-"""
+"""Model synchronization service with Redis caching and routing."""
 
 import json
 import logging
@@ -44,7 +42,8 @@ def datetime_serializer(obj: Any) -> str:
     """Custom JSON serializer for datetime objects."""
     if isinstance(obj, datetime):
         return obj.isoformat()
-    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+    msg = f"Object of type {type(obj).__name__} is not JSON serializable"
+    raise TypeError(msg)
 
 
 async def get_redis_client() -> redis.Redis:
@@ -68,12 +67,12 @@ async def get_redis_client() -> redis.Redis:
 class ModelSyncService:
     """Service for model synchronization with caching and routing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.default_model = getattr(settings, "DEFAULT_MODEL_ID", "deepseek-chat")
         self._models_cache: list[ModelInfo] | None = None
         self._cache_timestamp: datetime | None = None
 
-    async def initialize_models(self):
+    async def initialize_models(self) -> None:
         """Initialize models from configuration."""
         try:
             redis_client = await get_redis_client()
@@ -120,14 +119,15 @@ class ModelSyncService:
             # Cache in Redis with proper datetime serialization
             if redis_client:
                 models_json = json.dumps(
-                    [model.model_dump(mode="json") for model in models], default=datetime_serializer
+                    [model.model_dump(mode="json") for model in models],
+                    default=datetime_serializer,
                 )
                 await redis_client.setex("available_models", MODELS_CACHE_TTL, models_json)
 
             logger.info(f"Initialized {len(models)} models from configuration")
 
         except Exception as e:
-            logger.error(f"Failed to initialize models: {e}")
+            logger.exception(f"Failed to initialize models: {e}")
             raise ChimeraError(status_code=500, message=f"Model initialization failed: {e!s}")
 
     def _determine_model_capabilities(self, model_name: str) -> list[str]:
@@ -153,12 +153,11 @@ class ModelSyncService:
         lower_name = model_name.lower()
         if "pro" in lower_name or "opus" in lower_name:
             return 8192
-        elif "flash" in lower_name or "haiku" in lower_name or "mini" in lower_name:
+        if "flash" in lower_name or "haiku" in lower_name or "mini" in lower_name:
             return 4096
-        elif "thinking" in lower_name or "o1" in lower_name or "o3" in lower_name:
+        if "thinking" in lower_name or "o1" in lower_name or "o3" in lower_name:
             return 32768
-        else:
-            return 2048  # Default
+        return 2048  # Default
 
     async def get_available_models(self) -> AvailableModelsResponse:
         """Get all available models with caching."""
@@ -179,7 +178,7 @@ class ModelSyncService:
             )
 
         except Exception as e:
-            logger.error(f"Failed to get available models: {e}")
+            logger.exception(f"Failed to get available models: {e}")
             raise ChimeraError(status_code=500, message=f"Failed to retrieve models: {e!s}")
 
     async def validate_model_id(self, model_id: str) -> bool:
@@ -239,27 +238,26 @@ class ModelSyncService:
                         message="Model selected successfully",
                         timestamp=datetime.utcnow().isoformat(),
                     )
-                else:
-                    # Log error
-                    await log_model_change_error(
-                        db_session,
-                        user_id,
-                        session_id,
-                        request.model_id,
-                        "Failed to update user session",
-                        ip_address,
-                        user_agent,
-                    )
+                # Log error
+                await log_model_change_error(
+                    db_session,
+                    user_id,
+                    session_id,
+                    request.model_id,
+                    "Failed to update user session",
+                    ip_address,
+                    user_agent,
+                )
 
-                    return ModelSelectionResponse(
-                        success=False,
-                        model_id=request.model_id,
-                        message="Failed to update session",
-                        timestamp=datetime.utcnow().isoformat(),
-                    )
+                return ModelSelectionResponse(
+                    success=False,
+                    model_id=request.model_id,
+                    message="Failed to update session",
+                    timestamp=datetime.utcnow().isoformat(),
+                )
 
         except Exception as e:
-            logger.error(f"Model selection failed: {e}")
+            logger.exception(f"Model selection failed: {e}")
             return ModelSelectionResponse(
                 success=False,
                 model_id=request.model_id,
@@ -282,7 +280,7 @@ class ModelSyncService:
                 return None
 
         except Exception as e:
-            logger.error(f"Failed to get user model: {e}")
+            logger.exception(f"Failed to get user model: {e}")
             return None
 
     async def _check_rate_limit(self, user_id: str, session_id: str) -> bool:
@@ -301,7 +299,7 @@ class ModelSyncService:
             logger.warning(f"Rate limit check failed: {e}")
             return True  # Allow on error
 
-    async def _update_rate_limit(self, user_id: str, session_id: str):
+    async def _update_rate_limit(self, user_id: str, session_id: str) -> None:
         """Update rate limit counter for user."""
         try:
             redis_client = await get_redis_client()
@@ -319,8 +317,11 @@ class ModelSyncService:
             logger.warning(f"Failed to update rate limit: {e}")
 
     async def update_model_availability(
-        self, model_id: str, is_available: bool, error_message: str | None = None
-    ):
+        self,
+        model_id: str,
+        is_available: bool,
+        error_message: str | None = None,
+    ) -> None:
         """Update model availability status."""
         try:
             redis_client = await get_redis_client()
@@ -360,9 +361,9 @@ class ModelSyncService:
             logger.info(f"Updated model availability: {model_id} -> {is_available}")
 
         except Exception as e:
-            logger.error(f"Failed to update model availability: {e}")
+            logger.exception(f"Failed to update model availability: {e}")
 
-    async def cleanup_expired_data(self):
+    async def cleanup_expired_data(self) -> None:
         """Clean up expired sessions and cache data."""
         try:
             async with db_manager.session() as db_session:
@@ -371,7 +372,7 @@ class ModelSyncService:
             logger.info("Cleaned up expired model sync data")
 
         except Exception as e:
-            logger.error(f"Failed to cleanup expired data: {e}")
+            logger.exception(f"Failed to cleanup expired data: {e}")
 
 
 # Global service instance

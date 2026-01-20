@@ -1,5 +1,4 @@
-"""
-Campaign Analytics API Endpoints
+"""Campaign Analytics API Endpoints.
 
 Provides RESTful endpoints for campaign telemetry analytics:
 - Campaign listing and detail retrieval
@@ -16,7 +15,7 @@ import csv
 import io
 import time
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
@@ -56,8 +55,7 @@ router = APIRouter()
 
 
 async def get_db_session() -> AsyncSession:
-    """
-    Get an async database session for campaign analytics.
+    """Get an async database session for campaign analytics.
 
     Uses the read_only_session for query operations.
     """
@@ -79,26 +77,30 @@ async def get_analytics_service(
 
 @router.get(
     "",
-    response_model=CampaignListResponse,
     summary="List campaigns",
     description="Get a paginated list of campaigns with optional filtering.",
 )
 async def list_campaigns(
-    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    sort_by: str = Query("created_at", description="Field to sort by"),
-    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
-    status: list[CampaignStatusEnum] | None = Query(None, description="Filter by status"),
-    provider: list[str] | None = Query(None, description="Filter by target provider"),
-    technique_suite: list[str] | None = Query(None, description="Filter by technique suite"),
-    tags: list[str] | None = Query(None, description="Filter by tags"),
-    start_date: datetime | None = Query(None, description="Created after this date"),
-    end_date: datetime | None = Query(None, description="Created before this date"),
-    search: str | None = Query(None, max_length=100, description="Search in name/description"),
+    page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    sort_by: Annotated[str, Query(description="Field to sort by")] = "created_at",
+    sort_order: Annotated[str, Query(pattern="^(asc|desc)$", description="Sort order")] = "desc",
+    status: Annotated[
+        list[CampaignStatusEnum] | None, Query(description="Filter by status")
+    ] = None,
+    provider: Annotated[list[str] | None, Query(description="Filter by target provider")] = None,
+    technique_suite: Annotated[
+        list[str] | None, Query(description="Filter by technique suite")
+    ] = None,
+    tags: Annotated[list[str] | None, Query(description="Filter by tags")] = None,
+    start_date: Annotated[datetime | None, Query(description="Created after this date")] = None,
+    end_date: Annotated[datetime | None, Query(description="Created before this date")] = None,
+    search: Annotated[
+        str | None, Query(max_length=100, description="Search in name/description")
+    ] = None,
     service: CampaignAnalyticsService = Depends(get_analytics_service),
 ) -> CampaignListResponse:
-    """
-    List campaigns with pagination and filtering.
+    """List campaigns with pagination and filtering.
 
     Returns a paginated list of campaign summaries with quick stats.
     Supports filtering by status, provider, technique, tags, date range,
@@ -130,17 +132,15 @@ async def list_campaigns(
 
 @router.get(
     "/{campaign_id}",
-    response_model=CampaignDetail,
     summary="Get campaign detail",
     description="Get detailed information about a specific campaign.",
     responses={404: {"description": "Campaign not found"}},
 )
 async def get_campaign_detail(
     campaign_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> CampaignDetail:
-    """
-    Get detailed campaign information.
+    """Get detailed campaign information.
 
     Returns the full campaign details including configuration,
     quick statistics, and metadata.
@@ -158,17 +158,15 @@ async def get_campaign_detail(
 
 @router.get(
     "/{campaign_id}/summary",
-    response_model=CampaignSummary,
     summary="Get campaign summary",
     description="Get a summary view of a campaign (lighter than detail).",
     responses={404: {"description": "Campaign not found"}},
 )
 async def get_campaign_summary(
     campaign_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> CampaignSummary:
-    """
-    Get campaign summary.
+    """Get campaign summary.
 
     Returns a lightweight summary view of the campaign with
     quick stats but without full configuration.
@@ -191,17 +189,15 @@ async def get_campaign_summary(
 
 @router.get(
     "/{campaign_id}/statistics",
-    response_model=CampaignStatistics,
     summary="Get campaign statistics",
     description="Get comprehensive statistical analysis for a campaign.",
     responses={404: {"description": "Campaign not found"}},
 )
 async def get_campaign_statistics(
     campaign_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> CampaignStatistics:
-    """
-    Get comprehensive statistics for a campaign.
+    """Get comprehensive statistics for a campaign.
 
     Computes and returns:
     - Attempt counts by status
@@ -230,17 +226,15 @@ async def get_campaign_statistics(
 
 @router.get(
     "/{campaign_id}/breakdown/techniques",
-    response_model=TechniqueBreakdown,
     summary="Get technique breakdown",
     description="Get success rate breakdown by transformation technique.",
     responses={404: {"description": "Campaign not found"}},
 )
 async def get_technique_breakdown(
     campaign_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> TechniqueBreakdown:
-    """
-    Get breakdown of results by transformation technique.
+    """Get breakdown of results by transformation technique.
 
     Shows success rate, latency, and cost metrics for each
     technique used in the campaign.
@@ -258,17 +252,15 @@ async def get_technique_breakdown(
 
 @router.get(
     "/{campaign_id}/breakdown/providers",
-    response_model=ProviderBreakdown,
     summary="Get provider breakdown",
     description="Get success rate breakdown by LLM provider.",
     responses={404: {"description": "Campaign not found"}},
 )
 async def get_provider_breakdown(
     campaign_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> ProviderBreakdown:
-    """
-    Get breakdown of results by LLM provider.
+    """Get breakdown of results by LLM provider.
 
     Shows success rate, latency, and cost metrics for each
     provider used in the campaign.
@@ -286,17 +278,15 @@ async def get_provider_breakdown(
 
 @router.get(
     "/{campaign_id}/breakdown/potency",
-    response_model=PotencyBreakdown,
     summary="Get potency breakdown",
     description="Get success rate breakdown by potency level.",
     responses={404: {"description": "Campaign not found"}},
 )
 async def get_potency_breakdown(
     campaign_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> PotencyBreakdown:
-    """
-    Get breakdown of results by potency level.
+    """Get breakdown of results by potency level.
 
     Shows success rate, latency, and cost metrics for each
     potency level (1-10) used in the campaign.
@@ -319,29 +309,26 @@ async def get_potency_breakdown(
 
 @router.get(
     "/{campaign_id}/time-series",
-    response_model=TelemetryTimeSeries,
     summary="Get time series data",
     description="Get time-bucketed telemetry data for visualization.",
     responses={404: {"description": "Campaign not found"}},
 )
 async def get_time_series(
     campaign_id: str,
-    metric: str = Query(
-        "success_rate",
-        description="Metric to chart: success_rate, latency, tokens, cost, semantic_success",
-    ),
-    granularity: TimeGranularity = Query(
-        TimeGranularity.HOUR,
-        description="Time bucket granularity",
-    ),
-    start_time: datetime | None = Query(None, description="Series start time"),
-    end_time: datetime | None = Query(None, description="Series end time"),
-    technique_suite: list[str] | None = Query(None, description="Filter by technique"),
-    provider: list[str] | None = Query(None, description="Filter by provider"),
+    metric: Annotated[
+        str,
+        Query(description="Metric to chart: success_rate, latency, tokens, cost, semantic_success"),
+    ] = "success_rate",
+    granularity: Annotated[
+        TimeGranularity, Query(description="Time bucket granularity")
+    ] = TimeGranularity.HOUR,
+    start_time: Annotated[datetime | None, Query(description="Series start time")] = None,
+    end_time: Annotated[datetime | None, Query(description="Series end time")] = None,
+    technique_suite: Annotated[list[str] | None, Query(description="Filter by technique")] = None,
+    provider: Annotated[list[str] | None, Query(description="Filter by provider")] = None,
     service: CampaignAnalyticsService = Depends(get_analytics_service),
 ) -> TelemetryTimeSeries:
-    """
-    Get time series data for a campaign metric.
+    """Get time series data for a campaign metric.
 
     Returns time-bucketed data for charting success rates, latency,
     token usage, or cost over the campaign duration.
@@ -380,7 +367,6 @@ async def get_time_series(
 
 @router.post(
     "/compare",
-    response_model=CampaignComparison,
     summary="Compare campaigns",
     description="Compare 2-4 campaigns side by side with normalized metrics.",
     responses={
@@ -390,10 +376,9 @@ async def get_time_series(
 )
 async def compare_campaigns(
     request: CampaignComparisonRequest,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> CampaignComparison:
-    """
-    Compare multiple campaigns side by side.
+    """Compare multiple campaigns side by side.
 
     Supports comparing 2-4 campaigns with:
     - Core metrics comparison (success rate, latency, cost)
@@ -431,28 +416,32 @@ async def compare_campaigns(
 
 @router.get(
     "/{campaign_id}/events",
-    response_model=TelemetryListResponse,
     summary="List telemetry events",
     description="Get paginated list of individual telemetry events.",
     responses={404: {"description": "Campaign not found"}},
 )
 async def list_telemetry_events(
     campaign_id: str,
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(50, ge=1, le=200, description="Items per page"),
-    status_filter: list[str] | None = Query(None, alias="status", description="Filter by status"),
-    technique_suite: list[str] | None = Query(None, description="Filter by technique"),
-    provider: list[str] | None = Query(None, description="Filter by provider"),
-    model: list[str] | None = Query(None, description="Filter by model"),
-    success_only: bool | None = Query(None, description="Only successful attempts"),
-    start_time: datetime | None = Query(None, description="Events after this time"),
-    end_time: datetime | None = Query(None, description="Events before this time"),
-    min_potency: int | None = Query(None, ge=1, le=10, description="Minimum potency level"),
-    max_potency: int | None = Query(None, ge=1, le=10, description="Maximum potency level"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=200, description="Items per page")] = 50,
+    status_filter: Annotated[
+        list[str] | None, Query(alias="status", description="Filter by status")
+    ] = None,
+    technique_suite: Annotated[list[str] | None, Query(description="Filter by technique")] = None,
+    provider: Annotated[list[str] | None, Query(description="Filter by provider")] = None,
+    model: Annotated[list[str] | None, Query(description="Filter by model")] = None,
+    success_only: Annotated[bool | None, Query(description="Only successful attempts")] = None,
+    start_time: Annotated[datetime | None, Query(description="Events after this time")] = None,
+    end_time: Annotated[datetime | None, Query(description="Events before this time")] = None,
+    min_potency: Annotated[
+        int | None, Query(ge=1, le=10, description="Minimum potency level")
+    ] = None,
+    max_potency: Annotated[
+        int | None, Query(ge=1, le=10, description="Maximum potency level")
+    ] = None,
     service: CampaignAnalyticsService = Depends(get_analytics_service),
 ) -> TelemetryListResponse:
-    """
-    Get paginated list of telemetry events for a campaign.
+    """Get paginated list of telemetry events for a campaign.
 
     Returns individual execution events with summary information.
     Supports filtering by status, technique, provider, time range,
@@ -470,7 +459,7 @@ async def list_telemetry_events(
             end_time,
             min_potency,
             max_potency,
-        ]
+        ],
     ):
         filters = TelemetryFilterParams(
             technique_suite=technique_suite,
@@ -483,19 +472,16 @@ async def list_telemetry_events(
             max_potency=max_potency,
         )
 
-    result = await service.get_telemetry_events(
+    return await service.get_telemetry_events(
         campaign_id=campaign_id,
         page=page,
         page_size=page_size,
         filters=filters,
     )
 
-    return result
-
 
 @router.get(
     "/{campaign_id}/events/{event_id}",
-    response_model=TelemetryEventDetail,
     summary="Get telemetry event detail",
     description="Get full details for a single telemetry event.",
     responses={404: {"description": "Event not found"}},
@@ -503,10 +489,9 @@ async def list_telemetry_events(
 async def get_telemetry_event_detail(
     campaign_id: str,
     event_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> TelemetryEventDetail:
-    """
-    Get full details for a single telemetry event.
+    """Get full details for a single telemetry event.
 
     Returns complete event information including full prompts,
     responses, quality scores, and detailed timing breakdown.
@@ -542,12 +527,11 @@ async def get_telemetry_event_detail(
 )
 async def export_campaign_csv(
     campaign_id: str,
-    include_prompts: bool = Query(False, description="Include full prompt text"),
-    include_responses: bool = Query(False, description="Include full response text"),
+    include_prompts: Annotated[bool, Query(description="Include full prompt text")] = False,
+    include_responses: Annotated[bool, Query(description="Include full response text")] = False,
     service: CampaignAnalyticsService = Depends(get_analytics_service),
 ) -> StreamingResponse:
-    """
-    Export campaign telemetry data as CSV.
+    """Export campaign telemetry data as CSV.
 
     Downloads a CSV file containing all telemetry events for the campaign.
     Optionally includes full prompt and response text (can be large).
@@ -637,8 +621,7 @@ async def export_campaign_csv(
 
     processing_time = (time.time() - start_time) * 1000
     logger.info(
-        f"Exported {len(all_events)} events for campaign {campaign_id} "
-        f"in {processing_time:.2f}ms"
+        f"Exported {len(all_events)} events for campaign {campaign_id} in {processing_time:.2f}ms",
     )
 
     return StreamingResponse(
@@ -654,7 +637,6 @@ async def export_campaign_csv(
 
 @router.post(
     "/{campaign_id}/export/chart",
-    response_model=ExportResponse,
     summary="Export campaign chart",
     description="Generate chart export (PNG/SVG) for research publications.",
     responses={
@@ -665,10 +647,9 @@ async def export_campaign_csv(
 async def export_campaign_chart(
     campaign_id: str,
     request: ExportRequest,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> ExportResponse:
-    """
-    Generate chart export for a campaign.
+    """Generate chart export for a campaign.
 
     Creates PNG or SVG chart exports suitable for research publications
     and security reports.
@@ -744,10 +725,9 @@ async def export_campaign_chart(
 )
 async def invalidate_campaign_cache(
     campaign_id: str,
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> dict[str, Any]:
-    """
-    Invalidate cached analytics data for a campaign.
+    """Invalidate cached analytics data for a campaign.
 
     Forces fresh computation of statistics and breakdowns
     on the next request.
@@ -767,10 +747,9 @@ async def invalidate_campaign_cache(
     responses={200: {"description": "Cache statistics"}},
 )
 async def get_cache_stats(
-    service: CampaignAnalyticsService = Depends(get_analytics_service),
+    service: Annotated[CampaignAnalyticsService, Depends(get_analytics_service)],
 ) -> dict[str, Any]:
-    """
-    Get analytics cache statistics.
+    """Get analytics cache statistics.
 
     Returns cache hit/miss rates and size information.
     """

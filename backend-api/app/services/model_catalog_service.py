@@ -1,5 +1,4 @@
-"""
-Model Catalog Service for Project Chimera.
+"""Model Catalog Service for Project Chimera.
 
 Provides dynamic model discovery and catalog management across all
 registered AI providers. Supports caching, refresh, and aggregation.
@@ -18,12 +17,12 @@ logger = logging.getLogger(__name__)
 class ModelCatalogCache:
     """Cache for model catalog data with TTL support."""
 
-    def __init__(self, default_ttl_seconds: int = 3600):
-        """
-        Initialize the cache.
+    def __init__(self, default_ttl_seconds: int = 3600) -> None:
+        """Initialize the cache.
 
         Args:
             default_ttl_seconds: Default time-to-live in seconds (1 hour)
+
         """
         self._cache: dict[str, list[ModelInfo]] = {}
         self._timestamps: dict[str, datetime] = {}
@@ -84,8 +83,7 @@ class ModelCatalogCache:
 
 
 class ModelCatalogService:
-    """
-    Service for dynamic model discovery and catalog management.
+    """Service for dynamic model discovery and catalog management.
 
     Features:
     - Query each provider's API for available models
@@ -94,20 +92,19 @@ class ModelCatalogService:
     - Return model metadata: name, context_length, capabilities, pricing
     """
 
-    def __init__(self, cache_ttl_seconds: int = 3600):
-        """
-        Initialize the Model Catalog Service.
+    def __init__(self, cache_ttl_seconds: int = 3600) -> None:
+        """Initialize the Model Catalog Service.
 
         Args:
             cache_ttl_seconds: Cache TTL in seconds (default 1 hour)
+
         """
         self._cache = ModelCatalogCache(cache_ttl_seconds)
         self._discovery_lock = asyncio.Lock()
         self._last_full_refresh: datetime | None = None
 
     async def discover_models(self, provider: str, force_refresh: bool = False) -> list[ModelInfo]:
-        """
-        Discover models for a specific provider.
+        """Discover models for a specific provider.
 
         Args:
             provider: Provider type (e.g., "openai", "anthropic")
@@ -115,6 +112,7 @@ class ModelCatalogService:
 
         Returns:
             List of ModelInfo objects for the provider
+
         """
         # Check cache first unless force refresh
         if not force_refresh:
@@ -139,14 +137,13 @@ class ModelCatalogService:
             logger.info(f"Discovered {len(models)} models for {provider}")
             return models
         except Exception as e:
-            logger.error(f"Error discovering models for {provider}: {e}")
+            logger.exception(f"Error discovering models for {provider}: {e}")
             # Return cached data if available, even if expired
             cached = await self._cache.get(provider)
             return cached if cached else []
 
     async def refresh_catalog(self, provider: str | None = None) -> dict[str, list[ModelInfo]]:
-        """
-        Force refresh of model catalog.
+        """Force refresh of model catalog.
 
         Args:
             provider: Optional provider to refresh.
@@ -154,6 +151,7 @@ class ModelCatalogService:
 
         Returns:
             Dict mapping provider names to their model lists
+
         """
         async with self._discovery_lock:
             if provider:
@@ -161,14 +159,12 @@ class ModelCatalogService:
                 await self._cache.invalidate(provider)
                 models = await self.discover_models(provider, force_refresh=True)
                 return {provider: models}
-            else:
-                # Refresh all providers
-                await self._cache.invalidate()
-                return await self._discover_all_providers(force_refresh=True)
+            # Refresh all providers
+            await self._cache.invalidate()
+            return await self._discover_all_providers(force_refresh=True)
 
     async def get_available_models(self, provider: str) -> list[ModelInfo]:
-        """
-        Get available models for a provider.
+        """Get available models for a provider.
 
         Uses cache if available, otherwise discovers models.
 
@@ -177,29 +173,31 @@ class ModelCatalogService:
 
         Returns:
             List of available models
+
         """
         return await self.discover_models(provider, force_refresh=False)
 
     async def get_all_providers_with_models(self) -> dict[str, list[ModelInfo]]:
-        """
-        Get all providers with their available models.
+        """Get all providers with their available models.
 
         Returns:
             Dict mapping provider names to their model lists
+
         """
         return await self._discover_all_providers(force_refresh=False)
 
     async def _discover_all_providers(
-        self, force_refresh: bool = False
+        self,
+        force_refresh: bool = False,
     ) -> dict[str, list[ModelInfo]]:
-        """
-        Discover models from all registered providers.
+        """Discover models from all registered providers.
 
         Args:
             force_refresh: If True, bypass cache
 
         Returns:
             Dict mapping provider names to model lists
+
         """
         plugins = get_all_plugins()
 
@@ -211,14 +209,15 @@ class ModelCatalogService:
         async def discover_with_timeout(provider_type: str) -> tuple[str, list[ModelInfo]]:
             try:
                 models = await asyncio.wait_for(
-                    self.discover_models(provider_type, force_refresh), timeout=30.0
+                    self.discover_models(provider_type, force_refresh),
+                    timeout=30.0,
                 )
                 return (provider_type, models)
             except TimeoutError:
                 logger.warning(f"Timeout discovering models for {provider_type}")
                 return (provider_type, [])
             except Exception as e:
-                logger.error(f"Error discovering {provider_type}: {e}")
+                logger.exception(f"Error discovering {provider_type}: {e}")
                 return (provider_type, [])
 
         # Create tasks for all providers
@@ -238,14 +237,14 @@ class ModelCatalogService:
         return catalog
 
     async def get_provider_info(self, provider: str) -> ProviderInfo | None:
-        """
-        Get detailed information about a provider.
+        """Get detailed information about a provider.
 
         Args:
             provider: Provider type
 
         Returns:
             ProviderInfo object or None if not found
+
         """
         plugin = get_plugin(provider)
         if not plugin:
@@ -263,11 +262,11 @@ class ModelCatalogService:
         )
 
     async def get_all_provider_info(self) -> list[ProviderInfo]:
-        """
-        Get information about all registered providers.
+        """Get information about all registered providers.
 
         Returns:
             List of ProviderInfo objects
+
         """
         plugins = get_all_plugins()
 
@@ -287,8 +286,7 @@ class ModelCatalogService:
         supports_streaming: bool | None = None,
         supports_vision: bool | None = None,
     ) -> list[ModelInfo]:
-        """
-        Search for models across all providers with filters.
+        """Search for models across all providers with filters.
 
         Args:
             query: Text search in model name/display name
@@ -299,6 +297,7 @@ class ModelCatalogService:
 
         Returns:
             List of matching ModelInfo objects
+
         """
         all_models = await self.get_all_providers_with_models()
 
@@ -336,8 +335,7 @@ class ModelCatalogService:
         model_id: str,
         provider: str | None = None,
     ) -> ModelInfo | None:
-        """
-        Get a specific model by ID.
+        """Get a specific model by ID.
 
         Args:
             model_id: The model identifier
@@ -345,6 +343,7 @@ class ModelCatalogService:
 
         Returns:
             ModelInfo or None if not found
+
         """
         if provider:
             models = await self.get_available_models(provider)
@@ -385,8 +384,7 @@ def get_model_catalog_service() -> ModelCatalogService:
 
 
 async def initialize_model_catalog() -> None:
-    """
-    Initialize the model catalog at application startup.
+    """Initialize the model catalog at application startup.
 
     This pre-populates the cache with model information
     from all available providers.
@@ -398,7 +396,7 @@ async def initialize_model_catalog() -> None:
         catalog = await service.get_all_providers_with_models()
         total_models = sum(len(models) for models in catalog.values())
         logger.info(
-            f"Model catalog initialized: {len(catalog)} providers, " f"{total_models} total models"
+            f"Model catalog initialized: {len(catalog)} providers, {total_models} total models",
         )
     except Exception as e:
-        logger.error(f"Error initializing model catalog: {e}")
+        logger.exception(f"Error initializing model catalog: {e}")

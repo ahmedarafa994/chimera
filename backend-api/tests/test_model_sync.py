@@ -1,5 +1,4 @@
-"""
-Comprehensive tests for model synchronization system.
+"""Comprehensive tests for model synchronization system.
 Covers API endpoints, WebSocket functionality, and service layer.
 """
 
@@ -26,7 +25,8 @@ class TestModelSyncAPI:
     def mock_redis(self):
         """Mock Redis client."""
         with patch(
-            "app.services.model_sync_service.get_redis_client", new_callable=AsyncMock
+            "app.services.model_sync_service.get_redis_client",
+            new_callable=AsyncMock,
         ) as mock_get_redis:
             mock_redis_instance = AsyncMock()
             mock_get_redis.return_value = mock_redis_instance
@@ -72,7 +72,9 @@ class TestModelSyncAPI:
             },
         ]
 
-    def test_get_available_models_success(self, client, mock_redis, mock_db_session, sample_models):
+    def test_get_available_models_success(
+        self, client, mock_redis, mock_db_session, sample_models
+    ) -> None:
         """Test successful retrieval of available models."""
         # Mock settings to return sample models
         # Correctly patch the method on the Settings CLASS
@@ -102,7 +104,7 @@ class TestModelSyncAPI:
             assert data["count"] == 2
             assert len(data["models"]) == 2
 
-    def test_select_model_success(self, client, mock_redis, mock_db_session):
+    def test_select_model_success(self, client, mock_redis, mock_db_session) -> None:
         """Test successful model selection."""
         # Mock validation to succeed
         with patch(
@@ -113,7 +115,8 @@ class TestModelSyncAPI:
 
             # Mock update_user_session_model
             with patch(
-                "app.services.model_sync_service.update_user_session_model", new_callable=AsyncMock
+                "app.services.model_sync_service.update_user_session_model",
+                new_callable=AsyncMock,
             ) as mock_update:
                 mock_update.return_value = True
 
@@ -134,7 +137,7 @@ class TestModelSyncAPI:
                 assert data["success"] is True
                 assert data["model_id"] == "google:gemini-1.5-pro"
 
-    def test_select_model_invalid_model(self, client, mock_redis, mock_db_session):
+    def test_select_model_invalid_model(self, client, mock_redis, mock_db_session) -> None:
         """Test model selection with invalid model ID."""
         with patch(
             "app.services.model_sync_service.model_sync_service.validate_model_id",
@@ -160,7 +163,7 @@ class TestModelSyncAPI:
             assert data["success"] is False
             assert "invalid" in data["message"].lower()
 
-    def test_validate_model_success(self, client, mock_db_session):
+    def test_validate_model_success(self, client, mock_db_session) -> None:
         """Test successful model validation."""
         with patch(
             "app.services.model_sync_service.model_sync_service.validate_model_id",
@@ -176,7 +179,7 @@ class TestModelSyncAPI:
             assert data["is_valid"] is True
             assert data["model_id"] == "google:gemini-1.5-pro"
 
-    def test_validate_model_not_found(self, client, mock_db_session):
+    def test_validate_model_not_found(self, client, mock_db_session) -> None:
         """Test model validation with non-existent model."""
         with patch(
             "app.services.model_sync_service.model_sync_service.validate_model_id",
@@ -192,7 +195,7 @@ class TestModelSyncAPI:
             assert data["is_valid"] is False
             assert data["model_id"] == "nonexistent-model"
 
-    def test_health_check(self, client):
+    def test_health_check(self, client) -> None:
         """Test model sync service health check."""
         response = client.get("/api/v1/models/health")
 
@@ -217,8 +220,7 @@ class TestModelSyncService:
     @pytest.fixture
     def mock_db_session(self):
         """Mock database session."""
-        mock_session = AsyncMock()
-        return mock_session
+        return AsyncMock()
 
     @pytest.fixture
     def service(self):
@@ -226,14 +228,13 @@ class TestModelSyncService:
         return ModelSyncService()
 
     @pytest.mark.asyncio
-    async def test_get_available_models_cache_miss(self, service, mock_redis):
+    async def test_get_available_models_cache_miss(self, service, mock_redis) -> None:
         """Test getting available models with cache miss."""
         # Correctly patch the method on the Settings CLASS
         with (
             patch("app.services.model_sync_service.get_redis_client", return_value=mock_redis),
             patch("app.core.config.Settings.get_provider_models") as mock_get_models,
         ):
-
             mock_get_models.return_value = {"google": ["gemini-1.5-pro"], "openai": ["gpt-4-turbo"]}
             mock_redis.get.return_value = None
 
@@ -246,7 +247,7 @@ class TestModelSyncService:
             mock_redis.setex.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_select_model_success(self, service, mock_redis, mock_db_session):
+    async def test_select_model_success(self, service, mock_redis, mock_db_session) -> None:
         """Test successful model selection."""
         session_id = "test_session"
         user_id = "test_user"
@@ -262,11 +263,11 @@ class TestModelSyncService:
                 return_value=True,
             ),
         ):
-
             mock_get_session.return_value.__aenter__.return_value = mock_db_session
 
             request = ModelSelectionRequest(
-                model_id=model_id, timestamp=datetime.utcnow().isoformat()
+                model_id=model_id,
+                timestamp=datetime.utcnow().isoformat(),
             )
             result = await service.select_model(request, user_id, session_id, ip_address)
 
@@ -274,7 +275,7 @@ class TestModelSyncService:
             assert result.model_id == model_id
 
     @pytest.mark.asyncio
-    async def test_select_model_rate_limited(self, service, mock_redis):
+    async def test_select_model_rate_limited(self, service, mock_redis) -> None:
         """Test model selection with rate limiting."""
         session_id = "test_session"
         user_id = "test_user"
@@ -287,7 +288,8 @@ class TestModelSyncService:
             patch.object(service, "_check_rate_limit", return_value=False),
         ):
             request = ModelSelectionRequest(
-                model_id=model_id, timestamp=datetime.utcnow().isoformat()
+                model_id=model_id,
+                timestamp=datetime.utcnow().isoformat(),
             )
             result = await service.select_model(request, user_id, session_id, ip_address)
 
@@ -295,7 +297,7 @@ class TestModelSyncService:
             assert "rate limit" in result.message.lower()
 
     @pytest.mark.asyncio
-    async def test_validate_model_success(self, service):
+    async def test_validate_model_success(self, service) -> None:
         """Test successful model validation."""
         model_id = "google:gemini-1.5-pro"
 
@@ -307,7 +309,7 @@ class TestModelSyncService:
             assert result is True
 
     @pytest.mark.asyncio
-    async def test_validate_model_not_found(self, service):
+    async def test_validate_model_not_found(self, service) -> None:
         """Test model validation with non-existent model."""
         model_id = "nonexistent-model"
 
@@ -318,7 +320,7 @@ class TestModelSyncService:
             assert result is False
 
     @pytest.mark.asyncio
-    async def test_get_user_model_with_session(self, service, mock_db_session):
+    async def test_get_user_model_with_session(self, service, mock_db_session) -> None:
         """Test getting current model with valid session."""
         session_id = "test_session"
         model_id = "google:gemini-1.5-pro"
@@ -327,7 +329,6 @@ class TestModelSyncService:
             patch("app.core.database.db_manager.session") as mock_get_session,
             patch("app.services.model_sync_service.get_user_session") as mock_get_user_session,
         ):
-
             mock_get_session.return_value.__aenter__.return_value = mock_db_session
 
             mock_session_obj = MagicMock()
@@ -342,7 +343,7 @@ class TestModelSyncService:
             assert result.id == model_id
 
     @pytest.mark.asyncio
-    async def test_get_user_model_no_session(self, service, mock_db_session):
+    async def test_get_user_model_no_session(self, service, mock_db_session) -> None:
         """Test getting current model with no session."""
         session_id = "nonexistent_session"
 
@@ -350,7 +351,6 @@ class TestModelSyncService:
             patch("app.core.database.db_manager.session") as mock_get_session,
             patch("app.services.model_sync_service.get_user_session") as mock_get_user_session,
         ):
-
             mock_get_session.return_value.__aenter__.return_value = mock_db_session
             mock_get_user_session.return_value = None
 
@@ -363,17 +363,17 @@ class TestWebSocketIntegration:
     """Test WebSocket functionality for real-time updates."""
 
     @pytest.mark.asyncio
-    async def test_websocket_connection(self):
+    async def test_websocket_connection(self) -> None:
         """Test WebSocket connection and message handling."""
         with (
             patch(
-                "app.services.model_sync_service.get_redis_client", new_callable=AsyncMock
+                "app.services.model_sync_service.get_redis_client",
+                new_callable=AsyncMock,
             ),
             patch(
-                "app.services.model_sync_service.model_sync_service.get_available_models"
+                "app.services.model_sync_service.model_sync_service.get_available_models",
             ) as mock_get_models,
         ):
-
             mock_get_models.return_value = MagicMock(count=5)
 
             client = TestClient(app)

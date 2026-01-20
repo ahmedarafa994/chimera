@@ -1,5 +1,4 @@
-"""
-Provider Configuration API Endpoints
+"""Provider Configuration API Endpoints.
 
 REST API endpoints for dynamic provider management including:
 - Provider CRUD operations
@@ -12,7 +11,7 @@ REST API endpoints for dynamic provider management including:
 import contextlib
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
@@ -282,9 +281,9 @@ def model_info_to_response(model: ModelInfo) -> ModelResponse:
 # =============================================================================
 
 
-@router.get("/providers", response_model=ProviderListResponse)
+@router.get("/providers")
 async def list_providers(
-    enabled_only: bool = Query(False, description="Only return enabled providers"),
+    enabled_only: Annotated[bool, Query(description="Only return enabled providers")] = False,
     registry: ProviderRegistry = Depends(get_provider_registry),
 ) -> ProviderListResponse:
     """List all registered providers."""
@@ -303,10 +302,10 @@ async def list_providers(
     )
 
 
-@router.post("/providers", response_model=ProviderResponse, status_code=201)
+@router.post("/providers", status_code=201)
 async def create_provider(
     request: ProviderCreateRequest,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ProviderResponse:
     """Create a new provider."""
     try:
@@ -361,10 +360,10 @@ async def create_provider(
     return provider_config_to_response(updated)
 
 
-@router.get("/providers/{provider_id}", response_model=ProviderResponse)
+@router.get("/providers/{provider_id}")
 async def get_provider(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ProviderResponse:
     """Get a specific provider."""
     config = await registry.get_provider(provider_id)
@@ -374,11 +373,11 @@ async def get_provider(
     return provider_config_to_response(config)
 
 
-@router.patch("/providers/{provider_id}", response_model=ProviderResponse)
+@router.patch("/providers/{provider_id}")
 async def update_provider(
     provider_id: str,
     request: ProviderUpdateRequest,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ProviderResponse:
     """Update a provider."""
     config = await registry.get_provider(provider_id)
@@ -404,7 +403,7 @@ async def update_provider(
 @router.delete("/providers/{provider_id}")
 async def delete_provider(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> dict[str, Any]:
     """Delete a provider."""
     config = await registry.get_provider(provider_id)
@@ -424,11 +423,11 @@ async def delete_provider(
 # =============================================================================
 
 
-@router.put("/providers/{provider_id}/api-key", response_model=ApiKeyResponse)
+@router.put("/providers/{provider_id}/api-key")
 async def update_api_key(
     provider_id: str,
     request: ApiKeyUpdateRequest,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ApiKeyResponse:
     """Update API key for a provider."""
     config = await registry.get_provider(provider_id)
@@ -460,10 +459,10 @@ async def update_api_key(
     )
 
 
-@router.delete("/providers/{provider_id}/api-key", response_model=ApiKeyResponse)
+@router.delete("/providers/{provider_id}/api-key")
 async def delete_api_key(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ApiKeyResponse:
     """Delete API key for a provider."""
     config = await registry.get_provider(provider_id)
@@ -492,7 +491,7 @@ async def delete_api_key(
 @router.get("/providers/{provider_id}/api-key/verify")
 async def verify_api_key(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> dict[str, Any]:
     """Verify if a provider has a valid API key configured."""
     config = await registry.get_provider(provider_id)
@@ -520,9 +519,9 @@ async def verify_api_key(
 # =============================================================================
 
 
-@router.get("/active", response_model=ActiveProviderResponse)
+@router.get("/active")
 async def get_active_provider(
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ActiveProviderResponse:
     """Get the currently active provider."""
     provider = await registry.get_active_provider()
@@ -543,10 +542,10 @@ async def get_active_provider(
     )
 
 
-@router.post("/active", response_model=ActiveProviderResponse)
+@router.post("/active")
 async def set_active_provider(
     request: SetActiveProviderRequest,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ActiveProviderResponse:
     """Set the active provider."""
     config = await registry.get_provider(request.provider_id)
@@ -579,9 +578,9 @@ async def set_active_provider(
 # =============================================================================
 
 
-@router.get("/health", response_model=AllProvidersHealthResponse)
+@router.get("/health")
 async def get_all_health(
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> AllProvidersHealthResponse:
     """Get health status for all providers."""
     health_statuses = await registry.get_all_health_status()
@@ -602,10 +601,10 @@ async def get_all_health(
     )
 
 
-@router.get("/providers/{provider_id}/health", response_model=ProviderHealthResponse)
+@router.get("/providers/{provider_id}/health")
 async def get_provider_health(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ProviderHealthResponse:
     """Get health status for a specific provider."""
     config = await registry.get_provider(provider_id)
@@ -627,7 +626,7 @@ async def get_provider_health(
 @router.post("/providers/{provider_id}/health/check")
 async def trigger_health_check(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> dict[str, Any]:
     """Trigger a health check for a provider."""
     config = await registry.get_provider(provider_id)
@@ -647,7 +646,7 @@ async def trigger_health_check(
 @router.post("/providers/{provider_id}/circuit-breaker/reset")
 async def reset_circuit_breaker(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> dict[str, Any]:
     """Reset the circuit breaker for a provider."""
     config = await registry.get_provider(provider_id)
@@ -674,10 +673,10 @@ async def reset_circuit_breaker(
 # =============================================================================
 
 
-@router.get("/providers/{provider_id}/models", response_model=ModelsListResponse)
+@router.get("/providers/{provider_id}/models")
 async def list_provider_models(
     provider_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ModelsListResponse:
     """List all models for a provider."""
     config = await registry.get_provider(provider_id)
@@ -694,11 +693,11 @@ async def list_provider_models(
     )
 
 
-@router.post("/providers/{provider_id}/models", response_model=ModelResponse, status_code=201)
+@router.post("/providers/{provider_id}/models", status_code=201)
 async def create_model(
     provider_id: str,
     request: ModelCreateRequest,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> ModelResponse:
     """Create a new model for a provider."""
     config = await registry.get_provider(provider_id)
@@ -740,7 +739,7 @@ async def create_model(
 async def delete_model(
     provider_id: str,
     model_id: str,
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> dict[str, Any]:
     """Delete a model from a provider."""
     config = await registry.get_provider(provider_id)
@@ -760,9 +759,11 @@ async def delete_model(
 # =============================================================================
 
 
-@router.get("/fallback", response_model=FallbackResponse)
+@router.get("/fallback")
 async def get_fallback_suggestions(
-    exclude: str | None = Query(None, description="Comma-separated provider IDs to exclude"),
+    exclude: Annotated[
+        str | None, Query(description="Comma-separated provider IDs to exclude")
+    ] = None,
     registry: ProviderRegistry = Depends(get_provider_registry),
 ) -> FallbackResponse:
     """Get fallback provider suggestions."""
@@ -791,7 +792,7 @@ async def get_fallback_suggestions(
                 priority=provider.priority,
                 status=status.value,
                 reason=reason,
-            )
+            ),
         )
 
     active = await registry.get_active_provider()
@@ -810,7 +811,7 @@ async def get_fallback_suggestions(
 
 @router.post("/save")
 async def save_configuration(
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> dict[str, Any]:
     """Save provider configurations to file."""
     success = await registry.save_to_file()
@@ -826,7 +827,7 @@ async def save_configuration(
 
 @router.post("/load")
 async def load_configuration(
-    registry: ProviderRegistry = Depends(get_provider_registry),
+    registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
 ) -> dict[str, Any]:
     """Load provider configurations from file."""
     success = await registry.load_from_file()
@@ -846,18 +847,18 @@ async def load_configuration(
 class ConnectionManager:
     """Manage WebSocket connections for real-time updates."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self.active_connections.append(websocket)
 
-    def disconnect(self, websocket: WebSocket):
+    def disconnect(self, websocket: WebSocket) -> None:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
 
-    async def broadcast(self, message: dict[str, Any]):
+    async def broadcast(self, message: dict[str, Any]) -> None:
         for connection in self.active_connections:
             with contextlib.suppress(Exception):
                 await connection.send_json(message)
@@ -870,39 +871,39 @@ ws_manager = ConnectionManager()
 async def websocket_updates(
     websocket: WebSocket,
     registry: ProviderRegistry = Depends(get_provider_registry),
-):
+) -> None:
     """WebSocket endpoint for real-time provider updates."""
     await ws_manager.connect(websocket)
 
     # Register event handlers
-    async def on_provider_update(provider_id: str, data: dict[str, Any]):
+    async def on_provider_update(provider_id: str, data: dict[str, Any]) -> None:
         await ws_manager.broadcast(
             {
                 "type": "provider_updated",
                 "provider_id": provider_id,
                 "data": data,
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
-    async def on_status_change(provider_id: str, data: dict[str, Any]):
+    async def on_status_change(provider_id: str, data: dict[str, Any]) -> None:
         await ws_manager.broadcast(
             {
                 "type": "provider_status_changed",
                 "provider_id": provider_id,
                 "data": data,
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
-    async def on_active_change(provider_id: str, data: dict[str, Any]):
+    async def on_active_change(provider_id: str, data: dict[str, Any]) -> None:
         await ws_manager.broadcast(
             {
                 "type": "active_provider_changed",
                 "provider_id": provider_id,
                 "data": data,
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
     # Register handlers
@@ -927,7 +928,7 @@ async def websocket_updates(
                     "health": {pid: h.to_dict() for pid, h in health_statuses.items()},
                 },
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         # Keep connection alive and handle incoming messages
@@ -941,7 +942,7 @@ async def websocket_updates(
                         {
                             "type": "pong",
                             "timestamp": datetime.utcnow().isoformat(),
-                        }
+                        },
                     )
 
                 # Handle refresh request
@@ -959,13 +960,13 @@ async def websocket_updates(
                                 "health": {pid: h.to_dict() for pid, h in health_statuses.items()},
                             },
                             "timestamp": datetime.utcnow().isoformat(),
-                        }
+                        },
                     )
 
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                logger.error(f"WebSocket error: {e}")
+                logger.exception(f"WebSocket error: {e}")
                 break
 
     finally:

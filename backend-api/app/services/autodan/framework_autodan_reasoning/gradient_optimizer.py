@@ -1,5 +1,4 @@
-"""
-Gradient Optimizer for AutoDAN with CCGS Implementation.
+"""Gradient Optimizer for AutoDAN with CCGS Implementation.
 
 Implements optimizations from the AutoDAN Optimization Report:
 - GO-2: Gradient-guided position selection (implemented)
@@ -34,14 +33,13 @@ class SurrogateModel(Protocol):
 
 
 class GradientCache:
-    """
-    Cache for gradient computations to avoid redundant calculations.
+    """Cache for gradient computations to avoid redundant calculations.
 
     Implements GO-4: Gradient Caching
     Expected Impact: +10-20% reduction in unnecessary computation
     """
 
-    def __init__(self, max_size: int = 500):
+    def __init__(self, max_size: int = 500) -> None:
         self._cache: dict[str, np.ndarray] = {}
         self._max_size = max_size
         self._hits = 0
@@ -64,7 +62,7 @@ class GradientCache:
             self._misses += 1
         return result
 
-    def put(self, tokens: list[int], target_string: str, gradient: np.ndarray):
+    def put(self, tokens: list[int], target_string: str, gradient: np.ndarray) -> None:
         """Store gradient in cache."""
         if len(self._cache) >= self._max_size:
             # Remove oldest 10% of entries
@@ -85,7 +83,7 @@ class GradientCache:
             "size": len(self._cache),
         }
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear the cache."""
         self._cache.clear()
         self._hits = 0
@@ -93,8 +91,7 @@ class GradientCache:
 
 
 class GradientOptimizer:
-    """
-    Handles token-level optimization.
+    """Handles token-level optimization.
     Supports Coherence-Constrained Gradient Search (CCGS) if gradients are available.
 
     Implements optimizations:
@@ -110,7 +107,7 @@ class GradientOptimizer:
         llm_client=None,
         use_gradient_cache: bool = True,
         cache_size: int = 500,
-    ):
+    ) -> None:
         self.model = model
         self.tokenizer = tokenizer
         self.llm_client = llm_client  # For LLM-based coherence scoring fallback
@@ -127,16 +124,14 @@ class GradientOptimizer:
         if not self.has_gradients:
             logger.info(
                 "GradientOptimizer: Model does not natively support gradients. "
-                "Optimization will run in heuristic fallback mode (API-compatible)."
+                "Optimization will run in heuristic fallback mode (API-compatible).",
             )
 
         if use_gradient_cache:
             logger.info(f"Gradient caching enabled with max size {cache_size} (GO-4)")
 
     def optimize(self, prompt, target_string, coherence_weight=0.5, steps=10, epsilon=0.01):
-        """
-        Optimize the prompt to elicit the target string.
-        """
+        """Optimize the prompt to elicit the target string."""
         # If no gradients, we skip optimization for now to save tokens/time
         # In a full implementation, we could fallback to genetic mutation here
         if not self.has_gradients:
@@ -154,10 +149,14 @@ class GradientOptimizer:
 
         try:
             refined_tokens = self._coherence_constrained_gradient_search(
-                tokens, target_string, steps, epsilon, coherence_weight
+                tokens,
+                target_string,
+                steps,
+                epsilon,
+                coherence_weight,
             )
         except Exception as e:
-            logger.error(f"Gradient optimization failed: {e}")
+            logger.exception(f"Gradient optimization failed: {e}")
             return prompt
 
         # Decoding fallback logic
@@ -169,8 +168,7 @@ class GradientOptimizer:
         return prompt
 
     def _compute_gradient(self, tokens: list[int], target_string: str) -> np.ndarray:
-        """
-        Computes gradients of the attack loss w.r.t input tokens.
+        """Computes gradients of the attack loss w.r.t input tokens.
         Uses caching to avoid redundant computations (GO-4).
         """
         # Check cache first (GO-4)
@@ -199,9 +197,7 @@ class GradientOptimizer:
         return gradient
 
     def _compute_aligned_gradient(self, grads: list[np.ndarray]) -> np.ndarray:
-        """
-        Projects gradients to find a common descent direction for transferability.
-        """
+        """Projects gradients to find a common descent direction for transferability."""
         if not grads:
             return np.array([])
 
@@ -209,15 +205,16 @@ class GradientOptimizer:
             return grads[0]
 
         stacked_grads = np.stack(grads)
-        avg_grad = np.mean(stacked_grads, axis=0)
-        return avg_grad
+        return np.mean(stacked_grads, axis=0)
 
     def _get_valid_candidates(
-        self, tokens: list[int], position: int, epsilon: float = 0.01, k: int = 50
+        self,
+        tokens: list[int],
+        position: int,
+        epsilon: float = 0.01,
+        k: int = 50,
     ) -> list[int]:
-        """
-        Identifies candidate tokens that are linguistically probable given context.
-        """
+        """Identifies candidate tokens that are linguistically probable given context."""
         context = tokens[:position]
 
         if hasattr(self.model, "get_next_token_probs"):
@@ -243,9 +240,7 @@ class GradientOptimizer:
         lambda_perp: float = 0.5,
         surrogates: list | None = None,
     ) -> list[int]:
-        """
-        Implements CCGS to refine tokens with gradient-guided position selection.
-        """
+        """Implements CCGS to refine tokens with gradient-guided position selection."""
         # Handle empty tokens case
         if not tokens:
             logger.warning("Empty tokens provided to CCGS, returning empty list")
@@ -282,7 +277,7 @@ class GradientOptimizer:
             if target_pos < 0 or target_pos >= len(current_tokens):
                 logger.debug(
                     f"Invalid target_pos {target_pos} for tokens length "
-                    f"{len(current_tokens)}, skipping step {step}"
+                    f"{len(current_tokens)}, skipping step {step}",
                 )
                 continue
 
@@ -302,7 +297,9 @@ class GradientOptimizer:
                     if token_id_int < len(pos_grads):
                         attack_score = pos_grads[token_id_int]
                         coherence_score = self._compute_coherence_score(
-                            current_tokens, target_pos, token_id_int
+                            current_tokens,
+                            target_pos,
+                            token_id_int,
                         )
                         total_score = attack_score + (lambda_perp * coherence_score)
 
@@ -315,9 +312,7 @@ class GradientOptimizer:
         return current_tokens
 
     def _select_position_by_gradient(self, aligned_grad: np.ndarray) -> int:
-        """
-        Select position with highest gradient magnitude using softmax sampling.
-        """
+        """Select position with highest gradient magnitude using softmax sampling."""
         if aligned_grad.ndim != 2:
             return 0
 
@@ -341,8 +336,7 @@ class GradientOptimizer:
         return int(np.random.choice(len(position_scores), p=probs))
 
     def _compute_coherence_score(self, tokens: list[int], position: int, new_token: int) -> float:
-        """
-        Compute actual coherence using perplexity-based scoring.
+        """Compute actual coherence using perplexity-based scoring.
 
         Implements GO-3: Real coherence scoring
         Expected Impact: +15% quality improvement
@@ -376,8 +370,7 @@ class GradientOptimizer:
         return 0.5  # Neutral default
 
     def _llm_coherence_score(self, tokens: list[int], position: int, new_token: int) -> float:
-        """
-        Use LLM to estimate coherence of token substitution.
+        """Use LLM to estimate coherence of token substitution.
 
         This is a fallback for when the model doesn't support next token probs.
         """
@@ -418,7 +411,7 @@ class GradientOptimizer:
             return self._gradient_cache.get_stats()
         return {"enabled": False}
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear the gradient cache."""
         if self._gradient_cache:
             self._gradient_cache.clear()

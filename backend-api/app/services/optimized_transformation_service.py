@@ -1,5 +1,4 @@
-"""
-Optimized Transformation Service with performance enhancements.
+"""Optimized Transformation Service with performance enhancements.
 
 This module provides comprehensive optimizations for prompt transformations:
 - Async transformation pipelines
@@ -68,16 +67,14 @@ class TransformationJob:
 
 
 class CompressedCache:
-    """
-    Memory-efficient cache with compression and smart eviction.
-    """
+    """Memory-efficient cache with compression and smart eviction."""
 
     def __init__(
         self,
         max_memory_mb: int = 100,
         compression_threshold: int = 1000,  # Compress items > 1KB
         ttl_seconds: int = 3600,
-    ):
+    ) -> None:
         self.max_memory_mb = max_memory_mb
         self.compression_threshold = compression_threshold
         self.ttl_seconds = ttl_seconds
@@ -199,11 +196,9 @@ class CompressedCache:
 
 
 class AsyncTransformationPipeline:
-    """
-    Async pipeline for parallel transformation processing.
-    """
+    """Async pipeline for parallel transformation processing."""
 
-    def __init__(self, max_workers: int = 10, max_queue_size: int = 100):
+    def __init__(self, max_workers: int = 10, max_queue_size: int = 100) -> None:
         self.max_workers = max_workers
         self.max_queue_size = max_queue_size
 
@@ -252,7 +247,8 @@ class AsyncTransformationPipeline:
         # Check dependencies
         for dep_id in job.dependencies:
             if dep_id not in self._completed_jobs and dep_id not in self._active_jobs:
-                raise TransformationError(f"Dependency {dep_id} not found")
+                msg = f"Dependency {dep_id} not found"
+                raise TransformationError(msg)
 
         # Add to queue
         try:
@@ -260,22 +256,25 @@ class AsyncTransformationPipeline:
             self._active_jobs[job.job_id] = job
             return job.job_id
         except TimeoutError:
-            raise TransformationError("Pipeline queue is full")
+            msg = "Pipeline queue is full"
+            raise TransformationError(msg)
 
     async def get_result(self, job_id: str, timeout: float = 30.0) -> TransformationResult:
         """Get job result."""
         if job_id not in self._active_jobs:
-            raise TransformationError(f"Job {job_id} not found")
+            msg = f"Job {job_id} not found"
+            raise TransformationError(msg)
 
         job = self._active_jobs[job_id]
         if not job.future:
-            raise TransformationError(f"Job {job_id} not started")
+            msg = f"Job {job_id} not started"
+            raise TransformationError(msg)
 
         try:
-            result = await asyncio.wait_for(job.future, timeout=timeout)
-            return result
+            return await asyncio.wait_for(job.future, timeout=timeout)
         except TimeoutError:
-            raise TransformationError(f"Job {job_id} timed out")
+            msg = f"Job {job_id} timed out"
+            raise TransformationError(msg)
 
     async def _worker_loop(self, worker_id: str) -> None:
         """Worker loop for processing jobs."""
@@ -295,7 +294,9 @@ class AsyncTransformationPipeline:
 
                     # Execute transformation
                     result = await transform_func(
-                        job.prompt, job.potency_level, job.technique_suite
+                        job.prompt,
+                        job.potency_level,
+                        job.technique_suite,
                     )
 
                     # Store result and signal completion
@@ -310,7 +311,7 @@ class AsyncTransformationPipeline:
                     logger.debug(f"Job {job.job_id} completed in {processing_time:.2f}ms")
 
                 except Exception as e:
-                    logger.error(f"Job {job.job_id} failed: {e}")
+                    logger.exception(f"Job {job.job_id} failed: {e}")
                     if job.future:
                         job.future.set_exception(e)
                     self._update_processing_stats(0, success=False)
@@ -324,7 +325,7 @@ class AsyncTransformationPipeline:
             except TimeoutError:
                 continue  # Check shutdown event
             except Exception as e:
-                logger.error(f"Worker {worker_id} error: {e}")
+                logger.exception(f"Worker {worker_id} error: {e}")
 
     async def _wait_for_dependencies(self, job: TransformationJob) -> None:
         """Wait for job dependencies to complete."""
@@ -337,7 +338,8 @@ class AsyncTransformationPipeline:
                 if dep_job.future:
                     await dep_job.future
             else:
-                raise TransformationError(f"Dependency {dep_id} not found")
+                msg = f"Dependency {dep_id} not found"
+                raise TransformationError(msg)
 
     def _update_processing_stats(self, processing_time_ms: float, success: bool) -> None:
         """Update processing statistics."""
@@ -371,11 +373,9 @@ class AsyncTransformationPipeline:
 
 
 class MemoryOptimizer:
-    """
-    Memory optimization utilities for transformation operations.
-    """
+    """Memory optimization utilities for transformation operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._memory_threshold_mb = 500  # Trigger optimization at 500MB
         self._gc_frequency = 100  # Trigger GC every 100 operations
         self._operation_count = 0
@@ -410,7 +410,7 @@ class MemoryOptimizer:
     async def _perform_optimization(self, memory_stats: dict[str, float]) -> bool:
         """Perform memory optimization."""
         logger.debug(
-            f"Performing memory optimization. Current usage: {memory_stats['rss_mb']:.2f}MB"
+            f"Performing memory optimization. Current usage: {memory_stats['rss_mb']:.2f}MB",
         )
 
         # Run garbage collection
@@ -424,15 +424,14 @@ class MemoryOptimizer:
         freed_mb = memory_stats["rss_mb"] - new_stats["rss_mb"]
 
         logger.debug(
-            f"Memory optimization completed. Freed: {freed_mb:.2f}MB, GC collected: {collected} objects"
+            f"Memory optimization completed. Freed: {freed_mb:.2f}MB, GC collected: {collected} objects",
         )
 
         return freed_mb > 0
 
 
 class OptimizedTransformationEngine(BaseEngine):
-    """
-    Optimized transformation engine with performance enhancements.
+    """Optimized transformation engine with performance enhancements.
 
     Features:
     - Async transformation pipelines
@@ -449,7 +448,7 @@ class OptimizedTransformationEngine(BaseEngine):
         cache_max_memory_mb: int = 200,
         pipeline_workers: int = 8,
         enable_memory_optimization: bool = True,
-    ):
+    ) -> None:
         # Initialize base engine without cache to use our optimized version
         super().__init__(enable_cache=False)
 
@@ -509,11 +508,13 @@ class OptimizedTransformationEngine(BaseEngine):
         logger.info("OptimizedTransformationEngine shutdown complete")
 
     async def transform_parallel(
-        self, prompts: list[str], potency_level: int, technique_suite: str, **kwargs
+        self,
+        prompts: list[str],
+        potency_level: int,
+        technique_suite: str,
+        **kwargs,
     ) -> list[TransformationResult]:
-        """
-        Transform multiple prompts in parallel.
-        """
+        """Transform multiple prompts in parallel."""
         if not prompts:
             return []
 
@@ -540,7 +541,7 @@ class OptimizedTransformationEngine(BaseEngine):
                 result = await self._async_pipeline.get_result(job_id, timeout=60.0)
                 results.append(result)
             except Exception as e:
-                logger.error(f"Parallel transformation failed for job {job_id}: {e}")
+                logger.exception(f"Parallel transformation failed for job {job_id}: {e}")
                 # Create error result
                 error_result = TransformationResult(
                     original_prompt=prompts[job_ids.index(job_id)],
@@ -560,7 +561,7 @@ class OptimizedTransformationEngine(BaseEngine):
         self._metrics.parallel_efficiency = len(prompts) / (execution_time_ms / 1000)
 
         logger.info(
-            f"Parallel transformation completed: {len(prompts)} prompts in {execution_time_ms:.2f}ms"
+            f"Parallel transformation completed: {len(prompts)} prompts in {execution_time_ms:.2f}ms",
         )
 
         return results
@@ -573,9 +574,7 @@ class OptimizedTransformationEngine(BaseEngine):
         use_cache: bool = True,
         **kwargs,
     ) -> TransformationResult:
-        """
-        Optimized single prompt transformation.
-        """
+        """Optimized single prompt transformation."""
         start_time = time.time()
 
         try:
@@ -595,7 +594,10 @@ class OptimizedTransformationEngine(BaseEngine):
 
             # Perform transformation
             result = await self._transform_single_optimized(
-                prompt, potency_level, technique_suite, **kwargs
+                prompt,
+                potency_level,
+                technique_suite,
+                **kwargs,
             )
 
             # Cache result
@@ -609,16 +611,18 @@ class OptimizedTransformationEngine(BaseEngine):
             return result
 
         except Exception as e:
-            logger.error(f"Optimized transformation failed: {e}")
+            logger.exception(f"Optimized transformation failed: {e}")
             self._metrics.total_transformations += 1  # Count failed transformations
             raise
 
     async def _transform_single_optimized(
-        self, prompt: str, potency_level: int, technique_suite: str, **kwargs
+        self,
+        prompt: str,
+        potency_level: int,
+        technique_suite: str,
+        **kwargs,
     ) -> TransformationResult:
-        """
-        Optimized single transformation with CPU-intensive work in thread pool.
-        """
+        """Optimized single transformation with CPU-intensive work in thread pool."""
         # For CPU-intensive transformations, use thread pool
         cpu_intensive_techniques = {"cipher", "advanced_obfuscation", "quantum_exploit"}
 
@@ -628,15 +632,22 @@ class OptimizedTransformationEngine(BaseEngine):
                 self._thread_pool,
                 lambda: asyncio.run(
                     super(OptimizedTransformationEngine, self).transform(
-                        prompt, potency_level, technique_suite, use_cache=False, **kwargs
-                    )
+                        prompt,
+                        potency_level,
+                        technique_suite,
+                        use_cache=False,
+                        **kwargs,
+                    ),
                 ),
             )
-        else:
-            # Use base implementation for other techniques
-            return await super().transform(
-                prompt, potency_level, technique_suite, use_cache=False, **kwargs
-            )
+        # Use base implementation for other techniques
+        return await super().transform(
+            prompt,
+            potency_level,
+            technique_suite,
+            use_cache=False,
+            **kwargs,
+        )
 
     async def transform_stream_optimized(
         self,
@@ -645,9 +656,7 @@ class OptimizedTransformationEngine(BaseEngine):
         technique_suite: str,
         buffer_size: int = 8192,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Optimized streaming transformation with buffering.
-        """
+        """Optimized streaming transformation with buffering."""
         buffer = ""
 
         async for chunk in self.transform_stream(prompt, potency_level, technique_suite):
@@ -717,7 +726,8 @@ class OptimizedTransformationEngine(BaseEngine):
                     memory_stats = self._memory_optimizer.monitor_memory()
                     self._metrics.memory_usage_mb = memory_stats["rss_mb"]
                     self._metrics.memory_peak_mb = max(
-                        self._metrics.memory_peak_mb, memory_stats["rss_mb"]
+                        self._metrics.memory_peak_mb,
+                        memory_stats["rss_mb"],
                     )
 
                 # Update cache hit rate
@@ -731,13 +741,13 @@ class OptimizedTransformationEngine(BaseEngine):
                     f"Transformations: {self._metrics.total_transformations}, "
                     f"Avg time: {self._metrics.avg_execution_time_ms:.2f}ms, "
                     f"Memory: {self._metrics.memory_usage_mb:.2f}MB, "
-                    f"Cache hit rate: {self._metrics.cache_hit_rate:.2%}"
+                    f"Cache hit rate: {self._metrics.cache_hit_rate:.2%}",
                 )
 
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Performance monitoring error: {e}")
+                logger.exception(f"Performance monitoring error: {e}")
 
     def get_performance_metrics(self) -> dict[str, Any]:
         """Get comprehensive performance metrics."""
@@ -768,7 +778,7 @@ class OptimizedTransformationEngine(BaseEngine):
 
         if self._memory_optimizer:
             await self._memory_optimizer._perform_optimization(
-                self._memory_optimizer.monitor_memory()
+                self._memory_optimizer.monitor_memory(),
             )
 
         logger.info("All caches cleared and memory optimized")

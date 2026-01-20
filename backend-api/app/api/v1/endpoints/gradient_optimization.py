@@ -1,6 +1,7 @@
 import logging
 import uuid
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Header, HTTPException
 
@@ -16,18 +17,17 @@ def get_session_id(
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
     chimera_session_id: str | None = Cookie(None),
 ) -> str | None:
-    """Extract session ID from header or cookie"""
+    """Extract session ID from header or cookie."""
     return x_session_id or chimera_session_id
 
 
 @router.post("/optimize", response_model=GradientOptimizationResponse)
 async def optimize_prompt(
     request: GradientOptimizationRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Generate optimized adversarial prompts using HotFlip or GCG techniques.
+    """Generate optimized adversarial prompts using HotFlip or GCG techniques.
 
     Techniques:
     - hotflip: Greedy single-token substitution
@@ -56,7 +56,7 @@ async def optimize_prompt(
                 logger.info(f"Using session model: provider={provider}, model={model}")
 
         logger.info(
-            f"Gradient optimization will use: provider={provider}, model={model}, technique={request.technique}"
+            f"Gradient optimization will use: provider={provider}, model={model}, technique={request.technique}",
         )
 
         # Create the gradient optimizer engine
@@ -115,7 +115,7 @@ async def optimize_prompt(
         )
 
     except ValueError as e:
-        logger.error(f"Validation error: {e}")
+        logger.exception(f"Validation error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise

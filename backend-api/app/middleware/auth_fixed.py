@@ -1,5 +1,4 @@
-"""
-Simplified Authentication Middleware - FIXED VERSION
+"""Simplified Authentication Middleware - FIXED VERSION.
 
 This module provides a streamlined authentication system that:
 1. Fixes circular import issues
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 class SimplifiedAuthMiddleware(BaseHTTPMiddleware):
     """Simplified authentication middleware that avoids circular imports."""
 
-    def __init__(self, app, excluded_paths=None):
+    def __init__(self, app, excluded_paths=None) -> None:
         super().__init__(app)
         self.excluded_paths = excluded_paths or [
             "/",
@@ -88,8 +87,7 @@ class SimplifiedAuthMiddleware(BaseHTTPMiddleware):
 
         # Skip authentication for excluded paths
         if self.is_path_excluded(path):
-            response = await call_next(request)
-            return response
+            return await call_next(request)
 
         # Check for API key in header
         api_key = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
@@ -120,7 +118,7 @@ class SimplifiedAuthMiddleware(BaseHTTPMiddleware):
         import os
 
         if os.getenv("ENVIRONMENT", "development") == "development":
-            if path.startswith("/api/v1/health") or path.startswith("/api/v1/providers"):
+            if path.startswith(("/api/v1/health", "/api/v1/providers")):
                 authenticated = True
                 auth_method = "dev_bypass"
                 request.state.user_id = "dev_user"

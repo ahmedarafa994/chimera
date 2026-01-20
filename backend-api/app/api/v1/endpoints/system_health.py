@@ -1,22 +1,25 @@
 """System health check endpoint."""
+
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_db
+from app.core.database import get_db
 from app.schemas.system_health import SystemHealthResponse
 
 router = APIRouter()
 
 
-@router.get("/system-health", response_model=SystemHealthResponse)
+@router.get("/system-health")
 async def get_system_health(
-    db: AsyncSession = Depends(get_db)
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> SystemHealthResponse:
-    """
-    Get system health status.
+    """Get system health status.
 
     Returns:
         SystemHealthResponse: Current system health status
+
     """
     # Check database connection
     try:
@@ -31,7 +34,7 @@ async def get_system_health(
         "obfuscation",
         "payload_splitting",
         "cognitive_hacking",
-        "contextual_inception"
+        "contextual_inception",
     ]
 
     return SystemHealthResponse(
@@ -39,8 +42,8 @@ async def get_system_health(
         services={
             "database": db_status,
             "redis": "connected",  # Simplified
-            "llm_providers": "available"  # Simplified
+            "llm_providers": "available",  # Simplified
         },
         active_techniques=active_techniques,
-        api_version="1.0.0"
+        api_version="1.0.0",
     )

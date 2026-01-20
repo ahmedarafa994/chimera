@@ -1,5 +1,4 @@
-"""
-Provider Registry with AIConfigManager Integration
+"""Provider Registry with AIConfigManager Integration.
 
 Provides centralized provider registration and lookup with:
 - Config-driven provider list from AIConfigManager
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_config_manager():
-    """
-    Get AIConfigManager instance with graceful fallback.
+    """Get AIConfigManager instance with graceful fallback.
 
     Returns None if config manager is not available.
     """
@@ -61,8 +59,7 @@ class ProviderHealthStatus:
 
 
 class ProviderRegistry:
-    """
-    Provider registry with AIConfigManager integration.
+    """Provider registry with AIConfigManager integration.
 
     Features:
     - Config-driven provider list
@@ -82,12 +79,12 @@ class ProviderRegistry:
             cls._instance._initialize()
         return cls._instance
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         """Initialize the registry with providers from config or settings."""
         self.reload_configuration()
         self._subscribe_to_config_changes()
 
-    def _subscribe_to_config_changes(self):
+    def _subscribe_to_config_changes(self) -> None:
         """Subscribe to AIConfigManager for hot-reload support."""
         if ProviderRegistry._config_subscribed:
             return
@@ -101,7 +98,7 @@ class ProviderRegistry:
             except Exception as e:
                 logger.warning(f"Failed to subscribe to config changes: {e}")
 
-    def _on_config_change(self, event):
+    def _on_config_change(self, event) -> None:
         """Handle config change events for hot-reload."""
         logger.info(f"Config change detected: {event.event_type}, reloading providers")
         self.reload_configuration()
@@ -115,7 +112,7 @@ class ProviderRegistry:
         priority: int = 50,
         capabilities: dict[str, bool] | None = None,
         circuit_breaker_config: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Register or update a provider configuration."""
         self._providers[name.lower()] = ProviderInfo(
             name=name,
@@ -156,8 +153,7 @@ class ProviderRegistry:
         return self._providers.copy()
 
     def get_available_providers(self) -> list[str]:
-        """
-        Get list of available (enabled) provider names.
+        """Get list of available (enabled) provider names.
 
         Uses config if available for accurate enabled status.
         """
@@ -173,8 +169,7 @@ class ProviderRegistry:
         return [name for name, info in self._providers.items() if info.enabled]
 
     def is_provider_enabled(self, provider: str) -> bool:
-        """
-        Check if a provider is enabled.
+        """Check if a provider is enabled.
 
         Uses AIConfigManager if available.
         """
@@ -192,8 +187,7 @@ class ProviderRegistry:
         return provider_info.enabled if provider_info else False
 
     def get_provider_capabilities(self, provider: str) -> dict[str, bool] | None:
-        """
-        Get capabilities for a provider from config.
+        """Get capabilities for a provider from config.
 
         Returns dict with capability flags or None if not found.
         """
@@ -220,8 +214,7 @@ class ProviderRegistry:
         return provider_info.capabilities if provider_info else None
 
     def get_circuit_breaker_config(self, provider: str) -> dict[str, Any]:
-        """
-        Get circuit breaker configuration for a provider.
+        """Get circuit breaker configuration for a provider.
 
         Returns config dict with enabled, failure_threshold, recovery_timeout.
         """
@@ -258,7 +251,7 @@ class ProviderRegistry:
         provider: str,
         is_healthy: bool,
         error: str | None = None,
-    ):
+    ) -> None:
         """Update health status for a provider."""
         name = provider.lower()
         if name not in self._health_status:
@@ -316,7 +309,7 @@ class ProviderRegistry:
                 return name
         return None
 
-    def reload_configuration(self):
+    def reload_configuration(self) -> None:
         """Reload configuration from AIConfigManager or settings."""
         config_manager = _get_config_manager()
 
@@ -324,7 +317,7 @@ class ProviderRegistry:
             try:
                 config = config_manager.get_config()
                 logger.info(
-                    f"Reloading providers from config: " f"{len(config.providers)} providers"
+                    f"Reloading providers from config: {len(config.providers)} providers",
                 )
 
                 for provider_id, provider_config in config.providers.items():
@@ -354,7 +347,7 @@ class ProviderRegistry:
                 return
             except Exception as e:
                 logger.warning(
-                    f"Failed to load from config manager, " f"falling back to settings: {e}"
+                    f"Failed to load from config manager, falling back to settings: {e}",
                 )
 
         # Fallback to settings

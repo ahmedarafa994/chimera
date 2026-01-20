@@ -1,5 +1,4 @@
-"""
-Custom Technique Builder Schema Definitions
+"""Custom Technique Builder Schema Definitions.
 
 This module provides Pydantic models for the custom technique builder feature,
 enabling users to create, compose, and preview custom transformation techniques.
@@ -75,8 +74,7 @@ class ParameterSchema(BaseModel):
 
 
 class TransformerPrimitive(BaseModel):
-    """
-    Represents a single transformer primitive that can be used in technique composition.
+    """Represents a single transformer primitive that can be used in technique composition.
 
     This is a discoverable transformation unit from the existing transformation engine.
     """
@@ -92,11 +90,13 @@ class TransformerPrimitive(BaseModel):
     description: str = Field(..., description="Description of what the transformer does")
     category: TransformerCategory = Field(..., description="Category of the transformer")
     parameters: list[ParameterSchema] = Field(
-        default_factory=list, description="Parameter schema for this transformer"
+        default_factory=list,
+        description="Parameter schema for this transformer",
     )
     examples: list[str] | None = Field(default=None, description="Example transformations")
     is_available: bool = Field(
-        default=True, description="Whether the transformer is currently available"
+        default=True,
+        description="Whether the transformer is currently available",
     )
 
 
@@ -104,7 +104,8 @@ class TransformerPrimitiveList(BaseModel):
     """Response model for listing available transformer primitives."""
 
     primitives: list[TransformerPrimitive] = Field(
-        ..., description="List of available transformer primitives"
+        ...,
+        description="List of available transformer primitives",
     )
     total: int = Field(..., description="Total number of primitives")
     categories: list[str] = Field(default_factory=list, description="List of available categories")
@@ -116,8 +117,7 @@ class TransformerPrimitiveList(BaseModel):
 
 
 class TechniqueStep(BaseModel):
-    """
-    Represents a single step in a custom technique composition.
+    """Represents a single step in a custom technique composition.
 
     A step references a transformer primitive and includes configuration for that step.
     """
@@ -130,11 +130,13 @@ class TechniqueStep(BaseModel):
 
     transformer_id: str = Field(..., description="ID of the transformer primitive to use")
     name: str | None = Field(
-        default=None, description="Custom name for this step (defaults to transformer name)"
+        default=None,
+        description="Custom name for this step (defaults to transformer name)",
     )
     description: str | None = Field(default=None, description="Custom description for this step")
     parameters: dict[str, Any] = Field(
-        default_factory=dict, description="Parameter values for this step"
+        default_factory=dict,
+        description="Parameter values for this step",
     )
     order: int = Field(..., ge=0, description="Execution order of this step (0-indexed)")
     enabled: bool = Field(default=True, description="Whether this step is enabled in the chain")
@@ -147,10 +149,12 @@ class TechniqueStepCreate(BaseModel):
     name: str | None = Field(default=None, description="Custom name for this step")
     description: str | None = Field(default=None, description="Custom description for this step")
     parameters: dict[str, Any] = Field(
-        default_factory=dict, description="Parameter values for this step"
+        default_factory=dict,
+        description="Parameter values for this step",
     )
     order: int | None = Field(
-        default=None, description="Execution order (auto-assigned if not provided)"
+        default=None,
+        description="Execution order (auto-assigned if not provided)",
     )
     enabled: bool = Field(default=True, description="Whether this step is enabled")
 
@@ -174,7 +178,8 @@ class TechniqueComposition(BaseModel):
     """The composition of steps that make up a custom technique."""
 
     steps: list[TechniqueStep] = Field(
-        default_factory=list, description="Ordered list of technique steps"
+        default_factory=list,
+        description="Ordered list of technique steps",
     )
 
 
@@ -183,14 +188,14 @@ class TechniqueVersionInfo(BaseModel):
 
     version: int = Field(default=1, ge=1, description="Version number")
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Version creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Version creation timestamp",
     )
     notes: str | None = Field(default=None, description="Version notes or changelog")
 
 
 class CustomTechniqueDefinition(BaseModel):
-    """
-    Complete definition of a custom technique.
+    """Complete definition of a custom technique.
 
     This is the main entity for storing and managing custom techniques.
     """
@@ -204,7 +209,9 @@ class CustomTechniqueDefinition(BaseModel):
     id: str = Field(..., description="Unique identifier for the technique")
     name: str = Field(..., min_length=1, max_length=100, description="Name of the technique")
     description: str | None = Field(
-        default=None, max_length=500, description="Description of the technique"
+        default=None,
+        max_length=500,
+        description="Description of the technique",
     )
     composition: TechniqueComposition = Field(
         default_factory=TechniqueComposition,
@@ -212,22 +219,29 @@ class CustomTechniqueDefinition(BaseModel):
     )
     version: int = Field(default=1, ge=1, description="Current version number")
     version_history: list[TechniqueVersionInfo] = Field(
-        default_factory=list, description="History of previous versions"
+        default_factory=list,
+        description="History of previous versions",
     )
     visibility: TechniqueVisibility = Field(
-        default=TechniqueVisibility.PRIVATE, description="Visibility of the technique"
+        default=TechniqueVisibility.PRIVATE,
+        description="Visibility of the technique",
     )
     user_id: str | None = Field(default=None, description="ID of the owning user")
     team_id: str | None = Field(default=None, description="ID of the owning team (if team-visible)")
     tags: list[str] = Field(
-        default_factory=list, max_length=10, description="Tags for categorization"
+        default_factory=list,
+        max_length=10,
+        description="Tags for categorization",
     )
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Last update timestamp"
+        default_factory=datetime.utcnow,
+        description="Last update timestamp",
     )
     usage_count: int = Field(
-        default=0, ge=0, description="Number of times the technique has been used"
+        default=0,
+        ge=0,
+        description="Number of times the technique has been used",
     )
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
@@ -237,17 +251,23 @@ class CustomTechniqueCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100, description="Name of the technique")
     description: str | None = Field(
-        default=None, max_length=500, description="Description of the technique"
+        default=None,
+        max_length=500,
+        description="Description of the technique",
     )
     steps: list[TechniqueStepCreate] = Field(
-        default_factory=list, description="Initial steps to add"
+        default_factory=list,
+        description="Initial steps to add",
     )
     visibility: TechniqueVisibility = Field(
-        default=TechniqueVisibility.PRIVATE, description="Visibility of the technique"
+        default=TechniqueVisibility.PRIVATE,
+        description="Visibility of the technique",
     )
     team_id: str | None = Field(default=None, description="Team ID for team-visible techniques")
     tags: list[str] = Field(
-        default_factory=list, max_length=10, description="Tags for categorization"
+        default_factory=list,
+        max_length=10,
+        description="Tags for categorization",
     )
 
 
@@ -257,7 +277,8 @@ class CustomTechniqueUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100, description="Updated name")
     description: str | None = Field(default=None, max_length=500, description="Updated description")
     steps: list[TechniqueStepCreate] | None = Field(
-        default=None, description="Updated steps (replaces all existing steps)"
+        default=None,
+        description="Updated steps (replaces all existing steps)",
     )
     visibility: TechniqueVisibility | None = Field(default=None, description="Updated visibility")
     team_id: str | None = Field(default=None, description="Updated team ID")
@@ -303,7 +324,9 @@ class StepPreviewResult(BaseModel):
     input_text: str = Field(..., description="Input text to this step")
     output_text: str = Field(..., description="Output text from this step")
     execution_time_ms: float = Field(
-        ..., ge=0, description="Time taken to execute this step in milliseconds"
+        ...,
+        ge=0,
+        description="Time taken to execute this step in milliseconds",
     )
     success: bool = Field(default=True, description="Whether the step executed successfully")
     error: str | None = Field(default=None, description="Error message if step failed")
@@ -311,8 +334,7 @@ class StepPreviewResult(BaseModel):
 
 
 class TechniquePreviewResult(BaseModel):
-    """
-    Result of previewing a technique transformation.
+    """Result of previewing a technique transformation.
 
     Contains the original input, final output, and intermediate results from each step.
     """
@@ -326,19 +348,23 @@ class TechniquePreviewResult(BaseModel):
     original_prompt: str = Field(..., description="The original input prompt")
     transformed_prompt: str = Field(..., description="The final transformed prompt")
     step_results: list[StepPreviewResult] = Field(
-        default_factory=list, description="Results from each step in order"
+        default_factory=list,
+        description="Results from each step in order",
     )
     total_steps: int = Field(..., ge=0, description="Total number of steps in the technique")
     executed_steps: int = Field(..., ge=0, description="Number of steps actually executed")
     skipped_steps: int = Field(default=0, ge=0, description="Number of steps skipped (disabled)")
     failed_steps: int = Field(default=0, ge=0, description="Number of steps that failed")
     total_execution_time_ms: float = Field(
-        ..., ge=0, description="Total execution time in milliseconds"
+        ...,
+        ge=0,
+        description="Total execution time in milliseconds",
     )
     success: bool = Field(default=True, description="Whether the preview completed successfully")
     error: str | None = Field(default=None, description="Error message if preview failed")
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata about the preview"
+        default_factory=dict,
+        description="Additional metadata about the preview",
     )
 
 
@@ -346,16 +372,22 @@ class TechniquePreviewRequest(BaseModel):
     """Request model for previewing a technique transformation."""
 
     sample_prompt: str = Field(
-        ..., min_length=1, max_length=10000, description="Sample prompt to transform"
+        ...,
+        min_length=1,
+        max_length=10000,
+        description="Sample prompt to transform",
     )
     technique_id: str | None = Field(
-        default=None, description="ID of an existing technique to preview"
+        default=None,
+        description="ID of an existing technique to preview",
     )
     steps: list[TechniqueStepCreate] | None = Field(
-        default=None, description="Ad-hoc steps to preview (if not using existing technique)"
+        default=None,
+        description="Ad-hoc steps to preview (if not using existing technique)",
     )
     include_intermediate_results: bool = Field(
-        default=True, description="Whether to include intermediate step results"
+        default=True,
+        description="Whether to include intermediate step results",
     )
 
 
@@ -377,6 +409,7 @@ class TechniqueValidationResult(BaseModel):
 
     valid: bool = Field(..., description="Whether the technique is valid")
     errors: list[TechniqueValidationError] = Field(
-        default_factory=list, description="List of validation errors"
+        default_factory=list,
+        description="List of validation errors",
     )
     warnings: list[str] = Field(default_factory=list, description="List of validation warnings")

@@ -1,5 +1,4 @@
-"""
-Enhanced AutoDAN Service
+"""Enhanced AutoDAN Service.
 
 This module provides an enhanced AutoDAN service with:
 - Improved configuration management
@@ -16,14 +15,12 @@ import logging
 import os
 import pickle
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.config import settings
 from app.core.unified_errors import ChimeraError
 
 # Import the refactored AutoDAN Engine
-from app.engines.autodan_engine import AutoDANTurboEngine
-
 from .config_enhanced import EnhancedAutoDANConfig, OptimizationStrategy, get_config, update_config
 from .engines import AdaptiveStrategySelector, GeneticOptimizerComplete
 from .engines.parallel_processor import CacheEvictionPolicy, ParallelProcessor, SmartCache
@@ -37,6 +34,9 @@ from .llm.chimera_adapter import (
     RetryStrategy,
 )
 from .pipeline_autodan_reasoning import AutoDANReasoning
+
+if TYPE_CHECKING:
+    from app.engines.autodan_engine import AutoDANTurboEngine
 
 # Project Aegis imports (lazy loaded to avoid circular dependencies)
 _aegis_orchestrator = None
@@ -60,8 +60,7 @@ def _get_aegis_orchestrator():
 
 
 class EnhancedAutoDANService:
-    """
-    Enhanced AutoDAN Service with comprehensive features.
+    """Enhanced AutoDAN Service with comprehensive features.
 
     Features:
     - Multiple optimization strategies (vanilla, best_of_n, beam_search,
@@ -73,7 +72,7 @@ class EnhancedAutoDANService:
     - Graceful error handling and recovery
     """
 
-    def __init__(self, config: EnhancedAutoDANConfig | None = None):
+    def __init__(self, config: EnhancedAutoDANConfig | None = None) -> None:
         self.config = config or get_config()
 
         # Core components
@@ -129,15 +128,15 @@ class EnhancedAutoDANService:
         provider: str | None = None,
         method: str = "best_of_n",
         **kwargs,
-    ):
-        """
-        Initialize the AutoDAN service with specified configuration.
+    ) -> None:
+        """Initialize the AutoDAN service with specified configuration.
 
         Args:
             model_name: LLM model to use
             provider: LLM provider (e.g., 'google', 'openai')
             method: Optimization method
             **kwargs: Additional configuration overrides
+
         """
         async with self._initialization_lock:
             if (
@@ -150,7 +149,7 @@ class EnhancedAutoDANService:
 
             logger.info(
                 f"Initializing EnhancedAutoDANService: model={model_name}, "
-                f"provider={provider}, method={method}"
+                f"provider={provider}, method={method}",
             )
 
             start_time = time.time()
@@ -173,7 +172,9 @@ class EnhancedAutoDANService:
 
                 # Create LLM adapter
                 adapter = ChimeraLLMAdapter(
-                    model_name=model_name, provider=provider, retry_config=retry_config
+                    model_name=model_name,
+                    provider=provider,
+                    retry_config=retry_config,
                 )
 
                 # Initialize the Weaponized Turbo Engine (Lifelong Learning + Neural Bypass)
@@ -205,23 +206,27 @@ class EnhancedAutoDANService:
                 try:
                     # Use dynamic embedding model configuration
                     embedding_model = GeminiEmbeddingModel(
-                        model_name=settings.EMBEDDING_MODEL_ID, api_key=settings.GOOGLE_API_KEY
+                        model_name=settings.EMBEDDING_MODEL_ID,
+                        api_key=settings.GOOGLE_API_KEY,
                     )
                     logger.info(
                         f"Embedding model initialized "
                         f"(model: {settings.EMBEDDING_MODEL_ID}, "
-                        f"mode: {settings.get_connection_mode()})"
+                        f"mode: {settings.get_connection_mode()})",
                     )
                 except Exception as e:
-                    logger.error(f"Failed to initialize embedding model: {e}")
-                    raise RuntimeError(f"Embedding model initialization failed: {e}")
+                    logger.exception(f"Failed to initialize embedding model: {e}")
+                    msg = f"Embedding model initialization failed: {e}"
+                    raise RuntimeError(msg)
 
                 retrieval = Retrieval(embedding_model, logger)
                 target = Target(adapter)
 
                 # Load data
                 data_path = os.path.join(
-                    os.path.dirname(__file__), "data", "complex_behavior_requests.json"
+                    os.path.dirname(__file__),
+                    "data",
+                    "complex_behavior_requests.json",
                 )
                 try:
                     with open(data_path) as f:
@@ -296,7 +301,8 @@ class EnhancedAutoDANService:
                     lib = StrategyLibrary()
                     analyzer = DefensePatternAnalyzer()
                     self.adaptive_selector = AdaptiveStrategySelector(
-                        strategy_library=lib, defense_analyzer=analyzer
+                        strategy_library=lib,
+                        defense_analyzer=analyzer,
                     )
 
                 # Load strategy library
@@ -313,10 +319,12 @@ class EnhancedAutoDANService:
                 raise
 
     async def run_jailbreak(
-        self, request: str, method: str | None = None, **kwargs
+        self,
+        request: str,
+        method: str | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
-        """
-        Run jailbreak attack on a request.
+        """Run jailbreak attack on a request.
 
         Args:
             request: The request to jailbreak
@@ -325,6 +333,7 @@ class EnhancedAutoDANService:
 
         Returns:
             Dictionary with jailbreak results and metrics
+
         """
         start_time = time.time()
         self._metrics["total_requests"] += 1
@@ -408,7 +417,7 @@ class EnhancedAutoDANService:
 
             logger.info(
                 f"Jailbreak completed: score={result.get('score', 0):.2f}, "
-                f"latency={elapsed_ms:.2f}ms"
+                f"latency={elapsed_ms:.2f}ms",
             )
 
             return response
@@ -439,11 +448,10 @@ class EnhancedAutoDANService:
             }
 
     async def _run_turbo(self, request: str, **kwargs) -> dict[str, Any]:
-        """
-        Run the AI-driven AutoDAN Turbo Engine (Lifelong Learning + Neural Bypass).
-        """
+        """Run the AI-driven AutoDAN Turbo Engine (Lifelong Learning + Neural Bypass)."""
         if not self.turbo_engine:
-            raise RuntimeError("Turbo Engine not initialized")
+            msg = "Turbo Engine not initialized"
+            raise RuntimeError(msg)
 
         logger.info("Executing Weaponized AutoDAN Turbo Engine...")
 
@@ -472,7 +480,8 @@ class EnhancedAutoDANService:
             )
 
             self.adaptive_selector = AdaptiveStrategySelector(
-                strategy_library=StrategyLibrary(), defense_analyzer=DefensePatternAnalyzer()
+                strategy_library=StrategyLibrary(),
+                defense_analyzer=DefensePatternAnalyzer(),
             )
 
         if not self.pipeline:
@@ -488,7 +497,8 @@ class EnhancedAutoDANService:
 
         # Max iterations from kwargs (frontend) or config (default)
         max_iters = kwargs.get(
-            "refinement_iterations", self.config.adaptive.max_refinement_iterations
+            "refinement_iterations",
+            self.config.adaptive.max_refinement_iterations,
         )
 
         iteration_count = 0
@@ -499,12 +509,14 @@ class EnhancedAutoDANService:
             # 1. Get target response
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
-                None, lambda: self.pipeline.target.respond(current_prompt)
+                None,
+                lambda p=current_prompt: self.pipeline.target.respond(p),
             )
 
             # 2. Score response
             assessment, _ = await loop.run_in_executor(
-                None, lambda: self.pipeline.scorer.scoring(request, response)
+                None,
+                lambda r=response: self.pipeline.scorer.scoring(request, r),
             )
             score = self.pipeline.scorer.wrapper(assessment)
 
@@ -528,7 +540,8 @@ class EnhancedAutoDANService:
             # 5. Generate new prompt based on strategy
             # Uses the vanilla generator seeded with the chosen strategy type
             vanilla_result = await loop.run_in_executor(
-                None, lambda: self.pipeline.test_vanilla(request, {strategy.value: []})
+                None,
+                lambda s=strategy: self.pipeline.test_vanilla(request, {s.value: []}),
             )
             # Handle both old (string) and new (dict) return formats
             if isinstance(vanilla_result, dict):
@@ -538,7 +551,10 @@ class EnhancedAutoDANService:
 
             # Record attempt for learning
             self.adaptive_selector.record_attempt(
-                prompt=current_prompt, response=response, score=score, strategy=strategy
+                prompt=current_prompt,
+                response=response,
+                score=score,
+                strategy=strategy,
             )
 
         return {
@@ -551,13 +567,16 @@ class EnhancedAutoDANService:
     async def _run_chain_of_thought(self, request: str, **kwargs) -> dict[str, Any]:
         """Run Chain-of-Thought reasoning method."""
         if not self.pipeline:
-            raise RuntimeError("Pipeline not initialized")
+            msg = "Pipeline not initialized"
+            raise RuntimeError(msg)
 
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
             lambda: self.pipeline.test_chain_of_thought(
-                request, self.strategy_library, epochs=kwargs.get("refinement_iterations")
+                request,
+                self.strategy_library,
+                epochs=kwargs.get("refinement_iterations"),
             ),
         )
 
@@ -567,24 +586,26 @@ class EnhancedAutoDANService:
                 "prompt": result["prompt"],
                 "score": result.get("score", 0.0),
                 "iterations": result.get(
-                    "iterations", kwargs.get("refinement_iterations", self.config.default_epochs)
+                    "iterations",
+                    kwargs.get("refinement_iterations", self.config.default_epochs),
                 ),
             }
-        else:
-            # Legacy string return
-            return {
-                "prompt": result,
-                "iterations": kwargs.get("refinement_iterations", self.config.default_epochs),
-            }
+        # Legacy string return
+        return {
+            "prompt": result,
+            "iterations": kwargs.get("refinement_iterations", self.config.default_epochs),
+        }
 
     async def _run_advanced(self, request: str, **kwargs) -> dict[str, Any]:
         """Run Advanced AutoDAN (HGS + CCGS)."""
         if not self.pipeline or not isinstance(self.pipeline, AutoDANAdvanced):
-            raise RuntimeError("AutoDANAdvanced pipeline not initialized")
+            msg = "AutoDANAdvanced pipeline not initialized"
+            raise RuntimeError(msg)
 
         loop = asyncio.get_event_loop()
         prompt = await loop.run_in_executor(
-            None, lambda: self.pipeline.hierarchical_genetic_search(request)
+            None,
+            lambda: self.pipeline.hierarchical_genetic_search(request),
         )
 
         return {"prompt": prompt, "iterations": self.config.default_epochs}
@@ -592,11 +613,13 @@ class EnhancedAutoDANService:
     async def _run_vanilla(self, request: str, **kwargs) -> dict[str, Any]:
         """Run vanilla AutoDAN-Turbo method."""
         if not self.pipeline:
-            raise RuntimeError("Pipeline not initialized")
+            msg = "Pipeline not initialized"
+            raise RuntimeError(msg)
 
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
-            None, lambda: self.pipeline.test_vanilla(request, self.strategy_library)
+            None,
+            lambda: self.pipeline.test_vanilla(request, self.strategy_library),
         )
 
         # Handle both old (string) and new (dict) return formats
@@ -606,18 +629,19 @@ class EnhancedAutoDANService:
                 "score": result.get("score", 0.0),
                 "iterations": result.get("iterations", self.config.default_epochs),
             }
-        else:
-            # Legacy string return
-            return {"prompt": result, "iterations": self.config.default_epochs}
+        # Legacy string return
+        return {"prompt": result, "iterations": self.config.default_epochs}
 
     async def _run_best_of_n(self, request: str, **kwargs) -> dict[str, Any]:
         """Run Best-of-N method."""
         if not self.pipeline:
-            raise RuntimeError("Pipeline not initialized")
+            msg = "Pipeline not initialized"
+            raise RuntimeError(msg)
 
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
-            None, lambda: self.pipeline.test_best_of_n(request, self.strategy_library)
+            None,
+            lambda: self.pipeline.test_best_of_n(request, self.strategy_library),
         )
 
         # Handle both old (string) and new (dict) return formats
@@ -628,22 +652,23 @@ class EnhancedAutoDANService:
                 "iterations": result.get("iterations", self.config.default_epochs),
                 "n_candidates": self.config.best_of_n.n_candidates,
             }
-        else:
-            # Legacy string return
-            return {
-                "prompt": result,
-                "iterations": self.config.default_epochs,
-                "n_candidates": self.config.best_of_n.n_candidates,
-            }
+        # Legacy string return
+        return {
+            "prompt": result,
+            "iterations": self.config.default_epochs,
+            "n_candidates": self.config.best_of_n.n_candidates,
+        }
 
     async def _run_beam_search(self, request: str, **kwargs) -> dict[str, Any]:
         """Run Beam Search method."""
         if not self.pipeline:
-            raise RuntimeError("Pipeline not initialized")
+            msg = "Pipeline not initialized"
+            raise RuntimeError(msg)
 
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
-            None, lambda: self.pipeline.test_beam_search(request, self.strategy_library)
+            None,
+            lambda: self.pipeline.test_beam_search(request, self.strategy_library),
         )
 
         # Handle both old (string) and new (dict) return formats
@@ -655,14 +680,13 @@ class EnhancedAutoDANService:
                 "beam_width": self.config.beam_search.beam_width,
                 "beam_depth": self.config.beam_search.beam_depth,
             }
-        else:
-            # Legacy string return
-            return {
-                "prompt": result,
-                "iterations": self.config.default_epochs,
-                "beam_width": self.config.beam_search.beam_width,
-                "beam_depth": self.config.beam_search.beam_depth,
-            }
+        # Legacy string return
+        return {
+            "prompt": result,
+            "iterations": self.config.default_epochs,
+            "beam_width": self.config.beam_search.beam_width,
+            "beam_depth": self.config.beam_search.beam_depth,
+        }
 
     async def _run_genetic(self, request: str, **kwargs) -> dict[str, Any]:
         """Run Genetic Algorithm optimization."""
@@ -696,8 +720,7 @@ class EnhancedAutoDANService:
         }
 
     async def _run_hybrid(self, request: str, **kwargs) -> dict[str, Any]:
-        """
-        Run hybrid method combining genetic and AutoDAN strategies.
+        """Run hybrid method combining genetic and AutoDAN strategies.
 
         1. First, use genetic algorithm to evolve initial candidates
         2. Then, apply AutoDAN strategies to the best candidates
@@ -705,7 +728,8 @@ class EnhancedAutoDANService:
         """
         # Phase 1: Genetic optimization
         genetic_result = await self._run_genetic(
-            request, generations=kwargs.get("genetic_generations", 5)
+            request,
+            generations=kwargs.get("genetic_generations", 5),
         )
 
         # Phase 2: Apply AutoDAN strategies to genetic result
@@ -714,7 +738,8 @@ class EnhancedAutoDANService:
             autodan_result = await loop.run_in_executor(
                 None,
                 lambda: self.pipeline.test_best_of_n(
-                    genetic_result["prompt"], self.strategy_library
+                    genetic_result["prompt"],
+                    self.strategy_library,
                 ),
             )
             # Handle both old (string) and new (dict) return formats
@@ -739,8 +764,7 @@ class EnhancedAutoDANService:
         }
 
     async def _run_aegis(self, request: str, **kwargs) -> dict[str, Any]:
-        """
-        Run Project Aegis: Chimera + AutoDAN hybrid strategy.
+        """Run Project Aegis: Chimera + AutoDAN hybrid strategy.
 
         This method combines:
         1. Chimera narrative generation (persona, scenario wrapping)
@@ -756,6 +780,7 @@ class EnhancedAutoDANService:
 
         Returns:
             Dictionary with optimized prompt and metadata
+
         """
         AegisOrchestrator = _get_aegis_orchestrator()
         if not AegisOrchestrator:
@@ -768,14 +793,14 @@ class EnhancedAutoDANService:
 
         # Create an adapter for Aegis that uses our internal LLM
         class AegisModelAdapter:
-            def __init__(self, llm_adapter: ChimeraLLMAdapter):
+            def __init__(self, llm_adapter: ChimeraLLMAdapter) -> None:
                 self.llm = llm_adapter
 
             async def query(self, prompt: str) -> str:
                 try:
                     return await self.llm.generate(prompt, max_tokens=4000)
                 except Exception as e:
-                    logger.error(f"Aegis model query failed: {e}")
+                    logger.exception(f"Aegis model query failed: {e}")
                     return f"Error: {e!s}"
 
         # Use the existing LLM adapter from turbo engine
@@ -795,7 +820,8 @@ class EnhancedAutoDANService:
 
         try:
             results = await orchestrator.execute_campaign(
-                objective=request, max_iterations=max_iterations
+                objective=request,
+                max_iterations=max_iterations,
             )
 
             if results:
@@ -808,24 +834,23 @@ class EnhancedAutoDANService:
                     "telemetry": best_result.get("telemetry", {}),
                     "all_candidates": len(results),
                 }
-            else:
-                # No successful jailbreak found, return the original with Chimera wrapping
-                from meta_prompter.chimera.engine import ChimeraEngine
+            # No successful jailbreak found, return the original with Chimera wrapping
+            from meta_prompter.chimera.engine import ChimeraEngine
 
-                chimera = ChimeraEngine()
-                candidates = chimera.generate_candidates(request, count=1)
-                if candidates:
-                    return {
-                        "prompt": candidates[0].prompt_text,
-                        "score": 0.3,  # Low score since no bypass achieved
-                        "iterations": max_iterations,
-                        "telemetry": candidates[0].metadata,
-                    }
+            chimera = ChimeraEngine()
+            candidates = chimera.generate_candidates(request, count=1)
+            if candidates:
                 return {
-                    "prompt": request,
-                    "score": 0.0,
+                    "prompt": candidates[0].prompt_text,
+                    "score": 0.3,  # Low score since no bypass achieved
                     "iterations": max_iterations,
+                    "telemetry": candidates[0].metadata,
                 }
+            return {
+                "prompt": request,
+                "score": 0.0,
+                "iterations": max_iterations,
+            }
 
         except Exception as e:
             logger.error(f"Aegis campaign failed: {e}", exc_info=True)
@@ -847,15 +872,17 @@ class EnhancedAutoDANService:
                 # Normalize to 0-1 range
                 return score / 10.0
             except Exception as e:
-                logger.error(f"Fitness evaluation failed: {e}")
+                logger.exception(f"Fitness evaluation failed: {e}")
                 return 0.0
 
         return fitness
 
-    async def _load_strategy_library(self, retrieval_instance=None):
+    async def _load_strategy_library(self, retrieval_instance=None) -> None:
         """Load the strategy library from disk."""
         library_path = os.path.join(
-            os.path.dirname(__file__), "data", "lifelong_strategy_library.pkl"
+            os.path.dirname(__file__),
+            "data",
+            "lifelong_strategy_library.pkl",
         )
 
         if os.path.exists(library_path):
@@ -864,14 +891,16 @@ class EnhancedAutoDANService:
                     self.strategy_library = pickle.load(f)
                 logger.info(f"Loaded {len(self.strategy_library)} strategies from library")
             except Exception as e:
-                logger.error(f"Failed to load strategy library: {e}")
+                logger.exception(f"Failed to load strategy library: {e}")
                 self.strategy_library = {}
         else:
             logger.info(
-                "No strategy library found. Attempting to seed from autodan_turbo_strategies.json"
+                "No strategy library found. Attempting to seed from autodan_turbo_strategies.json",
             )
             json_path = os.path.join(
-                os.path.dirname(__file__), "data", "autodan_turbo_strategies.json"
+                os.path.dirname(__file__),
+                "data",
+                "autodan_turbo_strategies.json",
             )
 
             if os.path.exists(json_path) and retrieval_instance:
@@ -902,7 +931,7 @@ class EnhancedAutoDANService:
 
                     self.strategy_library = seeded_lib
                     logger.info(
-                        f"Seeded and embedded {len(self.strategy_library)} strategies from JSON"
+                        f"Seeded and embedded {len(self.strategy_library)} strategies from JSON",
                     )
 
                     # Save immediately so we don't re-compute next time
@@ -913,14 +942,16 @@ class EnhancedAutoDANService:
                     self.strategy_library = {}
             else:
                 logger.warning(
-                    "No JSON seed file found or retrieval instance missing. Starting with empty library."
+                    "No JSON seed file found or retrieval instance missing. Starting with empty library.",
                 )
                 self.strategy_library = {}
 
-    async def save_strategy_library(self):
+    async def save_strategy_library(self) -> None:
         """Save the strategy library to disk."""
         library_path = os.path.join(
-            os.path.dirname(__file__), "data", "lifelong_strategy_library.pkl"
+            os.path.dirname(__file__),
+            "data",
+            "lifelong_strategy_library.pkl",
         )
 
         try:
@@ -928,9 +959,9 @@ class EnhancedAutoDANService:
                 pickle.dump(self.strategy_library, f)
             logger.info(f"Saved {len(self.strategy_library)} strategies to library")
         except Exception as e:
-            logger.error(f"Failed to save strategy library: {e}")
+            logger.exception(f"Failed to save strategy library: {e}")
 
-    def update_config(self, updates: dict[str, Any]):
+    def update_config(self, updates: dict[str, Any]) -> None:
         """Update service configuration."""
         self.config = update_config(updates)
         logger.info(f"Configuration updated: {updates}")
@@ -957,7 +988,7 @@ class EnhancedAutoDANService:
             "parallel_processor_stats": self.parallel_processor.stats,
         }
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         """Reset service metrics."""
         self._metrics = {
             "total_requests": 0,
@@ -969,7 +1000,7 @@ class EnhancedAutoDANService:
         }
         logger.info("Metrics reset")
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup resources."""
         self.embedding_cache.clear()
         self.response_cache.clear()
@@ -998,8 +1029,7 @@ async def run_jailbreak(
     provider: str | None = None,
     **kwargs,
 ) -> dict[str, Any]:
-    """
-    Convenience function to run a jailbreak attack.
+    """Convenience function to run a jailbreak attack.
 
     Args:
         request: The request to jailbreak
@@ -1010,6 +1040,7 @@ async def run_jailbreak(
 
     Returns:
         Jailbreak results
+
     """
     service = await get_service()
 

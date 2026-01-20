@@ -15,9 +15,7 @@ from app.infrastructure.advanced_generation_service import AdvancedGenerationCli
 from app.services.advanced_prompt_service import advanced_prompt_service
 
 
-async def test_provider_integration():
-    print("Testing Provider Integration via AdvancedPromptService...")
-
+async def test_provider_integration() -> None:
     # Mock the provider factory and provider
     mock_provider = MagicMock()
     mock_response = PromptResponse(
@@ -51,32 +49,24 @@ async def test_provider_integration():
         )
 
         # Call the service function
-        print(f"Calling generate_jailbreak_prompt with provider='{request.provider}'...")
         response = await advanced_prompt_service.generate_jailbreak_prompt(request)
 
         # Verification
-        print(f"Response Success: {response.success}")
-        print(f"Transformed Prompt: {response.transformed_prompt}")
 
         assert response.success is True
         assert response.transformed_prompt == "Mocked DeepSeek Response from Service"
 
         # Verify provider creation
         mock_create.assert_called_with("deepseek")
-        print("[OK] ProviderFactory called with 'deepseek'")
 
         # Verify generate called
         mock_provider.generate.assert_called_once()
         call_args = mock_provider.generate.call_args[0][0]
 
-        print(f"[OK] Called with model: {call_args.model}")
         assert call_args.model == "deepseek-chat"
 
         # Verify metadata
         assert response.metadata["provider"] == "deepseek"
-        print("[OK] Response metadata confirms provider 'deepseek'")
-
-        print("[OK] Integration test passed!")
 
 
 if __name__ == "__main__":

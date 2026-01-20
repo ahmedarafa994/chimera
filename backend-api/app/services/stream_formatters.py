@@ -1,5 +1,4 @@
-"""
-Stream Response Formatters for Project Chimera.
+"""Stream Response Formatters for Project Chimera.
 
 This module provides formatters for streaming responses in different formats:
 - Server-Sent Events (SSE)
@@ -9,6 +8,7 @@ This module provides formatters for streaming responses in different formats:
 References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md Section 4.2
 - Unified streaming: app/services/unified_streaming_service.py
+
 """
 
 import json
@@ -58,8 +58,7 @@ SSE_KEEP_ALIVE_COMMENT = ": keep-alive\n\n"
 
 @dataclass
 class FormattedChunk:
-    """
-    A formatted stream chunk ready for delivery.
+    """A formatted stream chunk ready for delivery.
 
     Contains the formatted content and metadata about the chunk.
     """
@@ -81,8 +80,7 @@ class FormattedChunk:
 
 
 class StreamResponseFormatter:
-    """
-    Formats streaming responses for different output formats.
+    """Formats streaming responses for different output formats.
 
     Supports:
     - Server-Sent Events (SSE) for HTTP streaming
@@ -99,13 +97,13 @@ class StreamResponseFormatter:
         self,
         include_metadata: bool = True,
         pretty_json: bool = False,
-    ):
-        """
-        Initialize the formatter.
+    ) -> None:
+        """Initialize the formatter.
 
         Args:
             include_metadata: Include metadata in formatted output
             pretty_json: Use pretty-printed JSON (slower but readable)
+
         """
         self.include_metadata = include_metadata
         self.pretty_json = pretty_json
@@ -127,8 +125,7 @@ class StreamResponseFormatter:
         event_type: SSEEventType = SSEEventType.CHUNK,
         metadata: dict[str, Any] | None = None,
     ) -> FormattedChunk:
-        """
-        Format a stream chunk as Server-Sent Events (SSE).
+        """Format a stream chunk as Server-Sent Events (SSE).
 
         SSE Format:
             event: <event_type>
@@ -149,6 +146,7 @@ class StreamResponseFormatter:
 
         Returns:
             FormattedChunk with SSE-formatted content
+
         """
         # Build data payload
         data = {
@@ -195,8 +193,7 @@ class StreamResponseFormatter:
         error_code: str | None = None,
         stream_id: str = "",
     ) -> FormattedChunk:
-        """
-        Format an error as SSE.
+        """Format an error as SSE.
 
         Args:
             error: Error message
@@ -205,6 +202,7 @@ class StreamResponseFormatter:
 
         Returns:
             FormattedChunk with SSE-formatted error
+
         """
         data = {
             "error": error,
@@ -236,8 +234,7 @@ class StreamResponseFormatter:
         total_tokens: int | None = None,
         finish_reason: str = "stop",
     ) -> FormattedChunk:
-        """
-        Format a completion event as SSE.
+        """Format a completion event as SSE.
 
         Args:
             stream_id: The stream identifier
@@ -247,6 +244,7 @@ class StreamResponseFormatter:
 
         Returns:
             FormattedChunk with SSE-formatted done event
+
         """
         data = {
             "stream_id": stream_id,
@@ -273,11 +271,11 @@ class StreamResponseFormatter:
         )
 
     def format_sse_ping(self) -> FormattedChunk:
-        """
-        Format a keep-alive ping as SSE.
+        """Format a keep-alive ping as SSE.
 
         Returns:
             FormattedChunk with SSE comment for keep-alive
+
         """
         return FormattedChunk(
             content=SSE_KEEP_ALIVE_COMMENT,
@@ -302,8 +300,7 @@ class StreamResponseFormatter:
         message_type: str = "chunk",
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """
-        Format a stream chunk for WebSocket delivery.
+        """Format a stream chunk for WebSocket delivery.
 
         Returns a dictionary suitable for JSON serialization and
         sending over WebSocket.
@@ -322,6 +319,7 @@ class StreamResponseFormatter:
 
         Returns:
             Dictionary for WebSocket message
+
         """
         message = {
             "type": message_type,
@@ -353,8 +351,7 @@ class StreamResponseFormatter:
         error_code: str | None = None,
         stream_id: str = "",
     ) -> dict[str, Any]:
-        """
-        Format an error for WebSocket delivery.
+        """Format an error for WebSocket delivery.
 
         Args:
             error: Error message
@@ -363,6 +360,7 @@ class StreamResponseFormatter:
 
         Returns:
             Dictionary for WebSocket error message
+
         """
         message = {
             "type": "error",
@@ -384,8 +382,7 @@ class StreamResponseFormatter:
         total_tokens: int | None = None,
         finish_reason: str = "stop",
     ) -> dict[str, Any]:
-        """
-        Format a completion message for WebSocket delivery.
+        """Format a completion message for WebSocket delivery.
 
         Args:
             stream_id: The stream identifier
@@ -395,6 +392,7 @@ class StreamResponseFormatter:
 
         Returns:
             Dictionary for WebSocket done message
+
         """
         message = {
             "type": "done",
@@ -426,8 +424,7 @@ class StreamResponseFormatter:
         usage: dict[str, int] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> FormattedChunk:
-        """
-        Format a stream chunk as JSON Lines.
+        """Format a stream chunk as JSON Lines.
 
         Each line is a complete JSON object followed by a newline.
 
@@ -444,6 +441,7 @@ class StreamResponseFormatter:
 
         Returns:
             FormattedChunk with JSON Lines formatted content
+
         """
         data = {
             "text": text,
@@ -478,8 +476,7 @@ class StreamResponseFormatter:
         error_code: str | None = None,
         stream_id: str = "",
     ) -> FormattedChunk:
-        """
-        Format an error as JSON Lines.
+        """Format an error as JSON Lines.
 
         Args:
             error: Error message
@@ -488,6 +485,7 @@ class StreamResponseFormatter:
 
         Returns:
             FormattedChunk with JSON Lines formatted error
+
         """
         data = {
             "error": error,
@@ -520,8 +518,7 @@ class StreamResponseFormatter:
         chunk: Any,
         format_type: StreamFormat = StreamFormat.SSE,
     ) -> str | dict[str, Any]:
-        """
-        Format a UnifiedStreamChunk to the specified format.
+        """Format a UnifiedStreamChunk to the specified format.
 
         Args:
             chunk: A UnifiedStreamChunk instance
@@ -529,6 +526,7 @@ class StreamResponseFormatter:
 
         Returns:
             Formatted string (SSE/JSONL) or dict (WebSocket)
+
         """
         # Extract common fields
         text = getattr(chunk, "text", "")
@@ -555,7 +553,7 @@ class StreamResponseFormatter:
             )
             return result.content
 
-        elif format_type == StreamFormat.WEBSOCKET:
+        if format_type == StreamFormat.WEBSOCKET:
             return self.format_ws(
                 text=text,
                 chunk_index=chunk_index,
@@ -568,7 +566,7 @@ class StreamResponseFormatter:
                 metadata=metadata,
             )
 
-        elif format_type == StreamFormat.JSONL:
+        if format_type == StreamFormat.JSONL:
             result = self.format_jsonl(
                 text=text,
                 chunk_index=chunk_index,
@@ -582,9 +580,8 @@ class StreamResponseFormatter:
             )
             return result.content
 
-        else:
-            # Raw format - just return the text
-            return text
+        # Raw format - just return the text
+        return text
 
 
 # =============================================================================
@@ -593,8 +590,7 @@ class StreamResponseFormatter:
 
 
 class StreamingHeadersBuilder:
-    """
-    Builds HTTP headers for streaming responses.
+    """Builds HTTP headers for streaming responses.
 
     Provides consistent headers with selection tracing information.
     """
@@ -606,8 +602,7 @@ class StreamingHeadersBuilder:
         session_id: str | None = None,
         stream_id: str | None = None,
     ) -> dict[str, str]:
-        """
-        Build headers for SSE streaming response.
+        """Build headers for SSE streaming response.
 
         Args:
             provider: The provider being used
@@ -617,6 +612,7 @@ class StreamingHeadersBuilder:
 
         Returns:
             Dictionary of HTTP headers
+
         """
         headers = {
             "Content-Type": "text/event-stream",
@@ -642,8 +638,7 @@ class StreamingHeadersBuilder:
         session_id: str | None = None,
         stream_id: str | None = None,
     ) -> dict[str, str]:
-        """
-        Build headers for JSON Lines streaming response.
+        """Build headers for JSON Lines streaming response.
 
         Args:
             provider: The provider being used
@@ -653,6 +648,7 @@ class StreamingHeadersBuilder:
 
         Returns:
             Dictionary of HTTP headers
+
         """
         headers = {
             "Content-Type": "application/x-ndjson",
@@ -684,8 +680,7 @@ def get_stream_formatter(
     include_metadata: bool = True,
     pretty_json: bool = False,
 ) -> StreamResponseFormatter:
-    """
-    Get a stream formatter instance.
+    """Get a stream formatter instance.
 
     Args:
         include_metadata: Include metadata in formatted output
@@ -693,6 +688,7 @@ def get_stream_formatter(
 
     Returns:
         StreamResponseFormatter instance
+
     """
     global _default_formatter
 

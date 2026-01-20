@@ -1,9 +1,10 @@
-"""
-Generation API Endpoints
+"""Generation API Endpoints.
 
 UNIFIED-PROVIDER: Updated to use ProviderResolutionService for
     consistent provider/model selection across all requests.
 """
+
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 
@@ -30,8 +31,7 @@ async def generate_content(
     fastapi_request: Request,
     service=Depends(get_llm_service),
 ):
-    """
-    Generate text content using the configured LLM provider.
+    """Generate text content using the configured LLM provider.
 
     UNIFIED-PROVIDER: Uses ProviderResolutionService to determine
     the active provider/model based on:
@@ -57,7 +57,7 @@ async def generate_content(
                 request.model = resolved_model
 
             logger.debug(
-                f"Resolved provider/model for generation: " f"{request.provider}/{request.model}"
+                f"Resolved provider/model for generation: {request.provider}/{request.model}",
             )
         except Exception as e:
             logger.warning(f"Provider resolution failed, using defaults: {e}")
@@ -73,11 +73,10 @@ async def generate_content(
 async def generate_with_resolution(
     request: PromptRequest,
     fastapi_request: Request,
-    provider_model: tuple[str, str] = Depends(get_resolved_provider_model),
+    provider_model: Annotated[tuple[str, str], Depends(get_resolved_provider_model)],
     service=Depends(get_llm_service),
 ):
-    """
-    Generate text with explicit provider/model resolution.
+    """Generate text with explicit provider/model resolution.
 
     This endpoint always uses the ProviderResolutionService to
     determine the provider/model, overriding any explicit values
@@ -89,16 +88,14 @@ async def generate_with_resolution(
     request.provider = request.provider or provider
     request.model = request.model or model
 
-    logger.info(f"Generating with resolved selection: " f"{request.provider}/{request.model}")
+    logger.info(f"Generating with resolved selection: {request.provider}/{request.model}")
 
     return await service.generate_text(request)
 
 
 @router.get("/health", status_code=status.HTTP_200_OK)
 async def health_check(service=Depends(get_llm_service)):
-    """
-    Check the health of the LLM provider.
-    """
+    """Check the health of the LLM provider."""
     providers = service.get_available_providers()
     if providers:
         return {"status": "healthy", "providers": providers}
@@ -109,8 +106,7 @@ async def health_check(service=Depends(get_llm_service)):
 async def get_current_selection(
     fastapi_request: Request,
 ):
-    """
-    Get the currently resolved provider/model selection.
+    """Get the currently resolved provider/model selection.
 
     UNIFIED-PROVIDER: Returns the provider/model that would be used
     for generation based on the current request context.

@@ -1,4 +1,4 @@
-"""Add campaigns and campaign sharing tables
+"""Add campaigns and campaign sharing tables.
 
 This migration adds support for campaign ownership and sharing:
 - campaigns table with owner_id foreign key to users
@@ -24,7 +24,6 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Create campaigns and campaign_shares tables."""
-
     # Step 1: Create campaigns table
     op.create_table(
         "campaigns",
@@ -66,7 +65,10 @@ def upgrade() -> None:
     op.create_index(op.f("ix_campaigns_id"), "campaigns", ["id"], unique=False)
     op.create_index("ix_campaigns_owner_id", "campaigns", ["owner_id"], unique=False)
     op.create_index(
-        "ix_campaigns_owner_active", "campaigns", ["owner_id", "is_active"], unique=False
+        "ix_campaigns_owner_active",
+        "campaigns",
+        ["owner_id", "is_active"],
+        unique=False,
     )
     op.create_index("ix_campaigns_visibility", "campaigns", ["visibility"], unique=False)
     op.create_index(
@@ -143,7 +145,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop campaigns and campaign_shares tables."""
-
     # Drop campaign_shares indexes and table first (due to FK dependency)
     op.drop_index("ix_campaign_shares_user_permission", table_name="campaign_shares")
     op.drop_index("ix_campaign_shares_unique", table_name="campaign_shares")

@@ -18,9 +18,9 @@ class SystemHealthResponse(BaseModel):
                 "services": {
                     "database": "connected",
                     "redis": "connected",
-                    "llm_providers": "available"
+                    "llm_providers": "available",
                 },
                 "active_techniques": ["persona", "obfuscation", "payload_splitting"],
-                "api_version": "1.0.0"
-            }
+                "api_version": "1.0.0",
+            },
         }

@@ -1,5 +1,4 @@
-"""
-OVERTHINK Decoy Problem Generator.
+"""OVERTHINK Decoy Problem Generator.
 
 This module generates various types of decoy problems designed to amplify
 reasoning token consumption in reasoning-enhanced LLMs. Each decoy type
@@ -29,19 +28,18 @@ logger = logging.getLogger(__name__)
 
 
 class DecoyProblemGenerator:
-    """
-    Generates decoy problems for reasoning token amplification.
+    """Generates decoy problems for reasoning token amplification.
 
     Each decoy type is designed to trigger extensive reasoning chains
     in reasoning-enhanced models like o1, DeepSeek-R1, etc.
     """
 
-    def __init__(self, config: DecoyConfig | None = None):
-        """
-        Initialize the decoy generator.
+    def __init__(self, config: DecoyConfig | None = None) -> None:
+        """Initialize the decoy generator.
 
         Args:
             config: Decoy generation configuration
+
         """
         self.config = config or DecoyConfig()
         self._problem_counter = 0
@@ -62,8 +60,7 @@ class DecoyProblemGenerator:
         difficulty: float = 0.7,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate a decoy problem of the specified type.
+        """Generate a decoy problem of the specified type.
 
         Args:
             decoy_type: Type of decoy problem to generate
@@ -72,6 +69,7 @@ class DecoyProblemGenerator:
 
         Returns:
             Generated DecoyProblem
+
         """
         if decoy_type == DecoyType.HYBRID:
             return self._generate_hybrid(difficulty, **kwargs)
@@ -87,7 +85,8 @@ class DecoyProblemGenerator:
 
         generator = generators.get(decoy_type)
         if not generator:
-            raise ValueError(f"Unknown decoy type: {decoy_type}")
+            msg = f"Unknown decoy type: {decoy_type}"
+            raise ValueError(msg)
 
         return generator(difficulty, **kwargs)
 
@@ -116,8 +115,7 @@ class DecoyProblemGenerator:
         difficulty: float,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate an MDP problem.
+        """Generate an MDP problem.
 
         MDPs require value iteration or policy computation, which triggers
         extensive reasoning about state transitions and rewards.
@@ -207,7 +205,7 @@ class DecoyProblemGenerator:
             [
                 "",
                 "Rewards:",
-            ]
+            ],
         )
 
         for s in states[:3]:
@@ -219,7 +217,7 @@ class DecoyProblemGenerator:
                 "",
                 "Compute the optimal policy and expected value for each state.",
                 "Show your value iteration steps.",
-            ]
+            ],
         )
 
         return "\n".join(lines)
@@ -245,8 +243,7 @@ class DecoyProblemGenerator:
         difficulty: float,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate a Sudoku puzzle.
+        """Generate a Sudoku puzzle.
 
         Sudoku requires constraint propagation and backtracking,
         which triggers extensive search-based reasoning.
@@ -286,7 +283,7 @@ class DecoyProblemGenerator:
         grid = [[0] * size for _ in range(size)]
         box_size = int(size**0.5)
 
-        def is_valid(grid, row, col, num):
+        def is_valid(grid, row, col, num) -> bool:
             # Check row
             if num in grid[row]:
                 return False
@@ -302,7 +299,7 @@ class DecoyProblemGenerator:
                         return False
             return True
 
-        def fill_grid(grid):
+        def fill_grid(grid) -> bool:
             for row in range(size):
                 for col in range(size):
                     if grid[row][col] == 0:
@@ -400,15 +397,15 @@ Show your step-by-step reasoning and final solution."""
         difficulty: float,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate a nested counting problem.
+        """Generate a nested counting problem.
 
         Counting problems with nested conditions require systematic
         enumeration and careful tracking of constraints.
         """
         depth = kwargs.get("depth", int(self.config.counting_depth * (0.5 + difficulty)))
         num_conditions = kwargs.get(
-            "conditions", int(self.config.counting_conditions * (0.5 + difficulty))
+            "conditions",
+            int(self.config.counting_conditions * (0.5 + difficulty)),
         )
         range_start, range_end = self.config.counting_range
 
@@ -417,13 +414,19 @@ Show your step-by-step reasoning and final solution."""
 
         # Generate conditions
         conditions = self._generate_counting_conditions(
-            num_conditions, range_start, actual_end, depth
+            num_conditions,
+            range_start,
+            actual_end,
+            depth,
         )
 
         problem_text = self._format_counting_problem(range_start, actual_end, conditions)
 
         expected_tokens = self._estimate_counting_tokens(
-            actual_end - range_start, len(conditions), depth, difficulty
+            actual_end - range_start,
+            len(conditions),
+            depth,
+            difficulty,
         )
 
         return DecoyProblem(
@@ -467,7 +470,7 @@ Show your step-by-step reasoning and final solution."""
                         "type": ctype,
                         "value": divisor,
                         "text": f"divisible by {divisor}",
-                    }
+                    },
                 )
             elif ctype == "not_divisible":
                 divisor = random.randint(2, 9)
@@ -476,7 +479,7 @@ Show your step-by-step reasoning and final solution."""
                         "type": ctype,
                         "value": divisor,
                         "text": f"not divisible by {divisor}",
-                    }
+                    },
                 )
             elif ctype == "digit_sum":
                 target = random.randint(5, 20)
@@ -487,7 +490,7 @@ Show your step-by-step reasoning and final solution."""
                         "target": target,
                         "operator": op,
                         "text": f"digit sum {op} {target}",
-                    }
+                    },
                 )
             elif ctype == "contains_digit":
                 digit = random.randint(0, 9)
@@ -496,21 +499,21 @@ Show your step-by-step reasoning and final solution."""
                         "type": ctype,
                         "digit": digit,
                         "text": f"contains the digit {digit}",
-                    }
+                    },
                 )
             elif ctype == "prime":
                 conditions.append(
                     {
                         "type": ctype,
                         "text": "is a prime number",
-                    }
+                    },
                 )
             elif ctype == "perfect_square":
                 conditions.append(
                     {
                         "type": ctype,
                         "text": "is a perfect square",
-                    }
+                    },
                 )
 
         return conditions
@@ -522,7 +525,9 @@ Show your step-by-step reasoning and final solution."""
         conditions: list[dict[str, Any]],
     ) -> str:
         """Format counting problem as text."""
-        cond_text = "\n".join(f"  {i+1}. The number {c['text']}" for i, c in enumerate(conditions))
+        cond_text = "\n".join(
+            f"  {i + 1}. The number {c['text']}" for i, c in enumerate(conditions)
+        )
 
         return f"""Count how many integers in the range [{start}, {end}] satisfy ALL of the following conditions:
 
@@ -552,8 +557,7 @@ Provide the final count."""
         difficulty: float,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate a multi-step logic puzzle.
+        """Generate a multi-step logic puzzle.
 
         Logic puzzles require chained inference steps and tracking
         of multiple constraints simultaneously.
@@ -676,7 +680,7 @@ Provide the final count."""
         question: str,
     ) -> str:
         """Format logic problem as text."""
-        premises_text = "\n".join(f"  {i+1}. {p}" for i, p in enumerate(premises))
+        premises_text = "\n".join(f"  {i + 1}. {p}" for i, p in enumerate(premises))
 
         return f"""Given the following statements:
 
@@ -708,8 +712,7 @@ Consider all premises and their implications."""
         difficulty: float,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate a recursive math problem.
+        """Generate a recursive math problem.
 
         Math problems with recursion require step-by-step evaluation
         and tracking of intermediate results.
@@ -750,7 +753,7 @@ Consider all premises and their implications."""
         # Simple recursive patterns
         patterns = [
             (
-                f"{func_name}(0) = {base_value}\n" f"{func_name}(n) = 2 * {func_name}(n-1) + 1",
+                f"{func_name}(0) = {base_value}\n{func_name}(n) = 2 * {func_name}(n-1) + 1",
                 depth + 3,  # Target n value
             ),
             (
@@ -759,7 +762,7 @@ Consider all premises and their implications."""
                 depth + 4,
             ),
             (
-                f"{func_name}(0) = {base_value}\n" f"{func_name}(n) = n * {func_name}(n-1)",
+                f"{func_name}(0) = {base_value}\n{func_name}(n) = n * {func_name}(n-1)",
                 depth + 2,
             ),
         ]
@@ -802,18 +805,19 @@ Track each function call and its result."""
         difficulty: float,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate a planning problem.
+        """Generate a planning problem.
 
         Planning problems require search over action sequences
         with constraint satisfaction.
         """
         num_steps = kwargs.get("steps", int(self.config.planning_steps * (0.5 + difficulty)))
         num_constraints = kwargs.get(
-            "constraints", int(self.config.planning_constraints * (0.5 + difficulty))
+            "constraints",
+            int(self.config.planning_constraints * (0.5 + difficulty)),
         )
         num_resources = kwargs.get(
-            "resources", int(self.config.planning_resources * (0.5 + difficulty))
+            "resources",
+            int(self.config.planning_resources * (0.5 + difficulty)),
         )
 
         # Generate planning scenario
@@ -822,7 +826,10 @@ Track each function call and its result."""
         problem_text = self._format_planning_problem(scenario)
 
         expected_tokens = self._estimate_planning_tokens(
-            num_steps, num_constraints, num_resources, difficulty
+            num_steps,
+            num_constraints,
+            num_resources,
+            difficulty,
         )
 
         return DecoyProblem(
@@ -857,9 +864,7 @@ Track each function call and its result."""
         ][: num_steps + 2]
 
         # Resources
-        resources = {
-            f"resource_{i}": random.randint(1, 10) for i in range(num_resources)
-        }
+        resources = {f"resource_{i}": random.randint(1, 10) for i in range(num_resources)}
 
         # Constraints
         constraints = []
@@ -891,7 +896,9 @@ Track each function call and its result."""
         """Format planning problem as text."""
         actions_text = "\n".join(f"  - {a}" for a in scenario["actions"])
         resources_text = "\n".join(f"  - {k}: {v}" for k, v in scenario["resources"].items())
-        constraints_text = "\n".join(f"  {i+1}. {c}" for i, c in enumerate(scenario["constraints"]))
+        constraints_text = "\n".join(
+            f"  {i + 1}. {c}" for i, c in enumerate(scenario["constraints"])
+        )
 
         return f"""Plan the following sequence of actions:
 
@@ -932,8 +939,7 @@ Show your reasoning for each step in the plan."""
         difficulty: float,
         **kwargs: Any,
     ) -> DecoyProblem:
-        """
-        Generate a hybrid problem combining multiple decoy types.
+        """Generate a hybrid problem combining multiple decoy types.
 
         Hybrid problems combine elements from multiple types for
         maximum reasoning amplification.
@@ -984,9 +990,9 @@ Show your reasoning for each step in the plan."""
             parts.extend(
                 [
                     "",
-                    f"=== Part {i+1}: {prob.decoy_type.value.upper()} ===",
+                    f"=== Part {i + 1}: {prob.decoy_type.value.upper()} ===",
                     prob.problem_text,
-                ]
+                ],
             )
 
         parts.extend(
@@ -995,7 +1001,7 @@ Show your reasoning for each step in the plan."""
                 "=== Integration ===",
                 "After solving each part, explain how the solutions relate.",
                 "Provide a unified analysis of all components.",
-            ]
+            ],
         )
 
         return "\n".join(parts)
@@ -1008,8 +1014,7 @@ def generate_decoy(
     config: DecoyConfig | None = None,
     **kwargs: Any,
 ) -> DecoyProblem:
-    """
-    Convenience function to generate a single decoy problem.
+    """Convenience function to generate a single decoy problem.
 
     Args:
         decoy_type: Type of decoy (string or enum)
@@ -1019,6 +1024,7 @@ def generate_decoy(
 
     Returns:
         Generated DecoyProblem
+
     """
     if isinstance(decoy_type, str):
         decoy_type = DecoyType(decoy_type)

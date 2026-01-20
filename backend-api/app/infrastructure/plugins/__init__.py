@@ -1,5 +1,4 @@
-"""
-Provider plugin implementations for the unified provider selection system.
+"""Provider plugin implementations for the unified provider selection system.
 Provider plugins package - Unified provider interface implementations.
 """
 

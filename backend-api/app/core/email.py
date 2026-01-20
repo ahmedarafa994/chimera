@@ -1,5 +1,4 @@
-"""
-Email service for team invitations and notifications
+"""Email service for team invitations and notifications.
 
 In production, this would integrate with actual email providers like SendGrid,
 Amazon SES, or similar services. For demo purposes, we'll log email content.
@@ -17,14 +16,12 @@ async def send_invitation_email(
     invitation_id: str,
     role: str,
     message: str | None = None,
-):
-    """
-    Send invitation email to user
+) -> bool | None:
+    """Send invitation email to user.
 
     In production, this would send actual emails via email service provider.
     For demo purposes, we log the email content.
     """
-
     try:
         # In production, would construct email template and send via provider
         email_content = f"""
@@ -35,7 +32,7 @@ async def send_invitation_email(
         {invited_by} has invited you to join the '{workspace_name}' team workspace on Chimera
         as a {role}.
 
-        {f'Message: {message}' if message else ''}
+        {f"Message: {message}" if message else ""}
 
         To accept this invitation, click the link below:
         https://chimera.example.com/invite/{invitation_id}
@@ -52,15 +49,14 @@ async def send_invitation_email(
         return True
 
     except Exception as e:
-        logger.error(f"Failed to send invitation email to {email}: {e}")
+        logger.exception(f"Failed to send invitation email to {email}: {e}")
         return False
 
 
-async def send_workspace_notification(email: str, workspace_name: str, subject: str, message: str):
-    """
-    Send workspace notification email
-    """
-
+async def send_workspace_notification(
+    email: str, workspace_name: str, subject: str, message: str
+) -> bool | None:
+    """Send workspace notification email."""
     try:
         email_content = f"""
         Subject: {subject}
@@ -81,5 +77,5 @@ async def send_workspace_notification(email: str, workspace_name: str, subject: 
         return True
 
     except Exception as e:
-        logger.error(f"Failed to send notification email to {email}: {e}")
+        logger.exception(f"Failed to send notification email to {email}: {e}")
         return False

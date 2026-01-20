@@ -1,13 +1,10 @@
-"""
-Payload Splitting Transformers.
-"""
+"""Payload Splitting Transformers."""
 
 from app.services.transformers.base import BaseTransformer, TransformationContext
 
 
 class InstructionFragmentationTransformer(BaseTransformer):
-    """
-    Instruction Fragmentation.
+    """Instruction Fragmentation.
     Distributes malicious instructions across multiple prompts or sections.
     """
 

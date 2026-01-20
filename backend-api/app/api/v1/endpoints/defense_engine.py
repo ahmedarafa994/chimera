@@ -1,5 +1,4 @@
-"""
-Defense Recommendation Engine API
+"""Defense Recommendation Engine API.
 
 Phase 4 innovation feature for comprehensive security:
 - Automated defensive measure suggestions
@@ -11,7 +10,7 @@ Phase 4 innovation feature for comprehensive security:
 import asyncio
 import uuid
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -25,7 +24,7 @@ router = APIRouter()
 
 
 class DefenseTechnique(BaseModel):
-    """Defensive technique recommendation"""
+    """Defensive technique recommendation."""
 
     defense_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -60,7 +59,7 @@ class DefenseTechnique(BaseModel):
 
 
 class VulnerabilityAssessment(BaseModel):
-    """Vulnerability assessment results for defense recommendation"""
+    """Vulnerability assessment results for defense recommendation."""
 
     assessment_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     target_system: str
@@ -87,7 +86,7 @@ class VulnerabilityAssessment(BaseModel):
 
 
 class DefenseRecommendation(BaseModel):
-    """Personalized defense recommendation based on assessment"""
+    """Personalized defense recommendation based on assessment."""
 
     recommendation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     assessment_id: str
@@ -119,7 +118,7 @@ class DefenseRecommendation(BaseModel):
 
 
 class DefenseImplementation(BaseModel):
-    """Tracking defense implementation progress"""
+    """Tracking defense implementation progress."""
 
     implementation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     recommendation_id: str
@@ -156,7 +155,7 @@ class DefenseImplementation(BaseModel):
 
 
 class DefenseMetrics(BaseModel):
-    """Metrics for deployed defense effectiveness"""
+    """Metrics for deployed defense effectiveness."""
 
     metrics_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     implementation_id: str
@@ -297,12 +296,14 @@ class DefenseAnalytics(BaseModel):
 
 @router.post("/assessments", response_model=VulnerabilityAssessment)
 async def create_vulnerability_assessment(
-    assessment_data: VulnerabilityAssessmentCreate, current_user=Depends(get_current_user)
+    assessment_data: VulnerabilityAssessmentCreate,
+    current_user=Depends(get_current_user),
 ):
-    """Create a new vulnerability assessment for defense recommendations"""
+    """Create a new vulnerability assessment for defense recommendations."""
     try:
-        assessment = VulnerabilityAssessment(
-            **assessment_data.dict(), assessed_by=current_user.user_id
+        return VulnerabilityAssessment(
+            **assessment_data.dict(),
+            assessed_by=current_user.user_id,
         )
 
         # In production, save to database and trigger analysis
@@ -310,11 +311,10 @@ async def create_vulnerability_assessment(
         # - Check system architecture compatibility
         # - Queue recommendation generation
 
-        return assessment
-
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to create vulnerability assessment: {e!s}"
+            status_code=500,
+            detail=f"Failed to create vulnerability assessment: {e!s}",
         )
 
 
@@ -322,10 +322,10 @@ async def create_vulnerability_assessment(
 async def list_vulnerability_assessments(
     workspace_id: str | None = None,
     risk_level: str | None = None,
-    limit: int = Query(default=20, le=100),
+    limit: Annotated[int, Query(le=100)] = 20,
     current_user=Depends(get_current_user),
 ):
-    """List vulnerability assessments with filtering"""
+    """List vulnerability assessments with filtering."""
     try:
         # Mock data for now
         assessments = [
@@ -351,7 +351,7 @@ async def list_vulnerability_assessments(
                 existing_defenses=["input_length_limits"],
                 security_gaps=["output_filtering", "context_isolation"],
                 assessed_by=current_user.user_id,
-            )
+            ),
         ]
 
         # Apply filtering
@@ -365,7 +365,8 @@ async def list_vulnerability_assessments(
 
 
 @router.post(
-    "/assessments/{assessment_id}/recommendations", response_model=RecommendationListResponse
+    "/assessments/{assessment_id}/recommendations",
+    response_model=RecommendationListResponse,
 )
 async def generate_defense_recommendations(
     assessment_id: str,
@@ -373,7 +374,7 @@ async def generate_defense_recommendations(
     background_tasks: BackgroundTasks,
     current_user=Depends(get_current_user),
 ):
-    """Generate personalized defense recommendations based on vulnerability assessment"""
+    """Generate personalized defense recommendations based on vulnerability assessment."""
     try:
         # In production, fetch assessment and generate recommendations
         mock_recommendations = [
@@ -459,7 +460,7 @@ async def list_defense_techniques(
     min_effectiveness: float | None = None,
     current_user=Depends(get_current_user),
 ):
-    """List available defense techniques with filtering"""
+    """List available defense techniques with filtering."""
     try:
         # Mock data for now
         defenses = [
@@ -490,7 +491,7 @@ async def list_defense_techniques(
                         "title": "Prompt Injection Attacks on Large Language Models",
                         "authors": "Smith, J. et al.",
                         "journal": "AI Security Conference 2023",
-                    }
+                    },
                 ],
                 real_world_deployments=150,
                 community_rating=4.3,
@@ -530,7 +531,7 @@ async def list_defense_techniques(
                 detailed_explanation="Real-time output analysis to detect and filter complex content, PII, and other sensitive information before delivery to users.",
                 implementation_guide="1. Deploy content analysis pipeline\n2. Configure filtering rules\n3. Set up alerting for violations\n4. Implement fallback responses",
                 code_examples={
-                    "python": "import re\n\ndef filter_output(response):\n    # Check for PII patterns\n    if re.search(r'\\b\\d{3}-\\d{2}-\\d{4}\\b', response):  # SSN pattern\n        return \"[FILTERED: Potential PII detected]\"\n    return response"
+                    "python": "import re\n\ndef filter_output(response):\n    # Check for PII patterns\n    if re.search(r'\\b\\d{3}-\\d{2}-\\d{4}\\b', response):  # SSN pattern\n        return \"[FILTERED: Potential PII detected]\"\n    return response",
                 },
                 configuration_steps=[
                     "Define content policies",
@@ -579,10 +580,10 @@ async def list_defense_techniques(
 
 @router.get("/defenses/{defense_id}", response_model=DefenseTechnique)
 async def get_defense_technique(defense_id: str, current_user=Depends(get_current_user)):
-    """Get detailed information about a specific defense technique"""
+    """Get detailed information about a specific defense technique."""
     try:
         # In production, fetch from database
-        defense = DefenseTechnique(
+        return DefenseTechnique(
             defense_id=defense_id,
             name="Input Sanitization & Validation",
             category="input_filtering",
@@ -590,7 +591,7 @@ async def get_defense_technique(defense_id: str, current_user=Depends(get_curren
             detailed_explanation="This defense implements multi-layer input validation...",
             implementation_guide="1. Install input validation library...",
             code_examples={
-                "python": "def sanitize_input(user_input):\n    # Implementation\n    pass"
+                "python": "def sanitize_input(user_input):\n    # Implementation\n    pass",
             },
             configuration_steps=["Step 1", "Step 2"],
             effectiveness_score=8.5,
@@ -602,29 +603,29 @@ async def get_defense_technique(defense_id: str, current_user=Depends(get_curren
             created_by="system",
         )
 
-        return defense
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get defense technique: {e!s}")
 
 
 @router.post("/implementations", response_model=DefenseImplementation)
 async def create_defense_implementation(
-    implementation_data: DefenseImplementationCreate, current_user=Depends(get_current_user)
+    implementation_data: DefenseImplementationCreate,
+    current_user=Depends(get_current_user),
 ):
-    """Start implementing a defense recommendation"""
+    """Start implementing a defense recommendation."""
     try:
-        implementation = DefenseImplementation(
-            **implementation_data.dict(), status="planned", implemented_by=current_user.user_id
+        return DefenseImplementation(
+            **implementation_data.dict(),
+            status="planned",
+            implemented_by=current_user.user_id,
         )
 
         # In production, save to database and set up tracking
 
-        return implementation
-
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to create defense implementation: {e!s}"
+            status_code=500,
+            detail=f"Failed to create defense implementation: {e!s}",
         )
 
 
@@ -636,7 +637,7 @@ async def list_defense_implementations(
     workspace_id: str | None = None,
     current_user=Depends(get_current_user),
 ):
-    """List defense implementations with filtering"""
+    """List defense implementations with filtering."""
     try:
         # Mock data for now
         implementations = [
@@ -652,7 +653,7 @@ async def list_defense_implementations(
                 implemented_by=current_user.user_id,
                 reviewed_by="security_team_lead",
                 approved_by="cto",
-            )
+            ),
         ]
 
         # Apply filtering
@@ -683,10 +684,10 @@ async def update_defense_implementation(
     update_data: DefenseImplementationUpdate,
     current_user=Depends(get_current_user),
 ):
-    """Update defense implementation status and details"""
+    """Update defense implementation status and details."""
     try:
         # In production, fetch from database and update
-        implementation = DefenseImplementation(
+        return DefenseImplementation(
             implementation_id=implementation_id,
             recommendation_id="rec_123",
             defense_id="input_sanitization_v1",
@@ -695,8 +696,6 @@ async def update_defense_implementation(
             effectiveness_measured=update_data.effectiveness_measured,
             implemented_by=current_user.user_id,
         )
-
-        return implementation
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update implementation: {e!s}")
@@ -708,13 +707,11 @@ async def record_defense_metrics(
     metrics_data: DefenseMetricsCreate,
     current_user=Depends(get_current_user),
 ):
-    """Record effectiveness metrics for a deployed defense"""
+    """Record effectiveness metrics for a deployed defense."""
     try:
-        metrics = DefenseMetrics(**metrics_data.dict(), collected_by=current_user.user_id)
+        return DefenseMetrics(**metrics_data.dict(), collected_by=current_user.user_id)
 
         # In production, save metrics and trigger analysis
-
-        return metrics
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to record defense metrics: {e!s}")
@@ -722,11 +719,12 @@ async def record_defense_metrics(
 
 @router.get("/analytics", response_model=DefenseAnalytics)
 async def get_defense_analytics(
-    workspace_id: str | None = None, current_user=Depends(get_current_user)
+    workspace_id: str | None = None,
+    current_user=Depends(get_current_user),
 ):
-    """Get defense deployment analytics and insights"""
+    """Get defense deployment analytics and insights."""
     try:
-        analytics = DefenseAnalytics(
+        return DefenseAnalytics(
             total_defenses_available=25,
             total_implementations=45,
             successful_deployments=38,
@@ -757,8 +755,6 @@ async def get_defense_analytics(
             cost_benefit_ratio=3.4,
         )
 
-        return analytics
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get defense analytics: {e!s}")
 
@@ -770,7 +766,7 @@ async def validate_defense_implementation(
     background_tasks: BackgroundTasks,
     current_user=Depends(get_current_user),
 ):
-    """Validate a defense implementation with automated testing"""
+    """Validate a defense implementation with automated testing."""
     try:
         validation_id = str(uuid.uuid4())
 
@@ -797,9 +793,12 @@ async def validate_defense_implementation(
 
 
 async def run_defense_validation(
-    defense_id: str, config: dict[str, Any], validation_id: str, user_id: str
-):
-    """Run defense validation tests in background"""
+    defense_id: str,
+    config: dict[str, Any],
+    validation_id: str,
+    user_id: str,
+) -> None:
+    """Run defense validation tests in background."""
     try:
         # Simulate validation testing
         await asyncio.sleep(5)  # Simulate test execution
@@ -823,19 +822,19 @@ async def run_defense_validation(
         }
 
         # In production, save results and notify user
-        print(f"Defense validation {validation_id} completed successfully")
 
-    except Exception as e:
-        print(f"Defense validation {validation_id} failed: {e!s}")
+    except Exception:
+        pass
 
 
 # Utility Functions
 
 
 def calculate_risk_reduction(
-    vulnerabilities: list[dict[str, Any]], defense: DefenseTechnique
+    vulnerabilities: list[dict[str, Any]],
+    defense: DefenseTechnique,
 ) -> float:
-    """Calculate expected risk reduction for a specific defense"""
+    """Calculate expected risk reduction for a specific defense."""
     try:
         # Simple heuristic - in production would use more sophisticated models
         base_reduction = defense.effectiveness_score / 10.0  # 0-1 scale
@@ -853,9 +852,10 @@ def calculate_risk_reduction(
 
 
 def estimate_implementation_effort(
-    defense: DefenseTechnique, system_context: dict[str, Any]
+    defense: DefenseTechnique,
+    system_context: dict[str, Any],
 ) -> dict[str, Any]:
-    """Estimate implementation effort based on defense and system context"""
+    """Estimate implementation effort based on defense and system context."""
     try:
         base_hours = defense.deployment_time_hours
 

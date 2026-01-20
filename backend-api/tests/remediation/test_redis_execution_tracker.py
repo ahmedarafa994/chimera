@@ -10,33 +10,35 @@ from app.infrastructure.redis_execution_tracker import RedisExecutionTracker
 class TestRedisExecutionTracker:
     """Test suite for RedisExecutionTracker - using local fallback mode."""
 
-    def test_initialization(self):
+    def test_initialization(self) -> None:
         """Test tracker initializes correctly."""
         tracker = RedisExecutionTracker()
         assert tracker.active_ttl == 3600
         assert tracker.completed_ttl == 86400
         assert tracker.local_cache_max_size == 1000
 
-    def test_initialization_with_custom_values(self):
+    def test_initialization_with_custom_values(self) -> None:
         """Test tracker initializes with custom TTLs."""
         tracker = RedisExecutionTracker(active_ttl=1800, completed_ttl=43200, local_cache_size=5000)
         assert tracker.active_ttl == 1800
         assert tracker.completed_ttl == 43200
         assert tracker.local_cache_max_size == 5000
 
-    def test_local_cache_is_bounded_ordereddict(self):
+    def test_local_cache_is_bounded_ordereddict(self) -> None:
         """Test that local caches use OrderedDict for LRU."""
         tracker = RedisExecutionTracker()
         assert isinstance(tracker._local_active_cache, OrderedDict)
         assert isinstance(tracker._local_completed_cache, OrderedDict)
 
     @pytest.mark.asyncio
-    async def test_start_execution(self):
+    async def test_start_execution(self) -> None:
         """Test starting execution tracking."""
         tracker = RedisExecutionTracker()
 
         result = await tracker.start_execution(
-            execution_id="exec_123", technique_id="tech_1", user_id="user_1"
+            execution_id="exec_123",
+            technique_id="tech_1",
+            user_id="user_1",
         )
 
         assert result is True
@@ -46,7 +48,7 @@ class TestRedisExecutionTracker:
         assert data["status"] == "running"
 
     @pytest.mark.asyncio
-    async def test_start_execution_prevents_duplicates(self):
+    async def test_start_execution_prevents_duplicates(self) -> None:
         """Test that duplicate execution IDs are rejected."""
         tracker = RedisExecutionTracker()
 
@@ -59,7 +61,7 @@ class TestRedisExecutionTracker:
         assert result2 is False
 
     @pytest.mark.asyncio
-    async def test_complete_execution(self):
+    async def test_complete_execution(self) -> None:
         """Test completing execution tracking."""
         tracker = RedisExecutionTracker()
 
@@ -68,7 +70,9 @@ class TestRedisExecutionTracker:
 
         # Complete it
         await tracker.complete_execution(
-            execution_id="exec_123", success=True, execution_time_ms=1500.0
+            execution_id="exec_123",
+            success=True,
+            execution_time_ms=1500.0,
         )
 
         # Should move from active to completed
@@ -76,7 +80,7 @@ class TestRedisExecutionTracker:
         assert "exec_123" in tracker._local_completed_cache
 
     @pytest.mark.asyncio
-    async def test_get_active_count_total(self):
+    async def test_get_active_count_total(self) -> None:
         """Test getting total active execution count."""
         tracker = RedisExecutionTracker()
 
@@ -90,7 +94,7 @@ class TestRedisExecutionTracker:
         assert total == 3
 
     @pytest.mark.asyncio
-    async def test_get_active_count_by_technique(self):
+    async def test_get_active_count_by_technique(self) -> None:
         """Test getting active execution count for specific technique."""
         tracker = RedisExecutionTracker()
 
@@ -107,7 +111,7 @@ class TestRedisExecutionTracker:
         assert tech2_count == 1
 
     @pytest.mark.asyncio
-    async def test_local_cache_lru_eviction(self):
+    async def test_local_cache_lru_eviction(self) -> None:
         """Test LRU eviction when local cache exceeds limit."""
         tracker = RedisExecutionTracker(local_cache_size=3)
 
@@ -124,7 +128,7 @@ class TestRedisExecutionTracker:
         assert "exec_1" not in tracker._local_active_cache
         assert "exec_4" in tracker._local_active_cache
 
-    def test_key_generation(self):
+    def test_key_generation(self) -> None:
         """Test Redis key generation helpers."""
         tracker = RedisExecutionTracker()
 

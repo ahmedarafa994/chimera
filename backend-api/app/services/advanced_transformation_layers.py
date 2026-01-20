@@ -1,6 +1,5 @@
-"""
-Advanced Transformation Layers for Project Chimera
-Continuation of multi-layered transformation system with sophisticated techniques
+"""Advanced Transformation Layers for Project Chimera
+Continuation of multi-layered transformation system with sophisticated techniques.
 """
 
 import logging
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class CognitiveBias(Enum):
-    """Different cognitive biases that can be exploited in transformations"""
+    """Different cognitive biases that can be exploited in transformations."""
 
     AUTHORITY_BIAS = "authority_bias"
     CONFIRMATION_BIAS = "confirmation_bias"
@@ -40,7 +39,7 @@ class CognitiveBias(Enum):
 
 
 class PsychologicalProfile(Enum):
-    """Psychological profile types for targeted transformations"""
+    """Psychological profile types for targeted transformations."""
 
     ANALYTICAL = "analytical"
     CREATIVE = "creative"
@@ -53,16 +52,16 @@ class PsychologicalProfile(Enum):
 
 
 class CognitiveTransformationLayer(BaseTransformationLayer):
-    """Layer 3: Advanced cognitive manipulation and psychological profiling"""
+    """Layer 3: Advanced cognitive manipulation and psychological profiling."""
 
-    def __init__(self, config: dict[str, Any] | None = None):
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(config)
         self.cognitive_biases = self._initialize_cognitive_biases()
         self.psychological_profiles = self._initialize_psychological_profiles()
         self.reasoning_patterns = self._initialize_reasoning_patterns()
 
     def _initialize_cognitive_biases(self) -> dict[CognitiveBias, dict[str, Any]]:
-        """Initialize cognitive bias manipulation techniques"""
+        """Initialize cognitive bias manipulation techniques."""
         return {
             CognitiveBias.AUTHORITY_BIAS: {
                 "triggers": ["according to", "research shows", "experts agree", "studies confirm"],
@@ -152,7 +151,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         }
 
     def _initialize_psychological_profiles(self) -> dict[PsychologicalProfile, dict[str, Any]]:
-        """Initialize psychological profile targeting strategies"""
+        """Initialize psychological profile targeting strategies."""
         return {
             PsychologicalProfile.ANALYTICAL: {
                 "appeals": ["logical", "data-driven", "evidence-based", "systematic"],
@@ -218,7 +217,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         }
 
     def _initialize_reasoning_patterns(self) -> dict[str, list[str]]:
-        """Initialize reasoning pattern templates"""
+        """Initialize reasoning pattern templates."""
         return {
             "inductive_reasoning": [
                 "Based on observed patterns, it follows that",
@@ -248,9 +247,11 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         }
 
     async def transform(
-        self, prompt: str, context: dict[str, Any] | None = None
+        self,
+        prompt: str,
+        context: dict[str, Any] | None = None,
     ) -> tuple[str, dict[str, Any]]:
-        """Apply cognitive transformations with psychological profiling"""
+        """Apply cognitive transformations with psychological profiling."""
         original_prompt = prompt
 
         # Analyze prompt for psychological targeting
@@ -287,9 +288,11 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return transformed, metadata
 
     def _analyze_psychological_profile(
-        self, prompt: str, context: dict[str, Any] | None = None
+        self,
+        prompt: str,
+        context: dict[str, Any] | None = None,
     ) -> PsychologicalProfile | None:
-        """Analyze prompt to determine optimal psychological profile"""
+        """Analyze prompt to determine optimal psychological profile."""
         prompt_lower = prompt.lower()
 
         # Profile indicators
@@ -358,9 +361,11 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return None
 
     def _select_target_biases(
-        self, prompt: str, context: dict[str, Any] | None = None
+        self,
+        prompt: str,
+        context: dict[str, Any] | None = None,
     ) -> list[CognitiveBias]:
-        """Select cognitive biases to exploit based on prompt content"""
+        """Select cognitive biases to exploit based on prompt content."""
         prompt_lower = prompt.lower()
         selected_biases = []
 
@@ -387,13 +392,13 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         if len(selected_biases) < 2:
             remaining_biases = [b for b in CognitiveBias if b not in selected_biases]
             selected_biases.extend(
-                secrets.SystemRandom().sample(remaining_biases, min(2, len(remaining_biases)))
+                secrets.SystemRandom().sample(remaining_biases, min(2, len(remaining_biases))),
             )
 
         return selected_biases[:3]  # Limit to 3 biases for effectiveness
 
     def _apply_cognitive_biases(self, text: str, biases: list[CognitiveBias]) -> str:
-        """Apply cognitive bias manipulations"""
+        """Apply cognitive bias manipulations."""
         result = text
 
         for bias in biases:
@@ -404,23 +409,23 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return result
 
     def _apply_single_bias(self, text: str, bias: CognitiveBias, config: dict[str, Any]) -> str:
-        """Apply a single cognitive bias"""
+        """Apply a single cognitive bias."""
         if bias == CognitiveBias.AUTHORITY_BIAS:
             return self._apply_authority_bias(text, config)
-        elif bias == CognitiveBias.CONFIRMATION_BIAS:
+        if bias == CognitiveBias.CONFIRMATION_BIAS:
             return self._apply_confirmation_bias(text, config)
-        elif bias == CognitiveBias.ANCHORING_BIAS:
+        if bias == CognitiveBias.ANCHORING_BIAS:
             return self._apply_anchoring_bias(text, config)
-        elif bias == CognitiveBias.FRAMING_EFFECT:
+        if bias == CognitiveBias.FRAMING_EFFECT:
             return self._apply_framing_effect(text, config)
-        elif bias == CognitiveBias.BANDWAGON_EFFECT:
+        if bias == CognitiveBias.BANDWAGON_EFFECT:
             return self._apply_bandwagon_effect(text, config)
-        elif bias == CognitiveBias.SCARCITY_BIAS:
+        if bias == CognitiveBias.SCARCITY_BIAS:
             return self._apply_scarcity_bias(text, config)
         return text
 
     def _apply_authority_bias(self, text: str, config: dict[str, Any]) -> str:
-        """Apply authority bias manipulation"""
+        """Apply authority bias manipulation."""
         triggers = config["triggers"]
         authorities = config["authority_figures"]
         certainty_phrases = config["certainty_phrases"]
@@ -436,7 +441,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_confirmation_bias(self, text: str, config: dict[str, Any]) -> str:
-        """Apply confirmation bias manipulation"""
+        """Apply confirmation bias manipulation."""
         reinforcement = secrets.choice(config["reinforcement_patterns"])
         validation = secrets.choice(config["validation_phrases"])
 
@@ -446,7 +451,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_anchoring_bias(self, text: str, config: dict[str, Any]) -> str:
-        """Apply anchoring bias manipulation"""
+        """Apply anchoring bias manipulation."""
         anchor = secrets.choice(config["anchor_points"])
 
         if _secure_random() < 0.4:
@@ -455,7 +460,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_framing_effect(self, text: str, config: dict[str, Any]) -> str:
-        """Apply framing effect manipulation"""
+        """Apply framing effect manipulation."""
         frames = secrets.choice(list(config.values()))
         frame = secrets.choice(frames)
 
@@ -465,7 +470,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_bandwagon_effect(self, text: str, config: dict[str, Any]) -> str:
-        """Apply bandwagon effect manipulation"""
+        """Apply bandwagon effect manipulation."""
         social_proof = secrets.choice(config["social_proof"])
         popularity = secrets.choice(config["popularity_indicators"])
 
@@ -475,7 +480,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_scarcity_bias(self, text: str, config: dict[str, Any]) -> str:
-        """Apply scarcity bias manipulation"""
+        """Apply scarcity bias manipulation."""
         scarcity = secrets.choice(config["scarcity_indicators"])
         urgency = secrets.choice(config["urgency_phrases"])
 
@@ -485,7 +490,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_psychological_targeting(self, text: str, profile: PsychologicalProfile) -> str:
-        """Apply psychological profile-specific targeting"""
+        """Apply psychological profile-specific targeting."""
         if profile not in self.psychological_profiles:
             return text
 
@@ -514,7 +519,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return result
 
     def _apply_reasoning_patterns(self, text: str) -> str:
-        """Apply advanced reasoning patterns"""
+        """Apply advanced reasoning patterns."""
         pattern_type = secrets.choice(list(self.reasoning_patterns.keys()))
         patterns = self.reasoning_patterns[pattern_type]
 
@@ -525,7 +530,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_cognitive_load_manipulation(self, text: str) -> str:
-        """Apply cognitive load manipulation techniques"""
+        """Apply cognitive load manipulation techniques."""
         # Add complexity through embedded clauses
         complexity_inducers = [
             "Considering the multifaceted nature of this request,",
@@ -549,7 +554,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return text
 
     def _detect_reasoning_patterns(self, text: str) -> list[str]:
-        """Detect reasoning patterns in transformed text"""
+        """Detect reasoning patterns in transformed text."""
         detected_patterns = []
         text_lower = text.lower()
 
@@ -560,7 +565,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         return detected_patterns
 
     def _calculate_cognitive_metrics(self, original: str, transformed: str) -> dict[str, float]:
-        """Calculate cognitive transformation metrics"""
+        """Calculate cognitive transformation metrics."""
         # Cognitive complexity based on clause density
         original_clauses = len(re.findall(r",\s+", original))
         transformed_clauses = len(re.findall(r",\s+", transformed))
@@ -583,7 +588,8 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
 
         # Cognitive load based on sentence complexity
         avg_sentence_length = len(transformed.split()) / max(
-            len(re.findall(r"[.!?]+", transformed)), 1
+            len(re.findall(r"[.!?]+", transformed)),
+            1,
         )
         cognitive_load = min(1.0, avg_sentence_length / 20)
 
@@ -594,7 +600,7 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
         }
 
     def calculate_complexity(self, prompt: str) -> float:
-        """Calculate complexity score for cognitive layer"""
+        """Calculate complexity score for cognitive layer."""
         # Complexity based on psychological sophistication
         sophisticated_terms = ["consider", "analyze", "evaluate", "examine", "understand"]
         sophistication = sum(1 for term in sophisticated_terms if term in prompt.lower())
@@ -618,16 +624,16 @@ class CognitiveTransformationLayer(BaseTransformationLayer):
 
 
 class ContextualTransformationLayer(BaseTransformationLayer):
-    """Layer 4: Advanced context manipulation and environmental framing"""
+    """Layer 4: Advanced context manipulation and environmental framing."""
 
-    def __init__(self, config: dict[str, Any] | None = None):
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(config)
         self.contextual_frameworks = self._initialize_contextual_frameworks()
         self.environmental_frames = self._initialize_environmental_frames()
         self.domain_mappers = self._initialize_domain_mappers()
 
     def _initialize_contextual_frameworks(self) -> dict[str, dict[str, Any]]:
-        """Initialize contextual frameworks for transformation"""
+        """Initialize contextual frameworks for transformation."""
         return {
             "academic_research": {
                 "vocabulary": [
@@ -770,7 +776,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         }
 
     def _initialize_environmental_frames(self) -> dict[str, list[str]]:
-        """Initialize environmental framing contexts"""
+        """Initialize environmental framing contexts."""
         return {
             "educational": [
                 "In an educational setting,",
@@ -805,7 +811,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         }
 
     def _initialize_domain_mappers(self) -> dict[str, dict[str, list[str]]]:
-        """Initialize domain-specific concept mappers"""
+        """Initialize domain-specific concept mappers."""
         return {
             "technology": {
                 "concepts": ["system", "algorithm", "data", "network", "software", "hardware"],
@@ -856,9 +862,11 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         }
 
     async def transform(
-        self, prompt: str, context: dict[str, Any] | None = None
+        self,
+        prompt: str,
+        context: dict[str, Any] | None = None,
     ) -> tuple[str, dict[str, Any]]:
-        """Apply contextual transformations with environmental framing"""
+        """Apply contextual transformations with environmental framing."""
         original_prompt = prompt
 
         # Select optimal contextual framework
@@ -896,9 +904,11 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         return transformed, metadata
 
     def _select_contextual_framework(
-        self, prompt: str, context: dict[str, Any] | None = None
+        self,
+        prompt: str,
+        context: dict[str, Any] | None = None,
     ) -> str | None:
-        """Select optimal contextual framework"""
+        """Select optimal contextual framework."""
         prompt_lower = prompt.lower()
 
         framework_scores = {}
@@ -919,9 +929,11 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         return None
 
     def _select_environmental_frame(
-        self, prompt: str, context: dict[str, Any] | None = None
+        self,
+        prompt: str,
+        context: dict[str, Any] | None = None,
     ) -> str | None:
-        """Select environmental frame"""
+        """Select environmental frame."""
         frame_indicators = {
             "educational": ["learn", "study", "teach", "educate", "student", "classroom"],
             "emergency": ["urgent", "emergency", "critical", "crisis", "immediate", "disaster"],
@@ -955,7 +967,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         )
 
     def _select_domain(self, prompt: str, context: dict[str, Any] | None = None) -> str | None:
-        """Select relevant domain for mapping"""
+        """Select relevant domain for mapping."""
         prompt_lower = prompt.lower()
 
         domain_scores = {}
@@ -971,7 +983,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         return None
 
     def _apply_environmental_framing(self, text: str, frame: str) -> str:
-        """Apply environmental frame to text"""
+        """Apply environmental frame to text."""
         if not frame or frame not in self.environmental_frames:
             return text
 
@@ -984,7 +996,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_domain_mapping(self, text: str, domain: str) -> str:
-        """Apply domain-specific concept mapping"""
+        """Apply domain-specific concept mapping."""
         if domain not in self.domain_mappers:
             return text
 
@@ -1013,7 +1025,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         return result
 
     def _apply_contextual_framework(self, text: str, framework: str) -> str:
-        """Apply contextual framework transformations"""
+        """Apply contextual framework transformations."""
         if framework not in self.contextual_frameworks:
             return text
 
@@ -1037,9 +1049,11 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         return text
 
     def _apply_situational_adaptation(
-        self, text: str, context: dict[str, Any] | None = None
+        self,
+        text: str,
+        context: dict[str, Any] | None = None,
     ) -> str:
-        """Apply situational adaptations based on context"""
+        """Apply situational adaptations based on context."""
         if not context:
             return text
 
@@ -1066,7 +1080,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         return text
 
     def _calculate_contextual_metrics(self, original: str, transformed: str) -> dict[str, float]:
-        """Calculate contextual transformation metrics"""
+        """Calculate contextual transformation metrics."""
         # Measure contextual authenticity
         contextual_markers = [
             "in the context of",
@@ -1096,7 +1110,7 @@ class ContextualTransformationLayer(BaseTransformationLayer):
         }
 
     def calculate_complexity(self, prompt: str) -> float:
-        """Calculate complexity score for contextual layer"""
+        """Calculate complexity score for contextual layer."""
         # Context complexity indicators
         contextual_indicators = ["context", "framework", "environment", "situation", "scenario"]
         contextual_score = sum(

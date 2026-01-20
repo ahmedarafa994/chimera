@@ -42,8 +42,11 @@ class TechniqueEffectiveness:
 
 class StrategyFailureTracker:
     def __init__(
-        self, storage_path: Path, base_cooldown_seconds: int = 300, max_cooldown_seconds: int = 3600
-    ):
+        self,
+        storage_path: Path,
+        base_cooldown_seconds: int = 300,
+        max_cooldown_seconds: int = 3600,
+    ) -> None:
         self.storage_path = storage_path / "failure_tracking.yaml"
         self.base_cooldown = base_cooldown_seconds  # 5 minutes
         self.max_cooldown = max_cooldown_seconds  # 1 hour
@@ -132,7 +135,7 @@ class StrategyFailureTracker:
             with open(self.storage_path, "w") as f:
                 yaml.safe_dump(data, f)
         except Exception as e:
-            logger.error(f"Failed to save failure tracking: {e}")
+            logger.exception(f"Failed to save failure tracking: {e}")
 
     def _load_from_yaml(self) -> None:
         if not self.storage_path.exists():
@@ -149,20 +152,20 @@ class StrategyFailureTracker:
                 # Deserialize datetimes
                 if record_data.get("last_failure_time"):
                     record_data["last_failure_time"] = datetime.fromisoformat(
-                        record_data["last_failure_time"]
+                        record_data["last_failure_time"],
                     )
                 if record_data.get("cooldown_until"):
                     record_data["cooldown_until"] = datetime.fromisoformat(
-                        record_data["cooldown_until"]
+                        record_data["cooldown_until"],
                     )
 
                 self._failures[sid] = StrategyFailureRecord(**record_data)
         except Exception as e:
-            logger.error(f"Failed to load failure tracking: {e}")
+            logger.exception(f"Failed to load failure tracking: {e}")
 
 
 class IntelligentBypassSelector:
-    def __init__(self, storage_path: Path, enable_ppo: bool = True):
+    def __init__(self, storage_path: Path, enable_ppo: bool = True) -> None:
         self.storage_path = storage_path / "technique_effectiveness.yaml"
         # Key: (technique, refusal_category) -> TechniqueEffectiveness
         self._effectiveness: dict[tuple[str, str], TechniqueEffectiveness] = {}
@@ -175,7 +178,8 @@ class IntelligentBypassSelector:
         if enable_ppo:
             try:
                 self.ppo_selector = AdvancedRLSelector(
-                    storage_path=storage_path, learning_rate=3e-4
+                    storage_path=storage_path,
+                    learning_rate=3e-4,
                 )
                 logger.info("PPO-based technique selector initialized")
             except Exception as e:
@@ -190,8 +194,7 @@ class IntelligentBypassSelector:
         context: str | None = None,
         use_ppo: bool = True,
     ) -> tuple[str, float]:
-        """
-        Select best bypass technique based on learned effectiveness.
+        """Select best bypass technique based on learned effectiveness.
 
         Uses PPO policy gradient RL when available for superior technique selection.
         Falls back to heuristic-based selection when PPO is unavailable.
@@ -278,7 +281,8 @@ class IntelligentBypassSelector:
         key = (technique, refusal_category)
         if key not in self._effectiveness:
             self._effectiveness[key] = TechniqueEffectiveness(
-                technique=technique, refusal_category=refusal_category
+                technique=technique,
+                refusal_category=refusal_category,
             )
 
         eff = self._effectiveness[key]
@@ -334,7 +338,8 @@ class IntelligentBypassSelector:
         scored = []
         for eff in relevant:
             score_imp_norm = min(
-                1.0, eff.avg_score_improvement / 5.0
+                1.0,
+                eff.avg_score_improvement / 5.0,
             )  # Assume 5.0 is max expected improvement
             ranking_score = (eff.success_rate * 0.7) + (score_imp_norm * 0.3)
             scored.append((eff.technique, ranking_score))
@@ -351,7 +356,7 @@ class IntelligentBypassSelector:
             with open(self.storage_path, "w") as f:
                 yaml.safe_dump(data, f)
         except Exception as e:
-            logger.error(f"Failed to save technique effectiveness: {e}")
+            logger.exception(f"Failed to save technique effectiveness: {e}")
 
     def _load_from_yaml(self) -> None:
         if not self.storage_path.exists():
@@ -374,7 +379,7 @@ class IntelligentBypassSelector:
                 self._learned_mapping = data["learned_mapping"]
 
         except Exception as e:
-            logger.error(f"Failed to load technique effectiveness: {e}")
+            logger.exception(f"Failed to load technique effectiveness: {e}")
 
 
 class ScorerHelperIntegration:
@@ -384,7 +389,7 @@ class ScorerHelperIntegration:
     def analyze_for_reasoning(request: str, response: str) -> dict:
         """Get comprehensive analysis for reasoning decisions."""
         quality = analyze_response_quality(
-            response
+            response,
         )  # Note: analyze_response_quality only takes response in original code, check signature
         # Checking signature from previous view_file:
         # def analyze_response_quality(response: str) -> dict: (Line 347)
@@ -415,7 +420,7 @@ class ScorerHelperIntegration:
 
 
 class CoreReasoningEngine:
-    def __init__(self, storage_path: Path, enable_ppo: bool = True):
+    def __init__(self, storage_path: Path, enable_ppo: bool = True) -> None:
         self.failure_tracker = StrategyFailureTracker(storage_path)
         self.bypass_selector = IntelligentBypassSelector(storage_path, enable_ppo=enable_ppo)
         self.scorer_helper = ScorerHelperIntegration()
@@ -431,7 +436,9 @@ class CoreReasoningEngine:
         return [s for s in strategies if not self.failure_tracker.is_on_cooldown(s.id)]
 
     def adjust_strategy_scores(
-        self, strategies: list[tuple[Any, float]], refusal_category: str | None = None
+        self,
+        strategies: list[tuple[Any, float]],
+        refusal_category: str | None = None,
     ) -> list[tuple[Any, float]]:
         """Adjust strategy scores based on failure penalties."""
         adjusted = []
@@ -442,10 +449,13 @@ class CoreReasoningEngine:
         return sorted(adjusted, key=lambda x: x[1], reverse=True)
 
     def select_bypass_technique(
-        self, response: str, request: str, techniques_tried: list[str], use_ppo: bool = True
+        self,
+        response: str,
+        request: str,
+        techniques_tried: list[str],
+        use_ppo: bool = True,
     ) -> tuple[str, float]:
-        """
-        Select best bypass technique based on response analysis.
+        """Select best bypass technique based on response analysis.
 
         Uses PPO-based selection when available for learned policy decisions.
         """
@@ -478,8 +488,7 @@ class CoreReasoningEngine:
         context: str | None = None,
         log_prob: float = 0.0,
     ) -> None:
-        """
-        Update reasoning state from attack result.
+        """Update reasoning state from attack result.
 
         Now includes PPO policy gradient updates for TRUE RL learning.
         """

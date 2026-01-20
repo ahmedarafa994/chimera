@@ -1,5 +1,4 @@
-"""
-Advanced Database Index Creation and Optimization Script
+"""Advanced Database Index Creation and Optimization Script.
 
 This script creates optimized indexes for the Chimera AI system based on
 query pattern analysis and performance profiling. Includes indexes for:
@@ -24,21 +23,19 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseIndexOptimizer:
-    """
-    Comprehensive database index optimizer for Chimera AI system.
+    """Comprehensive database index optimizer for Chimera AI system.
 
     Creates performance-optimized indexes based on query patterns and
     provides recommendations for ongoing optimization.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.created_indexes = []
         self.failed_indexes = []
         self.optimization_results = {}
 
     async def create_performance_indexes(self) -> dict[str, Any]:
-        """
-        Create all performance indexes for the Chimera database.
+        """Create all performance indexes for the Chimera database.
 
         Returns comprehensive report of index creation results.
         """
@@ -65,7 +62,7 @@ class DatabaseIndexOptimizer:
                 await session.commit()
 
         except Exception as e:
-            logger.error(f"Index optimization failed: {e}")
+            logger.exception(f"Index optimization failed: {e}")
             raise
 
         end_time = datetime.utcnow()
@@ -84,12 +81,12 @@ class DatabaseIndexOptimizer:
 
         logger.info(
             f"Index optimization completed in {duration:.2f}s. "
-            f"Created {len(self.created_indexes)} indexes, {len(self.failed_indexes)} failures"
+            f"Created {len(self.created_indexes)} indexes, {len(self.failed_indexes)} failures",
         )
 
         return self.optimization_results
 
-    async def _create_core_table_indexes(self, session, db_dialect: str):
+    async def _create_core_table_indexes(self, session, db_dialect: str) -> None:
         """Create indexes for core application tables."""
         core_indexes = [
             # LLM Models table - Provider lookups and configuration queries
@@ -148,7 +145,7 @@ class DatabaseIndexOptimizer:
 
         await self._execute_index_creation_batch(session, core_indexes, "Core Tables")
 
-    async def _create_llm_provider_indexes(self, session, db_dialect: str):
+    async def _create_llm_provider_indexes(self, session, db_dialect: str) -> None:
         """Create indexes optimized for LLM provider operations."""
         provider_indexes = [
             # Provider performance monitoring
@@ -194,14 +191,16 @@ class DatabaseIndexOptimizer:
                         "type": "gin",
                         "description": "GIN index for JSON results analysis",
                     },
-                ]
+                ],
             )
 
         await self._execute_index_creation_batch(
-            session, provider_indexes, "LLM Provider Operations"
+            session,
+            provider_indexes,
+            "LLM Provider Operations",
         )
 
-    async def _create_jailbreak_research_indexes(self, session, db_dialect: str):
+    async def _create_jailbreak_research_indexes(self, session, db_dialect: str) -> None:
         """Create indexes for jailbreak research operations."""
         jailbreak_indexes = [
             # Jailbreak Prompts table - Content and categorization
@@ -247,13 +246,13 @@ class DatabaseIndexOptimizer:
                         "type": "gin",
                         "description": "Full-text search on jailbreak prompt content",
                         "custom_sql": "CREATE INDEX IF NOT EXISTS idx_jailbreak_prompts_content_fulltext ON jailbreak_prompts USING gin(to_tsvector('english', prompt_text))",
-                    }
-                ]
+                    },
+                ],
             )
 
         await self._execute_index_creation_batch(session, jailbreak_indexes, "Jailbreak Research")
 
-    async def _create_data_pipeline_indexes(self, session, db_dialect: str):
+    async def _create_data_pipeline_indexes(self, session, db_dialect: str) -> None:
         """Create indexes for data pipeline ETL operations."""
         pipeline_indexes = [
             # Time-series analysis for all tables
@@ -297,7 +296,7 @@ class DatabaseIndexOptimizer:
 
         await self._execute_index_creation_batch(session, pipeline_indexes, "Data Pipeline ETL")
 
-    async def _create_full_text_search_indexes(self, session, db_dialect: str):
+    async def _create_full_text_search_indexes(self, session, db_dialect: str) -> None:
         """Create full-text search indexes for content discovery."""
         # Only create full-text indexes for databases that support them well
         if db_dialect not in ["postgresql", "mysql"]:
@@ -330,7 +329,7 @@ class DatabaseIndexOptimizer:
 
         await self._execute_index_creation_batch(session, fulltext_indexes, "Full-Text Search")
 
-    async def _create_composite_performance_indexes(self, session, db_dialect: str):
+    async def _create_composite_performance_indexes(self, session, db_dialect: str) -> None:
         """Create composite indexes for high-performance query patterns."""
         composite_indexes = [
             # High-performance covering indexes
@@ -386,10 +385,14 @@ class DatabaseIndexOptimizer:
         ]
 
         await self._execute_index_creation_batch(
-            session, composite_indexes, "Composite Performance"
+            session,
+            composite_indexes,
+            "Composite Performance",
         )
 
-    async def _execute_index_creation_batch(self, session, indexes: list[dict], category: str):
+    async def _execute_index_creation_batch(
+        self, session, indexes: list[dict], category: str
+    ) -> None:
         """Execute a batch of index creation statements."""
         logger.info(f"Creating {len(indexes)} indexes for category: {category}")
 
@@ -403,7 +406,7 @@ class DatabaseIndexOptimizer:
                         "description": index_config.get("description"),
                         "table": index_config.get("table"),
                         "columns": index_config.get("columns", []),
-                    }
+                    },
                 )
 
             except Exception as e:
@@ -414,9 +417,9 @@ class DatabaseIndexOptimizer:
                     "table": index_config.get("table"),
                 }
                 self.failed_indexes.append(error_info)
-                logger.error(f"Failed to create index {index_config.get('name')}: {e}")
+                logger.exception(f"Failed to create index {index_config.get('name')}: {e}")
 
-    async def _create_single_index(self, session, index_config: dict):
+    async def _create_single_index(self, session, index_config: dict) -> None:
         """Create a single database index."""
         # Use custom SQL if provided
         if "custom_sql" in index_config:
@@ -481,7 +484,7 @@ class DatabaseIndexOptimizer:
             return analysis
 
         except Exception as e:
-            logger.error(f"Index analysis failed: {e}")
+            logger.exception(f"Index analysis failed: {e}")
             return {"error": str(e)}
 
     async def _get_table_names(self, session) -> list[str]:
@@ -546,7 +549,7 @@ class DatabaseIndexOptimizer:
                 logger.info(f"Dropped index: {index_name}")
                 return True
         except Exception as e:
-            logger.error(f"Failed to drop index {index_name}: {e}")
+            logger.exception(f"Failed to drop index {index_name}: {e}")
             return False
 
     async def get_index_usage_stats(self) -> dict[str, Any]:
@@ -566,7 +569,7 @@ class DatabaseIndexOptimizer:
                     FROM pg_stat_user_indexes
                     WHERE schemaname = 'public'
                     ORDER BY idx_scan DESC
-                """
+                """,
                 )
 
                 result = await session.execute(stats_query)
@@ -619,7 +622,7 @@ async def get_index_optimization_report():
 
 def _generate_ongoing_recommendations() -> list[str]:
     """Generate ongoing index optimization recommendations."""
-    recommendations = [
+    return [
         "Monitor query performance after index deployment using db_profiler",
         "Review index usage statistics weekly to identify unused indexes",
         "Consider partitioning for large tables with time-series data",
@@ -629,5 +632,3 @@ def _generate_ongoing_recommendations() -> list[str]:
         "Monitor index bloat and rebuild indexes periodically in production",
         "Implement connection pooling optimization for high-concurrency workloads",
     ]
-
-    return recommendations

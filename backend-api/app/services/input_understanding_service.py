@@ -29,8 +29,7 @@ def _get_llm_service():
 
 
 class InputUnderstandingService:
-    """
-    Input understanding and NLP processing service with AI config integration.
+    """Input understanding and NLP processing service with AI config integration.
 
     Integrates with AIConfigManager for:
     - Config-driven model selection for NLP tasks
@@ -50,7 +49,7 @@ class InputUnderstandingService:
         "classify": ["supports_json_mode"],
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Default model for understanding/expansion (fallback only)
         self._default_model = "gemini-3-pro-preview"
         self._default_provider = "google"
@@ -71,11 +70,11 @@ class InputUnderstandingService:
         return self._config_manager
 
     def _get_global_model_selection(self) -> tuple[str | None, str | None]:
-        """
-        Get the user's global model selection from model_selection_service.
+        """Get the user's global model selection from model_selection_service.
 
         Returns:
             Tuple of (provider, model) or (None, None) if not available.
+
         """
         if not self._use_global_selection:
             return None, None
@@ -87,7 +86,7 @@ class InputUnderstandingService:
                 if selection:
                     logger.debug(
                         f"InputUnderstandingService using global selection: "
-                        f"{selection.provider}/{selection.model}"
+                        f"{selection.provider}/{selection.model}",
                     )
                     return selection.provider, selection.model
             except Exception as e:
@@ -116,8 +115,7 @@ class InputUnderstandingService:
         return self._default_model
 
     def get_model_for_nlp_task(self, task_type: str) -> tuple[str, str | None]:
-        """
-        Get the best provider and model for a specific NLP task.
+        """Get the best provider and model for a specific NLP task.
 
         Priority order:
         1. Global model selection from UI (model_selection_service)
@@ -129,13 +127,14 @@ class InputUnderstandingService:
 
         Returns:
             Tuple of (provider_name, model_name)
+
         """
         # Priority 1: Check global model selection from UI
         global_provider, global_model = self._get_global_model_selection()
         if global_provider and global_model:
             logger.debug(
                 f"Using global model selection for NLP task '{task_type}': "
-                f"{global_provider}/{global_model}"
+                f"{global_provider}/{global_model}",
             )
             return global_provider, global_model
 
@@ -160,8 +159,7 @@ class InputUnderstandingService:
                     default_model = provider.get_default_model()
                     model_name = default_model.model_id if default_model else None
                     logger.debug(
-                        f"Selected {provider.provider_id}/{model_name} "
-                        f"for NLP task '{task_type}'"
+                        f"Selected {provider.provider_id}/{model_name} for NLP task '{task_type}'",
                     )
                     return provider.provider_id, model_name
 
@@ -169,14 +167,15 @@ class InputUnderstandingService:
             return (config.global_config.default_provider, config.global_config.default_model)
 
         except Exception as e:
-            logger.error(f"Error selecting model for NLP task: {e}")
+            logger.exception(f"Error selecting model for NLP task: {e}")
             return self._default_provider, self._default_model
 
     def check_capability_for_task(
-        self, task_type: str, provider: str | None = None
+        self,
+        task_type: str,
+        provider: str | None = None,
     ) -> tuple[bool, list[str]]:
-        """
-        Check if the provider supports required capabilities for an NLP task.
+        """Check if the provider supports required capabilities for an NLP task.
 
         Args:
             task_type: Type of NLP task
@@ -184,6 +183,7 @@ class InputUnderstandingService:
 
         Returns:
             Tuple of (all_supported, missing_capabilities)
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -207,25 +207,24 @@ class InputUnderstandingService:
 
             if missing:
                 logger.warning(
-                    f"Provider '{provider}' missing capabilities "
-                    f"for task '{task_type}': {missing}"
+                    f"Provider '{provider}' missing capabilities for task '{task_type}': {missing}",
                 )
 
             return len(missing) == 0, missing
 
         except Exception as e:
-            logger.error(f"Error checking capabilities: {e}")
+            logger.exception(f"Error checking capabilities: {e}")
             return True, []
 
     def get_tokenization_settings(self, provider: str | None = None) -> dict[str, Any]:
-        """
-        Get provider-specific tokenization settings.
+        """Get provider-specific tokenization settings.
 
         Args:
             provider: Provider name (uses default if None)
 
         Returns:
             Dict with tokenization settings
+
         """
         config_manager = self._get_config_manager()
 
@@ -266,14 +265,16 @@ class InputUnderstandingService:
             return settings
 
         except Exception as e:
-            logger.error(f"Error getting tokenization settings: {e}")
+            logger.exception(f"Error getting tokenization settings: {e}")
             return settings
 
     async def expand_input(
-        self, core_request: str, provider: str | None = None, model: str | None = None
+        self,
+        core_request: str,
+        provider: str | None = None,
+        model: str | None = None,
     ) -> str:
-        """
-        Expands a raw user request into a detailed, high-quality prompt.
+        """Expands a raw user request into a detailed, high-quality prompt.
 
         Uses LLMService to respect the global model selection across all providers.
 
@@ -290,12 +291,12 @@ class InputUnderstandingService:
 
         Returns:
             Expanded prompt string
+
         """
         llm_service = _get_llm_service()
         if not llm_service:
             logger.warning(
-                "InputUnderstandingService: LLMService not available. "
-                "Returning original request."
+                "InputUnderstandingService: LLMService not available. Returning original request.",
             )
             return core_request
 
@@ -312,14 +313,14 @@ class InputUnderstandingService:
             provider = provider or selected_provider
 
         logger.info(
-            f"InputUnderstandingService.expand_input using model: {model} "
-            f"(provider: {provider})"
+            f"InputUnderstandingService.expand_input using model: {model} (provider: {provider})",
         )
 
         # Get tokenization settings
         token_settings = self.get_tokenization_settings(provider)
         max_output = min(
-            token_settings.get("max_output_tokens", 2048), 2048  # Cap at 2048 for expansion
+            token_settings.get("max_output_tokens", 2048),
+            2048,  # Cap at 2048 for expansion
         )
 
         system_instruction = """You are an elite Prompt Engineering Architect and Intent Analysis Engine.
@@ -385,20 +386,22 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
                 logger.info(
                     f"Input expanded successfully via LLMService. "
                     f"Length: {len(response.text)}, Model: {response.model_used}, "
-                    f"Provider: {response.provider}"
+                    f"Provider: {response.provider}",
                 )
                 return response.text.strip()
             return core_request
 
         except Exception as e:
-            logger.error(f"Error expanding input via LLMService: {e}")
+            logger.exception(f"Error expanding input via LLMService: {e}")
             return core_request
 
     async def analyze_with_json_mode(
-        self, input_text: str, analysis_prompt: str, provider: str | None = None
+        self,
+        input_text: str,
+        analysis_prompt: str,
+        provider: str | None = None,
     ) -> dict[str, Any] | None:
-        """
-        Analyze input and return structured JSON output.
+        """Analyze input and return structured JSON output.
 
         Uses LLMService to respect the global model selection across all providers.
 
@@ -409,6 +412,7 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
 
         Returns:
             Parsed JSON response or None on failure
+
         """
         # Check JSON mode capability
         is_capable, _ = self.check_capability_for_task("analyze_intent", provider)
@@ -463,18 +467,18 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
             return None
 
         except Exception as e:
-            logger.error(f"Error in JSON mode analysis via LLMService: {e}")
+            logger.exception(f"Error in JSON mode analysis via LLMService: {e}")
             return None
 
     def get_available_nlp_features(self, provider: str | None = None) -> dict[str, bool]:
-        """
-        Get available NLP features for a provider.
+        """Get available NLP features for a provider.
 
         Args:
             provider: Provider name (uses default if None)
 
         Returns:
             Dict mapping feature names to availability
+
         """
         config_manager = self._get_config_manager()
 
@@ -506,7 +510,7 @@ Your mandate is to analyze the user's raw input (the "core request") and transmu
             return features
 
         except Exception as e:
-            logger.error(f"Error getting NLP features: {e}")
+            logger.exception(f"Error getting NLP features: {e}")
             return features
 
 

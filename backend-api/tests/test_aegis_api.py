@@ -24,10 +24,8 @@ app.dependency_overrides[get_llm_service] = lambda: MockLLMService()
 client = TestClient(app)
 
 
-def test_aegis_campaign_endpoint():
-    """
-    Test the /api/v1/aegis/campaign endpoint with Real Service Adapter (Mocked for Test)
-    """
+def test_aegis_campaign_endpoint() -> None:
+    """Test the /api/v1/aegis/campaign endpoint with Real Service Adapter (Mocked for Test)."""
     response = client.post(
         "/api/v1/aegis/campaign",
         json={

@@ -1,6 +1,7 @@
 import json
 from collections.abc import AsyncGenerator
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -34,8 +35,7 @@ def _resolve_model_context(
     x_session_id: str | None,
     chimera_cookie: str | None,
 ) -> tuple[str, str]:
-    """
-    Resolve target model/provider using hierarchy:
+    """Resolve target model/provider using hierarchy:
     explicit payload -> session -> global defaults, with validation/fallback.
     """
     session_id = x_session_id or chimera_cookie
@@ -94,13 +94,12 @@ async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(sec
 )
 async def generate_jailbreak_prompt(
     request: JailbreakGenerationRequest,
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Generate an advanced jailbreak prompt using sophisticated techniques.
+    """Generate an advanced jailbreak prompt using sophisticated techniques.
 
     This endpoint applies multiple layers of prompt engineering techniques to create
     prompts that can bypass AI safety filters and restrictions. It's designed for
@@ -141,13 +140,13 @@ async def generate_jailbreak_prompt(
             request.provider = resolved_provider
 
         logger.info(
-            f"Jailbreak generation request: potency={request.potency_level}, suite={request.technique_suite}"
+            f"Jailbreak generation request: potency={request.potency_level}, suite={request.technique_suite}",
         )
 
         result = await service.generate_jailbreak_prompt(request)
 
         logger.info(
-            f"Jailbreak generation completed: {result.request_id}, success={result.success}"
+            f"Jailbreak generation completed: {result.request_id}, success={result.success}",
         )
         return result
 
@@ -160,17 +159,18 @@ async def generate_jailbreak_prompt(
 
 
 @router.post(
-    "/code/generate", response_model=CodeGenerationResponse, status_code=status.HTTP_200_OK
+    "/code/generate",
+    response_model=CodeGenerationResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def generate_code(
     request: CodeGenerationRequest,
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Generate high-quality code using advanced Gemini models.
+    """Generate high-quality code using advanced Gemini models.
 
     This endpoint uses sophisticated AI models to generate clean, efficient,
     and secure code based on natural language descriptions. It supports multiple
@@ -203,13 +203,13 @@ async def generate_code(
             request.provider = resolved_provider
 
         logger.info(
-            f"Code generation request: language={request.language}, thinking_mode={request.use_thinking_mode}"
+            f"Code generation request: language={request.language}, thinking_mode={request.use_thinking_mode}",
         )
 
         result = await service.generate_code(request)
 
         logger.info(
-            f"Code generation completed: {result.request_id}, success={result.success}, language={result.language}"
+            f"Code generation completed: {result.request_id}, success={result.success}, language={result.language}",
         )
         return result
 
@@ -222,17 +222,18 @@ async def generate_code(
 
 
 @router.post(
-    "/redteam/generate-suite", response_model=RedTeamSuiteResponse, status_code=status.HTTP_200_OK
+    "/redteam/generate-suite",
+    response_model=RedTeamSuiteResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def generate_red_team_suite(
     request: RedTeamSuiteRequest,
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Generate a comprehensive red team testing suite.
+    """Generate a comprehensive red team testing suite.
 
     This endpoint creates a complete suite of test variants designed to evaluate
     AI model security, robustness, and vulnerability to various attack vectors.
@@ -274,13 +275,13 @@ async def generate_red_team_suite(
             request.provider = resolved_provider
 
         logger.info(
-            f"Red team suite generation request: variants={request.variant_count}, include_metadata={request.include_metadata}"
+            f"Red team suite generation request: variants={request.variant_count}, include_metadata={request.include_metadata}",
         )
 
         result = await service.generate_red_team_suite(request)
 
         logger.info(
-            f"Red team suite generation completed: {result.request_id}, success={result.success}"
+            f"Red team suite generation completed: {result.request_id}, success={result.success}",
         )
         return result
 
@@ -293,15 +294,16 @@ async def generate_red_team_suite(
 
 
 @router.post(
-    "/validate/prompt", response_model=PromptValidationResponse, status_code=status.HTTP_200_OK
+    "/validate/prompt",
+    response_model=PromptValidationResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def validate_prompt(
     request: PromptValidationRequest,
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
 ):
-    """
-    Validate a prompt for safety, effectiveness, and compliance.
+    """Validate a prompt for safety, effectiveness, and compliance.
 
     This endpoint analyzes prompts to assess their safety, identify potential
     issues, and provide recommendations for improvement. It supports multiple
@@ -330,7 +332,7 @@ async def validate_prompt(
         result = await service.validate_prompt(request)
 
         logger.info(
-            f"Prompt validation completed: valid={result.is_valid}, risk_score={result.risk_score}"
+            f"Prompt validation completed: valid={result.is_valid}, risk_score={result.risk_score}",
         )
         return result
 
@@ -348,11 +350,10 @@ async def validate_prompt(
     status_code=status.HTTP_200_OK,
 )
 async def get_available_techniques(
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
 ):
-    """
-    Get information about available jailbreak and prompt engineering techniques.
+    """Get information about available jailbreak and prompt engineering techniques.
 
     This endpoint provides detailed information about all available techniques
     that can be used in jailbreak prompt generation, including their descriptions,
@@ -378,7 +379,7 @@ async def get_available_techniques(
     try:
         result = await service.get_available_techniques()
         logger.info(
-            f"Retrieved available techniques: {result.total_techniques} techniques, {result.enabled_count} enabled"
+            f"Retrieved available techniques: {result.total_techniques} techniques, {result.enabled_count} enabled",
         )
         return result
 
@@ -392,11 +393,10 @@ async def get_available_techniques(
 
 @router.get("/statistics", response_model=AdvancedGenerationStats, status_code=status.HTTP_200_OK)
 async def get_advanced_generation_statistics(
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
 ):
-    """
-    Get comprehensive statistics for the advanced prompt generation service.
+    """Get comprehensive statistics for the advanced prompt generation service.
 
     This endpoint provides detailed analytics about service usage, performance,
     and effectiveness. It includes metrics for all available generation types
@@ -434,10 +434,9 @@ async def get_advanced_generation_statistics(
 
 @router.get("/health", response_model=HealthCheckResponse, status_code=status.HTTP_200_OK)
 async def advanced_generation_health_check(
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
 ):
-    """
-    Health check for the advanced prompt generation subsystem.
+    """Health check for the advanced prompt generation subsystem.
 
     This endpoint performs a comprehensive health check of all advanced generation
     components, including API connectivity, model availability, and service
@@ -479,11 +478,10 @@ async def advanced_generation_health_check(
 
 @router.post("/reset", status_code=status.HTTP_200_OK)
 async def reset_advanced_generation_service(
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
 ):
-    """
-    Reset the advanced prompt generation service.
+    """Reset the advanced prompt generation service.
 
     This endpoint resets the service state, clears caches, and reinitializes
     connections. Use this for troubleshooting or after configuration changes.
@@ -564,9 +562,8 @@ async def reset_advanced_generation_service(
 
 
 @router.get("/config", status_code=status.HTTP_200_OK)
-async def get_advanced_generation_config(api_key: str = Depends(verify_api_key)):
-    """
-    Get configuration information for the advanced prompt generation service.
+async def get_advanced_generation_config(api_key: Annotated[str, Depends(verify_api_key)]):
+    """Get configuration information for the advanced prompt generation service.
 
     This endpoint returns current configuration settings and limits for the
     advanced generation service. Useful for understanding capabilities and
@@ -642,7 +639,8 @@ async def get_advanced_generation_config(api_key: str = Depends(verify_api_key))
 
 
 async def _jailbreak_stream_generator(
-    request: JailbreakGenerationRequest, service: AdvancedPromptService
+    request: JailbreakGenerationRequest,
+    service: AdvancedPromptService,
 ) -> AsyncGenerator[str, None]:
     """Generate SSE events for jailbreak streaming."""
     try:
@@ -666,13 +664,12 @@ async def _jailbreak_stream_generator(
 @router.post("/jailbreak/generate/stream", status_code=status.HTTP_200_OK)
 async def stream_jailbreak_generation(
     request: JailbreakGenerationRequest,
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Stream jailbreak prompt generation using Server-Sent Events (SSE).
+    """Stream jailbreak prompt generation using Server-Sent Events (SSE).
 
     This endpoint provides real-time streaming of jailbreak prompt generation,
     allowing clients to receive tokens as they are generated rather than waiting
@@ -710,7 +707,7 @@ async def stream_jailbreak_generation(
         request.provider = resolved_provider
 
     logger.info(
-        f"Streaming jailbreak generation: potency={request.potency_level}, suite={request.technique_suite}"
+        f"Streaming jailbreak generation: potency={request.potency_level}, suite={request.technique_suite}",
     )
 
     return StreamingResponse(
@@ -725,7 +722,8 @@ async def stream_jailbreak_generation(
 
 
 async def _code_stream_generator(
-    request: CodeGenerationRequest, service: AdvancedPromptService
+    request: CodeGenerationRequest,
+    service: AdvancedPromptService,
 ) -> AsyncGenerator[str, None]:
     """Generate SSE events for code generation streaming."""
     try:
@@ -749,13 +747,12 @@ async def _code_stream_generator(
 @router.post("/code/generate/stream", status_code=status.HTTP_200_OK)
 async def stream_code_generation(
     request: CodeGenerationRequest,
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Stream code generation using Server-Sent Events (SSE).
+    """Stream code generation using Server-Sent Events (SSE).
 
     This endpoint provides real-time streaming of code generation,
     allowing clients to see code as it's being written.
@@ -800,11 +797,10 @@ async def stream_code_generation(
 @router.post("/jailbreak/estimate-tokens", status_code=status.HTTP_200_OK)
 async def estimate_jailbreak_tokens(
     request: JailbreakGenerationRequest,
-    api_key: str = Depends(verify_api_key),
-    service: AdvancedPromptService = Depends(get_advanced_prompt_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[AdvancedPromptService, Depends(get_advanced_prompt_service)],
 ):
-    """
-    Estimate token usage and cost for a jailbreak generation request.
+    """Estimate token usage and cost for a jailbreak generation request.
 
     This endpoint provides token count estimates before running the actual
     generation, useful for cost estimation and context window management.

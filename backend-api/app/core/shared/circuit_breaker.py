@@ -1,5 +1,4 @@
-"""
-Unified Circuit Breaker Pattern Implementation
+"""Unified Circuit Breaker Pattern Implementation.
 
 HIGH-001 FIX: Consolidated circuit breaker implementation that can be used
 across all Chimera components (backend-api, chimera-orchestrator, chimera-agent).
@@ -71,13 +70,17 @@ class CircuitBreakerConfig:
     def __post_init__(self):
         """Validate configuration values."""
         if self.failure_threshold < 1:
-            raise ValueError("failure_threshold must be at least 1")
+            msg = "failure_threshold must be at least 1"
+            raise ValueError(msg)
         if self.recovery_timeout < 0:
-            raise ValueError("recovery_timeout must be non-negative")
+            msg = "recovery_timeout must be non-negative"
+            raise ValueError(msg)
         if self.half_open_max_calls < 1:
-            raise ValueError("half_open_max_calls must be at least 1")
+            msg = "half_open_max_calls must be at least 1"
+            raise ValueError(msg)
         if self.timeout is not None and self.timeout < 0:
-            raise ValueError("timeout must be non-negative")
+            msg = "timeout must be non-negative"
+            raise ValueError(msg)
 
 
 @dataclass
@@ -111,8 +114,7 @@ class CircuitBreakerMetrics:
 
 
 class CircuitBreaker:
-    """
-    Thread-safe circuit breaker implementation with async support.
+    """Thread-safe circuit breaker implementation with async support.
 
     The circuit breaker pattern prevents cascading failures by failing fast
     when a service is unhealthy, allowing it time to recover.
@@ -124,12 +126,12 @@ class CircuitBreaker:
         HALF_OPEN -> OPEN: On any failure
     """
 
-    def __init__(self, config: CircuitBreakerConfig):
-        """
-        Initialize circuit breaker with configuration.
+    def __init__(self, config: CircuitBreakerConfig) -> None:
+        """Initialize circuit breaker with configuration.
 
         Args:
             config: CircuitBreakerConfig instance with settings
+
         """
         self.config = config
         self.name = config.name
@@ -176,7 +178,7 @@ class CircuitBreaker:
         self._metrics.last_state_change = time.time()
 
         logger.info(
-            f"Circuit breaker '{self.name}' transitioned: {old_state.value} -> {new_state.value}"
+            f"Circuit breaker '{self.name}' transitioned: {old_state.value} -> {new_state.value}",
         )
 
     def _check_recovery(self) -> bool:
@@ -197,11 +199,11 @@ class CircuitBreaker:
         return False
 
     def can_execute(self) -> bool:
-        """
-        Check if a call can be executed.
+        """Check if a call can be executed.
 
         Returns:
             True if the call should proceed, False if it should be rejected
+
         """
         with self._lock:
             if self._state == CircuitState.CLOSED:
@@ -285,8 +287,7 @@ class CircuitBreaker:
 
 
 class CircuitBreakerRegistry:
-    """
-    Registry for managing multiple circuit breakers.
+    """Registry for managing multiple circuit breakers.
 
     Provides centralized access to circuit breakers across the application,
     with thread-safe creation and retrieval.
@@ -298,20 +299,20 @@ class CircuitBreakerRegistry:
 
     @classmethod
     def register(cls, config: CircuitBreakerConfig) -> CircuitBreaker:
-        """
-        Register a new circuit breaker with configuration.
+        """Register a new circuit breaker with configuration.
 
         Args:
             config: Configuration for the circuit breaker
 
         Returns:
             The created or existing CircuitBreaker instance
+
         """
         with cls._lock:
             if config.name in cls._breakers:
                 logger.warning(
                     f"Circuit breaker '{config.name}' already registered, "
-                    "returning existing instance"
+                    "returning existing instance",
                 )
                 return cls._breakers[config.name]
 
@@ -329,8 +330,7 @@ class CircuitBreakerRegistry:
         recovery_timeout: float = 60.0,
         half_open_max_calls: int = 3,
     ) -> CircuitBreaker:
-        """
-        Get or create a circuit breaker by name.
+        """Get or create a circuit breaker by name.
 
         Args:
             name: Unique identifier for the circuit breaker
@@ -340,6 +340,7 @@ class CircuitBreakerRegistry:
 
         Returns:
             CircuitBreaker instance
+
         """
         with cls._lock:
             if name not in cls._breakers:
@@ -396,7 +397,7 @@ class CircuitBreakerRegistry:
 class CircuitBreakerOpen(Exception):
     """Exception raised when circuit breaker is open and rejecting calls."""
 
-    def __init__(self, name: str, retry_after: float):
+    def __init__(self, name: str, retry_after: float) -> None:
         self.name = name
         self.retry_after = retry_after
         super().__init__(f"Circuit breaker '{name}' is open. Retry after {retry_after:.1f}s")
@@ -410,8 +411,7 @@ def circuit_breaker(
     timeout: float | None = None,  # PERF-001 FIX: Add timeout parameter
     exceptions: tuple = (Exception,),
 ):
-    """
-    Circuit breaker decorator for async functions.
+    """Circuit breaker decorator for async functions.
 
     PERF-001 FIX: Added timeout support to prevent hanging requests.
 
@@ -433,6 +433,7 @@ def circuit_breaker(
     Raises:
         CircuitBreakerOpen: When circuit is open and call is rejected
         asyncio.TimeoutError: When operation times out
+
     """
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
@@ -505,8 +506,7 @@ def circuit_breaker(
 
 
 def is_circuit_open(name: str) -> bool:
-    """
-    Check if a circuit breaker is currently open.
+    """Check if a circuit breaker is currently open.
 
     Convenience function for use with retry libraries like tenacity.
 
@@ -515,6 +515,7 @@ def is_circuit_open(name: str) -> bool:
 
     Returns:
         True if circuit is open, False otherwise
+
     """
     breaker = CircuitBreakerRegistry.get(name)
     return breaker.state == CircuitState.OPEN

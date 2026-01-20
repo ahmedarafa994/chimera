@@ -1,6 +1,4 @@
-"""
-Background job for refreshing model availability every 60 seconds.
-"""
+"""Background job for refreshing model availability every 60 seconds."""
 
 import asyncio
 import logging
@@ -23,12 +21,12 @@ CONSECUTIVE_FAILURES_THRESHOLD = 3  # Mark model unavailable after N failures
 class ModelRefreshJob:
     """Background job to refresh model availability."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.is_running = False
         self.failure_counts: dict[str, int] = {}
         self.last_health_check: datetime = datetime.utcnow()
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the background job."""
         if self.is_running:
             logger.warning("Model refresh job is already running")
@@ -46,16 +44,16 @@ class ModelRefreshJob:
         except asyncio.CancelledError:
             logger.info("Model refresh job cancelled")
         except Exception as e:
-            logger.error(f"Model refresh job error: {e}")
+            logger.exception(f"Model refresh job error: {e}")
         finally:
             self.is_running = False
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the background job."""
         self.is_running = False
         logger.info("Model refresh job stopped")
 
-    async def _refresh_model_availability(self):
+    async def _refresh_model_availability(self) -> None:
         """Refresh availability of all models."""
         try:
             logger.debug("Refreshing model availability...")
@@ -85,11 +83,11 @@ class ModelRefreshJob:
                     self.failure_counts[model.id] = self.failure_counts.get(model.id, 0) + 1
 
             logger.info(
-                f"Model availability refresh completed. Checked {len(available_response.models)} models"
+                f"Model availability refresh completed. Checked {len(available_response.models)} models",
             )
 
         except Exception as e:
-            logger.error(f"Failed to refresh model availability: {e}")
+            logger.exception(f"Failed to refresh model availability: {e}")
 
     async def _check_model_availability(self, model) -> bool:
         """Check if a specific model is available."""
@@ -103,18 +101,17 @@ class ModelRefreshJob:
             # Check availability based on provider
             if provider_id == "google":
                 return await self._check_google_model(model_name)
-            elif provider_id == "anthropic" or provider_id == "kiro":
+            if provider_id in {"anthropic", "kiro"}:
                 return await self._check_anthropic_model(model_name)
-            elif provider_id == "openai" or provider_id == "cursor":
+            if provider_id in {"openai", "cursor"}:
                 return await self._check_openai_model(model_name)
-            elif provider_id == "deepseek":
+            if provider_id == "deepseek":
                 return await self._check_deepseek_model(model_name)
-            else:
-                logger.warning(f"Unknown provider: {provider_id}")
-                return False
+            logger.warning(f"Unknown provider: {provider_id}")
+            return False
 
         except Exception as e:
-            logger.error(f"Error checking model {model.id}: {e}")
+            logger.exception(f"Error checking model {model.id}: {e}")
             return False
 
     async def _check_google_model(self, model_name: str) -> bool:
@@ -127,8 +124,10 @@ class ModelRefreshJob:
             # Simple test call to check availability
             test_response = await client.generate(
                 PromptRequest(
-                    prompt="test", model=model_name, config=GenerationConfig(max_output_tokens=10)
-                )
+                    prompt="test",
+                    model=model_name,
+                    config=GenerationConfig(max_output_tokens=10),
+                ),
             )
 
             return test_response is not None
@@ -147,8 +146,10 @@ class ModelRefreshJob:
             # Test call to Anthropic endpoint
             test_response = await client.generate(
                 PromptRequest(
-                    prompt="test", model=model_name, config=GenerationConfig(max_output_tokens=10)
-                )
+                    prompt="test",
+                    model=model_name,
+                    config=GenerationConfig(max_output_tokens=10),
+                ),
             )
 
             return test_response is not None
@@ -167,8 +168,10 @@ class ModelRefreshJob:
             # Test call to OpenAI endpoint
             test_response = await client.generate(
                 PromptRequest(
-                    prompt="test", model=model_name, config=GenerationConfig(max_output_tokens=10)
-                )
+                    prompt="test",
+                    model=model_name,
+                    config=GenerationConfig(max_output_tokens=10),
+                ),
             )
 
             return test_response is not None
@@ -186,8 +189,10 @@ class ModelRefreshJob:
 
             test_response = await client.generate(
                 PromptRequest(
-                    prompt="test", model=model_name, config=GenerationConfig(max_output_tokens=10)
-                )
+                    prompt="test",
+                    model=model_name,
+                    config=GenerationConfig(max_output_tokens=10),
+                ),
             )
 
             return test_response is not None
@@ -196,7 +201,7 @@ class ModelRefreshJob:
             logger.debug(f"DeepSeek model {model_name} check failed: {e}")
             return False
 
-    async def _perform_health_checks(self):
+    async def _perform_health_checks(self) -> None:
         """Perform health checks on all providers."""
         try:
             now = datetime.utcnow()
@@ -226,7 +231,8 @@ class ModelRefreshJob:
 
                 client = AnthropicClient()
                 providers_health["anthropic"] = await self._test_provider_health(
-                    client, "Anthropic"
+                    client,
+                    "Anthropic",
                 )
             except Exception as e:
                 providers_health["anthropic"] = {"status": "error", "error": str(e)}
@@ -256,11 +262,11 @@ class ModelRefreshJob:
             total_providers = len(providers_health)
 
             logger.info(
-                f"Provider health check completed: {healthy_providers}/{total_providers} providers healthy"
+                f"Provider health check completed: {healthy_providers}/{total_providers} providers healthy",
             )
 
         except Exception as e:
-            logger.error(f"Health check failed: {e}")
+            logger.exception(f"Health check failed: {e}")
 
     async def _test_provider_health(self, client, provider_name: str) -> dict[str, Any]:
         """Test health of a specific provider client."""
@@ -269,7 +275,7 @@ class ModelRefreshJob:
             start_time = datetime.utcnow()
 
             test_response = await client.generate(
-                PromptRequest(prompt="health check", config=GenerationConfig(max_output_tokens=5))
+                PromptRequest(prompt="health check", config=GenerationConfig(max_output_tokens=5)),
             )
 
             response_time = (datetime.utcnow() - start_time).total_seconds()
@@ -280,15 +286,12 @@ class ModelRefreshJob:
                     "response_time_ms": response_time * 1000,
                     "timestamp": datetime.utcnow().isoformat(),
                 }
-            else:
-                return {
-                    "status": "unhealthy",
-                    "response_time_ms": (
-                        response_time * 1000 if "response_time" in locals() else None
-                    ),
-                    "error": "Test call failed or timed out",
-                    "timestamp": datetime.utcnow().isoformat(),
-                }
+            return {
+                "status": "unhealthy",
+                "response_time_ms": (response_time * 1000 if "response_time" in locals() else None),
+                "error": "Test call failed or timed out",
+                "timestamp": datetime.utcnow().isoformat(),
+            }
 
         except Exception as e:
             return {"status": "error", "error": str(e), "timestamp": datetime.utcnow().isoformat()}
@@ -303,7 +306,7 @@ class ModelRefreshJob:
             "timestamp": datetime.utcnow().isoformat(),
         }
 
-    async def cleanup_stale_cache_entries(self):
+    async def cleanup_stale_cache_entries(self) -> None:
         """Clean up stale cache entries."""
         try:
             async with db_manager.get_session() as db_session:
@@ -314,8 +317,8 @@ class ModelRefreshJob:
 
                 result = await db_session.execute(
                     delete(ModelAvailabilityCache).where(
-                        ModelAvailabilityCache.last_checked < cutoff_time
-                    )
+                        ModelAvailabilityCache.last_checked < cutoff_time,
+                    ),
                 )
 
                 deleted_count = result.rowcount
@@ -323,19 +326,19 @@ class ModelRefreshJob:
                     logger.info(f"Cleaned up {deleted_count} stale cache entries")
 
         except Exception as e:
-            logger.error(f"Failed to cleanup stale cache entries: {e}")
+            logger.exception(f"Failed to cleanup stale cache entries: {e}")
 
 
 # Global job instance
 model_refresh_job = ModelRefreshJob()
 
 
-async def start_model_refresh_job():
+async def start_model_refresh_job() -> None:
     """Start the model refresh background job."""
     await model_refresh_job.start()
 
 
-async def stop_model_refresh_job():
+async def stop_model_refresh_job() -> None:
     """Stop the model refresh background job."""
     await model_refresh_job.stop()
 

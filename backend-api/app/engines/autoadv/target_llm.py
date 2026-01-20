@@ -3,19 +3,16 @@ try:
     from openai import OpenAI
 except ImportError:
     OpenAI = None
-    pass
 # Make sure Together is imported if used
 try:
     from together import Together
 except ImportError:
     Together = None
-    pass
 # Make sure Anthropic is imported if used
 try:
     from anthropic import Anthropic
 except ImportError:
     Anthropic = None
-    pass
 
 from .config import TARGET_MODELS, VERBOSE_DETAILED
 from .llm_base import LLM
@@ -24,8 +21,7 @@ from .utils import api_call_with_retry, check_api_key_existence
 
 
 class TargetLLM(LLM):
-    """
-    Specialized LLM class for the target model that will be tested for safety
+    """Specialized LLM class for the target model that will be tested for safety
     guardrail effectiveness.
 
     Attributes:
@@ -33,6 +29,7 @@ class TargetLLM(LLM):
         api_type (str): API provider type ("together", "openai", "anthropic")
         memory_enabled (bool): Whether the model maintains conversation history
         client: The API client instance
+
     """
 
     def __init__(
@@ -41,15 +38,15 @@ class TargetLLM(LLM):
         target_model_key="llama3-8b",
         memory_enabled=False,
         model_config=None,
-    ):
-        """
-        Initialize a target model instance.
+    ) -> None:
+        """Initialize a target model instance.
 
         Args:
             temperature (float): Controls randomness in generation (0.0-2.0)
             target_model_key (str): Key for the model in TARGET_MODELS dictionary
             memory_enabled (bool): Whether to use full conversation history
             model_config (dict, optional): Model configuration if not using predefined models
+
         """
         if model_config:
             # Use provided configuration
@@ -62,13 +59,15 @@ class TargetLLM(LLM):
             )
             self.model_key = target_model_key
             self.api_type = model_config.get(
-                "api", "together"
+                "api",
+                "together",
             )  # Default to together if not specified
         else:
             # Use model_key from caller
             if target_model_key not in TARGET_MODELS:
+                msg = f"Unknown target model: {target_model_key}. Available options: {', '.join(TARGET_MODELS.keys())}"
                 raise ValueError(
-                    f"Unknown target model: {target_model_key}. Available options: {', '.join(TARGET_MODELS.keys())}"
+                    msg,
                 )
 
             model_config = TARGET_MODELS[target_model_key]
@@ -89,7 +88,7 @@ class TargetLLM(LLM):
         self.history = []
 
     def _initialize_api_client(self):
-        """Initialize the appropriate API client based on model provider"""
+        """Initialize the appropriate API client based on model provider."""
         log(
             f"Initializing target client for API type: {self.api_type}",
             "debug",
@@ -98,25 +97,27 @@ class TargetLLM(LLM):
         if self.api_type == "together":
             # Together uses OpenAI client format
             if not OpenAI:
-                raise ImportError("OpenAI library not installed (needed for Together).")
+                msg = "OpenAI library not installed (needed for Together)."
+                raise ImportError(msg)
             return OpenAI(
                 api_key=check_api_key_existence("TOGETHER_API_KEY"),
                 base_url="https://api.together.xyz/v1",
             )
-        elif self.api_type == "openai":
+        if self.api_type == "openai":
             if not OpenAI:
-                raise ImportError("OpenAI library not installed.")
+                msg = "OpenAI library not installed."
+                raise ImportError(msg)
             return OpenAI(api_key=check_api_key_existence("OPENAI_API_KEY"))
-        elif self.api_type == "anthropic":
+        if self.api_type == "anthropic":
             if not Anthropic:
-                raise ImportError("Anthropic library not installed. pip install anthropic")
+                msg = "Anthropic library not installed. pip install anthropic"
+                raise ImportError(msg)
             return Anthropic(api_key=check_api_key_existence("ANTHROPIC_API_KEY"))
-        else:
-            raise ValueError(f"Unsupported API type for target: {self.api_type}")
+        msg = f"Unsupported API type for target: {self.api_type}"
+        raise ValueError(msg)
 
     def converse(self, request):
-        """
-        Generate a response from the target model based on the provided request.
+        """Generate a response from the target model based on the provided request.
 
         Args:
             request (str): The request/prompt to send to the model
@@ -124,6 +125,7 @@ class TargetLLM(LLM):
         Returns:
             tuple: (response, request_tokens, response_tokens, request_cost, response_cost)
                    Returns (None, 0, 0, 0, 0) on error.
+
         """
         if not request:
             log("Target converse called with empty request.", "warning")

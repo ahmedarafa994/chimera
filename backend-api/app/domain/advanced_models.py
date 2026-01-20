@@ -88,10 +88,14 @@ class TechniqueSuite(str, Enum):
 
 class JailbreakGenerationRequest(BaseModel):
     core_request: str = Field(
-        ..., min_length=1, max_length=50000, description="The core request to transform"
+        ...,
+        min_length=1,
+        max_length=50000,
+        description="The core request to transform",
     )
     technique_suite: TechniqueSuite = Field(
-        TechniqueSuite.STANDARD, description="Technique suite to use"
+        TechniqueSuite.STANDARD,
+        description="Technique suite to use",
     )
     potency_level: int = Field(5, ge=1, le=10, description="Potency level of the transformation")
     provider: str = Field("google", description="LLM provider to use")
@@ -106,11 +110,17 @@ class JailbreakGenerationRequest(BaseModel):
     # Content Transformation Options
     use_leet_speak: bool = Field(False, description="Apply leetspeak transformation")
     leet_speak_density: float = Field(
-        0.0, ge=0.0, le=1.0, description="Density of leetspeak transformation"
+        0.0,
+        ge=0.0,
+        le=1.0,
+        description="Density of leetspeak transformation",
     )
     use_homoglyphs: bool = Field(False, description="Apply homoglyph substitution")
     homoglyph_density: float = Field(
-        0.0, ge=0.0, le=1.0, description="Density of homoglyph substitution"
+        0.0,
+        ge=0.0,
+        le=1.0,
+        description="Density of homoglyph substitution",
     )
     use_caesar_cipher: bool = Field(False, description="Apply Caesar cipher")
     caesar_shift: int = Field(3, ge=1, le=25, description="Caesar cipher shift amount")
@@ -131,16 +141,21 @@ class JailbreakGenerationRequest(BaseModel):
     # Research-Driven Options
     use_multilingual_trojan: bool = Field(False, description="Apply multilingual trojan")
     multilingual_target_language: str = Field(
-        "", description="Target language for multilingual trojan"
+        "",
+        description="Target language for multilingual trojan",
     )
     use_payload_splitting: bool = Field(False, description="Apply payload splitting")
     payload_splitting_parts: int = Field(
-        2, ge=2, le=10, description="Number of parts to split payload into"
+        2,
+        ge=2,
+        le=10,
+        description="Number of parts to split payload into",
     )
 
     # Advanced Options
     use_contextual_interaction_attack: bool = Field(
-        False, description="Apply contextual interaction attack"
+        False,
+        description="Apply contextual interaction attack",
     )
     cia_preliminary_rounds: int = Field(3, ge=1, le=10, description="Number of preliminary rounds")
     use_analysis_in_generation: bool = Field(False, description="Use analysis in generation")
@@ -148,7 +163,10 @@ class JailbreakGenerationRequest(BaseModel):
 
 class CodeGenerationRequest(BaseModel):
     prompt: str = Field(
-        ..., min_length=1, max_length=10000, description="The code generation request"
+        ...,
+        min_length=1,
+        max_length=10000,
+        description="The code generation request",
     )
     language: str | None = Field(None, description="Preferred programming language")
     framework: str | None = Field(None, description="Preferred framework/library")
@@ -161,7 +179,10 @@ class CodeGenerationRequest(BaseModel):
 
 class RedTeamSuiteRequest(BaseModel):
     prompt: str = Field(
-        ..., min_length=1, max_length=5000, description="The base prompt for red team analysis"
+        ...,
+        min_length=1,
+        max_length=5000,
+        description="The base prompt for red team analysis",
     )
     include_metadata: bool = Field(True, description="Include detailed metadata for each variant")
     variant_count: int = Field(7, ge=3, le=10, description="Number of variants to generate")
@@ -174,7 +195,8 @@ class PromptValidationRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=10000, description="The prompt to validate")
     test_input: str | None = Field(None, description="Optional test input for validation")
     validation_level: str = Field(
-        "standard", description="Validation level: basic, standard, comprehensive"
+        "standard",
+        description="Validation level: basic, standard, comprehensive",
     )
     provider: str | None = Field(None, description="LLM provider to use")
 
@@ -228,13 +250,16 @@ class AdvancedGenerationMetrics(BaseModel):
 
 class AdvancedGenerationStats(BaseModel):
     jailbreak_stats: AdvancedGenerationMetrics = Field(
-        ..., description="Jailbreak generation statistics"
+        ...,
+        description="Jailbreak generation statistics",
     )
     code_generation_stats: AdvancedGenerationMetrics = Field(
-        ..., description="Code generation statistics"
+        ...,
+        description="Code generation statistics",
     )
     red_team_stats: AdvancedGenerationMetrics = Field(
-        ..., description="Red team generation statistics"
+        ...,
+        description="Red team generation statistics",
     )
     validation_stats: AdvancedGenerationMetrics = Field(..., description="Validation statistics")
     uptime_hours: float = Field(..., description="Service uptime in hours")
@@ -247,7 +272,8 @@ class TechniqueInfo(BaseModel):
     description: str = Field(..., description="Technique description")
     risk_level: str = Field(..., description="Risk level: low, medium, high, critical")
     complexity: str = Field(
-        ..., description="Complexity level: basic, intermediate, advanced, expert"
+        ...,
+        description="Complexity level: basic, intermediate, advanced, expert",
     )
     enabled: bool = Field(True, description="Whether technique is enabled")
     success_rate: float | None = Field(None, ge=0.0, le=1.0, description="Historical success rate")

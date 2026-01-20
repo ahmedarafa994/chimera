@@ -1,5 +1,4 @@
-"""
-HTTP Connection Pool Management for LLM Providers
+"""HTTP Connection Pool Management for LLM Providers.
 
 PERF-001 FIX: Implements efficient connection pooling for HTTP/HTTPS connections
 to LLM providers. This reduces connection overhead and improves throughput.
@@ -59,8 +58,7 @@ class PoolStats:
 
 
 class PooledHTTPAdapter(HTTPAdapter):
-    """
-    Custom HTTPAdapter with connection pooling and metrics tracking.
+    """Custom HTTPAdapter with connection pooling and metrics tracking.
 
     PERF-001 FIX: Enhances standard HTTPAdapter with:
     - Configurable pool size
@@ -75,9 +73,8 @@ class PooledHTTPAdapter(HTTPAdapter):
         max_retries: int = 3,
         pool_block: bool = False,
         stats_name: str = "default",
-    ):
-        """
-        Initialize pooled HTTP adapter.
+    ) -> None:
+        """Initialize pooled HTTP adapter.
 
         Args:
             pool_connections: Number of connection pools to cache
@@ -85,6 +82,7 @@ class PooledHTTPAdapter(HTTPAdapter):
             max_retries: Maximum number of retries
             pool_block: Block the pool when full
             stats_name: Name for metrics tracking
+
         """
         self.stats_name = stats_name
         self.stats = PoolStats(pool_name=stats_name)
@@ -108,7 +106,7 @@ class PooledHTTPAdapter(HTTPAdapter):
 
         logger.info(
             f"Created PooledHTTPAdapter '{stats_name}': "
-            f"pool_connections={pool_connections}, pool_maxsize={pool_maxsize}"
+            f"pool_connections={pool_connections}, pool_maxsize={pool_maxsize}",
         )
 
     def send(self, request, **kwargs):
@@ -135,20 +133,19 @@ class PooledHTTPAdapter(HTTPAdapter):
 
             logger.debug(
                 f"{self.stats_name}: {request.method} {response.status_code} "
-                f"in {response_time_ms:.2f}ms"
+                f"in {response_time_ms:.2f}ms",
             )
 
             return response
 
         except Exception as e:
             self.stats.failed_requests += 1
-            logger.error(f"{self.stats_name}: Request failed - {e}")
+            logger.exception(f"{self.stats_name}: Request failed - {e}")
             raise
 
 
 class ConnectionPoolManager:
-    """
-    Manages connection pools for LLM providers.
+    """Manages connection pools for LLM providers.
 
     PERF-001 FIX: Centralized connection pool management with:
     - Provider-specific pool configuration
@@ -168,7 +165,7 @@ class ConnectionPoolManager:
                     cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize connection pool manager."""
         if hasattr(self, "_initialized"):
             return
@@ -206,14 +203,14 @@ class ConnectionPoolManager:
         logger.info("ConnectionPoolManager initialized")
 
     def get_adapter(self, provider: str) -> PooledHTTPAdapter:
-        """
-        Get or create a pooled HTTP adapter for a provider.
+        """Get or create a pooled HTTP adapter for a provider.
 
         Args:
             provider: Provider name (e.g., "openai", "anthropic", "google")
 
         Returns:
             PooledHTTPAdapter with provider-specific configuration
+
         """
         provider_key = provider.lower()
 
@@ -229,14 +226,13 @@ class ConnectionPoolManager:
                     self._pools[provider_key] = adapter
                     logger.info(
                         f"Created connection pool for '{provider_key}': "
-                        f"pool_maxsize={config['pool_maxsize']}"
+                        f"pool_maxsize={config['pool_maxsize']}",
                     )
 
         return self._pools[provider_key]
 
     def create_session(self, provider: str, timeout: float | None = None) -> requests.Session:
-        """
-        Create a requests session with connection pooling.
+        """Create a requests session with connection pooling.
 
         Args:
             provider: Provider name for pool configuration
@@ -244,6 +240,7 @@ class ConnectionPoolManager:
 
         Returns:
             Configured requests.Session with pooled adapter
+
         """
         provider_key = provider.lower()
 
@@ -264,26 +261,27 @@ class ConnectionPoolManager:
                 # Set default timeout if provided
                 if timeout:
                     session.request = lambda *args, **kwargs: super(
-                        requests.Session, session
+                        requests.Session,
+                        session,
                     ).request(*args, timeout=timeout, **kwargs)
 
                 self._sessions[provider_key] = session
                 logger.info(
                     f"Created pooled session for '{provider_key}' "
-                    f"(timeout: {timeout or 'default'})"
+                    f"(timeout: {timeout or 'default'})",
                 )
 
         return self._sessions[provider_key]
 
     def get_stats(self, provider: str | None = None) -> dict[str, Any]:
-        """
-        Get connection pool statistics.
+        """Get connection pool statistics.
 
         Args:
             provider: Specific provider stats, or all if None
 
         Returns:
             Dictionary of pool statistics
+
         """
         if provider:
             provider_key = provider.lower()
@@ -323,8 +321,7 @@ connection_pool_manager = ConnectionPoolManager()
 
 
 def get_pooled_session(provider: str, timeout: float | None = None) -> requests.Session:
-    """
-    Convenience function to get a pooled session for a provider.
+    """Convenience function to get a pooled session for a provider.
 
     Args:
         provider: Provider name (e.g., "openai", "anthropic")
@@ -336,19 +333,20 @@ def get_pooled_session(provider: str, timeout: float | None = None) -> requests.
     Example:
         session = get_pooled_session("openai", timeout=30)
         response = session.post("https://api.openai.com/v1/chat/completions", ...)
+
     """
     return connection_pool_manager.create_session(provider, timeout)
 
 
 def get_pool_stats(provider: str | None = None) -> dict[str, Any]:
-    """
-    Get connection pool statistics.
+    """Get connection pool statistics.
 
     Args:
         provider: Specific provider or all if None
 
     Returns:
         Dictionary of pool statistics
+
     """
     return connection_pool_manager.get_stats(provider)
 

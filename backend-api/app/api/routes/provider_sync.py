@@ -1,5 +1,4 @@
-"""
-Provider Synchronization API Router
+"""Provider Synchronization API Router.
 
 REST API and WebSocket endpoints for provider/model synchronization including:
 - Full sync endpoint for initial load
@@ -13,6 +12,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import JSONResponse
@@ -40,7 +40,7 @@ router = APIRouter(prefix="/provider-sync", tags=["provider-sync"])
 
 
 class SelectProviderRequest(BaseModel):
-    """Request to select a provider and optionally a model"""
+    """Request to select a provider and optionally a model."""
 
     provider_id: str = Field(..., description="ID of the provider to select")
     model_id: str | None = Field(None, description="ID of the model to select")
@@ -50,7 +50,7 @@ class SelectProviderRequest(BaseModel):
 
 
 class SelectProviderResponse(BaseModel):
-    """Response from provider selection"""
+    """Response from provider selection."""
 
     success: bool
     provider_id: str
@@ -65,7 +65,7 @@ class SelectProviderResponse(BaseModel):
 
 
 class SelectModelRequest(BaseModel):
-    """Request to select a model within the current provider"""
+    """Request to select a model within the current provider."""
 
     model_id: str = Field(..., description="ID of the model to select")
     persist: bool = Field(True, description="Whether to persist the selection")
@@ -74,7 +74,7 @@ class SelectModelRequest(BaseModel):
 
 
 class SelectModelResponse(BaseModel):
-    """Response from model selection"""
+    """Response from model selection."""
 
     success: bool
     model_id: str
@@ -86,7 +86,7 @@ class SelectModelResponse(BaseModel):
 
 
 class ActiveSelectionResponse(BaseModel):
-    """Current active provider and model selection"""
+    """Current active provider and model selection."""
 
     provider_id: str | None = None
     provider_name: str | None = None
@@ -103,26 +103,26 @@ class ActiveSelectionResponse(BaseModel):
 
 
 class SyncConnectionManager:
-    """Manages WebSocket connections for sync updates"""
+    """Manages WebSocket connections for sync updates."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
         self._lock = asyncio.Lock()
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         async with self._lock:
             self.active_connections.append(websocket)
         logger.info(f"Sync WebSocket connected. Total: {len(self.active_connections)}")
 
-    async def disconnect(self, websocket: WebSocket):
+    async def disconnect(self, websocket: WebSocket) -> None:
         async with self._lock:
             if websocket in self.active_connections:
                 self.active_connections.remove(websocket)
         logger.info(f"Sync WebSocket disconnected. Total: {len(self.active_connections)}")
 
-    async def broadcast(self, event: SyncEvent):
-        """Broadcast sync event to all connected clients"""
+    async def broadcast(self, event: SyncEvent) -> None:
+        """Broadcast sync event to all connected clients."""
         if not self.active_connections:
             return
 
@@ -145,7 +145,7 @@ sync_ws_manager = SyncConnectionManager()
 
 
 # Register broadcast callback with sync service
-async def broadcast_sync_event(event: SyncEvent):
+async def broadcast_sync_event(event: SyncEvent) -> None:
     await sync_ws_manager.broadcast(event)
 
 
@@ -159,10 +159,9 @@ provider_sync_service.register_event_callback(broadcast_sync_event)
 
 @router.get("/state", response_model=SyncState)
 async def get_sync_state(
-    include_deprecated: bool = Query(default=False, description="Include deprecated models"),
+    include_deprecated: Annotated[bool, Query(description="Include deprecated models")] = False,
 ):
-    """
-    Get the current synchronization state.
+    """Get the current synchronization state.
 
     Returns the complete state of all providers and models for initial sync.
     """
@@ -187,16 +186,16 @@ async def get_sync_state(
         return state
 
     except Exception as e:
-        logger.error(f"Failed to get sync state: {e}")
+        logger.exception(f"Failed to get sync state: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": str(e)}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)},
         )
 
 
 @router.post("/sync", response_model=SyncResponse)
 async def sync_providers(request: SyncRequest):
-    """
-    Synchronize provider and model configurations.
+    """Synchronize provider and model configurations.
 
     Supports both full and incremental sync based on client version.
     """
@@ -205,17 +204,15 @@ async def sync_providers(request: SyncRequest):
         result = provider_management_service.list_providers(include_health=True)
 
         # Handle sync request
-        response = await provider_sync_service.handle_sync_request(
+        return await provider_sync_service.handle_sync_request(
             request=request,
             providers=result.providers,
             active_provider_id=result.active_provider_id,
             default_provider_id=result.default_provider_id,
         )
 
-        return response
-
     except Exception as e:
-        logger.error(f"Sync request failed: {e}")
+        logger.exception(f"Sync request failed: {e}")
         return SyncResponse(
             success=False,
             error=str(e),
@@ -225,8 +222,7 @@ async def sync_providers(request: SyncRequest):
 
 @router.get("/version")
 async def get_sync_version():
-    """
-    Get the current sync version.
+    """Get the current sync version.
 
     Clients can use this to check if they need to sync.
     """
@@ -238,8 +234,7 @@ async def get_sync_version():
 
 @router.get("/providers/{provider_id}/availability", response_model=ProviderAvailabilityInfo)
 async def get_provider_availability(provider_id: str):
-    """
-    Get availability information for a specific provider.
+    """Get availability information for a specific provider.
 
     Includes fallback information if the provider is unavailable.
     """
@@ -260,27 +255,25 @@ async def get_provider_availability(provider_id: str):
                 fallback = p
                 break
 
-        availability = provider_sync_service.get_provider_availability(
+        return provider_sync_service.get_provider_availability(
             provider=provider,
             fallback_provider=fallback,
         )
 
-        return availability
-
     except Exception as e:
-        logger.error(f"Failed to get provider availability: {e}")
+        logger.exception(f"Failed to get provider availability: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": str(e)}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)},
         )
 
 
 @router.get("/models/{model_id}/availability", response_model=ModelAvailabilityInfo)
 async def get_model_availability(
     model_id: str,
-    provider_id: str | None = Query(default=None, description="Provider ID for the model"),
+    provider_id: Annotated[str | None, Query(description="Provider ID for the model")] = None,
 ):
-    """
-    Get availability information for a specific model.
+    """Get availability information for a specific model.
 
     Includes deprecation warnings and alternative suggestions.
     """
@@ -335,29 +328,27 @@ async def get_model_availability(
             and target_provider.status.value == "available"
         )
 
-        availability = provider_sync_service.get_model_availability(
+        return provider_sync_service.get_model_availability(
             model=model_spec,
             provider_available=provider_available,
             alternative_models=alternative_models[:5],  # Limit to 5 alternatives
         )
 
-        return availability
-
     except Exception as e:
-        logger.error(f"Failed to get model availability: {e}")
+        logger.exception(f"Failed to get model availability: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": str(e)}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)},
         )
 
 
 @router.get("/models")
 async def list_all_models(
-    provider_id: str | None = Query(default=None, description="Filter by provider"),
-    include_deprecated: bool = Query(default=False, description="Include deprecated models"),
-    capability: str | None = Query(default=None, description="Filter by capability"),
+    provider_id: Annotated[str | None, Query(description="Filter by provider")] = None,
+    include_deprecated: Annotated[bool, Query(description="Include deprecated models")] = False,
+    capability: Annotated[str | None, Query(description="Filter by capability")] = None,
 ):
-    """
-    List all available models across all providers.
+    """List all available models across all providers.
 
     Supports filtering by provider, deprecation status, and capabilities.
     """
@@ -409,9 +400,10 @@ async def list_all_models(
         }
 
     except Exception as e:
-        logger.error(f"Failed to list models: {e}")
+        logger.exception(f"Failed to list models: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": str(e)}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)},
         )
 
 
@@ -422,8 +414,7 @@ async def list_all_models(
 
 @router.get("/active", response_model=ActiveSelectionResponse)
 async def get_active_selection():
-    """
-    Get the currently active provider and model selection.
+    """Get the currently active provider and model selection.
 
     Returns the current selection state for the session.
     """
@@ -462,16 +453,16 @@ async def get_active_selection():
         )
 
     except Exception as e:
-        logger.error(f"Failed to get active selection: {e}")
+        logger.exception(f"Failed to get active selection: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": str(e)}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)},
         )
 
 
 @router.post("/select/provider", response_model=SelectProviderResponse)
 async def select_provider(request: SelectProviderRequest):
-    """
-    Select a provider and optionally a model.
+    """Select a provider and optionally a model.
 
     Validates the selection and broadcasts the change to all connected clients.
     Falls back to a default provider if the selected provider is unavailable.
@@ -540,7 +531,8 @@ async def select_provider(request: SelectProviderRequest):
         if request.persist:
             try:
                 await provider_management_service.set_active_provider(
-                    selected_provider.id, selected_model_id
+                    selected_provider.id,
+                    selected_model_id,
                 )
             except Exception as e:
                 logger.warning(f"Failed to persist selection: {e}")
@@ -564,16 +556,16 @@ async def select_provider(request: SelectProviderRequest):
         )
 
     except Exception as e:
-        logger.error(f"Failed to select provider: {e}")
+        logger.exception(f"Failed to select provider: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": str(e)}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)},
         )
 
 
 @router.post("/select/model", response_model=SelectModelResponse)
 async def select_model(request: SelectModelRequest):
-    """
-    Select a model within the currently active provider.
+    """Select a model within the currently active provider.
 
     Validates that the model belongs to the active provider and broadcasts
     the change to all connected clients.
@@ -625,7 +617,8 @@ async def select_model(request: SelectModelRequest):
         if request.persist:
             try:
                 await provider_management_service.set_active_provider(
-                    active_provider.id, target_model.id
+                    active_provider.id,
+                    target_model.id,
                 )
             except Exception as e:
                 logger.warning(f"Failed to persist model selection: {e}")
@@ -646,9 +639,10 @@ async def select_model(request: SelectModelRequest):
         )
 
     except Exception as e:
-        logger.error(f"Failed to select model: {e}")
+        logger.exception(f"Failed to select model: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": str(e)}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)},
         )
 
 
@@ -658,9 +652,8 @@ async def select_model(request: SelectModelRequest):
 
 
 @router.websocket("/ws")
-async def websocket_sync(websocket: WebSocket):
-    """
-    WebSocket endpoint for real-time sync updates.
+async def websocket_sync(websocket: WebSocket) -> None:
+    """WebSocket endpoint for real-time sync updates.
 
     Clients receive events when:
     - Providers are added, updated, or removed
@@ -697,7 +690,7 @@ async def websocket_sync(websocket: WebSocket):
 
                 if msg_type == "ping":
                     await websocket.send_json(
-                        {"type": "pong", "timestamp": datetime.utcnow().isoformat()}
+                        {"type": "pong", "timestamp": datetime.utcnow().isoformat()},
                     )
 
                 elif msg_type == "sync_request":
@@ -714,7 +707,7 @@ async def websocket_sync(websocket: WebSocket):
                         {
                             "type": "sync_response",
                             "data": response.model_dump(),
-                        }
+                        },
                     )
 
                 elif msg_type == "get_version":
@@ -723,7 +716,7 @@ async def websocket_sync(websocket: WebSocket):
                             "type": "version",
                             "version": provider_sync_service.version,
                             "timestamp": datetime.utcnow().isoformat(),
-                        }
+                        },
                     )
 
             except TimeoutError:
@@ -733,6 +726,6 @@ async def websocket_sync(websocket: WebSocket):
     except WebSocketDisconnect:
         logger.info("Sync WebSocket client disconnected")
     except Exception as e:
-        logger.error(f"Sync WebSocket error: {e}")
+        logger.exception(f"Sync WebSocket error: {e}")
     finally:
         await sync_ws_manager.disconnect(websocket)

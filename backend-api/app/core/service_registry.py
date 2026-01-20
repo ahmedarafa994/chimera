@@ -1,5 +1,4 @@
-"""
-Centralized Service Registry for Dependency Management
+"""Centralized Service Registry for Dependency Management.
 
 This module provides a unified service registry pattern for managing all backend services.
 It ensures consistent initialization, lifecycle management, and dependency injection across
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceRegistry:
-    """
-    Centralized service registry for dependency management.
+    """Centralized service registry for dependency management.
 
     Supports both eager and lazy service registration:
     - Eager: Register pre-instantiated service objects
@@ -42,6 +40,7 @@ class ServiceRegistry:
 
         # Get service (lazy services are created here)
         service = registry.get("heavy_service")
+
     """
 
     _instance: ClassVar[Optional["ServiceRegistry"]] = None
@@ -72,8 +71,7 @@ class ServiceRegistry:
         *,
         overwrite: bool = False,
     ) -> None:
-        """
-        Register a lazy service factory.
+        """Register a lazy service factory.
 
         The factory function will be called on first access to create the service.
         This is useful for heavy services that should only be loaded when needed.
@@ -82,6 +80,7 @@ class ServiceRegistry:
             name: Service name
             factory: Callable that returns the service instance
             overwrite: If True, overwrite existing registration
+
         """
         if name in self._services and not overwrite:
             logger.warning(f"Service {name} already registered, skipping lazy factory")
@@ -93,8 +92,7 @@ class ServiceRegistry:
         logger.info(f"Registered lazy service factory: {name}")
 
     def get(self, name: str) -> Any:
-        """
-        Get a service instance.
+        """Get a service instance.
 
         For lazy services, the factory is called on first access and
         the result is cached for subsequent calls.
@@ -114,10 +112,11 @@ class ServiceRegistry:
                 logger.info(f"Lazy loaded service: {name}")
                 return service
             except Exception as e:
-                logger.error(f"Failed to lazy load service {name}: {e}")
+                logger.exception(f"Failed to lazy load service {name}: {e}")
                 raise
 
-        raise KeyError(f"Service {name} not registered")
+        msg = f"Service {name} not registered"
+        raise KeyError(msg)
 
     def has(self, name: str) -> bool:
         """Check if service is registered (eager or lazy)."""
@@ -128,12 +127,12 @@ class ServiceRegistry:
         return name in self._services
 
     async def initialize_all(self, *, eager_only: bool = True) -> None:
-        """
-        Initialize all registered services.
+        """Initialize all registered services.
 
         Args:
             eager_only: If True (default), only initialize eagerly registered services.
                        If False, also load and initialize all lazy services.
+
         """
         if self._initialized:
             logger.warning("Services already initialized")
@@ -153,7 +152,7 @@ class ServiceRegistry:
                 try:
                     await service.initialize()
                 except Exception as e:
-                    logger.error(f"Failed to initialize service {name}: {e}")
+                    logger.exception(f"Failed to initialize service {name}: {e}")
                     raise
 
         self._initialized = True
@@ -167,7 +166,7 @@ class ServiceRegistry:
                 try:
                     await service.shutdown()
                 except Exception as e:
-                    logger.error(f"Error shutting down service {name}: {e}")
+                    logger.exception(f"Error shutting down service {name}: {e}")
 
         self._initialized = False
         logger.info("All services shut down")
@@ -221,13 +220,13 @@ class ServiceRegistry:
         return status
 
     def preload(self, *service_names: str) -> None:
-        """
-        Preload specific lazy services.
+        """Preload specific lazy services.
 
         Useful for warming up services that will definitely be needed.
 
         Args:
             service_names: Names of lazy services to preload
+
         """
         for name in service_names:
             if name in self._lazy_factories:
@@ -237,8 +236,7 @@ class ServiceRegistry:
                 logger.warning(f"Service {name} not registered, cannot preload")
 
     def reset(self) -> None:
-        """
-        Reset the registry (for testing purposes).
+        """Reset the registry (for testing purposes).
 
         Clears all registered services and factories.
         """
@@ -258,8 +256,7 @@ service_registry = ServiceRegistry()
 
 
 def get_ai_config_manager() -> "AIConfigManager":
-    """
-    Get the AI configuration manager from the service registry.
+    """Get the AI configuration manager from the service registry.
 
     This is a convenience function that provides dependency injection
     for the AIConfigManager. It ensures the manager is registered
@@ -273,6 +270,7 @@ def get_ai_config_manager() -> "AIConfigManager":
 
         config_manager = get_ai_config_manager()
         provider = config_manager.get_provider("openai")
+
     """
     if not service_registry.has("ai_config_manager"):
         # Register lazily if not already registered
@@ -284,8 +282,7 @@ def get_ai_config_manager() -> "AIConfigManager":
 
 
 def register_core_services() -> None:
-    """
-    Register core services including the AI configuration manager.
+    """Register core services including the AI configuration manager.
 
     This function should be called during application startup to ensure
     all core services are available. It registers the AIConfigManager
@@ -296,6 +293,7 @@ def register_core_services() -> None:
         from app.core.service_registry import register_core_services
 
         register_core_services()
+
     """
     from app.core.ai_config_manager import ai_config_manager
 
@@ -306,8 +304,7 @@ def register_core_services() -> None:
 
 
 async def initialize_ai_config(config_path: str | None = None) -> None:
-    """
-    Initialize the AI configuration manager with the providers.yaml file.
+    """Initialize the AI configuration manager with the providers.yaml file.
 
     This function loads the provider configuration from YAML and makes it
     available through the service registry. Should be called during
@@ -326,6 +323,7 @@ async def initialize_ai_config(config_path: str | None = None) -> None:
 
         register_core_services()
         await initialize_ai_config()
+
     """
     from pathlib import Path
 
@@ -342,10 +340,10 @@ async def initialize_ai_config(config_path: str | None = None) -> None:
     except FileNotFoundError:
         logger.warning(
             "AI provider configuration file not found. "
-            "Using defaults. Create providers.yaml to configure providers."
+            "Using defaults. Create providers.yaml to configure providers.",
         )
     except Exception as e:
-        logger.error(f"Failed to load AI provider configuration: {e}")
+        logger.exception(f"Failed to load AI provider configuration: {e}")
         raise
 
 
@@ -355,11 +353,11 @@ async def initialize_ai_config(config_path: str | None = None) -> None:
 
 
 def get_config_validator() -> "ConfigValidator":
-    """
-    Get the config validator from the service registry.
+    """Get the config validator from the service registry.
 
     Returns:
         ConfigValidator instance
+
     """
     if not service_registry.has("config_validator"):
         from app.core.config_validator import config_validator
@@ -375,11 +373,11 @@ def get_config_validator() -> "ConfigValidator":
 
 
 def get_fallback_manager() -> "FallbackManager":
-    """
-    Get the fallback manager from the service registry.
+    """Get the fallback manager from the service registry.
 
     Returns:
         FallbackManager instance
+
     """
     if not service_registry.has("fallback_manager"):
         from app.core.fallback_manager import fallback_manager
@@ -395,8 +393,7 @@ def get_fallback_manager() -> "FallbackManager":
 
 
 def register_validation_services() -> None:
-    """
-    Register validation and fallback services.
+    """Register validation and fallback services.
 
     This function should be called during application startup after
     register_core_services() to enable validation checkpoints and
@@ -410,6 +407,7 @@ def register_validation_services() -> None:
 
         register_core_services()
         register_validation_services()
+
     """
     from app.core.config_validator import config_validator
     from app.core.fallback_manager import fallback_manager
@@ -429,8 +427,7 @@ async def run_startup_validation(
     test_connectivity: bool = False,
     fail_on_warnings: bool = False,
 ) -> bool:
-    """
-    Run startup validation checks.
+    """Run startup validation checks.
 
     This function should be called during application startup after
     AI configuration is loaded. It validates the configuration and
@@ -455,6 +452,7 @@ async def run_startup_validation(
         register_validation_services()
         await initialize_ai_config()
         is_ready = await run_startup_validation(test_connectivity=True)
+
     """
     from app.core.startup_validator import StartupValidator
 
@@ -472,7 +470,7 @@ async def run_startup_validation(
         return is_ready
 
     except Exception as e:
-        logger.error(f"Startup validation failed: {e}")
+        logger.exception(f"Startup validation failed: {e}")
         return False
 
 
@@ -481,8 +479,7 @@ async def initialize_all_services(
     test_connectivity: bool = False,
     fail_on_warnings: bool = False,
 ) -> bool:
-    """
-    Initialize all core services including validation.
+    """Initialize all core services including validation.
 
     This is a convenience function that performs the complete
     initialization sequence:
@@ -509,6 +506,7 @@ async def initialize_all_services(
 
         if not is_ready:
             logger.warning("System starting with degraded state")
+
     """
     try:
         # Step 1: Register core services
@@ -533,5 +531,5 @@ async def initialize_all_services(
         return is_ready
 
     except Exception as e:
-        logger.error(f"Service initialization failed: {e}")
+        logger.exception(f"Service initialization failed: {e}")
         return False

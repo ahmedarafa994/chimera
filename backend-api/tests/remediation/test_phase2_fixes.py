@@ -10,15 +10,14 @@ from app.services.jailbreak.jailbreak_service import CacheManager, ExecutionTrac
 
 
 class TestPhase2Remediation:
-    """
-    Tests for Phase 2 Remediation Fixes.
+    """Tests for Phase 2 Remediation Fixes.
 
     Note: ExecutionTracker and CacheManager now use Redis-backed implementations.
     These tests verify the wrapper classes work correctly.
     """
 
-    def test_execution_tracker_initialization(self):
-        """Verify ExecutionTracker initializes with Redis wrapper"""
+    def test_execution_tracker_initialization(self) -> None:
+        """Verify ExecutionTracker initializes with Redis wrapper."""
         tracker = ExecutionTracker()
 
         # Verify it has the underlying tracker
@@ -26,8 +25,8 @@ class TestPhase2Remediation:
         assert hasattr(tracker, "_initialized")
         assert tracker._initialized is False  # Not connected until first use
 
-    def test_cache_manager_initialization(self):
-        """Verify CacheManager initializes with BoundedCacheManager wrapper"""
+    def test_cache_manager_initialization(self) -> None:
+        """Verify CacheManager initializes with BoundedCacheManager wrapper."""
         cache = CacheManager()
 
         # Verify it has the underlying cache
@@ -35,15 +34,15 @@ class TestPhase2Remediation:
         assert hasattr(cache, "_initialized")
         assert cache._initialized is False  # Not connected until first use
 
-    def test_rate_limiter_integration(self):
-        """Verify RateLimiter wrapper works"""
+    def test_rate_limiter_integration(self) -> None:
+        """Verify RateLimiter wrapper works."""
         limiter = RateLimiter()
         # Just verify it has the underlying limiter
         assert hasattr(limiter, "_limiter")
 
     @pytest.mark.asyncio
-    async def test_cache_manager_basic_operations(self):
-        """Test CacheManager basic async operations (mocked without Redis)"""
+    async def test_cache_manager_basic_operations(self) -> None:
+        """Test CacheManager basic async operations (mocked without Redis)."""
         # Skip if no Redis available - just test instantiation
         cache = CacheManager()
         assert cache._initialized is False
@@ -54,8 +53,8 @@ class TestPhase2Remediation:
         # assert value == "test_value"
 
     @pytest.mark.asyncio
-    async def test_execution_tracker_basic_operations(self):
-        """Test ExecutionTracker basic async operations (mocked without Redis)"""
+    async def test_execution_tracker_basic_operations(self) -> None:
+        """Test ExecutionTracker basic async operations (mocked without Redis)."""
         # Skip if no Redis available - just test instantiation
         tracker = ExecutionTracker()
         assert tracker._initialized is False

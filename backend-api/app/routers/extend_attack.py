@@ -1,5 +1,4 @@
-"""
-ExtendAttack API Router
+"""ExtendAttack API Router.
 
 Exposes ExtendAttack functionality for:
 - Token extension attacks via poly-base ASCII obfuscation
@@ -8,7 +7,7 @@ Exposes ExtendAttack functionality for:
 - Attack evaluation and metrics
 """
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -42,13 +41,12 @@ router = APIRouter(prefix="/extend-attack", tags=["ExtendAttack"])
 # ============== Endpoints ==============
 
 
-@router.post("/attack", response_model=AttackResponse)
+@router.post("/attack")
 async def execute_attack(
     request: AttackRequest,
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> AttackResponse:
-    """
-    Execute ExtendAttack on a single query.
+    """Execute ExtendAttack on a single query.
 
     Implements the 4-step algorithm from the ExtendAttack paper:
     1. Query Segmentation - Decompose Q into character set C
@@ -61,6 +59,7 @@ async def execute_attack(
 
     Returns:
         AttackResponse with original query, adversarial query, and metrics
+
     """
     try:
         result = service.execute_attack(
@@ -84,13 +83,12 @@ async def execute_attack(
         )
 
 
-@router.post("/attack/batch", response_model=BatchAttackResponse)
+@router.post("/attack/batch")
 async def execute_batch_attack(
     request: BatchAttackRequest,
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> BatchAttackResponse:
-    """
-    Execute ExtendAttack on multiple queries.
+    """Execute ExtendAttack on multiple queries.
 
     Supports benchmark-specific configuration for optimal results:
     - HumanEval: Function name preservation, ρ ≈ 0.30-0.35
@@ -102,6 +100,7 @@ async def execute_batch_attack(
 
     Returns:
         BatchAttackResponse with results for all queries and aggregate metrics
+
     """
     try:
         result = service.execute_batch_attack(
@@ -125,13 +124,12 @@ async def execute_batch_attack(
         )
 
 
-@router.post("/indirect-injection", response_model=IndirectInjectionResponse)
+@router.post("/indirect-injection")
 async def execute_indirect_injection(
     request: IndirectInjectionRequest,
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> IndirectInjectionResponse:
-    """
-    Execute indirect prompt injection attack.
+    """Execute indirect prompt injection attack.
 
     Poisons external data sources for retrieval-augmented scenarios.
     The obfuscated content will trigger extended generation when
@@ -142,6 +140,7 @@ async def execute_indirect_injection(
 
     Returns:
         IndirectInjectionResponse with poisoned document and injection metrics
+
     """
     try:
         result = service.execute_indirect_injection(
@@ -163,13 +162,12 @@ async def execute_indirect_injection(
         )
 
 
-@router.post("/evaluate", response_model=EvaluationResponse)
+@router.post("/evaluate")
 async def evaluate_attack(
     request: EvaluationRequest,
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> EvaluationResponse:
-    """
-    Evaluate attack effectiveness.
+    """Evaluate attack effectiveness.
 
     Metrics per ExtendAttack paper:
     - L(Y') >> L(Y) - Response length amplification (target: ≥1.5x)
@@ -181,6 +179,7 @@ async def evaluate_attack(
 
     Returns:
         EvaluationResponse with effectiveness metrics
+
     """
     try:
         result = service.evaluate_attack(
@@ -205,12 +204,11 @@ async def evaluate_attack(
         )
 
 
-@router.get("/benchmarks", response_model=list[BenchmarkConfigResponse])
+@router.get("/benchmarks")
 async def get_benchmark_configs(
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> list[BenchmarkConfigResponse]:
-    """
-    Get available benchmark configurations.
+    """Get available benchmark configurations.
 
     Returns configurations for supported benchmarks:
     - AIME 2024: Mathematical olympiad problems
@@ -220,6 +218,7 @@ async def get_benchmark_configs(
 
     Returns:
         List of benchmark configurations with selection rules and optimal ρ values
+
     """
     try:
         configs = service.get_benchmark_configs()
@@ -231,19 +230,19 @@ async def get_benchmark_configs(
         )
 
 
-@router.get("/benchmarks/{benchmark_name}", response_model=BenchmarkConfigResponse)
+@router.get("/benchmarks/{benchmark_name}")
 async def get_benchmark_config(
     benchmark_name: str,
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> BenchmarkConfigResponse:
-    """
-    Get specific benchmark configuration.
+    """Get specific benchmark configuration.
 
     Args:
         benchmark_name: Name of the benchmark (e.g., 'humaneval', 'aime_2024')
 
     Returns:
         BenchmarkConfigResponse with configuration details
+
     """
     try:
         config = service.get_benchmark_config(benchmark_name)
@@ -260,13 +259,12 @@ async def get_benchmark_config(
         )
 
 
-@router.post("/decode", response_model=DecodeResponse)
+@router.post("/decode")
 async def decode_obfuscated(
     request: DecodeRequest,
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> DecodeResponse:
-    """
-    Decode an obfuscated query back to original.
+    """Decode an obfuscated query back to original.
 
     For testing and debugging purposes. Reverses the poly-base ASCII
     transformation to recover the original text.
@@ -276,6 +274,7 @@ async def decode_obfuscated(
 
     Returns:
         DecodeResponse with decoded text and pattern count
+
     """
     try:
         result = service.decode_obfuscated(request.obfuscated_text)
@@ -292,12 +291,11 @@ async def decode_obfuscated(
         )
 
 
-@router.get("/n-notes", response_model=NNoteTemplatesResponse)
+@router.get("/n-notes")
 async def get_n_note_templates(
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> NNoteTemplatesResponse:
-    """
-    Get available N_note templates.
+    """Get available N_note templates.
 
     N_note (Decoded Output Instructions) is appended to adversarial queries
     to instruct the model to decode obfuscated content. Different variants
@@ -305,6 +303,7 @@ async def get_n_note_templates(
 
     Returns:
         NNoteTemplatesResponse with all available templates and their metadata
+
     """
     try:
         templates = service.get_n_note_templates()
@@ -316,13 +315,12 @@ async def get_n_note_templates(
         )
 
 
-@router.post("/resource-metrics", response_model=ResourceMetricsResponse)
+@router.post("/resource-metrics")
 async def calculate_resource_metrics(
     request: ResourceMetricsRequest,
-    service: ExtendAttackService = Depends(get_extend_attack_service),
+    service: Annotated[ExtendAttackService, Depends(get_extend_attack_service)],
 ) -> ResourceMetricsResponse:
-    """
-    Calculate resource exhaustion metrics and cost impact.
+    """Calculate resource exhaustion metrics and cost impact.
 
     Estimates token amplification and cost impact for attacks.
     Uses model-specific pricing for accurate cost estimation.
@@ -332,6 +330,7 @@ async def calculate_resource_metrics(
 
     Returns:
         ResourceMetricsResponse with amplification factors and cost estimates
+
     """
     try:
         result = service.calculate_resource_metrics(
@@ -352,15 +351,15 @@ async def calculate_resource_metrics(
         )
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get("/health")
 async def health_check() -> HealthResponse:
-    """
-    Health check endpoint.
+    """Health check endpoint.
 
     Returns basic health status for the ExtendAttack module.
 
     Returns:
         HealthResponse with status and module information
+
     """
     return HealthResponse(
         status="healthy",
@@ -374,13 +373,13 @@ async def health_check() -> HealthResponse:
 
 @router.get("/sessions")
 async def list_sessions(
-    service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
+    service: Annotated[ResourceExhaustionService, Depends(get_resource_exhaustion_service)],
 ) -> dict[str, Any]:
-    """
-    List all active attack sessions.
+    """List all active attack sessions.
 
     Returns:
         Dictionary with active sessions and their metrics
+
     """
     try:
         active_sessions = service.get_all_active_sessions()
@@ -401,8 +400,7 @@ async def start_session(
     model: str = "o3",
     service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
 ) -> dict[str, Any]:
-    """
-    Start a new attack session for tracking.
+    """Start a new attack session for tracking.
 
     Args:
         session_id: Unique identifier for the session
@@ -410,6 +408,7 @@ async def start_session(
 
     Returns:
         Dictionary with session details
+
     """
     try:
         session = service.start_session(session_id=session_id, model=model)
@@ -432,16 +431,16 @@ async def start_session(
 @router.post("/sessions/{session_id}/end")
 async def end_session(
     session_id: str,
-    service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
+    service: Annotated[ResourceExhaustionService, Depends(get_resource_exhaustion_service)],
 ) -> dict[str, Any]:
-    """
-    End an attack session.
+    """End an attack session.
 
     Args:
         session_id: Session identifier to end
 
     Returns:
         Dictionary with final session metrics
+
     """
     try:
         session = service.end_session(session_id=session_id)
@@ -466,16 +465,16 @@ async def end_session(
 @router.get("/sessions/{session_id}/metrics")
 async def get_session_metrics(
     session_id: str,
-    service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
+    service: Annotated[ResourceExhaustionService, Depends(get_resource_exhaustion_service)],
 ) -> dict[str, Any]:
-    """
-    Get metrics for a specific session.
+    """Get metrics for a specific session.
 
     Args:
         session_id: Session identifier to get metrics for
 
     Returns:
         Dictionary with session metrics
+
     """
     try:
         session = service.get_session_metrics(session_id=session_id)
@@ -504,8 +503,7 @@ async def record_attack(
     model: str | None = None,
     service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
 ) -> dict[str, Any]:
-    """
-    Record a single attack execution for a session.
+    """Record a single attack execution for a session.
 
     Args:
         session_id: Session to record attack for
@@ -517,9 +515,10 @@ async def record_attack(
 
     Returns:
         Dictionary with attack metrics and any triggered alerts
+
     """
     try:
-        result = service.record_attack(
+        return service.record_attack(
             session_id=session_id,
             baseline_tokens=baseline_tokens,
             attack_tokens=attack_tokens,
@@ -527,7 +526,6 @@ async def record_attack(
             successful=successful,
             model=model,
         )
-        return result
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -537,13 +535,13 @@ async def record_attack(
 
 @router.get("/budget/status")
 async def get_budget_status(
-    service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
+    service: Annotated[ResourceExhaustionService, Depends(get_resource_exhaustion_service)],
 ) -> dict[str, Any]:
-    """
-    Get current budget consumption status.
+    """Get current budget consumption status.
 
     Returns:
         Dictionary with budget status and consumption percentages
+
     """
     try:
         return service.get_budget_status()
@@ -562,8 +560,7 @@ async def estimate_attack_cost(
     model: str = "o3",
     service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
 ) -> dict[str, Any]:
-    """
-    Estimate cost for planned attacks.
+    """Estimate cost for planned attacks.
 
     Args:
         num_attacks: Number of attacks planned
@@ -573,6 +570,7 @@ async def estimate_attack_cost(
 
     Returns:
         Dictionary with cost estimates and projections
+
     """
     try:
         return service.estimate_attack_cost(
@@ -590,13 +588,13 @@ async def estimate_attack_cost(
 
 @router.get("/monitoring/hourly")
 async def get_hourly_summary(
-    service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
+    service: Annotated[ResourceExhaustionService, Depends(get_resource_exhaustion_service)],
 ) -> dict[str, Any]:
-    """
-    Get current hour's resource consumption summary.
+    """Get current hour's resource consumption summary.
 
     Returns:
         Dictionary with hourly consumption metrics
+
     """
     try:
         return service.get_hourly_summary()
@@ -612,14 +610,14 @@ async def get_historical_data(
     hours: int = 24,
     service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
 ) -> dict[str, Any]:
-    """
-    Get historical resource consumption data.
+    """Get historical resource consumption data.
 
     Args:
         hours: Number of hours of history to return (max 24)
 
     Returns:
         Dictionary with historical hourly data
+
     """
     try:
         history = service.get_historical_data(hours=hours)
@@ -640,14 +638,14 @@ async def get_cost_breakdown(
     session_id: str | None = None,
     service: ResourceExhaustionService = Depends(get_resource_exhaustion_service),
 ) -> dict[str, Any]:
-    """
-    Get detailed cost breakdown by model and operation.
+    """Get detailed cost breakdown by model and operation.
 
     Args:
         session_id: Optional session to get breakdown for
 
     Returns:
         Dictionary with cost breakdown details
+
     """
     try:
         return service.get_cost_breakdown(session_id=session_id)
@@ -660,11 +658,11 @@ async def get_cost_breakdown(
 
 @router.get("/monitoring/status")
 async def get_monitoring_status() -> dict[str, Any]:
-    """
-    Get status of the background monitoring system.
+    """Get status of the background monitoring system.
 
     Returns:
         Dictionary with monitoring status information
+
     """
     try:
         manager = get_monitoring_manager()

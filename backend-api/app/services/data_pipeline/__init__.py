@@ -1,5 +1,4 @@
-"""
-Chimera Data Pipeline Package
+"""Chimera Data Pipeline Package.
 
 Production-grade data pipeline for LLM analytics, jailbreak research tracking,
 and system observability.
@@ -22,27 +21,27 @@ Usage:
 """
 
 from .batch_ingestion import (
-                              BatchDataIngester,
-                              IngestionConfig,
-                              JailbreakExperimentRecord,
-                              LLMInteractionRecord,
-                              TransformationRecord,
-                              ingest_jailbreak_experiments_batch,
-                              ingest_llm_interactions_batch,
-                              ingest_transformation_events_batch,
+    BatchDataIngester,
+    IngestionConfig,
+    JailbreakExperimentRecord,
+    LLMInteractionRecord,
+    TransformationRecord,
+    ingest_jailbreak_experiments_batch,
+    ingest_llm_interactions_batch,
+    ingest_transformation_events_batch,
 )
 from .data_quality import (
-                              DataQualityConfig,
-                              DataQualityFramework,
-                              QualityCheckResult,
-                              validate_llm_interactions,
-                              validate_transformations,
+    DataQualityConfig,
+    DataQualityFramework,
+    QualityCheckResult,
+    validate_llm_interactions,
+    validate_transformations,
 )
 from .delta_lake_manager import (
-                              DeltaLakeManager,
-                              DeltaTableConfig,
-                              create_llm_interactions_table,
-                              query_llm_interactions,
+    DeltaLakeManager,
+    DeltaTableConfig,
+    create_llm_interactions_table,
+    query_llm_interactions,
 )
 
 __all__ = [

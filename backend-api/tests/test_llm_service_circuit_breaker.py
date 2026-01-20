@@ -1,5 +1,4 @@
-"""
-Tests for LLM Service CircuitBreakerOpen exception handling.
+"""Tests for LLM Service CircuitBreakerOpen exception handling.
 
 These tests verify that the LLM service properly handles circuit breaker
 exceptions and provides meaningful error messages to users.
@@ -29,8 +28,10 @@ class TestLLMServiceCircuitBreakerHandling:
 
     @pytest.mark.asyncio
     async def test_circuit_breaker_open_converts_to_provider_not_available(
-        self, llm_service, mock_provider
-    ):
+        self,
+        llm_service,
+        mock_provider,
+    ) -> None:
         """Test that CircuitBreakerOpen is converted to ProviderNotAvailableError."""
         from app.core.circuit_breaker import CircuitBreakerOpen
         from app.core.unified_errors import ProviderNotAvailableError
@@ -58,7 +59,9 @@ class TestLLMServiceCircuitBreakerHandling:
             assert error.details["circuit_state"] == "open"
 
     @pytest.mark.asyncio
-    async def test_generate_method_handles_circuit_breaker_open(self, llm_service, mock_provider):
+    async def test_generate_method_handles_circuit_breaker_open(
+        self, llm_service, mock_provider
+    ) -> None:
         """Test that the generate() method also handles CircuitBreakerOpen."""
         from app.core.circuit_breaker import CircuitBreakerOpen
         from app.core.unified_errors import ProviderNotAvailableError
@@ -77,8 +80,10 @@ class TestLLMServiceCircuitBreakerHandling:
 
     @pytest.mark.asyncio
     async def test_circuit_breaker_wrapper_created_on_registration(
-        self, llm_service, mock_provider
-    ):
+        self,
+        llm_service,
+        mock_provider,
+    ) -> None:
         """Test that circuit breaker wrapper is created when provider is registered."""
         # Initially no wrappers
         assert len(llm_service._circuit_breaker_cache) == 0
@@ -90,7 +95,9 @@ class TestLLMServiceCircuitBreakerHandling:
         assert "new_provider" in llm_service._circuit_breaker_cache
 
     @pytest.mark.asyncio
-    async def test_performance_stats_include_circuit_breakers(self, llm_service, mock_provider):
+    async def test_performance_stats_include_circuit_breakers(
+        self, llm_service, mock_provider
+    ) -> None:
         """Test that performance stats include circuit breaker information."""
         llm_service.register_provider("stats_provider", mock_provider)
 
@@ -104,13 +111,15 @@ class TestCircuitBreakerIntegration:
     """Integration tests for circuit breaker behavior."""
 
     @pytest.mark.asyncio
-    async def test_circuit_breaker_opens_after_failures(self):
+    async def test_circuit_breaker_opens_after_failures(self) -> None:
         """Test that circuit breaker opens after threshold failures."""
         from app.core.circuit_breaker import CircuitBreakerRegistry, CircuitState
 
         # Get a circuit breaker with low threshold for testing
         breaker = CircuitBreakerRegistry.get(
-            "test_integration", failure_threshold=2, recovery_timeout=60.0
+            "test_integration",
+            failure_threshold=2,
+            recovery_timeout=60.0,
         )
 
         # Reset to known state
@@ -128,7 +137,7 @@ class TestCircuitBreakerIntegration:
         assert not breaker.can_execute()
 
     @pytest.mark.asyncio
-    async def test_circuit_breaker_recovery(self):
+    async def test_circuit_breaker_recovery(self) -> None:
         """Test that circuit breaker recovers after timeout."""
         import time
 
@@ -154,14 +163,17 @@ class TestCircuitBreakerIntegration:
         assert breaker.state == CircuitState.HALF_OPEN
 
     @pytest.mark.asyncio
-    async def test_circuit_breaker_closes_after_success(self):
+    async def test_circuit_breaker_closes_after_success(self) -> None:
         """Test that circuit breaker closes after successful calls in half-open."""
         import time
 
         from app.core.circuit_breaker import CircuitBreakerRegistry, CircuitState
 
         breaker = CircuitBreakerRegistry.get(
-            "test_close", failure_threshold=1, recovery_timeout=0.1, half_open_max_calls=3
+            "test_close",
+            failure_threshold=1,
+            recovery_timeout=0.1,
+            half_open_max_calls=3,
         )
 
         # Reset and trip the breaker
@@ -184,7 +196,7 @@ class TestCircuitBreakerIntegration:
 class TestCircuitBreakerMetrics:
     """Test circuit breaker metrics collection."""
 
-    def test_circuit_breaker_status_includes_metrics(self):
+    def test_circuit_breaker_status_includes_metrics(self) -> None:
         """Test that circuit breaker status includes metrics."""
         from app.core.circuit_breaker import CircuitBreakerRegistry
 
@@ -204,7 +216,7 @@ class TestCircuitBreakerMetrics:
         assert metrics["successful_calls"] == 2
         assert metrics["failed_calls"] == 1
 
-    def test_circuit_breaker_registry_get_all_status(self):
+    def test_circuit_breaker_registry_get_all_status(self) -> None:
         """Test getting status of all circuit breakers."""
         from app.core.circuit_breaker import CircuitBreakerRegistry
 

@@ -1,5 +1,4 @@
-"""
-User Repository - Database access layer for user operations.
+"""User Repository - Database access layer for user operations.
 
 This module provides async CRUD operations for user management using
 SQLAlchemy 2.0 patterns. It implements the repository pattern for
@@ -66,8 +65,7 @@ class InvalidTokenError(NotFoundError):
 
 
 class UserRepository:
-    """
-    Repository for user database operations.
+    """Repository for user database operations.
 
     Provides async CRUD methods for user management including:
     - User creation with uniqueness enforcement
@@ -79,12 +77,12 @@ class UserRepository:
     All operations use SQLAlchemy 2.0 async patterns.
     """
 
-    def __init__(self, session: AsyncSession):
-        """
-        Initialize user repository.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize user repository.
 
         Args:
             session: SQLAlchemy async session
+
         """
         self._session = session
 
@@ -93,14 +91,14 @@ class UserRepository:
     # =========================================================================
 
     async def get_by_id(self, user_id: int) -> User | None:
-        """
-        Get user by ID.
+        """Get user by ID.
 
         Args:
             user_id: User's unique identifier
 
         Returns:
             User if found, None otherwise
+
         """
         try:
             stmt = select(User).where(User.id == user_id)
@@ -119,14 +117,14 @@ class UserRepository:
             raise
 
     async def get_by_email(self, email: str) -> User | None:
-        """
-        Get user by email address.
+        """Get user by email address.
 
         Args:
             email: User's email address (case-insensitive)
 
         Returns:
             User if found, None otherwise
+
         """
         try:
             # Case-insensitive email lookup
@@ -146,14 +144,14 @@ class UserRepository:
             raise
 
     async def get_by_username(self, username: str) -> User | None:
-        """
-        Get user by username.
+        """Get user by username.
 
         Args:
             username: User's username (case-insensitive)
 
         Returns:
             User if found, None otherwise
+
         """
         try:
             # Case-insensitive username lookup
@@ -173,8 +171,7 @@ class UserRepository:
             raise
 
     async def get_by_email_or_username(self, identifier: str) -> User | None:
-        """
-        Get user by email or username.
+        """Get user by email or username.
 
         Useful for login where user can provide either identifier.
 
@@ -183,13 +180,14 @@ class UserRepository:
 
         Returns:
             User if found, None otherwise
+
         """
         try:
             stmt = select(User).where(
                 or_(
                     func.lower(User.email) == identifier.lower(),
                     func.lower(User.username) == identifier.lower(),
-                )
+                ),
             )
             result = await self._session.execute(stmt)
             user = result.scalar_one_or_none()
@@ -206,14 +204,14 @@ class UserRepository:
             raise
 
     async def get_by_verification_token(self, token: str) -> User | None:
-        """
-        Get user by email verification token.
+        """Get user by email verification token.
 
         Args:
             token: Email verification token
 
         Returns:
             User if found with valid token, None otherwise
+
         """
         try:
             stmt = select(User).where(
@@ -223,7 +221,7 @@ class UserRepository:
                         User.email_verification_token_expires.is_(None),
                         User.email_verification_token_expires > datetime.utcnow(),
                     ),
-                )
+                ),
             )
             result = await self._session.execute(stmt)
             user = result.scalar_one_or_none()
@@ -240,21 +238,21 @@ class UserRepository:
             raise
 
     async def get_by_reset_token(self, token: str) -> User | None:
-        """
-        Get user by password reset token.
+        """Get user by password reset token.
 
         Args:
             token: Password reset token
 
         Returns:
             User if found with valid (non-expired) token, None otherwise
+
         """
         try:
             stmt = select(User).where(
                 and_(
                     User.password_reset_token == token,
                     User.password_reset_token_expires > datetime.utcnow(),
-                )
+                ),
             )
             result = await self._session.execute(stmt)
             user = result.scalar_one_or_none()
@@ -271,14 +269,14 @@ class UserRepository:
             raise
 
     async def exists_by_email(self, email: str) -> bool:
-        """
-        Check if a user exists with the given email.
+        """Check if a user exists with the given email.
 
         Args:
             email: Email address to check
 
         Returns:
             True if email exists, False otherwise
+
         """
         try:
             stmt = select(User.id).where(func.lower(User.email) == email.lower())
@@ -290,14 +288,14 @@ class UserRepository:
             raise
 
     async def exists_by_username(self, username: str) -> bool:
-        """
-        Check if a user exists with the given username.
+        """Check if a user exists with the given username.
 
         Args:
             username: Username to check
 
         Returns:
             True if username exists, False otherwise
+
         """
         try:
             stmt = select(User.id).where(func.lower(User.username) == username.lower())
@@ -317,8 +315,7 @@ class UserRepository:
         is_verified: bool | None = None,
         search: str | None = None,
     ) -> tuple[list[User], int]:
-        """
-        List users with pagination and filtering.
+        """List users with pagination and filtering.
 
         Args:
             limit: Maximum number of users to return
@@ -330,6 +327,7 @@ class UserRepository:
 
         Returns:
             Tuple of (list of users, total count)
+
         """
         try:
             # Build base query
@@ -350,7 +348,7 @@ class UserRepository:
                     or_(
                         User.email.ilike(search_pattern),
                         User.username.ilike(search_pattern),
-                    )
+                    ),
                 )
 
             if conditions:
@@ -388,8 +386,7 @@ class UserRepository:
         email_verification_token: str | None = None,
         email_verification_token_expires: datetime | None = None,
     ) -> User:
-        """
-        Create a new user.
+        """Create a new user.
 
         Args:
             email: User's email address
@@ -407,6 +404,7 @@ class UserRepository:
         Raises:
             EmailAlreadyExistsError: If email is already registered
             UsernameAlreadyExistsError: If username is already taken
+
         """
         try:
             # Create user instance
@@ -437,18 +435,17 @@ class UserRepository:
                     message=f"Email '{email}' is already registered",
                     details={"email": email},
                 )
-            elif "username" in error_str:
+            if "username" in error_str:
                 logger.warning(f"Username already exists: {username}")
                 raise UsernameAlreadyExistsError(
                     message=f"Username '{username}' is already taken",
                     details={"username": username},
                 )
-            else:
-                logger.error(f"IntegrityError creating user: {e}", exc_info=True)
-                raise UserAlreadyExistsError(
-                    message="User already exists",
-                    details={"email": email, "username": username},
-                )
+            logger.error(f"IntegrityError creating user: {e}", exc_info=True)
+            raise UserAlreadyExistsError(
+                message="User already exists",
+                details={"email": email, "username": username},
+            )
 
         except Exception as e:
             await self._session.rollback()
@@ -464,8 +461,7 @@ class UserRepository:
         user_id: int,
         **kwargs,
     ) -> User | None:
-        """
-        Update user fields.
+        """Update user fields.
 
         Args:
             user_id: User's ID
@@ -477,6 +473,7 @@ class UserRepository:
         Raises:
             EmailAlreadyExistsError: If updating email to an existing one
             UsernameAlreadyExistsError: If updating username to an existing one
+
         """
         try:
             # Get existing user
@@ -510,15 +507,14 @@ class UserRepository:
                     message="Email is already registered",
                     details={"user_id": user_id},
                 )
-            elif "username" in error_str:
+            if "username" in error_str:
                 logger.warning("Username already exists on update")
                 raise UsernameAlreadyExistsError(
                     message="Username is already taken",
                     details={"user_id": user_id},
                 )
-            else:
-                logger.error(f"IntegrityError updating user: {e}", exc_info=True)
-                raise
+            logger.error(f"IntegrityError updating user: {e}", exc_info=True)
+            raise
 
         except Exception as e:
             await self._session.rollback()
@@ -526,8 +522,7 @@ class UserRepository:
             raise
 
     async def update_password(self, user_id: int, hashed_password: str) -> bool:
-        """
-        Update user's password.
+        """Update user's password.
 
         Args:
             user_id: User's ID
@@ -535,6 +530,7 @@ class UserRepository:
 
         Returns:
             True if password was updated, False if user not found
+
         """
         try:
             stmt = (
@@ -553,9 +549,8 @@ class UserRepository:
             if result.rowcount > 0:
                 logger.info(f"Updated password for user id={user_id}")
                 return True
-            else:
-                logger.warning(f"User not found for password update: id={user_id}")
-                return False
+            logger.warning(f"User not found for password update: id={user_id}")
+            return False
 
         except Exception as e:
             await self._session.rollback()
@@ -563,14 +558,14 @@ class UserRepository:
             raise
 
     async def update_last_login(self, user_id: int) -> bool:
-        """
-        Update user's last login timestamp.
+        """Update user's last login timestamp.
 
         Args:
             user_id: User's ID
 
         Returns:
             True if updated, False if user not found
+
         """
         try:
             stmt = update(User).where(User.id == user_id).values(last_login=datetime.utcnow())
@@ -595,8 +590,7 @@ class UserRepository:
         token: str,
         expires_hours: int = 24,
     ) -> bool:
-        """
-        Set email verification token for user.
+        """Set email verification token for user.
 
         Args:
             user_id: User's ID
@@ -605,6 +599,7 @@ class UserRepository:
 
         Returns:
             True if token was set, False if user not found
+
         """
         try:
             expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
@@ -630,8 +625,7 @@ class UserRepository:
             raise
 
     async def verify_email(self, token: str) -> User | None:
-        """
-        Verify user's email using verification token.
+        """Verify user's email using verification token.
 
         Args:
             token: Email verification token
@@ -641,6 +635,7 @@ class UserRepository:
 
         Raises:
             InvalidTokenError: If token is invalid or expired
+
         """
         try:
             # Find user by token
@@ -674,8 +669,7 @@ class UserRepository:
         new_token: str,
         expires_hours: int = 24,
     ) -> bool:
-        """
-        Resend verification email by generating new token.
+        """Resend verification email by generating new token.
 
         Only works for unverified users.
 
@@ -686,6 +680,7 @@ class UserRepository:
 
         Returns:
             True if token was regenerated, False if user not found or already verified
+
         """
         try:
             user = await self.get_by_id(user_id)
@@ -713,8 +708,7 @@ class UserRepository:
         token: str,
         expires_hours: int = 1,
     ) -> bool:
-        """
-        Set password reset token for user.
+        """Set password reset token for user.
 
         Args:
             user_id: User's ID
@@ -723,6 +717,7 @@ class UserRepository:
 
         Returns:
             True if token was set, False if user not found
+
         """
         try:
             expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
@@ -748,14 +743,14 @@ class UserRepository:
             raise
 
     async def clear_reset_token(self, user_id: int) -> bool:
-        """
-        Clear password reset token for user.
+        """Clear password reset token for user.
 
         Args:
             user_id: User's ID
 
         Returns:
             True if token was cleared, False if user not found
+
         """
         try:
             stmt = (
@@ -780,8 +775,7 @@ class UserRepository:
             raise
 
     async def reset_password(self, token: str, new_hashed_password: str) -> User | None:
-        """
-        Reset user's password using reset token.
+        """Reset user's password using reset token.
 
         Args:
             token: Password reset token
@@ -792,6 +786,7 @@ class UserRepository:
 
         Raises:
             InvalidTokenError: If token is invalid or expired
+
         """
         try:
             # Find user by token
@@ -824,14 +819,14 @@ class UserRepository:
     # =========================================================================
 
     async def deactivate_user(self, user_id: int) -> bool:
-        """
-        Deactivate a user account.
+        """Deactivate a user account.
 
         Args:
             user_id: User's ID
 
         Returns:
             True if deactivated, False if user not found
+
         """
         try:
             stmt = (
@@ -852,14 +847,14 @@ class UserRepository:
             raise
 
     async def activate_user(self, user_id: int) -> bool:
-        """
-        Activate a user account.
+        """Activate a user account.
 
         Args:
             user_id: User's ID
 
         Returns:
             True if activated, False if user not found
+
         """
         try:
             stmt = (
@@ -880,8 +875,7 @@ class UserRepository:
             raise
 
     async def update_role(self, user_id: int, role: UserRole) -> bool:
-        """
-        Update user's role.
+        """Update user's role.
 
         Args:
             user_id: User's ID
@@ -889,6 +883,7 @@ class UserRepository:
 
         Returns:
             True if role was updated, False if user not found
+
         """
         try:
             stmt = (
@@ -913,8 +908,7 @@ class UserRepository:
     # =========================================================================
 
     async def delete_user(self, user_id: int) -> bool:
-        """
-        Delete a user permanently.
+        """Delete a user permanently.
 
         Note: Consider using deactivate_user instead for audit trail.
 
@@ -923,6 +917,7 @@ class UserRepository:
 
         Returns:
             True if deleted, False if user not found
+
         """
         try:
             user = await self.get_by_id(user_id)
@@ -950,8 +945,7 @@ class UserRepository:
         role: UserRole | None = None,
         is_active: bool | None = None,
     ) -> int:
-        """
-        Count users with optional filtering.
+        """Count users with optional filtering.
 
         Args:
             role: Filter by role
@@ -959,6 +953,7 @@ class UserRepository:
 
         Returns:
             Number of users matching criteria
+
         """
         try:
             stmt = select(func.count(User.id))
@@ -981,14 +976,14 @@ class UserRepository:
 
     @staticmethod
     def generate_token(length: int = 32) -> str:
-        """
-        Generate a cryptographically secure random token.
+        """Generate a cryptographically secure random token.
 
         Args:
             length: Length of the token in bytes (actual string will be 2x due to hex encoding)
 
         Returns:
             Hex-encoded random token
+
         """
         return secrets.token_hex(length)
 
@@ -997,14 +992,14 @@ class UserRepository:
     # =========================================================================
 
     async def list_api_keys(self, user_id: int) -> list[UserAPIKey]:
-        """
-        List all API keys for a user.
+        """List all API keys for a user.
 
         Args:
             user_id: User's ID
 
         Returns:
             List of UserAPIKey objects (active and inactive)
+
         """
         try:
             stmt = (
@@ -1023,14 +1018,14 @@ class UserRepository:
             raise
 
     async def count_active_api_keys(self, user_id: int) -> int:
-        """
-        Count active API keys for a user.
+        """Count active API keys for a user.
 
         Args:
             user_id: User's ID
 
         Returns:
             Number of active API keys
+
         """
         try:
             stmt = select(func.count(UserAPIKey.id)).where(
@@ -1041,7 +1036,7 @@ class UserRepository:
                         UserAPIKey.expires_at.is_(None),
                         UserAPIKey.expires_at > datetime.utcnow(),
                     ),
-                )
+                ),
             )
             result = await self._session.execute(stmt)
             count = result.scalar_one()
@@ -1054,8 +1049,7 @@ class UserRepository:
             raise
 
     async def get_api_key_by_id(self, key_id: int, user_id: int) -> UserAPIKey | None:
-        """
-        Get an API key by ID, ensuring it belongs to the specified user.
+        """Get an API key by ID, ensuring it belongs to the specified user.
 
         Args:
             key_id: API key ID
@@ -1063,13 +1057,14 @@ class UserRepository:
 
         Returns:
             UserAPIKey if found and owned by user, None otherwise
+
         """
         try:
             stmt = select(UserAPIKey).where(
                 and_(
                     UserAPIKey.id == key_id,
                     UserAPIKey.user_id == user_id,
-                )
+                ),
             )
             result = await self._session.execute(stmt)
             key = result.scalar_one_or_none()
@@ -1086,8 +1081,7 @@ class UserRepository:
             raise
 
     async def get_api_key_by_hash(self, hashed_key: str) -> UserAPIKey | None:
-        """
-        Get an API key by its hash.
+        """Get an API key by its hash.
 
         Used for API key authentication lookup.
 
@@ -1096,6 +1090,7 @@ class UserRepository:
 
         Returns:
             UserAPIKey if found, None otherwise
+
         """
         try:
             stmt = select(UserAPIKey).where(UserAPIKey.hashed_key == hashed_key)
@@ -1121,8 +1116,7 @@ class UserRepository:
         name: str | None = None,
         expires_at: datetime | None = None,
     ) -> UserAPIKey:
-        """
-        Create a new API key for a user.
+        """Create a new API key for a user.
 
         Args:
             user_id: User's ID
@@ -1133,6 +1127,7 @@ class UserRepository:
 
         Returns:
             Created UserAPIKey object
+
         """
         try:
             api_key = UserAPIKey(
@@ -1157,8 +1152,7 @@ class UserRepository:
             raise
 
     async def revoke_api_key(self, key_id: int, user_id: int) -> bool:
-        """
-        Revoke (deactivate) an API key.
+        """Revoke (deactivate) an API key.
 
         Args:
             key_id: API key ID
@@ -1166,6 +1160,7 @@ class UserRepository:
 
         Returns:
             True if revoked, False if not found or not owned by user
+
         """
         try:
             # First verify ownership
@@ -1193,8 +1188,7 @@ class UserRepository:
             raise
 
     async def delete_api_key(self, key_id: int, user_id: int) -> bool:
-        """
-        Permanently delete an API key.
+        """Permanently delete an API key.
 
         Args:
             key_id: API key ID
@@ -1202,6 +1196,7 @@ class UserRepository:
 
         Returns:
             True if deleted, False if not found
+
         """
         try:
             key = await self.get_api_key_by_id(key_id, user_id)
@@ -1221,14 +1216,14 @@ class UserRepository:
             raise
 
     async def update_api_key_usage(self, key_id: int) -> bool:
-        """
-        Update API key usage statistics (last_used_at, usage_count).
+        """Update API key usage statistics (last_used_at, usage_count).
 
         Args:
             key_id: API key ID
 
         Returns:
             True if updated, False if not found
+
         """
         try:
             stmt = (
@@ -1257,13 +1252,13 @@ class UserRepository:
 
 
 def get_user_repository(session: AsyncSession) -> UserRepository:
-    """
-    Get user repository instance.
+    """Get user repository instance.
 
     Args:
         session: SQLAlchemy async session
 
     Returns:
         UserRepository instance
+
     """
     return UserRepository(session)

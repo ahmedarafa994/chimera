@@ -1,5 +1,4 @@
-"""
-Resilience utilities for LLM provider calls.
+"""Resilience utilities for LLM provider calls.
 
 Provides:
 - Retry with exponential backoff
@@ -14,7 +13,7 @@ import random
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 from app.core.logging import logger
 
@@ -116,8 +115,7 @@ class RateLimitRegistry:
 
 
 def parse_rate_limit_headers(headers: dict[str, str]) -> RateLimitInfo:
-    """
-    Parse rate limit headers from provider responses.
+    """Parse rate limit headers from provider responses.
 
     Supports common header formats:
     - X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
@@ -165,8 +163,7 @@ def calculate_backoff(
     attempt: int,
     config: RetryConfig,
 ) -> float:
-    """
-    Calculate backoff delay with exponential growth and optional jitter.
+    """Calculate backoff delay with exponential growth and optional jitter.
 
     Args:
         attempt: Current attempt number (0-indexed)
@@ -174,15 +171,14 @@ def calculate_backoff(
 
     Returns:
         Delay in seconds
+
     """
     delay = config.base_delay * (config.exponential_base**attempt)
     delay = min(delay, config.max_delay)
 
     if config.jitter:
         # Add random jitter up to 25% of delay
-        jitter = (
-            delay * 0.25 * random.random()
-        )  # - jitter for retry delays, not cryptographic
+        jitter = delay * 0.25 * random.random()  # - jitter for retry delays, not cryptographic
         delay += jitter
 
     return delay
@@ -191,8 +187,7 @@ def calculate_backoff(
 def retry_with_backoff(
     config: RetryConfig | None = None,
 ) -> Callable[[Callable[P, Awaitable[T]]], Callable[P, Awaitable[T]]]:
-    """
-    Decorator for async functions with exponential backoff retry.
+    """Decorator for async functions with exponential backoff retry.
 
     Usage:
         @retry_with_backoff(RetryConfig(max_attempts=3))
@@ -204,6 +199,7 @@ def retry_with_backoff(
 
     Returns:
         Decorated async function with retry behavior
+
     """
     if config is None:
         config = RetryConfig()
@@ -223,7 +219,7 @@ def retry_with_backoff(
                     # Check if this is the last attempt
                     if attempt == config.max_attempts - 1:
                         logger.error(
-                            f"All {config.max_attempts} attempts failed for {func.__name__}: {e}"
+                            f"All {config.max_attempts} attempts failed for {func.__name__}: {e}",
                         )
                         raise
 
@@ -232,7 +228,7 @@ def retry_with_backoff(
 
                     logger.warning(
                         f"Attempt {attempt + 1}/{config.max_attempts} failed for "
-                        f"{func.__name__}: {e}. Retrying in {delay:.2f}s..."
+                        f"{func.__name__}: {e}. Retrying in {delay:.2f}s...",
                     )
 
                     await asyncio.sleep(delay)
@@ -240,7 +236,8 @@ def retry_with_backoff(
             # Should not reach here, but raise if we do
             if last_exception:
                 raise last_exception
-            raise RuntimeError("Unexpected retry loop exit")
+            msg = "Unexpected retry loop exit"
+            raise RuntimeError(msg)
 
         return wrapper
 
@@ -252,8 +249,7 @@ async def with_timeout(
     timeout_seconds: float,
     operation_name: str = "operation",
 ) -> T:
-    """
-    Execute a coroutine with a timeout.
+    """Execute a coroutine with a timeout.
 
     Args:
         coro: The coroutine to execute
@@ -265,6 +261,7 @@ async def with_timeout(
 
     Raises:
         asyncio.TimeoutError: If timeout is exceeded
+
     """
     try:
         return await asyncio.wait_for(coro, timeout=timeout_seconds)
@@ -274,8 +271,7 @@ async def with_timeout(
 
 
 class ProviderRateLimiter:
-    """
-    Rate limiter that respects provider-specific limits.
+    """Rate limiter that respects provider-specific limits.
 
     Usage:
         limiter = ProviderRateLimiter("openai", rpm=60, tpm=100000)
@@ -289,7 +285,7 @@ class ProviderRateLimiter:
         provider: str,
         requests_per_minute: int = 60,
         tokens_per_minute: int = 100000,
-    ):
+    ) -> None:
         self.tracker = RateLimitTracker(
             provider=provider,
             requests_per_minute=requests_per_minute,
@@ -316,6 +312,5 @@ class ProviderRateLimiter:
         """Context manager entry - acquire permission."""
         return await self.acquire()
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(self, *args: object) -> None:
         """Context manager exit."""
-        pass

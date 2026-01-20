@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-Simple startup script for the Chimera backend server.
+"""Simple startup script for the Chimera backend server.
 Uses direct import instead of string form to avoid module reload issues.
 """
 
@@ -20,7 +19,6 @@ import uvicorn
 from app.main import app  # Direct import
 
 if __name__ == "__main__":
-    print("Starting Chimera Backend Server on port 8001 (direct import mode)...")
     uvicorn.run(
         app,  # Direct app reference instead of string
         host="0.0.0.0",

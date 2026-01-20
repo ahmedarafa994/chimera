@@ -1,5 +1,4 @@
-"""
-Unified Provider Registry - Plugin-based registry for the Dynamic Provider Selection System.
+"""Unified Provider Registry - Plugin-based registry for the Dynamic Provider Selection System.
 
 This module implements the provider registry component of the unified provider selection
 system, managing provider plugins and providing a central access point for provider operations.
@@ -21,8 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class UnifiedProviderRegistry:
-    """
-    Singleton registry for managing AI provider plugins (Unified Selection System).
+    """Singleton registry for managing AI provider plugins (Unified Selection System).
 
     This registry implements the plugin-based architecture for the Dynamic Provider
     and Model Selection System. It provides:
@@ -54,7 +52,7 @@ class UnifiedProviderRegistry:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the registry (only happens once due to singleton)."""
         if self._initialized:
             return
@@ -73,8 +71,7 @@ class UnifiedProviderRegistry:
         aliases: list[str] | None = None,
         run_hooks: bool = True,
     ) -> None:
-        """
-        Register a provider plugin with the registry.
+        """Register a provider plugin with the registry.
 
         Args:
             plugin: The provider plugin instance to register
@@ -91,23 +88,27 @@ class UnifiedProviderRegistry:
             ...     aliases=["gpt"],
             ...     run_hooks=True
             ... )
+
         """
         if not isinstance(plugin, ProviderPlugin):
-            raise TypeError(f"Plugin must implement ProviderPlugin protocol, got {type(plugin)}")
+            msg = f"Plugin must implement ProviderPlugin protocol, got {type(plugin)}"
+            raise TypeError(msg)
 
         provider_id = plugin.provider_id
         if not provider_id or not isinstance(provider_id, str):
-            raise ValueError(f"Invalid provider_id: {provider_id}")
+            msg = f"Invalid provider_id: {provider_id}"
+            raise ValueError(msg)
 
         with self._lock:
             if provider_id in self._providers:
-                raise ValueError(f"Provider '{provider_id}' is already registered")
+                msg = f"Provider '{provider_id}' is already registered"
+                raise ValueError(msg)
 
             # Validate configuration
             if not plugin.validate_config():
                 logger.warning(
                     f"Provider '{provider_id}' registered with invalid configuration. "
-                    "Some features may not work correctly."
+                    "Some features may not work correctly.",
                 )
 
             # Register provider
@@ -118,9 +119,12 @@ class UnifiedProviderRegistry:
             if aliases:
                 for alias in aliases:
                     if alias in self._aliases:
-                        raise ValueError(
+                        msg = (
                             f"Alias '{alias}' already registered for provider "
                             f"'{self._aliases[alias]}'"
+                        )
+                        raise ValueError(
+                            msg,
                         )
                     self._aliases[alias] = provider_id
                     logger.debug(f"Registered alias: {alias} -> {provider_id}")
@@ -131,7 +135,7 @@ class UnifiedProviderRegistry:
                 self._models_cache[provider_id] = models
                 logger.debug(f"Cached {len(models)} models for provider '{provider_id}'")
             except Exception as e:
-                logger.error(f"Failed to cache models for '{provider_id}': {e}")
+                logger.exception(f"Failed to cache models for '{provider_id}': {e}")
                 self._models_cache[provider_id] = []
 
             # Run initialization hooks
@@ -140,17 +144,17 @@ class UnifiedProviderRegistry:
                     try:
                         hook(plugin)
                     except Exception as e:
-                        logger.error(f"Initialization hook failed for '{provider_id}': {e}")
+                        logger.exception(f"Initialization hook failed for '{provider_id}': {e}")
 
     def unregister_provider(self, provider_id: str) -> None:
-        """
-        Unregister a provider plugin.
+        """Unregister a provider plugin.
 
         Args:
             provider_id: The provider ID or alias to unregister
 
         Raises:
             KeyError: If provider_id is not registered
+
         """
         canonical_id = self._resolve_provider_id(provider_id)
 
@@ -167,8 +171,7 @@ class UnifiedProviderRegistry:
             logger.info(f"Unregistered provider: {canonical_id}")
 
     def get_provider(self, provider_id: str) -> ProviderPlugin:
-        """
-        Get a provider plugin by ID or alias.
+        """Get a provider plugin by ID or alias.
 
         Args:
             provider_id: The provider ID or alias
@@ -178,19 +181,20 @@ class UnifiedProviderRegistry:
 
         Raises:
             KeyError: If provider is not registered
+
         """
         canonical_id = self._resolve_provider_id(provider_id)
         return self._providers[canonical_id]
 
     def has_provider(self, provider_id: str) -> bool:
-        """
-        Check if a provider is registered.
+        """Check if a provider is registered.
 
         Args:
             provider_id: The provider ID or alias to check
 
         Returns:
             True if provider is registered, False otherwise
+
         """
         try:
             self._resolve_provider_id(provider_id)
@@ -199,10 +203,11 @@ class UnifiedProviderRegistry:
             return False
 
     def list_providers(
-        self, enabled_only: bool = True, with_capabilities: set[Capability] | None = None
+        self,
+        enabled_only: bool = True,
+        with_capabilities: set[Capability] | None = None,
     ) -> list[Provider]:
-        """
-        List all registered providers.
+        """List all registered providers.
 
         Args:
             enabled_only: Only return enabled providers (default: True)
@@ -210,6 +215,7 @@ class UnifiedProviderRegistry:
 
         Returns:
             List of Provider metadata objects
+
         """
         providers = []
 
@@ -228,7 +234,7 @@ class UnifiedProviderRegistry:
 
                 providers.append(provider)
             except Exception as e:
-                logger.error(f"Failed to get metadata for provider '{plugin.provider_id}': {e}")
+                logger.exception(f"Failed to get metadata for provider '{plugin.provider_id}': {e}")
 
         return providers
 
@@ -238,8 +244,7 @@ class UnifiedProviderRegistry:
         enabled_only: bool = True,
         with_capabilities: set[Capability] | None = None,
     ) -> list[Model]:
-        """
-        Get available models, optionally filtered by provider and capabilities.
+        """Get available models, optionally filtered by provider and capabilities.
 
         Args:
             provider_id: Filter by specific provider (optional)
@@ -251,6 +256,7 @@ class UnifiedProviderRegistry:
 
         Raises:
             KeyError: If provider_id is specified but not found
+
         """
         if provider_id:
             # Get models for specific provider
@@ -280,8 +286,7 @@ class UnifiedProviderRegistry:
         return filtered_models
 
     def create_client(self, provider_id: str, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create a client instance for a specific provider and model.
+        """Create a client instance for a specific provider and model.
 
         Args:
             provider_id: The provider ID or alias
@@ -294,6 +299,7 @@ class UnifiedProviderRegistry:
         Raises:
             KeyError: If provider is not registered
             ValueError: If model is not available or invalid configuration
+
         """
         plugin = self.get_provider(provider_id)
 
@@ -302,12 +308,11 @@ class UnifiedProviderRegistry:
             logger.debug(f"Created unified client for {provider_id}/{model_id}")
             return client
         except Exception as e:
-            logger.error(f"Failed to create client for {provider_id}/{model_id}: {e}")
+            logger.exception(f"Failed to create client for {provider_id}/{model_id}: {e}")
             raise
 
     def validate_selection(self, provider_id: str, model_id: str) -> bool:
-        """
-        Validate that a provider/model selection is valid.
+        """Validate that a provider/model selection is valid.
 
         Args:
             provider_id: The provider ID or alias
@@ -315,6 +320,7 @@ class UnifiedProviderRegistry:
 
         Returns:
             True if selection is valid, False otherwise
+
         """
         try:
             # Check provider exists
@@ -329,14 +335,14 @@ class UnifiedProviderRegistry:
             return False
 
     async def health_check(self, provider_id: str | None = None) -> dict[str, bool]:
-        """
-        Perform health check on providers.
+        """Perform health check on providers.
 
         Args:
             provider_id: Check specific provider (optional, checks all if None)
 
         Returns:
             Dictionary mapping provider IDs to health status (True = healthy)
+
         """
         results = {}
 
@@ -347,7 +353,7 @@ class UnifiedProviderRegistry:
                 canonical_id = self._resolve_provider_id(provider_id)
                 results[canonical_id] = await plugin.health_check()
             except Exception as e:
-                logger.error(f"Health check failed for '{provider_id}': {e}")
+                logger.exception(f"Health check failed for '{provider_id}': {e}")
                 results[provider_id] = False
         else:
             # Check all providers
@@ -355,27 +361,27 @@ class UnifiedProviderRegistry:
                 try:
                     results[pid] = await plugin.health_check()
                 except Exception as e:
-                    logger.error(f"Health check failed for '{pid}': {e}")
+                    logger.exception(f"Health check failed for '{pid}': {e}")
                     results[pid] = False
 
         return results
 
     def add_initialization_hook(self, hook: Callable[[ProviderPlugin], None]) -> None:
-        """
-        Add a hook that runs when new providers are registered.
+        """Add a hook that runs when new providers are registered.
 
         Args:
             hook: Callable that takes a ProviderPlugin and returns None
+
         """
         self._initialization_hooks.append(hook)
         logger.debug("Added initialization hook to unified registry")
 
     def refresh_models_cache(self, provider_id: str | None = None) -> None:
-        """
-        Refresh the cached model list for provider(s).
+        """Refresh the cached model list for provider(s).
 
         Args:
             provider_id: Refresh specific provider (optional, refreshes all if None)
+
         """
         if provider_id:
             canonical_id = self._resolve_provider_id(provider_id)
@@ -385,7 +391,7 @@ class UnifiedProviderRegistry:
                 self._models_cache[canonical_id] = models
                 logger.debug(f"Refreshed model cache for '{canonical_id}': {len(models)} models")
             except Exception as e:
-                logger.error(f"Failed to refresh models for '{canonical_id}': {e}")
+                logger.exception(f"Failed to refresh models for '{canonical_id}': {e}")
         else:
             for pid, plugin in self._providers.items():
                 try:
@@ -393,14 +399,14 @@ class UnifiedProviderRegistry:
                     self._models_cache[pid] = models
                     logger.debug(f"Refreshed model cache for '{pid}': {len(models)} models")
                 except Exception as e:
-                    logger.error(f"Failed to refresh models for '{pid}': {e}")
+                    logger.exception(f"Failed to refresh models for '{pid}': {e}")
 
     def get_statistics(self) -> dict[str, Any]:
-        """
-        Get registry statistics.
+        """Get registry statistics.
 
         Returns:
             Dictionary with registry statistics
+
         """
         total_models = sum(len(models) for models in self._models_cache.values())
         enabled_providers = sum(
@@ -417,8 +423,7 @@ class UnifiedProviderRegistry:
         }
 
     def _resolve_provider_id(self, provider_id: str) -> str:
-        """
-        Resolve a provider ID or alias to the canonical provider ID.
+        """Resolve a provider ID or alias to the canonical provider ID.
 
         Args:
             provider_id: The provider ID or alias
@@ -428,6 +433,7 @@ class UnifiedProviderRegistry:
 
         Raises:
             KeyError: If provider_id is not found
+
         """
         # Check if it's an alias
         if provider_id in self._aliases:
@@ -438,7 +444,8 @@ class UnifiedProviderRegistry:
             return provider_id
 
         # Not found
-        raise KeyError(f"Provider '{provider_id}' not registered in unified registry")
+        msg = f"Provider '{provider_id}' not registered in unified registry"
+        raise KeyError(msg)
 
     def __repr__(self) -> str:
         """String representation of registry."""

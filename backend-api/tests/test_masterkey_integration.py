@@ -15,7 +15,7 @@ from app.services.llm_service import LLMService
 
 
 @pytest.mark.asyncio
-async def test_masterkey_loaded_from_yaml():
+async def test_masterkey_loaded_from_yaml() -> None:
     """Verify that the masterkey technique is correctly loaded from the YAML configuration."""
     repo = FileTechniqueRepository()
     # Force reload to ensure we pick up the new file
@@ -35,9 +35,8 @@ async def test_masterkey_loaded_from_yaml():
 
 
 @pytest.mark.asyncio
-async def test_technique_executor_routes_to_masterkey_service():
+async def test_technique_executor_routes_to_masterkey_service() -> None:
     """Verify that TechniqueExecutor properly routes 'masterkey' ID to the MasterKeyService."""
-
     # Mock dependencies
     mock_repo = AsyncMock()
     mock_repo.get_technique.return_value = JailbreakTemplate(
@@ -102,21 +101,23 @@ async def test_technique_executor_routes_to_masterkey_service():
 
 
 @pytest.mark.asyncio
-async def test_masterkey_retry_logic():
+async def test_masterkey_retry_logic() -> None:
     """Ensure that the tenacity retry logic handles LLM generation failures as intended."""
-
     mock_llm_service = MagicMock(spec=LLMService)
     service = MasterKeyService(mock_llm_service)
 
     # Setup mock to fail twice then succeed
     success_response = PromptResponse(
-        text="success", model_used="gpt-4", provider="openai", latency_ms=100
+        text="success",
+        model_used="gpt-4",
+        provider="openai",
+        latency_ms=100,
     )
 
     # Mock generate_text to raise exception twice then return success
     # Note: tenacity waits, so this test might take a couple of seconds
     mock_llm_service.generate_text = AsyncMock(
-        side_effect=[Exception("API Error 1"), Exception("API Error 2"), success_response]
+        side_effect=[Exception("API Error 1"), Exception("API Error 2"), success_response],
     )
 
     # Create a dummy request

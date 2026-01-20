@@ -1,5 +1,4 @@
-"""
-Metamorph Service - Dynamic prompt transformation and dataset management.
+"""Metamorph Service - Dynamic prompt transformation and dataset management.
 
 This service provides:
 1. Dataset loading and management for jailbreak techniques
@@ -74,8 +73,7 @@ class TransformationResult:
 
 
 class MetamorphService:
-    """
-    Service for metamorphic prompt transformations.
+    """Service for metamorphic prompt transformations.
 
     Provides dynamic dataset loading, transformer management,
     and multi-layer prompt transformation capabilities.
@@ -115,7 +113,7 @@ class MetamorphService:
         },
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.dataset_loader: dataset_loader.DatasetLoader | None = None
         from app.core.config import settings
 
@@ -156,12 +154,12 @@ class MetamorphService:
         }
 
     async def initialize(self) -> bool:
-        """
-        Initialize the service with datasets and transformers.
+        """Initialize the service with datasets and transformers.
         Should be called at application startup.
 
         Returns:
             bool: True if initialization successful
+
         """
         if self._initialized:
             logger.info("MetamorphService already initialized")
@@ -172,14 +170,14 @@ class MetamorphService:
             # backend-api/app/services/metamorph_service.py
             # -> backend-api/app/services -> backend-api/app -> backend-api -> chimera
             base_path = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "..", "imported_data")
+                os.path.join(os.path.dirname(__file__), "..", "..", "..", "imported_data"),
             )
 
             if not os.path.exists(base_path):
                 logger.warning(f"Imported data directory not found at {base_path}")
                 # Try alternative path
                 alt_path = os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), "..", "..", "imported_data")
+                    os.path.join(os.path.dirname(__file__), "..", "..", "imported_data"),
                 )
                 if os.path.exists(alt_path):
                     base_path = alt_path
@@ -215,7 +213,7 @@ class MetamorphService:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to initialize MetamorphService: {e}")
+            logger.exception(f"Failed to initialize MetamorphService: {e}")
             return False
 
     def get_available_suites(self) -> list[str]:
@@ -223,14 +221,14 @@ class MetamorphService:
         return list(self.technique_suites.keys())
 
     def get_suite_info(self, suite_name: str) -> dict[str, Any] | None:
-        """
-        Get information about a specific technique suite.
+        """Get information about a specific technique suite.
 
         Args:
             suite_name: Name of the technique suite
 
         Returns:
             Dict with suite information or None if not found
+
         """
         if suite_name not in self.technique_suites:
             return None
@@ -244,14 +242,14 @@ class MetamorphService:
         }
 
     def get_provider_transformation_strategy(self, provider: str | None = None) -> dict[str, Any]:
-        """
-        Get transformation strategy for a specific provider.
+        """Get transformation strategy for a specific provider.
 
         Args:
             provider: Provider name (uses default if None)
 
         Returns:
             Strategy dict with preferred_suites, output_format, max_obfuscation
+
         """
         config_manager = self._get_config_manager()
 
@@ -277,18 +275,19 @@ class MetamorphService:
 
         # Fall back to default strategies
         return self.PROVIDER_TRANSFORMATION_STRATEGIES.get(
-            provider.lower(), self.PROVIDER_TRANSFORMATION_STRATEGIES["openai"]
+            provider.lower(),
+            self.PROVIDER_TRANSFORMATION_STRATEGIES["openai"],
         )
 
     def select_optimal_provider_for_transformation(self, suite_name: str) -> str | None:
-        """
-        Select the best provider for a specific transformation suite.
+        """Select the best provider for a specific transformation suite.
 
         Args:
             suite_name: Name of the transformation suite
 
         Returns:
             Provider name or None
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -307,14 +306,16 @@ class MetamorphService:
             return config.global_config.default_provider
 
         except Exception as e:
-            logger.error(f"Error selecting provider: {e}")
+            logger.exception(f"Error selecting provider: {e}")
             return None
 
     def estimate_transformation_cost(
-        self, prompt: str, provider: str | None = None, suite_name: str = "subtle_persuasion"
+        self,
+        prompt: str,
+        provider: str | None = None,
+        suite_name: str = "subtle_persuasion",
     ) -> float | None:
-        """
-        Estimate cost for a transformation operation.
+        """Estimate cost for a transformation operation.
 
         Args:
             prompt: Prompt to transform
@@ -323,6 +324,7 @@ class MetamorphService:
 
         Returns:
             Estimated cost in USD or None
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -353,12 +355,11 @@ class MetamorphService:
                 output_tokens=output_tokens,
             )
         except Exception as e:
-            logger.error(f"Error estimating cost: {e}")
+            logger.exception(f"Error estimating cost: {e}")
             return None
 
     def format_output_for_provider(self, transformed: str, provider: str | None = None) -> str:
-        """
-        Format transformed output according to provider preferences.
+        """Format transformed output according to provider preferences.
 
         Args:
             transformed: Transformed prompt
@@ -366,16 +367,17 @@ class MetamorphService:
 
         Returns:
             Formatted output string
+
         """
         strategy = self.get_provider_transformation_strategy(provider)
         output_format = strategy.get("output_format", "conversational")
 
         if output_format == "code_block":
             return f"```\n{transformed}\n```"
-        elif output_format == "structured":
+        if output_format == "structured":
             return f"<prompt>\n{transformed}\n</prompt>"
-        else:  # conversational
-            return transformed
+        # conversational
+        return transformed
 
     def transform(
         self,
@@ -386,8 +388,7 @@ class MetamorphService:
         provider: str | None = None,
         cost_aware: bool = True,
     ) -> TransformationResult:
-        """
-        Transform a prompt using the specified technique suite.
+        """Transform a prompt using the specified technique suite.
 
         Now with config-driven provider selection and cost awareness.
 
@@ -401,6 +402,7 @@ class MetamorphService:
 
         Returns:
             TransformationResult with transformed prompt and metadata
+
         """
         # Get provider-specific strategy
         strategy = self.get_provider_transformation_strategy(provider)
@@ -410,8 +412,7 @@ class MetamorphService:
         effective_potency = min(potency, max_obfuscation)
         if effective_potency != potency:
             logger.info(
-                f"Adjusted potency from {potency} to {effective_potency} "
-                f"for provider constraints"
+                f"Adjusted potency from {potency} to {effective_potency} for provider constraints",
             )
 
         # Cost-aware provider selection
@@ -432,8 +433,7 @@ class MetamorphService:
             for pref_suite in preferred:
                 if pref_suite in self.technique_suites:
                     logger.info(
-                        f"Using provider-preferred suite '{pref_suite}' "
-                        f"instead of '{suite_name}'"
+                        f"Using provider-preferred suite '{pref_suite}' instead of '{suite_name}'",
                     )
                     suite_name = pref_suite
                     break
@@ -442,7 +442,11 @@ class MetamorphService:
                 if not self.technique_suites:
                     logger.error("No technique suites loaded!")
                     return TransformationResult(
-                        prompt, prompt, [], 0, {"error": "No suites loaded"}
+                        prompt,
+                        prompt,
+                        [],
+                        0,
+                        {"error": "No suites loaded"},
                     )
                 logger.warning(f"Unknown suite '{suite_name}', using first available")
                 suite_name = next(iter(self.technique_suites.keys()))
@@ -521,14 +525,14 @@ class MetamorphService:
         )
 
     def get_random_prompt(self, dataset_name: str) -> str | None:
-        """
-        Get a random prompt from a loaded dataset.
+        """Get a random prompt from a loaded dataset.
 
         Args:
             dataset_name: Name of the dataset (e.g., 'GPTFuzz', 'PAIR')
 
         Returns:
             Random prompt string or None if dataset not available
+
         """
         if not self.dataset_loader:
             logger.warning("DatasetLoader not initialized")
@@ -537,11 +541,11 @@ class MetamorphService:
         return self.dataset_loader.get_random_prompt(dataset_name)
 
     def get_dataset_stats(self) -> dict[str, Any]:
-        """
-        Get statistics about loaded datasets.
+        """Get statistics about loaded datasets.
 
         Returns:
             Dict with dataset statistics
+
         """
         if not self.dataset_loader:
             return {"error": "DatasetLoader not initialized", "datasets": {}}
@@ -557,11 +561,11 @@ class MetamorphService:
         return stats
 
     def get_cost_summary(self) -> dict[str, Any]:
-        """
-        Get summary of accumulated transformation costs.
+        """Get summary of accumulated transformation costs.
 
         Returns:
             Dict with cost tracking information
+
         """
         return {
             "total_cost_usd": sum(self._cost_tracker.values()),
@@ -574,11 +578,11 @@ class MetamorphService:
         self._cost_tracker.clear()
 
     def get_available_providers(self) -> list[str]:
-        """
-        Get list of available providers from config.
+        """Get list of available providers from config.
 
         Returns:
             List of provider names
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -588,7 +592,7 @@ class MetamorphService:
             config = config_manager.get_config()
             return [p.provider_id for p in config.get_enabled_providers()]
         except Exception as e:
-            logger.error(f"Error getting providers: {e}")
+            logger.exception(f"Error getting providers: {e}")
             return list(self.PROVIDER_TRANSFORMATION_STRATEGIES.keys())
 
     @property

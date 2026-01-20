@@ -1,5 +1,4 @@
-"""
-Campaign Sharing API Endpoints
+"""Campaign Sharing API Endpoints.
 
 Provides endpoints for managing campaign sharing:
 - POST /campaigns/{id}/share - Share campaign with a user
@@ -11,6 +10,7 @@ All endpoints require authentication and check campaign ownership/admin permissi
 
 import logging
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -34,8 +34,7 @@ router = APIRouter()
 
 
 async def get_db_session() -> AsyncSession:
-    """
-    Get an async database session for the request.
+    """Get an async database session for the request.
 
     Yields a session and ensures proper cleanup.
     """
@@ -71,7 +70,8 @@ class ShareCampaignRequest(BaseModel):
         """Validate permission is valid."""
         v = v.lower().strip()
         if v not in ("view", "edit"):
-            raise ValueError("Permission must be 'view' or 'edit'")
+            msg = "Permission must be 'view' or 'edit'"
+            raise ValueError(msg)
         return v
 
     class Config:
@@ -79,7 +79,7 @@ class ShareCampaignRequest(BaseModel):
             "example": {
                 "email": "colleague@example.com",
                 "permission": "edit",
-            }
+            },
         }
 
 
@@ -108,7 +108,7 @@ class CampaignShareResponse(BaseModel):
                 "shared_by_email": "owner@example.com",
                 "created_at": "2024-01-15T10:30:00Z",
                 "updated_at": None,
-            }
+            },
         }
 
 
@@ -153,8 +153,7 @@ async def _get_authenticated_user(
     current_user: TokenPayload,
     session: AsyncSession,
 ) -> User:
-    """
-    Get the authenticated database user from the JWT token.
+    """Get the authenticated database user from the JWT token.
 
     Args:
         current_user: Token payload from JWT authentication
@@ -165,6 +164,7 @@ async def _get_authenticated_user(
 
     Raises:
         HTTPException: If user not found or is API client
+
     """
     # Check if this is an API client (not a database user)
     if current_user.type == "api_key" or current_user.sub == "api_client":
@@ -207,8 +207,7 @@ async def _get_authenticated_user(
 
 
 async def _get_campaign(session: AsyncSession, campaign_id: int) -> Campaign:
-    """
-    Get a campaign by ID.
+    """Get a campaign by ID.
 
     Args:
         session: Database session
@@ -219,6 +218,7 @@ async def _get_campaign(session: AsyncSession, campaign_id: int) -> Campaign:
 
     Raises:
         HTTPException: If campaign not found
+
     """
     stmt = select(Campaign).where(Campaign.id == campaign_id)
     result = await session.execute(stmt)
@@ -238,8 +238,7 @@ async def _check_share_permission(
     user: User,
     campaign: Campaign,
 ) -> None:
-    """
-    Check if user can manage shares for a campaign.
+    """Check if user can manage shares for a campaign.
 
     Only owner and admins can manage sharing.
 
@@ -250,6 +249,7 @@ async def _check_share_permission(
 
     Raises:
         HTTPException: If user cannot manage shares
+
     """
     auth_service = CampaignAuthService(session)
     access_result = await auth_service.check_access(
@@ -261,7 +261,7 @@ async def _check_share_permission(
     if not access_result.can_manage_shares:
         logger.warning(
             f"User {user.id} attempted to manage shares for campaign {campaign.id} "
-            f"without permission"
+            f"without permission",
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -274,8 +274,7 @@ def _share_to_response(
     user: User,
     shared_by: User | None = None,
 ) -> CampaignShareResponse:
-    """
-    Convert a CampaignShare model to a CampaignShareResponse.
+    """Convert a CampaignShare model to a CampaignShareResponse.
 
     Args:
         share: CampaignShare model
@@ -284,6 +283,7 @@ def _share_to_response(
 
     Returns:
         CampaignShareResponse
+
     """
     return CampaignShareResponse(
         id=share.id,
@@ -306,7 +306,6 @@ def _share_to_response(
 @router.post(
     "/{campaign_id}/share",
     status_code=status.HTTP_201_CREATED,
-    response_model=ShareCampaignSuccessResponse,
     summary="Share campaign with a user",
     description="""
 Share a campaign with another user by their email address.
@@ -367,11 +366,10 @@ async def share_campaign(
     campaign_id: int,
     request_data: ShareCampaignRequest,
     request: Request,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ShareCampaignSuccessResponse:
-    """
-    Share a campaign with another user.
+    """Share a campaign with another user.
 
     Creates a new share or updates an existing one.
     """
@@ -421,7 +419,7 @@ async def share_campaign(
         and_(
             CampaignShare.campaign_id == campaign_id,
             CampaignShare.user_id == target_user.id,
-        )
+        ),
     )
     result = await session.execute(stmt)
     existing_share = result.scalar_one_or_none()
@@ -473,7 +471,7 @@ async def share_campaign(
 
         logger.info(
             f"Campaign {campaign_id} shared with user {target_user.id} "
-            f"by user {user.id} (permission={permission.value})"
+            f"by user {user.id} (permission={permission.value})",
         )
 
         return ShareCampaignSuccessResponse(
@@ -497,7 +495,6 @@ async def share_campaign(
 @router.get(
     "/{campaign_id}/shares",
     status_code=status.HTTP_200_OK,
-    response_model=CampaignShareListResponse,
     summary="List all shares for a campaign",
     description="""
 List all users who have been granted access to a campaign.
@@ -545,11 +542,10 @@ List all users who have been granted access to a campaign.
 )
 async def list_campaign_shares(
     campaign_id: int,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> CampaignShareListResponse:
-    """
-    List all shares for a campaign.
+    """List all shares for a campaign.
 
     Returns all users who have been granted access to the campaign.
     """
@@ -584,7 +580,7 @@ async def list_campaign_shares(
         share_responses.append(_share_to_response(share, share_user, shared_by))
 
     logger.info(
-        f"Listed {len(share_responses)} shares for campaign {campaign_id} " f"by user {user.id}"
+        f"Listed {len(share_responses)} shares for campaign {campaign_id} by user {user.id}",
     )
 
     return CampaignShareListResponse(
@@ -599,7 +595,6 @@ async def list_campaign_shares(
 @router.delete(
     "/{campaign_id}/share/{target_user_id}",
     status_code=status.HTTP_200_OK,
-    response_model=RemoveShareResponse,
     summary="Remove a campaign share",
     description="""
 Remove a user's access to a campaign.
@@ -632,11 +627,10 @@ async def remove_campaign_share(
     campaign_id: int,
     target_user_id: int,
     request: Request,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> RemoveShareResponse:
-    """
-    Remove a user's access to a campaign.
+    """Remove a user's access to a campaign.
 
     Deletes the share record, revoking the user's access.
     """
@@ -654,7 +648,7 @@ async def remove_campaign_share(
         and_(
             CampaignShare.campaign_id == campaign_id,
             CampaignShare.user_id == target_user_id,
-        )
+        ),
     )
     result = await session.execute(stmt)
     share = result.scalar_one_or_none()
@@ -696,7 +690,7 @@ async def remove_campaign_share(
 
         logger.info(
             f"Removed share for user {target_user_id} from campaign {campaign_id} "
-            f"by user {user.id}"
+            f"by user {user.id}",
         )
 
         return RemoveShareResponse(
@@ -707,8 +701,7 @@ async def remove_campaign_share(
     except Exception as e:
         await session.rollback()
         logger.error(
-            f"Failed to remove share for user {target_user_id} "
-            f"from campaign {campaign_id}: {e}",
+            f"Failed to remove share for user {target_user_id} from campaign {campaign_id}: {e}",
             exc_info=True,
         )
         raise HTTPException(

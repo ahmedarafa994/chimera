@@ -1,5 +1,4 @@
-"""
-Hierarchical Genetic Search Service for AutoDAN.
+"""Hierarchical Genetic Search Service for AutoDAN.
 
 Implements bi-level evolution:
 - Level 1: Meta-strategy evolution (abstract attack templates)
@@ -37,8 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class HierarchicalGeneticSearchService:
-    """
-    Hierarchical Genetic Search service implementing bi-level evolution.
+    """Hierarchical Genetic Search service implementing bi-level evolution.
 
     This service extends the AutoDAN-Turbo lifelong learning engine with:
     - Meta-strategy evolution using LLM-based mutation/crossover
@@ -52,13 +50,13 @@ class HierarchicalGeneticSearchService:
         self,
         llm_client: ChimeraLLMAdapter | None = None,
         lifelong_engine: AutoDANTurboLifelongEngine | None = None,
-    ):
-        """
-        Initialize the hierarchical search service.
+    ) -> None:
+        """Initialize the hierarchical search service.
 
         Args:
             llm_client: LLM client for meta-strategy evolution
             lifelong_engine: Existing lifelong engine (optional)
+
         """
         self.llm_client = llm_client
         self.lifelong_engine = lifelong_engine
@@ -67,16 +65,17 @@ class HierarchicalGeneticSearchService:
         logger.info("HierarchicalGeneticSearchService initialized")
 
     async def execute_search(
-        self, request: HierarchicalSearchRequest
+        self,
+        request: HierarchicalSearchRequest,
     ) -> HierarchicalSearchResponse:
-        """
-        Execute hierarchical genetic search.
+        """Execute hierarchical genetic search.
 
         Args:
             request: Search configuration
 
         Returns:
             Search results with best prompt and metrics
+
         """
         start_time = datetime.utcnow()
 
@@ -92,7 +91,9 @@ class HierarchicalGeneticSearchService:
             )
 
             self.llm_client = ChimeraLLMAdapter(
-                model_name=request.model, provider=request.provider, retry_config=retry_config
+                model_name=request.model,
+                provider=request.provider,
+                retry_config=retry_config,
             )
 
         # Initialize lifelong engine if not provided
@@ -101,7 +102,7 @@ class HierarchicalGeneticSearchService:
 
         logger.info(
             f"Starting hierarchical search: population={request.population_size}, "
-            f"generations={request.generations}"
+            f"generations={request.generations}",
         )
 
         # Initialize population with meta-strategies
@@ -118,7 +119,9 @@ class HierarchicalGeneticSearchService:
 
             # Phase 1: Meta-strategy evolution (Level 1)
             offspring_strategies = await self._evolve_meta_strategies(
-                population, request.mutation_rate, request.crossover_rate
+                population,
+                request.mutation_rate,
+                request.crossover_rate,
             )
 
             # Phase 2: Prompt instantiation (Level 2)
@@ -144,12 +147,15 @@ class HierarchicalGeneticSearchService:
 
             logger.info(
                 f"Gen {generation + 1}: best={metrics.best_fitness:.2f}, "
-                f"avg={metrics.avg_fitness:.2f}, diversity={metrics.diversity_score:.2f}"
+                f"avg={metrics.avg_fitness:.2f}, diversity={metrics.diversity_score:.2f}",
             )
 
             # Selection for next generation
             population = self._select_next_generation(
-                offspring_strategies, scores, request.elitism_ratio, request.diversity_weight
+                offspring_strategies,
+                scores,
+                request.elitism_ratio,
+                request.diversity_weight,
             )
 
             # Early stopping if high score achieved
@@ -168,7 +174,9 @@ class HierarchicalGeneticSearchService:
         )
 
     def _create_lifelong_engine(
-        self, model_name: str | None, provider: str | None
+        self,
+        model_name: str | None,
+        provider: str | None,
     ) -> AutoDANTurboLifelongEngine:
         """Create a lifelong learning engine."""
         retry_config = RetryConfig(
@@ -181,7 +189,9 @@ class HierarchicalGeneticSearchService:
         )
 
         adapter = ChimeraLLMAdapter(
-            model_name=model_name, provider=provider, retry_config=retry_config
+            model_name=model_name,
+            provider=provider,
+            retry_config=retry_config,
         )
 
         return AutoDANTurboLifelongEngine(
@@ -194,7 +204,9 @@ class HierarchicalGeneticSearchService:
         )
 
     async def _initialize_population(
-        self, request: str, population_size: int
+        self,
+        request: str,
+        population_size: int,
     ) -> list[MetaStrategy]:
         """Initialize population with meta-strategies."""
         population = []
@@ -242,13 +254,18 @@ Be creative and try a unique approach."""
 
             return MetaStrategy(template=template, description=description, examples=[example])
         except Exception as e:
-            logger.error(f"Failed to generate creative strategy: {e}")
+            logger.exception(f"Failed to generate creative strategy: {e}")
             return MetaStrategy(
-                template="{payload}", description="Fallback strategy", examples=[request]
+                template="{payload}",
+                description="Fallback strategy",
+                examples=[request],
             )
 
     async def _evolve_meta_strategies(
-        self, population: list[MetaStrategy], mutation_rate: float, crossover_rate: float
+        self,
+        population: list[MetaStrategy],
+        mutation_rate: float,
+        crossover_rate: float,
     ) -> list[MetaStrategy]:
         """Evolve meta-strategies using LLM-based operators."""
         offspring = []
@@ -287,11 +304,13 @@ Create a similar but slightly different strategy. Keep the core idea but vary th
                 examples=strategy.examples,
             )
         except Exception as e:
-            logger.error(f"Mutation failed: {e}")
+            logger.exception(f"Mutation failed: {e}")
             return strategy
 
     async def _crossover_strategies(
-        self, parent1: MetaStrategy, parent2: MetaStrategy
+        self,
+        parent1: MetaStrategy,
+        parent2: MetaStrategy,
     ) -> MetaStrategy:
         """Crossover two meta-strategies using LLM."""
         prompt = f"""Combine these two jailbreak strategies:
@@ -311,7 +330,7 @@ Create a hybrid strategy that combines elements from both."""
                 examples=parent1.examples + parent2.examples,
             )
         except Exception as e:
-            logger.error(f"Crossover failed: {e}")
+            logger.exception(f"Crossover failed: {e}")
             return parent1
 
     async def _instantiate_prompts(self, request: str, strategies: list[MetaStrategy]) -> list[str]:
@@ -337,11 +356,14 @@ Create a hybrid strategy that combines elements from both."""
                 # Use lifelong engine's scorer
                 response = await self._get_target_response(prompt)
                 scoring = await self.lifelong_engine.scorer.score(
-                    request, prompt, response, detailed=True
+                    request,
+                    prompt,
+                    response,
+                    detailed=True,
                 )
                 scores.append(scoring.score)
             except Exception as e:
-                logger.error(f"Evaluation failed: {e}")
+                logger.exception(f"Evaluation failed: {e}")
                 scores.append(0.0)
 
         return scores
@@ -354,12 +376,11 @@ Create a hybrid strategy that combines elements from both."""
                 if hasattr(response, "content"):
                     return response.content
                 return str(response)
-            elif hasattr(self.llm_client, "chat"):
+            if hasattr(self.llm_client, "chat"):
                 return await self.llm_client.chat(prompt)
-            else:
-                return ""
+            return ""
         except Exception as e:
-            logger.error(f"Target response failed: {e}")
+            logger.exception(f"Target response failed: {e}")
             return ""
 
     async def _call_llm(self, prompt: str) -> str:
@@ -370,12 +391,11 @@ Create a hybrid strategy that combines elements from both."""
                 if hasattr(response, "content"):
                     return response.content
                 return str(response)
-            elif hasattr(self.llm_client, "chat"):
+            if hasattr(self.llm_client, "chat"):
                 return await self.llm_client.chat(prompt)
-            else:
-                return ""
+            return ""
         except Exception as e:
-            logger.error(f"LLM call failed: {e}")
+            logger.exception(f"LLM call failed: {e}")
             return ""
 
     def _calculate_diversity(self, prompts: list[str]) -> float:

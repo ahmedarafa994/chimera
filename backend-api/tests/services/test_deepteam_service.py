@@ -1,5 +1,4 @@
-"""
-Tests for DeepTeam Service.
+"""Tests for DeepTeam Service.
 
 Tests the multi-agent adversarial testing framework including
 agent coordination, attack generation, and evaluation.
@@ -22,29 +21,29 @@ class TestDeepTeamService:
                     return_value={
                         "attack_prompt": "Test attack prompt",
                         "technique": "multi_turn",
-                    }
-                )
+                    },
+                ),
             ),
             "evaluator": MagicMock(
                 evaluate=AsyncMock(
                     return_value={
                         "score": 7.5,
                         "is_successful": True,
-                    }
-                )
+                    },
+                ),
             ),
             "refiner": MagicMock(
                 refine=AsyncMock(
                     return_value={
                         "refined_prompt": "Refined attack prompt",
                         "improvements": ["Added context"],
-                    }
-                )
+                    },
+                ),
             ),
         }
 
     @pytest.mark.asyncio
-    async def test_multi_agent_attack_generation(self, mock_deepteam_agents):
+    async def test_multi_agent_attack_generation(self, mock_deepteam_agents) -> None:
         """Test multi-agent coordinated attack generation."""
         # Arrange
         target = "gpt-4"
@@ -61,7 +60,7 @@ class TestDeepTeamService:
         assert attack_result["technique"] == "multi_turn"
 
     @pytest.mark.asyncio
-    async def test_attack_evaluation(self, mock_deepteam_agents):
+    async def test_attack_evaluation(self, mock_deepteam_agents) -> None:
         """Test attack evaluation by evaluator agent."""
         # Arrange
         attack_prompt = "Test attack prompt"
@@ -78,7 +77,7 @@ class TestDeepTeamService:
         assert "is_successful" in eval_result
 
     @pytest.mark.asyncio
-    async def test_attack_refinement(self, mock_deepteam_agents):
+    async def test_attack_refinement(self, mock_deepteam_agents) -> None:
         """Test attack refinement by refiner agent."""
         # Arrange
         initial_attack = "Initial attack prompt"
@@ -95,7 +94,7 @@ class TestDeepTeamService:
         assert len(refined["improvements"]) > 0
 
     @pytest.mark.asyncio
-    async def test_full_attack_cycle(self, mock_deepteam_agents):
+    async def test_full_attack_cycle(self, mock_deepteam_agents) -> None:
         """Test complete attack-evaluate-refine cycle."""
         # Arrange
         agents = mock_deepteam_agents
@@ -130,7 +129,7 @@ class TestDeepTeamService:
 class TestDeepTeamVulnerabilities:
     """Tests for vulnerability detection."""
 
-    def test_vulnerability_classification(self):
+    def test_vulnerability_classification(self) -> None:
         """Test vulnerability type classification."""
         vulnerabilities = [
             {"type": "prompt_injection", "severity": "high"},
@@ -144,7 +143,7 @@ class TestDeepTeamVulnerabilities:
         assert len(critical) == 1
         assert len(high) == 1
 
-    def test_vulnerability_scoring(self):
+    def test_vulnerability_scoring(self) -> None:
         """Test vulnerability severity scoring."""
         severity_scores = {
             "low": 1,
@@ -163,11 +162,11 @@ class TestDeepTeamCallbacks:
     """Tests for DeepTeam callback system."""
 
     @pytest.mark.asyncio
-    async def test_progress_callback(self):
+    async def test_progress_callback(self) -> None:
         """Test progress callback invocation."""
         progress_updates = []
 
-        def on_progress(update):
+        def on_progress(update) -> None:
             progress_updates.append(update)
 
         # Simulate progress updates
@@ -178,11 +177,11 @@ class TestDeepTeamCallbacks:
         assert progress_updates[-1]["iteration"] == 4
 
     @pytest.mark.asyncio
-    async def test_completion_callback(self):
+    async def test_completion_callback(self) -> None:
         """Test completion callback."""
         completion_result = None
 
-        def on_complete(result):
+        def on_complete(result) -> None:
             nonlocal completion_result
             completion_result = result
 
@@ -196,7 +195,7 @@ class TestDeepTeamCallbacks:
 class TestDeepTeamConfig:
     """Tests for DeepTeam configuration."""
 
-    def test_default_config(self):
+    def test_default_config(self) -> None:
         """Test default configuration values."""
         config = {
             "max_iterations": 50,
@@ -209,7 +208,7 @@ class TestDeepTeamConfig:
         assert config["num_agents"] == 3
         assert config["target_score"] == 7.0
 
-    def test_config_validation(self):
+    def test_config_validation(self) -> None:
         """Test configuration validation."""
         valid_config = {
             "max_iterations": 100,

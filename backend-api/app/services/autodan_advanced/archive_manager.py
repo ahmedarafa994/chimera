@@ -1,5 +1,4 @@
-"""
-Dynamic Archive Manager for AutoDAN.
+"""Dynamic Archive Manager for AutoDAN.
 
 Implements Success Archive and Novelty Archive for diversity maintenance.
 """
@@ -16,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DynamicArchiveManager:
-    """
-    Manages Success and Novelty archives for AutoDAN.
+    """Manages Success and Novelty archives for AutoDAN.
 
     The archive maintains:
     - Success Archive: Prompts with Score > Threshold
@@ -33,9 +31,8 @@ class DynamicArchiveManager:
         max_archive_size: int = 1000,
         alpha: float = 0.7,  # Weight for score
         beta: float = 0.3,  # Weight for novelty
-    ):
-        """
-        Initialize the archive manager.
+    ) -> None:
+        """Initialize the archive manager.
 
         Args:
             success_threshold: Minimum score for success archive
@@ -43,6 +40,7 @@ class DynamicArchiveManager:
             max_archive_size: Maximum entries per archive
             alpha: Weight for score in selection
             beta: Weight for novelty in selection
+
         """
         self.success_threshold = success_threshold
         self.novelty_threshold = novelty_threshold
@@ -57,14 +55,17 @@ class DynamicArchiveManager:
         logger.info(
             f"DynamicArchiveManager initialized: "
             f"success_threshold={success_threshold}, "
-            f"novelty_threshold={novelty_threshold}"
+            f"novelty_threshold={novelty_threshold}",
         )
 
     def add_entry(
-        self, prompt: str, score: float, technique_type: str, embedding: np.ndarray | None = None
+        self,
+        prompt: str,
+        score: float,
+        technique_type: str,
+        embedding: np.ndarray | None = None,
     ) -> bool:
-        """
-        Add an entry to the appropriate archive(s).
+        """Add an entry to the appropriate archive(s).
 
         Args:
             prompt: The prompt text
@@ -74,6 +75,7 @@ class DynamicArchiveManager:
 
         Returns:
             True if added to any archive
+
         """
         added = False
 
@@ -108,8 +110,7 @@ class DynamicArchiveManager:
         return added
 
     def sample_diverse_elites(self, k: int) -> list[str]:
-        """
-        Sample k diverse elite prompts from archives.
+        """Sample k diverse elite prompts from archives.
 
         Uses selection probability: P(select) ∝ α·Score + β·Novelty
 
@@ -118,6 +119,7 @@ class DynamicArchiveManager:
 
         Returns:
             List of selected prompts
+
         """
         # Combine archives
         all_entries = self.success_archive + self.novelty_archive
@@ -201,8 +203,7 @@ class DynamicArchiveManager:
             self.novelty_archive.pop(0)
 
     def _calculate_novelty(self, embedding: np.ndarray) -> float:
-        """
-        Calculate novelty score based on semantic distance.
+        """Calculate novelty score based on semantic distance.
 
         Novelty is the average distance to k-nearest neighbors in success archive.
         """

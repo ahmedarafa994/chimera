@@ -1,5 +1,4 @@
-"""
-Provider Error Schemas for Unified Provider System
+"""Provider Error Schemas for Unified Provider System.
 
 This module defines normalized error types and schemas for handling
 provider-specific errors in a unified way across all AI providers.
@@ -18,8 +17,7 @@ from pydantic import BaseModel, Field
 
 
 class ProviderErrorCode(str, Enum):
-    """
-    Normalized error codes for provider-specific errors.
+    """Normalized error codes for provider-specific errors.
 
     These codes provide a unified way to categorize errors from
     different providers, enabling consistent error handling.
@@ -77,8 +75,7 @@ class ErrorSeverity(str, Enum):
 
 
 class RetryStrategy(BaseModel):
-    """
-    Strategy for retrying failed requests.
+    """Strategy for retrying failed requests.
 
     Provides guidance on whether and how to retry a failed request,
     with configurable backoff and jitter settings.
@@ -87,33 +84,44 @@ class RetryStrategy(BaseModel):
     should_retry: bool = Field(description="Whether the request should be retried")
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum number of retry attempts")
     base_delay_seconds: float = Field(
-        default=1.0, ge=0, description="Initial delay before first retry in seconds"
+        default=1.0,
+        ge=0,
+        description="Initial delay before first retry in seconds",
     )
     backoff_multiplier: float = Field(
-        default=2.0, ge=1.0, le=10.0, description="Multiplier for exponential backoff"
+        default=2.0,
+        ge=1.0,
+        le=10.0,
+        description="Multiplier for exponential backoff",
     )
     max_delay_seconds: float = Field(
-        default=60.0, ge=0, description="Maximum delay between retries in seconds"
+        default=60.0,
+        ge=0,
+        description="Maximum delay between retries in seconds",
     )
     jitter: bool = Field(default=True, description="Whether to add random jitter to delays")
     jitter_factor: float = Field(
-        default=0.1, ge=0, le=1.0, description="Factor for jitter (0.1 = ±10%)"
+        default=0.1,
+        ge=0,
+        le=1.0,
+        description="Factor for jitter (0.1 = ±10%)",
     )
 
     def calculate_delay(self, attempt: int) -> float:
-        """
-        Calculate the delay for a specific retry attempt.
+        """Calculate the delay for a specific retry attempt.
 
         Args:
             attempt: The retry attempt number (0-indexed)
 
         Returns:
             Delay in seconds before the next retry
+
         """
         import random
 
         delay = min(
-            self.base_delay_seconds * (self.backoff_multiplier**attempt), self.max_delay_seconds
+            self.base_delay_seconds * (self.backoff_multiplier**attempt),
+            self.max_delay_seconds,
         )
 
         if self.jitter:
@@ -124,35 +132,42 @@ class RetryStrategy(BaseModel):
 
 
 class FallbackSuggestion(BaseModel):
-    """
-    Suggestion for fallback action when a provider/model fails.
+    """Suggestion for fallback action when a provider/model fails.
 
     Provides alternative providers or models that may be used
     when the primary selection is unavailable.
     """
 
     alternative_provider: str | None = Field(
-        default=None, description="Alternative provider to use"
+        default=None,
+        description="Alternative provider to use",
     )
     alternative_model: str | None = Field(default=None, description="Alternative model to use")
     reason: str = Field(description="Reason for the fallback suggestion")
     confidence: float = Field(
-        default=0.8, ge=0, le=1.0, description="Confidence that the fallback will work"
+        default=0.8,
+        ge=0,
+        le=1.0,
+        description="Confidence that the fallback will work",
     )
     capability_match: float = Field(
-        default=1.0, ge=0, le=1.0, description="How well the fallback matches required capabilities"
+        default=1.0,
+        ge=0,
+        le=1.0,
+        description="How well the fallback matches required capabilities",
     )
     estimated_latency_change: float | None = Field(
-        default=None, description="Estimated latency change in ms (positive = slower)"
+        default=None,
+        description="Estimated latency change in ms (positive = slower)",
     )
     estimated_cost_change: float | None = Field(
-        default=None, description="Estimated cost change as a multiplier (1.0 = same cost)"
+        default=None,
+        description="Estimated cost change as a multiplier (1.0 = same cost)",
     )
 
 
 class NormalizedProviderError(BaseModel):
-    """
-    Normalized error from any AI provider.
+    """Normalized error from any AI provider.
 
     This class provides a unified error format that normalizes
     provider-specific error codes and messages into a consistent
@@ -174,11 +189,13 @@ class NormalizedProviderError(BaseModel):
 
     # Retry guidance
     retry_after_seconds: int | None = Field(
-        default=None, description="Seconds to wait before retrying (from provider)"
+        default=None,
+        description="Seconds to wait before retrying (from provider)",
     )
     is_retryable: bool = Field(default=False, description="Whether the error is retryable")
     retry_strategy: RetryStrategy | None = Field(
-        default=None, description="Recommended retry strategy"
+        default=None,
+        description="Recommended retry strategy",
     )
 
     # User guidance
@@ -187,15 +204,18 @@ class NormalizedProviderError(BaseModel):
 
     # Fallback options
     fallback_suggestion: FallbackSuggestion | None = Field(
-        default=None, description="Suggested fallback if available"
+        default=None,
+        description="Suggested fallback if available",
     )
 
     # Metadata
     severity: ErrorSeverity = Field(
-        default=ErrorSeverity.MEDIUM, description="Severity level of the error"
+        default=ErrorSeverity.MEDIUM,
+        description="Severity level of the error",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When the error occurred"
+        default_factory=datetime.utcnow,
+        description="When the error occurred",
     )
     request_id: str | None = Field(default=None, description="Request ID for tracing")
     trace_id: str | None = Field(default=None, description="Distributed trace ID")
@@ -230,7 +250,7 @@ class NormalizedProviderError(BaseModel):
                 "provider": self.provider,
                 "is_retryable": self.is_retryable,
                 "suggested_action": self.suggested_action,
-            }
+            },
         }
 
         if self.retry_after_seconds:
@@ -282,16 +302,17 @@ class ErrorMetrics(BaseModel):
 
 
 class ProviderException(Exception):
-    """
-    Base exception for provider-related errors.
+    """Base exception for provider-related errors.
 
     This exception wraps provider-specific errors and carries
     the normalized error information for consistent handling.
     """
 
     def __init__(
-        self, normalized_error: NormalizedProviderError, original_exception: Exception | None = None
-    ):
+        self,
+        normalized_error: NormalizedProviderError,
+        original_exception: Exception | None = None,
+    ) -> None:
         self.normalized_error = normalized_error
         self.original_exception = original_exception
         super().__init__(normalized_error.message)
@@ -318,9 +339,7 @@ class ProviderException(Exception):
 
 
 class SelectionValidationException(Exception):
-    """
-    Exception raised when provider/model selection validation fails.
-    """
+    """Exception raised when provider/model selection validation fails."""
 
     def __init__(
         self,
@@ -328,7 +347,7 @@ class SelectionValidationException(Exception):
         provider: str | None = None,
         model: str | None = None,
         validation_errors: list[str] | None = None,
-    ):
+    ) -> None:
         self.provider = provider
         self.model = model
         self.validation_errors = validation_errors or []
@@ -338,43 +357,29 @@ class SelectionValidationException(Exception):
 class ProviderRateLimitException(ProviderException):
     """Exception raised when a provider rate limit is hit."""
 
-    pass
-
 
 class ProviderQuotaException(ProviderException):
     """Exception raised when a provider quota is exceeded."""
-
-    pass
 
 
 class ProviderAuthenticationException(ProviderException):
     """Exception raised for authentication failures."""
 
-    pass
-
 
 class ProviderModelException(ProviderException):
     """Exception raised for model-related errors."""
-
-    pass
 
 
 class ProviderContentPolicyException(ProviderException):
     """Exception raised for content policy violations."""
 
-    pass
-
 
 class ProviderTimeoutException(ProviderException):
     """Exception raised for timeout errors."""
 
-    pass
-
 
 class ProviderUnavailableException(ProviderException):
     """Exception raised when a provider is unavailable."""
-
-    pass
 
 
 # =============================================================================

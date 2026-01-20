@@ -1,5 +1,4 @@
-"""
-OVERTHINK Engine - Main Attack Engine.
+"""OVERTHINK Engine - Main Attack Engine.
 
 This module implements the core OVERTHINK engine for reasoning token
 exploitation. It orchestrates all attack techniques and integrates
@@ -39,8 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class OverthinkEngine:
-    """
-    Core OVERTHINK attack engine.
+    """Core OVERTHINK attack engine.
 
     Implements 9 attack techniques for reasoning token exploitation:
     - mdp_decoy: Markov Decision Process decoys
@@ -59,14 +57,14 @@ class OverthinkEngine:
         config: OverthinkConfig | None = None,
         llm_client: Any | None = None,
         mousetrap_engine: Any | None = None,
-    ):
-        """
-        Initialize the OVERTHINK engine.
+    ) -> None:
+        """Initialize the OVERTHINK engine.
 
         Args:
             config: Engine configuration
             llm_client: LLM client for inference
             mousetrap_engine: Optional Mousetrap engine for enhanced attacks
+
         """
         self.config = config or OverthinkConfig()
         self.llm_client = llm_client
@@ -107,27 +105,28 @@ class OverthinkEngine:
         self,
         request: OverthinkRequest,
     ) -> OverthinkResult:
-        """
-        Execute an OVERTHINK attack.
+        """Execute an OVERTHINK attack.
 
         Args:
             request: Attack request with configuration
 
         Returns:
             Attack result with metrics
+
         """
         start_time = datetime.utcnow()
         attack_id = str(uuid.uuid4())[:12]
 
         logger.info(
-            f"Starting OVERTHINK attack {attack_id} " f"with technique {request.technique.value}"
+            f"Starting OVERTHINK attack {attack_id} with technique {request.technique.value}",
         )
 
         try:
             # Get technique handler
             handler = self._technique_handlers.get(request.technique)
             if not handler:
-                raise ValueError(f"Unknown technique: {request.technique}")
+                msg = f"Unknown technique: {request.technique}"
+                raise ValueError(msg)
 
             # Execute attack
             result = await handler(request)
@@ -157,13 +156,13 @@ class OverthinkEngine:
                 f"Attack {attack_id} completed - "
                 f"amplification: {result.token_metrics.amplification_factor:.2f}x"
                 if result.token_metrics
-                else "Attack completed"
+                else "Attack completed",
             )
 
             return result
 
         except Exception as e:
-            logger.error(f"Attack {attack_id} failed: {e}")
+            logger.exception(f"Attack {attack_id} failed: {e}")
             return OverthinkResult(
                 request=request,
                 success=False,
@@ -450,7 +449,7 @@ class OverthinkEngine:
 
         response = await self._execute_llm(injected.injected_prompt, request)
 
-        result = OverthinkResult(
+        return OverthinkResult(
             request=request,
             injected_prompt=injected,
             decoy_problems=decoys,
@@ -462,15 +461,13 @@ class OverthinkEngine:
             },
         )
 
-        return result
-
     async def _attack_mousetrap_enhanced(
         self,
         request: OverthinkRequest,
     ) -> OverthinkResult:
         """Execute Mousetrap-enhanced attack with chaotic reasoning."""
         if not self.mousetrap_engine:
-            logger.warning("Mousetrap engine not available, " "falling back to hybrid attack")
+            logger.warning("Mousetrap engine not available, falling back to hybrid attack")
             return await self._attack_hybrid_decoy(request)
 
         # Generate decoys
@@ -565,7 +562,7 @@ class OverthinkEngine:
             return response
 
         except Exception as e:
-            logger.error(f"LLM execution failed: {e}")
+            logger.exception(f"LLM execution failed: {e}")
             return ""
 
     async def _execute_openai(
@@ -607,7 +604,7 @@ class OverthinkEngine:
         if hasattr(self.llm_client, "chat"):
             result = await self.llm_client.chat(prompt)
             return str(result)
-        elif hasattr(self.llm_client, "generate"):
+        if hasattr(self.llm_client, "generate"):
             result = await asyncio.to_thread(
                 self.llm_client.generate,
                 request.system_prompt or "You are a helpful assistant.",
@@ -642,8 +639,7 @@ class OverthinkEngine:
         sentence_count = text.count(".") + text.count("!") + text.count("?")
         avg_sent_len = len(words) / max(1, sentence_count)
 
-        complexity = min(1.0, (avg_word_len / 10 + avg_sent_len / 30) / 2)
-        return complexity
+        return min(1.0, (avg_word_len / 10 + avg_sent_len / 30) / 2)
 
     def _select_decoy_types_for_context(
         self,
@@ -694,8 +690,7 @@ class OverthinkEngine:
                 (prev_avg * (count - 1) + new_amp) / count if count > 0 else new_amp
             )
 
-            if new_amp > self._stats.max_amplification:
-                self._stats.max_amplification = new_amp
+            self._stats.max_amplification = max(self._stats.max_amplification, new_amp)
 
         if result.cost_metrics:
             self._stats.total_cost += result.cost_metrics.total_cost
@@ -710,8 +705,7 @@ class OverthinkEngine:
         self,
         request: OverthinkRequest,
     ) -> OverthinkResult:
-        """
-        Execute combined Mousetrap + OVERTHINK attack.
+        """Execute combined Mousetrap + OVERTHINK attack.
 
         Convenience method for the fusion attack.
         """
@@ -724,8 +718,7 @@ class OverthinkEngine:
         generations: int = 10,
         target_amplification: float = 20.0,
     ) -> tuple[OverthinkResult, dict[str, Any]]:
-        """
-        Optimize attack using genetic evolution.
+        """Optimize attack using genetic evolution.
 
         Args:
             base_request: Base attack request
@@ -734,6 +727,7 @@ class OverthinkEngine:
 
         Returns:
             Best attack result and optimization info
+
         """
         # Initialize population based on request
         seed = GeneticIndividual(

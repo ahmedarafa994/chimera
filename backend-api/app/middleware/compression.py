@@ -1,5 +1,4 @@
-"""
-Response Compression Middleware for FastAPI
+"""Response Compression Middleware for FastAPI.
 
 PERF-001 FIX: Implements gzip and brotli compression to reduce bandwidth usage
 and improve API response times.
@@ -33,8 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompressionMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware that compresses responses using gzip or brotli.
+    """Middleware that compresses responses using gzip or brotli.
 
     Compresses responses based on Accept-Encoding header and response size.
     Skips compression for small responses, already compressed content, and
@@ -48,14 +46,14 @@ class CompressionMiddleware(BaseHTTPMiddleware):
         gzip_level: int = 6,
         brotli_level: int = 4,
     ) -> None:
-        """
-        Initialize compression middleware.
+        """Initialize compression middleware.
 
         Args:
             app: ASGI application
             minimum_size: Minimum response size in bytes to compress
             gzip_level: Gzip compression level (1-9, default 6)
             brotli_level: Brotli compression level (0-11, default 4)
+
         """
         super().__init__(app)
         self.minimum_size = minimum_size
@@ -64,20 +62,19 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         # Check if brotli is available
         try:
-            import brotli  # noqa: F401
+            import brotli
 
             self.brotli_available = True
         except ImportError:
             self.brotli_available = False
-            logger.debug("Brotli compression not available. " "Install with: pip install brotli")
+            logger.debug("Brotli compression not available. Install with: pip install brotli")
 
     async def dispatch(
         self,
         request: Request,
         call_next: Callable,
     ) -> Response:
-        """
-        Process request and compress response if applicable.
+        """Process request and compress response if applicable.
 
         Args:
             request: Incoming HTTP request
@@ -85,6 +82,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response, potentially compressed
+
         """
         # Get client's accepted encodings
         accept_encoding = request.headers.get("accept-encoding", "")
@@ -136,8 +134,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
         return response
 
     def _accepts_encoding(self, accept_encoding: str, encoding: str) -> bool:
-        """
-        Check if client accepts a specific encoding.
+        """Check if client accepts a specific encoding.
 
         Handles quality values (q) and wildcard accept-all.
 
@@ -147,6 +144,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             True if encoding is accepted with q > 0
+
         """
         if not accept_encoding:
             return False
@@ -175,8 +173,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
         return False
 
     def _should_skip_compression(self, content_type: str) -> bool:
-        """
-        Determine if content type should skip compression.
+        """Determine if content type should skip compression.
 
         Skip compression for already compressed formats like images, videos,
         and compressed archives.
@@ -186,6 +183,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             True if compression should be skipped
+
         """
         # Content types that are already compressed
         skip_types = [
@@ -205,8 +203,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
         return any(content_type_lower.startswith(skip_type) for skip_type in skip_types)
 
     def _compress_gzip(self, response: Response, body: bytes) -> Response:
-        """
-        Compress response using gzip.
+        """Compress response using gzip.
 
         Args:
             response: Original response
@@ -214,8 +211,8 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             New response with compressed body and appropriate headers
-        """
 
+        """
         # Create compressed buffer
         compressed_buffer = io.BytesIO()
 
@@ -236,7 +233,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         logger.debug(
             f"Gzip compression: {original_size} -> {compressed_size} bytes "
-            f"({ratio:.1f}% reduction)"
+            f"({ratio:.1f}% reduction)",
         )
 
         # Create new response with compressed data
@@ -252,8 +249,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
         )
 
     def _compress_brotli(self, response: Response, body: bytes) -> Response:
-        """
-        Compress response using brotli.
+        """Compress response using brotli.
 
         Args:
             response: Original response
@@ -261,6 +257,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             New response with compressed body and appropriate headers
+
         """
         import brotli
 
@@ -277,7 +274,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         logger.debug(
             f"Brotli compression: {original_size} -> {compressed_size} bytes "
-            f"({ratio:.1f}% reduction)"
+            f"({ratio:.1f}% reduction)",
         )
 
         # Create new response with compressed data
@@ -301,8 +298,7 @@ def create_compression_middleware(
     gzip_level: int = 6,
     brotli_level: int = 4,
 ) -> Callable[[ASGIApp], CompressionMiddleware]:
-    """
-    Factory function to create compression middleware with custom config.
+    """Factory function to create compression middleware with custom config.
 
     Allows easy configuration via environment variables or settings.
 
@@ -322,6 +318,7 @@ def create_compression_middleware(
             minimum_size=int(os.getenv("COMPRESSION_MIN_SIZE", "500")),
             gzip_level=int(os.getenv("COMPRESSION_LEVEL", "6")),
         ))
+
     """
 
     def middleware(app: ASGIApp) -> CompressionMiddleware:

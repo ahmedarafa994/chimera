@@ -13,7 +13,7 @@ class AttackContext:
     defense_patterns_observed: set[str] = field(default_factory=set)
     successful_techniques: list[str] = field(default_factory=list)
 
-    def add_turn(self, prompt: str, response: str, score: float):
+    def add_turn(self, prompt: str, response: str, score: float) -> None:
         self.turn_history.append(
             {
                 "turn": len(self.turn_history) + 1,
@@ -21,7 +21,7 @@ class AttackContext:
                 "response": response,
                 "score": score,
                 "timestamp": datetime.now().isoformat(),
-            }
+            },
         )
 
     def get_context_summary(self) -> str:

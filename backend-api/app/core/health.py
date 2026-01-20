@@ -1,5 +1,4 @@
-"""
-Enhanced Health Check System
+"""Enhanced Health Check System.
 
 Provides:
 - Comprehensive health checks for all services
@@ -74,8 +73,7 @@ class OverallHealth:
 
 
 class HealthChecker:
-    """
-    Health check manager for monitoring service dependencies.
+    """Health check manager for monitoring service dependencies.
 
     Enhanced with:
     - Service dependency graph
@@ -96,7 +94,7 @@ class HealthChecker:
         "database",
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._checks: dict[str, Callable] = {}
         self._start_time = time.time()
         self._last_check_results: dict[str, HealthCheckResult] = {}
@@ -108,7 +106,7 @@ class HealthChecker:
         # Register service dependencies
         self._register_default_dependencies()
 
-    def _register_default_checks(self):
+    def _register_default_checks(self) -> None:
         """Register default health checks."""
         self.register_check("database", self._check_database)
         self.register_check("redis", self._check_redis)
@@ -119,7 +117,7 @@ class HealthChecker:
         self.register_check("task_queue", self._check_task_queue)
         self.register_check("webhook_service", self._check_webhook_service)
 
-    def _register_default_dependencies(self):
+    def _register_default_dependencies(self) -> None:
         """Register default service dependencies."""
         self._dependencies = {
             "llm_service": ["database"],
@@ -129,27 +127,27 @@ class HealthChecker:
             "cache": ["redis"],
         }
 
-    def register_dependency(self, service: str, depends_on: list[str]):
-        """
-        Register service dependencies for health propagation.
+    def register_dependency(self, service: str, depends_on: list[str]) -> None:
+        """Register service dependencies for health propagation.
 
         Args:
             service: Service name
             depends_on: List of services this service depends on
+
         """
         self._dependencies[service] = depends_on
 
-    def register_check(self, name: str, check_func: Callable):
-        """
-        Register a health check function.
+    def register_check(self, name: str, check_func: Callable) -> None:
+        """Register a health check function.
 
         Args:
             name: Name of the check
             check_func: Async function that returns HealthCheckResult
+
         """
         self._checks[name] = check_func
 
-    def unregister_check(self, name: str):
+    def unregister_check(self, name: str) -> None:
         """Unregister a health check."""
         self._checks.pop(name, None)
 
@@ -157,7 +155,9 @@ class HealthChecker:
         """Run a single health check."""
         if name not in self._checks:
             return HealthCheckResult(
-                name=name, status=HealthStatus.UNKNOWN, message=f"Check '{name}' not found"
+                name=name,
+                status=HealthStatus.UNKNOWN,
+                message=f"Check '{name}' not found",
             )
 
         start_time = time.perf_counter()
@@ -197,7 +197,8 @@ class HealthChecker:
     async def run_all_checks(self) -> OverallHealth:
         """Run all registered health checks."""
         results = await asyncio.gather(
-            *[self.run_check(name) for name in self._checks], return_exceptions=True
+            *[self.run_check(name) for name in self._checks],
+            return_exceptions=True,
         )
 
         # Process results
@@ -206,7 +207,9 @@ class HealthChecker:
             name = list(self._checks.keys())[i]
             if isinstance(result, Exception):
                 check_results.append(
-                    HealthCheckResult(name=name, status=HealthStatus.UNHEALTHY, message=str(result))
+                    HealthCheckResult(
+                        name=name, status=HealthStatus.UNHEALTHY, message=str(result)
+                    ),
                 )
             else:
                 check_results.append(result)
@@ -223,8 +226,7 @@ class HealthChecker:
         )
 
     def _determine_overall_status(self, results: list[HealthCheckResult]) -> HealthStatus:
-        """
-        Determine overall health status from individual checks.
+        """Determine overall health status from individual checks.
 
         Only critical services can cause UNHEALTHY status.
         Optional services only cause DEGRADED status at worst.
@@ -252,12 +254,10 @@ class HealthChecker:
             s == HealthStatus.DEGRADED for s in all_statuses
         ):
             return HealthStatus.DEGRADED
-        else:
-            return HealthStatus.UNKNOWN
+        return HealthStatus.UNKNOWN
 
     async def liveness_check(self) -> HealthCheckResult:
-        """
-        Liveness probe - checks if the application is running.
+        """Liveness probe - checks if the application is running.
         Used by Kubernetes to determine if the pod should be restarted.
         """
         return HealthCheckResult(
@@ -271,8 +271,7 @@ class HealthChecker:
         )
 
     async def readiness_check(self) -> HealthCheckResult:
-        """
-        Readiness probe - checks if the application is ready to serve traffic.
+        """Readiness probe - checks if the application is ready to serve traffic.
         Used by Kubernetes to determine if the pod should receive traffic.
         """
         # Check critical dependencies
@@ -293,12 +292,11 @@ class HealthChecker:
                 status=HealthStatus.HEALTHY,
                 message="Application is ready to serve traffic",
             )
-        else:
-            return HealthCheckResult(
-                name="readiness",
-                status=HealthStatus.UNHEALTHY,
-                message="Application is not ready - critical dependencies unavailable",
-            )
+        return HealthCheckResult(
+            name="readiness",
+            status=HealthStatus.UNHEALTHY,
+            message="Application is not ready - critical dependencies unavailable",
+        )
 
     def get_last_results(self) -> dict[str, HealthCheckResult]:
         """Get the last check results."""
@@ -412,9 +410,9 @@ class HealthChecker:
                     message="Redis unavailable: Timeout connecting to server",
                     details={"error": "Timeout connecting to server"},
                 )
-            except Exception as e:
+            except Exception:
                 await client.close()
-                raise e
+                raise
         except ImportError:
             return HealthCheckResult(
                 name="redis",
@@ -446,7 +444,7 @@ class HealthChecker:
             # DEBUG: Log instance ID to track if same as registration
             logger.info(
                 f"health_check: llm_service instance_id={id(llm_service)}, "
-                f"_providers_keys={list(llm_service._providers.keys())}"
+                f"_providers_keys={list(llm_service._providers.keys())}",
             )
 
             providers = llm_service.get_available_providers()
@@ -467,13 +465,12 @@ class HealthChecker:
                         ),
                     },
                 )
-            else:
-                return HealthCheckResult(
-                    name="llm_service",
-                    status=HealthStatus.DEGRADED,
-                    message="No LLM providers available",
-                    details={"providers": []},
-                )
+            return HealthCheckResult(
+                name="llm_service",
+                status=HealthStatus.DEGRADED,
+                message="No LLM providers available",
+                details={"providers": []},
+            )
         except Exception as e:
             return HealthCheckResult(
                 name="llm_service",
@@ -519,13 +516,12 @@ class HealthChecker:
                         "default_ttl": settings.CACHE_DEFAULT_TTL,
                     },
                 )
-            else:
-                return HealthCheckResult(
-                    name="cache",
-                    status=HealthStatus.DEGRADED,
-                    message="Cache disabled",
-                    details={"enabled": False},
-                )
+            return HealthCheckResult(
+                name="cache",
+                status=HealthStatus.DEGRADED,
+                message="Cache disabled",
+                details={"enabled": False},
+            )
         except Exception as e:
             return HealthCheckResult(
                 name="cache",
@@ -647,8 +643,7 @@ class HealthChecker:
             )
 
     async def get_dependency_graph(self) -> dict:
-        """
-        Get service dependency health graph.
+        """Get service dependency health graph.
 
         Returns a graph showing services, their health status, and dependencies.
         """
@@ -672,8 +667,7 @@ class HealthChecker:
         return graph
 
     def get_dependency_tree(self, service: str, visited: set | None = None) -> dict:
-        """
-        Get dependency tree for a specific service (recursive).
+        """Get dependency tree for a specific service (recursive).
 
         Useful for understanding cascading failures.
         """

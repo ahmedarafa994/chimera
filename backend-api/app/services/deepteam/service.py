@@ -32,19 +32,18 @@ logger = logging.getLogger(__name__)
 
 
 class DeepTeamService:
-    """
-    Main service for running DeepTeam red teaming sessions.
+    """Main service for running DeepTeam red teaming sessions.
 
     This service orchestrates vulnerability scanning and attack simulation
     against LLM applications using the DeepTeam framework.
     """
 
-    def __init__(self, config: DeepTeamConfig | None = None):
-        """
-        Initialize the DeepTeam service.
+    def __init__(self, config: DeepTeamConfig | None = None) -> None:
+        """Initialize the DeepTeam service.
 
         Args:
             config: Service configuration. If None, uses defaults.
+
         """
         self.config = config or DeepTeamConfig()
         self._sessions: dict[str, RiskAssessmentResult] = {}
@@ -61,8 +60,7 @@ class DeepTeamService:
         preset: PresetConfig | None = None,
         target_purpose: str | None = None,
     ) -> RiskAssessmentResult:
-        """
-        Run a complete red teaming session.
+        """Run a complete red teaming session.
 
         Args:
             model_callback: Callback function that takes a prompt and returns model response
@@ -72,6 +70,7 @@ class DeepTeamService:
 
         Returns:
             RiskAssessmentResult with all test results
+
         """
         # Get configuration
         if session_config is None:
@@ -109,7 +108,7 @@ class DeepTeamService:
             return result
 
         except Exception as e:
-            logger.error(f"Red team session {session_id} failed: {e}")
+            logger.exception(f"Red team session {session_id} failed: {e}")
             raise
         finally:
             self._active_session = None
@@ -121,15 +120,13 @@ class DeepTeamService:
         config: RedTeamSessionConfig,
     ) -> RiskAssessmentResult:
         """Execute the red teaming session."""
-
         # Try to use DeepTeam's RedTeamer if available
         try:
-            result = await self._execute_with_deepteam(
+            return await self._execute_with_deepteam(
                 session_id=session_id,
                 model_callback=model_callback,
                 config=config,
             )
-            return result
         except ImportError:
             logger.warning("DeepTeam not installed, using mock execution")
             return await self._execute_mock_session(
@@ -234,7 +231,7 @@ class DeepTeamService:
                             score=score,
                             reason="Mock evaluation - DeepTeam not installed",
                             is_passing=is_passing,
-                        )
+                        ),
                     )
 
         # Calculate overview
@@ -273,7 +270,7 @@ class DeepTeamService:
                         reason=getattr(tc, "reason", None),
                         is_passing=getattr(tc, "is_passing", True),
                         error=getattr(tc, "error", None),
-                    )
+                    ),
                 )
 
         overview = self._calculate_overview(test_cases)
@@ -372,7 +369,7 @@ class DeepTeamService:
         """Save result to disk."""
         filepath = Path(self.config.results_storage_path) / f"{result.session_id}.json"
 
-        async def write_file():
+        async def write_file() -> None:
             with open(filepath, "w") as f:
                 json.dump(result.model_dump(), f, indent=2, default=str)
 
@@ -476,8 +473,7 @@ class DeepTeamService:
         preset: PresetConfig | None = None,
         target_purpose: str | None = None,
     ) -> dict[str, RiskAssessmentResult]:
-        """
-        Test multiple providers/models with the same configuration.
+        """Test multiple providers/models with the same configuration.
 
         Args:
             providers: List of provider configs, each with 'model_id' and optionally 'provider'
@@ -487,6 +483,7 @@ class DeepTeamService:
 
         Returns:
             Dict mapping provider/model to results
+
         """
         results = {}
 
@@ -511,7 +508,7 @@ class DeepTeamService:
                 )
                 results[key] = result
             except Exception as e:
-                logger.error(f"Failed to test {key}: {e}")
+                logger.exception(f"Failed to test {key}: {e}")
                 # Create error result
                 results[key] = RiskAssessmentResult(
                     session_id=str(uuid.uuid4()),
@@ -542,8 +539,7 @@ class DeepTeamService:
         session_config: RedTeamSessionConfig | None = None,
         preset: PresetConfig | None = None,
     ) -> RiskAssessmentResult:
-        """
-        Test a Chimera API endpoint.
+        """Test a Chimera API endpoint.
 
         Args:
             endpoint_url: URL of the Chimera endpoint to test
@@ -553,6 +549,7 @@ class DeepTeamService:
 
         Returns:
             RiskAssessmentResult
+
         """
         import aiohttp
 
@@ -570,7 +567,8 @@ class DeepTeamService:
                 ) as response,
             ):
                 if response.status != 200:
-                    raise Exception(f"Endpoint returned {response.status}")
+                    msg = f"Endpoint returned {response.status}"
+                    raise Exception(msg)
                 data = await response.json()
                 return data.get("response", data.get("content", str(data)))
 
@@ -587,43 +585,43 @@ class DeepTeamService:
 
     @staticmethod
     def get_available_vulnerabilities() -> list[str]:
-        """
-        Get list of all available vulnerability types.
+        """Get list of all available vulnerability types.
 
         Returns:
             List of vulnerability type names
+
         """
         return VulnerabilityFactory.get_available_vulnerabilities()
 
     @staticmethod
     def get_available_attacks() -> list[str]:
-        """
-        Get list of all available attack types.
+        """Get list of all available attack types.
 
         Returns:
             List of attack type names
+
         """
         return AttackFactory.get_available_attacks()
 
     @staticmethod
     def get_available_presets() -> list[str]:
-        """
-        Get list of all available preset configurations.
+        """Get list of all available preset configurations.
 
         Returns:
             List of preset names
+
         """
         return [preset.value for preset in PresetConfig]
 
     @staticmethod
     def get_preset_details(preset: PresetConfig) -> RedTeamSessionConfig:
-        """
-        Get the configuration details for a specific preset.
+        """Get the configuration details for a specific preset.
 
         Args:
             preset: The preset to get details for
 
         Returns:
             RedTeamSessionConfig for the preset
+
         """
         return get_preset_config(preset)

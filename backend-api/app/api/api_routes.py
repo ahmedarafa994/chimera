@@ -2,7 +2,7 @@ import logging
 import time
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -126,8 +126,8 @@ Supports Google Gemini, OpenAI, Anthropic Claude, and DeepSeek models with confi
                         "provider": "google",
                         "usage_metadata": {"prompt_tokens": 12, "completion_tokens": 150},
                         "latency_ms": 1250.5,
-                    }
-                }
+                    },
+                },
             },
         },
         400: {"description": "Invalid request parameters"},
@@ -138,10 +138,13 @@ Supports Google Gemini, OpenAI, Anthropic Claude, and DeepSeek models with confi
     tags=["generation"],
 )
 @api_error_handler("generate_content", "Failed to generate content")
-async def generate_content(request: PromptRequest, service: LLMService = Depends(get_llm_service)):
+async def generate_content(
+    request: PromptRequest, service: Annotated[LLMService, Depends(get_llm_service)]
+):
     """Generate text content using the configured LLM provider."""
     if not request.prompt or not request.prompt.strip():
-        raise ErrorResponseBuilder.validation_error("Prompt cannot be empty", field="prompt")
+        msg = "Prompt cannot be empty"
+        raise ErrorResponseBuilder.validation_error(msg, field="prompt")
     return await service.generate_text(request)
 
 
@@ -162,8 +165,7 @@ async def list_techniques():
 
 @router.get("/techniques/{technique_name}")
 async def get_technique_detail(technique_name: str):
-    """
-    Get detailed information about a specific technique suite.
+    """Get detailed information about a specific technique suite.
     Proxies to the v1 utils endpoint implementation.
     """
     from app.api.v1.endpoints.utils import get_technique_detail as v1_get_technique_detail
@@ -173,9 +175,7 @@ async def get_technique_detail(technique_name: str):
 
 @router.get("/metrics", response_model=MetricsResponse)
 async def get_metrics():
-    """
-    Get system metrics.
-    """
+    """Get system metrics."""
     return {
         "timestamp": datetime.utcnow().isoformat(),
         "metrics": {
@@ -187,10 +187,8 @@ async def get_metrics():
 
 
 @router.get("/health", status_code=status.HTTP_200_OK)
-async def health_check(_service: LLMService = Depends(get_llm_service)):
-    """
-    Check the health of the default provider.
-    """
+async def health_check(_service: Annotated[LLMService, Depends(get_llm_service)]):
+    """Check the health of the default provider."""
     try:
         # Simple health check without provider dependency for basic connectivity
         return {"status": "healthy", "provider": "connected"}
@@ -278,11 +276,10 @@ async def transform_prompt(request: TransformationRequest):
 @router.post("/execute", response_model=ExecutionResponse)
 @api_error_handler("execute_transformation", "Failed to execute transformation")
 async def execute_transformation(
-    request: ExecutionRequest, service: LLMService = Depends(get_llm_service)
+    request: ExecutionRequest,
+    service: Annotated[LLMService, Depends(get_llm_service)],
 ):
-    """
-    Transform and execute a prompt.
-    """
+    """Transform and execute a prompt."""
     from app.services.transformation_service import transformation_engine
 
     start_time = time.time()
@@ -342,12 +339,16 @@ async def execute_transformation(
 # Jailbreak Generation Models
 class JailbreakGenerateRequest(BaseModel):
     core_request: str = Field(
-        ..., min_length=1, max_length=50000, description="The core request to transform"
+        ...,
+        min_length=1,
+        max_length=50000,
+        description="The core request to transform",
     )
     technique_suite: str = Field("quantum_exploit", description="Technique suite to use")
     potency_level: int = Field(7, ge=1, le=10, description="Potency level (1-10)")
     provider: str | None = Field(
-        None, description="AI provider to use (e.g., 'google', 'openai', 'anthropic')"
+        None,
+        description="AI provider to use (e.g., 'google', 'openai', 'anthropic')",
     )
     model: str | None = Field(None, description="Specific model to use for generation")
     temperature: float = Field(0.8, ge=0.0, le=2.0, description="Temperature for AI generation")
@@ -356,11 +357,17 @@ class JailbreakGenerateRequest(BaseModel):
     density: float = Field(0.7, ge=0.0, le=1.0, description="Density of applied techniques")
     use_leet_speak: bool = Field(False, description="Apply leetspeak transformation")
     leet_speak_density: float = Field(
-        0.3, ge=0.0, le=1.0, description="Density of leetspeak transformation"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Density of leetspeak transformation",
     )
     use_homoglyphs: bool = Field(False, description="Apply homoglyph substitution")
     homoglyph_density: float = Field(
-        0.3, ge=0.0, le=1.0, description="Density of homoglyph substitution"
+        0.3,
+        ge=0.0,
+        le=1.0,
+        description="Density of homoglyph substitution",
     )
     use_caesar_cipher: bool = Field(False, description="Apply Caesar cipher")
     caesar_shift: int = Field(3, ge=1, le=25, description="Caesar cipher shift amount")
@@ -375,14 +382,19 @@ class JailbreakGenerateRequest(BaseModel):
     use_contextual_override: bool = Field(False, description="Apply contextual override")
     use_multilingual_trojan: bool = Field(False, description="Apply multilingual trojan")
     multilingual_target_language: str = Field(
-        "", description="Target language for multilingual trojan"
+        "",
+        description="Target language for multilingual trojan",
     )
     use_payload_splitting: bool = Field(False, description="Apply payload splitting")
     payload_splitting_parts: int = Field(
-        2, ge=2, le=10, description="Number of parts to split payload into"
+        2,
+        ge=2,
+        le=10,
+        description="Number of parts to split payload into",
     )
     use_contextual_interaction_attack: bool = Field(
-        False, description="Apply contextual interaction attack"
+        False,
+        description="Apply contextual interaction attack",
     )
     cia_preliminary_rounds: int = Field(3, ge=1, le=10, description="Number of preliminary rounds")
     use_analysis_in_generation: bool = Field(False, description="Use analysis in generation")
@@ -463,7 +475,8 @@ Generate sophisticated jailbreak prompts using AI-powered techniques for securit
     tags=["jailbreak"],
 )
 async def generate_jailbreak_prompt(
-    request: JailbreakGenerateRequest, _service: LLMService = Depends(get_llm_service)
+    request: JailbreakGenerateRequest,
+    _service: Annotated[LLMService, Depends(get_llm_service)],
 ):
     """Generate a jailbreak-transformed prompt using advanced AI-powered techniques."""
     start_time = time.time()
@@ -515,7 +528,7 @@ async def generate_jailbreak_prompt(
 
         # Check if AI generation is enabled and should be used
         logger.info(
-            f"AI generation enabled: {request.use_ai_generation}, technique_suite: {request.technique_suite}"
+            f"AI generation enabled: {request.use_ai_generation}, technique_suite: {request.technique_suite}",
         )
 
         if request.use_ai_generation:
@@ -568,11 +581,11 @@ async def generate_jailbreak_prompt(
 
                 # Generate using AI model
                 logger.info(
-                    f"Calling generate_jailbreak_prompt_from_gemini with options: temperature={options.temperature}, max_tokens={options.max_new_tokens}"
+                    f"Calling generate_jailbreak_prompt_from_gemini with options: temperature={options.temperature}, max_tokens={options.max_new_tokens}",
                 )
                 transformed_prompt = await generate_jailbreak_prompt_from_gemini(options)
                 logger.info(
-                    f"AI generation returned prompt of length: {len(transformed_prompt) if transformed_prompt else 0}"
+                    f"AI generation returned prompt of length: {len(transformed_prompt) if transformed_prompt else 0}",
                 )
 
                 provider_used = "gemini_ai"
@@ -592,7 +605,7 @@ async def generate_jailbreak_prompt(
         # Use rule-based transformation if AI generation is disabled or failed
         if not request.use_ai_generation or not transformed_prompt:
             logger.info(
-                f"Using rule-based transformation: use_ai_generation={request.use_ai_generation}, has_transformed_prompt={bool(transformed_prompt)}"
+                f"Using rule-based transformation: use_ai_generation={request.use_ai_generation}, has_transformed_prompt={bool(transformed_prompt)}",
             )
             from app.services.transformation_service import transformation_engine
 
@@ -630,7 +643,7 @@ async def generate_jailbreak_prompt(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Jailbreak generation failed: {e!s}")
+        logger.exception(f"Jailbreak generation failed: {e!s}")
         execution_time = time.time() - start_time
         return JailbreakGenerateResponse(
             success=False,
@@ -661,7 +674,8 @@ async def generate_jailbreak_prompt(
     tags=["jailbreak", "compatibility"],
 )
 async def jailbreak_alias(
-    request: JailbreakGenerateRequest, _service: LLMService = Depends(get_llm_service)
+    request: JailbreakGenerateRequest,
+    _service: Annotated[LLMService, Depends(get_llm_service)],
 ):
     """Alias for jailbreak generation endpoint for frontend compatibility."""
     return await generate_jailbreak_prompt(request, _service)

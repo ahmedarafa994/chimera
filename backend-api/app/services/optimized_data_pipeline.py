@@ -1,5 +1,4 @@
-"""
-Optimized Data Pipeline with parallel processing and memory efficiency.
+"""Optimized Data Pipeline with parallel processing and memory efficiency.
 
 This module provides comprehensive data pipeline optimizations:
 - Parallel data ingestion and processing
@@ -99,11 +98,9 @@ class BatchJob:
 
 
 class MemoryEfficientProcessor:
-    """
-    Memory-efficient data processor with streaming capabilities.
-    """
+    """Memory-efficient data processor with streaming capabilities."""
 
-    def __init__(self, max_memory_mb: int = 2048):
+    def __init__(self, max_memory_mb: int = 2048) -> None:
         self.max_memory_mb = max_memory_mb
         self._current_memory_mb = 0.0
         self._memory_threshold = max_memory_mb * 0.8  # 80% threshold
@@ -119,8 +116,7 @@ class MemoryEfficientProcessor:
         processor_func: callable,
         **kwargs,
     ) -> AsyncGenerator[pd.DataFrame, None]:
-        """
-        Process data in memory-efficient chunks.
+        """Process data in memory-efficient chunks.
 
         Args:
             data_source: DataFrame, file path, or data source
@@ -129,6 +125,7 @@ class MemoryEfficientProcessor:
 
         Yields:
             Processed DataFrame chunks
+
         """
         if isinstance(data_source, pd.DataFrame):
             # Process DataFrame in chunks
@@ -163,7 +160,9 @@ class MemoryEfficientProcessor:
                 for batch in parquet_file.iter_batches(batch_size=chunk_size):
                     chunk = batch.to_pandas()
                     processed_chunk = await self._process_chunk_safe(
-                        chunk, processor_func, **kwargs
+                        chunk,
+                        processor_func,
+                        **kwargs,
                     )
                     if processed_chunk is not None:
                         yield processed_chunk
@@ -174,7 +173,9 @@ class MemoryEfficientProcessor:
             elif str(data_source).endswith(".csv"):
                 for chunk in pd.read_csv(str(data_source), chunksize=chunk_size):
                     processed_chunk = await self._process_chunk_safe(
-                        chunk, processor_func, **kwargs
+                        chunk,
+                        processor_func,
+                        **kwargs,
                     )
                     if processed_chunk is not None:
                         yield processed_chunk
@@ -183,7 +184,10 @@ class MemoryEfficientProcessor:
                         del processed_chunk
 
     async def _process_chunk_safe(
-        self, chunk: pd.DataFrame, processor_func: callable, **kwargs
+        self,
+        chunk: pd.DataFrame,
+        processor_func: callable,
+        **kwargs,
     ) -> pd.DataFrame | None:
         """Safely process a chunk with error handling."""
         try:
@@ -215,11 +219,9 @@ class MemoryEfficientProcessor:
 
 
 class ParallelDataPipelineEngine:
-    """
-    High-performance data pipeline engine with parallel processing.
-    """
+    """High-performance data pipeline engine with parallel processing."""
 
-    def __init__(self, config: OptimizedIngestionConfig):
+    def __init__(self, config: OptimizedIngestionConfig) -> None:
         self.config = config
         self.data_lake_path = Path(config.data_lake_path)
 
@@ -286,7 +288,12 @@ class ParallelDataPipelineEngine:
         logger.info("Parallel data pipeline engine stopped")
 
     async def submit_batch_job(
-        self, table_name: str, start_time: float, end_time: float, priority: int = 0, **kwargs
+        self,
+        table_name: str,
+        start_time: float,
+        end_time: float,
+        priority: int = 0,
+        **kwargs,
     ) -> str:
         """Submit a batch processing job."""
         job = BatchJob(
@@ -311,16 +318,14 @@ class ParallelDataPipelineEngine:
         end_time: float,
         source_configs: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        """
-        Process LLM interactions in parallel from multiple sources.
-        """
+        """Process LLM interactions in parallel from multiple sources."""
         start_processing = time.time()
 
         # Create tasks for parallel extraction
         extraction_tasks = []
         for config in source_configs:
             task = asyncio.create_task(
-                self._extract_llm_interactions_optimized(start_time, end_time, config)
+                self._extract_llm_interactions_optimized(start_time, end_time, config),
             )
             extraction_tasks.append(task)
 
@@ -347,7 +352,9 @@ class ParallelDataPipelineEngine:
         # Process in parallel chunks
         processing_tasks = []
         async for chunk in self.memory_processor.process_in_chunks(
-            combined_df, self.config.chunk_size, self._process_llm_chunk
+            combined_df,
+            self.config.chunk_size,
+            self._process_llm_chunk,
         ):
             # Write chunks in parallel
             task = asyncio.create_task(self._write_chunk_optimized(chunk, "llm_interactions"))
@@ -383,25 +390,22 @@ class ParallelDataPipelineEngine:
         # Use process pool for CPU-intensive extraction
         if self.process_pool and source_config.get("cpu_intensive", False):
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.process_pool,
                 self._extract_llm_interactions_sync,
                 start_time,
                 end_time,
                 source_config,
             )
-            return result
-        else:
-            # Use thread pool for I/O-intensive extraction
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                self.thread_pool,
-                self._extract_llm_interactions_sync,
-                start_time,
-                end_time,
-                source_config,
-            )
-            return result
+        # Use thread pool for I/O-intensive extraction
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self.thread_pool,
+            self._extract_llm_interactions_sync,
+            start_time,
+            end_time,
+            source_config,
+        )
 
     def _extract_llm_interactions_sync(
         self,
@@ -445,15 +449,13 @@ class ParallelDataPipelineEngine:
         # Use process pool for large combines
         if sum(len(df) for df in dataframes) > 100000 and self.process_pool:
             loop = asyncio.get_event_loop()
-            combined = await loop.run_in_executor(
+            return await loop.run_in_executor(
                 self.process_pool,
                 self._combine_dataframes_sync,
                 dataframes,
             )
-            return combined
-        else:
-            # Simple concatenation for smaller datasets
-            return pd.concat(dataframes, ignore_index=True)
+        # Simple concatenation for smaller datasets
+        return pd.concat(dataframes, ignore_index=True)
 
     def _combine_dataframes_sync(self, dataframes: list[pd.DataFrame]) -> pd.DataFrame:
         """Synchronous DataFrame combination."""
@@ -465,9 +467,7 @@ class ParallelDataPipelineEngine:
             combined = combined.drop_duplicates(subset=["interaction_id"])
 
         # Optimize data types
-        combined = self._optimize_dataframe_dtypes(combined)
-
-        return combined
+        return self._optimize_dataframe_dtypes(combined)
 
     def _optimize_dataframe_dtypes(self, df: pd.DataFrame) -> pd.DataFrame:
         """Optimize DataFrame data types for memory efficiency."""
@@ -480,13 +480,12 @@ class ParallelDataPipelineEngine:
                     df[col] = df[col].astype("uint16")
                 elif df[col].max() < 4294967295:
                     df[col] = df[col].astype("uint32")
-            else:
-                if df[col].min() >= -128 and df[col].max() <= 127:
-                    df[col] = df[col].astype("int8")
-                elif df[col].min() >= -32768 and df[col].max() <= 32767:
-                    df[col] = df[col].astype("int16")
-                elif df[col].min() >= -2147483648 and df[col].max() <= 2147483647:
-                    df[col] = df[col].astype("int32")
+            elif df[col].min() >= -128 and df[col].max() <= 127:
+                df[col] = df[col].astype("int8")
+            elif df[col].min() >= -32768 and df[col].max() <= 32767:
+                df[col] = df[col].astype("int16")
+            elif df[col].min() >= -2147483648 and df[col].max() <= 2147483647:
+                df[col] = df[col].astype("int32")
 
         # Optimize string columns
         for col in df.select_dtypes(include=["object"]).columns:
@@ -510,9 +509,7 @@ class ParallelDataPipelineEngine:
             chunk["hour"] = pd.to_datetime(chunk["created_at"]).dt.hour
 
         # Data quality validation
-        chunk = chunk.dropna(subset=["interaction_id", "provider", "model"])
-
-        return chunk
+        return chunk.dropna(subset=["interaction_id", "provider", "model"])
 
     async def _write_chunk_optimized(
         self,
@@ -623,7 +620,7 @@ class ParallelDataPipelineEngine:
                     f"Records: {self.metrics.total_records_processed}, "
                     f"RPS: {self.metrics.records_per_second:.2f}, "
                     f"Memory: {self.metrics.memory_usage_mb:.2f}MB, "
-                    f"CPU: {self.metrics.cpu_usage_percent:.1f}%"
+                    f"CPU: {self.metrics.cpu_usage_percent:.1f}%",
                 )
 
             except asyncio.CancelledError:
@@ -660,11 +657,9 @@ class ParallelDataPipelineEngine:
 
 
 class StreamingDataPipeline:
-    """
-    Real-time streaming data pipeline for low-latency processing.
-    """
+    """Real-time streaming data pipeline for low-latency processing."""
 
-    def __init__(self, config: OptimizedIngestionConfig):
+    def __init__(self, config: OptimizedIngestionConfig) -> None:
         self.config = config
         self._stream_buffer: list[dict[str, Any]] = []
         self._buffer_lock = asyncio.Lock()
@@ -754,7 +749,7 @@ class StreamingDataPipeline:
             self._last_flush = time.time()
 
             logger.debug(
-                f"Flushed {sum(len(records) for records in records_by_table.values())} records"
+                f"Flushed {sum(len(records) for records in records_by_table.values())} records",
             )
 
     async def _write_streaming_data(self, df: pd.DataFrame, table_name: str) -> None:
@@ -799,9 +794,7 @@ async def run_optimized_etl_job(
     lookback_hours: int = 1,
     enable_streaming: bool = True,
 ) -> dict[str, Any]:
-    """
-    Run optimized ETL job with parallel processing.
-    """
+    """Run optimized ETL job with parallel processing."""
     config = OptimizedIngestionConfig(
         max_workers=8,
         enable_multiprocessing=True,
@@ -850,5 +843,5 @@ async def run_optimized_etl_job(
 # Global optimized pipeline instance
 optimized_pipeline_config = OptimizedIngestionConfig()
 optimized_batch_pipeline, optimized_streaming_pipeline = create_optimized_pipeline(
-    optimized_pipeline_config
+    optimized_pipeline_config,
 )

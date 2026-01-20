@@ -22,19 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigurationError(Exception):
-    """Base exception for configuration errors"""
-
-    pass
+    """Base exception for configuration errors."""
 
 
 class ValidationError(ConfigurationError):
-    """Raised when configuration validation fails"""
-
-    pass
+    """Raised when configuration validation fails."""
 
 
 class ProviderConfigValidator:
-    """Validates provider configurations including connectivity checks"""
+    """Validates provider configurations including connectivity checks."""
 
     # API key format patterns for validation (Task 3.1)
     API_KEY_PATTERNS = {
@@ -71,8 +67,7 @@ class ProviderConfigValidator:
     }
 
     async def validate_api_key_format(self, provider: str, api_key: str) -> tuple[bool, str]:
-        """
-        Validate API key format for a provider.
+        """Validate API key format for a provider.
 
         Args:
             provider: Provider name
@@ -80,6 +75,7 @@ class ProviderConfigValidator:
 
         Returns:
             Tuple of (is_valid, error_message)
+
         """
         if not api_key:
             return False, f"API key is required for {provider}"
@@ -108,7 +104,7 @@ class ProviderConfigValidator:
         return True, ""
 
     def _get_pattern_description(self, provider: str) -> str:
-        """Get human-readable description of API key pattern"""
+        """Get human-readable description of API key pattern."""
         descriptions = {
             "openai": "sk-... (starts with 'sk-' followed by 32+ characters)",
             "anthropic": "sk-ant-... (starts with 'sk-ant-' followed by 30+ characters)",
@@ -119,10 +115,12 @@ class ProviderConfigValidator:
         return descriptions.get(provider.lower(), "Valid API key format")
 
     async def validate_connectivity(
-        self, provider: str, api_key: str, base_url: str
+        self,
+        provider: str,
+        api_key: str,
+        base_url: str,
     ) -> tuple[bool, str]:
-        """
-        Test connectivity to a provider API.
+        """Test connectivity to a provider API.
 
         Args:
             provider: Provider name
@@ -131,6 +129,7 @@ class ProviderConfigValidator:
 
         Returns:
             Tuple of (is_connected, error_message)
+
         """
         try:
             # Decrypt key if encrypted
@@ -174,20 +173,21 @@ class ProviderConfigValidator:
                     "method": "GET",
                 }
 
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
-                async with session.request(
+            async with (
+                aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session,
+                session.request(
                     method=config["method"],
                     url=config["endpoint"],
                     headers=config["headers"],
                     params=config.get("params", {}),
-                ) as response:
-                    # Accept various success codes
-                    if response.status in [200, 201, 204, 401, 403]:
-                        # 401/403 means the endpoint exists but auth failed
-                        # This is still a valid connectivity test
-                        return True, ""
-                    else:
-                        return False, f"HTTP {response.status}: {await response.text()}"
+                ) as response,
+            ):
+                # Accept various success codes
+                if response.status in [200, 201, 204, 401, 403]:
+                    # 401/403 means the endpoint exists but auth failed
+                    # This is still a valid connectivity test
+                    return True, ""
+                return False, f"HTTP {response.status}: {await response.text()}"
 
         except TimeoutError:
             return False, f"Connection timeout to {provider} API at {base_url}"
@@ -203,8 +203,7 @@ class ProviderConfigValidator:
         base_url: str | None = None,
         test_connectivity: bool = True,
     ) -> dict[str, Any]:
-        """
-        Comprehensive validation of a provider configuration.
+        """Comprehensive validation of a provider configuration.
 
         Args:
             provider: Provider name
@@ -214,6 +213,7 @@ class ProviderConfigValidator:
 
         Returns:
             Dictionary with validation results
+
         """
         result = {
             "provider": provider,
@@ -231,7 +231,7 @@ class ProviderConfigValidator:
                 result["errors"].append(key_error)
                 result["recommendations"].append(
                     f"Ensure your {provider} API key follows the correct format. "
-                    f"Check your {provider} dashboard for the correct API key."
+                    f"Check your {provider} dashboard for the correct API key.",
                 )
 
         # Validate base URL
@@ -258,39 +258,38 @@ class ProviderConfigValidator:
                         f"Verify the base URL {base_url} is correct",
                         "Check your network connectivity and firewall settings",
                         f"Visit {provider}'s documentation for troubleshooting",
-                    ]
+                    ],
                 )
 
         return result
 
 
 class EnhancedConfigManager:
-    """
-    Enhanced configuration manager with hot-reload and validation capabilities.
+    """Enhanced configuration manager with hot-reload and validation capabilities.
     Implements Story 1.1 requirements for provider configuration management.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.validator = ProviderConfigValidator()
         self._last_reload = None
         self._config_hash = None
         self._reload_callbacks: list[callable] = []
 
-    def add_reload_callback(self, callback: callable):
-        """Add a callback to be called when configuration is reloaded"""
+    def add_reload_callback(self, callback: callable) -> None:
+        """Add a callback to be called when configuration is reloaded."""
         self._reload_callbacks.append(callback)
 
-    def remove_reload_callback(self, callback: callable):
-        """Remove a reload callback"""
+    def remove_reload_callback(self, callback: callable) -> None:
+        """Remove a reload callback."""
         if callback in self._reload_callbacks:
             self._reload_callbacks.remove(callback)
 
     async def reload_config(self) -> dict[str, Any]:
-        """
-        Hot-reload configuration without application restart.
+        """Hot-reload configuration without application restart.
 
         Returns:
             Dictionary with reload results
+
         """
         try:
             logger.info("Starting configuration hot-reload")
@@ -325,9 +324,9 @@ class EnhancedConfigManager:
                         callback()
                     callback_results.append({"callback": callback.__name__, "status": "success"})
                 except Exception as e:
-                    logger.error(f"Error in reload callback {callback.__name__}: {e}")
+                    logger.exception(f"Error in reload callback {callback.__name__}: {e}")
                     callback_results.append(
-                        {"callback": callback.__name__, "status": "error", "error": str(e)}
+                        {"callback": callback.__name__, "status": "error", "error": str(e)},
                     )
 
             elapsed = (datetime.now() - start_time).total_seconds() * 1000
@@ -346,11 +345,11 @@ class EnhancedConfigManager:
             return result
 
         except Exception as e:
-            logger.error(f"Error during configuration hot-reload: {e}")
+            logger.exception(f"Error during configuration hot-reload: {e}")
             return {"status": "error", "error": str(e), "reloaded_at": datetime.now().isoformat()}
 
     def _get_configured_providers(self) -> dict[str, dict[str, Any]]:
-        """Get current provider configuration"""
+        """Get current provider configuration."""
         providers = {}
 
         for provider_name, env_var in API_KEY_NAME_MAP.items():
@@ -366,9 +365,11 @@ class EnhancedConfigManager:
         return providers
 
     def _calculate_config_changes(
-        self, old_providers: dict[str, Any], new_providers: dict[str, Any]
+        self,
+        old_providers: dict[str, Any],
+        new_providers: dict[str, Any],
     ) -> dict[str, Any]:
-        """Calculate changes between old and new provider configurations"""
+        """Calculate changes between old and new provider configurations."""
         changes = {"added": [], "removed": [], "modified": []}
 
         # Find added providers
@@ -390,7 +391,7 @@ class EnhancedConfigManager:
         return changes
 
     async def _validate_all_providers(self, providers: dict[str, Any]) -> dict[str, Any]:
-        """Validate all provider configurations"""
+        """Validate all provider configurations."""
         validation_results = {
             "valid_providers": [],
             "invalid_providers": [],
@@ -415,7 +416,7 @@ class EnhancedConfigManager:
         return validation_results
 
     async def validate_proxy_mode_config(self) -> dict[str, Any]:
-        """Validate proxy mode configuration (AIClient-2-API Server)"""
+        """Validate proxy mode configuration (AIClient-2-API Server)."""
         result = {"is_valid": True, "errors": [], "warnings": [], "recommendations": []}
 
         if settings.API_CONNECTION_MODE == APIConnectionMode.PROXY:
@@ -423,20 +424,22 @@ class EnhancedConfigManager:
 
             # Test proxy connectivity
             try:
-                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-                    async with session.get(f"{proxy_url}/health") as response:
-                        if response.status != 200:
-                            result["is_valid"] = False
-                            result["errors"].append(
-                                f"Proxy server at {proxy_url} returned status {response.status}"
-                            )
-                            result["recommendations"].extend(
-                                [
-                                    "Ensure AIClient-2-API Server is running on localhost:8080",
-                                    "Check if the health endpoint is available",
-                                    "Consider fallback to direct mode if proxy is unavailable",
-                                ]
-                            )
+                async with (
+                    aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session,
+                    session.get(f"{proxy_url}/health") as response,
+                ):
+                    if response.status != 200:
+                        result["is_valid"] = False
+                        result["errors"].append(
+                            f"Proxy server at {proxy_url} returned status {response.status}",
+                        )
+                        result["recommendations"].extend(
+                            [
+                                "Ensure AIClient-2-API Server is running on localhost:8080",
+                                "Check if the health endpoint is available",
+                                "Consider fallback to direct mode if proxy is unavailable",
+                            ],
+                        )
             except Exception as e:
                 result["is_valid"] = False
                 result["errors"].append(f"Cannot connect to proxy server at {proxy_url}: {e}")
@@ -445,13 +448,13 @@ class EnhancedConfigManager:
                         "Start AIClient-2-API Server on localhost:8080",
                         "Check network connectivity",
                         "Verify proxy configuration in environment variables",
-                    ]
+                    ],
                 )
 
         return result
 
     async def get_provider_config_summary(self) -> dict[str, Any]:
-        """Get a summary of the current provider configuration"""
+        """Get a summary of the current provider configuration."""
         providers = self._get_configured_providers()
 
         summary = {

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Database Setup Script for Chimera Platform
+"""Database Setup Script for Chimera Platform.
 
 This script initializes the database schema, runs migrations,
 and optionally seeds initial data for development.
@@ -31,36 +30,28 @@ from app.infrastructure.database.models import Base as InfraBase
 
 def check_database_connection():
     """Check if database is accessible."""
-    print("🔍 Checking database connection...")
-    print(f"   Database URL: {settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else settings.DATABASE_URL}")
-
     try:
         engine = create_engine(settings.DATABASE_URL)
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        print("✅ Database connection successful")
         return engine
-    except OperationalError as e:
-        print(f"❌ Database connection failed: {e}")
+    except OperationalError:
         sys.exit(1)
 
 
-def check_migration_status():
+def check_migration_status() -> bool | None:
     """Check current Alembic migration status."""
-    print("\n📋 Checking migration status...")
     import subprocess
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             ["alembic", "current"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        print(result.stdout)
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to check migration status: {e}")
+    except subprocess.CalledProcessError:
         return False
 
 
@@ -70,31 +61,24 @@ def get_existing_tables(engine):
     return inspector.get_table_names()
 
 
-def run_migrations():
+def run_migrations() -> bool | None:
     """Run Alembic migrations to latest version."""
-    print("\n🔄 Running database migrations...")
     import subprocess
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             ["alembic", "upgrade", "head"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        print(result.stdout)
-        print("✅ Migrations completed successfully")
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Migration failed: {e}")
-        print(e.stderr)
+    except subprocess.CalledProcessError:
         return False
 
 
-def reset_database(engine):
+def reset_database(engine) -> None:
     """Drop all tables and recreate (WARNING: destructive)."""
-    print("\n⚠️  RESETTING DATABASE (dropping all tables)...")
-
     # Drop all tables
     DBBase.metadata.drop_all(bind=engine)
     InfraBase.metadata.drop_all(bind=engine)
@@ -104,13 +88,9 @@ def reset_database(engine):
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
         conn.commit()
 
-    print("✅ All tables dropped")
 
-
-def seed_database(engine):
+def seed_database(engine) -> None:
     """Seed database with initial data for development."""
-    print("\n🌱 Seeding database with sample data...")
-
     from passlib.context import CryptContext
     from sqlalchemy.orm import Session
 
@@ -123,7 +103,6 @@ def seed_database(engine):
         existing_admin = session.query(User).filter_by(email="admin@chimera.local").first()
 
         if existing_admin:
-            print("   ℹ️  Admin user already exists, skipping seed")
             return
 
         # Create admin user
@@ -133,7 +112,7 @@ def seed_database(engine):
             hashed_password=pwd_context.hash("admin123"),
             role=UserRole.ADMIN,
             is_active=True,
-            is_verified=True
+            is_verified=True,
         )
         session.add(admin_user)
 
@@ -144,7 +123,7 @@ def seed_database(engine):
             hashed_password=pwd_context.hash("researcher123"),
             role=UserRole.RESEARCHER,
             is_active=True,
-            is_verified=True
+            is_verified=True,
         )
         session.add(researcher_user)
 
@@ -155,34 +134,24 @@ def seed_database(engine):
             hashed_password=pwd_context.hash("viewer123"),
             role=UserRole.VIEWER,
             is_active=True,
-            is_verified=True
+            is_verified=True,
         )
         session.add(viewer_user)
 
         session.commit()
 
-        print("✅ Sample users created:")
-        print("   👤 admin@chimera.local / admin123 (Admin)")
-        print("   👤 researcher@chimera.local / researcher123 (Researcher)")
-        print("   👤 viewer@chimera.local / viewer123 (Viewer)")
 
-
-def print_schema_summary(engine):
+def print_schema_summary(engine) -> None:
     """Print summary of database schema."""
-    print("\n📊 Database Schema Summary:")
-
     inspector = inspect(engine)
     tables = inspector.get_table_names()
 
-    print(f"   Total tables: {len(tables)}")
-    print("\n   Tables:")
     for table in sorted(tables):
-        columns = inspector.get_columns(table)
-        indexes = inspector.get_indexes(table)
-        print(f"      • {table} ({len(columns)} columns, {len(indexes)} indexes)")
+        inspector.get_columns(table)
+        inspector.get_indexes(table)
 
 
-def main():
+def main() -> None:
     """Main setup function."""
     parser = argparse.ArgumentParser(description="Setup Chimera database")
     parser.add_argument("--seed", action="store_true", help="Seed database with sample data")
@@ -190,10 +159,6 @@ def main():
     parser.add_argument("--check", action="store_true", help="Check database status only")
 
     args = parser.parse_args()
-
-    print("=" * 60)
-    print("🗄️  Chimera Database Setup")
-    print("=" * 60)
 
     # Check database connection
     engine = check_database_connection()
@@ -209,13 +174,11 @@ def main():
     if args.reset:
         confirm = input("\n⚠️  Are you sure you want to reset the database? (yes/no): ")
         if confirm.lower() != "yes":
-            print("❌ Reset cancelled")
             return
         reset_database(engine)
 
     # Run migrations
     if not run_migrations():
-        print("\n❌ Setup failed due to migration errors")
         sys.exit(1)
 
     # Seed database if requested
@@ -225,14 +188,8 @@ def main():
     # Print schema summary
     print_schema_summary(engine)
 
-    print("\n" + "=" * 60)
-    print("✅ Database setup completed successfully!")
-    print("=" * 60)
-
     if args.seed:
-        print("\n💡 You can now login with:")
-        print("   Email: admin@chimera.local")
-        print("   Password: admin123")
+        pass
 
 
 if __name__ == "__main__":

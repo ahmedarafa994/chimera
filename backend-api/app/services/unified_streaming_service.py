@@ -1,5 +1,4 @@
-"""
-Unified Streaming Service for Project Chimera.
+"""Unified Streaming Service for Project Chimera.
 
 This service provides unified streaming generation that respects
 provider/model selection from GlobalModelSelectionState and
@@ -18,6 +17,7 @@ References:
 - Provider plugins: app/services/provider_plugins/__init__.py
 - Global model selection: app/services/global_model_selection_state.py
 - Provider resolution: app/services/provider_resolution_service.py
+
 """
 
 import asyncio
@@ -44,8 +44,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StreamingRequest:
-    """
-    Request for streaming generation.
+    """Request for streaming generation.
 
     Contains all parameters needed for streaming generation including
     provider/model selection options.
@@ -68,8 +67,7 @@ class StreamingRequest:
 
 @dataclass
 class StreamingContext:
-    """
-    Context for a streaming session.
+    """Context for a streaming session.
 
     Captures the resolved provider/model selection and maintains
     consistency during the entire stream lifetime.
@@ -100,8 +98,7 @@ class StreamingContext:
 
 @dataclass
 class UnifiedStreamChunk:
-    """
-    Unified stream chunk format for consistent response structure.
+    """Unified stream chunk format for consistent response structure.
 
     Normalizes provider-specific chunk formats into a unified structure
     with tracing information.
@@ -138,8 +135,7 @@ class UnifiedStreamChunk:
 
 @dataclass
 class StreamMetrics:
-    """
-    Metrics collected during streaming.
+    """Metrics collected during streaming.
 
     Used for monitoring and debugging streaming performance.
     """
@@ -198,8 +194,7 @@ class StreamMetrics:
 
 
 class UnifiedStreamingService:
-    """
-    Unified streaming service that respects provider/model selection.
+    """Unified streaming service that respects provider/model selection.
 
     Features:
     - Uses resolved provider/model from ProviderResolutionService
@@ -226,7 +221,7 @@ class UnifiedStreamingService:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the streaming service."""
         if self._initialized:
             return
@@ -261,8 +256,7 @@ class UnifiedStreamingService:
         max_tokens: int | None = None,
         **kwargs,
     ) -> AsyncIterator[UnifiedStreamChunk]:
-        """
-        Stream text generation using current provider/model selection.
+        """Stream text generation using current provider/model selection.
 
         This method resolves the provider/model from the selection hierarchy,
         creates a streaming context, and yields unified stream chunks.
@@ -288,6 +282,7 @@ class UnifiedStreamingService:
             ...     temperature=0.8
             ... ):
             ...     print(chunk.text, end="", flush=True)
+
         """
         # Create streaming request
         request = StreamingRequest(
@@ -319,10 +314,12 @@ class UnifiedStreamingService:
             # Get provider plugin
             plugin = get_plugin(context.provider)
             if not plugin:
-                raise ValueError(f"Provider plugin not found: {context.provider}")
+                msg = f"Provider plugin not found: {context.provider}"
+                raise ValueError(msg)
 
             if not plugin.supports_streaming():
-                raise ValueError(f"Provider {context.provider} does not support streaming")
+                msg = f"Provider {context.provider} does not support streaming"
+                raise ValueError(msg)
 
             # Create generation request
             gen_request = GenerationRequest(
@@ -371,7 +368,8 @@ class UnifiedStreamingService:
                     metrics.finish_reason = unified_chunk.finish_reason
                     if unified_chunk.usage:
                         metrics.total_tokens = unified_chunk.usage.get(
-                            "total_tokens", metrics.total_tokens
+                            "total_tokens",
+                            metrics.total_tokens,
                         )
 
                 # Notify listeners
@@ -388,7 +386,7 @@ class UnifiedStreamingService:
                 f"Stream completed: stream_id={context.stream_id}, "
                 f"provider={context.provider}, model={context.model}, "
                 f"chunks={metrics.total_chunks}, "
-                f"duration_ms={metrics.total_duration_ms:.1f}"
+                f"duration_ms={metrics.total_duration_ms:.1f}",
             )
 
         except asyncio.CancelledError:
@@ -403,7 +401,7 @@ class UnifiedStreamingService:
             # Handle errors
             metrics.error = str(e)
             metrics.ended_at = datetime.utcnow()
-            logger.error(f"Stream error: stream_id={context.stream_id}, " f"error={e}")
+            logger.exception(f"Stream error: stream_id={context.stream_id}, error={e}")
             await self._notify_listeners("error", context, e)
             raise
 
@@ -422,8 +420,7 @@ class UnifiedStreamingService:
         explicit_model: str | None = None,
         **kwargs,
     ) -> AsyncIterator[UnifiedStreamChunk]:
-        """
-        Stream chat completion using current provider/model selection.
+        """Stream chat completion using current provider/model selection.
 
         Similar to stream_generate but uses chat message format instead
         of a single prompt.
@@ -449,6 +446,7 @@ class UnifiedStreamingService:
             ...     session_id="sess_123"
             ... ):
             ...     print(chunk.text, end="", flush=True)
+
         """
         # Convert messages to prompt (simplified approach)
         # More sophisticated implementations could use provider-specific
@@ -491,8 +489,7 @@ class UnifiedStreamingService:
         self,
         request: StreamingRequest,
     ) -> StreamingContext:
-        """
-        Create a streaming context with resolved provider/model.
+        """Create a streaming context with resolved provider/model.
 
         Resolves the provider/model from the selection hierarchy and
         creates an immutable context for the stream duration.
@@ -524,7 +521,7 @@ class UnifiedStreamingService:
         logger.debug(
             f"Created streaming context: stream_id={stream_id}, "
             f"provider={resolution.provider}, model={resolution.model_id}, "
-            f"source={resolution.resolution_source}"
+            f"source={resolution.resolution_source}",
         )
 
         return context
@@ -539,8 +536,7 @@ class UnifiedStreamingService:
         chunk_index: int,
         context: StreamingContext,
     ) -> UnifiedStreamChunk:
-        """
-        Normalize a provider-specific chunk to unified format.
+        """Normalize a provider-specific chunk to unified format.
 
         Handles differences between provider chunk formats and adds
         tracing information.
@@ -579,8 +575,7 @@ class UnifiedStreamingService:
         logger.info(f"Stream metrics: {metrics.to_dict()}")
 
     def get_metrics_summary(self) -> dict[str, Any]:
-        """
-        Get summary of stream metrics.
+        """Get summary of stream metrics.
 
         Returns aggregate statistics about recent streams.
         """
@@ -636,8 +631,7 @@ class UnifiedStreamingService:
         return [ctx.to_dict() for ctx in self._active_streams.values()]
 
     async def cancel_stream(self, stream_id: str) -> bool:
-        """
-        Request cancellation of an active stream.
+        """Request cancellation of an active stream.
 
         Note: This only removes the stream from tracking. The actual
         cancellation depends on the caller handling CancelledError.
@@ -654,11 +648,11 @@ class UnifiedStreamingService:
     # -------------------------------------------------------------------------
 
     def add_stream_listener(self, callback: callable) -> None:
-        """
-        Add a listener for stream events.
+        """Add a listener for stream events.
 
         Args:
             callback: Async callable(event_type, context, data)
+
         """
         self._stream_listeners.append(callback)
 
@@ -684,7 +678,7 @@ class UnifiedStreamingService:
                 else:
                     listener(event_type, context, data)
             except Exception as e:
-                logger.error(f"Error in stream listener: {e}")
+                logger.exception(f"Error in stream listener: {e}")
 
 
 # =============================================================================
@@ -696,11 +690,11 @@ _unified_streaming_service: UnifiedStreamingService | None = None
 
 
 def get_unified_streaming_service() -> UnifiedStreamingService:
-    """
-    Get the singleton UnifiedStreamingService instance.
+    """Get the singleton UnifiedStreamingService instance.
 
     Returns:
         The global UnifiedStreamingService instance
+
     """
     global _unified_streaming_service
     if _unified_streaming_service is None:
@@ -709,8 +703,7 @@ def get_unified_streaming_service() -> UnifiedStreamingService:
 
 
 async def get_unified_streaming_service_async() -> UnifiedStreamingService:
-    """
-    Async factory for UnifiedStreamingService.
+    """Async factory for UnifiedStreamingService.
 
     Use this as a FastAPI dependency:
         @router.post("/stream/generate")
@@ -723,6 +716,7 @@ async def get_unified_streaming_service_async() -> UnifiedStreamingService:
 
     Returns:
         The global UnifiedStreamingService instance
+
     """
     return get_unified_streaming_service()
 

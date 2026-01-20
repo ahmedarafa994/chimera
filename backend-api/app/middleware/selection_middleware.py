@@ -1,5 +1,4 @@
-"""
-Selection Middleware - FastAPI middleware for provider selection injection and validation.
+"""Selection Middleware - FastAPI middleware for provider selection injection and validation.
 
 This module implements the middleware layer that injects and validates provider/model
 selections for incoming requests. It implements the four-tier selection hierarchy:
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class SelectionMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for injecting provider/model selection into request context.
+    """Middleware for injecting provider/model selection into request context.
 
     This middleware implements the selection resolution strategy:
     1. Check for request-level override (headers or query params)
@@ -46,9 +44,8 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         default_model: str = "gpt-4-turbo",
         enable_session_lookup: bool = True,
         excluded_paths: list[str] | None = None,
-    ):
-        """
-        Initialize selection middleware.
+    ) -> None:
+        """Initialize selection middleware.
 
         Args:
             app: FastAPI application instance
@@ -56,6 +53,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             default_model: Default model ID (fallback)
             enable_session_lookup: Whether to perform session database lookups
             excluded_paths: List of paths to exclude from selection logic
+
         """
         super().__init__(app)
         self._default_provider = default_provider
@@ -68,8 +66,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         logger.info(f"SelectionMiddleware initialized (default={default_provider}/{default_model})")
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """
-        Process request and inject selection into context.
+        """Process request and inject selection into context.
 
         Args:
             request: FastAPI request
@@ -77,6 +74,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response from downstream handler
+
         """
         # Generate request ID for tracing
         request_id = str(uuid.uuid4())
@@ -102,7 +100,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
             logger.debug(
                 f"[{request_id}] Selection set: {selection.provider_id}/{selection.model_id} "
-                f"(scope={selection.scope.value})"
+                f"(scope={selection.scope.value})",
             )
 
             # Attach request ID to request state for downstream access
@@ -135,8 +133,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             pass
 
     async def _resolve_selection(self, request: Request, request_id: str) -> Selection:
-        """
-        Resolve selection using four-tier hierarchy.
+        """Resolve selection using four-tier hierarchy.
 
         Priority (highest to lowest):
         1. Request Override - Headers or query parameters
@@ -150,6 +147,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Resolved Selection object
+
         """
         # 1. Check for request-level override
         request_override = self._extract_request_override(request)
@@ -173,12 +171,12 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                 if session_selection and session_selection[0] and session_selection[1]:
                     provider_id, model_id = session_selection
                     logger.debug(
-                        f"[{request_id}] Using session preference: " f"{provider_id}/{model_id}"
+                        f"[{request_id}] Using session preference: {provider_id}/{model_id}",
                     )
 
                     # Create a simple object to match expected interface
                     class SessionSelection:
-                        def __init__(self, provider_id: str, model_id: str):
+                        def __init__(self, provider_id: str, model_id: str) -> None:
                             self.provider_id = provider_id
                             self.model_id = model_id
 
@@ -191,7 +189,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         # 4. Fall back to static default
         logger.debug(
-            f"[{request_id}] Using static default: {self._default_provider}/{self._default_model}"
+            f"[{request_id}] Using static default: {self._default_provider}/{self._default_model}",
         )
         return Selection(
             provider_id=self._default_provider,
@@ -202,8 +200,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         )
 
     def _get_global_model_selection(self, request_id: str) -> Selection | None:
-        """
-        Get the global model selection set via /model-selection endpoint.
+        """Get the global model selection set via /model-selection endpoint.
 
         This reads from the model_selection_service which persists user's
         selected provider/model to a JSON file.
@@ -213,6 +210,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Selection if set and valid, None otherwise
+
         """
         try:
             selection = model_selection_service.get_selection()
@@ -223,26 +221,24 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                 # Validate the selection is still valid
                 if self._validate_selection(provider_id, model_id):
                     logger.debug(
-                        f"[{request_id}] Using global model selection: {provider_id}/{model_id}"
+                        f"[{request_id}] Using global model selection: {provider_id}/{model_id}",
                     )
                     return Selection(
                         provider_id=provider_id,
                         model_id=model_id,
                         scope=SelectionScope.GLOBAL,
                     )
-                else:
-                    logger.warning(
-                        f"[{request_id}] Global model selection {provider_id}/{model_id} "
-                        "is no longer valid. Falling back to static default."
-                    )
+                logger.warning(
+                    f"[{request_id}] Global model selection {provider_id}/{model_id} "
+                    "is no longer valid. Falling back to static default.",
+                )
             return None
         except Exception as e:
             logger.warning(f"[{request_id}] Failed to get global model selection: {e}")
             return None
 
     def _extract_request_override(self, request: Request) -> tuple[str, str] | None:
-        """
-        Extract provider/model override from request headers or query params.
+        """Extract provider/model override from request headers or query params.
 
         Checks (in order):
         1. Headers: X-Provider-ID and X-Model-ID
@@ -253,6 +249,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Tuple of (provider_id, model_id) if found, None otherwise
+
         """
         # Check headers
         provider_id = request.headers.get("X-Provider-ID")
@@ -271,8 +268,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         return None
 
     def _extract_session_id(self, request: Request) -> str | None:
-        """
-        Extract session ID from request.
+        """Extract session ID from request.
 
         Checks (in order):
         1. Request state (set by auth middleware)
@@ -285,6 +281,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Session ID if found, None otherwise
+
         """
         # Check request state
         if hasattr(request.state, "session_id"):
@@ -308,8 +305,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         return None
 
     def _extract_user_id(self, request: Request) -> str | None:
-        """
-        Extract user ID from request.
+        """Extract user ID from request.
 
         Checks (in order):
         1. Request state (set by auth middleware)
@@ -320,6 +316,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             User ID if found, None otherwise
+
         """
         # Check request state
         if hasattr(request.state, "user_id"):
@@ -333,10 +330,11 @@ class SelectionMiddleware(BaseHTTPMiddleware):
         return None
 
     async def _lookup_session_preference(
-        self, session_id: str, request_id: str
+        self,
+        session_id: str,
+        request_id: str,
     ) -> tuple[str | None, str | None]:
-        """
-        Look up session preference from database.
+        """Look up session preference from database.
 
         Queries the selections table for the session's stored preference.
         Returns None if no preference is stored or if the stored selection
@@ -348,6 +346,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Tuple of (provider_id, model_id) if found, None otherwise
+
         """
         try:
             from app.services.selection_service import selection_service
@@ -360,22 +359,20 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                 if selection:
                     logger.debug(
                         f"[{request_id}] Found session preference: "
-                        f"{selection.provider_id}/{selection.model_id}"
+                        f"{selection.provider_id}/{selection.model_id}",
                     )
                     return selection.provider_id, selection.model_id
-                else:
-                    logger.debug(
-                        f"[{request_id}] No valid session preference found for session={session_id}"
-                    )
-                    return None, None
+                logger.debug(
+                    f"[{request_id}] No valid session preference found for session={session_id}",
+                )
+                return None, None
 
         except Exception as e:
             logger.error(f"[{request_id}] Failed to lookup session preference: {e}", exc_info=True)
             return None, None
 
     def _validate_selection(self, provider_id: str, model_id: str) -> bool:
-        """
-        Validate that provider/model combination is valid.
+        """Validate that provider/model combination is valid.
 
         Validation strategy (from most to least strict):
         1. Check unified_registry if available
@@ -389,6 +386,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             True if valid, False otherwise
+
         """
         try:
             # First try unified_registry (if populated)
@@ -428,7 +426,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                         models = p.get("available_models", p.get("models", []))
                         if model_name in models or model_id in models:
                             logger.debug(
-                                f"Validated selection via model_router_service: {provider_id}/{model_id}"
+                                f"Validated selection via model_router_service: {provider_id}/{model_id}",
                             )
                             return True
 
@@ -437,7 +435,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                         for m in models_detail:
                             if m.get("id") == model_id or m.get("name") == model_name:
                                 logger.debug(
-                                    f"Validated selection via models_detail: {provider_id}/{model_id}"
+                                    f"Validated selection via models_detail: {provider_id}/{model_id}",
                                 )
                                 return True
 
@@ -445,7 +443,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                         # Still allow it - model catalogs can be incomplete
                         logger.debug(
                             f"Provider '{provider_id}' found but model '{model_id}' not in catalog. "
-                            f"Allowing selection anyway."
+                            f"Allowing selection anyway.",
                         )
                         return True
 
@@ -453,7 +451,7 @@ class SelectionMiddleware(BaseHTTPMiddleware):
                 # It might be a custom/dynamically added provider
                 logger.debug(
                     f"Provider '{provider_id}' not in model_router_service. "
-                    f"Allowing selection if provider is otherwise valid."
+                    f"Allowing selection if provider is otherwise valid.",
                 )
                 # Allow if we couldn't find it - be lenient
                 return True
@@ -467,11 +465,11 @@ class SelectionMiddleware(BaseHTTPMiddleware):
             return True
 
     def _create_fallback_selection(self) -> Selection:
-        """
-        Create a fallback selection for error cases.
+        """Create a fallback selection for error cases.
 
         Returns:
             Selection with default values
+
         """
         return Selection(
             provider_id=self._default_provider,
@@ -481,16 +479,14 @@ class SelectionMiddleware(BaseHTTPMiddleware):
 
 
 class SelectionValidationMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for validating that selection context is properly set.
+    """Middleware for validating that selection context is properly set.
 
     This middleware runs after SelectionMiddleware and ensures that
     the selection context is available for downstream handlers.
     """
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """
-        Validate selection context and call next handler.
+        """Validate selection context and call next handler.
 
         Args:
             request: FastAPI request
@@ -498,12 +494,13 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response from downstream handler
+
         """
         # Check if selection is set
         if not SelectionContext.is_set():
             logger.error(
                 f"Selection context not set for request: {request.url.path}. "
-                "Ensure SelectionMiddleware is configured correctly."
+                "Ensure SelectionMiddleware is configured correctly.",
             )
             # Could raise HTTPException here, but for now we'll allow it to proceed
 
@@ -512,7 +509,7 @@ class SelectionValidationMiddleware(BaseHTTPMiddleware):
         if selection:
             logger.debug(
                 f"Validated selection: {selection.provider_id}/{selection.model_id} "
-                f"for path: {request.url.path}"
+                f"for path: {request.url.path}",
             )
 
         return await call_next(request)

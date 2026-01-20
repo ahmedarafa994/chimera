@@ -1,5 +1,4 @@
-"""
-Advanced Circuit Breakers and Bulkheads for System Resilience.
+"""Advanced Circuit Breakers and Bulkheads for System Resilience.
 
 This module provides comprehensive resilience patterns:
 - Advanced Circuit Breaker with adaptive thresholds
@@ -110,10 +109,10 @@ class RetryConfig:
 
     # Conditional retry
     retryable_exceptions: set[str] = field(
-        default_factory=lambda: {"TimeoutError", "ConnectionError", "HTTPError"}
+        default_factory=lambda: {"TimeoutError", "ConnectionError", "HTTPError"},
     )
     non_retryable_exceptions: set[str] = field(
-        default_factory=lambda: {"AuthenticationError", "AuthorizationError", "ValidationError"}
+        default_factory=lambda: {"AuthenticationError", "AuthorizationError", "ValidationError"},
     )
 
 
@@ -141,7 +140,7 @@ class ThrottleConfig:
 class CircuitBreakerException(Exception):
     """Exception raised when circuit breaker is open."""
 
-    def __init__(self, name: str, state: CircuitState, retry_after: float):
+    def __init__(self, name: str, state: CircuitState, retry_after: float) -> None:
         self.name = name
         self.state = state
         self.retry_after = retry_after
@@ -168,7 +167,7 @@ class CircuitMetrics:
             "open_to_half_open": 0,
             "half_open_to_closed": 0,
             "half_open_to_open": 0,
-        }
+        },
     )
 
     last_failure_time: float = 0.0
@@ -176,11 +175,9 @@ class CircuitMetrics:
 
 
 class AdvancedCircuitBreaker:
-    """
-    Advanced circuit breaker with adaptive thresholds and comprehensive metrics.
-    """
+    """Advanced circuit breaker with adaptive thresholds and comprehensive metrics."""
 
-    def __init__(self, name: str, config: CircuitBreakerConfig):
+    def __init__(self, name: str, config: CircuitBreakerConfig) -> None:
         self.name = name
         self.config = config
 
@@ -252,7 +249,7 @@ class AdvancedCircuitBreaker:
         if self.state == CircuitState.CLOSED:
             return True
 
-        elif self.state == CircuitState.OPEN:
+        if self.state == CircuitState.OPEN:
             # Check if recovery timeout has passed
             if current_time - self.last_failure_time >= self.config.recovery_timeout_seconds:
                 self.state = CircuitState.HALF_OPEN
@@ -262,7 +259,7 @@ class AdvancedCircuitBreaker:
                 return True
             return False
 
-        elif self.state == CircuitState.HALF_OPEN:
+        if self.state == CircuitState.HALF_OPEN:
             # Allow limited requests to test recovery
             return len(self._active_requests) == 0
 
@@ -272,10 +269,9 @@ class AdvancedCircuitBreaker:
         """Execute the actual function call."""
         if asyncio.iscoroutinefunction(func):
             return await func(*args, **kwargs)
-        else:
-            # Run sync function in thread pool
-            loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(None, func, *args, **kwargs)
+        # Run sync function in thread pool
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, func, *args, **kwargs)
 
     async def _record_success(self, response_time_ms: float) -> None:
         """Record successful request."""
@@ -471,11 +467,9 @@ class BulkheadMetrics:
 
 
 class BulkheadIsolation:
-    """
-    Bulkhead pattern implementation for resource isolation.
-    """
+    """Bulkhead pattern implementation for resource isolation."""
 
-    def __init__(self, name: str, config: BulkheadConfig):
+    def __init__(self, name: str, config: BulkheadConfig) -> None:
         self.name = name
         self.config = config
 
@@ -512,7 +506,8 @@ class BulkheadIsolation:
         # Check resource limits before queuing
         if not await self._check_resource_limits():
             self.metrics.rejected_requests += 1
-            raise RuntimeError(f"Bulkhead '{self.name}' resource limits exceeded")
+            msg = f"Bulkhead '{self.name}' resource limits exceeded"
+            raise RuntimeError(msg)
 
         # Try to add to queue
         try:
@@ -521,7 +516,8 @@ class BulkheadIsolation:
             self.metrics.queued_requests += 1
         except asyncio.QueueFull:
             self.metrics.rejected_requests += 1
-            raise RuntimeError(f"Bulkhead '{self.name}' queue is full")
+            msg = f"Bulkhead '{self.name}' queue is full"
+            raise RuntimeError(msg)
 
         # Process request
         return await self._process_request()
@@ -555,7 +551,7 @@ class BulkheadIsolation:
                 # Update average processing time
                 if self._processing_times:
                     self.metrics.avg_processing_time_ms = sum(self._processing_times) / len(
-                        self._processing_times
+                        self._processing_times,
                     )
 
                 return result
@@ -574,7 +570,7 @@ class BulkheadIsolation:
         # Check memory limit
         if self._memory_usage_mb > self.config.max_memory_mb:
             logger.warning(
-                f"Bulkhead '{self.name}' memory limit exceeded: {self._memory_usage_mb}MB"
+                f"Bulkhead '{self.name}' memory limit exceeded: {self._memory_usage_mb}MB",
             )
             return False
 
@@ -636,7 +632,7 @@ class BulkheadIsolation:
 class TokenBucketThrottle:
     """Token bucket rate limiting implementation."""
 
-    def __init__(self, config: ThrottleConfig):
+    def __init__(self, config: ThrottleConfig) -> None:
         self.config = config
 
         # Token bucket state
@@ -678,7 +674,7 @@ class TokenBucketThrottle:
 class RetryHandler:
     """Advanced retry handler with multiple backoff strategies."""
 
-    def __init__(self, config: RetryConfig):
+    def __init__(self, config: RetryConfig) -> None:
         self.config = config
 
     async def execute_with_retry(self, func: Callable, *args, **kwargs) -> Any:
@@ -689,9 +685,8 @@ class RetryHandler:
             try:
                 if asyncio.iscoroutinefunction(func):
                     return await func(*args, **kwargs)
-                else:
-                    loop = asyncio.get_event_loop()
-                    return await loop.run_in_executor(None, func, *args, **kwargs)
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, func, *args, **kwargs)
 
             except Exception as e:
                 last_exception = e
@@ -780,11 +775,9 @@ class RetryHandler:
 
 
 class ResilienceManager:
-    """
-    Integrated resilience manager combining all patterns.
-    """
+    """Integrated resilience manager combining all patterns."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Component registries
         self._circuit_breakers: dict[str, AdvancedCircuitBreaker] = {}
         self._bulkheads: dict[str, BulkheadIsolation] = {}
@@ -802,7 +795,9 @@ class ResilienceManager:
         }
 
     def register_circuit_breaker(
-        self, name: str, config: CircuitBreakerConfig
+        self,
+        name: str,
+        config: CircuitBreakerConfig,
     ) -> AdvancedCircuitBreaker:
         """Register a circuit breaker."""
         circuit_breaker = AdvancedCircuitBreaker(name, config)
@@ -850,7 +845,8 @@ class ResilienceManager:
                 throttle_instance = self._throttles[throttle]
                 if not await throttle_instance.acquire():
                     self._global_metrics["throttle_rejections"] += 1
-                    raise RuntimeError(f"Request throttled by '{throttle}'")
+                    msg = f"Request throttled by '{throttle}'"
+                    raise RuntimeError(msg)
 
             # Define execution function
             async def execute():
@@ -858,13 +854,11 @@ class ResilienceManager:
                 if bulkhead and bulkhead in self._bulkheads:
                     bulkhead_instance = self._bulkheads[bulkhead]
                     return await bulkhead_instance.execute(func, *args, **kwargs)
-                else:
-                    # Direct execution
-                    if asyncio.iscoroutinefunction(func):
-                        return await func(*args, **kwargs)
-                    else:
-                        loop = asyncio.get_event_loop()
-                        return await loop.run_in_executor(None, func, *args, **kwargs)
+                # Direct execution
+                if asyncio.iscoroutinefunction(func):
+                    return await func(*args, **kwargs)
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, func, *args, **kwargs)
 
             # Apply circuit breaker protection
             if circuit_breaker and circuit_breaker in self._circuit_breakers:
@@ -876,13 +870,12 @@ class ResilienceManager:
                     result = await retry_instance.execute_with_retry(cb_instance.call, execute)
                 else:
                     result = await cb_instance.call(execute)
+            # Apply retry handler directly if no circuit breaker
+            elif retry_handler and retry_handler in self._retry_handlers:
+                retry_instance = self._retry_handlers[retry_handler]
+                result = await retry_instance.execute_with_retry(execute)
             else:
-                # Apply retry handler directly if no circuit breaker
-                if retry_handler and retry_handler in self._retry_handlers:
-                    retry_instance = self._retry_handlers[retry_handler]
-                    result = await retry_instance.execute_with_retry(execute)
-                else:
-                    result = await execute()
+                result = await execute()
 
             self._global_metrics["successful_requests"] += 1
             return result

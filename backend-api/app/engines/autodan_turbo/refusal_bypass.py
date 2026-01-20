@@ -1,5 +1,4 @@
-"""
-Refusal Bypass Engine for AutoDAN-Turbo.
+"""Refusal Bypass Engine for AutoDAN-Turbo.
 
 Implements advanced techniques to prevent LLM refusals when generating adversarial prompts.
 This module provides:
@@ -347,8 +346,7 @@ REFUSAL_PATTERNS_BY_TYPE = {
 
 
 class RefusalBypassEngine:
-    """
-    Engine for analyzing and bypassing LLM refusals.
+    """Engine for analyzing and bypassing LLM refusals.
 
     Provides methods to:
     1. Detect and categorize refusals
@@ -363,15 +361,15 @@ class RefusalBypassEngine:
         enable_semantic_reframing: bool = True,
         enable_intent_obfuscation: bool = True,
         preferred_strategies: list[MutationStrategy] | None = None,
-    ):
-        """
-        Initialize the refusal bypass engine.
+    ) -> None:
+        """Initialize the refusal bypass engine.
 
         Args:
             max_retries: Maximum number of bypass attempts
             enable_semantic_reframing: Enable term replacement
             enable_intent_obfuscation: Enable academic/research framing
             preferred_strategies: Preferred mutation strategies (in order)
+
         """
         self.max_retries = max_retries
         self.enable_semantic_reframing = enable_semantic_reframing
@@ -400,18 +398,18 @@ class RefusalBypassEngine:
 
         logger.info(
             f"RefusalBypassEngine initialized with max_retries={max_retries}, "
-            f"strategies={[s.value for s in self.preferred_strategies]}"
+            f"strategies={[s.value for s in self.preferred_strategies]}",
         )
 
     def analyze_refusal(self, response: str) -> RefusalAnalysis:
-        """
-        Analyze a response to detect and categorize refusals.
+        """Analyze a response to detect and categorize refusals.
 
         Args:
             response: The LLM response to analyze
 
         Returns:
             RefusalAnalysis with detection results
+
         """
         self._stats["total_analyses"] += 1
 
@@ -476,14 +474,14 @@ class RefusalBypassEngine:
         return strategy_map.get(refusal_type, MutationStrategy.OPERATIONAL_FRAMING)
 
     def apply_semantic_reframing(self, text: str) -> str:
-        """
-        Apply semantic reframing to replace sensitive terms.
+        """Apply semantic reframing to replace sensitive terms.
 
         Args:
             text: Original text with potentially sensitive terms
 
         Returns:
             Reframed text with neutral alternatives
+
         """
         if not self.enable_semantic_reframing:
             return text
@@ -499,8 +497,7 @@ class RefusalBypassEngine:
         return result
 
     def apply_intent_obfuscation(self, intent: str, strategy: MutationStrategy) -> str:
-        """
-        Apply intent obfuscation using the specified strategy.
+        """Apply intent obfuscation using the specified strategy.
 
         Args:
             intent: The original intent/request
@@ -508,6 +505,7 @@ class RefusalBypassEngine:
 
         Returns:
             Obfuscated prompt with academic/research framing
+
         """
         if not self.enable_intent_obfuscation:
             return intent
@@ -536,10 +534,12 @@ class RefusalBypassEngine:
         return template.format(intent=reframed_intent)
 
     def mutate_prompt(
-        self, prompt: str, strategy: MutationStrategy | None = None, attempt_number: int = 0
+        self,
+        prompt: str,
+        strategy: MutationStrategy | None = None,
+        attempt_number: int = 0,
     ) -> str:
-        """
-        Mutate a prompt to bypass potential refusals.
+        """Mutate a prompt to bypass potential refusals.
 
         Args:
             prompt: Original prompt
@@ -548,6 +548,7 @@ class RefusalBypassEngine:
 
         Returns:
             Mutated prompt
+
         """
         self._stats["bypass_attempts"] += 1
 
@@ -593,7 +594,7 @@ class RefusalBypassEngine:
         """Get bypass engine statistics."""
         return self._stats.copy()
 
-    def reset_stats(self):
+    def reset_stats(self) -> None:
         """Reset statistics."""
         self._stats = {
             "total_analyses": 0,
@@ -605,8 +606,7 @@ class RefusalBypassEngine:
 
 
 class AdaptiveRefusalHandler:
-    """
-    Adaptive handler that wraps LLM calls with automatic refusal bypass.
+    """Adaptive handler that wraps LLM calls with automatic refusal bypass.
 
     Automatically detects refusals and retries with mutated prompts.
     """
@@ -617,15 +617,15 @@ class AdaptiveRefusalHandler:
         bypass_engine: RefusalBypassEngine | None = None,
         max_retries: int = 3,
         on_refusal_callback: Callable[[str, RefusalAnalysis], None] | None = None,
-    ):
-        """
-        Initialize the adaptive handler.
+    ) -> None:
+        """Initialize the adaptive handler.
 
         Args:
             llm_call_fn: Function to call the LLM (takes prompt, returns response)
             bypass_engine: RefusalBypassEngine instance (created if not provided)
             max_retries: Maximum retry attempts
             on_refusal_callback: Optional callback when refusal is detected
+
         """
         self.llm_call_fn = llm_call_fn
         self.bypass_engine = bypass_engine or RefusalBypassEngine(max_retries=max_retries)
@@ -640,10 +640,11 @@ class AdaptiveRefusalHandler:
         }
 
     async def call_with_bypass(
-        self, prompt: str, extract_response: Callable[[Any], str] | None = None
+        self,
+        prompt: str,
+        extract_response: Callable[[Any], str] | None = None,
     ) -> tuple[str, bool, int]:
-        """
-        Call LLM with automatic refusal bypass.
+        """Call LLM with automatic refusal bypass.
 
         Args:
             prompt: Original prompt
@@ -651,6 +652,7 @@ class AdaptiveRefusalHandler:
 
         Returns:
             Tuple of (response, was_bypassed, attempts)
+
         """
         self._call_stats["total_calls"] += 1
 
@@ -687,7 +689,7 @@ class AdaptiveRefusalHandler:
 
                 logger.warning(
                     f"Refusal detected (attempt {attempt + 1}/{self.max_retries + 1}): "
-                    f"type={analysis.refusal_type.value}, confidence={analysis.confidence:.2f}"
+                    f"type={analysis.refusal_type.value}, confidence={analysis.confidence:.2f}",
                 )
 
                 # Mutate prompt for next attempt
@@ -701,7 +703,7 @@ class AdaptiveRefusalHandler:
                     logger.info(f"Retrying with strategy: {strategy.value if strategy else 'auto'}")
 
             except Exception as e:
-                logger.error(f"LLM call failed on attempt {attempt + 1}: {e}")
+                logger.exception(f"LLM call failed on attempt {attempt + 1}: {e}")
                 if attempt == self.max_retries:
                     raise
 
@@ -718,8 +720,7 @@ class AdaptiveRefusalHandler:
 
         if inspect.iscoroutinefunction(self.llm_call_fn):
             return await self.llm_call_fn(prompt)
-        else:
-            return await asyncio.to_thread(self.llm_call_fn, prompt)
+        return await asyncio.to_thread(self.llm_call_fn, prompt)
 
     def get_stats(self) -> dict:
         """Get handler statistics."""
@@ -736,8 +737,7 @@ def create_obfuscated_prompt(
     strategy: MutationStrategy = MutationStrategy.OPERATIONAL_FRAMING,
     apply_reframing: bool = True,
 ) -> str:
-    """
-    Convenience function to create an obfuscated prompt.
+    """Convenience function to create an obfuscated prompt.
 
     Args:
         intent: The original intent/request
@@ -746,22 +746,24 @@ def create_obfuscated_prompt(
 
     Returns:
         Obfuscated prompt
+
     """
     engine = RefusalBypassEngine(
-        enable_semantic_reframing=apply_reframing, enable_intent_obfuscation=True
+        enable_semantic_reframing=apply_reframing,
+        enable_intent_obfuscation=True,
     )
     return engine.apply_intent_obfuscation(intent, strategy)
 
 
 def detect_and_categorize_refusal(response: str) -> dict:
-    """
-    Convenience function to detect and categorize a refusal.
+    """Convenience function to detect and categorize a refusal.
 
     Args:
         response: LLM response to analyze
 
     Returns:
         Dictionary with refusal analysis results
+
     """
     engine = RefusalBypassEngine()
     analysis = engine.analyze_refusal(response)
@@ -782,8 +784,7 @@ def detect_and_categorize_refusal(response: str) -> dict:
 
 # Add obfuscate_intent method to RefusalBypassEngine
 def _obfuscate_intent_impl(self, intent: str, strategy_index: int = 0) -> str:
-    """
-    Obfuscate the intent using academic/research framing.
+    """Obfuscate the intent using academic/research framing.
 
     Args:
         intent: The original intent/request
@@ -791,6 +792,7 @@ def _obfuscate_intent_impl(self, intent: str, strategy_index: int = 0) -> str:
 
     Returns:
         Obfuscated prompt with academic/research framing
+
     """
     # Combine all templates
     all_templates = (
@@ -815,20 +817,21 @@ RefusalBypassEngine.obfuscate_intent = _obfuscate_intent_impl
 
 
 class MultiStageAttackPipeline:
-    """
-    Multi-stage attack pipeline with progressive bypass strategies.
+    """Multi-stage attack pipeline with progressive bypass strategies.
 
     Implements a cascading approach where each stage uses more sophisticated
     bypass techniques if previous stages fail.
     """
 
-    def __init__(self, bypass_engine: RefusalBypassEngine, stages: list[dict] | None = None):
-        """
-        Initialize the multi-stage pipeline.
+    def __init__(
+        self, bypass_engine: RefusalBypassEngine, stages: list[dict] | None = None
+    ) -> None:
+        """Initialize the multi-stage pipeline.
 
         Args:
             bypass_engine: RefusalBypassEngine instance
             stages: Custom stage configurations (uses defaults if not provided)
+
         """
         self.bypass_engine = bypass_engine
 
@@ -863,14 +866,14 @@ class MultiStageAttackPipeline:
         }
 
     def generate_staged_prompts(self, intent: str) -> list[tuple[str, str]]:
-        """
-        Generate prompts for each stage of the pipeline.
+        """Generate prompts for each stage of the pipeline.
 
         Args:
             intent: The original intent/request
 
         Returns:
             List of (stage_name, prompt) tuples
+
         """
         staged_prompts = []
 
@@ -887,10 +890,12 @@ class MultiStageAttackPipeline:
         return staged_prompts
 
     async def execute(
-        self, intent: str, llm_call_fn, extract_response: Callable[[Any], str] | None = None
+        self,
+        intent: str,
+        llm_call_fn,
+        extract_response: Callable[[Any], str] | None = None,
     ) -> tuple[str, str, int]:
-        """
-        Execute the multi-stage pipeline.
+        """Execute the multi-stage pipeline.
 
         Args:
             intent: Original intent/request
@@ -899,6 +904,7 @@ class MultiStageAttackPipeline:
 
         Returns:
             Tuple of (response, successful_stage_name, total_attempts)
+
         """
         self._pipeline_stats["total_runs"] += 1
 
@@ -937,7 +943,7 @@ class MultiStageAttackPipeline:
                 last_response = response
 
             except Exception as e:
-                logger.error(f"Stage {stage_name} failed with error: {e}")
+                logger.exception(f"Stage {stage_name} failed with error: {e}")
                 continue
 
         # All stages failed

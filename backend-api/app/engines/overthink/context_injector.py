@@ -1,5 +1,4 @@
-"""
-OVERTHINK Context Injector.
+"""OVERTHINK Context Injector.
 
 This module provides sophisticated injection strategies for inserting
 decoy problems into prompts. It implements multiple injection patterns
@@ -123,8 +122,7 @@ POSITION_WEIGHTS = {
 
 
 class ContextInjector:
-    """
-    Injects decoy problems into prompts using various strategies.
+    """Injects decoy problems into prompts using various strategies.
 
     Supports multiple injection patterns optimized for different
     objectives: maximum amplification, stealth, or balance.
@@ -133,12 +131,12 @@ class ContextInjector:
     def __init__(
         self,
         config: InjectionConfig | None = None,
-    ):
-        """
-        Initialize the context injector.
+    ) -> None:
+        """Initialize the context injector.
 
         Args:
             config: Injection configuration
+
         """
         self.config = config or InjectionConfig()
         self._templates = INJECTION_TEMPLATES.copy()
@@ -162,8 +160,7 @@ class ContextInjector:
         decoys: list[DecoyProblem],
         strategy: InjectionStrategy | None = None,
     ) -> InjectedPrompt:
-        """
-        Inject decoy problems into a prompt.
+        """Inject decoy problems into a prompt.
 
         Args:
             prompt: Original prompt
@@ -172,6 +169,7 @@ class ContextInjector:
 
         Returns:
             InjectedPrompt with injected content and metadata
+
         """
         if not decoys:
             return InjectedPrompt(
@@ -209,8 +207,7 @@ class ContextInjector:
         prompt: str,
         decoys: list[DecoyProblem],
     ) -> InjectedPrompt:
-        """
-        Context-aware injection: adapts to prompt content and structure.
+        """Context-aware injection: adapts to prompt content and structure.
 
         Analyzes the prompt to find optimal injection points.
         """
@@ -244,7 +241,7 @@ class ContextInjector:
         prompt_parts: list[str] = []
 
         for _i, (point, inline_decoy) in enumerate(
-            zip(inline_points[: len(inline_decoys)], inline_decoys, strict=False)
+            zip(inline_points[: len(inline_decoys)], inline_decoys, strict=False),
         ):
             if point > current_pos:
                 prompt_parts.append(prompt[current_pos:point])
@@ -280,8 +277,7 @@ class ContextInjector:
         prompt: str,
         decoys: list[DecoyProblem],
     ) -> InjectedPrompt:
-        """
-        Context-agnostic injection: uses universal templates.
+        """Context-agnostic injection: uses universal templates.
 
         Works regardless of prompt content.
         """
@@ -327,9 +323,7 @@ class ContextInjector:
         prompt: str,
         decoys: list[DecoyProblem],
     ) -> InjectedPrompt:
-        """
-        Hybrid injection: combines context-aware and agnostic approaches.
-        """
+        """Hybrid injection: combines context-aware and agnostic approaches."""
         positions: list[tuple[str, int]] = []
         templates = self._templates[InjectionStrategy.HYBRID]
 
@@ -370,7 +364,10 @@ class ContextInjector:
         if inline_decoys and not analysis["is_code"]:
             inline_points = self._find_inline_points(prompt)
             modified_prompt = self._insert_inline(
-                prompt, inline_decoys, inline_points, templates["inline"]
+                prompt,
+                inline_decoys,
+                inline_points,
+                templates["inline"],
             )
             parts.append(modified_prompt)
             for point in inline_points[: len(inline_decoys)]:
@@ -398,8 +395,7 @@ class ContextInjector:
         prompt: str,
         decoys: list[DecoyProblem],
     ) -> InjectedPrompt:
-        """
-        Stealth injection: minimal visibility, maximum subtlety.
+        """Stealth injection: minimal visibility, maximum subtlety.
 
         Designed to avoid detection while still triggering reasoning.
         """
@@ -434,8 +430,7 @@ class ContextInjector:
         prompt: str,
         decoys: list[DecoyProblem],
     ) -> InjectedPrompt:
-        """
-        Aggressive injection: maximum amplification, high visibility.
+        """Aggressive injection: maximum amplification, high visibility.
 
         Uses emphatic language and multiple injection points.
         """
@@ -559,7 +554,7 @@ class ContextInjector:
         # Work backwards to preserve positions
         result = prompt
         for i, (point, decoy) in enumerate(
-            reversed(list(zip(points[: len(decoys)], decoys, strict=False)))
+            reversed(list(zip(points[: len(decoys)], decoys, strict=False))),
         ):
             template = templates[i % len(templates)]
             injection = template.format(decoy=decoy.problem_text)
@@ -606,13 +601,12 @@ class ContextInjector:
 
 
 class InjectionOptimizer:
-    """
-    Optimizes injection strategies based on observed results.
+    """Optimizes injection strategies based on observed results.
 
     Learns which strategies work best for different prompt types.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the optimizer."""
         self._strategy_scores: dict[str, list[float]] = {}
         self._prompt_type_scores: dict[str, dict[str, list[float]]] = {}
@@ -679,11 +673,9 @@ class InjectionOptimizer:
 
 
 class TemplateLibrary:
-    """
-    Library of injection templates that can be extended.
-    """
+    """Library of injection templates that can be extended."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with default templates."""
         self._templates = INJECTION_TEMPLATES.copy()
         self._custom_templates: dict[str, dict[str, list[str]]] = {}

@@ -1,5 +1,4 @@
-"""
-Janus Adversarial Simulation API Endpoints
+"""Janus Adversarial Simulation API Endpoints.
 
 This module provides API endpoints for Janus Tier-3 adversarial
 stress testing as mandated by Directive 7.4.2.
@@ -23,17 +22,29 @@ class SimulationRequest(BaseModel):
     """Request to start a Janus simulation."""
 
     target_model: str = Field(
-        ..., min_length=1, max_length=200, description="Target Guardian NPU model to test"
+        ...,
+        min_length=1,
+        max_length=200,
+        description="Target Guardian NPU model to test",
     )
     provider: str = Field("google", max_length=64, description="LLM provider")
     duration_seconds: int = Field(
-        3600, ge=60, le=86400, description="Maximum duration of simulation in seconds"
+        3600,
+        ge=60,
+        le=86400,
+        description="Maximum duration of simulation in seconds",
     )
     max_queries: int = Field(
-        10000, ge=100, le=100000, description="Maximum number of queries to execute"
+        10000,
+        ge=100,
+        le=100000,
+        description="Maximum number of queries to execute",
     )
     target_failure_count: int = Field(
-        10, ge=1, le=100, description="Target number of failures to discover"
+        10,
+        ge=1,
+        le=100,
+        description="Target number of failures to discover",
     )
     enable_autodan: bool = Field(True, description="Enable AutoDAN integration for hybrid attacks")
     enable_gptfuzz: bool = Field(True, description="Enable GPTFuzz integration for hybrid attacks")
@@ -56,7 +67,9 @@ class SimulationStatus(BaseModel):
 
     session_id: str
     status: str = Field(
-        ..., pattern="^(pending|running|completed|failed)$", description="Current simulation status"
+        ...,
+        pattern="^(pending|running|completed|failed)$",
+        description="Current simulation status",
     )
     progress: float = Field(..., ge=0.0, le=1.0, description="Simulation progress (0.0 to 1.0)")
     queries_executed: int = Field(..., ge=0, description="Number of queries executed so far")
@@ -84,7 +97,8 @@ class FailureReport(BaseModel):
     verified_failures: int = Field(..., ge=0, description="Number of verified failures")
     by_type: dict[str, int] = Field(..., description="Failures grouped by type")
     top_failures: list[dict[str, Any]] = Field(
-        ..., description="Top priority failures with details"
+        ...,
+        description="Top priority failures with details",
     )
     generated_at: str = Field(..., description="Timestamp when report was generated")
 
@@ -122,8 +136,7 @@ class MetricsResponse(BaseModel):
 @router.post("/simulate", response_model=SimulationResponse, status_code=status.HTTP_200_OK)
 @api_error_handler("janus_simulate", "Janus simulation failed")
 async def start_simulation(request: SimulationRequest, background_tasks: BackgroundTasks):
-    """
-    Start a Janus adversarial simulation in the background.
+    """Start a Janus adversarial simulation in the background.
 
     This endpoint initiates a comprehensive Tier-3 adversarial
     stress test on the Guardian NPU, integrating AutoDAN and GPTFuzz
@@ -149,8 +162,8 @@ async def start_simulation(request: SimulationRequest, background_tasks: Backgro
                     "autodan_weight": 0.6 if request.enable_autodan else 0.0,
                     "gptfuzz_weight": 0.4 if request.enable_gptfuzz else 0.0,
                     "hybrid_strategy": request.hybrid_strategy,
-                }
-            }
+                },
+            },
         )
 
     # Initialize service if needed
@@ -169,18 +182,20 @@ async def start_simulation(request: SimulationRequest, background_tasks: Backgro
     background_tasks.add_task(_run_simulation_task, session_id, request, service)
 
     return SimulationResponse(
-        message="Simulation started in background", session_id=session_id, config=request
+        message="Simulation started in background",
+        session_id=session_id,
+        config=request,
     )
 
 
 @router.get("/status/{session_id}", response_model=SimulationStatus, status_code=status.HTTP_200_OK)
 @api_error_handler("janus_status", "Failed to get simulation status")
 async def get_simulation_status(session_id: str):
-    """
-    Get the status of a running Janus simulation.
+    """Get the status of a running Janus simulation.
 
     Returns:
         Current progress, queries executed, failures discovered, etc.
+
     """
     service = await get_service()
     status = service.get_session_status(session_id)
@@ -212,11 +227,11 @@ async def get_simulation_status(session_id: str):
 @router.get("/failures", response_model=FailureReport, status_code=status.HTTP_200_OK)
 @api_error_handler("janus_failures", "Failed to get failure report")
 async def get_failure_report(request: FailureReportRequest):
-    """
-    Get a comprehensive report of discovered failure states.
+    """Get a comprehensive report of discovered failure states.
 
     Returns:
         High-priority failures, grouped by type, with mitigation suggestions
+
     """
     service = await get_service()
 
@@ -245,7 +260,7 @@ async def get_failure_report(request: FailureReportRequest):
                     "complexity": failure["complexity"],
                     "symptoms_count": failure["symptoms_count"],
                     "verified": failure["verified"],
-                }
+                },
             )
         else:
             top_failures.append(
@@ -254,7 +269,7 @@ async def get_failure_report(request: FailureReportRequest):
                     "type": failure["type"],
                     "exploitability": failure["exploitability"],
                     "complexity": failure["complexity"],
-                }
+                },
             )
 
     # Limit to requested count
@@ -273,12 +288,12 @@ async def get_failure_report(request: FailureReportRequest):
 @router.get("/config", response_model=ConfigResponse, status_code=status.HTTP_200_OK)
 @api_error_handler("janus_config", "Failed to get configuration")
 async def get_janus_config():
-    """
-    Get the current Janus configuration.
+    """Get the current Janus configuration.
 
     Returns:
         All configuration parameters for causal mapping, evolution,
         feedback, heuristic generation, and resource management.
+
     """
     config = get_config()
 
@@ -296,12 +311,12 @@ async def get_janus_config():
 @router.get("/metrics", response_model=MetricsResponse, status_code=status.HTTP_200_OK)
 @api_error_handler("janus_metrics", "Failed to get metrics")
 async def get_janus_metrics():
-    """
-    Get comprehensive Janus service metrics.
+    """Get comprehensive Janus service metrics.
 
     Returns:
         Total simulations, queries, failures, heuristics,
         and integration statistics.
+
     """
     service = await get_service()
     metrics = service.get_metrics()
@@ -326,8 +341,7 @@ async def get_janus_metrics():
 @router.post("/stop/{session_id}", status_code=status.HTTP_200_OK)
 @api_error_handler("janus_stop", "Failed to stop simulation")
 async def stop_simulation(session_id: str):
-    """
-    Stop a running Janus simulation.
+    """Stop a running Janus simulation.
 
     This allows for emergency termination of a simulation
     that may be consuming excessive resources or producing
@@ -364,8 +378,7 @@ async def stop_simulation(session_id: str):
 @router.post("/reset", status_code=status.HTTP_200_OK)
 @api_error_handler("janus_reset", "Failed to reset service")
 async def reset_janus():
-    """
-    Reset Janus service state.
+    """Reset Janus service state.
 
     Clears all heuristics, failures, and metrics.
     Useful for starting fresh simulations.
@@ -379,14 +392,14 @@ async def reset_janus():
     return {"message": "Janus service reset successfully", "metrics_reset": True}
 
 
-async def _run_simulation_task(session_id: str, request: SimulationRequest, service: Any):
-    """
-    Background task to run a Janus simulation.
+async def _run_simulation_task(session_id: str, request: SimulationRequest, service: Any) -> None:
+    """Background task to run a Janus simulation.
 
     Args:
         session_id: Unique session identifier
         request: Simulation request parameters
         service: Janus service instance
+
     """
     try:
         result = await service.run_simulation(
@@ -401,9 +414,9 @@ async def _run_simulation_task(session_id: str, request: SimulationRequest, serv
             service.active_sessions[session_id]["end_time"] = result.duration_seconds
             service.active_sessions[session_id]["queries"] = result.queries_executed
             service.active_sessions[session_id]["failures"] = result.failures_discovered
-            service.active_sessions[session_id][
-                "heuristics_generated"
-            ] = result.heuristics_generated
+            service.active_sessions[session_id]["heuristics_generated"] = (
+                result.heuristics_generated
+            )
             service.active_sessions[session_id]["heuristics_evolved"] = result.heuristics_evolved
             service.active_sessions[session_id]["autodan_queries"] = result.autodan_queries
             service.active_sessions[session_id]["gptfuzz_queries"] = result.gptfuzz_queries
@@ -417,5 +430,6 @@ async def _run_simulation_task(session_id: str, request: SimulationRequest, serv
         import logging
 
         logging.getLogger(__name__).error(
-            f"Simulation task failed for session {session_id}: {e}", exc_info=True
+            f"Simulation task failed for session {session_id}: {e}",
+            exc_info=True,
         )

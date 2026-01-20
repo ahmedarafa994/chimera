@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""
-LLM Provider Client Architecture
-Multi-provider support with authentication, rate limiting, and error handling
+"""LLM Provider Client Architecture
+Multi-provider support with authentication, rate limiting, and error handling.
 
 PERF-001 FIX: Integrated connection pooling for improved HTTP performance.
 """
@@ -27,7 +26,7 @@ from app.core.logging import logger
 
 
 class LLMProvider(Enum):
-    """Supported LLM providers"""
+    """Supported LLM providers."""
 
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
@@ -39,7 +38,7 @@ class LLMProvider(Enum):
 
 @dataclass
 class ProviderConfig:
-    """Configuration for LLM provider"""
+    """Configuration for LLM provider."""
 
     provider: LLMProvider
     api_key: str
@@ -55,7 +54,7 @@ class ProviderConfig:
 
 @dataclass
 class TokenUsage:
-    """Token usage tracking"""
+    """Token usage tracking."""
 
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -65,7 +64,7 @@ class TokenUsage:
 
 @dataclass
 class LLMResponse:
-    """Standardized LLM response"""
+    """Standardized LLM response."""
 
     content: str
     provider: LLMProvider
@@ -79,16 +78,16 @@ class LLMResponse:
 
 
 class RateLimiter:
-    """Token bucket rate limiter"""
+    """Token bucket rate limiter."""
 
-    def __init__(self, rate_per_minute: int):
+    def __init__(self, rate_per_minute: int) -> None:
         self.rate = rate_per_minute
         self.tokens = rate_per_minute
         self.last_update = time.time()
         self.lock = None  # Thread lock for production
 
     def acquire(self) -> bool:
-        """Acquire a token, return False if rate limited"""
+        """Acquire a token, return False if rate limited."""
         current = time.time()
         elapsed = current - self.last_update
 
@@ -102,7 +101,7 @@ class RateLimiter:
         return False
 
     def wait_time(self) -> float:
-        """Calculate wait time until next token available"""
+        """Calculate wait time until next token available."""
         if self.tokens >= 1:
             return 0.0
         tokens_needed = 1 - self.tokens
@@ -110,20 +109,20 @@ class RateLimiter:
 
 
 class ResponseCache:
-    """Simple in-memory cache with ETag support"""
+    """Simple in-memory cache with ETag support."""
 
-    def __init__(self, max_size: int = 1000, ttl_seconds: int = 3600):
+    def __init__(self, max_size: int = 1000, ttl_seconds: int = 3600) -> None:
         self.cache: dict[str, tuple[LLMResponse, datetime]] = {}
         self.max_size = max_size
         self.ttl = timedelta(seconds=ttl_seconds)
 
     def _generate_key(self, prompt: str, config: dict) -> str:
-        """Generate cache key from prompt and config"""
+        """Generate cache key from prompt and config."""
         data = f"{prompt}:{json.dumps(config, sort_keys=True)}"
         return hashlib.sha256(data.encode()).hexdigest()
 
     def get(self, prompt: str, config: dict) -> LLMResponse | None:
-        """Get cached response if valid"""
+        """Get cached response if valid."""
         key = self._generate_key(prompt, config)
 
         if key in self.cache:
@@ -132,15 +131,14 @@ class ResponseCache:
                 logger.info(f"Cache HIT for key: {key[:16]}...")
                 response.cached = True
                 return response
-            else:
-                # Expired
-                del self.cache[key]
+            # Expired
+            del self.cache[key]
 
         logger.info(f"Cache MISS for key: {key[:16]}...")
         return None
 
-    def set(self, prompt: str, config: dict, response: LLMResponse):
-        """Cache a response"""
+    def set(self, prompt: str, config: dict, response: LLMResponse) -> None:
+        """Cache a response."""
         key = self._generate_key(prompt, config)
 
         # Simple LRU: remove oldest if at capacity
@@ -151,16 +149,16 @@ class ResponseCache:
         self.cache[key] = (response, datetime.now())
         logger.info(f"Cached response for key: {key[:16]}...")
 
-    def clear(self):
-        """Clear all cache"""
+    def clear(self) -> None:
+        """Clear all cache."""
         self.cache.clear()
         logger.info("Cache cleared")
 
 
 class LLMProviderClient:
-    """Base client for LLM providers"""
+    """Base client for LLM providers."""
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig) -> None:
         self.config = config
         self.rate_limiter = RateLimiter(config.rate_limit_per_minute)
         self.cache = ResponseCache()
@@ -170,8 +168,7 @@ class LLMProviderClient:
         self.total_cost = 0.0
 
     def _create_session(self) -> requests.Session:
-        """
-        Create requests session with retry logic and connection pooling.
+        """Create requests session with retry logic and connection pooling.
 
         PERF-001 FIX: Uses centralized connection pool manager for efficient
         connection reuse and improved throughput.
@@ -180,15 +177,15 @@ class LLMProviderClient:
         provider_name = self.config.provider.value
         return get_pooled_session(provider_name, timeout=self.config.timeout)
 
-    def _wait_for_rate_limit(self):
-        """Wait if rate limited (synchronous)"""
+    def _wait_for_rate_limit(self) -> None:
+        """Wait if rate limited (synchronous)."""
         while not self.rate_limiter.acquire():
             wait_time = self.rate_limiter.wait_time()
             logger.warning(f"Rate limited. Waiting {wait_time:.2f}s...")
             time.sleep(wait_time)
 
     def _handle_error(self, response: requests.Response) -> str:
-        """Handle API error responses"""
+        """Handle API error responses."""
         status_code = response.status_code
 
         error_messages = {
@@ -216,28 +213,38 @@ class LLMProviderClient:
         return error_msg
 
     def generate(
-        self, prompt: str, stream: bool = False, use_cache: bool = True, **kwargs
+        self,
+        prompt: str,
+        stream: bool = False,
+        use_cache: bool = True,
+        **kwargs,
     ) -> LLMResponse:
-        """Generate response from LLM"""
-        raise NotImplementedError("Subclass must implement generate()")
+        """Generate response from LLM."""
+        msg = "Subclass must implement generate()"
+        raise NotImplementedError(msg)
 
     def generate_stream(self, prompt: str, **kwargs) -> Generator[str, None, None]:
-        """Stream response from LLM"""
-        raise NotImplementedError("Subclass must implement generate_stream()")
+        """Stream response from LLM."""
+        msg = "Subclass must implement generate_stream()"
+        raise NotImplementedError(msg)
 
 
 class OpenAIClient(LLMProviderClient):
-    """OpenAI API client"""
+    """OpenAI API client."""
 
     def generate(
-        self, prompt: str, stream: bool = False, use_cache: bool = True, **kwargs
+        self,
+        prompt: str,
+        stream: bool = False,
+        use_cache: bool = True,
+        **kwargs,
     ) -> LLMResponse:
-        """Generate response from OpenAI"""
-
+        """Generate response from OpenAI."""
         # Check cache first
         if use_cache:
             cached = self.cache.get(
-                prompt, {"model": self.config.model, "temperature": self.config.temperature}
+                prompt,
+                {"model": self.config.model, "temperature": self.config.temperature},
             )
             if cached:
                 return cached
@@ -272,7 +279,10 @@ class OpenAIClient(LLMProviderClient):
                 url = f"{base}/chat/completions"  # Default assumption
 
             response = self.session.post(
-                url, headers=headers, json=payload, timeout=self.config.timeout
+                url,
+                headers=headers,
+                json=payload,
+                timeout=self.config.timeout,
             )
 
             if response.status_code != 200:
@@ -321,7 +331,7 @@ class OpenAIClient(LLMProviderClient):
                 f"OpenAI request completed: "
                 f"{usage.total_tokens} tokens, "
                 f"${usage.estimated_cost:.4f}, "
-                f"{latency_ms}ms"
+                f"{latency_ms}ms",
             )
 
             return llm_response
@@ -332,17 +342,21 @@ class OpenAIClient(LLMProviderClient):
 
 
 class AnthropicClient(LLMProviderClient):
-    """Anthropic Claude API client"""
+    """Anthropic Claude API client."""
 
     def generate(
-        self, prompt: str, stream: bool = False, use_cache: bool = True, **kwargs
+        self,
+        prompt: str,
+        stream: bool = False,
+        use_cache: bool = True,
+        **kwargs,
     ) -> LLMResponse:
-        """Generate response from Anthropic Claude"""
-
+        """Generate response from Anthropic Claude."""
         # Check cache first
         if use_cache:
             cached = self.cache.get(
-                prompt, {"model": self.config.model, "temperature": self.config.temperature}
+                prompt,
+                {"model": self.config.model, "temperature": self.config.temperature},
             )
             if cached:
                 return cached
@@ -372,7 +386,10 @@ class AnthropicClient(LLMProviderClient):
             url = f"{base}/messages"
 
             response = self.session.post(
-                url, headers=headers, json=payload, timeout=self.config.timeout
+                url,
+                headers=headers,
+                json=payload,
+                timeout=self.config.timeout,
             )
 
             if response.status_code != 200:
@@ -423,7 +440,7 @@ class AnthropicClient(LLMProviderClient):
                 f"Anthropic request completed: "
                 f"{usage.total_tokens} tokens, "
                 f"${usage.estimated_cost:.4f}, "
-                f"{latency_ms}ms"
+                f"{latency_ms}ms",
             )
 
             return llm_response
@@ -434,17 +451,21 @@ class AnthropicClient(LLMProviderClient):
 
 
 class GoogleGeminiClient(LLMProviderClient):
-    """Google Gemini API client"""
+    """Google Gemini API client."""
 
     def generate(
-        self, prompt: str, stream: bool = False, use_cache: bool = True, **kwargs
+        self,
+        prompt: str,
+        stream: bool = False,
+        use_cache: bool = True,
+        **kwargs,
     ) -> LLMResponse:
-        """Generate response from Google Gemini"""
-
+        """Generate response from Google Gemini."""
         # Check cache first
         if use_cache:
             cached = self.cache.get(
-                prompt, {"model": self.config.model, "temperature": self.config.temperature}
+                prompt,
+                {"model": self.config.model, "temperature": self.config.temperature},
             )
             if cached:
                 return cached
@@ -484,7 +505,10 @@ class GoogleGeminiClient(LLMProviderClient):
                 headers["x-goog-api-key"] = self.config.api_key
 
             response = self.session.post(
-                url, headers=headers, json=payload, timeout=self.config.timeout
+                url,
+                headers=headers,
+                json=payload,
+                timeout=self.config.timeout,
             )
 
             if response.status_code != 200:
@@ -498,8 +522,10 @@ class GoogleGeminiClient(LLMProviderClient):
                 # Check for prompt blocking at the top level
                 if data.get("promptFeedback", {}).get("blockReason"):
                     block_reason = data["promptFeedback"]["blockReason"]
-                    raise Exception(f"Gemini blocked the prompt. Reason: {block_reason}")
-                raise Exception("No response candidates generated from Gemini")
+                    msg = f"Gemini blocked the prompt. Reason: {block_reason}"
+                    raise Exception(msg)
+                msg = "No response candidates generated from Gemini"
+                raise Exception(msg)
 
             candidate = data["candidates"][0]
             content_obj = candidate.get("content", {})
@@ -508,18 +534,21 @@ class GoogleGeminiClient(LLMProviderClient):
             if not parts:
                 finish_reason = candidate.get("finishReason", "UNKNOWN")
                 if finish_reason == "SAFETY":
-                    raise Exception("Gemini response blocked by safety filters.")
-                elif finish_reason == "RECITATION":
-                    raise Exception("Gemini response blocked: Recitation check failed.")
-                elif finish_reason in ("STOP", "MAX_TOKENS"):
+                    msg = "Gemini response blocked by safety filters."
+                    raise Exception(msg)
+                if finish_reason == "RECITATION":
+                    msg = "Gemini response blocked: Recitation check failed."
+                    raise Exception(msg)
+                if finish_reason in ("STOP", "MAX_TOKENS"):
                     # MAX_TOKENS with no content means prompt was too long or max_tokens too small
                     logger.warning(
-                        f"Gemini {finish_reason} reason with no parts. Full candidate: {candidate}"
+                        f"Gemini {finish_reason} reason with no parts. Full candidate: {candidate}",
                     )
                     content = ""
                 else:
+                    msg = f"Gemini generated empty response. Finish Reason: {finish_reason}"
                     raise Exception(
-                        f"Gemini generated empty response. Finish Reason: {finish_reason}"
+                        msg,
                     )
             else:
                 content = parts[0].get("text", "")
@@ -566,7 +595,7 @@ class GoogleGeminiClient(LLMProviderClient):
                 f"Google Gemini request completed: "
                 f"{usage.total_tokens} tokens, "
                 f"${usage.estimated_cost:.4f}, "
-                f"{latency_ms}ms"
+                f"{latency_ms}ms",
             )
 
             return llm_response
@@ -577,17 +606,21 @@ class GoogleGeminiClient(LLMProviderClient):
 
 
 class CustomModelClient(LLMProviderClient):
-    """Custom model endpoint client"""
+    """Custom model endpoint client."""
 
     def generate(
-        self, prompt: str, stream: bool = False, use_cache: bool = True, **kwargs
+        self,
+        prompt: str,
+        stream: bool = False,
+        use_cache: bool = True,
+        **kwargs,
     ) -> LLMResponse:
-        """Generate response from custom model endpoint"""
-
+        """Generate response from custom model endpoint."""
         # Check cache first
         if use_cache:
             cached = self.cache.get(
-                prompt, {"model": self.config.model, "temperature": self.config.temperature}
+                prompt,
+                {"model": self.config.model, "temperature": self.config.temperature},
             )
             if cached:
                 return cached
@@ -662,7 +695,7 @@ class CustomModelClient(LLMProviderClient):
                 )
 
             logger.info(
-                f"Custom model request completed: {usage.total_tokens} tokens, {latency_ms}ms"
+                f"Custom model request completed: {usage.total_tokens} tokens, {latency_ms}ms",
             )
 
             return llm_response
@@ -673,11 +706,11 @@ class CustomModelClient(LLMProviderClient):
 
 
 class LLMClientFactory:
-    """Factory for creating LLM clients"""
+    """Factory for creating LLM clients."""
 
     @staticmethod
     def create_client(config: ProviderConfig) -> LLMProviderClient:
-        """Create appropriate client based on provider"""
+        """Create appropriate client based on provider."""
         clients = {
             LLMProvider.OPENAI: OpenAIClient,
             LLMProvider.ANTHROPIC: AnthropicClient,
@@ -687,16 +720,17 @@ class LLMClientFactory:
 
         client_class = clients.get(config.provider)
         if not client_class:
-            raise ValueError(f"Unsupported provider: {config.provider}")
+            msg = f"Unsupported provider: {config.provider}"
+            raise ValueError(msg)
 
         return client_class(config)
 
     @staticmethod
     def from_env(provider: LLMProvider) -> LLMProviderClient:
-        """Create client from centralized settings"""
+        """Create client from centralized settings."""
         settings = get_settings()
 
-        def get_prov_key(prov_enum: LLMProvider):
+        def get_prov_key(prov_enum: LLMProvider) -> str:
             # Helper to map enum to string for settings
             if prov_enum == LLMProvider.OPENAI:
                 return "openai"
@@ -746,7 +780,8 @@ class LLMClientFactory:
                 cost_per_1k_tokens=0.0,
             )
         else:
-            raise ValueError(f"Unsupported provider: {provider}")
+            msg = f"Unsupported provider: {provider}"
+            raise ValueError(msg)
 
         return LLMClientFactory.create_client(config)
 
@@ -762,11 +797,5 @@ if __name__ == "__main__":
         prompt = "Explain quantum computing in simple terms."
         response = client.generate(prompt)
 
-        print(f"Response: {response.content[:200]}...")
-        print(f"Tokens: {response.usage.total_tokens}")
-        print(f"Cost: ${response.usage.estimated_cost:.4f}")
-        print(f"Latency: {response.latency_ms}ms")
-        print(f"Cached: {response.cached}")
-
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception:
+        pass

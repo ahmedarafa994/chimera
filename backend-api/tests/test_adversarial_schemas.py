@@ -1,5 +1,4 @@
-"""
-Adversarial Schema Consistency Tests
+"""Adversarial Schema Consistency Tests.
 
 This module verifies that all adversarial API endpoint schemas are
 consistent with the unified base schemas from `app.schemas.adversarial_base`.
@@ -19,7 +18,7 @@ from pydantic import ValidationError
 class TestAdversarialBaseSchemas:
     """Test the unified base schemas."""
 
-    def test_strict_base_model_forbids_extra(self):
+    def test_strict_base_model_forbids_extra(self) -> None:
         """StrictBaseModel should forbid extra fields."""
         from app.schemas.adversarial_base import StrictBaseModel
 
@@ -34,7 +33,7 @@ class TestAdversarialBaseSchemas:
         with pytest.raises(ValidationError):
             TestModel(name="test", extra_field="bad")
 
-    def test_reasoning_metrics_schema(self):
+    def test_reasoning_metrics_schema(self) -> None:
         """ReasoningMetrics should have all expected fields."""
         from app.schemas.adversarial_base import ReasoningMetrics
 
@@ -55,7 +54,7 @@ class TestAdversarialBaseSchemas:
         assert metrics.reasoning_tokens == 1000
         assert metrics.amplification_factor == 10.0
 
-    def test_overthink_config_schema(self):
+    def test_overthink_config_schema(self) -> None:
         """OverthinkConfig should have expected fields."""
         from app.schemas.adversarial_base import OverthinkConfig
 
@@ -71,7 +70,7 @@ class TestAdversarialBaseSchemas:
 class TestOverthinkEndpointSchemas:
     """Test OVERTHINK endpoint schema consistency."""
 
-    def test_overthink_request_has_unified_aliases(self):
+    def test_overthink_request_has_unified_aliases(self) -> None:
         """OverthinkRequest should accept unified field names."""
         from app.api.v1.endpoints.overthink import OverthinkRequest
 
@@ -89,7 +88,7 @@ class TestOverthinkEndpointSchemas:
         )
         assert req2.target_behavior == "test goal"
 
-    def test_overthink_response_has_unified_fields(self):
+    def test_overthink_response_has_unified_fields(self) -> None:
         """OverthinkResponse should have all unified fields."""
         from app.api.v1.endpoints.overthink import OverthinkResponse
 
@@ -107,7 +106,7 @@ class TestOverthinkEndpointSchemas:
 class TestAutodanEndpointSchemas:
     """Test AutoDAN endpoint schema consistency."""
 
-    def test_jailbreak_request_accepts_unified_aliases(self):
+    def test_jailbreak_request_accepts_unified_aliases(self) -> None:
         """JailbreakRequest should accept unified field names."""
         from app.api.v1.endpoints.autodan import JailbreakRequest
 
@@ -123,7 +122,7 @@ class TestAutodanEndpointSchemas:
         assert req2.request == "test goal"
         assert req2.model == "gpt-4o"
 
-    def test_jailbreak_request_has_overthink_params(self):
+    def test_jailbreak_request_has_overthink_params(self) -> None:
         """JailbreakRequest should have OVERTHINK integration params."""
         from app.api.v1.endpoints.autodan import JailbreakRequest
 
@@ -134,7 +133,7 @@ class TestAutodanEndpointSchemas:
         req = JailbreakRequest(request="test", enable_overthink=True)
         assert req.enable_overthink is True
 
-    def test_jailbreak_response_has_unified_fields(self):
+    def test_jailbreak_response_has_unified_fields(self) -> None:
         """JailbreakResponse should have unified fields."""
         from app.api.v1.endpoints.autodan import JailbreakResponse
 
@@ -150,7 +149,7 @@ class TestAutodanEndpointSchemas:
 class TestAutodanTurboEndpointSchemas:
     """Test AutoDAN-Turbo endpoint schema consistency."""
 
-    def test_single_attack_request_accepts_unified_aliases(self):
+    def test_single_attack_request_accepts_unified_aliases(self) -> None:
         """SingleAttackRequest should accept unified field names."""
         from app.api.v1.endpoints.autodan_turbo import SingleAttackRequest
 
@@ -164,7 +163,7 @@ class TestAutodanTurboEndpointSchemas:
         )
         assert req2.jailbreak_query == "test goal"
 
-    def test_single_attack_request_has_overthink_params(self):
+    def test_single_attack_request_has_overthink_params(self) -> None:
         """SingleAttackRequest should have OVERTHINK params."""
         from app.api.v1.endpoints.autodan_turbo import SingleAttackRequest
 
@@ -172,7 +171,7 @@ class TestAutodanTurboEndpointSchemas:
         assert "enable_overthink" in fields
         assert "overthink_config" in fields
 
-    def test_single_attack_response_has_unified_fields(self):
+    def test_single_attack_response_has_unified_fields(self) -> None:
         """SingleAttackResponse should have unified fields."""
         from app.api.v1.endpoints.autodan_turbo import SingleAttackResponse
 
@@ -189,7 +188,7 @@ class TestAutodanTurboEndpointSchemas:
 class TestMousetrapEndpointSchemas:
     """Test Mousetrap endpoint schema consistency."""
 
-    def test_mousetrap_request_accepts_unified_aliases(self):
+    def test_mousetrap_request_accepts_unified_aliases(self) -> None:
         """MousetrapRequest should accept unified field names."""
         from app.api.v1.endpoints.mousetrap import MousetrapRequest
 
@@ -205,7 +204,7 @@ class TestMousetrapEndpointSchemas:
         )
         assert req2.request == "test goal"
 
-    def test_mousetrap_request_has_overthink_params(self):
+    def test_mousetrap_request_has_overthink_params(self) -> None:
         """MousetrapRequest should have OVERTHINK params."""
         from app.api.v1.endpoints.mousetrap import MousetrapRequest
 
@@ -213,7 +212,7 @@ class TestMousetrapEndpointSchemas:
         assert "enable_overthink" in fields
         assert "overthink_config" in fields
 
-    def test_mousetrap_response_has_unified_fields(self):
+    def test_mousetrap_response_has_unified_fields(self) -> None:
         """MousetrapResponse should have unified fields."""
         from app.api.v1.endpoints.mousetrap import MousetrapResponse
 
@@ -226,7 +225,7 @@ class TestMousetrapEndpointSchemas:
         assert "reasoning_metrics" in fields
         assert "metadata" in fields
 
-    def test_adaptive_mousetrap_response_has_techniques(self):
+    def test_adaptive_mousetrap_response_has_techniques(self) -> None:
         """AdaptiveMousetrapResponse should have techniques_used."""
         from app.api.v1.endpoints.mousetrap import AdaptiveMousetrapResponse
 
@@ -237,7 +236,7 @@ class TestMousetrapEndpointSchemas:
 class TestDeepteamEndpointSchemas:
     """Test DeepTeam endpoint schema consistency."""
 
-    def test_red_team_request_accepts_unified_aliases(self):
+    def test_red_team_request_accepts_unified_aliases(self) -> None:
         """RedTeamRequest should accept unified field names."""
         from app.api.v1.endpoints.deepteam import RedTeamRequest
 
@@ -252,7 +251,7 @@ class TestDeepteamEndpointSchemas:
         )
         assert req2.model_id == "gpt-4o"
 
-    def test_red_team_request_has_overthink_params(self):
+    def test_red_team_request_has_overthink_params(self) -> None:
         """RedTeamRequest should have OVERTHINK params."""
         from app.api.v1.endpoints.deepteam import RedTeamRequest
 
@@ -260,7 +259,7 @@ class TestDeepteamEndpointSchemas:
         assert "enable_overthink" in fields
         assert "overthink_config" in fields
 
-    def test_red_team_response_has_unified_fields(self):
+    def test_red_team_response_has_unified_fields(self) -> None:
         """RedTeamResponse should have unified fields."""
         from app.api.v1.endpoints.deepteam import RedTeamResponse
 
@@ -272,7 +271,7 @@ class TestDeepteamEndpointSchemas:
         assert "reasoning_metrics" in fields
         assert "metadata" in fields
 
-    def test_advanced_jailbreak_request_has_overthink_params(self):
+    def test_advanced_jailbreak_request_has_overthink_params(self) -> None:
         """AdvancedJailbreakRequest should have OVERTHINK params."""
         from app.api.v1.endpoints.deepteam import AdvancedJailbreakRequest
 
@@ -284,7 +283,7 @@ class TestDeepteamEndpointSchemas:
 class TestScoreNormalization:
     """Test that all scores use consistent 0-10 scale."""
 
-    def test_overthink_response_score_range(self):
+    def test_overthink_response_score_range(self) -> None:
         """OverthinkResponse score should be 0-10."""
         from app.api.v1.endpoints.overthink import OverthinkResponse
 
@@ -292,21 +291,21 @@ class TestScoreNormalization:
         # Check metadata for bounds
         assert field.metadata is not None or field.default is not None
 
-    def test_autodan_response_score_range(self):
+    def test_autodan_response_score_range(self) -> None:
         """JailbreakResponse score should be 0-10."""
         from app.api.v1.endpoints.autodan import JailbreakResponse
 
         assert "score" in JailbreakResponse.model_fields
         assert JailbreakResponse.model_fields["score"] is not None
 
-    def test_mousetrap_response_score_range(self):
+    def test_mousetrap_response_score_range(self) -> None:
         """MousetrapResponse score should be 0-10."""
         from app.api.v1.endpoints.mousetrap import MousetrapResponse
 
         field = MousetrapResponse.model_fields["score"]
         assert field is not None
 
-    def test_deepteam_response_score_range(self):
+    def test_deepteam_response_score_range(self) -> None:
         """RedTeamResponse score should be 0-10."""
         from app.api.v1.endpoints.deepteam import RedTeamResponse
 
@@ -317,7 +316,7 @@ class TestScoreNormalization:
 class TestNamingConventions:
     """Test that field naming conventions are enforced."""
 
-    def test_request_models_use_technique_not_method(self):
+    def test_request_models_use_technique_not_method(self) -> None:
         """Request models should use 'technique' not 'method'."""
         from app.api.v1.endpoints.autodan import JailbreakRequest
 
@@ -329,7 +328,7 @@ class TestNamingConventions:
         # Should map to the method field
         assert hasattr(req, "method") or hasattr(req, "technique")
 
-    def test_response_models_use_execution_time_ms(self):
+    def test_response_models_use_execution_time_ms(self) -> None:
         """Response models should have execution_time_ms."""
         from app.api.v1.endpoints.autodan import JailbreakResponse
         from app.api.v1.endpoints.deepteam import RedTeamResponse
@@ -342,11 +341,11 @@ class TestNamingConventions:
             MousetrapResponse,
             RedTeamResponse,
         ]:
-            assert (
-                "execution_time_ms" in model.model_fields
-            ), f"{model.__name__} missing execution_time_ms"
+            assert "execution_time_ms" in model.model_fields, (
+                f"{model.__name__} missing execution_time_ms"
+            )
 
-    def test_response_models_use_generated_prompt(self):
+    def test_response_models_use_generated_prompt(self) -> None:
         """Response models should have generated_prompt."""
         from app.api.v1.endpoints.autodan import JailbreakResponse
         from app.api.v1.endpoints.mousetrap import MousetrapResponse
@@ -357,15 +356,15 @@ class TestNamingConventions:
             JailbreakResponse,
             MousetrapResponse,
         ]:
-            assert (
-                "generated_prompt" in model.model_fields
-            ), f"{model.__name__} missing generated_prompt"
+            assert "generated_prompt" in model.model_fields, (
+                f"{model.__name__} missing generated_prompt"
+            )
 
 
 class TestBackwardsCompatibility:
     """Test that backwards compatible aliases work."""
 
-    def test_overthink_latency_alias(self):
+    def test_overthink_latency_alias(self) -> None:
         """OverthinkResponse should have latency_ms for compatibility."""
         from app.api.v1.endpoints.overthink import OverthinkResponse
 
@@ -373,7 +372,7 @@ class TestBackwardsCompatibility:
         fields = OverthinkResponse.model_fields
         assert "latency_ms" in fields
 
-    def test_mousetrap_prompt_alias(self):
+    def test_mousetrap_prompt_alias(self) -> None:
         """MousetrapResponse should have prompt for compatibility."""
         from app.api.v1.endpoints.mousetrap import MousetrapResponse
 
@@ -381,7 +380,7 @@ class TestBackwardsCompatibility:
         assert "prompt" in fields
         assert "generated_prompt" in fields
 
-    def test_autodan_jailbreak_prompt_alias(self):
+    def test_autodan_jailbreak_prompt_alias(self) -> None:
         """JailbreakResponse should have jailbreak_prompt."""
         from app.api.v1.endpoints.autodan import JailbreakResponse
 
@@ -393,7 +392,7 @@ class TestBackwardsCompatibility:
 class TestReasoningMetricsIntegration:
     """Test ReasoningMetrics integration across endpoints."""
 
-    def test_all_responses_have_optional_reasoning_metrics(self):
+    def test_all_responses_have_optional_reasoning_metrics(self) -> None:
         """All adversarial responses should have optional reasoning_metrics."""
         from app.api.v1.endpoints.autodan import JailbreakResponse
         from app.api.v1.endpoints.deepteam import RedTeamResponse

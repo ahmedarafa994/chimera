@@ -1,5 +1,4 @@
-"""
-Custom Provider Plugin for Project Chimera.
+"""Custom Provider Plugin for Project Chimera.
 
 Provides a base class for creating custom provider plugins with
 configurable endpoints and behaviors.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class CustomPlugin(BaseProviderPlugin):
-    """
-    Configurable custom provider plugin.
+    """Configurable custom provider plugin.
 
     This plugin allows dynamic configuration of custom AI providers
     through environment variables or runtime configuration.
@@ -48,9 +46,8 @@ class CustomPlugin(BaseProviderPlugin):
         api_key: str | None = None,
         default_model: str | None = None,
         custom_capabilities: list[ProviderCapability] | None = None,
-    ):
-        """
-        Initialize custom provider with optional configuration.
+    ) -> None:
+        """Initialize custom provider with optional configuration.
 
         Args:
             provider_name: Unique identifier for this provider
@@ -59,6 +56,7 @@ class CustomPlugin(BaseProviderPlugin):
             api_key: API key for authentication
             default_model: Default model identifier
             custom_capabilities: List of supported capabilities
+
         """
         super().__init__()
         self._provider_name = provider_name
@@ -75,7 +73,8 @@ class CustomPlugin(BaseProviderPlugin):
     @property
     def display_name(self) -> str:
         return self._display_name or os.environ.get(
-            "CUSTOM_PROVIDER_DISPLAY_NAME", "Custom Provider"
+            "CUSTOM_PROVIDER_DISPLAY_NAME",
+            "Custom Provider",
         )
 
     @property
@@ -159,7 +158,7 @@ class CustomPlugin(BaseProviderPlugin):
                     max_output_tokens=model.get("max_tokens", 2048),
                     supports_streaming=True,
                     capabilities=["chat"],
-                )
+                ),
             )
 
         return models if models else self._get_static_models()
@@ -182,7 +181,9 @@ class CustomPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using custom provider (OpenAI-compatible)."""
         model = request.model or self.get_default_model()
@@ -252,14 +253,16 @@ class CustomPlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Custom provider error: {e.response.status_code}")
+            logger.exception(f"Custom provider error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"Custom provider generation error: {e}")
+            logger.exception(f"Custom provider generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from custom provider."""
         model = request.model or self.get_default_model()
@@ -335,7 +338,7 @@ class CustomPlugin(BaseProviderPlugin):
                             logger.warning(f"Parse error: {e}")
                             continue
         except Exception as e:
-            logger.error(f"Custom provider streaming error: {e}")
+            logger.exception(f"Custom provider streaming error: {e}")
             raise
 
 
@@ -347,8 +350,7 @@ def create_custom_plugin(
     default_model: str = "default",
     capabilities: list[ProviderCapability] | None = None,
 ) -> CustomPlugin:
-    """
-    Factory function to create a configured custom plugin.
+    """Factory function to create a configured custom plugin.
 
     Args:
         provider_name: Unique identifier for the provider
@@ -360,6 +362,7 @@ def create_custom_plugin(
 
     Returns:
         Configured CustomPlugin instance
+
     """
     return CustomPlugin(
         provider_name=provider_name,

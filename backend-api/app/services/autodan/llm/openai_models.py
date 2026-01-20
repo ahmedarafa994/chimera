@@ -17,7 +17,7 @@ class OpenAIEmbeddingModel:
         openai_api_key: str | None = None,
         embedding_model: str = "text-embedding-ada-002",
         logger: logging.Logger | None = None,
-    ):
+    ) -> None:
         self.settings = get_settings()
         self.logger = logger
 
@@ -38,7 +38,7 @@ class OpenAIEmbeddingModel:
             self.client = OpenAI(
                 api_key=openai_api_key
                 or self.settings.OPENAI_API_KEY
-                or os.getenv("OPENAI_API_KEY")
+                or os.getenv("OPENAI_API_KEY"),
             )
 
     def encode(self, text):
@@ -51,7 +51,8 @@ class OpenAIEmbeddingModel:
             # Use modern OpenAI API client for both Azure and OpenAI
             if self.azure:
                 response = self.client.embeddings.create(
-                    input=text, model=self.azure_deployment_name
+                    input=text,
+                    model=self.azure_deployment_name,
                 )
             else:
                 response = self.client.embeddings.create(input=text, model=self.embedding_model)
@@ -66,5 +67,5 @@ class OpenAIEmbeddingModel:
             if self.logger:
                 self.logger.error(f"Embedding error: {e}", exc_info=True)
             else:
-                print(f"Embedding error: {e}")
+                pass
             return None

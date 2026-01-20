@@ -1,6 +1,5 @@
-"""
-Secrets Management Module
-Production-grade secrets handling with multiple provider support
+"""Secrets Management Module
+Production-grade secrets handling with multiple provider support.
 """
 
 import logging
@@ -13,16 +12,15 @@ logger = logging.getLogger(__name__)
 
 
 class SecretsProvider(ABC):
-    """Abstract base class for secrets providers"""
+    """Abstract base class for secrets providers."""
 
     @abstractmethod
     def get_secret(self, key: str) -> str | None:
-        """Retrieve a secret by key"""
-        pass
+        """Retrieve a secret by key."""
 
 
 class EnvironmentSecretsProvider(SecretsProvider):
-    """Environment variable based secrets (development only)"""
+    """Environment variable based secrets (development only)."""
 
     def get_secret(self, key: str) -> str | None:
         value = os.getenv(key)
@@ -30,20 +28,23 @@ class EnvironmentSecretsProvider(SecretsProvider):
         if value and value.startswith("CHANGE_ME"):
             env = os.getenv("ENVIRONMENT", "development")
             if env == "production":
-                raise ValueError(
+                msg = (
                     f"CRITICAL: Secret {key} has placeholder value 'CHANGE_ME*' in production. "
                     f"All secrets must be properly configured before starting the application."
                 )
+                raise ValueError(
+                    msg,
+                )
             logger.warning(
-                f"Secret {key} has not been configured - using placeholder value (development mode only)"
+                f"Secret {key} has not been configured - using placeholder value (development mode only)",
             )
         return value
 
 
 class AzureKeyVaultProvider(SecretsProvider):
-    """Azure Key Vault secrets provider"""
+    """Azure Key Vault secrets provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.vault_url = os.getenv("AZURE_VAULT_URL")
         self._client = None
 
@@ -57,9 +58,12 @@ class AzureKeyVaultProvider(SecretsProvider):
                 credential = DefaultAzureCredential()
                 self._client = SecretClient(vault_url=self.vault_url, credential=credential)
             except ImportError:
-                raise ImportError(
+                msg = (
                     "Azure Key Vault SDK not installed. "
                     "Install with: pip install azure-keyvault-secrets azure-identity"
+                )
+                raise ImportError(
+                    msg,
                 )
         return self._client
 
@@ -71,14 +75,14 @@ class AzureKeyVaultProvider(SecretsProvider):
             secret = self.client.get_secret(vault_key)
             return secret.value
         except Exception as e:
-            logger.error(f"Failed to retrieve secret {key} from Azure Key Vault: {e}")
+            logger.exception(f"Failed to retrieve secret {key} from Azure Key Vault: {e}")
             return None
 
 
 class AWSSecretsManagerProvider(SecretsProvider):
-    """AWS Secrets Manager provider"""
+    """AWS Secrets Manager provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.region = os.getenv("AWS_REGION", "us-east-1")
         self.secret_name = os.getenv("AWS_SECRET_NAME", "chimera/secrets")
         self._client = None
@@ -92,7 +96,8 @@ class AWSSecretsManagerProvider(SecretsProvider):
 
                 self._client = boto3.client("secretsmanager", region_name=self.region)
             except ImportError:
-                raise ImportError("AWS SDK not installed. Install with: pip install boto3")
+                msg = "AWS SDK not installed. Install with: pip install boto3"
+                raise ImportError(msg)
         return self._client
 
     def _load_secrets(self):
@@ -103,7 +108,7 @@ class AWSSecretsManagerProvider(SecretsProvider):
                 response = self.client.get_secret_value(SecretId=self.secret_name)
                 self._secrets_cache = json.loads(response["SecretString"])
             except Exception as e:
-                logger.error(f"Failed to load secrets from AWS Secrets Manager: {e}")
+                logger.exception(f"Failed to load secrets from AWS Secrets Manager: {e}")
                 self._secrets_cache = {}
         return self._secrets_cache
 
@@ -113,9 +118,9 @@ class AWSSecretsManagerProvider(SecretsProvider):
 
 
 class HashiCorpVaultProvider(SecretsProvider):
-    """HashiCorp Vault secrets provider"""
+    """HashiCorp Vault secrets provider."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.vault_addr = os.getenv("VAULT_ADDR")
         self.vault_token = os.getenv("VAULT_TOKEN")
         self.mount_point = os.getenv("VAULT_MOUNT_POINT", "secret")
@@ -131,8 +136,9 @@ class HashiCorpVaultProvider(SecretsProvider):
 
                 self._client = hvac.Client(url=self.vault_addr, token=self.vault_token)
             except ImportError:
+                msg = "HashiCorp Vault SDK not installed. Install with: pip install hvac"
                 raise ImportError(
-                    "HashiCorp Vault SDK not installed. Install with: pip install hvac"
+                    msg,
                 )
         return self._client
 
@@ -140,11 +146,12 @@ class HashiCorpVaultProvider(SecretsProvider):
         if self._secrets_cache is None:
             try:
                 response = self.client.secrets.kv.v2.read_secret_version(
-                    mount_point=self.mount_point, path=self.secret_path
+                    mount_point=self.mount_point,
+                    path=self.secret_path,
                 )
                 self._secrets_cache = response["data"]["data"]
             except Exception as e:
-                logger.error(f"Failed to load secrets from HashiCorp Vault: {e}")
+                logger.exception(f"Failed to load secrets from HashiCorp Vault: {e}")
                 self._secrets_cache = {}
         return self._secrets_cache
 
@@ -154,8 +161,7 @@ class HashiCorpVaultProvider(SecretsProvider):
 
 
 class SecretsManager:
-    """
-    Centralized secrets management with multiple provider support.
+    """Centralized secrets management with multiple provider support.
 
     Usage:
         secrets = SecretsManager()
@@ -176,7 +182,7 @@ class SecretsManager:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._initialized:
             return
 
@@ -194,8 +200,7 @@ class SecretsManager:
 
     @lru_cache(maxsize=100)
     def get_secret(self, key: str, default: str | None = None) -> str | None:
-        """
-        Get a secret value by key.
+        """Get a secret value by key.
 
         Args:
             key: The secret key (e.g., "CHIMERA_API_KEY")
@@ -203,6 +208,7 @@ class SecretsManager:
 
         Returns:
             The secret value or default
+
         """
         value = self.provider.get_secret(key)
 
@@ -214,8 +220,7 @@ class SecretsManager:
         return value
 
     def get_required_secret(self, key: str) -> str:
-        """
-        Get a required secret value. Raises if not found.
+        """Get a required secret value. Raises if not found.
 
         Args:
             key: The secret key
@@ -225,24 +230,26 @@ class SecretsManager:
 
         Raises:
             ValueError: If the secret is not found
+
         """
         value = self.get_secret(key)
         if value is None:
-            raise ValueError(f"Required secret {key} not found")
+            msg = f"Required secret {key} not found"
+            raise ValueError(msg)
         return value
 
-    def clear_cache(self):
-        """Clear the secrets cache"""
+    def clear_cache(self) -> None:
+        """Clear the secrets cache."""
         self.get_secret.cache_clear()
 
 
 # Convenience function for getting secrets
 @lru_cache
 def get_secrets_manager() -> SecretsManager:
-    """Get the singleton SecretsManager instance"""
+    """Get the singleton SecretsManager instance."""
     return SecretsManager()
 
 
 def get_secret(key: str, default: str | None = None) -> str | None:
-    """Convenience function to get a secret"""
+    """Convenience function to get a secret."""
     return get_secrets_manager().get_secret(key, default)

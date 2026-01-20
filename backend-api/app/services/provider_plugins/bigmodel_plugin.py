@@ -1,5 +1,4 @@
-"""
-BigModel (Zhipu AI) Provider Plugin for Project Chimera.
+"""BigModel (Zhipu AI) Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for Zhipu AI BigModel integration,
 supporting GLM-4, GLM-3, and CodeGeeX models.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class BigModelPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for Zhipu AI BigModel API.
+    """Provider plugin for Zhipu AI BigModel API.
 
     Supports GLM-4, GLM-3-Turbo, CodeGeeX, and other Zhipu models.
     Uses the OpenAI-compatible API format.
@@ -217,8 +215,7 @@ class BigModelPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available BigModel models.
+        """List available BigModel models.
 
         Attempts to fetch from API, falls back to static list.
         """
@@ -262,7 +259,7 @@ class BigModelPlugin(BaseProviderPlugin):
                         context_window=128000,
                         supports_streaming=True,
                         capabilities=["chat"],
-                    )
+                    ),
                 )
 
         api_ids = {m.model_id for m in models}
@@ -288,12 +285,15 @@ class BigModelPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using BigModel API."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("BigModel API key is required")
+            msg = "BigModel API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
         start_time = time.time()
@@ -356,19 +356,22 @@ class BigModelPlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"BigModel API error: {e.response.status_code}")
+            logger.exception(f"BigModel API error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"BigModel generation error: {e}")
+            logger.exception(f"BigModel generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from BigModel API."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("BigModel API key is required")
+            msg = "BigModel API key is required"
+            raise ValueError(msg)
 
         model = request.model or self.get_default_model()
 
@@ -441,5 +444,5 @@ class BigModelPlugin(BaseProviderPlugin):
                             logger.warning(f"Parse error: {e}")
                             continue
         except Exception as e:
-            logger.error(f"BigModel streaming error: {e}")
+            logger.exception(f"BigModel streaming error: {e}")
             raise

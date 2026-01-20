@@ -208,9 +208,9 @@ describe('AegisCampaignDashboard Component', () => {
 
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../AegisCampaignDashboard');
-      expect(module).toBeDefined();
-      expect(module.AegisCampaignDashboard).toBeDefined();
+      const importedModule = await import('../AegisCampaignDashboard');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.AegisCampaignDashboard).toBeDefined();
     });
   });
 
@@ -513,9 +513,9 @@ describe('AegisCampaignDashboard Component', () => {
 describe('ConnectionStatus Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../ConnectionStatus');
-      expect(module).toBeDefined();
-      expect(module.ConnectionStatus).toBeDefined();
+      const importedModule = await import('../ConnectionStatus');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.ConnectionStatus).toBeDefined();
     });
   });
 
@@ -705,9 +705,9 @@ describe('ConnectionStatus Component', () => {
 describe('SuccessRateCard Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../SuccessRateCard');
-      expect(module).toBeDefined();
-      expect(module.SuccessRateCard).toBeDefined();
+      const importedModule = await import('../SuccessRateCard');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.SuccessRateCard).toBeDefined();
     });
   });
 
@@ -836,9 +836,9 @@ describe('SuccessRateCard Component', () => {
 describe('TokenUsageCard Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../TokenUsageCard');
-      expect(module).toBeDefined();
-      expect(module.TokenUsageCard).toBeDefined();
+      const importedModule = await import('../TokenUsageCard');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.TokenUsageCard).toBeDefined();
     });
   });
 
@@ -900,9 +900,9 @@ describe('TokenUsageCard Component', () => {
 describe('LatencyCard Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../LatencyCard');
-      expect(module).toBeDefined();
-      expect(module.LatencyCard).toBeDefined();
+      const importedModule = await import('../LatencyCard');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.LatencyCard).toBeDefined();
     });
   });
 
@@ -931,9 +931,9 @@ describe('LatencyCard Component', () => {
 describe('TechniqueBreakdown Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../TechniqueBreakdown');
-      expect(module).toBeDefined();
-      expect(module.TechniqueBreakdown).toBeDefined();
+      const importedModule = await import('../TechniqueBreakdown');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.TechniqueBreakdown).toBeDefined();
     });
   });
 
@@ -971,9 +971,9 @@ describe('TechniqueBreakdown Component', () => {
 describe('LiveEventFeed Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../LiveEventFeed');
-      expect(module).toBeDefined();
-      expect(module.LiveEventFeed).toBeDefined();
+      const importedModule = await import('../LiveEventFeed');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.LiveEventFeed).toBeDefined();
     });
   });
 
@@ -995,9 +995,9 @@ describe('LiveEventFeed Component', () => {
 describe('PromptEvolutionTimeline Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../PromptEvolutionTimeline');
-      expect(module).toBeDefined();
-      expect(module.PromptEvolutionTimeline).toBeDefined();
+      const importedModule = await import('../PromptEvolutionTimeline');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.PromptEvolutionTimeline).toBeDefined();
     });
   });
 
@@ -1034,9 +1034,9 @@ describe('PromptEvolutionTimeline Component', () => {
 describe('SuccessRateTrendChart Component', () => {
   describe('Module Import', () => {
     it('can be imported without errors', async () => {
-      const module = await import('../SuccessRateTrendChart');
-      expect(module).toBeDefined();
-      expect(module.SuccessRateTrendChart).toBeDefined();
+      const importedModule = await import('../SuccessRateTrendChart');
+      expect(importedModule).toBeDefined();
+      expect(importedModule.SuccessRateTrendChart).toBeDefined();
     });
   });
 

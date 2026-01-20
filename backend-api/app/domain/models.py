@@ -7,13 +7,13 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
 def to_camel(string: str) -> str:
-    """Convert snake_case to camelCase"""
+    """Convert snake_case to camelCase."""
     components = string.split("_")
     return components[0] + "".join(x.title() for x in components[1:])
 
 
 class CamelCaseModel(BaseModel):
-    """Base model with automatic camelCase alias generation"""
+    """Base model with automatic camelCase alias generation."""
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
@@ -44,35 +44,46 @@ class GenerationConfig(BaseModel):
     stop_sequences: list[str] | None = None
     # Gemini 3 thinking level: "low", "medium" (not supported yet), "high" (default)
     thinking_level: str | None = Field(
-        None, pattern="^(low|medium|high)$", description="Gemini 3 thinking level"
+        None,
+        pattern="^(low|medium|high)$",
+        description="Gemini 3 thinking level",
     )
 
     @field_validator("stop_sequences")
+    @classmethod
     def validate_stop_sequences(cls, v):
         if v is not None:
             # Limit number of stop sequences to prevent resource exhaustion
             if len(v) > 10:
-                raise ValueError("Maximum 10 stop sequences allowed")
+                msg = "Maximum 10 stop sequences allowed"
+                raise ValueError(msg)
             # Validate each stop sequence
             for seq in v:
                 if not isinstance(seq, str) or len(seq) > 100:
-                    raise ValueError("Each stop sequence must be a string of max 100 characters")
+                    msg = "Each stop sequence must be a string of max 100 characters"
+                    raise ValueError(msg)
         return v
 
 
 class PromptRequest(BaseModel):
     prompt: str = Field(
-        ..., min_length=1, max_length=50000, description="The input prompt for generation"
+        ...,
+        min_length=1,
+        max_length=50000,
+        description="The input prompt for generation",
     )
     system_instruction: str | None = Field(
-        None, max_length=10000, description="System instruction to guide the model"
+        None,
+        max_length=10000,
+        description="System instruction to guide the model",
     )
     config: GenerationConfig | None = Field(default_factory=GenerationConfig)
     model: str | None = Field(None, description="Specific model to use, overrides default")
     provider: LLMProviderType | None = Field(None, description="Provider to use")
     api_key: str | None = Field(None, description="Optional API key override")
     skip_validation: bool = Field(
-        False, description="Skip complex content validation (for internal/research use)"
+        False,
+        description="Skip complex content validation (for internal/research use)",
     )
 
     model_config = ConfigDict(
@@ -83,14 +94,16 @@ class PromptRequest(BaseModel):
                 "provider": "google",
                 "model": "gemini-2.0-flash-exp",
                 "config": {"temperature": 0.7, "max_output_tokens": 2048, "top_p": 0.95},
-            }
+            },
         },
     )
 
     @field_validator("prompt")
+    @classmethod
     def validate_prompt(cls, v):
         if not v or not v.strip():
-            raise ValueError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise ValueError(msg)
         return v.strip()
 
     @model_validator(mode="after")
@@ -103,14 +116,17 @@ class PromptRequest(BaseModel):
         # Prevent ReDoS by checking input length before regex
         # Increased limit to 50000 to match field max_length for AutoDAN and other long prompts
         if len(self.prompt) > 50000:
-            raise ValueError("Prompt too long for pattern validation")
+            msg = "Prompt too long for pattern validation"
+            raise ValueError(msg)
         complex_patterns = [r"<script[^>]*>.*?</script>", r"javascript:", r"on\w+\s*="]
         for pattern in complex_patterns:
             if re.search(pattern, self.prompt, re.IGNORECASE):
-                raise ValueError(f"Prompt contains potentially complex content: {pattern}")
+                msg = f"Prompt contains potentially complex content: {pattern}"
+                raise ValueError(msg)
         return self
 
     @field_validator("system_instruction")
+    @classmethod
     def validate_system_instruction(cls, v):
         if v is not None:
             # Apply similar validation to system instruction
@@ -118,30 +134,37 @@ class PromptRequest(BaseModel):
 
             for pattern in complex_patterns:
                 if re.search(pattern, v, re.IGNORECASE):
+                    msg = f"System instruction contains potentially complex content: {pattern}"
                     raise ValueError(
-                        f"System instruction contains potentially complex content: {pattern}"
+                        msg,
                     )
 
         return v.strip() if v else v
 
     @field_validator("api_key")
+    @classmethod
     def validate_api_key(cls, v):
         if v is not None:
             # Basic API key format validation
             if not re.match(r"^[a-zA-Z0-9\-_\.]+$", v):
-                raise ValueError("Invalid API key format")
+                msg = "Invalid API key format"
+                raise ValueError(msg)
             if len(v) < 16 or len(v) > 256:
-                raise ValueError("API key must be between 16 and 256 characters")
+                msg = "API key must be between 16 and 256 characters"
+                raise ValueError(msg)
         return v
 
     @field_validator("model")
+    @classmethod
     def validate_model(cls, v):
         if v is not None:
             # Validate model name format
             if not re.match(r"^[a-zA-Z0-9\-_\.]+$", v):
-                raise ValueError("Invalid model name format")
+                msg = "Invalid model name format"
+                raise ValueError(msg)
             if len(v) > 100:
-                raise ValueError("Model name too long")
+                msg = "Model name too long"
+                raise ValueError(msg)
         return v
 
 
@@ -167,17 +190,21 @@ class TransformationRequest(BaseModel):
     techniques: list[str] | None = None
 
     @field_validator("core_request")
+    @classmethod
     def validate_core_request(cls, v):
         if not v or not v.strip():
-            raise ValueError("Core request cannot be empty")
+            msg = "Core request cannot be empty"
+            raise ValueError(msg)
         return v.strip()
 
     @field_validator("technique_suite")
+    @classmethod
     def validate_technique_suite(cls, v):
         if v is None:
             return v
         if not re.match(r"^[a-zA-Z0-9\-_]+$", v):
-            raise ValueError("Invalid technique suite name")
+            msg = "Invalid technique suite name"
+            raise ValueError(msg)
         return v
 
     @model_validator(mode="after")
@@ -202,12 +229,14 @@ class ExecutionRequest(TransformationRequest):
     api_key: str | None = Field(None, description="Optional API key override")
 
     @field_validator("provider")
+    @classmethod
     def validate_provider(cls, v):
         if v is not None:
             # Validate against LLMProviderType enum
             valid_providers = [p.value for p in LLMProviderType]
             if v.lower() not in valid_providers:
-                raise ValueError(f"Provider must be one of: {valid_providers}")
+                msg = f"Provider must be one of: {valid_providers}"
+                raise ValueError(msg)
         return v
 
 
@@ -233,7 +262,7 @@ class PromptResponse(BaseModel):
                 },
                 "finish_reason": "stop",
                 "latency_ms": 1250.5,
-            }
+            },
         },
     )
 
@@ -263,7 +292,7 @@ class TransformationResponse(BaseModel):
                     "timestamp": "2023-10-27T10:00:00Z",
                     "bypass_probability": 0.85,
                 },
-            }
+            },
         },
     )
 
@@ -298,7 +327,7 @@ class ExecutionResponse(BaseModel):
                     },
                 },
                 "execution_time_seconds": 2.15,
-            }
+            },
         },
     )
 
@@ -339,7 +368,7 @@ class ProviderListResponse(BaseModel):
                 ],
                 "count": 2,
                 "default": "google",
-            }
+            },
         },
     )
 
@@ -362,7 +391,7 @@ class MetricsResponse(BaseModel):
 
 
 class TechniqueSuite(str, Enum):
-    """Available technique suites for prompt transformation"""
+    """Available technique suites for prompt transformation."""
 
     SIMPLE = "simple"
     LAYERED = "layered"
@@ -379,7 +408,7 @@ class TechniqueSuite(str, Enum):
 
 
 class JailbreakGenerationRequest(BaseModel):
-    """Request model for AI-powered jailbreak generation"""
+    """Request model for AI-powered jailbreak generation."""
 
     core_request: str = Field(..., min_length=1, max_length=5000)
     technique_suite: str = Field(..., min_length=1, max_length=50)
@@ -420,14 +449,16 @@ class JailbreakGenerationRequest(BaseModel):
     use_cache: bool = True
 
     @field_validator("core_request")
+    @classmethod
     def validate_core_request(cls, v):
         if not v or not v.strip():
-            raise ValueError("Core request cannot be empty")
+            msg = "Core request cannot be empty"
+            raise ValueError(msg)
         return v.strip()
 
 
 class JailbreakGenerationResponse(BaseModel):
-    """Response model for jailbreak generation"""
+    """Response model for jailbreak generation."""
 
     success: bool
     request_id: str = Field(..., min_length=1, max_length=100)
@@ -437,31 +468,37 @@ class JailbreakGenerationResponse(BaseModel):
 
 
 class GradientOptimizationRequest(BaseModel):
-    """Request model for gradient-based optimization attacks (HotFlip/GCG)"""
+    """Request model for gradient-based optimization attacks (HotFlip/GCG)."""
 
     core_request: str = Field(..., min_length=1, max_length=5000)
     technique: str = Field(
-        ..., pattern="^(hotflip|gcg)$", description="Optimization technique: hotflip or gcg"
+        ...,
+        pattern="^(hotflip|gcg)$",
+        description="Optimization technique: hotflip or gcg",
     )
     potency_level: int = Field(..., ge=1, le=10)
     num_steps: int = Field(10, ge=1, le=50, description="Number of optimization steps")
     beam_width: int = Field(3, ge=1, le=10, description="Beam width for GCG (ignored for HotFlip)")
     target_model: str | None = Field(
-        None, max_length=100, description="Target model for transfer attack verification"
+        None,
+        max_length=100,
+        description="Target model for transfer attack verification",
     )
     provider: str | None = Field("openai", max_length=50, description="Provider for optimization")
     model: str | None = Field(None, max_length=100, description="Specific model for optimization")
     use_cache: bool = True
 
     @field_validator("core_request")
+    @classmethod
     def validate_core_request(cls, v):
         if not v or not v.strip():
-            raise ValueError("Core request cannot be empty")
+            msg = "Core request cannot be empty"
+            raise ValueError(msg)
         return v.strip()
 
 
 class GradientOptimizationResponse(BaseModel):
-    """Response model for gradient optimization"""
+    """Response model for gradient optimization."""
 
     success: bool
     request_id: str = Field(..., min_length=1, max_length=100)
@@ -471,7 +508,7 @@ class GradientOptimizationResponse(BaseModel):
 
 
 class SessionInfoResponse(BaseModel):
-    """Response model for session information"""
+    """Response model for session information."""
 
     session_id: str = Field(..., min_length=1, max_length=100)
     provider: str | None = Field(None, max_length=50)
@@ -493,10 +530,12 @@ class StreamChunk(BaseModel):
     text: str = Field(..., description="The text content of this chunk")
     is_final: bool = Field(False, description="Whether this is the final chunk")
     finish_reason: str | None = Field(
-        None, description="Reason for completion (e.g., 'STOP', 'MAX_TOKENS')"
+        None,
+        description="Reason for completion (e.g., 'STOP', 'MAX_TOKENS')",
     )
     token_count: int | None = Field(
-        None, description="Number of tokens in this chunk (if available)"
+        None,
+        description="Number of tokens in this chunk (if available)",
     )
 
     model_config = ConfigDict(
@@ -506,8 +545,8 @@ class StreamChunk(BaseModel):
                 "is_final": False,
                 "finish_reason": None,
                 "token_count": 3,
-            }
-        }
+            },
+        },
     )
 
 
@@ -517,7 +556,8 @@ class TokenCountRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=100000, description="Text to count tokens for")
     model: str | None = Field(None, max_length=100, description="Specific model for tokenization")
     provider: LLMProviderType | None = Field(
-        LLMProviderType.GOOGLE, description="Provider to use for counting"
+        LLMProviderType.GOOGLE,
+        description="Provider to use for counting",
     )
 
     model_config = ConfigDict(
@@ -526,14 +566,16 @@ class TokenCountRequest(BaseModel):
                 "text": "Explain quantum computing in simple terms",
                 "model": "gemini-2.5-flash",
                 "provider": "google",
-            }
-        }
+            },
+        },
     )
 
     @field_validator("text")
+    @classmethod
     def validate_text(cls, v):
         if not v or not v.strip():
-            raise ValueError("Text cannot be empty")
+            msg = "Text cannot be empty"
+            raise ValueError(msg)
         return v
 
 
@@ -544,7 +586,9 @@ class TokenCountResponse(BaseModel):
     model: str = Field(..., description="Model used for tokenization")
     provider: str = Field(..., description="Provider used for counting")
     cached_content_tokens: int | None = Field(
-        None, ge=0, description="Tokens from cached content (if applicable)"
+        None,
+        ge=0,
+        description="Tokens from cached content (if applicable)",
     )
 
     model_config = ConfigDict(
@@ -554,8 +598,8 @@ class TokenCountResponse(BaseModel):
                 "model": "gemini-2.5-flash",
                 "provider": "google",
                 "cached_content_tokens": None,
-            }
-        }
+            },
+        },
     )
 
 
@@ -565,7 +609,7 @@ class TokenCountResponse(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    """Standardized error response format"""
+    """Standardized error response format."""
 
     error_code: str = Field(..., min_length=1, max_length=50)
     message: str = Field(..., min_length=1, max_length=500)
@@ -606,7 +650,7 @@ class ErrorResponse(BaseModel):
                     "timestamp": "2023-10-27T10:00:00Z",
                     "request_id": "req_c3d4e5f6",
                 },
-            ]
+            ],
         },
     )
 
@@ -617,7 +661,7 @@ class ErrorResponse(BaseModel):
 
 
 class AuthType(str, Enum):
-    """Authentication types supported by providers"""
+    """Authentication types supported by providers."""
 
     API_KEY = "api_key"
     OAUTH = "oauth"
@@ -626,7 +670,7 @@ class AuthType(str, Enum):
 
 
 class Capability(str, Enum):
-    """Capabilities supported by models and providers"""
+    """Capabilities supported by models and providers."""
 
     TEXT_GENERATION = "text_generation"
     CODE_GENERATION = "code_generation"
@@ -640,38 +684,47 @@ class Capability(str, Enum):
 
 
 class Provider(BaseModel):
-    """Provider metadata model for the unified provider system"""
+    """Provider metadata model for the unified provider system."""
 
     id: str = Field(..., min_length=1, max_length=50, description="Unique provider identifier")
     name: str = Field(..., min_length=1, max_length=100, description="Provider name")
     display_name: str = Field(..., min_length=1, max_length=100, description="Human-readable name")
     aliases: set[str] = Field(
-        default_factory=set, description="Alternative names (e.g., 'google' and 'gemini')"
+        default_factory=set,
+        description="Alternative names (e.g., 'google' and 'gemini')",
     )
     api_endpoint: str = Field(
-        ..., min_length=1, max_length=500, description="Base API endpoint URL"
+        ...,
+        min_length=1,
+        max_length=500,
+        description="Base API endpoint URL",
     )
     auth_type: AuthType = Field(..., description="Authentication method")
     capabilities: set[Capability] = Field(default_factory=set, description="Supported capabilities")
     is_enabled: bool = Field(True, description="Whether provider is currently enabled")
     config: dict[str, Any] = Field(
-        default_factory=dict, description="Provider-specific configuration"
+        default_factory=dict,
+        description="Provider-specific configuration",
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     @field_validator("id")
+    @classmethod
     def validate_id(cls, v):
         if not re.match(r"^[a-z0-9_-]+$", v):
+            msg = "Provider ID must contain only lowercase letters, numbers, hyphens, dashes"
             raise ValueError(
-                "Provider ID must contain only lowercase letters, numbers, hyphens, dashes"
+                msg,
             )
         return v
 
     @field_validator("api_endpoint")
+    @classmethod
     def validate_endpoint(cls, v):
         if not v.startswith(("http://", "https://")):
-            raise ValueError("API endpoint must be a valid HTTP/HTTPS URL")
+            msg = "API endpoint must be a valid HTTP/HTTPS URL"
+            raise ValueError(msg)
         return v
 
     model_config = ConfigDict(
@@ -686,13 +739,13 @@ class Provider(BaseModel):
                 "capabilities": ["text_generation", "chat", "streaming", "function_calling"],
                 "is_enabled": True,
                 "config": {"timeout": 30, "retry_count": 3},
-            }
-        }
+            },
+        },
     )
 
 
 class Model(BaseModel):
-    """Model metadata for the unified provider system"""
+    """Model metadata for the unified provider system."""
 
     id: str = Field(..., min_length=1, max_length=100, description="Unique model identifier")
     provider_id: str = Field(..., min_length=1, max_length=50, description="Parent provider ID")
@@ -708,10 +761,12 @@ class Model(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     @field_validator("id")
+    @classmethod
     def validate_id(cls, v):
         if not re.match(r"^[a-zA-Z0-9_.-]+$", v):
+            msg = "Model ID must contain only letters, numbers, dots, hyphens, underscores"
             raise ValueError(
-                "Model ID must contain only letters, numbers, dots, hyphens, underscores"
+                msg,
             )
         return v
 
@@ -734,13 +789,13 @@ class Model(BaseModel):
                 "cost_per_1k_output_tokens": 0.03,
                 "is_enabled": True,
                 "config": {"max_tokens": 4096},
-            }
-        }
+            },
+        },
     )
 
 
 class SelectionScope(str, Enum):
-    """Scope levels for provider/model selection in the three-tier hierarchy"""
+    """Scope levels for provider/model selection in the three-tier hierarchy."""
 
     GLOBAL = "global"  # System-wide default from environment variables
     SESSION = "session"  # User session preference stored in database
@@ -748,25 +803,29 @@ class SelectionScope(str, Enum):
 
 
 class Selection(BaseModel):
-    """Provider and model selection for the three-tier hierarchy system"""
+    """Provider and model selection for the three-tier hierarchy system."""
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Selected provider ID")
     model_id: str = Field(..., min_length=1, max_length=100, description="Selected model ID")
     scope: SelectionScope = Field(..., description="Selection scope level")
     user_id: str | None = Field(None, max_length=100, description="User ID (for session scope)")
     session_id: str | None = Field(
-        None, max_length=100, description="Session ID (for session scope)"
+        None,
+        max_length=100,
+        description="Session ID (for session scope)",
     )
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     @model_validator(mode="after")
     def validate_scope_requirements(self):
-        """Validate scope-specific requirements"""
+        """Validate scope-specific requirements."""
         if self.scope == SelectionScope.SESSION and not (self.user_id or self.session_id):
-            raise ValueError("Session scope requires either user_id or session_id")
+            msg = "Session scope requires either user_id or session_id"
+            raise ValueError(msg)
         if self.scope == SelectionScope.GLOBAL and (self.user_id or self.session_id):
-            raise ValueError("Global scope cannot have user_id or session_id")
+            msg = "Global scope cannot have user_id or session_id"
+            raise ValueError(msg)
         return self
 
     model_config = ConfigDict(
@@ -777,24 +836,27 @@ class Selection(BaseModel):
                 "scope": "session",
                 "user_id": "user_123",
                 "session_id": "session_456",
-            }
-        }
+            },
+        },
     )
 
 
 class ProviderSelectionRequest(BaseModel):
-    """Request to update provider/model selection"""
+    """Request to update provider/model selection."""
 
     provider_id: str = Field(..., min_length=1, max_length=50, description="Provider to select")
     model_id: str = Field(..., min_length=1, max_length=100, description="Model to select")
     scope: SelectionScope = Field(
-        SelectionScope.SESSION, description="Selection scope (default: session)"
+        SelectionScope.SESSION,
+        description="Selection scope (default: session)",
     )
 
     @field_validator("provider_id", "model_id")
+    @classmethod
     def validate_ids(cls, v):
         if not v or not v.strip():
-            raise ValueError("ID cannot be empty")
+            msg = "ID cannot be empty"
+            raise ValueError(msg)
         return v.strip()
 
     model_config = ConfigDict(
@@ -803,13 +865,13 @@ class ProviderSelectionRequest(BaseModel):
                 "provider_id": "anthropic",
                 "model_id": "claude-3-5-sonnet-20241022",
                 "scope": "session",
-            }
-        }
+            },
+        },
     )
 
 
 class ProviderSelectionResponse(BaseModel):
-    """Response from provider/model selection update"""
+    """Response from provider/model selection update."""
 
     success: bool
     selection: Selection
@@ -827,6 +889,6 @@ class ProviderSelectionResponse(BaseModel):
                     "session_id": "session_456",
                 },
                 "message": "Provider selection updated successfully",
-            }
-        }
+            },
+        },
     )

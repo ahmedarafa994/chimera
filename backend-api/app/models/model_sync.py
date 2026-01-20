@@ -1,6 +1,4 @@
-"""
-SQLAlchemy models for model synchronization system.
-"""
+"""SQLAlchemy models for model synchronization system."""
 
 # Use appropriate JSON type based on database
 import os
@@ -109,7 +107,7 @@ class ModelAvailabilityCache(Base):
 
 
 # Create all tables
-def create_model_sync_tables(engine):
+def create_model_sync_tables(engine) -> None:
     """Create model synchronization tables."""
     Base.metadata.create_all(engine, checkfirst=True)
 
@@ -122,7 +120,7 @@ async def get_active_models(db_session):
     from app.domain.model_sync import ModelInfo
 
     result = await db_session.execute(
-        select(Model).where(Model.is_active).order_by(Model.provider, Model.name)
+        select(Model).where(Model.is_active).order_by(Model.provider, Model.name),
     )
     models = result.scalars().all()
 
@@ -148,13 +146,17 @@ async def get_user_session(db_session, session_id: str):
     from sqlalchemy import select
 
     result = await db_session.execute(
-        select(UserSession).where(UserSession.session_id == session_id)
+        select(UserSession).where(UserSession.session_id == session_id),
     )
     return result.scalar_one_or_none()
 
 
 async def create_user_session(
-    db_session, user_id: str, session_id: str, ip_address: str, user_agent: str | None = None
+    db_session,
+    user_id: str,
+    session_id: str,
+    ip_address: str,
+    user_agent: str | None = None,
 ):
     """Create a new user session."""
     from datetime import timedelta
@@ -172,13 +174,13 @@ async def create_user_session(
     return session
 
 
-async def update_user_session_model(db_session, session_id: str, model_id: str):
+async def update_user_session_model(db_session, session_id: str, model_id: str) -> bool:
     """Update user session with selected model."""
     from sqlalchemy import select, update
 
     # Get current session
     result = await db_session.execute(
-        select(UserSession).where(UserSession.session_id == session_id)
+        select(UserSession).where(UserSession.session_id == session_id),
     )
     session = result.scalar_one_or_none()
 
@@ -189,7 +191,7 @@ async def update_user_session_model(db_session, session_id: str, model_id: str):
         await db_session.execute(
             update(UserSession)
             .where(UserSession.session_id == session_id)
-            .values(selected_model_id=model_id, last_updated=datetime.utcnow())
+            .values(selected_model_id=model_id, last_updated=datetime.utcnow()),
         )
 
         # Log the change
@@ -218,7 +220,7 @@ async def log_model_change_error(
     error_message: str,
     ip_address: str,
     user_agent: str | None = None,
-):
+) -> None:
     """Log failed model change attempt."""
     change_log = ModelChangeLog(
         user_id=user_id,
@@ -234,7 +236,7 @@ async def log_model_change_error(
     await db_session.commit()
 
 
-async def cleanup_expired_sessions(db_session):
+async def cleanup_expired_sessions(db_session) -> None:
     """Clean up expired user sessions."""
     from sqlalchemy import delete
 

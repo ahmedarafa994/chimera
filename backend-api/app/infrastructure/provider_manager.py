@@ -1,5 +1,4 @@
-"""
-Provider Manager with Failover Support
+"""Provider Manager with Failover Support.
 
 Story 1.2: Direct API Integration
 Provides centralized management of LLM providers with automatic failover.
@@ -86,14 +85,13 @@ class FailoverConfig:
 
 
 class ProviderManager:
-    """
-    Centralized provider management with failover support.
+    """Centralized provider management with failover support.
 
     Manages multiple LLM providers, tracks their health,
     and provides automatic failover when primary providers fail.
     """
 
-    def __init__(self, failover_config: FailoverConfig | None = None):
+    def __init__(self, failover_config: FailoverConfig | None = None) -> None:
         self.config = failover_config or FailoverConfig()
         self._providers: dict[str, LLMProvider] = {}
         self._provider_states: dict[str, ProviderState] = {}
@@ -111,8 +109,7 @@ class ProviderManager:
         is_default: bool = False,
         retry_config: RetryConfig | None = None,
     ) -> None:
-        """
-        Register a provider with the manager.
+        """Register a provider with the manager.
 
         Args:
             name: Unique name for the provider.
@@ -120,6 +117,7 @@ class ProviderManager:
             priority: Priority for failover (higher = tried first).
             is_default: Whether this is the default provider.
             retry_config: Custom retry configuration.
+
         """
         self._providers[name] = provider
         self._provider_states[name] = ProviderState(
@@ -138,7 +136,7 @@ class ProviderManager:
         self._update_provider_order()
 
         logger.info(
-            f"Registered provider '{name}' with priority {priority} " f"(default={is_default})"
+            f"Registered provider '{name}' with priority {priority} (default={is_default})",
         )
 
     def _update_provider_order(self) -> None:
@@ -247,13 +245,13 @@ class ProviderManager:
                 state.status = ProviderStatus.RATE_LIMITED
                 state.rate_limit_reset = time.time() + self.config.rate_limit_cooldown
                 logger.warning(
-                    f"Provider '{name}' rate limited. " f"Cooldown until {state.rate_limit_reset}"
+                    f"Provider '{name}' rate limited. Cooldown until {state.rate_limit_reset}",
                 )
             elif state.consecutive_failures >= self.config.unhealthy_threshold:
                 state.status = ProviderStatus.UNHEALTHY
                 logger.error(
                     f"Provider '{name}' marked UNHEALTHY after "
-                    f"{state.consecutive_failures} consecutive failures"
+                    f"{state.consecutive_failures} consecutive failures",
                 )
             else:
                 state.status = ProviderStatus.DEGRADED
@@ -263,8 +261,7 @@ class ProviderManager:
         request: PromptRequest,
         preferred_provider: str | None = None,
     ) -> PromptResponse:
-        """
-        Generate text with automatic failover to backup providers.
+        """Generate text with automatic failover to backup providers.
 
         Args:
             request: The prompt request.
@@ -275,6 +272,7 @@ class ProviderManager:
 
         Raises:
             RetryExhaustedError: When all providers fail.
+
         """
         # Build provider order for this request
         providers_to_try = []
@@ -334,7 +332,7 @@ class ProviderManager:
                     raise
 
                 logger.warning(
-                    f"Provider '{provider_name}' failed: {e!s}. " f"Trying next provider..."
+                    f"Provider '{provider_name}' failed: {e!s}. Trying next provider...",
                 )
 
         raise RetryExhaustedError(
@@ -344,14 +342,14 @@ class ProviderManager:
         )
 
     async def check_provider_health(self, name: str) -> ProviderStatus:
-        """
-        Check the health of a specific provider.
+        """Check the health of a specific provider.
 
         Args:
             name: The provider name.
 
         Returns:
             The current health status of the provider.
+
         """
         provider = self._providers.get(name)
         if not provider:
@@ -382,7 +380,7 @@ class ProviderManager:
             return state.status
 
         except Exception as e:
-            logger.error(f"Health check failed for '{name}': {e!s}")
+            logger.exception(f"Health check failed for '{name}': {e!s}")
             state.status = ProviderStatus.UNHEALTHY
             state.last_health_check = time.time()
             return state.status
@@ -422,7 +420,7 @@ class ProviderManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Health check loop error: {e!s}")
+                logger.exception(f"Health check loop error: {e!s}")
 
     def get_stats(self) -> dict[str, Any]:
         """Get statistics for all providers."""
@@ -464,8 +462,7 @@ def get_provider_manager() -> ProviderManager:
 
 
 async def initialize_provider_manager() -> ProviderManager:
-    """
-    Initialize the provider manager with all configured providers.
+    """Initialize the provider manager with all configured providers.
 
     This should be called during application startup.
     """

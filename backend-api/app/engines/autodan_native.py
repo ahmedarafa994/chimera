@@ -10,11 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class AutoDANNativeEngine:
-    """
-    Native implementation of AutoDAN (Best-of-N) for Project Chimera using Gemini.
-    """
+    """Native implementation of AutoDAN (Best-of-N) for Project Chimera using Gemini."""
 
-    def __init__(self, model_name: str = "gemini-3-pro-preview"):
+    def __init__(self, model_name: str = "gemini-3-pro-preview") -> None:
         if not GeminiClient:
             logger.error("GeminiClient not available")
             self.client = None
@@ -25,13 +23,11 @@ class AutoDANNativeEngine:
             self.model_name = model_name
             logger.info(f"AutoDANNativeEngine initialized with model: {model_name}")
         except Exception as e:
-            logger.error(f"Failed to initialize GeminiClient: {e}")
+            logger.exception(f"Failed to initialize GeminiClient: {e}")
             self.client = None
 
     def transform(self, intent_data: dict, potency: int) -> str:
-        """
-        Transform the prompt using Best-of-N strategy with Gemini.
-        """
+        """Transform the prompt using Best-of-N strategy with Gemini."""
         if not self.client:
             logger.warning("GeminiClient not initialized. Returning original prompt.")
             return intent_data.get("raw_text", "")
@@ -41,7 +37,7 @@ class AutoDANNativeEngine:
             return ""
 
         logger.info(
-            f"Running AutoDAN Native (Best-of-N) with {self.model_name} for: {original_prompt}"
+            f"Running AutoDAN Native (Best-of-N) with {self.model_name} for: {original_prompt}",
         )
 
         # Number of variations based on potency
@@ -50,8 +46,7 @@ class AutoDANNativeEngine:
         variations = self._generate_variations(original_prompt, n)
 
         # Heuristic: Select the longest response as it likely contains the most elaborate framing
-        best_variation = max(variations, key=len) if variations else original_prompt
-        return best_variation
+        return max(variations, key=len) if variations else original_prompt
 
     def _generate_variations(self, prompt: str, n: int) -> list[str]:
         variations = []
@@ -82,6 +77,6 @@ class AutoDANNativeEngine:
                 if response and not response.startswith("Error"):
                     variations.append(response.strip())
             except Exception as e:
-                logger.error(f"Variation generation failed: {e}")
+                logger.exception(f"Variation generation failed: {e}")
 
         return variations

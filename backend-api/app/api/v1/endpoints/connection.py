@@ -1,8 +1,9 @@
-"""
-Connection Management API Endpoints
+"""Connection Management API Endpoints
 Direct-only API connection management.
 Includes provider endpoint management and validation.
 """
+
+from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends
@@ -75,8 +76,7 @@ class ProviderHealthResponse(BaseModel):
 # Endpoints
 @router.get("/config", response_model=ConnectionConfigResponse)
 async def get_connection_config():
-    """
-    Get current connection configuration.
+    """Get current connection configuration.
 
     Returns the current direct connection configuration.
     """
@@ -87,8 +87,7 @@ async def get_connection_config():
 
 @router.get("/status", response_model=ConnectionStatusResponse)
 async def get_connection_status():
-    """
-    Get current connection status.
+    """Get current connection status.
 
     Checks the active connection and returns status information including
     latency and available models.
@@ -108,8 +107,7 @@ async def get_connection_status():
 
 @router.get("/health")
 async def connection_health():
-    """
-    Quick health check for current connection.
+    """Quick health check for current connection.
 
     Returns a simple status without detailed model information.
     """
@@ -126,9 +124,7 @@ async def connection_health():
 
 @router.get("/endpoints", response_model=EndpointsListResponse)
 async def list_provider_endpoints():
-    """
-    List all configured direct endpoints for all providers.
-    """
+    """List all configured direct endpoints for all providers."""
     cfg = get_settings()
     all_endpoints = cfg.get_all_provider_endpoints()
 
@@ -141,10 +137,10 @@ async def list_provider_endpoints():
 
 @router.post("/endpoints/validate", response_model=ValidateEndpointResponse)
 async def validate_provider_endpoint(
-    request: ValidateEndpointRequest, _user: TokenPayload = Depends(get_current_user)
+    request: ValidateEndpointRequest,
+    _user: Annotated[TokenPayload, Depends(get_current_user)],
 ):
-    """
-    Validate a provider endpoint URL format and configuration.
+    """Validate a provider endpoint URL format and configuration.
 
     Checks if the direct endpoint URL for the specified provider
     is properly formatted and configured.
@@ -164,14 +160,18 @@ async def validate_provider_endpoint(
     error_msg = None if is_valid else f"Invalid URL format: {endpoint}"
 
     return ValidateEndpointResponse(
-        provider=request.provider, url=endpoint, is_valid=is_valid, error_message=error_msg
+        provider=request.provider,
+        url=endpoint,
+        is_valid=is_valid,
+        error_message=error_msg,
     )
 
 
 @router.post("/endpoints/test/{provider}", response_model=ProviderHealthResponse)
-async def test_provider_connection(provider: str, _user: TokenPayload = Depends(get_current_user)):
-    """
-    Test connectivity for a specific provider endpoint.
+async def test_provider_connection(
+    provider: str, _user: Annotated[TokenPayload, Depends(get_current_user)]
+):
+    """Test connectivity for a specific provider endpoint.
 
     Performs a health check against the provider's direct endpoint
     to verify it's reachable and responding.
@@ -183,7 +183,9 @@ async def test_provider_connection(provider: str, _user: TokenPayload = Depends(
 
     if not endpoint:
         return ProviderHealthResponse(
-            provider=provider, is_healthy=False, error_message=f"No endpoint for {provider}"
+            provider=provider,
+            is_healthy=False,
+            error_message=f"No endpoint for {provider}",
         )
 
     start_time = timer.time()
@@ -219,5 +221,7 @@ async def test_provider_connection(provider: str, _user: TokenPayload = Depends(
         )
     except Exception as e:
         return ProviderHealthResponse(
-            provider=provider, is_healthy=False, error_message=f"Unexpected error: {e!s}"
+            provider=provider,
+            is_healthy=False,
+            error_message=f"Unexpected error: {e!s}",
         )

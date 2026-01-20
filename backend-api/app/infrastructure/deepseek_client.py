@@ -13,7 +13,7 @@ from app.domain.models import LLMProviderType, PromptRequest, PromptResponse, St
 
 
 class DeepSeekClient(LLMProvider):
-    def __init__(self, config: Settings = None):
+    def __init__(self, config: Settings = None) -> None:
         self.config = config or get_settings()
         self.endpoint = self.config.get_provider_endpoint("deepseek")
         api_key = self.config.DEEPSEEK_API_KEY
@@ -34,13 +34,15 @@ class DeepSeekClient(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         # Input validation
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         # API key override if provided
         client = self.client
         if request.api_key:
             if not self._validate_api_key(request.api_key):
-                raise AppError("Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST)
+                msg = "Invalid API key format"
+                raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
             client = AsyncOpenAI(api_key=request.api_key, base_url=self.endpoint)
 
         model_name = request.model or self.config.DEEPSEEK_MODEL
@@ -48,8 +50,9 @@ class DeepSeekClient(LLMProvider):
 
         # Direct Mode
         if not client:
+            msg = "DeepSeek client not initialized. Check API key."
             raise AppError(
-                "DeepSeek client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -103,8 +106,10 @@ class DeepSeekClient(LLMProvider):
 
         except Exception as e:
             logger.error(f"DeepSeek generation failed: {e!s}", exc_info=True)
+            msg = f"DeepSeek generation failed: {e!s}"
             raise AppError(
-                f"DeepSeek generation failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY
+                msg,
+                status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
     async def check_health(self) -> bool:
@@ -120,25 +125,28 @@ class DeepSeekClient(LLMProvider):
             return False
 
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation using DeepSeek's OpenAI-compatible streaming API.
+        """Stream text generation using DeepSeek's OpenAI-compatible streaming API.
 
         Yields:
             StreamChunk: Individual chunks of generated text.
+
         """
         # Input validation
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         client = self.client
         if request.api_key:
             if not self._validate_api_key(request.api_key):
-                raise AppError("Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST)
+                msg = "Invalid API key format"
+                raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
             client = AsyncOpenAI(api_key=request.api_key, base_url=self.endpoint)
 
         if not client:
+            msg = "DeepSeek client not initialized. Check API key."
             raise AppError(
-                "DeepSeek client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -165,7 +173,9 @@ class DeepSeekClient(LLMProvider):
             async for chunk in stream:
                 if chunk.choices and chunk.choices[0].delta.content:
                     yield StreamChunk(
-                        text=chunk.choices[0].delta.content, is_final=False, finish_reason=None
+                        text=chunk.choices[0].delta.content,
+                        is_final=False,
+                        finish_reason=None,
                     )
 
                 if chunk.choices and chunk.choices[0].finish_reason:
@@ -180,11 +190,11 @@ class DeepSeekClient(LLMProvider):
 
         except Exception as e:
             logger.error(f"DeepSeek streaming failed: {e!s}", exc_info=True)
-            raise AppError(f"Streaming failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Streaming failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)
 
     async def count_tokens(self, text: str, model: str | None = None) -> int:
-        """
-        Count tokens using tiktoken for DeepSeek models.
+        """Count tokens using tiktoken for DeepSeek models.
 
         DeepSeek uses a tokenizer similar to OpenAI's, so we use tiktoken
         with cl100k_base encoding as a reasonable approximation.
@@ -195,6 +205,7 @@ class DeepSeekClient(LLMProvider):
 
         Returns:
             int: The number of tokens in the text.
+
         """
         try:
             # DeepSeek uses a tokenizer similar to OpenAI's cl100k_base
@@ -204,4 +215,5 @@ class DeepSeekClient(LLMProvider):
 
         except Exception as e:
             logger.error(f"Token counting failed: {e!s}", exc_info=True)
-            raise AppError(f"Token counting failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Token counting failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)

@@ -1,5 +1,4 @@
-"""
-Feature Flag Service for Technique Management
+"""Feature Flag Service for Technique Management.
 
 Provides runtime control over technique availability based on:
 - Enabled/disabled status
@@ -20,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class FeatureFlagService:
-    """
-    Manages feature flags for jailbreak techniques.
+    """Manages feature flags for jailbreak techniques.
 
     Loads configuration from techniques.yaml and provides runtime
     checks for technique availability and risk validation.
@@ -49,7 +47,7 @@ class FeatureFlagService:
                 logger.warning(f"Config file not found: {self._config_path}")
                 self._config = {}
         except Exception as e:
-            logger.error(f"Failed to load technique config: {e}")
+            logger.exception(f"Failed to load technique config: {e}")
             self._config = {}
 
     def reload_config(self) -> bool:
@@ -58,7 +56,7 @@ class FeatureFlagService:
             self._load_config()
             return True
         except Exception as e:
-            logger.error(f"Failed to reload config: {e}")
+            logger.exception(f"Failed to reload config: {e}")
             return False
 
     def is_technique_enabled(self, technique_name: str) -> bool:
@@ -101,13 +99,16 @@ class FeatureFlagService:
         ]
 
     def validate_technique_access(
-        self, technique_name: str, user_has_approval: bool = False, tenant_id: str | None = None
+        self,
+        technique_name: str,
+        user_has_approval: bool = False,
+        tenant_id: str | None = None,
     ) -> tuple[bool, str]:
-        """
-        Validate if a user can access a technique.
+        """Validate if a user can access a technique.
 
         Returns:
             Tuple of (allowed: bool, reason: str)
+
         """
         technique = self._config.get(technique_name)
 
@@ -154,8 +155,7 @@ class FeatureFlagService:
         }
 
     def set_technique_enabled(self, technique_name: str, enabled: bool) -> bool:
-        """
-        Runtime toggle for technique enabled status.
+        """Runtime toggle for technique enabled status.
         Note: This does NOT persist to disk - use for temporary overrides.
         """
         if technique_name in self._config:

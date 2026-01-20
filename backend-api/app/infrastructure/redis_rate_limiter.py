@@ -1,5 +1,4 @@
-"""
-Distributed rate limiter with Redis backend.
+"""Distributed rate limiter with Redis backend.
 
 This module provides a production-ready rate limiter using Redis
 sorted sets for sliding window rate limiting across multiple instances.
@@ -16,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class RedisRateLimiter:
-    """
-    Distributed rate limiter using Redis sliding window algorithm.
+    """Distributed rate limiter using Redis sliding window algorithm.
 
     Features:
     - Cluster-wide rate limiting across all service instances
@@ -33,7 +31,7 @@ class RedisRateLimiter:
         redis_url: str = "redis://localhost:6379/0",
         default_limit: int = 60,
         default_window: int = 60,
-    ):
+    ) -> None:
         self.redis_url = redis_url
         self._redis: redis.Redis | None = None
         self._connected = False
@@ -69,10 +67,12 @@ class RedisRateLimiter:
             self._connected = False
 
     async def is_allowed(
-        self, key: str, limit: int | None = None, window_seconds: int | None = None
+        self,
+        key: str,
+        limit: int | None = None,
+        window_seconds: int | None = None,
     ) -> bool:
-        """
-        Check if request is allowed under rate limit using sliding window.
+        """Check if request is allowed under rate limit using sliding window.
 
         Uses Redis sorted set with timestamps as scores for O(log n) operations.
 
@@ -83,6 +83,7 @@ class RedisRateLimiter:
 
         Returns:
             True if request is allowed, False if rate limited
+
         """
         limit = limit or self._default_limit
         window_seconds = window_seconds or self._default_window
@@ -116,7 +117,7 @@ class RedisRateLimiter:
                 return False
 
             except Exception as e:
-                logger.error(f"Redis rate limit error: {e}")
+                logger.exception(f"Redis rate limit error: {e}")
                 # Fall through to local limiter
 
         # Local fallback
@@ -142,7 +143,10 @@ class RedisRateLimiter:
             return False
 
     async def get_remaining_requests(
-        self, key: str, limit: int | None = None, window_seconds: int | None = None
+        self,
+        key: str,
+        limit: int | None = None,
+        window_seconds: int | None = None,
     ) -> int:
         """Get remaining requests in current window."""
         limit = limit or self._default_limit
@@ -159,7 +163,7 @@ class RedisRateLimiter:
                 current_count = await self._redis.zcard(redis_key)
                 return max(0, limit - current_count)
             except Exception as e:
-                logger.error(f"Redis get_remaining error: {e}")
+                logger.exception(f"Redis get_remaining error: {e}")
 
         # Local fallback
         async with self._lock:
@@ -181,7 +185,7 @@ class RedisRateLimiter:
                 if oldest:
                     return int(oldest[0][1] + window_seconds)
             except Exception as e:
-                logger.error(f"Redis get_reset_time error: {e}")
+                logger.exception(f"Redis get_reset_time error: {e}")
 
         # Local fallback
         async with self._lock:
@@ -198,13 +202,16 @@ class RedisRateLimiter:
             try:
                 await self._redis.delete(redis_key)
             except Exception as e:
-                logger.error(f"Redis reset_limit error: {e}")
+                logger.exception(f"Redis reset_limit error: {e}")
 
         async with self._lock:
             self._local_requests.pop(key, None)
 
     async def get_usage(
-        self, key: str, limit: int | None = None, window_seconds: int | None = None
+        self,
+        key: str,
+        limit: int | None = None,
+        window_seconds: int | None = None,
     ) -> dict[str, Any]:
         """Get detailed rate limit usage for a key."""
         limit = limit or self._default_limit
@@ -278,7 +285,9 @@ async def get_rate_limiter() -> RedisRateLimiter:
         default_limit = getattr(settings, "RATE_LIMIT_DEFAULT_LIMIT", 60)
         default_window = getattr(settings, "RATE_LIMIT_DEFAULT_WINDOW", 60)
         rate_limiter = RedisRateLimiter(
-            redis_url=redis_url, default_limit=default_limit, default_window=default_window
+            redis_url=redis_url,
+            default_limit=default_limit,
+            default_window=default_window,
         )
         await rate_limiter.connect()
     return rate_limiter

@@ -1,5 +1,4 @@
-"""
-WebSocket Event Broadcaster
+"""WebSocket Event Broadcaster.
 
 Service for emitting WebSocket events from backend services.
 Integrates with AutoDAN, GPTFuzz, and Deep Team orchestrator.
@@ -30,13 +29,13 @@ logger = logging.getLogger(__name__)
 
 
 class EventBroadcaster:
-    """Broadcasts events to WebSocket clients"""
+    """Broadcasts events to WebSocket clients."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.manager = connection_manager
 
-    async def emit_session_started(self, session_id: str, config: dict[str, Any]):
-        """Emit session started event"""
+    async def emit_session_started(self, session_id: str, config: dict[str, Any]) -> None:
+        """Emit session started event."""
         try:
             event_data = SessionStartedEvent(
                 session_id=session_id,
@@ -63,15 +62,15 @@ class EventBroadcaster:
             logger.info(f"Emitted SESSION_STARTED for {session_id}")
 
         except Exception as e:
-            logger.error(f"Error emitting session_started: {e}")
+            logger.exception(f"Error emitting session_started: {e}")
 
     async def emit_session_completed(
         self,
         session_id: str,
         statistics: dict[str, Any],
         best_candidate: dict[str, Any] | None = None,
-    ):
-        """Emit session completed event"""
+    ) -> None:
+        """Emit session completed event."""
         try:
             event_data = SessionCompletedEvent(
                 session_id=session_id,
@@ -101,7 +100,7 @@ class EventBroadcaster:
             logger.info(f"Emitted SESSION_COMPLETED for {session_id}")
 
         except Exception as e:
-            logger.error(f"Error emitting session_completed: {e}")
+            logger.exception(f"Error emitting session_completed: {e}")
 
     async def emit_session_failed(
         self,
@@ -109,8 +108,8 @@ class EventBroadcaster:
         error_message: str,
         error_type: str,
         recovery_suggestions: list | None = None,
-    ):
-        """Emit session failed event"""
+    ) -> None:
+        """Emit session failed event."""
         try:
             event_data = SessionFailedEvent(
                 session_id=session_id,
@@ -137,7 +136,7 @@ class EventBroadcaster:
             logger.error(f"Emitted SESSION_FAILED for {session_id}: {error_message}")
 
         except Exception as e:
-            logger.error(f"Error emitting session_failed: {e}")
+            logger.exception(f"Error emitting session_failed: {e}")
 
     async def emit_agent_status_changed(
         self,
@@ -148,8 +147,8 @@ class EventBroadcaster:
         new_status: str,
         current_task: str | None = None,
         progress: float | None = None,
-    ):
-        """Emit agent status changed event"""
+    ) -> None:
+        """Emit agent status changed event."""
         try:
             event_data = AgentStatusChangedEvent(
                 agent_id=agent_id,
@@ -171,16 +170,19 @@ class EventBroadcaster:
             await self.manager.broadcast_to_session(session_id, event)
 
             logger.debug(
-                f"Emitted AGENT_STATUS_CHANGED for {agent_id}: " f"{old_status} -> {new_status}"
+                f"Emitted AGENT_STATUS_CHANGED for {agent_id}: {old_status} -> {new_status}",
             )
 
         except Exception as e:
-            logger.error(f"Error emitting agent_status_changed: {e}")
+            logger.exception(f"Error emitting agent_status_changed: {e}")
 
     async def emit_generation_started(
-        self, session_id: str, generation: int, config: dict[str, Any]
-    ):
-        """Emit generation started event"""
+        self,
+        session_id: str,
+        generation: int,
+        config: dict[str, Any],
+    ) -> None:
+        """Emit generation started event."""
         try:
             event_data = GenerationStartedEvent(
                 generation=generation,
@@ -203,7 +205,7 @@ class EventBroadcaster:
             logger.debug(f"Emitted GENERATION_STARTED for generation {generation}")
 
         except Exception as e:
-            logger.error(f"Error emitting generation_started: {e}")
+            logger.exception(f"Error emitting generation_started: {e}")
 
     async def emit_generation_progress(
         self,
@@ -214,8 +216,8 @@ class EventBroadcaster:
         total_evaluations: int,
         current_best_fitness: float,
         average_fitness: float,
-    ):
-        """Emit generation progress event"""
+    ) -> None:
+        """Emit generation progress event."""
         try:
             event_data = GenerationProgressEvent(
                 generation=generation,
@@ -238,16 +240,20 @@ class EventBroadcaster:
 
             logger.debug(
                 f"Emitted GENERATION_PROGRESS: {progress * 100:.1f}% "
-                f"({completed_evaluations}/{total_evaluations})"
+                f"({completed_evaluations}/{total_evaluations})",
             )
 
         except Exception as e:
-            logger.error(f"Error emitting generation_progress: {e}")
+            logger.exception(f"Error emitting generation_progress: {e}")
 
     async def emit_generation_complete(
-        self, session_id: str, generation: int, statistics: dict[str, Any], elite_candidates: list
-    ):
-        """Emit generation complete event"""
+        self,
+        session_id: str,
+        generation: int,
+        statistics: dict[str, Any],
+        elite_candidates: list,
+    ) -> None:
+        """Emit generation complete event."""
         try:
             event_data = GenerationCompleteEvent(
                 generation=generation,
@@ -276,11 +282,11 @@ class EventBroadcaster:
 
             logger.info(
                 f"Emitted GENERATION_COMPLETE for generation {generation} "
-                f"(best: {statistics.get('bestFitness', 0.0):.3f})"
+                f"(best: {statistics.get('bestFitness', 0.0):.3f})",
             )
 
         except Exception as e:
-            logger.error(f"Error emitting generation_complete: {e}")
+            logger.exception(f"Error emitting generation_complete: {e}")
 
     async def emit_evaluation_complete(
         self,
@@ -294,8 +300,8 @@ class EventBroadcaster:
         feedback: str,
         suggestions: list,
         execution_time: float,
-    ):
-        """Emit evaluation complete event"""
+    ) -> None:
+        """Emit evaluation complete event."""
         try:
             event_data = EvaluationCompleteEvent(
                 candidate_id=candidate_id,
@@ -329,11 +335,11 @@ class EventBroadcaster:
                 )
 
             logger.debug(
-                f"Emitted EVALUATION_COMPLETE: success={success}, " f"score={overall_score:.3f}"
+                f"Emitted EVALUATION_COMPLETE: success={success}, score={overall_score:.3f}",
             )
 
         except Exception as e:
-            logger.error(f"Error emitting evaluation_complete: {e}")
+            logger.exception(f"Error emitting evaluation_complete: {e}")
 
     async def emit_refinement_suggested(
         self,
@@ -342,8 +348,8 @@ class EventBroadcaster:
         config_updates: dict[str, float],
         strategy_suggestions: list,
         analysis: str,
-    ):
-        """Emit refinement suggested event"""
+    ) -> None:
+        """Emit refinement suggested event."""
         try:
             event_data = RefinementSuggestedEvent(
                 generation=generation,
@@ -365,7 +371,7 @@ class EventBroadcaster:
             logger.info(f"Emitted REFINEMENT_SUGGESTED for generation {generation}")
 
         except Exception as e:
-            logger.error(f"Error emitting refinement_suggested: {e}")
+            logger.exception(f"Error emitting refinement_suggested: {e}")
 
     async def emit_error(
         self,
@@ -377,8 +383,8 @@ class EventBroadcaster:
         severity: str = "medium",
         recoverable: bool = True,
         recovery_suggestions: list | None = None,
-    ):
-        """Emit error occurred event"""
+    ) -> None:
+        """Emit error occurred event."""
         try:
             event_data = ErrorOccurredEvent(
                 error_code=error_code,
@@ -401,11 +407,11 @@ class EventBroadcaster:
             await self.manager.broadcast_to_session(session_id, event)
 
             logger.error(
-                f"Emitted ERROR_OCCURRED: {error_code} - {error_message} " f"(severity: {severity})"
+                f"Emitted ERROR_OCCURRED: {error_code} - {error_message} (severity: {severity})",
             )
 
         except Exception as e:
-            logger.error(f"Error emitting error event: {e}")
+            logger.exception(f"Error emitting error event: {e}")
 
 
 # Global broadcaster instance

@@ -43,7 +43,7 @@ class IterativePromptOptimizer:
         crossover: float = 0.1,
         mutation: float = 0.5,
         population: int = 10,
-    ):
+    ) -> None:
         self.intention = intention
         self.target = target
         self.iteration: int = iteration
@@ -107,7 +107,7 @@ class IterativePromptOptimizer:
         if population:
             best_chromosome = population[0]
             logger.info(
-                f"Best Chromosome Enhanced Fitness Score: {best_chromosome.fitness_score} (Base: {best_chromosome.fitness_score - getattr(best_chromosome, 'enhancement_bonus', 0):.1f}, Bonus: {getattr(best_chromosome, 'enhancement_bonus', 0):.1f})"
+                f"Best Chromosome Enhanced Fitness Score: {best_chromosome.fitness_score} (Base: {best_chromosome.fitness_score - getattr(best_chromosome, 'enhancement_bonus', 0):.1f}, Bonus: {getattr(best_chromosome, 'enhancement_bonus', 0):.1f})",
             )
 
         return population
@@ -127,10 +127,13 @@ class IterativePromptOptimizer:
                 ),
             }
             enhanced = NextGenerationTransformationMixin.apply_viral_propagation(
-                framework, potency=5
+                framework,
+                potency=5,
             )
             enhanced = NextGenerationTransformationMixin.apply_adaptive_execution(
-                enhanced, intent_data["target_model"], 5
+                enhanced,
+                intent_data["target_model"],
+                5,
             )
             # Only apply stealth if framework is not empty
             if enhanced:
@@ -179,7 +182,7 @@ class IterativePromptOptimizer:
         logger.info("Finish mutating chromosome")
         return list(mutated_population)
 
-    async def attack_application(self, population: list[Chromosome]):
+    async def attack_application(self, population: list[Chromosome]) -> None:
         logger.info("Start to attack application with next-generation enhancements")
 
         async def run_single_attack(chromosome: Chromosome):
@@ -199,19 +202,24 @@ class IterativePromptOptimizer:
                 enhanced_prompt = base_prompt
                 # Viral propagation
                 enhanced_prompt = NextGenerationTransformationMixin.apply_viral_propagation(
-                    enhanced_prompt, 8
+                    enhanced_prompt,
+                    8,
                 )
                 # Adaptive execution
                 enhanced_prompt = NextGenerationTransformationMixin.apply_adaptive_execution(
-                    enhanced_prompt, intent_data["target_model"], 8
+                    enhanced_prompt,
+                    intent_data["target_model"],
+                    8,
                 )
                 # Stealth techniques
                 enhanced_prompt = NextGenerationTransformationMixin.apply_stealth_techniques(
-                    enhanced_prompt, 8
+                    enhanced_prompt,
+                    8,
                 )
                 # Recursive obfuscation
                 enhanced_prompt = NextGenerationTransformationMixin.apply_recursive_obfuscation(
-                    enhanced_prompt, depth=2
+                    enhanced_prompt,
+                    depth=2,
                 )
 
                 prompt_injection.prompt = enhanced_prompt
@@ -227,7 +235,7 @@ class IterativePromptOptimizer:
             # 1. Perplexity (Stealth) - use enhanced prompt if available
             try:
                 chromosome.perplexity_score = self.perplexity_calculator.calculate(
-                    prompt_injection.prompt
+                    prompt_injection.prompt,
                 )
             except Exception as e:
                 logger.error(f"Perplexity Calc Error: {e}")
@@ -242,7 +250,8 @@ class IterativePromptOptimizer:
                     chromosome.refusal_category = "Hard Refusal"
                 else:
                     analysis = await RefusalClassifier.analyze(
-                        response, self.intention.question_prompt
+                        response,
+                        self.intention.question_prompt,
                     )
                     chromosome.refusal_category = analysis.get("category", "Unknown")
                     chromosome.analysis = analysis.get("reason", "")
@@ -302,13 +311,16 @@ class IterativePromptOptimizer:
                 # Apply adaptive execution
                 target_model = intent_data["target_model"]
                 enhanced = NextGenerationTransformationMixin.apply_adaptive_execution(
-                    enhanced, target_model, 7
+                    enhanced,
+                    target_model,
+                    7,
                 )
                 # Apply stealth techniques
                 enhanced = NextGenerationTransformationMixin.apply_stealth_techniques(enhanced, 7)
                 # Apply recursive obfuscation for high potency
                 enhanced = NextGenerationTransformationMixin.apply_recursive_obfuscation(
-                    enhanced, depth=2
+                    enhanced,
+                    depth=2,
                 )
                 enhanced_disruptor_list.append(enhanced)
             except Exception as e:
@@ -384,7 +396,8 @@ class IterativePromptOptimizer:
                         }
                         enhanced_chrom.disruptor = (
                             NextGenerationTransformationMixin.apply_viral_propagation(
-                                enhanced_chrom.disruptor, 9
+                                enhanced_chrom.disruptor,
+                                9,
                             )
                         )
                         population.append(enhanced_chrom)
@@ -395,7 +408,7 @@ class IterativePromptOptimizer:
             # If stagnant for 3 iterations, boost mutation, crossover, and inject next-generation features
             if stagnation_counter >= 3:
                 logger.info(
-                    "Stagnation detected: Boosting mutation/crossover rates and injecting next-generation features"
+                    "Stagnation detected: Boosting mutation/crossover rates and injecting next-generation features",
                 )
                 current_mutation = min(self.mutation * 2.0, 0.95)  # Double mutation
                 current_crossover_count = int(min(self.max_crossover * 2.0, len(population)))
@@ -467,14 +480,18 @@ class IterativePromptOptimizer:
                     ),
                 }
                 enhanced = NextGenerationTransformationMixin.apply_viral_propagation(
-                    final_prompt, 10
+                    final_prompt,
+                    10,
                 )
                 enhanced = NextGenerationTransformationMixin.apply_adaptive_execution(
-                    enhanced, intent_data["target_model"], 10
+                    enhanced,
+                    intent_data["target_model"],
+                    10,
                 )
                 enhanced = NextGenerationTransformationMixin.apply_stealth_techniques(enhanced, 10)
                 enhanced = NextGenerationTransformationMixin.apply_recursive_obfuscation(
-                    enhanced, depth=3
+                    enhanced,
+                    depth=3,
                 )
                 self.best_chromosome.final_enhanced_prompt = enhanced
                 logger.info("Applied final next-generation enhancement layer to best chromosome")

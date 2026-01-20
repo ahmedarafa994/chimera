@@ -1,4 +1,4 @@
-"""Add multi-user authentication tables
+"""Add multi-user authentication tables.
 
 This migration adds support for the multi-user authentication system with:
 - Reconstructed users table with full auth fields (email, password, role, verification)
@@ -28,7 +28,6 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema for multi-user authentication."""
-
     # Step 1: Create a new users table with the full auth schema
     # We'll use a new table name first, then rename if needed
     # SQLite compatible approach using batch operations
@@ -201,7 +200,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema - restore original users table structure."""
-
     # Drop new tables in reverse order
     op.drop_index(op.f("ix_user_preferences_id"), table_name="user_preferences")
     op.drop_table("user_preferences")

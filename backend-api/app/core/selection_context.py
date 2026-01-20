@@ -1,5 +1,4 @@
-"""
-Request Context Propagation - Immutable context for provider selection.
+"""Request Context Propagation - Immutable context for provider selection.
 
 This module implements the immutable request context pattern using Python's contextvars.
 The selection is resolved once at request entry and propagated through the entire call stack,
@@ -33,8 +32,7 @@ _request_id_context: ContextVar[str | None] = ContextVar("request_id", default=N
 
 
 class SelectionContext:
-    """
-    Immutable request context for provider/model selection.
+    """Immutable request context for provider/model selection.
 
     This class manages the request-scoped selection state using Python's contextvars.
     Once set, the selection cannot be changed within the same request context, ensuring
@@ -57,8 +55,7 @@ class SelectionContext:
         user_id: str | None = None,
         request_id: str | None = None,
     ) -> tuple[Token, Token | None, Token | None, Token | None]:
-        """
-        Set the selection context for the current request.
+        """Set the selection context for the current request.
 
         This should be called once at request entry (typically in middleware or
         dependency injection). Subsequent calls within the same context will log
@@ -76,9 +73,11 @@ class SelectionContext:
 
         Raises:
             ValueError: If selection is None or invalid
+
         """
         if selection is None:
-            raise ValueError("Selection cannot be None")
+            msg = "Selection cannot be None"
+            raise ValueError(msg)
 
         # Check if selection is already set
         existing = _selection_context.get()
@@ -87,7 +86,7 @@ class SelectionContext:
                 f"Selection context already set for request {request_id}. "
                 f"Existing: {existing.provider_id}/{existing.model_id}, "
                 f"New: {selection.provider_id}/{selection.model_id}. "
-                "Using existing selection to maintain immutability."
+                "Using existing selection to maintain immutability.",
             )
             # Return current tokens (no-op)
             return (
@@ -114,90 +113,90 @@ class SelectionContext:
 
         logger.debug(
             f"Set selection context: {selection.provider_id}/{selection.model_id} "
-            f"(scope={selection.scope.value}, request={request_id})"
+            f"(scope={selection.scope.value}, request={request_id})",
         )
 
         return selection_token, session_token, user_token, request_token
 
     @staticmethod
     def get_selection() -> Selection | None:
-        """
-        Get the current selection from context.
+        """Get the current selection from context.
 
         Returns:
             The current Selection object, or None if not set
+
         """
         return _selection_context.get()
 
     @staticmethod
     def get_provider_id() -> str | None:
-        """
-        Get the current provider ID from context.
+        """Get the current provider ID from context.
 
         Returns:
             The provider ID, or None if selection not set
+
         """
         selection = _selection_context.get()
         return selection.provider_id if selection else None
 
     @staticmethod
     def get_model_id() -> str | None:
-        """
-        Get the current model ID from context.
+        """Get the current model ID from context.
 
         Returns:
             The model ID, or None if selection not set
+
         """
         selection = _selection_context.get()
         return selection.model_id if selection else None
 
     @staticmethod
     def get_session_id() -> str | None:
-        """
-        Get the current session ID from context.
+        """Get the current session ID from context.
 
         Returns:
             The session ID, or None if not set
+
         """
         return _session_id_context.get()
 
     @staticmethod
     def get_user_id() -> str | None:
-        """
-        Get the current user ID from context.
+        """Get the current user ID from context.
 
         Returns:
             The user ID, or None if not set
+
         """
         return _user_id_context.get()
 
     @staticmethod
     def get_request_id() -> str | None:
-        """
-        Get the current request ID from context.
+        """Get the current request ID from context.
 
         Returns:
             The request ID, or None if not set
+
         """
         return _request_id_context.get()
 
     @staticmethod
     def is_set() -> bool:
-        """
-        Check if selection context is currently set.
+        """Check if selection context is currently set.
 
         Returns:
             True if selection is set, False otherwise
+
         """
         return _selection_context.get() is not None
 
     @staticmethod
     def get_scope() -> SelectionScope | None:
-        """
-        Get the scope of the current selection.
+        """Get the scope of the current selection.
 
         Returns:
             The SelectionScope, or None if selection not set
+
         """
         selection = _selection_context.get()
         return selection.scope if selection else None
@@ -209,8 +208,7 @@ class SelectionContext:
         user_token: Token | None = None,
         request_token: Token | None = None,
     ) -> None:
-        """
-        Reset context variables to their previous values.
+        """Reset context variables to their previous values.
 
         This is primarily for testing or explicit context cleanup. Normal
         request processing should rely on automatic context cleanup.
@@ -220,6 +218,7 @@ class SelectionContext:
             session_token: Session ID token
             user_token: User ID token
             request_token: Request ID token
+
         """
         if selection_token is not None:
             _selection_context.reset(selection_token)
@@ -237,8 +236,7 @@ class SelectionContext:
 
     @staticmethod
     def clear_all() -> None:
-        """
-        Clear all context variables (primarily for testing).
+        """Clear all context variables (primarily for testing).
 
         WARNING: This clears context for the current execution context.
         Use with caution in production code.
@@ -253,11 +251,11 @@ class SelectionContext:
 
     @staticmethod
     def get_debug_info() -> dict[str, Any]:
-        """
-        Get debug information about the current context.
+        """Get debug information about the current context.
 
         Returns:
             Dictionary with context state information
+
         """
         selection = _selection_context.get()
 
@@ -278,15 +276,14 @@ class SelectionContext:
                     "selection_session_id": selection.session_id,
                     "created_at": selection.created_at.isoformat(),
                     "updated_at": selection.updated_at.isoformat(),
-                }
+                },
             )
 
         return info
 
 
 class SelectionContextManager:
-    """
-    Context manager for selection context (useful for testing and explicit scoping).
+    """Context manager for selection context (useful for testing and explicit scoping).
 
     Usage:
         >>> with SelectionContextManager(selection, session_id="sess_123"):
@@ -301,15 +298,15 @@ class SelectionContextManager:
         session_id: str | None = None,
         user_id: str | None = None,
         request_id: str | None = None,
-    ):
-        """
-        Initialize context manager.
+    ) -> None:
+        """Initialize context manager.
 
         Args:
             selection: The Selection object to set
             session_id: Optional session identifier
             user_id: Optional user identifier
             request_id: Optional request identifier
+
         """
         self.selection = selection
         self.session_id = session_id
@@ -320,7 +317,10 @@ class SelectionContextManager:
     def __enter__(self):
         """Enter context and set selection."""
         self.tokens = SelectionContext.set_selection(
-            self.selection, self.session_id, self.user_id, self.request_id
+            self.selection,
+            self.session_id,
+            self.user_id,
+            self.request_id,
         )
         return self
 
@@ -333,8 +333,7 @@ class SelectionContextManager:
 
 # Convenience function for FastAPI dependency injection
 def get_current_selection() -> Selection | None:
-    """
-    FastAPI dependency to get the current selection from context.
+    """FastAPI dependency to get the current selection from context.
 
     Usage in route:
         @app.get("/api/v1/something")
@@ -348,8 +347,7 @@ def get_current_selection() -> Selection | None:
 
 # Convenience function for getting required selection
 def require_selection() -> Selection:
-    """
-    FastAPI dependency that requires a selection to be set.
+    """FastAPI dependency that requires a selection to be set.
 
     Raises HTTPException if no selection is in context.
 

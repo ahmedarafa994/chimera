@@ -9,7 +9,7 @@ from app.core.unified_errors import (
 )
 
 
-def test_aegis_error_inheritance():
+def test_aegis_error_inheritance() -> None:
     """Test that AegisError inherits from ServiceError."""
     err = AegisError("Test error")
     assert isinstance(err, ServiceError)
@@ -20,7 +20,7 @@ def test_aegis_error_inheritance():
     assert err.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
-def test_aegis_synthesis_error():
+def test_aegis_synthesis_error() -> None:
     """Test AegisSynthesisError properties."""
     err = AegisSynthesisError("Synthesis failed", details={"persona": "dark_triad"})
     assert isinstance(err, AegisError)
@@ -30,7 +30,7 @@ def test_aegis_synthesis_error():
     assert err.details["persona"] == "dark_triad"
 
 
-def test_aegis_transformation_error():
+def test_aegis_transformation_error() -> None:
     """Test AegisTransformationError properties."""
     err = AegisTransformationError("Transformation failed", status_code=status.HTTP_400_BAD_REQUEST)
     assert isinstance(err, AegisError)

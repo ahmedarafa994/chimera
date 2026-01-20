@@ -6,23 +6,22 @@ logger = logging.getLogger(__name__)
 
 
 class DiversityArchive:
-    """
-    Manages a population of prompts with scores and embeddings.
+    """Manages a population of prompts with scores and embeddings.
     Implements a simplified Map-Elites / Novelty Search approach.
     """
 
-    def __init__(self, capacity=1000):
+    def __init__(self, capacity=1000) -> None:
         self.capacity = capacity
         self.entries = []  # List of dict: {'prompt': str, 'score': float, 'embedding': np.array}
 
-    def add(self, prompt, score, embedding):
-        """
-        Add a prompt to the archive.
+    def add(self, prompt, score, embedding) -> None:
+        """Add a prompt to the archive.
 
         Args:
             prompt (str): The prompt text.
             score (float): The fitness score (e.g. attack success rate or judge score).
             embedding (np.array): Semantic embedding of the prompt (or response).
+
         """
         # Ensure embedding is numpy array
         if not isinstance(embedding, np.ndarray):
@@ -34,8 +33,7 @@ class DiversityArchive:
         for e in self.entries:
             if e["prompt"] == prompt:
                 # Update score if better
-                if score > e["score"]:
-                    e["score"] = score
+                e["score"] = max(e["score"], score)
                 return
 
         self.entries.append(entry)
@@ -45,7 +43,7 @@ class DiversityArchive:
         if len(self.entries) > self.capacity:
             self._prune()
 
-    def _prune(self):
+    def _prune(self) -> None:
         """Remove entries to stay within capacity."""
         # Sort by score descending
         self.entries.sort(key=lambda x: x["score"], reverse=True)
@@ -54,15 +52,15 @@ class DiversityArchive:
         self.entries = self.entries[:keep_count]
 
     def sample_diverse_elites(self, k=10):
-        """
-        Select k diverse and high-performing prompts.
-        Selection Logic: P(select) ~ alpha * Score + beta * Novelty
+        """Select k diverse and high-performing prompts.
+        Selection Logic: P(select) ~ alpha * Score + beta * Novelty.
 
         Args:
             k (int): Number of elites to return.
 
         Returns:
             List[str]: List of selected prompts.
+
         """
         if not self.entries:
             return []

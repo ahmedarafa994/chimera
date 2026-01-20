@@ -1,5 +1,4 @@
-"""
-Background Task Queue - Reliable async task processing.
+"""Background Task Queue - Reliable async task processing.
 
 Provides:
 - Task scheduling with priority levels
@@ -63,8 +62,7 @@ class TaskPriority(int, Enum):
 
 @dataclass
 class Task:
-    """
-    Background task definition.
+    """Background task definition.
 
     Attributes:
         name: Handler name for this task
@@ -81,6 +79,7 @@ class Task:
         result: Task result (if completed)
         error: Error message (if failed)
         correlation_id: ID for distributed tracing
+
     """
 
     name: str
@@ -131,8 +130,7 @@ class TaskQueueStats:
 
 
 class TaskQueue:
-    """
-    In-memory task queue with retry logic and dead-letter handling.
+    """In-memory task queue with retry logic and dead-letter handling.
 
     Features:
     - Priority-based processing
@@ -142,7 +140,7 @@ class TaskQueue:
     - Graceful shutdown
     """
 
-    def __init__(self, max_workers: int = 5, dead_letter_size: int = 100):
+    def __init__(self, max_workers: int = 5, dead_letter_size: int = 100) -> None:
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
         self._handlers: dict[str, Callable] = {}
         self._tasks: dict[str, Task] = {}
@@ -155,8 +153,7 @@ class TaskQueue:
         self._lock = asyncio.Lock()
 
     def handler(self, task_name: str):
-        """
-        Decorator for registering task handlers.
+        """Decorator for registering task handlers.
 
         Usage:
             @task_queue.handler("process_data")
@@ -171,15 +168,16 @@ class TaskQueue:
         return decorator
 
     def register_handler(
-        self, task_name: str, handler: Callable[[dict], Awaitable[Any] | Any]
+        self,
+        task_name: str,
+        handler: Callable[[dict], Awaitable[Any] | Any],
     ) -> None:
         """Register a handler for a task type."""
         self._handlers[task_name] = handler
         logger.info(f"Registered task handler: {task_name}")
 
     async def enqueue(self, task: Task, delay: float = 0) -> str:
-        """
-        Add a task to the queue.
+        """Add a task to the queue.
 
         Args:
             task: Task to enqueue
@@ -187,6 +185,7 @@ class TaskQueue:
 
         Returns:
             Task ID for tracking
+
         """
         task.status = TaskStatus.QUEUED
         self._tasks[task.task_id] = task
@@ -274,7 +273,7 @@ class TaskQueue:
                 logger.debug(f"Worker {worker_id} cancelled")
                 break
             except Exception as e:
-                logger.error(f"Worker {worker_id} error: {e}")
+                logger.exception(f"Worker {worker_id} error: {e}")
 
     async def _process_task(self, task: Task) -> None:
         """Process a single task with retry logic."""
@@ -320,7 +319,7 @@ class TaskQueue:
 
                 logger.info(
                     f"Retrying task {task.task_id} in {delay:.1f}s "
-                    f"(attempt {task.attempts}/{task.max_retries})"
+                    f"(attempt {task.attempts}/{task.max_retries})",
                 )
                 await self.enqueue(task, delay=delay)
             else:

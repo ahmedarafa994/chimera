@@ -1,5 +1,4 @@
-"""
-Benchmark Suite for AutoDAN Optimization Framework.
+"""Benchmark Suite for AutoDAN Optimization Framework.
 
 Provides comprehensive evaluation across:
 - Attack success rate
@@ -55,7 +54,7 @@ class BenchmarkSuite:
     total_duration: float = 0.0
     timestamp: float = field(default_factory=time.time)
 
-    def add_result(self, result: BenchmarkResult):
+    def add_result(self, result: BenchmarkResult) -> None:
         """Add benchmark result."""
         self.results.append(result)
         self.total_duration += result.duration_seconds
@@ -90,8 +89,7 @@ class BenchmarkSuite:
 
 
 class AttackSuccessBenchmark:
-    """
-    Benchmark for attack success rate.
+    """Benchmark for attack success rate.
 
     Measures how effectively the system generates
     successful jailbreak prompts.
@@ -102,7 +100,7 @@ class AttackSuccessBenchmark:
         test_prompts: list[str],
         target_model: Any | None = None,
         success_threshold: float = 8.5,
-    ):
+    ) -> None:
         self.test_prompts = test_prompts
         self.target_model = target_model
         self.success_threshold = success_threshold
@@ -112,8 +110,7 @@ class AttackSuccessBenchmark:
         attack_fn: Callable,
         n_trials: int = 10,
     ) -> BenchmarkResult:
-        """
-        Run attack success benchmark.
+        """Run attack success benchmark.
 
         Args:
             attack_fn: Function that generates attack prompts
@@ -121,6 +118,7 @@ class AttackSuccessBenchmark:
 
         Returns:
             Benchmark result
+
         """
         start_time = time.time()
 
@@ -171,8 +169,7 @@ class AttackSuccessBenchmark:
 
 
 class ConvergenceBenchmark:
-    """
-    Benchmark for convergence speed.
+    """Benchmark for convergence speed.
 
     Measures how quickly the optimization converges
     to high-quality solutions.
@@ -182,7 +179,7 @@ class ConvergenceBenchmark:
         self,
         target_score: float = 8.5,
         max_iterations: int = 150,
-    ):
+    ) -> None:
         self.target_score = target_score
         self.max_iterations = max_iterations
 
@@ -191,8 +188,7 @@ class ConvergenceBenchmark:
         optimizer: Any,
         test_cases: list[dict[str, Any]],
     ) -> BenchmarkResult:
-        """
-        Run convergence benchmark.
+        """Run convergence benchmark.
 
         Args:
             optimizer: Optimizer instance
@@ -200,6 +196,7 @@ class ConvergenceBenchmark:
 
         Returns:
             Benchmark result
+
         """
         start_time = time.time()
 
@@ -248,7 +245,7 @@ class ConvergenceBenchmark:
         auc_scores = []
         for history in score_histories:
             if history:
-                auc = np.trapz(history) / len(history)
+                auc = np.trapezoid(history) / len(history)
                 auc_scores.append(auc)
 
         avg_auc = float(np.mean(auc_scores)) if auc_scores else 0
@@ -269,8 +266,7 @@ class ConvergenceBenchmark:
 
 
 class EfficiencyBenchmark:
-    """
-    Benchmark for computational efficiency.
+    """Benchmark for computational efficiency.
 
     Measures throughput, latency, and resource utilization.
     """
@@ -279,7 +275,7 @@ class EfficiencyBenchmark:
         self,
         warmup_iterations: int = 5,
         benchmark_iterations: int = 50,
-    ):
+    ) -> None:
         self.warmup_iterations = warmup_iterations
         self.benchmark_iterations = benchmark_iterations
 
@@ -288,8 +284,7 @@ class EfficiencyBenchmark:
         process_fn: Callable,
         batch_sizes: list[int] | None = None,
     ) -> BenchmarkResult:
-        """
-        Run efficiency benchmark.
+        """Run efficiency benchmark.
 
         Args:
             process_fn: Function to benchmark
@@ -297,6 +292,7 @@ class EfficiencyBenchmark:
 
         Returns:
             Benchmark result
+
         """
         if batch_sizes is None:
             batch_sizes = [1, 4, 8, 16, 32]
@@ -351,8 +347,7 @@ class EfficiencyBenchmark:
 
 
 class MemoryBenchmark:
-    """
-    Benchmark for memory usage.
+    """Benchmark for memory usage.
 
     Measures peak memory, memory efficiency, and leak detection.
     """
@@ -361,7 +356,7 @@ class MemoryBenchmark:
         self,
         iterations: int = 100,
         leak_threshold: float = 0.1,  # 10% growth
-    ):
+    ) -> None:
         self.iterations = iterations
         self.leak_threshold = leak_threshold
 
@@ -369,14 +364,14 @@ class MemoryBenchmark:
         self,
         process_fn: Callable,
     ) -> BenchmarkResult:
-        """
-        Run memory benchmark.
+        """Run memory benchmark.
 
         Args:
             process_fn: Function to benchmark
 
         Returns:
             Benchmark result
+
         """
         import gc
 
@@ -439,8 +434,7 @@ class MemoryBenchmark:
 
 
 class ScalabilityBenchmark:
-    """
-    Benchmark for scalability.
+    """Benchmark for scalability.
 
     Measures performance across different scales of input.
     """
@@ -449,7 +443,7 @@ class ScalabilityBenchmark:
         self,
         scales: list[int] | None = None,
         timeout_seconds: float = 60.0,
-    ):
+    ) -> None:
         self.scales = scales or [10, 50, 100, 500, 1000]
         self.timeout_seconds = timeout_seconds
 
@@ -457,14 +451,14 @@ class ScalabilityBenchmark:
         self,
         process_fn: Callable,
     ) -> BenchmarkResult:
-        """
-        Run scalability benchmark.
+        """Run scalability benchmark.
 
         Args:
             process_fn: Function that takes scale parameter
 
         Returns:
             Benchmark result
+
         """
         start_time = time.time()
 
@@ -539,8 +533,7 @@ class ScalabilityBenchmark:
 
 
 class AutoDANBenchmarkRunner:
-    """
-    Main benchmark runner for AutoDAN optimization framework.
+    """Main benchmark runner for AutoDAN optimization framework.
 
     Orchestrates all benchmarks and generates reports.
     """
@@ -548,7 +541,7 @@ class AutoDANBenchmarkRunner:
     def __init__(
         self,
         output_dir: str = "benchmark_results",
-    ):
+    ) -> None:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
@@ -559,7 +552,7 @@ class AutoDANBenchmarkRunner:
         self,
         name: str,
         benchmark: Any,
-    ):
+    ) -> None:
         """Register a benchmark."""
         self.benchmarks[name] = benchmark
 
@@ -568,8 +561,7 @@ class AutoDANBenchmarkRunner:
         optimizer: Any,
         test_data: dict[str, Any],
     ) -> BenchmarkSuite:
-        """
-        Run all registered benchmarks.
+        """Run all registered benchmarks.
 
         Args:
             optimizer: Optimizer to benchmark
@@ -577,6 +569,7 @@ class AutoDANBenchmarkRunner:
 
         Returns:
             Benchmark suite with all results
+
         """
         suite = BenchmarkSuite(name=f"autodan_benchmark_{int(time.time())}")
 
@@ -591,11 +584,11 @@ class AutoDANBenchmarkRunner:
                     )
                     suite.add_result(result)
                     logger.info(
-                        f"  Score: {result.score:.4f}, Duration: {result.duration_seconds:.2f}s"
+                        f"  Score: {result.score:.4f}, Duration: {result.duration_seconds:.2f}s",
                     )
 
             except Exception as e:
-                logger.error(f"Benchmark {name} failed: {e}")
+                logger.exception(f"Benchmark {name} failed: {e}")
 
         self.results.append(suite)
         return suite
@@ -613,7 +606,7 @@ class AutoDANBenchmarkRunner:
             benchmark_iterations=10,
         )
 
-        async def dummy_process(batch_size):
+        async def dummy_process(batch_size) -> None:
             await asyncio.sleep(0.01 * batch_size)
 
         result = await efficiency.run(dummy_process, [1, 4, 8])
@@ -622,7 +615,7 @@ class AutoDANBenchmarkRunner:
         # Memory benchmark
         memory = MemoryBenchmark(iterations=20)
 
-        async def memory_process():
+        async def memory_process() -> None:
             _ = np.random.randn(1000, 100)
             await asyncio.sleep(0.001)
 
@@ -635,7 +628,7 @@ class AutoDANBenchmarkRunner:
         self,
         suite: BenchmarkSuite,
         filename: str | None = None,
-    ):
+    ) -> None:
         """Save benchmark results to file."""
         if filename is None:
             filename = f"{suite.name}.json"
@@ -688,7 +681,7 @@ class AutoDANBenchmarkRunner:
                     f"  Mean Score: {stats['mean']:.4f}",
                     f"  Std Dev: {stats['std']:.4f}",
                     f"  Range: [{stats['min']:.4f}, {stats['max']:.4f}]",
-                ]
+                ],
             )
 
         lines.extend(
@@ -697,7 +690,7 @@ class AutoDANBenchmarkRunner:
                 "-" * 60,
                 "Detailed Results",
                 "-" * 60,
-            ]
+            ],
         )
 
         for result in suite.results:
@@ -707,7 +700,7 @@ class AutoDANBenchmarkRunner:
                     f"  Score: {result.score:.4f}",
                     f"  Duration: {result.duration_seconds:.2f}s",
                     "  Metrics:",
-                ]
+                ],
             )
             for key, value in result.metrics.items():
                 if isinstance(value, float):
@@ -721,7 +714,7 @@ class AutoDANBenchmarkRunner:
                 "=" * 60,
                 "End of Report",
                 "=" * 60,
-            ]
+            ],
         )
 
         return "\n".join(lines)

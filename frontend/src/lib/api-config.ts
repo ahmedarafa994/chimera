@@ -61,7 +61,7 @@ interface StorableConfig {
 // Default configuration from environment variables
 const defaultConfig: ApiConfig = {
   mode: (process.env.NEXT_PUBLIC_API_MODE as ApiMode) || "direct",
-  backendApiUrl: process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8001/api/v1",
+  backendApiUrl: process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8002/api/v1",
   backendApiKey: process.env.NEXT_PUBLIC_CHIMERA_API_KEY || "",
   geminiApiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
   geminiApiUrl: process.env.NEXT_PUBLIC_GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -181,6 +181,22 @@ export function getApiHeaders(): Record<string, string> {
   if (config.mode === "proxy") {
     if (config.backendApiKey) {
       headers["X-API-Key"] = config.backendApiKey;
+    }
+
+    // Add Bearer token for authenticated requests
+    if (typeof window !== "undefined") {
+      try {
+        const encodedToken = localStorage.getItem("chimera_access_token");
+        if (encodedToken) {
+          // Decode: AuthProvider uses btoa(encodeURIComponent(value))
+          const accessToken = decodeURIComponent(atob(encodedToken));
+          if (accessToken) {
+            headers["Authorization"] = `Bearer ${accessToken}`;
+          }
+        }
+      } catch {
+        // Ignore decoding errors
+      }
     }
   } else {
     // Direct mode

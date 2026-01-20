@@ -1,6 +1,4 @@
-"""
-Domain models for model synchronization system.
-"""
+"""Domain models for model synchronization system."""
 
 from datetime import datetime
 from enum import Enum
@@ -112,7 +110,7 @@ class ModelSyncError(BaseModel):
 class ModelValidationError(Exception):
     """Custom exception for model validation errors."""
 
-    def __init__(self, message: str, model_id: str | None = None):
+    def __init__(self, message: str, model_id: str | None = None) -> None:
         self.message = message
         self.model_id = model_id
         super().__init__(message)

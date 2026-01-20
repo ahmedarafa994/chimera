@@ -1,5 +1,4 @@
-"""
-Azure OpenAI Provider Plugin for Project Chimera.
+"""Azure OpenAI Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for Azure OpenAI Service integration,
 supporting Azure-hosted OpenAI models with enterprise features.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class AzurePlugin(BaseProviderPlugin):
-    """
-    Provider plugin for Azure OpenAI Service.
+    """Provider plugin for Azure OpenAI Service.
 
     Azure OpenAI provides enterprise-grade access to OpenAI models
     with additional security, compliance, and regional deployment options.
@@ -51,9 +49,8 @@ class AzurePlugin(BaseProviderPlugin):
 
     @property
     def base_url(self) -> str:
-        """
-        Azure OpenAI requires a resource endpoint.
-        Format: https://{resource-name}.openai.azure.com
+        """Azure OpenAI requires a resource endpoint.
+        Format: https://{resource-name}.openai.azure.com.
         """
         return os.environ.get("AZURE_OPENAI_ENDPOINT", "")
 
@@ -78,8 +75,7 @@ class AzurePlugin(BaseProviderPlugin):
         return os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
 
     def _get_deployment_name(self, model: str | None) -> str:
-        """
-        Get the Azure deployment name for a model.
+        """Get the Azure deployment name for a model.
 
         In Azure, you deploy models to named deployments.
         This mapping can be customized via environment variables.
@@ -92,8 +88,7 @@ class AzurePlugin(BaseProviderPlugin):
         return os.environ.get(env_key, model)
 
     def _get_static_models(self) -> list[ModelInfo]:
-        """
-        Return static model definitions for Azure OpenAI.
+        """Return static model definitions for Azure OpenAI.
 
         Note: Actual available models depend on Azure deployment.
         """
@@ -220,8 +215,7 @@ class AzurePlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available Azure OpenAI models.
+        """List available Azure OpenAI models.
 
         Attempts to fetch from Azure API, falls back to static list.
         """
@@ -238,7 +232,8 @@ class AzurePlugin(BaseProviderPlugin):
     async def _fetch_models_from_api(self, api_key: str) -> list[ModelInfo]:
         """Fetch deployments from Azure OpenAI."""
         if not self.base_url:
-            raise ValueError("Azure OpenAI endpoint not configured")
+            msg = "Azure OpenAI endpoint not configured"
+            raise ValueError(msg)
 
         url = f"{self.base_url}/openai/deployments"
         params = {"api-version": self.api_version}
@@ -279,7 +274,7 @@ class AzurePlugin(BaseProviderPlugin):
                         input_price_per_1k=base_model.input_price_per_1k,
                         output_price_per_1k=base_model.output_price_per_1k,
                         capabilities=base_model.capabilities,
-                    )
+                    ),
                 )
             else:
                 models.append(
@@ -290,7 +285,7 @@ class AzurePlugin(BaseProviderPlugin):
                         context_window=8192,
                         supports_streaming=True,
                         capabilities=["chat"],
-                    )
+                    ),
                 )
 
         return models if models else self._get_static_models()
@@ -317,14 +312,18 @@ class AzurePlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using Azure OpenAI API."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Azure OpenAI API key is required")
+            msg = "Azure OpenAI API key is required"
+            raise ValueError(msg)
         if not self.base_url:
-            raise ValueError("Azure OpenAI endpoint is required")
+            msg = "Azure OpenAI endpoint is required"
+            raise ValueError(msg)
 
         deployment = self._get_deployment_name(request.model)
         start_time = time.time()
@@ -356,7 +355,7 @@ class AzurePlugin(BaseProviderPlugin):
         if request.response_format:
             payload["response_format"] = request.response_format
 
-        url = f"{self.base_url}/openai/deployments/{deployment}" f"/chat/completions"
+        url = f"{self.base_url}/openai/deployments/{deployment}/chat/completions"
         params = {"api-version": self.api_version}
 
         try:
@@ -392,21 +391,25 @@ class AzurePlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Azure OpenAI API error: {e.response.status_code}")
+            logger.exception(f"Azure OpenAI API error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"Azure OpenAI generation error: {e}")
+            logger.exception(f"Azure OpenAI generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Azure OpenAI API."""
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Azure OpenAI API key is required")
+            msg = "Azure OpenAI API key is required"
+            raise ValueError(msg)
         if not self.base_url:
-            raise ValueError("Azure OpenAI endpoint is required")
+            msg = "Azure OpenAI endpoint is required"
+            raise ValueError(msg)
 
         deployment = self._get_deployment_name(request.model)
 
@@ -435,7 +438,7 @@ class AzurePlugin(BaseProviderPlugin):
         if request.stop_sequences:
             payload["stop"] = request.stop_sequences
 
-        url = f"{self.base_url}/openai/deployments/{deployment}" f"/chat/completions"
+        url = f"{self.base_url}/openai/deployments/{deployment}/chat/completions"
         params = {"api-version": self.api_version}
 
         try:
@@ -482,5 +485,5 @@ class AzurePlugin(BaseProviderPlugin):
                             logger.warning(f"Parse error: {e}")
                             continue
         except Exception as e:
-            logger.error(f"Azure OpenAI streaming error: {e}")
+            logger.exception(f"Azure OpenAI streaming error: {e}")
             raise

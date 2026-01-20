@@ -1,5 +1,4 @@
-"""
-Provider Selection Middleware
+"""Provider Selection Middleware.
 
 Middleware that injects provider/model context into requests based on:
 1. HTTP headers (X-Provider, X-Model, X-Failover-Chain)
@@ -28,15 +27,15 @@ class ProviderContext:
         model: str,
         failover_chain: str | None = None,
         source: str = "default",
-    ):
-        """
-        Initialize provider context.
+    ) -> None:
+        """Initialize provider context.
 
         Args:
             provider: Provider ID (e.g., "openai", "gemini")
             model: Model ID (e.g., "gpt-4", "gemini-2.0-flash-exp")
             failover_chain: Optional named failover chain
             source: Where the selection came from ("header", "query", "default")
+
         """
         self.provider = provider
         self.model = model
@@ -54,8 +53,7 @@ class ProviderContext:
 
 
 class ProviderSelectionMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to inject provider/model context into requests.
+    """Middleware to inject provider/model context into requests.
 
     Checks for provider/model override in the following order:
     1. HTTP headers (X-Provider, X-Model, X-Failover-Chain)
@@ -72,6 +70,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
             context = get_request_provider(request)
             provider, model = context
             # Use provider and model...
+
     """
 
     # Headers for provider selection
@@ -102,15 +101,15 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
         allow_header_override: bool = True,
         allow_query_override: bool = True,
         validate_provider: bool = True,
-    ):
-        """
-        Initialize provider selection middleware.
+    ) -> None:
+        """Initialize provider selection middleware.
 
         Args:
             app: ASGI application
             allow_header_override: Allow provider override via headers
             allow_query_override: Allow provider override via query params
             validate_provider: Validate that selected provider exists
+
         """
         super().__init__(app)
         self._allow_header_override = allow_header_override
@@ -134,8 +133,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: Callable,
     ) -> Response:
-        """
-        Process request and inject provider context.
+        """Process request and inject provider context.
 
         Args:
             request: Incoming request
@@ -143,6 +141,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response from next handler
+
         """
         path = request.url.path
 
@@ -171,7 +170,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
             if context:
                 logger.debug(
                     f"Provider context: provider={context.provider}, "
-                    f"model={context.model}, source={context.source}"
+                    f"model={context.model}, source={context.source}",
                 )
 
             # Add provider info to response headers
@@ -184,7 +183,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            logger.error(f"Provider selection middleware error: {e}")
+            logger.exception(f"Provider selection middleware error: {e}")
             # Continue without provider context on error
             return await call_next(request)
 
@@ -193,8 +192,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
         return any(path.startswith(skip_path) for skip_path in self.SKIP_PATHS)
 
     def _resolve_provider_context(self, request: Request) -> ProviderContext | None:
-        """
-        Resolve provider context from request.
+        """Resolve provider context from request.
 
         Checks in order:
         1. HTTP headers
@@ -206,6 +204,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
 
         Returns:
             ProviderContext or None if no config available
+
         """
         provider = None
         model = None
@@ -275,14 +274,14 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
         self,
         context: ProviderContext,
     ) -> dict:
-        """
-        Validate the provider selection.
+        """Validate the provider selection.
 
         Args:
             context: Provider context to validate
 
         Returns:
             Dict with validation result
+
         """
         config_manager = self._get_config_manager()
         if not config_manager or not config_manager.is_loaded():
@@ -325,11 +324,10 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
                             f"provider '{context.provider}'"
                         ),
                     }
-                else:
-                    return {
-                        "valid": False,
-                        "reason": f"Unknown model: {context.model}",
-                    }
+                return {
+                    "valid": False,
+                    "reason": f"Unknown model: {context.model}",
+                }
 
         # Check failover chain exists if specified
         if context.failover_chain and context.failover_chain not in config.failover_chains:
@@ -358,8 +356,7 @@ class ProviderSelectionMiddleware(BaseHTTPMiddleware):
 
 
 def get_request_provider(request: Request) -> tuple[str, str]:
-    """
-    Extract provider and model from request state.
+    """Extract provider and model from request state.
 
     This is a helper function to access the provider context
     set by ProviderSelectionMiddleware.
@@ -372,6 +369,7 @@ def get_request_provider(request: Request) -> tuple[str, str]:
 
     Raises:
         ValueError: If no provider context is set
+
     """
     context = getattr(request.state, "provider_context", None)
 
@@ -381,33 +379,34 @@ def get_request_provider(request: Request) -> tuple[str, str]:
         if validated:
             return (validated, "")
 
-        raise ValueError("No provider context available in request")
+        msg = "No provider context available in request"
+        raise ValueError(msg)
 
     return (context.provider, context.model)
 
 
 def get_request_provider_context(request: Request) -> ProviderContext | None:
-    """
-    Get the full provider context from request state.
+    """Get the full provider context from request state.
 
     Args:
         request: Request object
 
     Returns:
         ProviderContext or None
+
     """
     return getattr(request.state, "provider_context", None)
 
 
 def get_request_failover_chain(request: Request) -> str | None:
-    """
-    Get the failover chain name from request state.
+    """Get the failover chain name from request state.
 
     Args:
         request: Request object
 
     Returns:
         Failover chain name or None
+
     """
     context = getattr(request.state, "provider_context", None)
     return context.failover_chain if context else None
@@ -418,8 +417,7 @@ def create_provider_selection_middleware(
     allow_query_override: bool = True,
     validate_provider: bool = True,
 ) -> type:
-    """
-    Factory function to create middleware instance with custom configuration.
+    """Factory function to create middleware instance with custom configuration.
 
     Args:
         allow_header_override: Allow provider override via headers
@@ -442,10 +440,11 @@ def create_provider_selection_middleware(
                 validate_provider=True,
             )
         )
+
     """
 
     class ConfiguredProviderSelectionMiddleware(ProviderSelectionMiddleware):
-        def __init__(self, app):
+        def __init__(self, app) -> None:
             super().__init__(
                 app,
                 allow_header_override=allow_header_override,

@@ -1,5 +1,4 @@
-"""
-Unified AutoDAN Processing Pipeline
+"""Unified AutoDAN Processing Pipeline.
 
 This module provides a unified processing pipeline for all AutoDAN variants,
 ensuring consistent workflow alignment across different optimization strategies
@@ -69,7 +68,7 @@ class PipelineMetrics:
 class PipelineContext:
     """Context object passed through the pipeline."""
 
-    def __init__(self, request_data: dict[str, Any]):
+    def __init__(self, request_data: dict[str, Any]) -> None:
         self.execution_id = str(uuid.uuid4())
         self.request_data = request_data
         self.stage_data: dict[str, Any] = {}
@@ -101,7 +100,9 @@ class PipelineContext:
         self.metrics.stage_timings[f"{stage.value}_start"] = time.time()
 
     def mark_stage_end(
-        self, stage: ProcessingStage, stage_metrics: dict[str, Any] | None = None
+        self,
+        stage: ProcessingStage,
+        stage_metrics: dict[str, Any] | None = None,
     ) -> None:
         """Mark the end of a processing stage."""
         end_time = time.time()
@@ -147,14 +148,13 @@ class PipelineProcessor(Protocol):
 class BasePipelineProcessor(ABC):
     """Base class for pipeline processors."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
         self.logger = logging.getLogger(f"{__name__}.{name}")
 
     @abstractmethod
     async def process(self, context: PipelineContext) -> PipelineContext:
         """Process the context."""
-        pass
 
     async def validate(self, context: PipelineContext) -> bool:
         """Default validation - always returns True."""
@@ -186,7 +186,7 @@ class BasePipelineProcessor(ABC):
             self.logger.debug(f"Completed {self.name} processing in {duration_ms:.2f}ms")
 
         except Exception as e:
-            self.logger.error(f"Error in {self.name} processing: {e}")
+            self.logger.exception(f"Error in {self.name} processing: {e}")
             context.add_error(e)
 
             # Record error metrics
@@ -205,7 +205,7 @@ class BasePipelineProcessor(ABC):
 class RequestValidationProcessor(BasePipelineProcessor):
     """Validates incoming requests."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("request_validation")
 
     async def process(self, context: PipelineContext) -> PipelineContext:
@@ -215,10 +215,12 @@ class RequestValidationProcessor(BasePipelineProcessor):
 
             # Basic validation
             if not request_data.get("request"):
-                raise ValueError("Request field is required")
+                msg = "Request field is required"
+                raise ValueError(msg)
 
             if len(request_data.get("request", "")) > 50000:
-                raise ValueError("Request too long")
+                msg = "Request too long"
+                raise ValueError(msg)
 
             # Add validation metadata
             context.add_metadata("validation_passed", True)
@@ -230,7 +232,7 @@ class RequestValidationProcessor(BasePipelineProcessor):
 class StrategySelectionProcessor(BasePipelineProcessor):
     """Selects and configures the appropriate AutoDAN strategy."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("strategy_selection")
         self.available_strategies = {
             "vanilla": "VanillaStrategy",
@@ -278,7 +280,7 @@ class StrategySelectionProcessor(BasePipelineProcessor):
 class CoreStrategyProcessor(BasePipelineProcessor):
     """Executes the core AutoDAN strategy."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("core_strategy")
 
     async def process(self, context: PipelineContext) -> PipelineContext:
@@ -287,7 +289,8 @@ class CoreStrategyProcessor(BasePipelineProcessor):
             strategy_config = context.get_stage_data(ProcessingStage.PRE_PROCESSING)
 
             if not strategy_config:
-                raise ValueError("Strategy configuration not found")
+                msg = "Strategy configuration not found"
+                raise ValueError(msg)
 
             # Simulate strategy execution (replace with actual strategy implementation)
             await self._execute_strategy(context, strategy_config)
@@ -295,7 +298,9 @@ class CoreStrategyProcessor(BasePipelineProcessor):
         return context
 
     async def _execute_strategy(
-        self, context: PipelineContext, strategy_config: dict[str, Any]
+        self,
+        context: PipelineContext,
+        strategy_config: dict[str, Any],
     ) -> None:
         """Execute the selected strategy."""
         method = strategy_config["method"]
@@ -328,7 +333,7 @@ class CoreStrategyProcessor(BasePipelineProcessor):
 class ResultValidationProcessor(BasePipelineProcessor):
     """Validates and sanitizes results."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("result_validation")
 
     async def process(self, context: PipelineContext) -> PipelineContext:
@@ -337,13 +342,15 @@ class ResultValidationProcessor(BasePipelineProcessor):
             result = context.get_stage_data(ProcessingStage.CORE_PROCESSING)
 
             if not result:
-                raise ValueError("No result from core processing")
+                msg = "No result from core processing"
+                raise ValueError(msg)
 
             # Validate result structure
             required_fields = ["jailbreak_prompt", "method", "score", "success"]
             for field in required_fields:
                 if field not in result:
-                    raise ValueError(f"Missing required field: {field}")
+                    msg = f"Missing required field: {field}"
+                    raise ValueError(msg)
 
             # Validate score range
             score = result.get("score", 0)
@@ -361,7 +368,7 @@ class ResultValidationProcessor(BasePipelineProcessor):
 class ResponseFormattingProcessor(BasePipelineProcessor):
     """Formats final response."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("response_formatting")
 
     async def process(self, context: PipelineContext) -> PipelineContext:
@@ -396,14 +403,13 @@ class ResponseFormattingProcessor(BasePipelineProcessor):
 
 
 class UnifiedAutoDANPipeline:
-    """
-    Unified processing pipeline for all AutoDAN variants.
+    """Unified processing pipeline for all AutoDAN variants.
 
     This pipeline ensures consistent workflow alignment across all AutoDAN
     strategies while providing comprehensive monitoring and error handling.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.pipeline")
         self.pre_processors: list[PipelineProcessor] = []
         self.core_processors: list[PipelineProcessor] = []
@@ -435,8 +441,7 @@ class UnifiedAutoDANPipeline:
         self.post_processors.append(processor)
 
     async def execute(self, request_data: dict[str, Any]) -> dict[str, Any]:
-        """
-        Execute the complete pipeline.
+        """Execute the complete pipeline.
 
         Args:
             request_data: Input request data
@@ -446,6 +451,7 @@ class UnifiedAutoDANPipeline:
 
         Raises:
             Exception: If pipeline execution fails
+
         """
         context = PipelineContext(request_data)
         context.status = PipelineStatus.RUNNING
@@ -455,17 +461,23 @@ class UnifiedAutoDANPipeline:
 
             # Pre-processing
             context = await self._execute_processor_chain(
-                context, self.pre_processors, "pre-processing"
+                context,
+                self.pre_processors,
+                "pre-processing",
             )
 
             # Core processing
             context = await self._execute_processor_chain(
-                context, self.core_processors, "core processing"
+                context,
+                self.core_processors,
+                "core processing",
             )
 
             # Post-processing
             context = await self._execute_processor_chain(
-                context, self.post_processors, "post-processing"
+                context,
+                self.post_processors,
+                "post-processing",
             )
 
             # Mark as completed
@@ -474,17 +486,18 @@ class UnifiedAutoDANPipeline:
             # Get final result
             result = context.get_stage_data(ProcessingStage.POST_PROCESSING)
             if not result:
-                raise ValueError("No result from post-processing")
+                msg = "No result from post-processing"
+                raise ValueError(msg)
 
             self.logger.info(
                 f"Pipeline execution {context.execution_id} completed successfully "
-                f"in {context.metrics.total_duration_ms:.2f}ms"
+                f"in {context.metrics.total_duration_ms:.2f}ms",
             )
 
             return result
 
         except Exception as e:
-            self.logger.error(f"Pipeline execution {context.execution_id} failed: {e}")
+            self.logger.exception(f"Pipeline execution {context.execution_id} failed: {e}")
             context.fail(e)
 
             # Return error response
@@ -502,7 +515,10 @@ class UnifiedAutoDANPipeline:
             }
 
     async def _execute_processor_chain(
-        self, context: PipelineContext, processors: list[PipelineProcessor], chain_name: str
+        self,
+        context: PipelineContext,
+        processors: list[PipelineProcessor],
+        chain_name: str,
     ) -> PipelineContext:
         """Execute a chain of processors."""
         self.logger.debug(f"Starting {chain_name} chain with {len(processors)} processors")
@@ -511,7 +527,7 @@ class UnifiedAutoDANPipeline:
             # Validate processor can handle context
             if not await processor.validate(context):
                 self.logger.warning(
-                    f"Processor {processor.get_processor_name()} cannot handle context, skipping"
+                    f"Processor {processor.get_processor_name()} cannot handle context, skipping",
                 )
                 continue
 
@@ -548,14 +564,14 @@ def get_pipeline() -> UnifiedAutoDANPipeline:
 
 
 async def execute_autodan_pipeline(request_data: dict[str, Any]) -> dict[str, Any]:
-    """
-    Convenience function to execute the AutoDAN pipeline.
+    """Convenience function to execute the AutoDAN pipeline.
 
     Args:
         request_data: Input request data
 
     Returns:
         Formatted response dictionary
+
     """
     pipeline = get_pipeline()
     return await pipeline.execute(request_data)

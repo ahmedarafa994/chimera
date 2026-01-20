@@ -1,5 +1,4 @@
-"""
-Chimera Load Testing Configuration
+"""Chimera Load Testing Configuration.
 
 Defines test scenarios with varying intensity levels for different purposes:
 - Smoke tests: Quick validation (10 users, 1 minute)

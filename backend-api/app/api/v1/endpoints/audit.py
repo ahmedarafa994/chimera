@@ -1,5 +1,4 @@
-"""
-Audit Log Endpoints
+"""Audit Log Endpoints.
 
 Provides access to system audit logs for compliance and security monitoring.
 
@@ -14,6 +13,7 @@ Provides access to system audit logs for compliance and security monitoring.
 import logging
 from contextlib import suppress
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -72,7 +72,7 @@ class AuditActivityEntry(BaseModel):
                 "resource": "/api/v1/auth/login",
                 "details": {"method": "password"},
                 "ip_address": "192.168.1.1",
-            }
+            },
         }
 
 
@@ -97,7 +97,7 @@ class UserActivityResponse(BaseModel):
                 "page": 1,
                 "page_size": 50,
                 "has_more": False,
-            }
+            },
         }
 
 
@@ -114,8 +114,7 @@ class UserActivityErrorResponse(BaseModel):
 
 
 async def get_db_session() -> AsyncSession:
-    """
-    Get an async database session for the request.
+    """Get an async database session for the request.
 
     Yields a session and ensures proper cleanup.
     """
@@ -195,8 +194,7 @@ async def _get_authenticated_user(
     current_user: TokenPayload,
     session: AsyncSession,
 ) -> User:
-    """
-    Get the authenticated database user from the JWT token.
+    """Get the authenticated database user from the JWT token.
 
     Args:
         current_user: Token payload from JWT authentication
@@ -207,6 +205,7 @@ async def _get_authenticated_user(
 
     Raises:
         HTTPException: If user not found or is API client
+
     """
     # Check if this is an API client (not a database user)
     if current_user.type == "api_key" or current_user.sub == "api_client":
@@ -253,14 +252,14 @@ async def _get_authenticated_user(
 
 
 async def verify_admin_access(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """
-    Verify admin access.
+    """Verify admin access.
     In a real app, this would check roles/claims.
     For now, we check the API key against the admin key.
     """
     if not credentials or credentials.credentials != settings.CHIMERA_API_KEY:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or missing API key"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API key",
         )
     return credentials.credentials
 
@@ -272,17 +271,15 @@ async def verify_admin_access(credentials: HTTPAuthorizationCredentials = Depend
     description="Retrieve audit logs with filtering capabilities.",
 )
 async def get_audit_logs(
-    action: str | None = Query(None, description="Filter by action type"),
-    user_id: str | None = Query(None, description="Filter by user ID"),
-    start_date: datetime | None = Query(None, description="Start date filter"),
-    end_date: datetime | None = Query(None, description="End date filter"),
-    limit: int = Query(100, ge=1, le=1000),
-    severity: str | None = Query(None, description="Filter by severity"),
+    action: Annotated[str | None, Query(description="Filter by action type")] = None,
+    user_id: Annotated[str | None, Query(description="Filter by user ID")] = None,
+    start_date: Annotated[datetime | None, Query(description="Start date filter")] = None,
+    end_date: Annotated[datetime | None, Query(description="End date filter")] = None,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 100,
+    severity: Annotated[str | None, Query(description="Filter by severity")] = None,
     _admin: str = Depends(verify_admin_access),
 ):
-    """
-    Retrieve audit logs based on filters.
-    """
+    """Retrieve audit logs based on filters."""
     audit_logger = get_audit_logger()
 
     # Convert string action to Enum if provided
@@ -292,7 +289,11 @@ async def get_audit_logs(
             audit_action = AuditAction(action)
 
     logs = audit_logger.query(
-        action=audit_action, user_id=user_id, start_time=start_date, end_time=end_date, limit=limit
+        action=audit_action,
+        user_id=user_id,
+        start_time=start_date,
+        end_time=end_date,
+        limit=limit,
     )
 
     # Manual severity filter since query() might not support it directly in all implementations
@@ -311,10 +312,8 @@ async def get_audit_logs(
     summary="Get audit statistics",
     description="Retrieve summary statistics of audit events.",
 )
-async def get_audit_stats(_admin: str = Depends(verify_admin_access)):
-    """
-    Get statistical summary of audit logs.
-    """
+async def get_audit_stats(_admin: Annotated[str, Depends(verify_admin_access)]):
+    """Get statistical summary of audit logs."""
     audit_logger = get_audit_logger()
     all_logs = (
         audit_logger.storage.get_all()
@@ -340,10 +339,8 @@ async def get_audit_stats(_admin: str = Depends(verify_admin_access)):
     summary="Verify audit chain",
     description="Trigger a cryptographic verification of the audit log chain.",
 )
-async def verify_audit_chain(_admin: str = Depends(verify_admin_access)):
-    """
-    Cryptographically verify the tamper-evident hash chain.
-    """
+async def verify_audit_chain(_admin: Annotated[str, Depends(verify_admin_access)]):
+    """Cryptographically verify the tamper-evident hash chain."""
     audit_logger = get_audit_logger()
     is_valid, failed_hash, failed_index = audit_logger.verify_chain()
 
@@ -373,7 +370,6 @@ async def verify_audit_chain(_admin: str = Depends(verify_admin_access)):
 @router.get(
     "/my-activity",
     status_code=status.HTTP_200_OK,
-    response_model=UserActivityResponse,
     summary="Get current user's activity history",
     description="""
 Get the activity history for the currently authenticated user.
@@ -430,26 +426,25 @@ Get the activity history for the currently authenticated user.
     tags=["audit", "users"],
 )
 async def get_my_activity(
-    action: str | None = Query(
-        None,
-        description="Filter by action type (e.g., auth.login, user.password_change)",
-        examples=["auth.login", "user.password_change", "apikey.created"],
-    ),
-    start_date: datetime | None = Query(
-        None,
-        description="Start date for filtering (ISO 8601 format)",
-    ),
-    end_date: datetime | None = Query(
-        None,
-        description="End date for filtering (ISO 8601 format)",
-    ),
-    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
-    page_size: int = Query(50, ge=1, le=100, description="Number of results per page"),
+    action: Annotated[
+        str | None,
+        Query(
+            description="Filter by action type (e.g., auth.login, user.password_change)",
+            examples=["auth.login", "user.password_change", "apikey.created"],
+        ),
+    ] = None,
+    start_date: Annotated[
+        datetime | None, Query(description="Start date for filtering (ISO 8601 format)")
+    ] = None,
+    end_date: Annotated[
+        datetime | None, Query(description="End date for filtering (ISO 8601 format)")
+    ] = None,
+    page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Number of results per page")] = 50,
     current_user: TokenPayload = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session),
 ) -> UserActivityResponse:
-    """
-    Get the current user's activity history.
+    """Get the current user's activity history.
 
     Returns a paginated list of audit entries for the authenticated user.
     """
@@ -506,7 +501,6 @@ async def get_my_activity(
 @router.get(
     "/users/{user_id}/activity",
     status_code=status.HTTP_200_OK,
-    response_model=UserActivityResponse,
     summary="Get specific user's activity history (Admin only)",
     description="""
 Get the activity history for a specific user.
@@ -558,31 +552,28 @@ Get the activity history for a specific user.
     tags=["audit", "admin"],
 )
 async def get_user_activity(
-    user_id: int = Path(
-        ...,
-        description="The ID of the user whose activity to retrieve",
-        ge=1,
-    ),
-    action: str | None = Query(
-        None,
-        description="Filter by action type (e.g., auth.login, user.password_change)",
-        examples=["auth.login", "user.password_change", "apikey.created"],
-    ),
-    start_date: datetime | None = Query(
-        None,
-        description="Start date for filtering (ISO 8601 format)",
-    ),
-    end_date: datetime | None = Query(
-        None,
-        description="End date for filtering (ISO 8601 format)",
-    ),
-    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
-    page_size: int = Query(50, ge=1, le=100, description="Number of results per page"),
+    user_id: Annotated[
+        int, Path(description="The ID of the user whose activity to retrieve", ge=1)
+    ] = ...,
+    action: Annotated[
+        str | None,
+        Query(
+            description="Filter by action type (e.g., auth.login, user.password_change)",
+            examples=["auth.login", "user.password_change", "apikey.created"],
+        ),
+    ] = None,
+    start_date: Annotated[
+        datetime | None, Query(description="Start date for filtering (ISO 8601 format)")
+    ] = None,
+    end_date: Annotated[
+        datetime | None, Query(description="End date for filtering (ISO 8601 format)")
+    ] = None,
+    page: Annotated[int, Query(ge=1, description="Page number (1-indexed)")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Number of results per page")] = 50,
     current_user: TokenPayload = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session),
 ) -> UserActivityResponse:
-    """
-    Get activity history for a specific user.
+    """Get activity history for a specific user.
 
     Admin only endpoint. Returns a paginated list of audit entries.
     """
@@ -592,7 +583,7 @@ async def get_user_activity(
     # Check admin role
     if admin_user.role != UserRole.ADMIN:
         logger.warning(
-            f"Non-admin user {admin_user.id} attempted to access user {user_id} activity"
+            f"Non-admin user {admin_user.id} attempted to access user {user_id} activity",
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -646,7 +637,7 @@ async def get_user_activity(
 
     logger.info(
         f"Admin {admin_user.id} retrieved {len(activities)} activity entries "
-        f"for user {user_id} (page {page})"
+        f"for user {user_id} (page {page})",
     )
 
     return UserActivityResponse(

@@ -1,6 +1,5 @@
-"""
-Observability Module
-Structured logging, metrics, and request tracing for production monitoring
+"""Observability Module
+Structured logging, metrics, and request tracing for production monitoring.
 """
 
 import json
@@ -37,8 +36,7 @@ request_id_var: ContextVar[str] = ContextVar("request_id", default="")
 
 
 class JSONFormatter(logging.Formatter):
-    """
-    JSON formatter for structured logging.
+    """JSON formatter for structured logging.
 
     Outputs logs in JSON format for easy parsing by log aggregation tools
     like ELK, Datadog, Splunk, etc.
@@ -105,9 +103,7 @@ class JSONFormatter(logging.Formatter):
 
 
 class ConsoleFormatter(logging.Formatter):
-    """
-    Colored console formatter for development.
-    """
+    """Colored console formatter for development."""
 
     COLORS: ClassVar[dict[str, str]] = {
         "DEBUG": "\033[36m",  # Cyan
@@ -138,10 +134,11 @@ class ConsoleFormatter(logging.Formatter):
 
 
 def setup_logging(
-    level: str = "INFO", json_format: bool = True, log_file: str | None = None
+    level: str = "INFO",
+    json_format: bool = True,
+    log_file: str | None = None,
 ) -> logging.Logger:
-    """
-    Set up logging with appropriate formatter and Sentry integration.
+    """Set up logging with appropriate formatter and Sentry integration.
 
     Args:
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -150,6 +147,7 @@ def setup_logging(
 
     Returns:
         Configured root logger
+
     """
     root_logger = logging.getLogger()
     root_logger.setLevel(getattr(logging, level.upper()))
@@ -195,10 +193,8 @@ def setup_logging(
     return root_logger
 
 
-def setup_tracing(app):
-    """
-    Set up OpenTelemetry tracing.
-    """
+def setup_tracing(app) -> None:
+    """Set up OpenTelemetry tracing."""
     otlp_endpoint = os.getenv("OTLP_ENDPOINT")
     if otlp_endpoint:
         resource = Resource.create(
@@ -206,7 +202,7 @@ def setup_tracing(app):
                 "service.name": "chimera-backend",
                 "service.version": "2.0.0",
                 "deployment.environment": os.getenv("ENVIRONMENT", "development"),
-            }
+            },
         )
 
         tracer_provider = TracerProvider(resource=resource)
@@ -230,8 +226,7 @@ def get_logger(name: str) -> logging.Logger:
 
 
 class ObservabilityMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for request/response logging and metrics.
+    """Middleware for request/response logging and metrics.
 
     Features:
     - Unique request ID generation and propagation
@@ -267,7 +262,7 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         "/v1/api/event_logging",
     }
 
-    def __init__(self, app, logger: logging.Logger | None = None):
+    def __init__(self, app, logger: logging.Logger | None = None) -> None:
         super().__init__(app)
         self.logger = logger or get_logger("chimera.http")
         # PERF-025: Track 404 counts to avoid log spam
@@ -358,7 +353,7 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         duration_ms: float,
         client_ip: str,
         request_id: str,
-    ):
+    ) -> None:
         """Log a successful request."""
         log_level = logging.WARNING if response.status_code >= 400 else logging.INFO
 
@@ -385,7 +380,7 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         duration_ms: float,
         client_ip: str,
         request_id: str,
-    ):
+    ) -> None:
         """Log a request error."""
         self.logger.error(
             f"{request.method} {request.url.path} ERROR: {type(error).__name__}",
@@ -398,7 +393,6 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
                 "error_type": type(error).__name__,
                 "error_message": str(error),
             },
-            exc_info=True,
         )
 
 
@@ -408,14 +402,14 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
 
 
 class MetricsCollector:
-    """
-    Metrics collector using official prometheus_client.
-    """
+    """Metrics collector using official prometheus_client."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Define standard metrics
         self.http_requests_total = Counter(
-            "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status"]
+            "http_requests_total",
+            "Total HTTP requests",
+            ["method", "endpoint", "status"],
         )
         self.http_request_duration_seconds = Histogram(
             "http_request_duration_seconds",
@@ -423,7 +417,9 @@ class MetricsCollector:
             ["method", "endpoint"],
         )
         self.jailbreak_attempts_total = Counter(
-            "jailbreak_attempts_total", "Total jailbreak attempts", ["technique", "status"]
+            "jailbreak_attempts_total",
+            "Total jailbreak attempts",
+            ["technique", "status"],
         )
         self.model_tokens_total = Counter(
             "model_tokens_total",
@@ -431,7 +427,7 @@ class MetricsCollector:
             ["model", "type"],  # info: prompt or completion
         )
 
-    def increment(self, name: str, value: int = 1, labels: dict[str, str] | None = None):
+    def increment(self, name: str, value: int = 1, labels: dict[str, str] | None = None) -> None:
         """Increment a counter metric."""
         # Map legacy calls to new counters if possible, or ignore
         if name == "http_requests_total":
@@ -439,7 +435,7 @@ class MetricsCollector:
         elif name == "jailbreak_attempts":
             self.jailbreak_attempts_total.labels(**(labels or {})).inc(value)
 
-    def observe(self, name: str, value: float, labels: dict[str, str] | None = None):
+    def observe(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
         """Record a value for histogram."""
         if name == "http_request_duration_seconds":
             self.http_request_duration_seconds.labels(**(labels or {})).observe(value)
@@ -461,10 +457,10 @@ metrics = MetricsCollector()
 class HealthCheck:
     """Health check manager for service dependencies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.checks: dict[str, Callable[[], bool]] = {}
 
-    def register(self, name: str, check: Callable[[], bool]):
+    def register(self, name: str, check: Callable[[], bool]) -> None:
         """Register a health check function."""
         self.checks[name] = check
 
@@ -504,22 +500,22 @@ health_check = HealthCheck()
 class AlertManager:
     """Simple alert manager for critical events."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("chimera.alerts")
         self.alert_callbacks: list = []
 
-    def register_callback(self, callback: Callable[[str, str, dict], None]):
+    def register_callback(self, callback: Callable[[str, str, dict], None]) -> None:
         """Register an alert callback (e.g., Slack, PagerDuty)."""
         self.alert_callbacks.append(callback)
 
-    def alert(self, severity: str, message: str, details: dict[str, Any] | None = None):
-        """
-        Send an alert.
+    def alert(self, severity: str, message: str, details: dict[str, Any] | None = None) -> None:
+        """Send an alert.
 
         Args:
             severity: "critical", "warning", or "info"
             message: Alert message
             details: Additional details
+
         """
         self.logger.log(
             logging.CRITICAL if severity == "critical" else logging.WARNING,
@@ -532,13 +528,13 @@ class AlertManager:
             try:
                 callback(severity, message, details or {})
             except Exception as e:
-                self.logger.error(f"Alert callback failed: {e}")
+                self.logger.exception(f"Alert callback failed: {e}")
 
-    def critical(self, message: str, details: dict[str, Any] | None = None):
+    def critical(self, message: str, details: dict[str, Any] | None = None) -> None:
         """Send a critical alert."""
         self.alert("critical", message, details)
 
-    def warning(self, message: str, details: dict[str, Any] | None = None):
+    def warning(self, message: str, details: dict[str, Any] | None = None) -> None:
         """Send a warning alert."""
         self.alert("warning", message, details)
 

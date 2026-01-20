@@ -1,5 +1,4 @@
-"""
-Configuration Service with Caching
+"""Configuration Service with Caching.
 
 Story 1.3: Configuration Persistence System
 Provides business logic for configuration management with in-memory caching.
@@ -41,8 +40,7 @@ class CacheEntry:
 
 
 class ConfigurationService:
-    """
-    Configuration service with in-memory caching.
+    """Configuration service with in-memory caching.
 
     Provides high-level operations for managing provider configurations
     and API keys with automatic cache invalidation.
@@ -50,13 +48,13 @@ class ConfigurationService:
 
     DEFAULT_CACHE_TTL = timedelta(minutes=5)
 
-    def __init__(self, db: DatabaseConnection, cache_ttl: timedelta | None = None):
-        """
-        Initialize configuration service.
+    def __init__(self, db: DatabaseConnection, cache_ttl: timedelta | None = None) -> None:
+        """Initialize configuration service.
 
         Args:
             db: Database connection instance.
             cache_ttl: Cache time-to-live. Defaults to 5 minutes.
+
         """
         self._db = db
         self._cache_ttl = cache_ttl or self.DEFAULT_CACHE_TTL
@@ -85,16 +83,17 @@ class ConfigurationService:
         """Set value in cache with expiration."""
         cache_key = self._cache_key(namespace, key)
         self._cache[cache_key] = CacheEntry(
-            value=value, expires_at=datetime.now(UTC) + self._cache_ttl
+            value=value,
+            expires_at=datetime.now(UTC) + self._cache_ttl,
         )
 
     def _invalidate_cache(self, namespace: str, key: str | None = None) -> None:
-        """
-        Invalidate cache entries.
+        """Invalidate cache entries.
 
         Args:
             namespace: Cache namespace to invalidate.
             key: Specific key to invalidate. If None, invalidates all in namespace.
+
         """
         if key:
             cache_key = self._cache_key(namespace, key)
@@ -115,14 +114,14 @@ class ConfigurationService:
     # =========================================================================
 
     async def get_config(self, config_id: str) -> ProviderConfigEntity | None:
-        """
-        Get provider configuration by ID.
+        """Get provider configuration by ID.
 
         Args:
             config_id: Configuration ID.
 
         Returns:
             Configuration entity or None.
+
         """
         cached = self._get_cached("config", config_id)
         if cached is not None:
@@ -149,14 +148,14 @@ class ConfigurationService:
         return configs
 
     async def get_configs_by_provider(self, provider_type: str) -> list[ProviderConfigEntity]:
-        """
-        Get configurations for a specific provider type.
+        """Get configurations for a specific provider type.
 
         Args:
             provider_type: Provider type to filter.
 
         Returns:
             List of configurations.
+
         """
         cache_key = f"provider:{provider_type}"
         cached = self._get_cached("config", cache_key)
@@ -170,16 +169,17 @@ class ConfigurationService:
         return configs
 
     async def get_default_config(
-        self, provider_type: str | None = None
+        self,
+        provider_type: str | None = None,
     ) -> ProviderConfigEntity | None:
-        """
-        Get default configuration.
+        """Get default configuration.
 
         Args:
             provider_type: Optional provider type filter.
 
         Returns:
             Default configuration or None.
+
         """
         cache_key = f"default:{provider_type or 'any'}"
         cached = self._get_cached("config", cache_key)
@@ -201,8 +201,7 @@ class ConfigurationService:
         settings: dict[str, Any] | None = None,
         is_default: bool = False,
     ) -> ProviderConfigEntity:
-        """
-        Create new provider configuration.
+        """Create new provider configuration.
 
         Args:
             provider_type: Provider type (e.g., 'openai', 'anthropic').
@@ -212,9 +211,13 @@ class ConfigurationService:
 
         Returns:
             Created configuration entity.
+
         """
         entity = ProviderConfigEntity(
-            provider_type=provider_type, name=name, settings=settings or {}, is_default=is_default
+            provider_type=provider_type,
+            name=name,
+            settings=settings or {},
+            is_default=is_default,
         )
 
         async with self._lock:
@@ -232,8 +235,7 @@ class ConfigurationService:
         settings: dict[str, Any] | None = None,
         is_default: bool | None = None,
     ) -> ProviderConfigEntity:
-        """
-        Update existing configuration.
+        """Update existing configuration.
 
         Args:
             config_id: Configuration ID to update.
@@ -246,13 +248,15 @@ class ConfigurationService:
 
         Raises:
             ConfigNotFoundError: If configuration not found.
+
         """
         async with self._lock:
             uow = UnitOfWork(self._db)
             config = await uow.configs.get_by_id(config_id)
 
             if not config:
-                raise ConfigNotFoundError(f"Config {config_id} not found")
+                msg = f"Config {config_id} not found"
+                raise ConfigNotFoundError(msg)
 
             if name is not None:
                 config.name = name
@@ -268,14 +272,14 @@ class ConfigurationService:
         return updated
 
     async def delete_config(self, config_id: str) -> bool:
-        """
-        Delete configuration.
+        """Delete configuration.
 
         Args:
             config_id: Configuration ID to delete.
 
         Returns:
             True if deleted successfully.
+
         """
         async with self._lock:
             uow = UnitOfWork(self._db)
@@ -286,14 +290,14 @@ class ConfigurationService:
         return result
 
     async def set_default_config(self, config_id: str) -> ProviderConfigEntity:
-        """
-        Set configuration as default.
+        """Set configuration as default.
 
         Args:
             config_id: Configuration ID to set as default.
 
         Returns:
             Updated configuration.
+
         """
         async with self._lock:
             uow = UnitOfWork(self._db)
@@ -307,14 +311,14 @@ class ConfigurationService:
     # =========================================================================
 
     async def get_api_key(self, key_id: str) -> ApiKeyEntity | None:
-        """
-        Get API key by ID.
+        """Get API key by ID.
 
         Args:
             key_id: API key ID.
 
         Returns:
             API key entity or None.
+
         """
         cached = self._get_cached("api_key", key_id)
         if cached is not None:
@@ -329,14 +333,14 @@ class ConfigurationService:
         return key
 
     async def get_active_api_key(self, provider_type: str) -> ApiKeyEntity | None:
-        """
-        Get active API key for a provider.
+        """Get active API key for a provider.
 
         Args:
             provider_type: Provider type.
 
         Returns:
             Active API key or None.
+
         """
         cache_key = f"active:{provider_type}"
         cached = self._get_cached("api_key", cache_key)
@@ -352,8 +356,7 @@ class ConfigurationService:
         return key
 
     async def store_api_key(self, provider_type: str, key_name: str, api_key: str) -> ApiKeyEntity:
-        """
-        Store new API key (encrypted at rest).
+        """Store new API key (encrypted at rest).
 
         Args:
             provider_type: Provider type.
@@ -362,6 +365,7 @@ class ConfigurationService:
 
         Returns:
             Created API key entity.
+
         """
         entity = ApiKeyEntity(provider_type=provider_type, key_name=key_name, api_key=api_key)
 
@@ -374,8 +378,7 @@ class ConfigurationService:
         return created
 
     async def rotate_api_key(self, key_id: str, new_api_key: str) -> ApiKeyEntity:
-        """
-        Rotate an existing API key.
+        """Rotate an existing API key.
 
         Args:
             key_id: Key ID to rotate.
@@ -386,13 +389,15 @@ class ConfigurationService:
 
         Raises:
             ConfigNotFoundError: If key not found.
+
         """
         async with self._lock:
             uow = UnitOfWork(self._db)
             key = await uow.api_keys.get_by_id(key_id)
 
             if not key:
-                raise ConfigNotFoundError(f"API key {key_id} not found")
+                msg = f"API key {key_id} not found"
+                raise ConfigNotFoundError(msg)
 
             key.api_key = new_api_key
             updated = await uow.api_keys.update(key)
@@ -402,14 +407,14 @@ class ConfigurationService:
         return updated
 
     async def deactivate_api_key(self, key_id: str) -> bool:
-        """
-        Deactivate an API key.
+        """Deactivate an API key.
 
         Args:
             key_id: Key ID to deactivate.
 
         Returns:
             True if deactivated.
+
         """
         async with self._lock:
             uow = UnitOfWork(self._db)
@@ -420,14 +425,14 @@ class ConfigurationService:
         return result
 
     async def delete_api_key(self, key_id: str) -> bool:
-        """
-        Delete an API key.
+        """Delete an API key.
 
         Args:
             key_id: Key ID to delete.
 
         Returns:
             True if deleted.
+
         """
         async with self._lock:
             uow = UnitOfWork(self._db)
@@ -438,14 +443,14 @@ class ConfigurationService:
         return result
 
     async def record_key_usage(self, key_id: str) -> bool:
-        """
-        Record API key usage timestamp.
+        """Record API key usage timestamp.
 
         Args:
             key_id: Key ID to update.
 
         Returns:
             True if updated.
+
         """
         uow = UnitOfWork(self._db)
         return await uow.api_keys.record_usage(key_id)
@@ -456,13 +461,13 @@ _config_service: ConfigurationService | None = None
 
 
 async def get_config_service() -> ConfigurationService:
-    """
-    Get or create configuration service singleton.
+    """Get or create configuration service singleton.
 
     Initializes database and schema if needed.
 
     Returns:
         ConfigurationService instance.
+
     """
     global _config_service
 

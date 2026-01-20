@@ -1,6 +1,4 @@
-"""
-High-performance HTTP client with connection pooling, retries, and caching.
-"""
+"""High-performance HTTP client with connection pooling, retries, and caching."""
 
 import asyncio
 import hashlib
@@ -25,18 +23,22 @@ class HttpClientConfig:
     """HTTP client configuration for optimal performance."""
 
     # Connection pool settings
-    pool_limits: Limits = Limits(
-        max_keepalive_connections=50,  # Increased keepalive connections
-        max_connections=100,  # Total connection limit
-        keepalive_expiry=30.0,  # Keepalive expiry
+    pool_limits: Limits = field(
+        default_factory=lambda: Limits(
+            max_keepalive_connections=50,
+            max_connections=100,
+            keepalive_expiry=30.0,
+        )
     )
 
     # Timeout settings disabled - no timeouts
-    timeout: Timeout = Timeout(
-        connect=None,  # No connection timeout
-        read=None,  # No read timeout
-        write=None,  # No write timeout
-        pool=None,  # No pool acquisition timeout
+    timeout: Timeout = field(
+        default_factory=lambda: Timeout(
+            connect=None,
+            read=None,
+            write=None,
+            pool=None,
+        )
     )
 
     # Retry settings
@@ -59,7 +61,7 @@ class HttpClientConfig:
 class PerformanceMetrics:
     """Track HTTP client performance metrics."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.request_count = 0
         self.error_count = 0
         self.cache_hits = 0
@@ -67,7 +69,9 @@ class PerformanceMetrics:
         self.average_response_time = 0.0
         self.start_time = time.time()
 
-    def record_request(self, response_time: float, error: bool = False, cache_hit: bool = False):
+    def record_request(
+        self, response_time: float, error: bool = False, cache_hit: bool = False
+    ) -> None:
         """Record a request metric."""
         self.request_count += 1
         if error:
@@ -101,7 +105,7 @@ class PerformanceMetrics:
 class CachedResponse:
     """Cached response wrapper."""
 
-    def __init__(self, response: Response):
+    def __init__(self, response: Response) -> None:
         self.content = response.content
         self.status_code = response.status_code
         self.headers = dict(response.headers)
@@ -115,7 +119,7 @@ class CachedResponse:
 class OptimizedHttpClient:
     """High-performance HTTP client with connection pooling and optimizations."""
 
-    def __init__(self, config: HttpClientConfig = None):
+    def __init__(self, config: HttpClientConfig = None) -> None:
         self.config = config or HttpClientConfig()
         self._client: AsyncClient | None = None
         self.metrics = PerformanceMetrics()
@@ -138,7 +142,7 @@ class OptimizedHttpClient:
             logger.info("Optimized HTTP client initialized")
 
         except Exception as e:
-            logger.error(f"HTTP client initialization failed: {e}")
+            logger.exception(f"HTTP client initialization failed: {e}")
             raise
 
     async def shutdown(self) -> None:
@@ -226,7 +230,7 @@ class OptimizedHttpClient:
         except Exception as e:
             response_time = time.time() - start_time
             self.metrics.record_request(response_time, error=True)
-            logger.error(f"HTTP request failed: {method} {url} - {e}")
+            logger.exception(f"HTTP request failed: {method} {url} - {e}")
             raise
 
     async def get(self, url: str, params: dict | None = None, **kwargs) -> Response:
@@ -234,7 +238,11 @@ class OptimizedHttpClient:
         return await self.request("GET", url, params=params, **kwargs)
 
     async def post(
-        self, url: str, data: dict | None = None, json: dict | None = None, **kwargs
+        self,
+        url: str,
+        data: dict | None = None,
+        json: dict | None = None,
+        **kwargs,
     ) -> Response:
         """POST request."""
         if json and not data:
@@ -245,7 +253,11 @@ class OptimizedHttpClient:
         return await self.request("POST", url, data=data, **kwargs)
 
     async def put(
-        self, url: str, data: dict | None = None, json: dict | None = None, **kwargs
+        self,
+        url: str,
+        data: dict | None = None,
+        json: dict | None = None,
+        **kwargs,
     ) -> Response:
         """PUT request."""
         if json and not data:
@@ -299,7 +311,7 @@ class OptimizedHttpClient:
 class BatchHttpClient:
     """Batch HTTP client for concurrent requests."""
 
-    def __init__(self, client: OptimizedHttpClient):
+    def __init__(self, client: OptimizedHttpClient) -> None:
         self.client = client
 
     async def batch_request(self, requests: list[dict[str, Any]]) -> list[Response]:
@@ -361,7 +373,7 @@ def http_cached(ttl: int = 300, key_params: list[str] | None = None):
                 await cache.set(cache_key, result, ttl=ttl)
                 return result
             except Exception as e:
-                logger.error(f"HTTP function error for {func.__name__}: {e}")
+                logger.exception(f"HTTP function error for {func.__name__}: {e}")
                 raise
 
         return wrapper
@@ -369,13 +381,13 @@ def http_cached(ttl: int = 300, key_params: list[str] | None = None):
     return decorator
 
 
-async def initialize_http_client():
+async def initialize_http_client() -> None:
     """Initialize the HTTP client system."""
     await http_client.initialize()
     logger.info("HTTP client system initialized")
 
 
-async def shutdown_http_client():
+async def shutdown_http_client() -> None:
     """Shutdown the HTTP client system."""
     await http_client.shutdown()
     logger.info("HTTP client system shutdown")

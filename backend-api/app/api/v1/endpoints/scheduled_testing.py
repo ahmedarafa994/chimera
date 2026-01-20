@@ -1,5 +1,4 @@
-"""
-Scheduled Testing & Monitoring Endpoints
+"""Scheduled Testing & Monitoring Endpoints.
 
 Phase 3 enterprise feature for automation:
 - Recurring adversarial test scheduling
@@ -11,7 +10,7 @@ Phase 3 enterprise feature for automation:
 import uuid
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, validator
@@ -64,7 +63,7 @@ class ScheduleStatus(str, Enum):
 
 
 class AlertRule(BaseModel):
-    """Alert rule configuration"""
+    """Alert rule configuration."""
 
     rule_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -86,7 +85,7 @@ class AlertRule(BaseModel):
 
 
 class ScheduledTest(BaseModel):
-    """Scheduled test configuration"""
+    """Scheduled test configuration."""
 
     schedule_id: str
     name: str
@@ -126,12 +125,13 @@ class ScheduledTest(BaseModel):
     @validator("cron_expression")
     def validate_cron_expression(cls, v, values):
         if values.get("frequency") == ScheduleFrequency.CUSTOM_CRON and not v:
-            raise ValueError("cron_expression is required when frequency is custom_cron")
+            msg = "cron_expression is required when frequency is custom_cron"
+            raise ValueError(msg)
         return v
 
 
 class ScheduleExecution(BaseModel):
-    """Individual schedule execution record"""
+    """Individual schedule execution record."""
 
     execution_id: str
     schedule_id: str
@@ -158,7 +158,7 @@ class ScheduleExecution(BaseModel):
 
 
 class AlertEvent(BaseModel):
-    """Alert event record"""
+    """Alert event record."""
 
     alert_id: str
     schedule_id: str
@@ -187,7 +187,7 @@ class AlertEvent(BaseModel):
 
 
 class ScheduleCreate(BaseModel):
-    """Request to create scheduled test"""
+    """Request to create scheduled test."""
 
     name: str = Field(..., min_length=1, max_length=100)
     description: str = Field(..., min_length=1, max_length=1000)
@@ -200,7 +200,7 @@ class ScheduleCreate(BaseModel):
 
 
 class ScheduleUpdate(BaseModel):
-    """Request to update scheduled test"""
+    """Request to update scheduled test."""
 
     name: str | None = None
     description: str | None = None
@@ -213,7 +213,7 @@ class ScheduleUpdate(BaseModel):
 
 
 class ScheduleListResponse(BaseModel):
-    """Response for schedule listing"""
+    """Response for schedule listing."""
 
     schedules: list[ScheduledTest]
     total: int
@@ -224,7 +224,7 @@ class ScheduleListResponse(BaseModel):
 
 
 class ExecutionListResponse(BaseModel):
-    """Response for execution listing"""
+    """Response for execution listing."""
 
     executions: list[ScheduleExecution]
     total: int
@@ -235,7 +235,7 @@ class ExecutionListResponse(BaseModel):
 
 
 class AlertListResponse(BaseModel):
-    """Response for alert listing"""
+    """Response for alert listing."""
 
     alerts: list[AlertEvent]
     total: int
@@ -246,7 +246,7 @@ class AlertListResponse(BaseModel):
 
 
 class MonitoringDashboard(BaseModel):
-    """Monitoring dashboard data"""
+    """Monitoring dashboard data."""
 
     total_schedules: int
     active_schedules: int
@@ -273,33 +273,33 @@ alert_events: list[AlertEvent] = []
 
 
 def calculate_next_execution(
-    frequency: ScheduleFrequency, cron_expr: str | None = None
+    frequency: ScheduleFrequency,
+    cron_expr: str | None = None,
 ) -> datetime:
-    """Calculate next execution time based on frequency"""
+    """Calculate next execution time based on frequency."""
     now = datetime.utcnow()
 
     if frequency == ScheduleFrequency.HOURLY:
         return now + timedelta(hours=1)
-    elif frequency == ScheduleFrequency.DAILY:
+    if frequency == ScheduleFrequency.DAILY:
         return now + timedelta(days=1)
-    elif frequency == ScheduleFrequency.WEEKLY:
+    if frequency == ScheduleFrequency.WEEKLY:
         return now + timedelta(weeks=1)
-    elif frequency == ScheduleFrequency.MONTHLY:
+    if frequency == ScheduleFrequency.MONTHLY:
         return now + timedelta(days=30)  # Simplified monthly calculation
-    elif frequency == ScheduleFrequency.CUSTOM_CRON and cron_expr:
+    if frequency == ScheduleFrequency.CUSTOM_CRON and cron_expr:
         # Simplified cron parsing - in production would use proper cron library
         return now + timedelta(hours=1)  # Fallback
-    else:
-        return now + timedelta(hours=1)  # Default
+    return now + timedelta(hours=1)  # Default
 
 
 @router.post("/schedules", response_model=ScheduledTest, status_code=status.HTTP_201_CREATED)
 async def create_scheduled_test(
     schedule_data: ScheduleCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Create a new scheduled test"""
+    """Create a new scheduled test."""
     try:
         # Generate schedule ID
         schedule_id = (
@@ -308,7 +308,8 @@ async def create_scheduled_test(
 
         # Calculate next execution
         next_execution = calculate_next_execution(
-            schedule_data.frequency, schedule_data.cron_expression
+            schedule_data.frequency,
+            schedule_data.cron_expression,
         )
 
         # Create scheduled test
@@ -336,7 +337,7 @@ async def create_scheduled_test(
         return scheduled_test
 
     except Exception as e:
-        logger.error(f"Failed to create scheduled test: {e}")
+        logger.exception(f"Failed to create scheduled test: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create scheduled test",
@@ -345,14 +346,14 @@ async def create_scheduled_test(
 
 @router.get("/schedules", response_model=ScheduleListResponse)
 async def list_scheduled_tests(
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    workspace_id: str | None = Query(None, description="Filter by workspace"),
-    status_filter: ScheduleStatus | None = Query(None, description="Filter by status"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    workspace_id: Annotated[str | None, Query(description="Filter by workspace")] = None,
+    status_filter: Annotated[ScheduleStatus | None, Query(description="Filter by status")] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List scheduled tests"""
+    """List scheduled tests."""
     try:
         # Get accessible schedules
         accessible_schedules = []
@@ -393,7 +394,7 @@ async def list_scheduled_tests(
         )
 
     except Exception as e:
-        logger.error(f"Failed to list scheduled tests: {e}")
+        logger.exception(f"Failed to list scheduled tests: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve scheduled tests",
@@ -402,15 +403,18 @@ async def list_scheduled_tests(
 
 @router.get("/schedules/{schedule_id}", response_model=ScheduledTest)
 async def get_scheduled_test(
-    schedule_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    schedule_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Get scheduled test details"""
+    """Get scheduled test details."""
     try:
         schedule = scheduled_tests.get(schedule_id)
 
         if not schedule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Scheduled test not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Scheduled test not found",
             )
 
         # Check access permissions
@@ -420,7 +424,8 @@ async def get_scheduled_test(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this scheduled test"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this scheduled test",
             )
 
         return schedule
@@ -428,7 +433,7 @@ async def get_scheduled_test(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get scheduled test {schedule_id}: {e}")
+        logger.exception(f"Failed to get scheduled test {schedule_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve scheduled test",
@@ -439,21 +444,23 @@ async def get_scheduled_test(
 async def update_scheduled_test(
     schedule_id: str,
     update_data: ScheduleUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Update scheduled test (creator only)"""
+    """Update scheduled test (creator only)."""
     try:
         schedule = scheduled_tests.get(schedule_id)
 
         if not schedule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Scheduled test not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Scheduled test not found",
             )
 
         if schedule.created_by != current_user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Only schedule creator can update"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only schedule creator can update",
             )
 
         # Update fields
@@ -467,7 +474,8 @@ async def update_scheduled_test(
             schedule.frequency = update_data.frequency
             # Recalculate next execution
             schedule.next_execution = calculate_next_execution(
-                schedule.frequency, schedule.cron_expression
+                schedule.frequency,
+                schedule.cron_expression,
             )
         if update_data.cron_expression is not None:
             schedule.cron_expression = update_data.cron_expression
@@ -487,7 +495,7 @@ async def update_scheduled_test(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update scheduled test {schedule_id}: {e}")
+        logger.exception(f"Failed to update scheduled test {schedule_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update scheduled test",
@@ -498,16 +506,17 @@ async def update_scheduled_test(
 async def trigger_manual_execution(
     schedule_id: str,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Trigger manual execution of scheduled test"""
+    """Trigger manual execution of scheduled test."""
     try:
         schedule = scheduled_tests.get(schedule_id)
 
         if not schedule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Scheduled test not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Scheduled test not found",
             )
 
         # Check access permissions
@@ -517,7 +526,8 @@ async def trigger_manual_execution(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this scheduled test"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this scheduled test",
             )
 
         # Create execution record
@@ -545,7 +555,7 @@ async def trigger_manual_execution(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to trigger execution for schedule {schedule_id}: {e}")
+        logger.exception(f"Failed to trigger execution for schedule {schedule_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to trigger test execution",
@@ -555,18 +565,19 @@ async def trigger_manual_execution(
 @router.get("/schedules/{schedule_id}/executions", response_model=ExecutionListResponse)
 async def list_schedule_executions(
     schedule_id: str,
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List executions for a scheduled test"""
+    """List executions for a scheduled test."""
     try:
         schedule = scheduled_tests.get(schedule_id)
 
         if not schedule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Scheduled test not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Scheduled test not found",
             )
 
         # Check access permissions
@@ -576,7 +587,8 @@ async def list_schedule_executions(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this scheduled test"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this scheduled test",
             )
 
         # Get executions
@@ -602,7 +614,7 @@ async def list_schedule_executions(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to list executions for schedule {schedule_id}: {e}")
+        logger.exception(f"Failed to list executions for schedule {schedule_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve executions",
@@ -611,14 +623,14 @@ async def list_schedule_executions(
 
 @router.get("/alerts", response_model=AlertListResponse)
 async def list_alerts(
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    severity: AlertSeverity | None = Query(None, description="Filter by severity"),
-    unresolved_only: bool = Query(False, description="Show only unresolved alerts"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    severity: Annotated[AlertSeverity | None, Query(description="Filter by severity")] = None,
+    unresolved_only: Annotated[bool, Query(description="Show only unresolved alerts")] = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List alert events"""
+    """List alert events."""
     try:
         # Get accessible alerts (based on schedule access)
         accessible_alerts = []
@@ -655,17 +667,20 @@ async def list_alerts(
         )
 
     except Exception as e:
-        logger.error(f"Failed to list alerts: {e}")
+        logger.exception(f"Failed to list alerts: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve alerts"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve alerts",
         )
 
 
 @router.post("/alerts/{alert_id}/acknowledge")
 async def acknowledge_alert(
-    alert_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    alert_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Acknowledge an alert"""
+    """Acknowledge an alert."""
     try:
         # Find alert
         alert = next((a for a in alert_events if a.alert_id == alert_id), None)
@@ -677,7 +692,8 @@ async def acknowledge_alert(
         schedule = scheduled_tests.get(alert.schedule_id)
         if not schedule or (schedule.created_by != current_user.id and not schedule.workspace_id):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this alert"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this alert",
             )
 
         # Acknowledge alert
@@ -690,19 +706,20 @@ async def acknowledge_alert(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to acknowledge alert {alert_id}: {e}")
+        logger.exception(f"Failed to acknowledge alert {alert_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to acknowledge alert"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to acknowledge alert",
         )
 
 
 @router.get("/dashboard", response_model=MonitoringDashboard)
 async def get_monitoring_dashboard(
-    workspace_id: str | None = Query(None, description="Filter by workspace"),
+    workspace_id: Annotated[str | None, Query(description="Filter by workspace")] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get monitoring dashboard data"""
+    """Get monitoring dashboard data."""
     try:
         # Get accessible schedules
         accessible_schedules = []
@@ -795,7 +812,7 @@ async def get_monitoring_dashboard(
         )
 
     except Exception as e:
-        logger.error(f"Failed to get monitoring dashboard: {e}")
+        logger.exception(f"Failed to get monitoring dashboard: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve dashboard data",
@@ -804,20 +821,24 @@ async def get_monitoring_dashboard(
 
 @router.delete("/schedules/{schedule_id}")
 async def delete_scheduled_test(
-    schedule_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    schedule_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Delete scheduled test (creator only)"""
+    """Delete scheduled test (creator only)."""
     try:
         schedule = scheduled_tests.get(schedule_id)
 
         if not schedule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Scheduled test not found"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Scheduled test not found",
             )
 
         if schedule.created_by != current_user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Only schedule creator can delete"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only schedule creator can delete",
             )
 
         # Delete schedule and related data
@@ -835,7 +856,7 @@ async def delete_scheduled_test(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete scheduled test {schedule_id}: {e}")
+        logger.exception(f"Failed to delete scheduled test {schedule_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete scheduled test",
@@ -843,8 +864,8 @@ async def delete_scheduled_test(
 
 
 # Background task functions
-async def execute_scheduled_test_background(schedule_id: str, execution_id: str):
-    """Execute scheduled test in background"""
+async def execute_scheduled_test_background(schedule_id: str, execution_id: str) -> None:
+    """Execute scheduled test in background."""
     try:
         schedule = scheduled_tests.get(schedule_id)
         executions = schedule_executions.get(schedule_id, [])
@@ -881,7 +902,8 @@ async def execute_scheduled_test_background(schedule_id: str, execution_id: str)
 
         # Calculate next execution
         schedule.next_execution = calculate_next_execution(
-            schedule.frequency, schedule.cron_expression
+            schedule.frequency,
+            schedule.cron_expression,
         )
 
         # Check alert rules
@@ -890,15 +912,15 @@ async def execute_scheduled_test_background(schedule_id: str, execution_id: str)
         logger.info(f"Completed scheduled execution {execution_id} - Status: {execution.status}")
 
     except Exception as e:
-        logger.error(f"Failed to execute scheduled test {schedule_id}/{execution_id}: {e}")
+        logger.exception(f"Failed to execute scheduled test {schedule_id}/{execution_id}: {e}")
         if execution:
             execution.status = "error"
             execution.error_message = str(e)
             execution.completed_at = datetime.utcnow()
 
 
-async def check_alert_rules(schedule: ScheduledTest, execution: ScheduleExecution):
-    """Check alert rules and trigger alerts if needed"""
+async def check_alert_rules(schedule: ScheduledTest, execution: ScheduleExecution) -> None:
+    """Check alert rules and trigger alerts if needed."""
     try:
         for rule in schedule.alert_rules:
             if not rule.enabled:
@@ -957,12 +979,12 @@ async def check_alert_rules(schedule: ScheduledTest, execution: ScheduleExecutio
                         "threshold": rule.threshold_value,
                         "actual": metric_value,
                         "severity": rule.severity.value,
-                    }
+                    },
                 )
 
                 logger.warning(
-                    f"Alert triggered for schedule {schedule.schedule_id}: {alert.title}"
+                    f"Alert triggered for schedule {schedule.schedule_id}: {alert.title}",
                 )
 
     except Exception as e:
-        logger.error(f"Failed to check alert rules for schedule {schedule.schedule_id}: {e}")
+        logger.exception(f"Failed to check alert rules for schedule {schedule.schedule_id}: {e}")

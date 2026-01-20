@@ -1,5 +1,4 @@
-"""
-Middleware module for the backend API.
+"""Middleware module for the backend API.
 Provides authentication, logging, error handling, and other cross-cutting concerns using FastAPI/Starlette.
 """
 
@@ -22,11 +21,9 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 async def verify_api_key(api_key: str = Depends(api_key_header)):
-    """
-    Dependency to verify API key.
-    """
+    """Dependency to verify API key."""
     if not config.security.enable_api_key_auth:
-        return
+        return None
 
     if not api_key:
         raise HTTPException(
@@ -41,11 +38,9 @@ async def verify_api_key(api_key: str = Depends(api_key_header)):
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to log incoming requests and outgoing responses.
-    """
+    """Middleware to log incoming requests and outgoing responses."""
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self.logger = logging.getLogger("app.middleware.logging")
 
@@ -104,15 +99,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 },
                 exc_info=True,
             )
-            raise e
+            raise
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """
-    Simple in-memory rate limiter middleware.
-    """
+    """Simple in-memory rate limiter middleware."""
 
-    def __init__(self, app: ASGIApp, max_requests: int = 60, window_seconds: int = 60):
+    def __init__(self, app: ASGIApp, max_requests: int = 60, window_seconds: int = 60) -> None:
         super().__init__(app)
         self.max_requests = max_requests
         self.window_seconds = window_seconds
@@ -169,9 +162,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to add security headers.
-    """
+    """Middleware to add security headers."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
@@ -182,16 +173,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def setup_middleware(app: FastAPI):
-    """
-    Set up all middleware for the FastAPI application.
-    """
+def setup_middleware(app: FastAPI) -> None:
+    """Set up all middleware for the FastAPI application."""
     # Security Headers (Inner - executed last in request flow, first in response)
     app.add_middleware(SecurityHeadersMiddleware)
 
     # Rate Limiting
     app.add_middleware(
-        RateLimitMiddleware, max_requests=config.security.rate_limit_per_minute, window_seconds=60
+        RateLimitMiddleware,
+        max_requests=config.security.rate_limit_per_minute,
+        window_seconds=60,
     )
 
     # Request Logging (Outer - executed first)

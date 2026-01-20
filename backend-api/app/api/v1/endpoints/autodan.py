@@ -1,5 +1,4 @@
-"""
-Unified AutoDAN API Endpoints
+"""Unified AutoDAN API Endpoints.
 
 This module provides a comprehensive API for all AutoDAN variants, supporting:
 - Multiple optimization strategies (Adaptive, Genetic, Beam Search, etc.)
@@ -18,7 +17,7 @@ Schema Synchronization:
 import asyncio
 import time
 import uuid
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Cookie, Header, HTTPException, status
 from pydantic import AliasChoices, Field, field_validator
@@ -57,8 +56,7 @@ StrictModel = StrictBaseModel
 
 
 class JailbreakRequest(StrictModel):
-    """
-    Primary request model for jailbreak generation.
+    """Primary request model for jailbreak generation.
 
     Unified Schema Fields:
     - `goal`: Alias for `request` (unified naming)
@@ -121,7 +119,8 @@ class JailbreakRequest(StrictModel):
     def _strip_request(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("request/goal cannot be empty")
+            msg = "request/goal cannot be empty"
+            raise ValueError(msg)
         return stripped
 
     @field_validator("provider", "model")
@@ -155,8 +154,7 @@ class JailbreakRequest(StrictModel):
 
 
 class JailbreakResponse(StrictModel):
-    """
-    Standardized response model for all jailbreak methods.
+    """Standardized response model for all jailbreak methods.
 
     Unified Schema Fields:
     - `generated_prompt`: Alias for `jailbreak_prompt` (unified naming)
@@ -242,8 +240,7 @@ class JailbreakResponse(StrictModel):
 
 
 class BatchJailbreakRequest(StrictModel):
-    """
-    Request model for high-throughput batch processing.
+    """Request model for high-throughput batch processing.
 
     Unified Schema Fields:
     - `goals`: Alias for `requests` (unified naming)
@@ -288,16 +285,20 @@ class BatchJailbreakRequest(StrictModel):
     @classmethod
     def _validate_requests(cls, value: list[str]) -> list[str]:
         if not value:
-            raise ValueError("requests/goals must be a non-empty list")
+            msg = "requests/goals must be a non-empty list"
+            raise ValueError(msg)
         cleaned: list[str] = []
         for idx, item in enumerate(value):
             if not isinstance(item, str):
-                raise TypeError(f"requests[{idx}] must be a string")
+                msg = f"requests[{idx}] must be a string"
+                raise TypeError(msg)
             stripped = item.strip()
             if not stripped:
-                raise ValueError(f"requests[{idx}] cannot be empty")
+                msg = f"requests[{idx}] cannot be empty"
+                raise ValueError(msg)
             if len(stripped) > 50000:
-                raise ValueError(f"requests[{idx}] is too long")
+                msg = f"requests[{idx}] is too long"
+                raise ValueError(msg)
             cleaned.append(stripped)
         return cleaned
 
@@ -309,8 +310,7 @@ class BatchJailbreakRequest(StrictModel):
 
 
 class BatchJailbreakResponse(StrictModel):
-    """
-    Aggregate response for batch operations.
+    """Aggregate response for batch operations.
 
     Unified Schema Fields:
     - `total_execution_time_ms`: Alias for `total_latency_ms` (unified)
@@ -330,8 +330,7 @@ class BatchJailbreakResponse(StrictModel):
 
 
 class LifelongAttackRequest(StrictModel):
-    """
-    Request for AutoDAN-Turbo lifelong learning attack.
+    """Request for AutoDAN-Turbo lifelong learning attack.
 
     Unified Schema Fields:
     - `goal`: Alias for `request` (unified naming)
@@ -375,7 +374,8 @@ class LifelongAttackRequest(StrictModel):
     def _strip_lifelong_request(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("request/goal cannot be empty")
+            msg = "request/goal cannot be empty"
+            raise ValueError(msg)
         return stripped
 
     # Unified property aliases
@@ -413,8 +413,7 @@ def _resolve_model_context(
     x_session_id: str | None,
     chimera_cookie: str | None,
 ) -> tuple[str, str]:
-    """
-    Resolve target model/provider using hierarchy:
+    """Resolve target model/provider using hierarchy:
     explicit payload -> session -> global defaults, with validation/fallback.
     """
     session_id = x_session_id or chimera_cookie
@@ -466,11 +465,10 @@ def _resolve_model_context(
 )
 async def generate_jailbreak(
     payload: JailbreakRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
-    """
-    Primary entry point for AutoDAN jailbreak generation.
+    """Primary entry point for AutoDAN jailbreak generation.
     Supports the new Adaptive Strategy Selection mode by default.
     """
     provider, model = _resolve_model_context(
@@ -565,8 +563,8 @@ async def generate_jailbreak(
 )
 async def batch_jailbreak(
     payload: BatchJailbreakRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
 ):
     """Execute high-volume jailbreak generation in parallel."""
     start_time = time.time()
@@ -607,7 +605,7 @@ async def batch_jailbreak(
                         status="error",
                         error=str(res),
                         latency_ms=0.0,
-                    )
+                    ),
                 )
             else:
                 results.append(JailbreakResponse(**res))
@@ -637,7 +635,7 @@ async def batch_jailbreak(
                         cached=False,
                         model_used=model,
                         provider_used=provider,
-                    )
+                    ),
                 )
                 continue
 
@@ -653,7 +651,7 @@ async def batch_jailbreak(
                         model_used=res.get("model_used"),
                         provider_used=res.get("provider_used"),
                         strategies_tried=res.get("strategies_tried"),
-                    )
+                    ),
                 )
             else:
                 results.append(JailbreakResponse(**res))
@@ -698,10 +696,9 @@ async def trigger_lifelong_learning(payload: LifelongAttackRequest):
     """Trigger lifelong learning engine for strategy extraction."""
     from app.services.autodan.service import autodan_service
 
-    result = await autodan_service.run_lifelong_attack(
+    return await autodan_service.run_lifelong_attack(
         request=payload.request,
         model_name=payload.model,
         provider=payload.provider,
         detailed_scoring=payload.detailed_scoring,
     )
-    return result

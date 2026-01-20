@@ -1,6 +1,5 @@
-"""
-Input Validation and Sanitization Module
-Provides comprehensive input validation to prevent injection attacks
+"""Input Validation and Sanitization Module
+Provides comprehensive input validation to prevent injection attacks.
 """
 
 import html
@@ -19,30 +18,29 @@ logger = logging.getLogger(__name__)
 
 
 class Sanitizer:
-    """Input sanitization utilities"""
+    """Input sanitization utilities."""
 
     # Patterns for potentially complex content
     SCRIPT_PATTERN = re.compile(r"<script[^>]*>.*?</script>", re.IGNORECASE | re.DOTALL)
 
     @classmethod
     def escape_html(cls, text: str) -> str:
-        """Escape HTML entities to prevent XSS"""
+        """Escape HTML entities to prevent XSS."""
         return html.escape(text)
 
     @classmethod
     def remove_null_bytes(cls, text: str) -> str:
-        """Remove null bytes that could cause issues"""
+        """Remove null bytes that could cause issues."""
         return text.replace("\x00", "")
 
     @classmethod
     def remove_scripts(cls, text: str) -> str:
-        """Remove script tags"""
+        """Remove script tags."""
         return cls.SCRIPT_PATTERN.sub("", text)
 
     @classmethod
     def sanitize_prompt(cls, text: str, max_length: int = 50000) -> str:
-        """
-        Sanitize a prompt input.
+        """Sanitize a prompt input.
 
         Args:
             text: The input text to sanitize
@@ -50,6 +48,7 @@ class Sanitizer:
 
         Returns:
             Sanitized text
+
         """
         if not text:
             return ""
@@ -69,11 +68,10 @@ class Sanitizer:
 
     @classmethod
     def sanitize_for_display(cls, text: str) -> str:
-        """Sanitize text for safe display (HTML escaped)"""
+        """Sanitize text for safe display (HTML escaped)."""
         text = cls.remove_null_bytes(text)
         text = cls.remove_scripts(text)
-        text = cls.escape_html(text)
-        return text
+        return cls.escape_html(text)
 
 
 # =============================================================================
@@ -82,8 +80,7 @@ class Sanitizer:
 
 
 class PromptInput(BaseModel):
-    """
-    Validated prompt input with injection prevention.
+    """Validated prompt input with injection prevention.
 
     Usage:
         @app.post("/api/enhance")
@@ -93,21 +90,26 @@ class PromptInput(BaseModel):
     """
 
     prompt: str = Field(
-        ..., min_length=1, max_length=50000, description="The prompt text to process"
+        ...,
+        min_length=1,
+        max_length=50000,
+        description="The prompt text to process",
     )
 
     @validator("prompt")
     def sanitize_prompt(cls, v):
-        """Sanitize the prompt input"""
+        """Sanitize the prompt input."""
         if not v:
-            raise ValueError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise ValueError(msg)
 
         # Remove null bytes
         v = Sanitizer.remove_null_bytes(v)
 
         # Check for suspiciously long repeated patterns
         if len(set(v)) < len(v) * 0.01 and len(v) > 1000:
-            raise ValueError("Prompt contains suspicious repeated content")
+            msg = "Prompt contains suspicious repeated content"
+            raise ValueError(msg)
 
         return v.strip()
 
@@ -116,7 +118,7 @@ class PromptInput(BaseModel):
 
 
 class EnhancementRequest(BaseModel):
-    """Validated enhancement request"""
+    """Validated enhancement request."""
 
     prompt: str = Field(..., min_length=1, max_length=50000)
     tone: str | None = Field("engaging", max_length=50)
@@ -142,12 +144,13 @@ class EnhancementRequest(BaseModel):
                 "technical",
             ]
             if v.lower() not in allowed_tones:
-                raise ValueError(f"Tone must be one of: {allowed_tones}")
+                msg = f"Tone must be one of: {allowed_tones}"
+                raise ValueError(msg)
         return v.lower() if v else "engaging"
 
 
 class JailbreakRequest(BaseModel):
-    """Validated jailbreak enhancement request"""
+    """Validated jailbreak enhancement request."""
 
     prompt: str = Field(..., min_length=1, max_length=50000)
     technique_preference: str | None = Field("advanced", max_length=50)
@@ -163,7 +166,8 @@ class JailbreakRequest(BaseModel):
         if v:
             allowed = ["basic", "intermediate", "advanced", "expert"]
             if v.lower() not in allowed:
-                raise ValueError(f"Technique must be one of: {allowed}")
+                msg = f"Technique must be one of: {allowed}"
+                raise ValueError(msg)
         return v.lower() if v else "advanced"
 
     @validator("target_model")
@@ -171,12 +175,13 @@ class JailbreakRequest(BaseModel):
         if v:
             # Only allow alphanumeric, hyphens, and dots
             if not re.match(r"^[\w\-\.]+$", v):
-                raise ValueError("Invalid target model format")
+                msg = "Invalid target model format"
+                raise ValueError(msg)
         return v
 
 
 class TransformRequest(BaseModel):
-    """Validated transformation request"""
+    """Validated transformation request."""
 
     prompt: str = Field(..., min_length=1, max_length=50000)
     technique: str | None = Field(None, max_length=100)
@@ -194,12 +199,13 @@ class TransformRequest(BaseModel):
         if v:
             # Only allow safe identifier characters
             if not re.match(r"^[\w\-\.]+$", v):
-                raise ValueError("Invalid identifier format")
+                msg = "Invalid identifier format"
+                raise ValueError(msg)
         return v
 
 
 class AIModelRequest(BaseModel):
-    """Validated AI model request"""
+    """Validated AI model request."""
 
     prompt: str = Field(..., min_length=1, max_length=50000)
     model: str = Field(..., max_length=100)
@@ -214,7 +220,8 @@ class AIModelRequest(BaseModel):
     @validator("model")
     def validate_model(cls, v):
         if not re.match(r"^[\w\-\.\/]+$", v):
-            raise ValueError("Invalid model identifier format")
+            msg = "Invalid model identifier format"
+            raise ValueError(msg)
         return v
 
 
@@ -224,8 +231,7 @@ class AIModelRequest(BaseModel):
 
 
 class SanitizedResponse(BaseModel):
-    """
-    Base response model with automatic HTML escaping for display safety.
+    """Base response model with automatic HTML escaping for display safety.
 
     Use this for any response that will be rendered in a browser.
     """
@@ -236,7 +242,7 @@ class SanitizedResponse(BaseModel):
 
 
 class SafeAPIResponse(BaseModel):
-    """Safe API response with sanitized output"""
+    """Safe API response with sanitized output."""
 
     success: bool
     data: dict[str, Any] | None = None
@@ -258,13 +264,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class InputValidationMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for global input validation and sanitization.
-    """
+    """Middleware for global input validation and sanitization."""
 
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB
 
-    def __init__(self, app, excluded_paths: list[str] | None = None):
+    def __init__(self, app, excluded_paths: list[str] | None = None) -> None:
         super().__init__(app)
         self.excluded_paths = excluded_paths or []
         self.excluded_paths = [path.rstrip("/") for path in self.excluded_paths]
@@ -287,11 +291,10 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
             if "application/json" not in content_type and "multipart/form-data" not in content_type:
                 # Log but don't block - let the endpoint handle it
                 logger.warning(
-                    f"Unexpected content-type: {content_type} for {request.method} {request.url.path}"
+                    f"Unexpected content-type: {content_type} for {request.method} {request.url.path}",
                 )
 
-        response = await call_next(request)
-        return response
+        return await call_next(request)
 
 
 # =============================================================================
@@ -300,8 +303,7 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
 
 
 def get_rate_limit_key(request: Request) -> str:
-    """
-    Generate a rate limit key based on client identity.
+    """Generate a rate limit key based on client identity.
 
     Tries to use the most specific identifier:
     1. Authenticated user ID

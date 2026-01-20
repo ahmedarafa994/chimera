@@ -43,8 +43,7 @@ _config_logger = logging.getLogger(__name__)
 
 
 class AdvancedPromptService:
-    """
-    Advanced prompt generation service with AI config integration.
+    """Advanced prompt generation service with AI config integration.
 
     Integrates with AIConfigManager for:
     - Config-driven provider/model selection
@@ -61,7 +60,7 @@ class AdvancedPromptService:
         "validation": ["supports_json_mode"],
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._start_time = datetime.now()
         self._config_manager = None
         self._stats = {
@@ -104,14 +103,14 @@ class AdvancedPromptService:
         return self._config_manager
 
     def get_optimal_provider_for_task(self, task_type: str) -> str | None:
-        """
-        Get the best provider supporting capabilities needed for a task type.
+        """Get the best provider supporting capabilities needed for a task type.
 
         Args:
             task_type: Type of task (jailbreak, code_generation, red_team, validation)
 
         Returns:
             Provider name or None if no suitable provider found
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -133,30 +132,30 @@ class AdvancedPromptService:
 
                 if has_all_capabilities:
                     _config_logger.debug(
-                        f"Selected provider '{provider.provider_id}' for task type '{task_type}'"
+                        f"Selected provider '{provider.provider_id}' for task type '{task_type}'",
                     )
                     return provider.provider_id
 
             # Fall back to default provider
             default_provider = config.global_config.default_provider
             _config_logger.info(
-                f"No optimal provider found for task '{task_type}', using default: {default_provider}"
+                f"No optimal provider found for task '{task_type}', using default: {default_provider}",
             )
             return default_provider
 
         except Exception as e:
-            _config_logger.error(f"Error selecting provider for task: {e}")
+            _config_logger.exception(f"Error selecting provider for task: {e}")
             return None
 
     def get_provider_for_capability(self, capability: str) -> str | None:
-        """
-        Get the best provider supporting a specific capability.
+        """Get the best provider supporting a specific capability.
 
         Args:
             capability: Capability name (e.g., 'supports_streaming', 'supports_vision')
 
         Returns:
             Provider name or None if no provider supports the capability
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -169,14 +168,15 @@ class AdvancedPromptService:
                     return provider.provider_id
             return None
         except Exception as e:
-            _config_logger.error(f"Error finding provider for capability '{capability}': {e}")
+            _config_logger.exception(f"Error finding provider for capability '{capability}': {e}")
             return None
 
     def _validate_provider_capabilities(
-        self, provider_name: str, required_capabilities: list[str]
+        self,
+        provider_name: str,
+        required_capabilities: list[str],
     ) -> tuple[bool, list[str]]:
-        """
-        Validate that a provider supports required capabilities.
+        """Validate that a provider supports required capabilities.
 
         Args:
             provider_name: Name of the provider to validate
@@ -184,6 +184,7 @@ class AdvancedPromptService:
 
         Returns:
             Tuple of (all_supported, missing_capabilities)
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -203,13 +204,13 @@ class AdvancedPromptService:
 
             if missing:
                 _config_logger.warning(
-                    f"Provider '{provider_name}' missing capabilities: {missing}"
+                    f"Provider '{provider_name}' missing capabilities: {missing}",
                 )
 
             return len(missing) == 0, missing
 
         except Exception as e:
-            _config_logger.error(f"Error validating provider capabilities: {e}")
+            _config_logger.exception(f"Error validating provider capabilities: {e}")
             return True, []  # Assume OK on error
 
     def estimate_cost(
@@ -219,8 +220,7 @@ class AdvancedPromptService:
         estimated_input_tokens: int,
         estimated_output_tokens: int,
     ) -> float | None:
-        """
-        Estimate cost for a generation request using config pricing.
+        """Estimate cost for a generation request using config pricing.
 
         Args:
             provider: Provider name
@@ -230,6 +230,7 @@ class AdvancedPromptService:
 
         Returns:
             Estimated cost in USD or None if pricing unavailable
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -256,14 +257,15 @@ class AdvancedPromptService:
                 output_tokens=estimated_output_tokens,
             )
         except Exception as e:
-            _config_logger.error(f"Error estimating cost: {e}")
+            _config_logger.exception(f"Error estimating cost: {e}")
             return None
 
     def _get_config_driven_provider_model(
-        self, requested_provider: str | None, requested_model: str | None
+        self,
+        requested_provider: str | None,
+        requested_model: str | None,
     ) -> tuple[str, str | None]:
-        """
-        Get provider and model based on config with fallbacks.
+        """Get provider and model based on config with fallbacks.
 
         Args:
             requested_provider: Provider requested by user (may be None)
@@ -271,6 +273,7 @@ class AdvancedPromptService:
 
         Returns:
             Tuple of (provider_name, model_name)
+
         """
         config_manager = self._get_config_manager()
 
@@ -301,11 +304,12 @@ class AdvancedPromptService:
             return provider_name, model_name
 
         except Exception as e:
-            _config_logger.error(f"Error getting config-driven provider/model: {e}")
+            _config_logger.exception(f"Error getting config-driven provider/model: {e}")
             return requested_provider or "google", requested_model
 
     async def generate_jailbreak_prompt(
-        self, request: JailbreakGenerationRequest
+        self,
+        request: JailbreakGenerationRequest,
     ) -> JailbreakGenerationResponse:
         """Generate an enhanced jailbreak prompt using the specified techniques."""
         request_id = str(uuid.uuid4())
@@ -314,16 +318,18 @@ class AdvancedPromptService:
         try:
             # Get config-driven provider/model
             provider, model = self._get_config_driven_provider_model(
-                request.provider, request.model
+                request.provider,
+                request.model,
             )
 
             # Validate provider capabilities for jailbreak generation
             is_valid, missing = self._validate_provider_capabilities(
-                provider, ["supports_streaming", "supports_system_prompt"]
+                provider,
+                ["supports_streaming", "supports_system_prompt"],
             )
             if not is_valid:
                 _config_logger.warning(
-                    f"Provider '{provider}' missing capabilities {missing} for jailbreak generation"
+                    f"Provider '{provider}' missing capabilities {missing} for jailbreak generation",
                 )
 
             # Estimate cost before generation
@@ -440,16 +446,18 @@ class AdvancedPromptService:
             # Check cache (simplified key)
             # Get config-driven provider/model for code generation
             provider, model = self._get_config_driven_provider_model(
-                request.provider, None  # CodeGenerationRequest may not have model field
+                request.provider,
+                None,  # CodeGenerationRequest may not have model field
             )
 
             # Validate capabilities for code generation
             is_valid, missing = self._validate_provider_capabilities(
-                provider, ["supports_streaming"]
+                provider,
+                ["supports_streaming"],
             )
             if not is_valid:
                 _config_logger.warning(
-                    f"Provider '{provider}' missing capabilities for code generation: {missing}"
+                    f"Provider '{provider}' missing capabilities for code generation: {missing}",
                 )
 
             # Cache key with config-driven provider
@@ -476,7 +484,9 @@ class AdvancedPromptService:
 
             # Generate code with config-driven provider
             code = await generate_code_from_gemini(
-                request.prompt, request.use_thinking_mode, provider_name=provider
+                request.prompt,
+                request.use_thinking_mode,
+                provider_name=provider,
             )
             execution_time = time.time() - start_time
 
@@ -538,11 +548,12 @@ class AdvancedPromptService:
 
             # Validate provider capabilities
             is_valid, missing = self._validate_provider_capabilities(
-                provider, ["supports_streaming", "supports_system_prompt"]
+                provider,
+                ["supports_streaming", "supports_system_prompt"],
             )
             if not is_valid:
                 _config_logger.warning(
-                    f"Provider '{provider}' missing capabilities for red team: {missing}"
+                    f"Provider '{provider}' missing capabilities for red team: {missing}",
                 )
 
             # Estimate cost
@@ -555,7 +566,8 @@ class AdvancedPromptService:
 
             # Generate red team suite with config-driven provider
             suite_content = await generate_red_team_suite_from_gemini(
-                request.prompt, provider_name=provider
+                request.prompt,
+                provider_name=provider,
             )
             execution_time = time.time() - start_time
 
@@ -661,7 +673,9 @@ class AdvancedPromptService:
             common_techniques = []
             if category == "jailbreak" and stats["techniques"]:
                 sorted_techniques = sorted(
-                    stats["techniques"].items(), key=lambda x: x[1], reverse=True
+                    stats["techniques"].items(),
+                    key=lambda x: x[1],
+                    reverse=True,
                 )
                 common_techniques = [t[0] for t in sorted_techniques[:5]]
 
@@ -756,7 +770,7 @@ class AdvancedPromptService:
                 error=str(e),
             )
 
-    def _update_stats(self, category: str, success: bool, execution_time: float):
+    def _update_stats(self, category: str, success: bool, execution_time: float) -> None:
         """Update internal statistics."""
         self._stats[category]["total"] += 1
         if success:
@@ -770,7 +784,7 @@ class AdvancedPromptService:
         if len(times) > 1000:
             times.pop(0)
 
-    def _track_technique_usage(self, request: JailbreakGenerationRequest):
+    def _track_technique_usage(self, request: JailbreakGenerationRequest) -> None:
         """Track usage of specific techniques."""
         techniques = []
         if request.use_role_hijacking:
@@ -814,10 +828,10 @@ class AdvancedPromptService:
     # =========================================================================
 
     async def generate_jailbreak_prompt_stream(
-        self, request: JailbreakGenerationRequest
+        self,
+        request: JailbreakGenerationRequest,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Stream jailbreak prompt generation for real-time feedback.
+        """Stream jailbreak prompt generation for real-time feedback.
 
         This method streams the generation process, providing real-time
         updates as the jailbreak prompt is being constructed.
@@ -827,6 +841,7 @@ class AdvancedPromptService:
 
         Yields:
             StreamChunk: Individual chunks of the generated prompt.
+
         """
         str(uuid.uuid4())
         start_time = time.time()
@@ -874,16 +889,17 @@ class AdvancedPromptService:
             yield StreamChunk(text=f"\n[Error: {e!s}]", is_final=True, finish_reason="ERROR")
 
     async def generate_code_stream(
-        self, request: CodeGenerationRequest
+        self,
+        request: CodeGenerationRequest,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Stream code generation for real-time feedback.
+        """Stream code generation for real-time feedback.
 
         Args:
             request: The code generation request.
 
         Yields:
             StreamChunk: Individual chunks of the generated code.
+
         """
         str(uuid.uuid4())
         start_time = time.time()
@@ -967,10 +983,10 @@ Follow best practices for security and maintainability.
 Include appropriate error handling and comments."""
 
     async def estimate_generation_tokens(
-        self, request: JailbreakGenerationRequest
+        self,
+        request: JailbreakGenerationRequest,
     ) -> dict[str, Any]:
-        """
-        Estimate token usage for a jailbreak generation request.
+        """Estimate token usage for a jailbreak generation request.
         Uses config-driven pricing when available.
 
         Args:
@@ -978,6 +994,7 @@ Include appropriate error handling and comments."""
 
         Returns:
             Dict with token estimates and cost information.
+
         """
         # Build the prompts to estimate
         system_prompt = self._build_jailbreak_system_prompt(request)

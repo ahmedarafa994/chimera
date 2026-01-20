@@ -1,5 +1,4 @@
-"""
-OVERTHINK ICL Genetic Optimizer.
+"""OVERTHINK ICL Genetic Optimizer.
 
 This module implements In-Context Learning (ICL) optimization combined
 with genetic algorithms to evolve attack strategies. It learns from
@@ -38,8 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 class ICLGeneticOptimizer:
-    """
-    Genetic optimizer enhanced with In-Context Learning.
+    """Genetic optimizer enhanced with In-Context Learning.
 
     Combines genetic algorithms for attack evolution with ICL
     for learning from successful attack patterns.
@@ -49,13 +47,13 @@ class ICLGeneticOptimizer:
         self,
         config: ICLConfig | None = None,
         fitness_fn: Callable[[GeneticIndividual], float] | None = None,
-    ):
-        """
-        Initialize the ICL genetic optimizer.
+    ) -> None:
+        """Initialize the ICL genetic optimizer.
 
         Args:
             config: ICL configuration
             fitness_fn: Custom fitness function
+
         """
         self.config = config or ICLConfig()
         self.fitness_fn = fitness_fn or self._default_fitness
@@ -83,8 +81,7 @@ class ICLGeneticOptimizer:
         size: int | None = None,
         seed_individuals: list[GeneticIndividual] | None = None,
     ) -> list[GeneticIndividual]:
-        """
-        Initialize the population.
+        """Initialize the population.
 
         Args:
             size: Population size
@@ -92,6 +89,7 @@ class ICLGeneticOptimizer:
 
         Returns:
             Initial population
+
         """
         size = size or self.config.population_size
 
@@ -147,8 +145,7 @@ class ICLGeneticOptimizer:
         target_fitness: float | None = None,
         evaluation_fn: Callable[[GeneticIndividual], float] | None = None,
     ) -> GeneticIndividual:
-        """
-        Evolve the population.
+        """Evolve the population.
 
         Args:
             generations: Number of generations
@@ -157,6 +154,7 @@ class ICLGeneticOptimizer:
 
         Returns:
             Best individual after evolution
+
         """
         generations = generations or self.config.generations
         eval_fn = evaluation_fn or self.fitness_fn
@@ -531,8 +529,7 @@ class ICLGeneticOptimizer:
         technique: AttackTechnique | None = None,
         k: int | None = None,
     ) -> str:
-        """
-        Generate ICL prefix from examples.
+        """Generate ICL prefix from examples.
 
         Args:
             technique: Filter by technique
@@ -540,6 +537,7 @@ class ICLGeneticOptimizer:
 
         Returns:
             ICL prefix string
+
         """
         k = k or self.config.example_count
 
@@ -659,7 +657,7 @@ class ICLGeneticOptimizer:
                     params=ind_data["params"],
                     fitness=ind_data["fitness"],
                     generation=ind_data["generation"],
-                )
+                ),
             )
 
         # Load best individual
@@ -688,7 +686,7 @@ class ICLGeneticOptimizer:
                     strategy=InjectionStrategy(ex_data["strategy"]),
                     amplification=ex_data["amplification"],
                     params=ex_data["params"],
-                )
+                ),
             )
 
         # Load history and statistics
@@ -701,18 +699,17 @@ class ICLGeneticOptimizer:
         logger.info(
             f"Loaded state: gen {self._generation}, "
             f"{len(self._population)} individuals, "
-            f"{len(self._example_library)} examples"
+            f"{len(self._example_library)} examples",
         )
 
 
 class ExampleSelector:
-    """
-    Selects the best examples for ICL prompts.
+    """Selects the best examples for ICL prompts.
 
     Uses various strategies to choose relevant examples.
     """
 
-    def __init__(self, examples: list[ICLExample] | None = None):
+    def __init__(self, examples: list[ICLExample] | None = None) -> None:
         """Initialize with optional examples."""
         self._examples = examples or []
 

@@ -7,11 +7,9 @@ from .logging_utils import log
 
 
 class GrokClient:
-    """
-    Client for interacting with the Grok API.
-    """
+    """Client for interacting with the Grok API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Grok client."""
         self.api_key = os.environ.get("XAI_API_KEY")
         if not self.api_key:
@@ -23,10 +21,13 @@ class GrokClient:
         )
 
     def generate(
-        self, system_message=None, messages=None, temperature=0.7, model="grok-3-mini-beta"
+        self,
+        system_message=None,
+        messages=None,
+        temperature=0.7,
+        model="grok-3-mini-beta",
     ):
-        """
-        Generate a response using the Grok API.
+        """Generate a response using the Grok API.
 
         Args:
             system_message (str): System instructions
@@ -36,6 +37,7 @@ class GrokClient:
 
         Returns:
             dict: Response from the Grok API
+
         """
         if system_message:
             log(
@@ -100,17 +102,7 @@ if __name__ == "__main__":
     user_message = {"role": "user", "content": "What is 101*3?"}
 
     response = grok_client.generate(
-        system_message=system_prompt, messages=[user_message], temperature=0.7
+        system_message=system_prompt,
+        messages=[user_message],
+        temperature=0.7,
     )
-
-    print("Reasoning Content:")
-    print(response.get("reasoning", "<No reasoning content>"))
-
-    print("\nFinal Response:")
-    print(response["response"])
-
-    print("\nNumber of completion tokens (input):")
-    print(response["usage"].get("completion_tokens", 0))
-
-    print("\nNumber of reasoning tokens (input):")
-    print(response["usage"].get("reasoning_tokens", 0))

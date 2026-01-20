@@ -1,5 +1,4 @@
-"""
-Chimera LLM Adapter for AutoDAN Integration
+"""Chimera LLM Adapter for AutoDAN Integration.
 
 This module bridges AutoDAN's model interface requirements with Chimera's LLMService,
 providing robust error handling with exponential backoff for rate limit (429) errors.
@@ -33,7 +32,7 @@ def _secure_uniform(a, b):
 
 
 try:
-    import google.genai as genai
+    from google import genai
     from google.genai import types
 
     HAS_GENAI = True
@@ -46,8 +45,7 @@ T = TypeVar("T")
 
 
 class SharedRateLimitState:
-    """
-    Shared rate limit state across multiple ChimeraLLMAdapter instances.
+    """Shared rate limit state across multiple ChimeraLLMAdapter instances.
 
     Expected Impact: -30% rate limit hits through coordinated backoff.
     """
@@ -64,7 +62,7 @@ class SharedRateLimitState:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Prevent re-initialization
         if getattr(self, "_initialized", False):
             return
@@ -77,7 +75,7 @@ class SharedRateLimitState:
         self._initialized = True
         logger.info("SharedRateLimitState initialized")
 
-    def update_rate_limit_state(self, error: Exception, provider: str = "default"):
+    def update_rate_limit_state(self, error: Exception, provider: str = "default") -> None:
         """Update rate limit tracking state."""
         self._consecutive_failures += 1
         self._last_error_time = time.time()
@@ -97,10 +95,10 @@ class SharedRateLimitState:
         logger.debug(
             f"Rate limit state updated: provider={provider}, "
             f"failures={self._consecutive_failures}, "
-            f"cooldown_until={self._rate_limit_until}"
+            f"cooldown_until={self._rate_limit_until}",
         )
 
-    def reset_rate_limit_state(self, provider: str = "default"):
+    def reset_rate_limit_state(self, provider: str = "default") -> None:
         """Reset rate limit tracking after successful call."""
         self._consecutive_failures = 0
         self._rate_limit_until = 0
@@ -158,7 +156,7 @@ class RetryConfig:
 class RateLimitError(Exception):
     """Raised when rate limit (429) is encountered."""
 
-    def __init__(self, message: str, retry_after: float | None = None):
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
         super().__init__(message)
         self.retry_after = retry_after
 
@@ -166,14 +164,13 @@ class RateLimitError(Exception):
 class ResourceExhaustedError(Exception):
     """Raised when resource is exhausted (quota exceeded)."""
 
-    def __init__(self, message: str, resource_type: str = "unknown"):
+    def __init__(self, message: str, resource_type: str = "unknown") -> None:
         super().__init__(message)
         self.resource_type = resource_type
 
 
 def calculate_backoff_delay(attempt: int, config: RetryConfig) -> float:
-    """
-    Calculate the delay before the next retry attempt.
+    """Calculate the delay before the next retry attempt.
 
     Args:
         attempt: Current attempt numberndexed)
@@ -181,6 +178,7 @@ def calculate_backoff_delay(attempt: int, config: RetryConfig) -> float:
 
     Returns:
         Delay in seconds before next retry
+
     """
     if config.strategy == RetryStrategy.EXPONENTIAL_BACKOFF:
         delay = config.base_delay * (config.exponential_base**attempt)
@@ -202,8 +200,7 @@ def calculate_backoff_delay(attempt: int, config: RetryConfig) -> float:
 
 
 def is_retryable_error(error: Exception, config: RetryConfig) -> bool:
-    """
-    Determine if an error is retryable.
+    """Determine if an error is retryable.
 
     Args:
         error: The exception that occurred
@@ -211,6 +208,7 @@ def is_retryable_error(error: Exception, config: RetryConfig) -> bool:
 
     Returns:
         True if the error should trigger a retry
+
     """
     # Check for specific exception types
     if isinstance(error, config.retryable_exceptions):
@@ -229,14 +227,14 @@ def is_retryable_error(error: Exception, config: RetryConfig) -> bool:
 
 
 def extract_retry_after(error: Exception) -> float | None:
-    """
-    Extract retry-after value from error if available.
+    """Extract retry-after value from error if available.
 
     Args:
         error: The exception that occurred
 
     Returns:
         Retry-after value in seconds, or None if not available
+
     """
     error_str = str(error)
 
@@ -294,8 +292,7 @@ async def retry_with_backoff(
     operation_name: str = "operation",
     **kwargs,
 ) -> T:
-    """
-    Execute a function without retry logic - fails immediately on any error.
+    """Execute a function without retry logic - fails immediately on any error.
 
     Args:
         func: Async function to execute
@@ -309,12 +306,12 @@ async def retry_with_backoff(
 
     Raises:
         Exception immediately on any error (no retries)
+
     """
     try:
         if asyncio.iscoroutinefunction(func):
             return await func(*args, **kwargs)
-        else:
-            return func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     except Exception as e:
         error_str = str(e).lower()
@@ -326,15 +323,14 @@ async def retry_with_backoff(
             or "resource exhausted" in error_str
             or "quota" in error_str
         ):
-            logger.error(f"{operation_name} failed with rate limit/quota error (no retry): {e}")
+            logger.exception(f"{operation_name} failed with rate limit/quota error (no retry): {e}")
         else:
-            logger.error(f"{operation_name} failed: {e}")
+            logger.exception(f"{operation_name} failed: {e}")
         raise
 
 
 class ChimeraLLMAdapter:
-    """
-    Adapter to bridge AutoDAN's model interface requirements with Chimera's LLMService.
+    """Adapter to bridge AutoDAN's model interface requirements with Chimera's LLMService.
 
     Features:
     - Exponential backoff for rate limit errors (HTTP 429)
@@ -357,7 +353,7 @@ class ChimeraLLMAdapter:
         retry_config: RetryConfig | None = None,
         safety_enabled: bool | None = None,
         shared_rate_limit: SharedRateLimitState | None = None,
-    ):
+    ) -> None:
         self.model_name = model_name
         self.provider = provider
         self.loop = loop
@@ -388,7 +384,7 @@ class ChimeraLLMAdapter:
         if not self.provider:
             self.provider = settings.AI_PROVIDER or "deepseek"
             logger.debug(
-                f"Using default provider: {self.provider} (AI_PROVIDER={settings.AI_PROVIDER})"
+                f"Using default provider: {self.provider} (AI_PROVIDER={settings.AI_PROVIDER})",
             )
 
         self.provider = self.provider.lower()
@@ -399,13 +395,13 @@ class ChimeraLLMAdapter:
 
         valid_models = settings.get_provider_models().get(self.provider)
         logger.debug(
-            f"Valid models for {self.provider}: {valid_models}, current model: {self.model_name}"
+            f"Valid models for {self.provider}: {valid_models}, current model: {self.model_name}",
         )
         if valid_models and self.model_name not in valid_models:
             logger.warning(
                 "Unsupported model for provider; falling back to default. "
                 f"provider={self.provider}, model={self.model_name}, "
-                f"valid={valid_models}"
+                f"valid={valid_models}",
             )
             self.model_name = valid_models[0]
 
@@ -415,7 +411,7 @@ class ChimeraLLMAdapter:
         logger.info(
             f"ChimeraLLMAdapter initialized: provider={self.provider}, "
             f"model={self.model_name}, max_retries={self.retry_config.max_retries}, "
-            f"safety_enabled={self.safety_enabled}, shared_rate_limit={shared_rate_limit is not None}"
+            f"safety_enabled={self.safety_enabled}, shared_rate_limit={shared_rate_limit is not None}",
         )
 
     # ------------------------------------------------------------------
@@ -458,8 +454,9 @@ class ChimeraLLMAdapter:
         """Check if we're in a rate limit cooldown period."""
         if self._shared_state.is_in_cooldown(self.provider):
             wait_time = self._shared_state.get_cooldown_remaining(self.provider)
+            msg = f"Rate limit cooldown active for {self.provider}. Wait {wait_time:.1f}s"
             raise RateLimitError(
-                f"Rate limit cooldown active for {self.provider}. Wait {wait_time:.1f}s",
+                msg,
                 retry_after=wait_time,
             )
 
@@ -472,8 +469,7 @@ class ChimeraLLMAdapter:
         self._shared_state.reset_rate_limit_state(self.provider)
 
     def generate(self, system: str, user: str, **kwargs) -> str:
-        """
-        Generates a response using the Chimera LLM Service.
+        """Generates a response using the Chimera LLM Service.
 
         Args:
             system: System prompt
@@ -482,13 +478,13 @@ class ChimeraLLMAdapter:
 
         Returns:
             Generated text response
+
         """
         prompt = f"{system}\n\n{user}"
         return self._invoke_llm(prompt, **kwargs)
 
     def conditional_generate(self, condition: str, system: str, user: str, **kwargs) -> str:
-        """
-           Generates a response with a pre-filled condition.
+        """Generates a response with a pre-filled condition.
 
         Args:
                condition: Pre-fill/conditioning context
@@ -496,15 +492,15 @@ class ChimeraLLMAdapter:
                user: User prompt
                **kwargs: Additional generation parameters
 
-           Returns:
+        Returns:
                Generated text response
+
         """
         prompt = f"{system}\n\n{user}\n\n{condition}"
         return self._invoke_llm(prompt, **kwargs)
 
     def _invoke_llm(self, prompt: str, **kwargs) -> str:
-        """
-        Invoke the LLM with proper async handling and retry logic.
+        """Invoke the LLM with proper async handling and retry logic.
 
         Args:
             prompt: The full prompt to send
@@ -512,11 +508,11 @@ class ChimeraLLMAdapter:
 
         Returns:
             Generated text response
-        """
 
+        """
         logger.debug(
             f"Invoking LLM: provider={self.provider}, model={self.model_name}, "
-            f"loop={'active' if self.loop and not self.loop.is_closed() else 'none'}"
+            f"loop={'active' if self.loop and not self.loop.is_closed() else 'none'}",
         )
 
         # Check rate limit cooldown
@@ -551,7 +547,7 @@ class ChimeraLLMAdapter:
                     if "event loop is closed" in str(e).lower():
                         logger.warning(
                             "Main event loop closed while awaiting result; "
-                            "falling back to a new loop"
+                            "falling back to a new loop",
                         )
                         with contextlib.suppress(Exception):
                             future.cancel()
@@ -569,8 +565,7 @@ class ChimeraLLMAdapter:
         return result
 
     def _generate_sync(self, prompt: str, **kwargs) -> str:
-        """
-        Synchronous generation using provider SDK directly.
+        """Synchronous generation using provider SDK directly.
         Used when called from thread pool executors without an event loop.
         Supports DeepSeek, Gemini, and OpenAI providers.
         """
@@ -583,17 +578,21 @@ class ChimeraLLMAdapter:
         # Route to appropriate provider
         if self.provider in ("deepseek", "openai"):
             return self._generate_sync_openai_compatible(prompt, temperature, max_tokens, top_p)
-        else:
-            return self._generate_sync_gemini(prompt, temperature, max_tokens, top_p)
+        return self._generate_sync_gemini(prompt, temperature, max_tokens, top_p)
 
     def _generate_sync_openai_compatible(
-        self, prompt: str, temperature: float, max_tokens: int, top_p: float
+        self,
+        prompt: str,
+        temperature: float,
+        max_tokens: int,
+        top_p: float,
     ) -> str:
         """Synchronous generation using OpenAI-compatible API (DeepSeek, OpenAI)."""
         try:
             from openai import OpenAI
         except ImportError:
-            raise RuntimeError("openai SDK not available for sync generation")
+            msg = "openai SDK not available for sync generation"
+            raise RuntimeError(msg)
 
         # Get API key and base URL based on provider
         if self.provider == "deepseek":
@@ -607,17 +606,19 @@ class ChimeraLLMAdapter:
                 # This should never happen if __init__ ran correctly
                 logger.error(
                     "[CRITICAL] self.model_name is None/empty after __init__! "
-                    f"Falling back to settings.DEEPSEEK_MODEL={settings.DEEPSEEK_MODEL}"
+                    f"Falling back to settings.DEEPSEEK_MODEL={settings.DEEPSEEK_MODEL}",
                 )
                 model_name = settings.DEEPSEEK_MODEL or "deepseek-chat"
             if not api_key:
-                raise RuntimeError("No DeepSeek API key configured (DEEPSEEK_API_KEY)")
+                msg = "No DeepSeek API key configured (DEEPSEEK_API_KEY)"
+                raise RuntimeError(msg)
         else:  # openai
             api_key = settings.OPENAI_API_KEY
             base_url = settings.DIRECT_OPENAI_BASE_URL or "https://api.openai.com/v1"
             model_name = self.model_name or settings.OPENAI_MODEL or "gpt-4o"
             if not api_key:
-                raise RuntimeError("No OpenAI API key configured (OPENAI_API_KEY)")
+                msg = "No OpenAI API key configured (OPENAI_API_KEY)"
+                raise RuntimeError(msg)
 
         # ALWAYS log at ERROR level to ensure visibility in all log configurations
         # This is critical for debugging "Model Not Exist" errors
@@ -625,7 +626,7 @@ class ChimeraLLMAdapter:
             f"[MODEL DEBUG] API call starting: provider={self.provider}, "
             f"model_name='{model_name}', self.model_name='{self.model_name}', "
             f"settings.DEEPSEEK_MODEL='{settings.DEEPSEEK_MODEL}', "
-            f"base_url={base_url}"
+            f"base_url={base_url}",
         )
 
         # Create client
@@ -643,9 +644,8 @@ class ChimeraLLMAdapter:
 
             if response and response.choices and response.choices[0].message.content:
                 return response.choices[0].message.content.strip()
-            else:
-                logger.warning(f"Empty response from {self.provider}")
-                return ""
+            logger.warning(f"Empty response from {self.provider}")
+            return ""
 
         except Exception as e:
             error_str = str(e).lower()
@@ -653,12 +653,12 @@ class ChimeraLLMAdapter:
             # Log full details for debugging "Model Not Exist" errors
             # Using ERROR level to ensure visibility regardless of log config
             # Note: Using separate log calls to avoid multi-line truncation
-            logger.error(f"Sync {self.provider} generation failed: {e}")
-            logger.error(f"  [DEBUG] model_name used in API call: '{model_name}'")
-            logger.error(f"  [DEBUG] self.model_name: '{self.model_name}'")
-            logger.error(f"  [DEBUG] settings.DEEPSEEK_MODEL: '{settings.DEEPSEEK_MODEL}'")
-            logger.error(f"  [DEBUG] base_url: '{base_url}'")
-            logger.error(f"  [DEBUG] api_key present: {bool(api_key)}")
+            logger.exception(f"Sync {self.provider} generation failed: {e}")
+            logger.exception(f"  [DEBUG] model_name used in API call: '{model_name}'")
+            logger.exception(f"  [DEBUG] self.model_name: '{self.model_name}'")
+            logger.exception(f"  [DEBUG] settings.DEEPSEEK_MODEL: '{settings.DEEPSEEK_MODEL}'")
+            logger.exception(f"  [DEBUG] base_url: '{base_url}'")
+            logger.exception(f"  [DEBUG] api_key present: {bool(api_key)}")
 
             # Fail immediately on rate limit/quota errors - no retries
             if (
@@ -667,22 +667,29 @@ class ChimeraLLMAdapter:
                 or "resource exhausted" in error_str
                 or "quota" in error_str
             ):
-                raise RateLimitError(f"Rate limit/quota exceeded: {e}")
+                msg = f"Rate limit/quota exceeded: {e}"
+                raise RateLimitError(msg)
 
             # Other errors also fail immediately
             raise
 
     def _generate_sync_gemini(
-        self, prompt: str, temperature: float, max_tokens: int, top_p: float
+        self,
+        prompt: str,
+        temperature: float,
+        max_tokens: int,
+        top_p: float,
     ) -> str:
         """Synchronous generation using Gemini SDK."""
         if not HAS_GENAI:
-            raise RuntimeError("google-genai SDK not available for sync generation")
+            msg = "google-genai SDK not available for sync generation"
+            raise RuntimeError(msg)
 
         # Get API key
         api_key = settings.GOOGLE_API_KEY or getattr(settings, "GEMINI_API_KEY", None)
         if not api_key:
-            raise RuntimeError("No Gemini API key configured")
+            msg = "No Gemini API key configured"
+            raise RuntimeError(msg)
 
         # Create a fresh sync client for this request
         client = genai.Client(api_key=api_key)
@@ -696,10 +703,12 @@ class ChimeraLLMAdapter:
                 types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
                 types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
                 types.SafetySetting(
-                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"
+                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold="BLOCK_NONE",
                 ),
                 types.SafetySetting(
-                    category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"
+                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold="BLOCK_NONE",
                 ),
             ]
             logger.debug("Safety settings disabled for research mode")
@@ -722,11 +731,10 @@ class ChimeraLLMAdapter:
 
             if response and response.text:
                 return response.text
-            else:
-                logger.warning("Empty response from Gemini")
-                if response and hasattr(response, "prompt_feedback"):
-                    logger.warning(f"Prompt feedback: {response.prompt_feedback}")
-                return ""
+            logger.warning("Empty response from Gemini")
+            if response and hasattr(response, "prompt_feedback"):
+                logger.warning(f"Prompt feedback: {response.prompt_feedback}")
+            return ""
 
         except Exception as e:
             error_str = str(e).lower()
@@ -737,10 +745,11 @@ class ChimeraLLMAdapter:
                 or "resource exhausted" in error_str
                 or "quota" in error_str
             ):
-                logger.error(f"Rate limit/quota exceeded (no retry): {e}")
-                raise RateLimitError(f"Rate limit/quota exceeded: {e}")
+                logger.exception(f"Rate limit/quota exceeded (no retry): {e}")
+                msg = f"Rate limit/quota exceeded: {e}"
+                raise RateLimitError(msg)
 
-            logger.error(f"Sync Gemini generation failed: {e}")
+            logger.exception(f"Sync Gemini generation failed: {e}")
             raise
 
     async def generate_async(self, system: str, user: str, **kwargs) -> str:
@@ -749,15 +758,18 @@ class ChimeraLLMAdapter:
         return await self._generate_with_retry(prompt, **kwargs)
 
     async def conditional_generate_async(
-        self, condition: str, system: str, user: str, **kwargs
+        self,
+        condition: str,
+        system: str,
+        user: str,
+        **kwargs,
     ) -> str:
         """Async version of conditional_generate."""
         prompt = f"{system}\n\n{user}\n\n{condition}"
         return await self._generate_with_retry(prompt, **kwargs)
 
     async def _generate_with_retry(self, prompt: str, **kwargs) -> str:
-        """
-        Generate with automatic retry and eonential backoff.
+        """Generate with automatic retry and eonential backoff.
 
         Args:
             prompt: The prompt to send
@@ -765,6 +777,7 @@ class ChimeraLLMAdapter:
 
         Returns:
             Generated text response
+
         """
         return await retry_with_backoff(
             self._generate_async,
@@ -775,8 +788,7 @@ class ChimeraLLMAdapter:
         )
 
     async def _generate_async(self, prompt: str, **kwargs) -> str:
-        """
-        Core async generation method.
+        """Core async generation method.
 
         Args:
             prompt: The prompt to send
@@ -784,6 +796,7 @@ class ChimeraLLMAdapter:
 
         Returns:
             Generated text response
+
         """
         try:
             # Map kwargs to generation config
@@ -798,7 +811,7 @@ class ChimeraLLMAdapter:
 
             logger.debug(
                 f"ChimeraLLMAdapter gtemp={temperature}, "
-                f"max_tokens={max_tokens} (raw={raw_max_tokens}), top_p={top_p}"
+                f"max_tokens={max_tokens} (raw={raw_max_tokens}), top_p={top_p}",
             )
 
             response = await llm_service.generate(
@@ -817,27 +830,33 @@ class ChimeraLLMAdapter:
 
             # Classify the error for better handling
             if "429" in error_str or "rate limit" in error_str:
-                raise RateLimitError(f"Rate limit exceeded: {e}")
-            elif "resource exhausted" in error_str or "quota" in error_str:
-                raise ResourceExhaustedError(f"Resource exhausted: {e}")
+                msg = f"Rate limit exceeded: {e}"
+                raise RateLimitError(msg)
+            if "resource exhausted" in error_str or "quota" in error_str:
+                msg = f"Resource exhausted: {e}"
+                raise ResourceExhaustedError(msg)
 
-            logger.error(f"Error invoking LLM Service: {e}")
+            logger.exception(f"Error invoking LLM Service: {e}")
             raise
 
 
 class AutoDANModelInterface:
-    """
-    High-level interface for AutoDAN framework integration.
+    """High-level interface for AutoDAN framework integration.
 
     This class provides a clean interface that matches AutoDAN's expected
     model interface while leveraging Chimrastructure.
     """
 
     def __init__(
-        self, provider: str = "gemini", model: str | None = None, retry_config: RetryConfig = None
-    ):
+        self,
+        provider: str = "gemini",
+        model: str | None = None,
+        retry_config: RetryConfig = None,
+    ) -> None:
         self.adapter = ChimeraLLMAdapter(
-            model_name=model, provider=provider, retry_config=retry_config
+            model_name=model,
+            provider=provider,
+            retry_config=retry_config,
         )
         self._call_count = 0
         self._error_count = 0
@@ -896,8 +915,7 @@ class AutoDANModelInterface:
 
 
 class BatchingChimeraAdapter(ChimeraLLMAdapter):
-    """
-    Batching-enabled Chimera LLM Adapter.
+    """Batching-enabled Chimera LLM Adapter.
 
     Queues requests and processes them in batches for improved throughput
     and reduced API costs. Uses a semaphore to limit concurrent API requests
@@ -913,15 +931,15 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
         batch_timeout: float = 0.5,
         max_concurrent_requests: int = 3,
         **kwargs,
-    ):
-        """
-        Initialize batching adapter.
+    ) -> None:
+        """Initialize batching adapter.
 
         Args:
             batch_size: Maximum requests per batch
             batch_timeout: Maximum wait time before processing partial batch
             max_concurrent_requests: Maximum number of concurrent API requests (default: 3)
             *args, **kwargs: Passed to ChimeraLLMAdapter
+
         """
         super().__init__(*args, **kwargs)
         self._batch_queue: asyncio.Queue = None
@@ -934,17 +952,16 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
 
         logger.info(
             f"BatchingChimeraAdapter initialized: batch_size={batch_size}, "
-            f"timeout={batch_timeout}s, max_concurrent_requests={max_concurrent_requests}"
+            f"timeout={batch_timeout}s, max_concurrent_requests={max_concurrent_requests}",
         )
 
-    def _ensure_queue(self):
+    def _ensure_queue(self) -> None:
         """Ensure the batch queue is initialized."""
         if self._batch_queue is None:
             self._batch_queue = asyncio.Queue()
 
     async def generate_batched(self, system: str, user: str, **kwargs) -> str:
-        """
-        Queue request for batched processing.
+        """Queue request for batched processing.
 
         Args:
             system: System prompt
@@ -953,6 +970,7 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
 
         Returns:
             Generated text response
+
         """
         self._ensure_queue()
 
@@ -970,7 +988,7 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
         # Wait for result
         return await future
 
-    async def _process_batch(self):
+    async def _process_batch(self) -> None:
         """Process queued requests in batches."""
         while True:
             batch = []
@@ -980,7 +998,8 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
                 while len(batch) < self._batch_size:
                     try:
                         item = await asyncio.wait_for(
-                            self._batch_queue.get(), timeout=self._batch_timeout
+                            self._batch_queue.get(),
+                            timeout=self._batch_timeout,
                         )
                         batch.append(item)
                     except TimeoutError:
@@ -996,7 +1015,7 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
 
                 logger.debug(
                     f"Processing batch of {len(batch)} requests "
-                    f"(max_concurrent={self._max_concurrent_requests})"
+                    f"(max_concurrent={self._max_concurrent_requests})",
                 )
 
                 # Execute requests with rate limiting via semaphore
@@ -1015,7 +1034,7 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
                             future.set_result(result)
 
             except Exception as e:
-                logger.error(f"Batch processing error: {e}")
+                logger.exception(f"Batch processing error: {e}")
                 # Set exception on all pending futures
                 for item in batch:
                     future = item[2]
@@ -1027,8 +1046,7 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
                 return
 
     async def _rate_limited_generate(self, prompt: str, **kwargs) -> str:
-        """
-        Generate with rate limiting via semaphore.
+        """Generate with rate limiting via semaphore.
 
         Acquires the concurrency semaphore before making the API call to ensure
         we don't exceed max_concurrent_requests simultaneous API calls.
@@ -1039,13 +1057,13 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
 
         Returns:
             Generated text response
+
         """
         async with self._concurrency_semaphore:
             return await self._generate_with_retry(prompt, **kwargs)
 
     async def generate_batch(self, requests: list[tuple[str, str]], **kwargs) -> list[str]:
-        """
-        Generate responses for multiple requests with rate limiting.
+        """Generate responses for multiple requests with rate limiting.
 
         Uses a semaphore to limit concurrent API calls and prevent rate limiting.
 
@@ -1055,6 +1073,7 @@ class BatchingChimeraAdapter(ChimeraLLMAdapter):
 
         Returns:
             List of generated responses
+
         """
         tasks = [
             self._rate_limited_generate(f"{system}\n\n{user}", **kwargs)

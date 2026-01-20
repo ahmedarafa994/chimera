@@ -1,5 +1,4 @@
-"""
-Anthropic Provider Plugin - Implementation for Claude models.
+"""Anthropic Provider Plugin - Implementation for Claude models.
 
 This module implements the Anthropic provider plugin, supporting Claude 3.5,
 Claude 3, and other Anthropic models through the unified provider interface.
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicClient(BaseLLMClient):
-    """
-    Anthropic-specific LLM client implementation.
+    """Anthropic-specific LLM client implementation.
 
     Wraps the Anthropic Python SDK to implement the BaseLLMClient interface.
     """
@@ -32,9 +30,8 @@ class AnthropicClient(BaseLLMClient):
         api_key: str,
         base_url: str | None = None,
         **kwargs: Any,
-    ):
-        """
-        Initialize Anthropic client.
+    ) -> None:
+        """Initialize Anthropic client.
 
         Args:
             provider_id: Provider identifier ('anthropic')
@@ -42,6 +39,7 @@ class AnthropicClient(BaseLLMClient):
             api_key: Anthropic API key
             base_url: Optional custom base URL
             **kwargs: Additional Anthropic client configuration
+
         """
         self._provider_id = provider_id
         self._model_id = model_id
@@ -72,8 +70,7 @@ class AnthropicClient(BaseLLMClient):
         system_instruction: str | None = None,
         **kwargs: Any,
     ) -> PromptResponse:
-        """
-        Generate text completion using Anthropic API.
+        """Generate text completion using Anthropic API.
 
         Args:
             prompt: The input prompt text
@@ -84,6 +81,7 @@ class AnthropicClient(BaseLLMClient):
 
         Returns:
             PromptResponse with generated text and metadata
+
         """
         # Prepare parameters
         params = {
@@ -120,7 +118,7 @@ class AnthropicClient(BaseLLMClient):
             )
 
         except Exception as e:
-            logger.error(f"Anthropic generation failed: {e}")
+            logger.exception(f"Anthropic generation failed: {e}")
             raise
 
     async def stream(
@@ -131,8 +129,7 @@ class AnthropicClient(BaseLLMClient):
         system_instruction: str | None = None,
         **kwargs: Any,
     ):
-        """
-        Stream text completion from Anthropic API.
+        """Stream text completion from Anthropic API.
 
         Args:
             prompt: The input prompt text
@@ -143,6 +140,7 @@ class AnthropicClient(BaseLLMClient):
 
         Yields:
             Text chunks as they are generated
+
         """
         # Prepare parameters
         params = {
@@ -164,7 +162,7 @@ class AnthropicClient(BaseLLMClient):
                     yield text
 
         except Exception as e:
-            logger.error(f"Anthropic streaming failed: {e}")
+            logger.exception(f"Anthropic streaming failed: {e}")
             raise
 
     def get_capabilities(self) -> set[Capability]:
@@ -189,13 +187,12 @@ class AnthropicClient(BaseLLMClient):
 
 
 class AnthropicPlugin(BaseProviderPlugin):
-    """
-    Anthropic provider plugin implementation.
+    """Anthropic provider plugin implementation.
 
     Provides factory methods and metadata for Claude models.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Anthropic plugin."""
         super().__init__(
             provider_id="anthropic",
@@ -219,7 +216,7 @@ class AnthropicPlugin(BaseProviderPlugin):
 
     def _build_model_list(self) -> list[Model]:
         """Build list of available Anthropic models (January 2026)."""
-        models = [
+        return [
             Model(
                 id="claude-opus-4.5",
                 name="Claude Opus 4.5 (Flagship)",
@@ -282,11 +279,8 @@ class AnthropicPlugin(BaseProviderPlugin):
             ),
         ]
 
-        return models
-
     def create_client(self, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create an Anthropic client for the specified model.
+        """Create an Anthropic client for the specified model.
 
         Args:
             model_id: The model identifier
@@ -297,21 +291,28 @@ class AnthropicPlugin(BaseProviderPlugin):
 
         Raises:
             ValueError: If model is not available or API key missing
+
         """
         # Validate model
         if not self.validate_model_id(model_id):
             available = [m.id for m in self.get_available_models()]
-            raise ValueError(
+            msg = (
                 f"Model '{model_id}' not available from Anthropic. "
                 f"Available models: {', '.join(available)}"
+            )
+            raise ValueError(
+                msg,
             )
 
         # Get API key
         api_key = self._get_api_key()
         if not api_key:
-            raise ValueError(
+            msg = (
                 f"Anthropic API key not configured. "
                 f"Set {self._api_key_env_var} environment variable."
+            )
+            raise ValueError(
+                msg,
             )
 
         # Create client

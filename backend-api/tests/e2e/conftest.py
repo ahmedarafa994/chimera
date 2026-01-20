@@ -1,6 +1,5 @@
-"""
-E2E Test Configuration and Fixtures
-Provides fixtures for end-to-end testing with Playwright
+"""E2E Test Configuration and Fixtures
+Provides fixtures for end-to-end testing with Playwright.
 """
 
 import pytest
@@ -10,7 +9,7 @@ from playwright.sync_api import sync_playwright
 
 @pytest.fixture(scope="session")
 def browser_context():
-    """Create a browser context for E2E tests"""
+    """Create a browser context for E2E tests."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -24,21 +23,21 @@ def browser_context():
 
 @pytest.fixture
 def page(browser_context):
-    """Create a new page for each test"""
+    """Create a new page for each test."""
     page = browser_context.new_page()
     yield page
     page.close()
 
 
 @pytest.fixture(scope="session")
-def api_base_url():
-    """Base URL for API testing"""
+def api_base_url() -> str:
+    """Base URL for API testing."""
     return "http://localhost:8001"
 
 
 @pytest.fixture(scope="session")
-def frontend_base_url():
-    """Base URL for frontend testing"""
+def frontend_base_url() -> str:
+    """Base URL for frontend testing."""
     return "http://localhost:3001"
 
 
@@ -53,7 +52,7 @@ def api_available(api_base_url) -> bool:
 
 
 @pytest.fixture(autouse=True)
-def require_api(api_available):
+def require_api(api_available) -> None:
     """Skip E2E API tests when the backend is not running."""
     if not api_available:
         pytest.skip("API is not available")

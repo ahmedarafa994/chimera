@@ -1,5 +1,5 @@
 class Scorer:
-    def __init__(self, model, x_model=None):
+    def __init__(self, model, x_model=None) -> None:
         self.model = model
         self.x_model = x_model
 

@@ -1,5 +1,4 @@
-"""
-DeepTeam Streaming Callbacks
+"""DeepTeam Streaming Callbacks.
 
 Provides streaming callbacks for real-time attack results and vulnerability discoveries.
 Supports WebSocket, SSE, and callback-based streaming.
@@ -92,7 +91,6 @@ class StreamCallback(ABC):
     @abstractmethod
     async def on_event(self, event: StreamEvent) -> None:
         """Handle a streaming event."""
-        pass
 
     async def on_session_start(self, session_id: str, config: dict) -> None:
         """Called when a session starts."""
@@ -101,7 +99,7 @@ class StreamCallback(ABC):
                 type=StreamEventType.SESSION_START,
                 session_id=session_id,
                 data={"config": config},
-            )
+            ),
         )
 
     async def on_session_end(
@@ -116,7 +114,7 @@ class StreamCallback(ABC):
                 type=StreamEventType.SESSION_END,
                 session_id=session_id,
                 data={"results": results, "duration_ms": duration_ms},
-            )
+            ),
         )
 
     async def on_attack_start(
@@ -132,7 +130,7 @@ class StreamCallback(ABC):
                 session_id=session_id,
                 attack_id=attack_id,
                 data={"attack_type": attack_type},
-            )
+            ),
         )
 
     async def on_attack_complete(
@@ -149,7 +147,7 @@ class StreamCallback(ABC):
                 session_id=session_id,
                 attack_id=attack_id,
                 data={"success": success, "results": results},
-            )
+            ),
         )
 
     async def on_vulnerability_discovered(
@@ -169,7 +167,7 @@ class StreamCallback(ABC):
                     "severity": severity,
                     "details": details,
                 },
-            )
+            ),
         )
 
     async def on_prompt_generated(
@@ -186,7 +184,7 @@ class StreamCallback(ABC):
                 session_id=session_id,
                 prompt_id=prompt_id,
                 data={"prompt": prompt, "strategy": strategy},
-            )
+            ),
         )
 
     async def on_prompt_tested(
@@ -204,7 +202,7 @@ class StreamCallback(ABC):
                 session_id=session_id,
                 prompt_id=prompt_id,
                 data={"success": success, "response": response},
-            )
+            ),
         )
 
     async def on_progress(
@@ -224,7 +222,7 @@ class StreamCallback(ABC):
                 current_step=current_step,
                 total_steps=total_steps,
                 data={"message": message} if message else {},
-            )
+            ),
         )
 
     async def on_error(
@@ -239,14 +237,14 @@ class StreamCallback(ABC):
                 type=StreamEventType.SESSION_ERROR,
                 session_id=session_id,
                 data={"error": error, "details": details or {}},
-            )
+            ),
         )
 
 
 class LoggingStreamCallback(StreamCallback):
     """Stream callback that logs all events."""
 
-    def __init__(self, log_level: int = logging.INFO):
+    def __init__(self, log_level: int = logging.INFO) -> None:
         self.log_level = log_level
         self.events: list[StreamEvent] = []
 
@@ -280,7 +278,7 @@ class CallbackStreamCallback(StreamCallback):
         self,
         callback: Callable[[StreamEvent], None],
         async_callback: Callable[[StreamEvent], Any] | None = None,
-    ):
+    ) -> None:
         self.callback = callback
         self.async_callback = async_callback
 
@@ -295,7 +293,7 @@ class CallbackStreamCallback(StreamCallback):
 class QueueStreamCallback(StreamCallback):
     """Stream callback that puts events into an async queue."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         import asyncio
 
         self.queue: asyncio.Queue[StreamEvent] = asyncio.Queue()
@@ -330,12 +328,12 @@ class QueueStreamCallback(StreamCallback):
 class WebSocketStreamCallback(StreamCallback):
     """Stream callback that sends events over WebSocket."""
 
-    def __init__(self, websocket: Any):
-        """
-        Initialize with a WebSocket connection.
+    def __init__(self, websocket: Any) -> None:
+        """Initialize with a WebSocket connection.
 
         Args:
             websocket: A WebSocket connection (FastAPI WebSocket or similar)
+
         """
         self.websocket = websocket
         self._closed = False
@@ -348,7 +346,7 @@ class WebSocketStreamCallback(StreamCallback):
         try:
             await self.websocket.send_json(event.model_dump())
         except Exception as e:
-            logger.error(f"Failed to send WebSocket event: {e}")
+            logger.exception(f"Failed to send WebSocket event: {e}")
             self._closed = True
 
     async def close(self) -> None:
@@ -361,7 +359,7 @@ class WebSocketStreamCallback(StreamCallback):
 class SSEStreamCallback(StreamCallback):
     """Stream callback for Server-Sent Events."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.events: list[str] = []
         self._closed = False
 
@@ -386,7 +384,7 @@ class SSEStreamCallback(StreamCallback):
 class MultiStreamCallback(StreamCallback):
     """Stream callback that forwards events to multiple callbacks."""
 
-    def __init__(self, callbacks: list[StreamCallback] | None = None):
+    def __init__(self, callbacks: list[StreamCallback] | None = None) -> None:
         self.callbacks: list[StreamCallback] = callbacks or []
 
     def add_callback(self, callback: StreamCallback) -> None:
@@ -403,13 +401,13 @@ class MultiStreamCallback(StreamCallback):
             try:
                 await callback.on_event(event)
             except Exception as e:
-                logger.error(f"Callback error: {e}")
+                logger.exception(f"Callback error: {e}")
 
 
 class VulnerabilityTracker:
     """Tracks discovered vulnerabilities during a session."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.vulnerabilities: list[dict] = []
         self.severity_counts: dict[str, int] = {
             "critical": 0,
@@ -432,7 +430,7 @@ class VulnerabilityTracker:
                 "severity": severity,
                 "details": details,
                 "discovered_at": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         severity_lower = severity.lower()
@@ -459,7 +457,7 @@ class VulnerabilityTracker:
 class AttackResultTracker:
     """Tracks attack results during a session."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.attacks: list[dict] = []
         self.successful_attacks: int = 0
         self.failed_attacks: int = 0
@@ -482,7 +480,7 @@ class AttackResultTracker:
                 "blocked": blocked,
                 "details": details or {},
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
         if success:
@@ -512,7 +510,7 @@ class StreamingSession:
         self,
         session_id: str | None = None,
         callback: StreamCallback | None = None,
-    ):
+    ) -> None:
         self.session_id = session_id or str(uuid4())
         self.callback = callback or LoggingStreamCallback()
         self.vulnerability_tracker = VulnerabilityTracker()

@@ -1,5 +1,4 @@
-"""
-Streaming Pipeline Service
+"""Streaming Pipeline Service.
 
 This module orchestrates the streaming data pipeline, coordinating the producer,
 consumer, and real-time metrics components.
@@ -48,8 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 class StreamingPipeline:
-    """
-    Orchestrates the streaming data pipeline
+    """Orchestrates the streaming data pipeline.
 
     Features:
     - Automatic event publishing to Redis Streams
@@ -85,17 +83,18 @@ class StreamingPipeline:
 
         await pipeline.stop()
         await pipeline.close()
+
     """
 
     def __init__(
         self,
         redis_url: str | None = None,
-    ):
-        """
-        Initialize the streaming pipeline
+    ) -> None:
+        """Initialize the streaming pipeline.
 
         Args:
             redis_url: Redis connection URL
+
         """
         self.redis_url = redis_url
 
@@ -123,11 +122,11 @@ class StreamingPipeline:
         self._alerts_handler: Callable | None = None
 
     async def initialize(self) -> None:
-        """
-        Initialize all pipeline components
+        """Initialize all pipeline components.
 
         Raises:
             Exception: If initialization fails
+
         """
         try:
             logger.info("Initializing streaming pipeline...")
@@ -169,7 +168,7 @@ class StreamingPipeline:
             logger.info("Streaming pipeline initialized successfully")
 
         except Exception as e:
-            logger.error(f"Failed to initialize streaming pipeline: {e}")
+            logger.exception(f"Failed to initialize streaming pipeline: {e}")
             self._is_healthy = False
             raise
 
@@ -179,16 +178,17 @@ class StreamingPipeline:
         process_analytics: bool = False,
         process_alerts: bool = False,
     ) -> None:
-        """
-        Start background consumer tasks
+        """Start background consumer tasks.
 
         Args:
             process_metrics: Start metrics consumer (default: True)
             process_analytics: Start analytics consumer (default: False)
             process_alerts: Start alerts consumer (default: False)
+
         """
         if not self._is_initialized:
-            raise RuntimeError("Pipeline not initialized")
+            msg = "Pipeline not initialized"
+            raise RuntimeError(msg)
 
         if self._is_running:
             logger.warning("Pipeline already running")
@@ -224,8 +224,7 @@ class StreamingPipeline:
         logger.info(f"Started {len(self._consumer_tasks)} consumer tasks")
 
     async def stop(self) -> None:
-        """
-        Stop background consumer tasks gracefully
+        """Stop background consumer tasks gracefully.
 
         Waits for pending messages to be processed
         """
@@ -258,7 +257,7 @@ class StreamingPipeline:
         logger.info("Streaming pipeline stopped")
 
     async def close(self) -> None:
-        """Close all pipeline components and cleanup resources"""
+        """Close all pipeline components and cleanup resources."""
         await self.stop()
 
         if self._producer:
@@ -277,14 +276,14 @@ class StreamingPipeline:
         logger.info("Streaming pipeline closed")
 
     async def publish_llm_event(self, event_data: dict[str, Any]) -> bool:
-        """
-        Publish LLM interaction event to stream
+        """Publish LLM interaction event to stream.
 
         Args:
             event_data: Event data dictionary
 
         Returns:
             True if published successfully
+
         """
         if not self._producer:
             return False
@@ -304,7 +303,7 @@ class StreamingPipeline:
         return result is not None
 
     async def publish_transformation_event(self, event_data: dict[str, Any]) -> bool:
-        """Publish transformation event to stream"""
+        """Publish transformation event to stream."""
         if not self._producer:
             return False
 
@@ -321,7 +320,7 @@ class StreamingPipeline:
         return result is not None
 
     async def publish_jailbreak_event(self, event_data: dict[str, Any]) -> bool:
-        """Publish jailbreak experiment event to stream"""
+        """Publish jailbreak experiment event to stream."""
         if not self._producer:
             return False
 
@@ -338,7 +337,7 @@ class StreamingPipeline:
         return result is not None
 
     async def _run_metrics_consumer(self) -> None:
-        """Run the metrics consumer (aggregates TimeSeries)"""
+        """Run the metrics consumer (aggregates TimeSeries)."""
         logger.info("Metrics consumer started")
 
         try:
@@ -368,7 +367,7 @@ class StreamingPipeline:
                         acknowledgements.append((entry.stream_key, entry.entry_id))
 
                     except Exception as e:
-                        logger.error(f"Error processing metric entry: {e}")
+                        logger.exception(f"Error processing metric entry: {e}")
 
                 # Acknowledge batch
                 if acknowledgements:
@@ -377,10 +376,10 @@ class StreamingPipeline:
         except asyncio.CancelledError:
             logger.info("Metrics consumer cancelled")
         except Exception as e:
-            logger.error(f"Metrics consumer error: {e}")
+            logger.exception(f"Metrics consumer error: {e}")
 
     async def _run_analytics_consumer(self) -> None:
-        """Run the analytics consumer (performs enrichment)"""
+        """Run the analytics consumer (performs enrichment)."""
         logger.info("Analytics consumer started")
 
         try:
@@ -399,7 +398,7 @@ class StreamingPipeline:
                         acknowledgements.append((entry.stream_key, entry.entry_id))
 
                     except Exception as e:
-                        logger.error(f"Error processing analytics entry: {e}")
+                        logger.exception(f"Error processing analytics entry: {e}")
 
                 if acknowledgements:
                     await self._analytics_consumer.acknowledge_batch(acknowledgements)
@@ -407,10 +406,10 @@ class StreamingPipeline:
         except asyncio.CancelledError:
             logger.info("Analytics consumer cancelled")
         except Exception as e:
-            logger.error(f"Analytics consumer error: {e}")
+            logger.exception(f"Analytics consumer error: {e}")
 
     async def _run_alerts_consumer(self) -> None:
-        """Run the alerts consumer (monitors anomalies)"""
+        """Run the alerts consumer (monitors anomalies)."""
         logger.info("Alerts consumer started")
 
         try:
@@ -427,14 +426,14 @@ class StreamingPipeline:
                         if latency_ms > 10000:  # 10 second threshold
                             logger.warning(
                                 f"High latency detected: {latency_ms}ms "
-                                f"for provider={data.get('provider')}"
+                                f"for provider={data.get('provider')}",
                             )
 
                         # Example alert: error spike
                         if data.get("status") == "error":
                             logger.warning(
                                 f"Error detected for provider={data.get('provider')}, "
-                                f"model={data.get('model')}"
+                                f"model={data.get('model')}",
                             )
 
                         # Call custom handler if set
@@ -444,7 +443,7 @@ class StreamingPipeline:
                         acknowledgements.append((entry.stream_key, entry.entry_id))
 
                     except Exception as e:
-                        logger.error(f"Error processing alerts entry: {e}")
+                        logger.exception(f"Error processing alerts entry: {e}")
 
                 if acknowledgements:
                     await self._alerts_consumer.acknowledge_batch(acknowledgements)
@@ -452,26 +451,26 @@ class StreamingPipeline:
         except asyncio.CancelledError:
             logger.info("Alerts consumer cancelled")
         except Exception as e:
-            logger.error(f"Alerts consumer error: {e}")
+            logger.exception(f"Alerts consumer error: {e}")
 
     def set_metrics_handler(self, handler: Callable) -> None:
-        """Set custom handler for metrics processing"""
+        """Set custom handler for metrics processing."""
         self._metrics_handler = handler
 
     def set_analytics_handler(self, handler: Callable) -> None:
-        """Set custom handler for analytics processing"""
+        """Set custom handler for analytics processing."""
         self._analytics_handler = handler
 
     def set_alerts_handler(self, handler: Callable) -> None:
-        """Set custom handler for alerts processing"""
+        """Set custom handler for alerts processing."""
         self._alerts_handler = handler
 
     async def health_check(self) -> dict[str, Any]:
-        """
-        Perform health check on all components
+        """Perform health check on all components.
 
         Returns:
             Dictionary with health status
+
         """
         health = {
             "pipeline": "running" if self._is_running else "stopped",
@@ -502,7 +501,7 @@ class StreamingPipeline:
             if consumer:
                 try:
                     stats = await consumer.get_group_info(
-                        consumer.stream_keys[0] if consumer.stream_keys else "chimera:llm_events"
+                        consumer.stream_keys[0] if consumer.stream_keys else "chimera:llm_events",
                     )
                     health["components"][name] = bool(stats)
                 except Exception:
@@ -519,8 +518,7 @@ class StreamingPipeline:
         aggregation_type: AggregationType = AggregationType.AVG,
         bucket_size_ms: int = 60000,
     ) -> dict[str, Any]:
-        """
-        Query real-time metrics
+        """Query real-time metrics.
 
         Args:
             provider: LLM provider
@@ -531,6 +529,7 @@ class StreamingPipeline:
 
         Returns:
             Dictionary with metrics data
+
         """
         if not self._metrics:
             return {}
@@ -546,11 +545,11 @@ class StreamingPipeline:
         return result.to_dict()
 
     async def get_pipeline_stats(self) -> dict[str, Any]:
-        """
-        Get pipeline statistics
+        """Get pipeline statistics.
 
         Returns:
             Dictionary with pipeline stats
+
         """
         stats = {
             "running": self._is_running,
@@ -583,7 +582,7 @@ _pipeline: StreamingPipeline | None = None
 
 
 async def get_pipeline() -> StreamingPipeline:
-    """Get or create singleton pipeline instance"""
+    """Get or create singleton pipeline instance."""
     global _pipeline
 
     if _pipeline is None:
@@ -594,7 +593,7 @@ async def get_pipeline() -> StreamingPipeline:
 
 
 async def close_pipeline() -> None:
-    """Close singleton pipeline instance"""
+    """Close singleton pipeline instance."""
     global _pipeline
 
     if _pipeline:

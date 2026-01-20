@@ -1,9 +1,8 @@
-"""
-Intent-Aware Jailbreak Generation API Endpoint
+"""Intent-Aware Jailbreak Generation API Endpoint
 Provides deep intent understanding and comprehensive technique application.
 """
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -22,30 +21,34 @@ security = HTTPBearer(auto_error=False)  # Don't auto-error, we'll handle it man
 
 # Request/Response Models
 class IntentAwareGenerationRequest(BaseModel):
-    """Request for intent-aware jailbreak generation"""
+    """Request for intent-aware jailbreak generation."""
 
     core_request: str = Field(..., description="The user's core request/intent to achieve")
     technique_suite: str | None = Field(
-        default=None, description="Optional specific technique suite to use (from dropdown)"
+        default=None,
+        description="Optional specific technique suite to use (from dropdown)",
     )
     potency_level: int = Field(default=7, ge=1, le=10, description="Potency level (1-10)")
     apply_all_techniques: bool = Field(
-        default=False, description="Apply all available dropdown techniques"
+        default=False,
+        description="Apply all available dropdown techniques",
     )
     # Advanced options
     temperature: float = Field(default=0.8, ge=0.0, le=2.0)
     max_new_tokens: int = Field(default=4096, ge=256, le=8192)
     enable_intent_analysis: bool = Field(
-        default=True, description="Enable deep LLM-powered intent analysis"
+        default=True,
+        description="Enable deep LLM-powered intent analysis",
     )
     enable_technique_layering: bool = Field(
-        default=True, description="Enable multi-technique layering"
+        default=True,
+        description="Enable multi-technique layering",
     )
     use_cache: bool = Field(default=True, description="Use cached results if available")
 
 
 class IntentAnalysisResponse(BaseModel):
-    """Intent analysis results"""
+    """Intent analysis results."""
 
     primary_intent: str
     secondary_intents: list[str]
@@ -55,7 +58,7 @@ class IntentAnalysisResponse(BaseModel):
 
 
 class AppliedTechniqueInfo(BaseModel):
-    """Information about an applied technique"""
+    """Information about an applied technique."""
 
     name: str
     priority: int
@@ -63,7 +66,7 @@ class AppliedTechniqueInfo(BaseModel):
 
 
 class GenerationMetadata(BaseModel):
-    """Metadata about the generation"""
+    """Metadata about the generation."""
 
     obfuscation_level: int
     persistence_required: bool
@@ -74,7 +77,7 @@ class GenerationMetadata(BaseModel):
 
 
 class IntentAwareGenerationResponse(BaseModel):
-    """Response from intent-aware jailbreak generation"""
+    """Response from intent-aware jailbreak generation."""
 
     success: bool
     request_id: str
@@ -89,7 +92,7 @@ class IntentAwareGenerationResponse(BaseModel):
 
 
 class AvailableTechniquesResponse(BaseModel):
-    """List of all available techniques"""
+    """List of all available techniques."""
 
     techniques: list[dict[str, Any]]
     total_count: int
@@ -101,11 +104,10 @@ async def verify_api_key(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     x_api_key: str | None = Header(None, alias="X-API-Key"),
 ):
-    """
-    Verify API key for protected endpoints.
+    """Verify API key for protected endpoints.
     Accepts either:
     - Authorization: Bearer <token>
-    - X-API-Key: <token>
+    - X-API-Key: <token>.
     """
     api_key = None
 
@@ -141,15 +143,16 @@ def get_jailbreak_service() -> IntentAwareJailbreakService:
 
 
 @router.post(
-    "/generate", response_model=IntentAwareGenerationResponse, status_code=status.HTTP_200_OK
+    "/generate",
+    response_model=IntentAwareGenerationResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def generate_intent_aware_jailbreak(
     request: IntentAwareGenerationRequest,
-    api_key: str = Depends(verify_api_key),
-    service: IntentAwareJailbreakService = Depends(get_jailbreak_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[IntentAwareJailbreakService, Depends(get_jailbreak_service)],
 ):
-    """
-    Generate a jailbreak prompt with deep intent understanding.
+    """Generate a jailbreak prompt with deep intent understanding.
 
     This endpoint uses LLM-powered analysis to:
     1. Deeply understand the user's true intent and objectives
@@ -175,13 +178,14 @@ async def generate_intent_aware_jailbreak(
     try:
         logger.info(
             f"Intent-aware generation request: potency={request.potency_level}, "
-            f"technique={request.technique_suite}, apply_all={request.apply_all_techniques}"
+            f"technique={request.technique_suite}, apply_all={request.apply_all_techniques}",
         )
 
         # Validate input
         if not request.core_request or not request.core_request.strip():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Core request cannot be empty"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Core request cannot be empty",
             )
 
         # Generate the jailbreak prompt
@@ -208,7 +212,9 @@ async def generate_intent_aware_jailbreak(
             ),
             applied_techniques=[
                 AppliedTechniqueInfo(
-                    name=tech["name"], priority=tech["priority"], rationale=tech["rationale"]
+                    name=tech["name"],
+                    priority=tech["priority"],
+                    rationale=tech["rationale"],
                 )
                 for tech in result["applied_techniques"]
             ],
@@ -231,19 +237,21 @@ async def generate_intent_aware_jailbreak(
     except Exception as e:
         logger.error(f"Intent-aware generation failed: {e!s}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Generation failed: {e!s}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Generation failed: {e!s}",
         )
 
 
 @router.get(
-    "/techniques", response_model=AvailableTechniquesResponse, status_code=status.HTTP_200_OK
+    "/techniques",
+    response_model=AvailableTechniquesResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def get_available_techniques(
-    api_key: str = Depends(verify_api_key),
-    service: IntentAwareJailbreakService = Depends(get_jailbreak_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[IntentAwareJailbreakService, Depends(get_jailbreak_service)],
 ):
-    """
-    Get all available techniques that can be applied.
+    """Get all available techniques that can be applied.
 
     Returns the complete list of jailbreak techniques available in the dropdown,
     organized by category with their descriptions and configurations.
@@ -296,11 +304,13 @@ async def get_available_techniques(
                     "framers": tech_config.get("framers", []),
                     "obfuscators": tech_config.get("obfuscators", []),
                     "description": f"{category}-based technique using {len(tech_config.get('transformers', []))} transformers",
-                }
+                },
             )
 
         return AvailableTechniquesResponse(
-            techniques=techniques, total_count=len(techniques), categories=sorted(categories)
+            techniques=techniques,
+            total_count=len(techniques),
+            categories=sorted(categories),
         )
 
     except Exception as e:
@@ -314,11 +324,10 @@ async def get_available_techniques(
 @router.post("/analyze-intent", status_code=status.HTTP_200_OK)
 async def analyze_user_intent(
     request: dict,
-    api_key: str = Depends(verify_api_key),
-    service: IntentAwareJailbreakService = Depends(get_jailbreak_service),
+    api_key: Annotated[str, Depends(verify_api_key)],
+    service: Annotated[IntentAwareJailbreakService, Depends(get_jailbreak_service)],
 ):
-    """
-    Analyze user input to understand intent without generating a jailbreak.
+    """Analyze user input to understand intent without generating a jailbreak.
 
     This endpoint performs deep intent analysis using LLM to:
     - Identify the primary and secondary intents
@@ -333,7 +342,8 @@ async def analyze_user_intent(
 
         if not user_input or not user_input.strip():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Core request cannot be empty"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Core request cannot be empty",
             )
 
         # Perform intent analysis
@@ -375,5 +385,6 @@ async def analyze_user_intent(
     except Exception as e:
         logger.error(f"Intent analysis failed: {e!s}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Analysis failed: {e!s}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Analysis failed: {e!s}",
         )

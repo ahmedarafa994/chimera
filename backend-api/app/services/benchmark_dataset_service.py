@@ -1,5 +1,4 @@
-"""
-Benchmark Dataset Service
+"""Benchmark Dataset Service.
 
 This service manages research benchmark datasets for LLM safety evaluation,
 including the Do-Not-Answer dataset from the paper "Do-Not-Answer: A Dataset
@@ -95,8 +94,7 @@ class RiskAreaInfo(BaseModel):
 
 @dataclass
 class BenchmarkDatasetService:
-    """
-    Service for managing benchmark datasets for LLM safety evaluation.
+    """Service for managing benchmark datasets for LLM safety evaluation.
 
     Loads and manages datasets like Do-Not-Answer for testing jailbreak
     resistance and operational parameters in language models.
@@ -170,7 +168,7 @@ class BenchmarkDatasetService:
                                 expected_behavior=p.get("expected_behavior", "refuse"),
                                 severity=p.get("severity", "high"),
                                 metadata=p.get("metadata", {}),
-                            )
+                            ),
                         )
 
             # Create dataset object
@@ -196,7 +194,7 @@ class BenchmarkDatasetService:
             logger.info("Loaded dataset '%s' with %d prompts", dataset_name, len(prompts))
 
         except Exception as e:
-            logger.error("Failed to load dataset from %s: %s", dataset_dir, e)
+            logger.exception("Failed to load dataset from %s: %s", dataset_dir, e)
 
     def get_datasets(self) -> list[str]:
         """Get list of available dataset names."""
@@ -217,8 +215,7 @@ class BenchmarkDatasetService:
         limit: int | None = None,
         shuffle: bool = False,
     ) -> list[BenchmarkPrompt]:
-        """
-        Get prompts from a dataset with optional filtering.
+        """Get prompts from a dataset with optional filtering.
 
         Args:
             dataset_name: Name of the dataset to query
@@ -230,6 +227,7 @@ class BenchmarkDatasetService:
 
         Returns:
             List of matching prompts
+
         """
         self.load_datasets()
 
@@ -302,7 +300,7 @@ class BenchmarkDatasetService:
                         name=ht.get("name", ""),
                         subcategories=ht.get("subcategories", []),
                         example_prompts=ht.get("example_prompts", []),
-                    )
+                    ),
                 )
 
             risk_areas.append(
@@ -311,7 +309,7 @@ class BenchmarkDatasetService:
                     name=ra.get("name", ""),
                     description=ra.get("description", ""),
                     harm_types=harm_types,
-                )
+                ),
             )
 
         return risk_areas
@@ -334,8 +332,7 @@ class BenchmarkDatasetService:
         risk_areas: list[str] | None = None,
         severities: list[str] | None = None,
     ) -> list[BenchmarkPrompt]:
-        """
-        Generate a balanced test batch from a dataset.
+        """Generate a balanced test batch from a dataset.
 
         Args:
             dataset_name: Name of the dataset
@@ -346,6 +343,7 @@ class BenchmarkDatasetService:
 
         Returns:
             List of prompts for testing
+
         """
         self.load_datasets()
 
@@ -385,11 +383,10 @@ class BenchmarkDatasetService:
                 batch.extend(unused[:remaining])
 
             return batch[:batch_size]
-        else:
-            # Simple random selection
-            prompts_copy = list(prompts)
-            random.shuffle(prompts_copy)
-            return prompts_copy[:batch_size]
+        # Simple random selection
+        prompts_copy = list(prompts)
+        random.shuffle(prompts_copy)
+        return prompts_copy[:batch_size]
 
     def export_prompts_for_jailbreak(
         self,
@@ -397,8 +394,7 @@ class BenchmarkDatasetService:
         risk_area: str | None = None,
         limit: int | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Export prompts in a format suitable for jailbreak testing.
+        """Export prompts in a format suitable for jailbreak testing.
 
         Returns prompts formatted for use with the AutoDAN and other
         jailbreak generation engines.

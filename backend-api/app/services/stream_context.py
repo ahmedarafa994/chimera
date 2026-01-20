@@ -1,5 +1,4 @@
-"""
-Stream Context Manager for Project Chimera.
+"""Stream Context Manager for Project Chimera.
 
 This module provides context management for streaming operations,
 ensuring selection consistency during streaming and proper cleanup.
@@ -13,6 +12,7 @@ Features:
 References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md Section 4.2
 - Unified streaming: app/services/unified_streaming_service.py
+
 """
 
 import asyncio
@@ -34,8 +34,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StreamSession:
-    """
-    Represents an active streaming session.
+    """Represents an active streaming session.
 
     Contains all context needed for a streaming operation including
     the locked provider/model selection and timing information.
@@ -106,8 +105,7 @@ class StreamSession:
 
 @dataclass
 class StreamLock:
-    """
-    Lock entry for preventing selection changes during streaming.
+    """Lock entry for preventing selection changes during streaming.
 
     When a stream is active for a session, this lock prevents
     provider/model selection changes until the stream completes.
@@ -132,8 +130,7 @@ class StreamLock:
 
 
 class StreamingContext:
-    """
-    Context manager that maintains provider/model selection during streaming.
+    """Context manager that maintains provider/model selection during streaming.
 
     Ensures:
     - Selection doesn't change mid-stream
@@ -163,7 +160,7 @@ class StreamingContext:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the streaming context manager."""
         if self._initialized:
             return
@@ -198,8 +195,7 @@ class StreamingContext:
         stream_id: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> AsyncIterator[StreamSession]:
-        """
-        Create a locked streaming session context.
+        """Create a locked streaming session context.
 
         The selection (provider/model) is locked for the duration of the
         stream to ensure consistency. Other attempts to change selection
@@ -219,6 +215,7 @@ class StreamingContext:
         Raises:
             StreamLockError: If unable to acquire lock
             asyncio.CancelledError: If stream is cancelled
+
         """
         stream_id = stream_id or f"stream_{uuid.uuid4().hex[:12]}"
         session_lock = asyncio.Lock()
@@ -254,7 +251,7 @@ class StreamingContext:
 
             logger.debug(
                 f"Stream session started: stream_id={stream_id}, "
-                f"provider={provider}, model={model}"
+                f"provider={provider}, model={model}",
             )
 
             yield session
@@ -270,7 +267,7 @@ class StreamingContext:
 
         except Exception as e:
             session.mark_error(str(e))
-            logger.error(f"Stream session error: {stream_id}, error={e}")
+            logger.exception(f"Stream session error: {stream_id}, error={e}")
             raise
 
         finally:
@@ -288,7 +285,7 @@ class StreamingContext:
             logger.debug(
                 f"Stream session ended: stream_id={stream_id}, "
                 f"chunks={session.chunks_sent}, "
-                f"duration_ms={session.duration_ms:.1f}"
+                f"duration_ms={session.duration_ms:.1f}",
             )
 
     async def _acquire_selection_lock(
@@ -298,8 +295,7 @@ class StreamingContext:
         provider: str,
         model: str,
     ) -> StreamLock:
-        """
-        Acquire a selection lock for a session.
+        """Acquire a selection lock for a session.
 
         This prevents selection changes during streaming.
         """
@@ -311,21 +307,20 @@ class StreamingContext:
                 if existing.is_expired(self._lock_timeout_seconds):
                     logger.warning(
                         f"Releasing expired lock: session={session_id}, "
-                        f"stream={existing.stream_id}"
+                        f"stream={existing.stream_id}",
                     )
                     del self._selection_locks[session_id]
+                # Allow if same provider/model, otherwise wait
+                elif existing.provider == provider and existing.model == model:
+                    logger.debug(f"Reusing existing lock: session={session_id}")
+                    return existing
                 else:
-                    # Allow if same provider/model, otherwise wait
-                    if existing.provider == provider and existing.model == model:
-                        logger.debug(f"Reusing existing lock: session={session_id}")
-                        return existing
-                    else:
-                        # Different selection - this shouldn't happen often
-                        logger.warning(
-                            f"Selection conflict: session={session_id}, "
-                            f"existing={existing.provider}/{existing.model}, "
-                            f"requested={provider}/{model}"
-                        )
+                    # Different selection - this shouldn't happen often
+                    logger.warning(
+                        f"Selection conflict: session={session_id}, "
+                        f"existing={existing.provider}/{existing.model}, "
+                        f"requested={provider}/{model}",
+                    )
 
             # Create new lock
             lock = StreamLock(
@@ -340,7 +335,7 @@ class StreamingContext:
 
             logger.debug(
                 f"Selection lock acquired: session={session_id}, "
-                f"provider={provider}, model={model}"
+                f"provider={provider}, model={model}",
             )
 
             return lock
@@ -367,11 +362,11 @@ class StreamingContext:
         return False
 
     def get_locked_selection(self, session_id: str) -> tuple[str, str] | None:
-        """
-        Get the locked selection for a session.
+        """Get the locked selection for a session.
 
         Returns:
             Tuple of (provider, model) if locked, None otherwise
+
         """
         lock = self._selection_locks.get(session_id)
         if lock and not lock.is_expired(self._lock_timeout_seconds):
@@ -421,7 +416,7 @@ class StreamingContext:
                 else:
                     callback(session)
             except Exception as e:
-                logger.error(f"Error in stream start callback: {e}")
+                logger.exception(f"Error in stream start callback: {e}")
 
     async def _notify_end(self, session: StreamSession) -> None:
         """Notify listeners of stream end."""
@@ -432,18 +427,18 @@ class StreamingContext:
                 else:
                     callback(session)
             except Exception as e:
-                logger.error(f"Error in stream end callback: {e}")
+                logger.exception(f"Error in stream end callback: {e}")
 
     # -------------------------------------------------------------------------
     # Cleanup
     # -------------------------------------------------------------------------
 
     async def cleanup_expired_locks(self) -> int:
-        """
-        Clean up expired selection locks.
+        """Clean up expired selection locks.
 
         Returns:
             Number of locks cleaned up
+
         """
         cleaned = 0
         async with self._global_lock:
@@ -471,11 +466,11 @@ _streaming_context: StreamingContext | None = None
 
 
 def get_streaming_context() -> StreamingContext:
-    """
-    Get the singleton StreamingContext instance.
+    """Get the singleton StreamingContext instance.
 
     Returns:
         The global StreamingContext instance
+
     """
     global _streaming_context
     if _streaming_context is None:
@@ -484,13 +479,13 @@ def get_streaming_context() -> StreamingContext:
 
 
 async def get_streaming_context_async() -> StreamingContext:
-    """
-    Async factory for StreamingContext.
+    """Async factory for StreamingContext.
 
     Use this as a FastAPI dependency.
 
     Returns:
         The global StreamingContext instance
+
     """
     return get_streaming_context()
 
@@ -509,7 +504,7 @@ class StreamLockError(Exception):
         session_id: str | None = None,
         existing_provider: str | None = None,
         existing_model: str | None = None,
-    ):
+    ) -> None:
         super().__init__(message)
         self.session_id = session_id
         self.existing_provider = existing_provider
@@ -524,7 +519,7 @@ class StreamCancelledError(Exception):
         message: str,
         stream_id: str,
         reason: str | None = None,
-    ):
+    ) -> None:
         super().__init__(message)
         self.stream_id = stream_id
         self.reason = reason

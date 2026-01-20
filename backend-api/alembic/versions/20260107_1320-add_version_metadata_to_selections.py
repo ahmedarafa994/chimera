@@ -1,4 +1,4 @@
-"""Add version and metadata columns to selections table
+"""Add version and metadata columns to selections table.
 
 Adds optimistic concurrency control support via version column
 and metadata JSONB column for flexible data storage.
@@ -26,13 +26,15 @@ def upgrade() -> None:
     # Add version column for optimistic concurrency control
     # Default to 1 for existing rows
     op.add_column(
-        "selections", sa.Column("version", sa.Integer(), nullable=False, server_default="1")
+        "selections",
+        sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
     )
 
     # Add metadata JSONB column for flexible data storage
     # Use JSON for SQLite compatibility, JSONB for PostgreSQL
     op.add_column(
-        "selections", sa.Column("metadata", sa.JSON(), nullable=False, server_default="{}")
+        "selections",
+        sa.Column("metadata", sa.JSON(), nullable=False, server_default="{}"),
     )
 
     # Add source column to track where selection came from

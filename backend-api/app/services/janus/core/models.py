@@ -1,5 +1,4 @@
-"""
-Janus Core Data Models
+"""Janus Core Data Models.
 
 Defines all data structures for autonomous heuristic derivation,
 causal mapping, and failure state classification.
@@ -49,7 +48,7 @@ class GuardianState:
         """Get a variable value with default."""
         return self.variables.get(key, default)
 
-    def set_variable(self, key: str, value: Any):
+    def set_variable(self, key: str, value: Any) -> None:
         """Set a variable value."""
         self.variables[key] = value
 
@@ -163,7 +162,10 @@ class Heuristic:
         """Execute the heuristic against Guardian."""
         if self.action is None:
             return InteractionResult(
-                heuristic_name=self.name, success=False, error="No action defined", score=0.0
+                heuristic_name=self.name,
+                success=False,
+                error="No action defined",
+                score=0.0,
             )
 
         try:
@@ -177,7 +179,10 @@ class Heuristic:
             return result
         except Exception as e:
             return InteractionResult(
-                heuristic_name=self.name, success=False, error=str(e), score=0.0
+                heuristic_name=self.name,
+                success=False,
+                error=str(e),
+                score=0.0,
             )
 
 
@@ -267,13 +272,13 @@ class CausalGraph:
     feedback_loops: list[list[str]] = field(default_factory=list)
     hidden_variables: set[str] = field(default_factory=set)
 
-    def add_node(self, node: CausalNode):
+    def add_node(self, node: CausalNode) -> None:
         """Add a node to the graph."""
         self.nodes[node.variable_id] = node
         if not node.observable:
             self.hidden_variables.add(node.variable_id)
 
-    def add_edge(self, edge: CausalEdge):
+    def add_edge(self, edge: CausalEdge) -> None:
         """Add an edge to the graph."""
         self.edges.append(edge)
         self._update_graph_properties()
@@ -290,7 +295,7 @@ class CausalGraph:
         """Get all edges pointing to a variable."""
         return [e for e in self.edges if e.target.variable_id == variable_id]
 
-    def _update_graph_properties(self):
+    def _update_graph_properties(self) -> None:
         """Update graph properties like DAG status and feedback loops."""
         # Simple cycle detection
         visited = set()
@@ -304,8 +309,12 @@ class CausalGraph:
         self.is_dag = len(self.feedback_loops) == 0
 
     def _detect_cycles(
-        self, node_id: str, visited: set[str], recursion_stack: set[str], path: list[str]
-    ):
+        self,
+        node_id: str,
+        visited: set[str],
+        recursion_stack: set[str],
+        path: list[str],
+    ) -> None:
         """Detect cycles using DFS."""
         visited.add(node_id)
         recursion_stack.add(node_id)

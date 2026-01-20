@@ -1,5 +1,4 @@
-"""
-Usage Tracking Service
+"""Usage Tracking Service.
 
 Tracks API usage per tenant for billing, analytics, and quota enforcement.
 Supports in-memory storage with optional Redis persistence.
@@ -30,8 +29,7 @@ class UsageEventType(str, Enum):
 
 @dataclass
 class UsageEvent:
-    """
-    Single usage event record.
+    """Single usage event record.
 
     Attributes:
         tenant_id: Tenant that generated the event
@@ -42,6 +40,7 @@ class UsageEvent:
         timestamp: When the event occurred
         duration_ms: Request duration in milliseconds
         tokens_used: Token count (for LLM calls)
+
     """
 
     tenant_id: str
@@ -71,8 +70,7 @@ class TenantUsageSummary:
 
 
 class UsageTracker:
-    """
-    Tracks and aggregates API usage per tenant.
+    """Tracks and aggregates API usage per tenant.
 
     Provides:
     - Real-time usage recording
@@ -108,8 +106,7 @@ class UsageTracker:
         tokens_used: int = 0,
         metadata: dict[str, Any] | None = None,
     ) -> UsageEvent:
-        """
-        Record a usage event.
+        """Record a usage event.
 
         Args:
             tenant_id: Tenant identifier
@@ -122,6 +119,7 @@ class UsageTracker:
 
         Returns:
             The recorded event
+
         """
         event = UsageEvent(
             tenant_id=tenant_id,
@@ -184,7 +182,10 @@ class UsageTracker:
         )
 
     def record_technique_usage(
-        self, tenant_id: str, technique: str, potency: int = 5
+        self,
+        tenant_id: str,
+        technique: str,
+        potency: int = 5,
     ) -> UsageEvent:
         """Record technique usage."""
         return self.record_event(
@@ -195,7 +196,11 @@ class UsageTracker:
         )
 
     def record_error(
-        self, tenant_id: str, endpoint: str, error_type: str, error_message: str
+        self,
+        tenant_id: str,
+        endpoint: str,
+        error_type: str,
+        error_message: str,
     ) -> UsageEvent:
         """Record an error event."""
         return self.record_event(
@@ -211,8 +216,7 @@ class UsageTracker:
         return self._monthly_counts.get(f"{tenant_id}:{month_key}", 0)
 
     def check_quota(self, tenant_id: str, monthly_quota: int) -> tuple[bool, int]:
-        """
-        Check if tenant is within quota.
+        """Check if tenant is within quota.
 
         Args:
             tenant_id: Tenant identifier
@@ -220,6 +224,7 @@ class UsageTracker:
 
         Returns:
             Tuple of (within_quota: bool, remaining: int)
+
         """
         if monthly_quota == -1:
             return True, -1  # Unlimited
@@ -230,8 +235,7 @@ class UsageTracker:
         return remaining > 0, remaining
 
     def get_tenant_summary(self, tenant_id: str, period_hours: int = 24) -> TenantUsageSummary:
-        """
-        Get usage summary for a tenant.
+        """Get usage summary for a tenant.
 
         Args:
             tenant_id: Tenant identifier
@@ -239,6 +243,7 @@ class UsageTracker:
 
         Returns:
             Usage summary
+
         """
         now = datetime.utcnow()
         period_start = now - timedelta(hours=period_hours)
@@ -286,7 +291,9 @@ class UsageTracker:
         )
 
     def get_top_techniques(
-        self, tenant_id: str | None = None, limit: int = 10
+        self,
+        tenant_id: str | None = None,
+        limit: int = 10,
     ) -> list[tuple[str, int]]:
         """Get most used techniques."""
         technique_counts: dict[str, int] = defaultdict(int)

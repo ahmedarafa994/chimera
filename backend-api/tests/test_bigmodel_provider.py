@@ -1,5 +1,4 @@
-"""
-Tests for BigModel (ZhiPu AI) Provider Implementation
+"""Tests for BigModel (ZhiPu AI) Provider Implementation.
 
 Story 1.2: Direct API Integration
 """
@@ -31,19 +30,19 @@ def provider(mock_settings):
 class TestBigModelProviderInitialization:
     """Tests for BigModel provider initialization."""
 
-    def test_provider_name(self, provider):
+    def test_provider_name(self, provider) -> None:
         """Test that provider name is set correctly."""
         assert provider.provider_name == "bigmodel"
 
-    def test_base_url(self, provider):
+    def test_base_url(self, provider) -> None:
         """Test that base URL is correct."""
         assert provider._BASE_URL == "https://open.bigmodel.cn/api/paas/v4"
 
-    def test_default_model(self, provider):
+    def test_default_model(self, provider) -> None:
         """Test that default model is glm-4.7."""
         assert provider._DEFAULT_MODEL == "glm-4.7"
 
-    def test_available_models(self, provider):
+    def test_available_models(self, provider) -> None:
         """Test that available models list is populated."""
         expected_models = [
             "glm-4.7",
@@ -65,17 +64,17 @@ class TestBigModelProviderInitialization:
 class TestBigModelProviderConfiguration:
     """Tests for BigModel provider configuration."""
 
-    def test_get_api_key(self, provider, mock_settings):
+    def test_get_api_key(self, provider, mock_settings) -> None:
         """Test API key retrieval."""
         assert provider._get_api_key() == "test-api-key-12345678901234567890"
 
-    def test_get_default_model_from_config(self, mock_settings):
+    def test_get_default_model_from_config(self, mock_settings) -> None:
         """Test getting default model from config."""
         mock_settings.bigmodel_model = "glm-4.5"
         provider = BigModelProvider(config=mock_settings)
         assert provider._get_default_model() == "glm-4.5"
 
-    def test_get_default_model_fallback(self):
+    def test_get_default_model_fallback(self) -> None:
         """Test default model fallback when not in config."""
         settings = MagicMock()
         settings.BIGMODEL_API_KEY = "test-key-12345678901234567890"
@@ -87,7 +86,7 @@ class TestBigModelProviderConfiguration:
 class TestBigModelProviderBuildConfig:
     """Tests for generation config building."""
 
-    def test_build_config_with_temperature(self, provider):
+    def test_build_config_with_temperature(self, provider) -> None:
         """Test generation config with temperature."""
         request = PromptRequest(
             prompt="test",
@@ -96,7 +95,7 @@ class TestBigModelProviderBuildConfig:
         config = provider._build_generation_config(request)
         assert config["temperature"] == 0.5
 
-    def test_build_config_temperature_clamping(self, provider):
+    def test_build_config_temperature_clamping(self, provider) -> None:
         """Test that temperature is clamped to valid range."""
         # Test with valid temperature (0.9 maps to 0.9)
         request = PromptRequest(
@@ -114,7 +113,7 @@ class TestBigModelProviderBuildConfig:
         config = provider._build_generation_config(request)
         assert config["temperature"] == 0.0
 
-    def test_build_config_top_p_clamping(self, provider):
+    def test_build_config_top_p_clamping(self, provider) -> None:
         """Test that top_p is clamped to valid range (0.01-1.0)."""
         # top_p of 0.0 should be clamped to 0.01 by BigModel provider
         request = PromptRequest(
@@ -124,7 +123,7 @@ class TestBigModelProviderBuildConfig:
         config = provider._build_generation_config(request)
         assert config["top_p"] == 0.01
 
-    def test_build_config_defaults(self, provider):
+    def test_build_config_defaults(self, provider) -> None:
         """Test config values when no explicit config is provided.
 
         Note: PromptRequest automatically creates a GenerationConfig with defaults,
@@ -137,7 +136,7 @@ class TestBigModelProviderBuildConfig:
         assert config["top_p"] == 0.95  # GenerationConfig default
         assert config["max_tokens"] == 2048  # GenerationConfig max_output_tokens default
 
-    def test_build_config_with_request_config(self, provider):
+    def test_build_config_with_request_config(self, provider) -> None:
         """Test config values when GenerationConfig is provided."""
         request = PromptRequest(
             prompt="test",
@@ -148,7 +147,7 @@ class TestBigModelProviderBuildConfig:
         assert config["temperature"] == 0.7
         assert config["top_p"] == 0.9
 
-    def test_build_config_with_max_output_tokens(self, provider):
+    def test_build_config_with_max_output_tokens(self, provider) -> None:
         """Test generation config with max_output_tokens."""
         request = PromptRequest(
             prompt="test",
@@ -162,7 +161,7 @@ class TestBigModelProviderGeneration:
     """Tests for BigModel generation functionality."""
 
     @pytest.mark.asyncio
-    async def test_generate_success(self, provider):
+    async def test_generate_success(self, provider) -> None:
         """Test successful generation."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -175,7 +174,7 @@ class TestBigModelProviderGeneration:
                         "content": "Test response",
                     },
                     "finish_reason": "stop",
-                }
+                },
             ],
             "usage": {
                 "prompt_tokens": 10,
@@ -208,7 +207,7 @@ class TestBigModelProviderHealthCheck:
     """Tests for BigModel health check."""
 
     @pytest.mark.asyncio
-    async def test_health_check_success(self, provider):
+    async def test_health_check_success(self, provider) -> None:
         """Test successful health check."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -220,7 +219,7 @@ class TestBigModelProviderHealthCheck:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_health_check_failure(self, provider):
+    async def test_health_check_failure(self, provider) -> None:
         """Test failed health check."""
         client = MagicMock(spec=httpx.AsyncClient)
         client.post = AsyncMock(side_effect=httpx.RequestError("Connection error"))
@@ -233,13 +232,13 @@ class TestBigModelProviderContextManager:
     """Tests for async context manager functionality."""
 
     @pytest.mark.asyncio
-    async def test_context_manager(self, provider):
+    async def test_context_manager(self, provider) -> None:
         """Test async context manager."""
         async with provider as p:
             assert p is provider
 
     @pytest.mark.asyncio
-    async def test_context_manager_cleanup(self, provider):
+    async def test_context_manager_cleanup(self, provider) -> None:
         """Test that context manager cleans up HTTP client."""
         provider._http_client = MagicMock(spec=httpx.AsyncClient)
         provider._http_client.aclose = AsyncMock()

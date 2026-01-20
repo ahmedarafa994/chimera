@@ -1,5 +1,4 @@
-"""
-Attack Session Replay & Sharing Endpoints
+"""Attack Session Replay & Sharing Endpoints.
 
 Phase 2 feature for competitive differentiation:
 - Complete session saving with full context
@@ -11,7 +10,7 @@ Phase 2 feature for competitive differentiation:
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -43,7 +42,7 @@ class SharePermission(str, Enum):
 
 
 class AttackStep(BaseModel):
-    """Individual step in an attack session"""
+    """Individual step in an attack session."""
 
     step_id: str
     timestamp: datetime
@@ -66,7 +65,7 @@ class AttackStep(BaseModel):
 
 
 class AttackSession(BaseModel):
-    """Complete attack session with all steps and context"""
+    """Complete attack session with all steps and context."""
 
     session_id: str
     name: str
@@ -105,7 +104,7 @@ class AttackSession(BaseModel):
 
 
 class SessionCreate(BaseModel):
-    """Request to create a new attack session"""
+    """Request to create a new attack session."""
 
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(None, max_length=1000)
@@ -123,7 +122,7 @@ class SessionCreate(BaseModel):
 
 
 class SessionUpdate(BaseModel):
-    """Request to update session metadata"""
+    """Request to update session metadata."""
 
     name: str | None = None
     description: str | None = None
@@ -133,7 +132,7 @@ class SessionUpdate(BaseModel):
 
 
 class SessionShare(BaseModel):
-    """Request to share session with users"""
+    """Request to share session with users."""
 
     user_ids: list[str] = Field(..., min_length=1)
     permission: SharePermission = SharePermission.VIEW
@@ -142,7 +141,7 @@ class SessionShare(BaseModel):
 
 
 class SessionReplay(BaseModel):
-    """Request to replay a session"""
+    """Request to replay a session."""
 
     session_id: str
     replay_name: str | None = None
@@ -155,7 +154,7 @@ class SessionReplay(BaseModel):
 
 
 class SessionExport(BaseModel):
-    """Session export data"""
+    """Session export data."""
 
     session: AttackSession
     export_format: str = "json"
@@ -163,7 +162,7 @@ class SessionExport(BaseModel):
 
 
 class SessionListResponse(BaseModel):
-    """Response for session listing"""
+    """Response for session listing."""
 
     sessions: list[AttackSession]
     total: int
@@ -181,11 +180,10 @@ session_shares: dict[str, list[dict[str, Any]]] = {}
 @router.post("/", response_model=AttackSession, status_code=status.HTTP_201_CREATED)
 async def create_session(
     session_data: SessionCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """
-    Create a new attack session for recording and replay
+    """Create a new attack session for recording and replay.
 
     This endpoint initializes a new session that can record all attack steps,
     enabling full reproducibility and sharing capabilities.
@@ -222,7 +220,7 @@ async def create_session(
         return session
 
     except Exception as e:
-        logger.error(f"Failed to create session: {e}")
+        logger.exception(f"Failed to create session: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create attack session",
@@ -231,19 +229,19 @@ async def create_session(
 
 @router.get("/", response_model=SessionListResponse)
 async def list_sessions(
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    status_filter: SessionStatus | None = Query(
-        None, description="Filter by status", alias="status"
-    ),
-    category: str | None = Query(None, description="Filter by category"),
-    search: str | None = Query(None, description="Search in name and description"),
-    owner_only: bool = Query(False, description="Show only owned sessions"),
-    shared_only: bool = Query(False, description="Show only shared sessions"),
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    status_filter: Annotated[
+        SessionStatus | None, Query(description="Filter by status", alias="status")
+    ] = None,
+    category: Annotated[str | None, Query(description="Filter by category")] = None,
+    search: Annotated[str | None, Query(description="Search in name and description")] = None,
+    owner_only: Annotated[bool, Query(description="Show only owned sessions")] = False,
+    shared_only: Annotated[bool, Query(description="Show only shared sessions")] = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List attack sessions with filtering and pagination"""
+    """List attack sessions with filtering and pagination."""
     try:
         # Get all sessions accessible to user
         accessible_sessions = []
@@ -308,17 +306,20 @@ async def list_sessions(
         )
 
     except Exception as e:
-        logger.error(f"Failed to list sessions: {e}")
+        logger.exception(f"Failed to list sessions: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve sessions"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve sessions",
         )
 
 
 @router.get("/{session_id}", response_model=AttackSession)
 async def get_session(
-    session_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    session_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Get detailed session information including all steps"""
+    """Get detailed session information including all steps."""
     try:
         session = sessions_storage.get(session_id)
 
@@ -336,7 +337,8 @@ async def get_session(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this session"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this session",
             )
 
         return session
@@ -344,9 +346,10 @@ async def get_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get session {session_id}: {e}")
+        logger.exception(f"Failed to get session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve session",
         )
 
 
@@ -354,10 +357,10 @@ async def get_session(
 async def update_session(
     session_id: str,
     update_data: SessionUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Update session metadata (owner only)"""
+    """Update session metadata (owner only)."""
     try:
         session = sessions_storage.get(session_id)
 
@@ -391,9 +394,10 @@ async def update_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update session {session_id}: {e}")
+        logger.exception(f"Failed to update session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update session",
         )
 
 
@@ -401,10 +405,10 @@ async def update_session(
 async def add_session_step(
     session_id: str,
     step_data: dict[str, Any],
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Add a step to an active session"""
+    """Add a step to an active session."""
     try:
         session = sessions_storage.get(session_id)
 
@@ -413,7 +417,8 @@ async def add_session_step(
 
         if session.owner_id != current_user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Only session owner can add steps"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only session owner can add steps",
             )
 
         if session.status not in [SessionStatus.ACTIVE, SessionStatus.PAUSED]:
@@ -452,9 +457,10 @@ async def add_session_step(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to add step to session {session_id}: {e}")
+        logger.exception(f"Failed to add step to session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to add session step"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add session step",
         )
 
 
@@ -462,10 +468,10 @@ async def add_session_step(
 async def share_session(
     session_id: str,
     share_data: SessionShare,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Share session with other users"""
+    """Share session with other users."""
     try:
         session = sessions_storage.get(session_id)
 
@@ -491,7 +497,8 @@ async def share_session(
         for user_id in share_data.user_ids:
             # Check if already shared with this user
             existing_share = next(
-                (s for s in session_shares[session_id] if s["user_id"] == user_id), None
+                (s for s in session_shares[session_id] if s["user_id"] == user_id),
+                None,
             )
 
             if existing_share:
@@ -509,7 +516,7 @@ async def share_session(
                         "shared_at": datetime.utcnow(),
                         "expires_at": share_data.expires_at,
                         "message": share_data.message,
-                    }
+                    },
                 )
 
         # Update session sharing info
@@ -526,9 +533,10 @@ async def share_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to share session {session_id}: {e}")
+        logger.exception(f"Failed to share session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to share session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to share session",
         )
 
 
@@ -536,10 +544,10 @@ async def share_session(
 async def replay_session(
     session_id: str,
     replay_data: SessionReplay,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Create a replay of an existing session"""
+    """Create a replay of an existing session."""
     try:
         original_session = sessions_storage.get(session_id)
 
@@ -640,20 +648,21 @@ async def replay_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to replay session {session_id}: {e}")
+        logger.exception(f"Failed to replay session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to replay session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to replay session",
         )
 
 
 @router.get("/{session_id}/export", response_model=SessionExport)
 async def export_session(
     session_id: str,
-    format: str = Query("json", description="Export format"),
+    format: Annotated[str, Query(description="Export format")] = "json",
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Export session data for sharing or backup"""
+    """Export session data for sharing or backup."""
     try:
         session = sessions_storage.get(session_id)
 
@@ -671,7 +680,8 @@ async def export_session(
 
         if not has_access:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this session"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this session",
             )
 
         # Generate export metadata
@@ -688,19 +698,20 @@ async def export_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to export session {session_id}: {e}")
+        logger.exception(f"Failed to export session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to export session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to export session",
         )
 
 
 @router.post("/import", response_model=AttackSession)
 async def import_session(
     import_data: SessionExport,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Import a previously exported session"""
+    """Import a previously exported session."""
     try:
         # Generate new session ID for imported session
         new_session_id = (
@@ -735,17 +746,20 @@ async def import_session(
         return imported_session
 
     except Exception as e:
-        logger.error(f"Failed to import session: {e}")
+        logger.exception(f"Failed to import session: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to import session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to import session",
         )
 
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
-    session_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
-):
-    """Delete a session (owner only)"""
+    session_id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> None:
+    """Delete a session (owner only)."""
     try:
         session = sessions_storage.get(session_id)
 
@@ -767,7 +781,8 @@ async def delete_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete session {session_id}: {e}")
+        logger.exception(f"Failed to delete session {session_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete session"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete session",
         )

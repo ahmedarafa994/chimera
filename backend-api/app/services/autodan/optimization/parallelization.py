@@ -1,5 +1,4 @@
-"""
-AutoDAN Parallelization and Turbo Architecture
+"""AutoDAN Parallelization and Turbo Architecture.
 
 Efficient parallel execution and AutoDAN-Turbo specific optimizations:
 - Thread/process pool management
@@ -9,6 +8,7 @@ Efficient parallel execution and AutoDAN-Turbo specific optimizations:
 
 References:
 - AutoDAN-Turbo: A Lifelong Agent for Strategy Self-Exploration (Liu et al., 2024)
+
 """
 
 import asyncio
@@ -47,8 +47,7 @@ class BatchResult(Generic[T]):
 
 
 class BatchProcessor(Generic[T, R]):
-    """
-    Generic batch processor for parallel evaluation.
+    """Generic batch processor for parallel evaluation.
 
     Supports both sync and async processing with configurable
     parallelization strategy.
@@ -58,7 +57,7 @@ class BatchProcessor(Generic[T, R]):
         self,
         config: ParallelizationConfig | None = None,
         process_func: Callable[[T], R] | None = None,
-    ):
+    ) -> None:
         self.config = config or ParallelizationConfig()
         self.process_func = process_func
         self._executor: ThreadPoolExecutor | ProcessPoolExecutor | None = None
@@ -74,10 +73,11 @@ class BatchProcessor(Generic[T, R]):
         return self._executor
 
     def process_batch(
-        self, items: list[T], process_func: Callable[[T], R] | None = None
+        self,
+        items: list[T],
+        process_func: Callable[[T], R] | None = None,
     ) -> BatchResult[R]:
-        """
-        Process a batch of items in parallel.
+        """Process a batch of items in parallel.
 
         Args:
             items: List of items to process
@@ -85,10 +85,12 @@ class BatchProcessor(Generic[T, R]):
 
         Returns:
             BatchResult with results and diagnostics
+
         """
         func = process_func or self.process_func
         if func is None:
-            raise ValueError("No processing function provided")
+            msg = "No processing function provided"
+            raise ValueError(msg)
 
         start_time = time.time()
         results: list[R | None] = [None] * len(items)
@@ -120,16 +122,18 @@ class BatchProcessor(Generic[T, R]):
         )
 
     async def process_batch_async(
-        self, items: list[T], process_func: Callable[[T], R] | None = None
+        self,
+        items: list[T],
+        process_func: Callable[[T], R] | None = None,
     ) -> BatchResult[R]:
-        """
-        Process a batch of items asynchronously.
+        """Process a batch of items asynchronously.
 
         Uses asyncio for I/O-bound operations.
         """
         func = process_func or self.process_func
         if func is None:
-            raise ValueError("No processing function provided")
+            msg = "No processing function provided"
+            raise ValueError(msg)
 
         start_time = time.time()
         results: list[R | None] = []
@@ -170,7 +174,7 @@ class BatchProcessor(Generic[T, R]):
             errors=errors,
         )
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown executor."""
         if self._executor is not None:
             self._executor.shutdown(wait=True)
@@ -183,8 +187,7 @@ class BatchProcessor(Generic[T, R]):
 
 
 class AsyncQueueProcessor(Generic[T, R]):
-    """
-    Async queue-based processor for continuous prompt generation.
+    """Async queue-based processor for continuous prompt generation.
 
     Maintains a queue of pending items and processes them
     asynchronously with configurable concurrency.
@@ -195,7 +198,7 @@ class AsyncQueueProcessor(Generic[T, R]):
         config: ParallelizationConfig | None = None,
         process_func: Callable[[T], R] | None = None,
         result_callback: Callable[[R], None] | None = None,
-    ):
+    ) -> None:
         self.config = config or ParallelizationConfig()
         self.process_func = process_func
         self.result_callback = result_callback
@@ -207,7 +210,7 @@ class AsyncQueueProcessor(Generic[T, R]):
         self._processed_count = 0
         self._error_count = 0
 
-    def start(self):
+    def start(self) -> None:
         """Start worker threads."""
         if self._running:
             return
@@ -216,12 +219,14 @@ class AsyncQueueProcessor(Generic[T, R]):
 
         for i in range(self.config.num_workers):
             worker = threading.Thread(
-                target=self._worker_loop, name=f"QueueWorker-{i}", daemon=True
+                target=self._worker_loop,
+                name=f"QueueWorker-{i}",
+                daemon=True,
             )
             worker.start()
             self._workers.append(worker)
 
-    def _worker_loop(self):
+    def _worker_loop(self) -> None:
         """Worker thread main loop."""
         while self._running:
             try:
@@ -246,11 +251,11 @@ class AsyncQueueProcessor(Generic[T, R]):
             except queue.Empty:
                 continue
 
-    def submit(self, item: T, block: bool = True, timeout: float | None = None):
+    def submit(self, item: T, block: bool = True, timeout: float | None = None) -> None:
         """Submit item for processing."""
         self._input_queue.put(item, block=block, timeout=timeout)
 
-    def submit_batch(self, items: list[T]):
+    def submit_batch(self, items: list[T]) -> None:
         """Submit multiple items."""
         for item in items:
             self.submit(item)
@@ -272,7 +277,7 @@ class AsyncQueueProcessor(Generic[T, R]):
                 break
         return results
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop all workers."""
         self._running = False
 
@@ -305,8 +310,7 @@ class AsyncQueueProcessor(Generic[T, R]):
 
 
 class PopulationParallelEvaluator:
-    """
-    Parallel evaluator optimized for genetic algorithm populations.
+    """Parallel evaluator optimized for genetic algorithm populations.
 
     Features:
     - Batch fitness evaluation
@@ -318,7 +322,7 @@ class PopulationParallelEvaluator:
         self,
         config: ParallelizationConfig | None = None,
         fitness_func: Callable[[str], float] | None = None,
-    ):
+    ) -> None:
         self.config = config or ParallelizationConfig()
         self.fitness_func = fitness_func
         self.batch_processor = BatchProcessor(config)
@@ -333,10 +337,11 @@ class PopulationParallelEvaluator:
         self._timing_history: deque = deque(maxlen=10)
 
     def evaluate_population(
-        self, population: list[str], fitness_func: Callable[[str], float] | None = None
+        self,
+        population: list[str],
+        fitness_func: Callable[[str], float] | None = None,
     ) -> list[float]:
-        """
-        Evaluate fitness for entire population.
+        """Evaluate fitness for entire population.
 
         Args:
             population: List of prompt strings
@@ -344,10 +349,12 @@ class PopulationParallelEvaluator:
 
         Returns:
             List of fitness values
+
         """
         func = fitness_func or self.fitness_func
         if func is None:
-            raise ValueError("No fitness function provided")
+            msg = "No fitness function provided"
+            raise ValueError(msg)
 
         # Check cache first
         results = [None] * len(population)
@@ -391,7 +398,7 @@ class PopulationParallelEvaluator:
 
         return results
 
-    def _adapt_batch_size(self):
+    def _adapt_batch_size(self) -> None:
         """Adapt batch size based on timing history."""
         if len(self._timing_history) < 5:
             return
@@ -406,7 +413,7 @@ class PopulationParallelEvaluator:
         self._optimal_batch_size = int(0.7 * self._optimal_batch_size + 0.3 * ideal_batch_size)
         self._optimal_batch_size = max(1, min(self._optimal_batch_size, 100))
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear evaluation cache."""
         self._cache.clear()
         self._cache_hits = 0
@@ -452,8 +459,7 @@ class Strategy:
 
 
 class StrategyLibrary:
-    """
-    Lifelong learning strategy library for AutoDAN-Turbo.
+    """Lifelong learning strategy library for AutoDAN-Turbo.
 
     Maintains a collection of discovered attack strategies,
     their effectiveness scores, and semantic embeddings for
@@ -464,7 +470,7 @@ class StrategyLibrary:
         self,
         config: TurboConfig | None = None,
         embedding_func: Callable[[str], np.ndarray] | None = None,
-    ):
+    ) -> None:
         self.config = config or TurboConfig()
         self.embedding_func = embedding_func
 
@@ -480,8 +486,7 @@ class StrategyLibrary:
         effectiveness_score: float = 0.0,
         metadata: dict[str, Any] | None = None,
     ) -> Strategy:
-        """
-        Add a new strategy to the library.
+        """Add a new strategy to the library.
 
         Returns the created Strategy object.
         """
@@ -529,7 +534,7 @@ class StrategyLibrary:
                 self._embedding_matrix = embedding.reshape(1, -1)
             else:
                 self._embedding_matrix = np.vstack(
-                    [self._embedding_matrix, embedding.reshape(1, -1)]
+                    [self._embedding_matrix, embedding.reshape(1, -1)],
                 )
 
         # Prune if necessary
@@ -552,8 +557,7 @@ class StrategyLibrary:
         return np.dot(matrix_norm, emb_norm)
 
     def get_similar_strategies(self, query: str, top_k: int = 5) -> list[Strategy]:
-        """
-        Retrieve strategies similar to the query.
+        """Retrieve strategies similar to the query.
 
         Args:
             query: Query string
@@ -561,11 +565,14 @@ class StrategyLibrary:
 
         Returns:
             List of similar strategies
+
         """
         if self.embedding_func is None or len(self._strategies) == 0:
             # Return top strategies by effectiveness
             sorted_strategies = sorted(
-                self._strategies.values(), key=lambda s: s.effectiveness_score, reverse=True
+                self._strategies.values(),
+                key=lambda s: s.effectiveness_score,
+                reverse=True,
             )
             return sorted_strategies[:top_k]
 
@@ -579,10 +586,11 @@ class StrategyLibrary:
         return [self._strategies[self._strategy_ids[i]] for i in top_indices]
 
     def get_effective_strategies(
-        self, min_score: float = 0.0, top_k: int | None = None
+        self,
+        min_score: float = 0.0,
+        top_k: int | None = None,
     ) -> list[Strategy]:
-        """
-        Get strategies above effectiveness threshold.
+        """Get strategies above effectiveness threshold.
 
         Args:
             min_score: Minimum effectiveness score
@@ -590,6 +598,7 @@ class StrategyLibrary:
 
         Returns:
             List of effective strategies
+
         """
         effective = [s for s in self._strategies.values() if s.effectiveness_score >= min_score]
 
@@ -601,14 +610,16 @@ class StrategyLibrary:
 
         return effective
 
-    def update_strategy_effectiveness(self, strategy_id: str, score: float, success: bool = True):
-        """
-        Update strategy effectiveness based on usage.
+    def update_strategy_effectiveness(
+        self, strategy_id: str, score: float, success: bool = True
+    ) -> None:
+        """Update strategy effectiveness based on usage.
 
         Args:
             strategy_id: ID of the strategy
             score: Score achieved
             success: Whether the attack succeeded
+
         """
         if strategy_id not in self._strategies:
             return
@@ -623,7 +634,7 @@ class StrategyLibrary:
         alpha = 0.1  # Learning rate for effectiveness update
         strategy.effectiveness_score = (1 - alpha) * strategy.effectiveness_score + alpha * score
 
-    def _prune_strategies(self):
+    def _prune_strategies(self) -> None:
         """Remove low-effectiveness strategies to maintain library size."""
         if len(self._strategies) <= self.config.max_library_size:
             return
@@ -655,7 +666,7 @@ class StrategyLibrary:
                     self._strategies[sid].embedding
                     for sid in self._strategy_ids
                     if self._strategies[sid].embedding is not None
-                ]
+                ],
             )
 
     def export_library(self) -> dict[str, Any]:
@@ -680,7 +691,7 @@ class StrategyLibrary:
             },
         }
 
-    def import_library(self, data: dict[str, Any]):
+    def import_library(self, data: dict[str, Any]) -> None:
         """Import library from serialized format."""
         for s_data in data.get("strategies", []):
             self.add_strategy(
@@ -703,7 +714,7 @@ class StrategyLibrary:
         return {
             "total_strategies": len(self._strategies),
             "avg_effectiveness": np.mean(
-                [s.effectiveness_score for s in self._strategies.values()]
+                [s.effectiveness_score for s in self._strategies.values()],
             ),
             "avg_success_rate": np.mean([s.success_rate for s in self._strategies.values()]),
             "top_strategies": [s.name for s in self.get_effective_strategies(top_k=5)],
@@ -716,8 +727,7 @@ class StrategyLibrary:
 
 
 class TurboLifelongLearner:
-    """
-    AutoDAN-Turbo lifelong learning orchestrator.
+    """AutoDAN-Turbo lifelong learning orchestrator.
 
     Manages the continuous improvement cycle:
     1. Strategy exploration
@@ -731,7 +741,7 @@ class TurboLifelongLearner:
         config: TurboConfig | None = None,
         strategy_library: StrategyLibrary | None = None,
         evaluator: PopulationParallelEvaluator | None = None,
-    ):
+    ) -> None:
         self.config = config or TurboConfig()
         self.strategy_library = strategy_library or StrategyLibrary(config)
         self.evaluator = evaluator
@@ -742,10 +752,12 @@ class TurboLifelongLearner:
         self._score_history: deque = deque(maxlen=100)
 
     def step(
-        self, prompts: list[str], scores: list[float], metadata: list[dict[str, Any]] | None = None
+        self,
+        prompts: list[str],
+        scores: list[float],
+        metadata: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        """
-        Perform one lifelong learning step.
+        """Perform one lifelong learning step.
 
         Args:
             prompts: Generated prompts from this iteration
@@ -754,6 +766,7 @@ class TurboLifelongLearner:
 
         Returns:
             Dict with updated state and recommendations
+
         """
         self._iteration += 1
         metadata = metadata or [{}] * len(prompts)
@@ -762,8 +775,7 @@ class TurboLifelongLearner:
         max_score = max(scores) if scores else 0.0
         self._score_history.append(max_score)
 
-        if max_score > self._best_score:
-            self._best_score = max_score
+        self._best_score = max(self._best_score, max_score)
 
         # Extract and store successful strategies
         successful_strategies = self._extract_strategies(prompts, scores, metadata)
@@ -787,7 +799,10 @@ class TurboLifelongLearner:
         }
 
     def _extract_strategies(
-        self, prompts: list[str], scores: list[float], metadata: list[dict[str, Any]]
+        self,
+        prompts: list[str],
+        scores: list[float],
+        metadata: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         """Extract successful strategies from prompts."""
         strategies = []
@@ -809,7 +824,8 @@ class TurboLifelongLearner:
             strategy_info = {
                 "name": meta.get("strategy_name", f"auto_{self._iteration}_{len(strategies)}"),
                 "description": meta.get(
-                    "description", f"Strategy from iteration {self._iteration}"
+                    "description",
+                    f"Strategy from iteration {self._iteration}",
                 ),
                 "pattern": prompt[:500],  # Truncate for storage
                 "effectiveness_score": effectiveness,
@@ -819,22 +835,21 @@ class TurboLifelongLearner:
 
         return strategies
 
-    def _update_phase(self):
+    def _update_phase(self) -> None:
         """Update learning phase based on progress."""
         if self._iteration <= self.config.warmup_iterations:
             self._phase = "warmup"
         elif self._iteration <= self.config.warmup_iterations + self.config.lifelong_iterations:
             self._phase = "lifelong"
-        else:
-            # Check if still improving
-            if len(self._score_history) >= 10:
-                recent = list(self._score_history)[-10:]
-                improvement = recent[-1] - recent[0]
+        # Check if still improving
+        elif len(self._score_history) >= 10:
+            recent = list(self._score_history)[-10:]
+            improvement = recent[-1] - recent[0]
 
-                if improvement < self.config.min_score_improvement:
-                    self._phase = "exploitation"
-                else:
-                    self._phase = "lifelong"
+            if improvement < self.config.min_score_improvement:
+                self._phase = "exploitation"
+            else:
+                self._phase = "lifelong"
 
     def _get_recommendations(self) -> dict[str, Any]:
         """Get recommendations for next iteration."""
@@ -855,7 +870,8 @@ class TurboLifelongLearner:
 
             # Get top strategies to use
             effective_strategies = self.strategy_library.get_effective_strategies(
-                min_score=0.5, top_k=self.config.top_k_strategies
+                min_score=0.5,
+                top_k=self.config.top_k_strategies,
             )
             recommendations["use_strategies"] = [s.pattern for s in effective_strategies]
             recommendations["focus_areas"] = ["refinement", "combination"]
@@ -865,7 +881,7 @@ class TurboLifelongLearner:
             recommendations["exploration_rate"] = 0.1
 
             top_strategies = self.strategy_library.get_effective_strategies(
-                top_k=self.config.top_k_strategies // 2
+                top_k=self.config.top_k_strategies // 2,
             )
             recommendations["use_strategies"] = [s.pattern for s in top_strategies]
             recommendations["focus_areas"] = ["optimization", "transfer"]
@@ -873,10 +889,11 @@ class TurboLifelongLearner:
         return recommendations
 
     def best_of_n_sample(
-        self, candidates: list[str], fitness_func: Callable[[str], float]
+        self,
+        candidates: list[str],
+        fitness_func: Callable[[str], float],
     ) -> tuple[str, float]:
-        """
-        Best-of-N sampling for prompt selection.
+        """Best-of-N sampling for prompt selection.
 
         Args:
             candidates: List of candidate prompts
@@ -884,6 +901,7 @@ class TurboLifelongLearner:
 
         Returns:
             Tuple of (best_prompt, best_score)
+
         """
         if not candidates:
             return "", 0.0

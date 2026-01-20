@@ -1,5 +1,4 @@
-"""
-Advanced Caching System for AutoDAN with Similarity Matching
+"""Advanced Caching System for AutoDAN with Similarity Matching.
 
 This module provides a sophisticated caching system with:
 - Multi-tier caching (L1: Memory, L2: Redis, L3: Disk)
@@ -55,7 +54,7 @@ except ImportError:
 
 
 class CacheLevel(Enum):
-    """Cache tier levels"""
+    """Cache tier levels."""
 
     L1 = "memory"  # In-memory LRU cache
     L2 = "redis"  # Redis cache
@@ -63,7 +62,7 @@ class CacheLevel(Enum):
 
 
 class EvictionPolicy(Enum):
-    """Cache eviction policies"""
+    """Cache eviction policies."""
 
     LRU = "lru"  # Least Recently Used
     LFU = "lfu"  # Least Frequently Used
@@ -73,7 +72,7 @@ class EvictionPolicy(Enum):
 
 @dataclass
 class CacheEntry:
-    """Cache entry with metadata"""
+    """Cache entry with metadata."""
 
     key: str
     value: Any
@@ -86,25 +85,25 @@ class CacheEntry:
 
     @property
     def is_expired(self) -> bool:
-        """Check if entry has expired"""
+        """Check if entry has expired."""
         if self.ttl_seconds is None:
             return False
         return time.time() - self.created_at > self.ttl_seconds
 
     @property
     def age_seconds(self) -> float:
-        """Get age in seconds"""
+        """Get age in seconds."""
         return time.time() - self.created_at
 
-    def touch(self):
-        """Update access metadata"""
+    def touch(self) -> None:
+        """Update access metadata."""
         self.last_accessed = time.time()
         self.access_count += 1
 
 
 @dataclass
 class CacheStats:
-    """Cache statistics"""
+    """Cache statistics."""
 
     total_requests: int = 0
     cache_hits: int = 0
@@ -117,54 +116,49 @@ class CacheStats:
 
     @property
     def hit_rate(self) -> float:
-        """Calculate cache hit rate"""
+        """Calculate cache hit rate."""
         total = self.cache_hits + self.cache_misses
         return self.cache_hits / total if total > 0 else 0.0
 
     @property
     def similarity_hit_rate(self) -> float:
-        """Calculate similarity-based hit rate"""
+        """Calculate similarity-based hit rate."""
         return self.similarity_hits / self.cache_hits if self.cache_hits > 0 else 0.0
 
 
 class CacheBackend(ABC):
-    """Abstract cache backend interface"""
+    """Abstract cache backend interface."""
 
     @abstractmethod
     async def get(self, key: str) -> CacheEntry | None:
-        """Get entry by key"""
-        pass
+        """Get entry by key."""
 
     @abstractmethod
     async def set(self, key: str, entry: CacheEntry) -> bool:
-        """Set entry"""
-        pass
+        """Set entry."""
 
     @abstractmethod
     async def delete(self, key: str) -> bool:
-        """Delete entry"""
-        pass
+        """Delete entry."""
 
     @abstractmethod
     async def clear(self) -> bool:
-        """Clear all entries"""
-        pass
+        """Clear all entries."""
 
     @abstractmethod
     async def size(self) -> int:
-        """Get number of entries"""
-        pass
+        """Get number of entries."""
 
 
 class MemoryCache(CacheBackend):
-    """In-memory LRU cache backend"""
+    """In-memory LRU cache backend."""
 
     def __init__(
         self,
         max_size: int = 1000,
         max_size_bytes: int = 100 * 1024 * 1024,  # 100MB
         eviction_policy: EvictionPolicy = EvictionPolicy.LRU,
-    ):
+    ) -> None:
         self.max_size = max_size
         self.max_size_bytes = max_size_bytes
         self.eviction_policy = eviction_policy
@@ -223,7 +217,7 @@ class MemoryCache(CacheBackend):
         return len(self.cache)
 
     async def _remove_entry(self, key: str) -> bool:
-        """Remove entry and update size"""
+        """Remove entry and update size."""
         if key not in self.cache:
             return False
 
@@ -232,7 +226,7 @@ class MemoryCache(CacheBackend):
         return True
 
     async def _evict_one(self) -> bool:
-        """Evict one entry based on policy"""
+        """Evict one entry based on policy."""
         if not self.cache:
             return False
 
@@ -254,23 +248,24 @@ class MemoryCache(CacheBackend):
 
 
 class RedisCache(CacheBackend):
-    """Redis-based cache backend"""
+    """Redis-based cache backend."""
 
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379/0",
         key_prefix: str = "autodan_cache:",
         compression: bool = True,
-    ):
+    ) -> None:
         self.redis_url = redis_url
         self.key_prefix = key_prefix
         self.compression = compression
         self.redis: aioredis.Redis | None = None
 
-    async def initialize(self):
-        """Initialize Redis connection"""
+    async def initialize(self) -> None:
+        """Initialize Redis connection."""
         if not REDIS_AVAILABLE:
-            raise RuntimeError("Redis not available")
+            msg = "Redis not available"
+            raise RuntimeError(msg)
 
         self.redis = aioredis.from_url(self.redis_url)
 
@@ -287,7 +282,7 @@ class RedisCache(CacheBackend):
             if self.compression:
                 data = zlib.decompress(data)
 
-            entry = pickle.loads(data)  # noqa: S301 - internal cache data, trusted source
+            entry = pickle.loads(data)
 
             # Check TTL
             if entry.is_expired:
@@ -298,7 +293,7 @@ class RedisCache(CacheBackend):
             return entry
 
         except Exception as e:
-            logger.error(f"Redis get error: {e}")
+            logger.exception(f"Redis get error: {e}")
             return None
 
     async def set(self, key: str, entry: CacheEntry) -> bool:
@@ -317,7 +312,7 @@ class RedisCache(CacheBackend):
             return True
 
         except Exception as e:
-            logger.error(f"Redis set error: {e}")
+            logger.exception(f"Redis set error: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -328,7 +323,7 @@ class RedisCache(CacheBackend):
             result = await self.redis.delete(f"{self.key_prefix}{key}")
             return result > 0
         except Exception as e:
-            logger.error(f"Redis delete error: {e}")
+            logger.exception(f"Redis delete error: {e}")
             return False
 
     async def clear(self) -> bool:
@@ -341,7 +336,7 @@ class RedisCache(CacheBackend):
                 await self.redis.delete(*keys)
             return True
         except Exception as e:
-            logger.error(f"Redis clear error: {e}")
+            logger.exception(f"Redis clear error: {e}")
             return False
 
     async def size(self) -> int:
@@ -352,24 +347,24 @@ class RedisCache(CacheBackend):
             keys = await self.redis.keys(f"{self.key_prefix}*")
             return len(keys)
         except Exception as e:
-            logger.error(f"Redis size error: {e}")
+            logger.exception(f"Redis size error: {e}")
             return 0
 
-    async def cleanup(self):
-        """Cleanup Redis connection"""
+    async def cleanup(self) -> None:
+        """Cleanup Redis connection."""
         if self.redis:
             await self.redis.close()
 
 
 class DiskCache(CacheBackend):
-    """Disk-based persistent cache"""
+    """Disk-based persistent cache."""
 
     def __init__(
         self,
         cache_dir: str | Path = "cache/autodan",
         max_size_mb: int = 1000,
         compression: bool = True,
-    ):
+    ) -> None:
         self.cache_dir = Path(cache_dir)
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.compression = compression
@@ -377,7 +372,7 @@ class DiskCache(CacheBackend):
         self._lock = asyncio.Lock()
 
     def _get_file_path(self, key: str) -> Path:
-        """Get file path for key"""
+        """Get file path for key."""
         safe_key = hashlib.md5(key.encode()).hexdigest()
         return self.cache_dir / f"{safe_key}.cache"
 
@@ -395,7 +390,7 @@ class DiskCache(CacheBackend):
                 if self.compression:
                     data = zlib.decompress(data)
 
-                entry = pickle.loads(data)  # noqa: S301 - internal cache data, trusted source
+                entry = pickle.loads(data)
 
                 if entry.is_expired:
                     file_path.unlink(missing_ok=True)
@@ -405,7 +400,7 @@ class DiskCache(CacheBackend):
                 return entry
 
         except Exception as e:
-            logger.error(f"Disk cache get error: {e}")
+            logger.exception(f"Disk cache get error: {e}")
             return None
 
     async def set(self, key: str, entry: CacheEntry) -> bool:
@@ -427,7 +422,7 @@ class DiskCache(CacheBackend):
                 return True
 
         except Exception as e:
-            logger.error(f"Disk cache set error: {e}")
+            logger.exception(f"Disk cache set error: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -437,7 +432,7 @@ class DiskCache(CacheBackend):
             file_path.unlink(missing_ok=True)
             return True
         except Exception as e:
-            logger.error(f"Disk cache delete error: {e}")
+            logger.exception(f"Disk cache delete error: {e}")
             return False
 
     async def clear(self) -> bool:
@@ -447,18 +442,18 @@ class DiskCache(CacheBackend):
                     file_path.unlink(missing_ok=True)
                 return True
         except Exception as e:
-            logger.error(f"Disk cache clear error: {e}")
+            logger.exception(f"Disk cache clear error: {e}")
             return False
 
     async def size(self) -> int:
         try:
             return len(list(self.cache_dir.glob("*.cache")))
         except Exception as e:
-            logger.error(f"Disk cache size error: {e}")
+            logger.exception(f"Disk cache size error: {e}")
             return 0
 
     async def _get_cache_size(self) -> int:
-        """Get total cache size in bytes"""
+        """Get total cache size in bytes."""
         total_size = 0
         for file_path in self.cache_dir.glob("*.cache"):
             try:
@@ -467,8 +462,8 @@ class DiskCache(CacheBackend):
                 continue
         return total_size
 
-    async def _cleanup_old_files(self):
-        """Remove oldest files to free space"""
+    async def _cleanup_old_files(self) -> None:
+        """Remove oldest files to free space."""
         files = list(self.cache_dir.glob("*.cache"))
         files.sort(key=lambda f: f.stat().st_mtime)
 
@@ -482,9 +477,9 @@ class DiskCache(CacheBackend):
 
 
 class SimilarityIndex:
-    """FAISS-based similarity index for semantic cache hits"""
+    """FAISS-based similarity index for semantic cache hits."""
 
-    def __init__(self, dimension: int = 768, index_type: str = "IVF"):
+    def __init__(self, dimension: int = 768, index_type: str = "IVF") -> None:
         self.dimension = dimension
         self.index_type = index_type
         self.index: faiss.Index | None = None
@@ -494,8 +489,8 @@ class SimilarityIndex:
         self.next_id = 0
         self._lock = asyncio.Lock()
 
-    async def initialize(self):
-        """Initialize FAISS index"""
+    async def initialize(self) -> None:
+        """Initialize FAISS index."""
         if not FAISS_AVAILABLE:
             logger.warning("FAISS not available, similarity search disabled")
             return
@@ -512,8 +507,8 @@ class SimilarityIndex:
                 # Flat index for smaller datasets
                 self.index = faiss.IndexFlatIP(self.dimension)
 
-    async def add_embedding(self, key: str, embedding: np.ndarray):
-        """Add embedding to index"""
+    async def add_embedding(self, key: str, embedding: np.ndarray) -> None:
+        """Add embedding to index."""
         if not self.index or not FAISS_AVAILABLE:
             return
 
@@ -530,9 +525,12 @@ class SimilarityIndex:
             self.next_id += 1
 
     async def search_similar(
-        self, embedding: np.ndarray, k: int = 5, threshold: float = 0.9
+        self,
+        embedding: np.ndarray,
+        k: int = 5,
+        threshold: float = 0.9,
     ) -> list[tuple[str, float]]:
-        """Search for similar embeddings"""
+        """Search for similar embeddings."""
         if not self.index or not FAISS_AVAILABLE or self.next_id == 0:
             return []
 
@@ -542,7 +540,8 @@ class SimilarityIndex:
 
             # Search
             similarities, indices = self.index.search(
-                normalized_embedding.reshape(1, -1).astype("float32"), min(k, self.next_id)
+                normalized_embedding.reshape(1, -1).astype("float32"),
+                min(k, self.next_id),
             )
 
             # Filter by threshold and return results
@@ -555,8 +554,8 @@ class SimilarityIndex:
 
             return results
 
-    async def remove_embedding(self, key: str):
-        """Remove embedding (note: FAISS doesn't support removal, so we mark as deleted)"""
+    async def remove_embedding(self, key: str) -> None:
+        """Remove embedding (note: FAISS doesn't support removal, so we mark as deleted)."""
         if key in self.key_to_id:
             async with self._lock:
                 # In a production system, you'd need to rebuild the index periodically
@@ -568,8 +567,7 @@ class SimilarityIndex:
 
 
 class HierarchicalCache:
-    """
-    Multi-tier hierarchical cache with similarity matching
+    """Multi-tier hierarchical cache with similarity matching.
 
     Features:
     - L1: Fast in-memory cache
@@ -589,7 +587,7 @@ class HierarchicalCache:
         enable_similarity: bool = True,
         enable_bloom_filter: bool = True,
         embedding_dimension: int = 768,
-    ):
+    ) -> None:
         # Initialize backends
         self.l1_cache = MemoryCache(**(memory_config or {}))
         self.l2_cache = RedisCache(**(redis_config or {})) if REDIS_AVAILABLE else None
@@ -612,8 +610,8 @@ class HierarchicalCache:
         self.stats = CacheStats()
         self._lock = asyncio.Lock()
 
-    async def initialize(self):
-        """Initialize all cache components"""
+    async def initialize(self) -> None:
+        """Initialize all cache components."""
         if self.l2_cache:
             await self.l2_cache.initialize()
 
@@ -623,7 +621,7 @@ class HierarchicalCache:
         logger.info("Hierarchical cache initialized")
 
     async def get(self, key: str, embedding: np.ndarray | None = None) -> Any | None:
-        """Get value from cache with similarity matching"""
+        """Get value from cache with similarity matching."""
         start_time = time.time()
         self.stats.total_requests += 1
 
@@ -635,11 +633,10 @@ class HierarchicalCache:
                         self.stats.bloom_filter_saves += 1
                         self.stats.cache_misses += 1
                         return None
-                else:  # fallback to set
-                    if key not in self.bloom_filter:
-                        self.stats.bloom_filter_saves += 1
-                        self.stats.cache_misses += 1
-                        return None
+                elif key not in self.bloom_filter:
+                    self.stats.bloom_filter_saves += 1
+                    self.stats.cache_misses += 1
+                    return None
 
             # Try direct lookup in all tiers
             entry = await self._get_from_tier(CacheLevel.L1, key)
@@ -657,7 +654,9 @@ class HierarchicalCache:
             # Try similarity search if embedding provided
             if self.enable_similarity and embedding is not None and self.similarity_index:
                 similar_keys = await self.similarity_index.search_similar(
-                    embedding, k=5, threshold=self.similarity_threshold
+                    embedding,
+                    k=5,
+                    threshold=self.similarity_threshold,
                 )
 
                 for similar_key, similarity in similar_keys:
@@ -675,7 +674,7 @@ class HierarchicalCache:
 
         except Exception as e:
             self.stats.errors += 1
-            logger.error(f"Cache get error: {e}")
+            logger.exception(f"Cache get error: {e}")
             return None
         finally:
             elapsed = time.time() - start_time
@@ -688,7 +687,7 @@ class HierarchicalCache:
         ttl_seconds: float | None = None,
         embedding: np.ndarray | None = None,
     ) -> bool:
-        """Set value in cache"""
+        """Set value in cache."""
         try:
             # Calculate size
             size_bytes = len(pickle.dumps(value))
@@ -731,11 +730,11 @@ class HierarchicalCache:
 
         except Exception as e:
             self.stats.errors += 1
-            logger.error(f"Cache set error: {e}")
+            logger.exception(f"Cache set error: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
-        """Delete from all cache tiers"""
+        """Delete from all cache tiers."""
         try:
             success = True
             success &= await self.l1_cache.delete(key)
@@ -753,11 +752,11 @@ class HierarchicalCache:
 
         except Exception as e:
             self.stats.errors += 1
-            logger.error(f"Cache delete error: {e}")
+            logger.exception(f"Cache delete error: {e}")
             return False
 
     async def clear(self) -> bool:
-        """Clear all cache tiers"""
+        """Clear all cache tiers."""
         try:
             success = True
             success &= await self.l1_cache.clear()
@@ -781,21 +780,21 @@ class HierarchicalCache:
 
         except Exception as e:
             self.stats.errors += 1
-            logger.error(f"Cache clear error: {e}")
+            logger.exception(f"Cache clear error: {e}")
             return False
 
     async def _get_from_tier(self, tier: CacheLevel, key: str) -> CacheEntry | None:
-        """Get entry from specific tier"""
+        """Get entry from specific tier."""
         if tier == CacheLevel.L1:
             return await self.l1_cache.get(key)
-        elif tier == CacheLevel.L2 and self.l2_cache:
+        if tier == CacheLevel.L2 and self.l2_cache:
             return await self.l2_cache.get(key)
-        elif tier == CacheLevel.L3:
+        if tier == CacheLevel.L3:
             return await self.l3_cache.get(key)
         return None
 
     async def _get_from_any_tier(self, key: str) -> CacheEntry | None:
-        """Get entry from any available tier"""
+        """Get entry from any available tier."""
         entry = await self._get_from_tier(CacheLevel.L1, key)
         if not entry and self.l2_cache:
             entry = await self._get_from_tier(CacheLevel.L2, key)
@@ -803,13 +802,13 @@ class HierarchicalCache:
             entry = await self._get_from_tier(CacheLevel.L3, key)
         return entry
 
-    async def _promote_entry(self, key: str, entry: CacheEntry):
-        """Promote entry to higher cache tiers"""
+    async def _promote_entry(self, key: str, entry: CacheEntry) -> None:
+        """Promote entry to higher cache tiers."""
         # Always ensure L1 has the entry
         await self.l1_cache.set(key, entry)
 
     def get_stats(self) -> dict[str, Any]:
-        """Get comprehensive cache statistics"""
+        """Get comprehensive cache statistics."""
         return {
             "hit_rate": self.stats.hit_rate,
             "similarity_hit_rate": self.stats.similarity_hit_rate,
@@ -831,8 +830,8 @@ class HierarchicalCache:
             "bloom_filter_enabled": self.enable_bloom_filter,
         }
 
-    async def cleanup(self):
-        """Cleanup all cache resources"""
+    async def cleanup(self) -> None:
+        """Cleanup all cache resources."""
         if self.l2_cache:
             await self.l2_cache.cleanup()
 
@@ -841,14 +840,14 @@ class HierarchicalCache:
 
 # Factory function for easy cache creation
 def create_hierarchical_cache(**kwargs) -> HierarchicalCache:
-    """Create a hierarchical cache with sensible defaults"""
+    """Create a hierarchical cache with sensible defaults."""
     return HierarchicalCache(**kwargs)
 
 
 # Context manager for managed cache lifecycle
 @asynccontextmanager
 async def managed_hierarchical_cache(**kwargs):
-    """Context manager for automatic cache lifecycle management"""
+    """Context manager for automatic cache lifecycle management."""
     cache = HierarchicalCache(**kwargs)
     try:
         await cache.initialize()

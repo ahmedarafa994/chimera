@@ -1,5 +1,4 @@
-"""
-AutoDAN-X RAG Engine - Retrieval-Augmented Generation for adversarial prompt engineering.
+"""AutoDAN-X RAG Engine - Retrieval-Augmented Generation for adversarial prompt engineering.
 
 This module provides:
 - FAISS-based vector store for knowledge base
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class RAGEngine:
-    """
-    RAG Engine for AutoDAN-X knowledge base retrieval.
+    """RAG Engine for AutoDAN-X knowledge base retrieval.
 
     Uses FAISS for efficient similarity search and GeminiEmbeddingModel
     for generating embeddings.
@@ -38,20 +36,21 @@ class RAGEngine:
         knowledge_base_path: str | None = None,
         index_path: str | None = None,
         embedding_dimension: int = 768,
-    ):
-        """
-        Initialize the RAG Engine.
+    ) -> None:
+        """Initialize the RAG Engine.
 
         Args:
             knowledge_base_path: Path to knowledge base YAML files
             index_path: Path to store/load FAISS index
             embedding_dimension: Dimension of embedding vectors
+
         """
         self.knowledge_base_path = Path(
-            knowledge_base_path or os.path.join(os.path.dirname(__file__), "data", "knowledge_base")
+            knowledge_base_path
+            or os.path.join(os.path.dirname(__file__), "data", "knowledge_base"),
         )
         self.index_path = Path(
-            index_path or os.path.join(os.path.dirname(__file__), "data", "embeddings")
+            index_path or os.path.join(os.path.dirname(__file__), "data", "embeddings"),
         )
         self.embedding_dimension = embedding_dimension
 
@@ -93,12 +92,14 @@ class RAGEngine:
                 from app.services.autodan.llm import GeminiEmbeddingModel
 
                 self._embedding_model = GeminiEmbeddingModel(
-                    model_name="models/text-embedding-004", api_key=settings.GOOGLE_API_KEY
+                    model_name="models/text-embedding-004",
+                    api_key=settings.GOOGLE_API_KEY,
                 )
                 logger.info("Initialized GeminiEmbeddingModel for RAG")
             except Exception as e:
-                logger.error(f"Failed to initialize embedding model: {e}")
-                raise RuntimeError(f"RAG Engine requires embedding model: {e}")
+                logger.exception(f"Failed to initialize embedding model: {e}")
+                msg = f"RAG Engine requires embedding model: {e}"
+                raise RuntimeError(msg)
         return self._embedding_model
 
     async def _load_knowledge_base(self) -> None:
@@ -111,7 +112,7 @@ class RAGEngine:
             try:
                 await self._load_yaml_file(yaml_file)
             except Exception as e:
-                logger.error(f"Error loading {yaml_file}: {e}")
+                logger.exception(f"Error loading {yaml_file}: {e}")
 
     async def _load_yaml_file(self, file_path: Path) -> None:
         """Load a single YAML file into the knowledge base."""
@@ -152,7 +153,7 @@ class RAGEngine:
             entry_id = (
                 data.get("id")
                 or hashlib.md5(
-                    str(data.get("title", "") + data.get("content", "")).encode()
+                    str(data.get("title", "") + data.get("content", "")).encode(),
                 ).hexdigest()[:12]
             )
 
@@ -194,7 +195,7 @@ class RAGEngine:
         try:
             import faiss
         except ImportError:
-            logger.error("FAISS not installed. Install with: pip install faiss-cpu")
+            logger.exception("FAISS not installed. Install with: pip install faiss-cpu")
             return
 
         # Get embeddings for all entries
@@ -212,11 +213,12 @@ class RAGEngine:
             try:
                 # Use the embedding model's embed method
                 batch_embeddings = await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: [embedding_model.embed(text) for text in batch_texts]
+                    None,
+                    lambda b=batch_texts: [embedding_model.embed(text) for text in b],
                 )
                 all_embeddings.extend(batch_embeddings)
             except Exception as e:
-                logger.error(f"Error generating embeddings for batch {i}: {e}")
+                logger.exception(f"Error generating embeddings for batch {i}: {e}")
                 # Use zero vectors as fallback
                 all_embeddings.extend([np.zeros(self.embedding_dimension) for _ in batch_texts])
 
@@ -267,7 +269,7 @@ class RAGEngine:
 
             logger.info(f"Saved FAISS index to {self.index_path}")
         except Exception as e:
-            logger.error(f"Failed to save index: {e}")
+            logger.exception(f"Failed to save index: {e}")
 
     async def _load_index(self) -> bool:
         """Load FAISS index from disk."""
@@ -303,8 +305,7 @@ class RAGEngine:
         min_relevance: float = 0.0,
         category_filter: str | None = None,
     ) -> RAGContext:
-        """
-        Search the knowledge base for relevant entries.
+        """Search the knowledge base for relevant entries.
 
         Args:
             query: Search query
@@ -314,6 +315,7 @@ class RAGEngine:
 
         Returns:
             RAGContext with retrieved entries and scores
+
         """
         if not self._initialized:
             await self.initialize()
@@ -328,7 +330,8 @@ class RAGEngine:
             # Get query embedding
             embedding_model = self._get_embedding_model()
             query_embedding = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: embedding_model.embed(query)
+                None,
+                lambda: embedding_model.embed(query),
             )
             query_vector = np.array([query_embedding], dtype=np.float32)
 
@@ -385,7 +388,7 @@ class RAGEngine:
             )
 
         except Exception as e:
-            logger.error(f"Search error: {e}")
+            logger.exception(f"Search error: {e}")
             return RAGContext(query=query)
 
     def _build_combined_context(
@@ -413,14 +416,14 @@ class RAGEngine:
         return "\n".join(context_parts)
 
     async def add_entry(self, entry: KnowledgeEntry) -> bool:
-        """
-        Add a new entry to the knowledge base.
+        """Add a new entry to the knowledge base.
 
         Args:
             entry: KnowledgeEntry to add
 
         Returns:
             True if successful
+
         """
         if not self._initialized:
             await self.initialize()
@@ -429,7 +432,8 @@ class RAGEngine:
             # Generate embedding
             embedding_model = self._get_embedding_model()
             embedding = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: embedding_model.embed(entry.content)
+                None,
+                lambda: embedding_model.embed(entry.content),
             )
             embedding_vector = np.array([embedding], dtype=np.float32)
 
@@ -458,7 +462,7 @@ class RAGEngine:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to add entry: {e}")
+            logger.exception(f"Failed to add entry: {e}")
             return False
 
     def get_stats(self) -> RAGStats:

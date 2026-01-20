@@ -1,5 +1,4 @@
-"""
-Optimized WebSocket Service with performance enhancements.
+"""Optimized WebSocket Service with performance enhancements.
 
 This module provides comprehensive WebSocket optimizations:
 - Connection pooling and management
@@ -78,9 +77,7 @@ class MessageBatch:
 
 
 class OptimizedWebSocketConnection:
-    """
-    Optimized WebSocket connection with performance enhancements.
-    """
+    """Optimized WebSocket connection with performance enhancements."""
 
     def __init__(
         self,
@@ -88,7 +85,7 @@ class OptimizedWebSocketConnection:
         connection_id: str,
         client_ip: str = "",
         heartbeat_interval: int = 30,
-    ):
+    ) -> None:
         self.websocket = websocket
         self.connection_id = connection_id
         self.client_ip = client_ip
@@ -175,7 +172,10 @@ class OptimizedWebSocketConnection:
             self.state = ConnectionState.ERROR
 
     async def send_json(
-        self, data: dict[str, Any], batch: bool = True, priority: bool = False
+        self,
+        data: dict[str, Any],
+        batch: bool = True,
+        priority: bool = False,
     ) -> None:
         """Send JSON data with optional batching."""
         if self.state != ConnectionState.CONNECTED:
@@ -491,11 +491,9 @@ class OptimizedWebSocketConnection:
 
 
 class WebSocketConnectionManager:
-    """
-    Optimized WebSocket connection manager with load balancing and monitoring.
-    """
+    """Optimized WebSocket connection manager with load balancing and monitoring."""
 
-    def __init__(self, max_connections: int = 1000, heartbeat_interval: int = 30):
+    def __init__(self, max_connections: int = 1000, heartbeat_interval: int = 30) -> None:
         self.max_connections = max_connections
         self.heartbeat_interval = heartbeat_interval
 
@@ -556,14 +554,17 @@ class WebSocketConnectionManager:
         # Check connection limits
         if len(self._connections) >= self.max_connections:
             await websocket.close(code=status.WS_1013_TRY_AGAIN_LATER, reason="Server at capacity")
-            raise RuntimeError("Connection limit exceeded")
+            msg = "Connection limit exceeded"
+            raise RuntimeError(msg)
 
         # Check per-IP limits
         if len(self._connections_by_client_ip[client_ip]) >= 10:  # Max 10 per IP
             await websocket.close(
-                code=status.WS_1008_POLICY_VIOLATION, reason="Too many connections from this IP"
+                code=status.WS_1008_POLICY_VIOLATION,
+                reason="Too many connections from this IP",
             )
-            raise RuntimeError("Per-IP connection limit exceeded")
+            msg = "Per-IP connection limit exceeded"
+            raise RuntimeError(msg)
 
         # Create connection
         connection_id = str(uuid4())
@@ -657,7 +658,7 @@ class WebSocketConnectionManager:
         for connection_id in self._connection_groups[group]:
             if connection_id in self._connections:
                 task = asyncio.create_task(
-                    self._connections[connection_id].send_json(data, batch=batch)
+                    self._connections[connection_id].send_json(data, batch=batch),
                 )
                 tasks.append(task)
 
@@ -738,7 +739,7 @@ class WebSocketConnectionManager:
                         time.time() - conn.connected_at for conn in self._connections.values()
                     )
                     self._global_metrics["avg_connection_duration"] = total_duration / len(
-                        self._connections
+                        self._connections,
                     )
 
                 # Log metrics
@@ -746,7 +747,7 @@ class WebSocketConnectionManager:
                     f"WebSocket metrics - "
                     f"Active: {self._global_metrics['active_connections']}, "
                     f"Total: {self._global_metrics['total_connections']}, "
-                    f"Avg duration: {self._global_metrics['avg_connection_duration']:.1f}s"
+                    f"Avg duration: {self._global_metrics['avg_connection_duration']:.1f}s",
                 )
 
             except asyncio.CancelledError:

@@ -16,15 +16,14 @@ from app.domain.models import LLMProviderType, PromptRequest, PromptResponse, St
 
 
 class GeminiClient(LLMProvider):
-    """
-    Modern Gemini client using python-genai SDK with:
+    """Modern Gemini client using python-genai SDK with:
     - Native async support via client.aio
     - Streaming generation
     - Token counting
-    - Proper error handling with errors.APIError
+    - Proper error handling with errors.APIError.
     """
 
-    def __init__(self, config: Settings = None):
+    def __init__(self, config: Settings = None) -> None:
         self.config = config or get_settings()
         self._client: genai.Client | None = None
 
@@ -37,8 +36,7 @@ class GeminiClient(LLMProvider):
         logger.info("GeminiClient configured in DIRECT mode via SDK")
 
     def _get_safety_settings(self) -> list:
-        """
-        Get safety settings configured to allow all content for research/testing.
+        """Get safety settings configured to allow all content for research/testing.
         BLOCK_NONE allows all content including hate speech, harassment, and complex content.
         """
         from google.genai import types
@@ -54,13 +52,14 @@ class GeminiClient(LLMProvider):
     def client(self) -> genai.Client:
         """Get the sync client, raising if not initialized."""
         if not self._client:
+            msg = "Gemini client not initialized - API key may be missing"
             raise AppError(
-                "Gemini client not initialized - API key may be missing",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return self._client
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the client and cleanup resources. Call on application shutdown."""
         if self._client is not None:
             with suppress(Exception):
@@ -68,15 +67,15 @@ class GeminiClient(LLMProvider):
             self._client = None
 
     def _ensure_client(self) -> genai.Client:
-        """
-        Ensure a client instance exists and return it.
+        """Ensure a client instance exists and return it.
         Reuses the existing client to avoid repeated cleanup issues with aiohttp.
         """
         if self._client is None:
             api_key = self.config.get_effective_api_key()
             if not api_key:
+                msg = "Gemini client not initialized - API key missing"
                 raise AppError(
-                    "Gemini client not initialized - API key missing",
+                    msg,
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
             self._client = genai.Client(api_key=api_key)
@@ -84,8 +83,7 @@ class GeminiClient(LLMProvider):
 
     @asynccontextmanager
     async def _async_client(self):
-        """
-        Context manager for async client operations.
+        """Context manager for async client operations.
         Uses client.aio pattern from SDK for native async support.
 
         Creates a fresh client for each context to avoid event loop binding issues
@@ -93,8 +91,9 @@ class GeminiClient(LLMProvider):
         """
         api_key = self.config.get_effective_api_key()
         if not api_key:
+            msg = "Gemini client not initialized - API key missing"
             raise AppError(
-                "Gemini client not initialized - API key missing",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -124,7 +123,8 @@ class GeminiClient(LLMProvider):
     def _sanitize_prompt(self, prompt: str) -> str:
         """Sanitize user input to prevent injection attacks."""
         if not prompt:
-            raise ValueError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise ValueError(msg)
 
         # Remove potential code injection patterns
         prompt = re.sub(r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL)
@@ -152,7 +152,8 @@ class GeminiClient(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         # Input validation and sanitization
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         sanitized_system_instruction = None
@@ -161,7 +162,8 @@ class GeminiClient(LLMProvider):
 
         # API key validation
         if request.api_key and not self._validate_api_key(request.api_key):
-            raise AppError("Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Invalid API key format"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         model_name = request.model or self.config.GOOGLE_MODEL
         start_time = time.time()
@@ -192,13 +194,17 @@ class GeminiClient(LLMProvider):
 
         except errors.APIError as e:
             logger.error(f"Gemini API error: code={e.code}, message={e.message}")
+            msg = f"Gemini API error: {e.message}"
             raise AppError(
-                f"Gemini API error: {e.message}", status_code=self._map_error_code(e.code)
+                msg,
+                status_code=self._map_error_code(e.code),
             )
         except Exception as e:
             logger.error(f"Gemini generation failed: {e!s}", exc_info=True)
+            msg = f"Gemini generation failed: {e!s}"
             raise AppError(
-                f"Gemini generation failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY
+                msg,
+                status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
     def _build_response(self, response, model_name: str, latency: float) -> PromptResponse:
@@ -206,10 +212,11 @@ class GeminiClient(LLMProvider):
         if not response.candidates:
             if response.prompt_feedback and response.prompt_feedback.block_reason:
                 logger.warning(
-                    f"Content blocked by safety filters: {response.prompt_feedback.block_reason}"
-                )
-                raise AppError(
                     f"Content blocked by safety filters: {response.prompt_feedback.block_reason}",
+                )
+                msg = f"Content blocked by safety filters: {response.prompt_feedback.block_reason}"
+                raise AppError(
+                    msg,
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
             return PromptResponse(
@@ -228,13 +235,19 @@ class GeminiClient(LLMProvider):
                 else:
                     usage_metadata = {
                         "prompt_token_count": getattr(
-                            response.usage_metadata, "prompt_token_count", 0
+                            response.usage_metadata,
+                            "prompt_token_count",
+                            0,
                         ),
                         "candidates_token_count": getattr(
-                            response.usage_metadata, "candidates_token_count", 0
+                            response.usage_metadata,
+                            "candidates_token_count",
+                            0,
                         ),
                         "total_token_count": getattr(
-                            response.usage_metadata, "total_token_count", 0
+                            response.usage_metadata,
+                            "total_token_count",
+                            0,
                         ),
                     }
             except Exception as e:
@@ -265,15 +278,16 @@ class GeminiClient(LLMProvider):
         return mapping.get(code, status.HTTP_502_BAD_GATEWAY)
 
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation using generate_content_stream.
+        """Stream text generation using generate_content_stream.
 
         Yields:
             StreamChunk: Individual chunks of generated text.
+
         """
         # Input validation
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         sanitized_system_instruction = None
@@ -313,16 +327,18 @@ class GeminiClient(LLMProvider):
 
         except errors.APIError as e:
             logger.error(f"Gemini streaming error: code={e.code}, message={e.message}")
+            msg = f"Streaming failed: {e.message}"
             raise AppError(
-                f"Streaming failed: {e.message}", status_code=self._map_error_code(e.code)
+                msg,
+                status_code=self._map_error_code(e.code),
             )
         except Exception as e:
             logger.error(f"Gemini streaming failed: {e!s}", exc_info=True)
-            raise AppError(f"Streaming failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Streaming failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)
 
     async def count_tokens(self, text: str, model: str | None = None) -> int:
-        """
-        Count the number of tokens in the given text.
+        """Count the number of tokens in the given text.
 
         Args:
             text: The text to count tokens for.
@@ -330,6 +346,7 @@ class GeminiClient(LLMProvider):
 
         Returns:
             int: The number of tokens in the text.
+
         """
         model_name = model or self.config.GOOGLE_MODEL
 
@@ -340,12 +357,15 @@ class GeminiClient(LLMProvider):
 
         except errors.APIError as e:
             logger.error(f"Token counting error: code={e.code}, message={e.message}")
+            msg = f"Token counting failed: {e.message}"
             raise AppError(
-                f"Token counting failed: {e.message}", status_code=self._map_error_code(e.code)
+                msg,
+                status_code=self._map_error_code(e.code),
             )
         except Exception as e:
             logger.error(f"Token counting failed: {e!s}", exc_info=True)
-            raise AppError(f"Token counting failed: {e!s}", status_code=status.HTTP_502_BAD_GATEWAY)
+            msg = f"Token counting failed: {e!s}"
+            raise AppError(msg, status_code=status.HTTP_502_BAD_GATEWAY)
 
     async def check_health(self) -> bool:
         try:

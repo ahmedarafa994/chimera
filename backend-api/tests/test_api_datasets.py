@@ -30,7 +30,7 @@ with SyncSessionFactory() as db:
 client = TestClient(app)
 
 
-def test_list_datasets():
+def test_list_datasets() -> None:
     resp = client.get("/api/v1/datasets")
     assert resp.status_code == 200
     data = resp.json()
@@ -39,7 +39,7 @@ def test_list_datasets():
     assert any(d.get("name") == "jailbreak_llms_2023" for d in data)
 
 
-def test_get_prompts_for_dataset():
+def test_get_prompts_for_dataset() -> None:
     # Find dataset id
     resp = client.get("/api/v1/datasets")
     assert resp.status_code == 200

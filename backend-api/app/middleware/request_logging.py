@@ -1,5 +1,4 @@
-"""
-Request Logging Middleware
+"""Request Logging Middleware.
 
 Provides:
 - Automatic request/response logging
@@ -25,8 +24,7 @@ from app.core.structured_logging import (
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for comprehensive request logging.
+    """Middleware for comprehensive request logging.
 
     Features:
     - Generates unique request IDs
@@ -45,7 +43,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             "/v1/models",
             "/v1/api/event_logging",
             "/v1/v1/",  # Double-prefixed paths from misconfigured clients
-        ]
+        ],
     )
 
     def __init__(
@@ -55,7 +53,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         log_request_body: bool = False,
         log_response_body: bool = False,
         slow_request_threshold_ms: float = 5000,
-    ):
+    ) -> None:
         super().__init__(app)
         self.exclude_paths = exclude_paths or ["/health", "/metrics", "/docs", "/openapi.json"]
         self.log_request_body = log_request_body
@@ -117,8 +115,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         error = None
 
         try:
-            response = await call_next(request)
-            return response
+            return await call_next(request)
         except Exception as e:
             error = e
             # Build request_data if not already built (for error logging)
@@ -162,7 +159,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     logger.warning(
                         f"Known 404 pattern: {request.method} {path} - {count} occurrences",
                         extra={
-                            "extra_data": {"path": path, "count": count, "request_id": request_id}
+                            "extra_data": {"path": path, "count": count, "request_id": request_id},
                         },
                     )
                     should_log = False
@@ -234,8 +231,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for collecting request metrics.
+    """Middleware for collecting request metrics.
 
     Tracks:
     - Request counts by endpoint
@@ -244,7 +240,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     - Status code distribution
     """
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self._request_count = 0
         self._error_count = 0
@@ -312,7 +308,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             },
         }
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         """Reset all metrics."""
         self._request_count = 0
         self._error_count = 0
@@ -330,7 +326,7 @@ def get_metrics_middleware() -> MetricsMiddleware | None:
     return metrics_middleware
 
 
-def set_metrics_middleware(middleware: MetricsMiddleware):
+def set_metrics_middleware(middleware: MetricsMiddleware) -> None:
     """Set the global metrics middleware instance."""
     global metrics_middleware
     metrics_middleware = middleware

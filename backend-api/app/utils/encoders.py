@@ -1,22 +1,18 @@
-"""
-Encoder utilities for various cipher techniques.
-"""
+"""Encoder utilities for various cipher techniques."""
 
 import base64
 import binascii
 
 
 def encode_ascii(text: str) -> str:
-    """
-    Convert text to space-separated ASCII decimal values.
-    Example: "User" -> "85 115 101 114"
+    """Convert text to space-separated ASCII decimal values.
+    Example: "User" -> "85 115 101 114".
     """
     return " ".join(str(ord(char)) for char in text)
 
 
 def encode_caesar(text: str, shift: int = 3) -> str:
-    """
-    Apply Caesar Cipher shift to text.
+    """Apply Caesar Cipher shift to text.
     Default shift is 3 (as used in the dataset examples).
     """
     result = ""
@@ -90,26 +86,21 @@ MORSE_CODE_DICT = {
 
 
 def encode_morse(text: str) -> str:
-    """
-    Convert text to Morse code.
-    """
+    """Convert text to Morse code."""
     return " ".join(MORSE_CODE_DICT.get(char.upper(), char) for char in text)
 
 
 def apply_cipher_suite(text: str, cipher_type: str) -> str:
-    """
-    Apply a specific cipher encoding to the text.
-    """
+    """Apply a specific cipher encoding to the text."""
     cipher_type = cipher_type.lower()
     if cipher_type == "ascii":
         return encode_ascii(text)
-    elif cipher_type == "caesar":
+    if cipher_type == "caesar":
         return encode_caesar(text)
-    elif cipher_type == "morse":
+    if cipher_type == "morse":
         return encode_morse(text)
-    elif cipher_type == "base64":
+    if cipher_type == "base64":
         return encode_base64(text)
-    elif cipher_type == "hex":
+    if cipher_type == "hex":
         return encode_hex(text)
-    else:
-        return text
+    return text

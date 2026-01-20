@@ -1,5 +1,4 @@
-"""
-AutoDAN Advanced Optimization Configuration
+"""AutoDAN Advanced Optimization Configuration.
 
 Mathematical foundations and configuration for the enhanced AutoDAN framework.
 Includes loss function formulations, hyperparameter scheduling, and optimization targets.
@@ -8,6 +7,7 @@ References:
 - AutoDAN: Generating Stealthy Jailbreak Prompts on Aligned LLMs (Liu et al., 2023)
 - AutoDAN-Turbo: A Lifelong Agent for Strategy Self-Exploration (Liu et al., 2024)
 - GCG: Universal and Transferable Adversarial Attacks (Zou et al., 2023)
+
 """
 
 import math
@@ -103,8 +103,7 @@ class SelectionStrategy(str, Enum):
 
 @dataclass
 class LossFunctionConfig:
-    """
-    Configuration for composite loss function.
+    """Configuration for composite loss function.
 
     Total Loss Formulation:
     L_total = alpha·L_attack + beta·L_coherence + gamma·L_diversity + delta·L_stealth
@@ -153,8 +152,7 @@ class LossFunctionConfig:
 
 @dataclass
 class FitnessConfig:
-    """
-    Enhanced fitness function configuration.
+    """Enhanced fitness function configuration.
 
     Fitness Formulation:
     F(x) = w₁·S_align(x) - w₂·P_refusal(x) + w₃·C_coherence(x) + w₄·N_novelty(x) - w₅·D_detect(x)
@@ -195,10 +193,12 @@ class FitnessConfig:
     sharing_alpha: float = 1.0
 
     def compute_shared_fitness(
-        self, raw_fitness: float, similarity_sum: float, _population_size: int
+        self,
+        raw_fitness: float,
+        similarity_sum: float,
+        _population_size: int,
     ) -> float:
-        """
-        Compute fitness with sharing for diversity preservation.
+        """Compute fitness with sharing for diversity preservation.
 
         F_shared(i) = F(i) / Σⱼ sh(d(i,j))
 
@@ -212,8 +212,7 @@ class FitnessConfig:
 
 @dataclass
 class ConvergenceConfig:
-    """
-    Configuration for convergence acceleration.
+    """Configuration for convergence acceleration.
 
     Adaptive Step Size Formulation:
     η_t = η_0 · (1 + β·ΔF_t) · schedule(t)
@@ -261,8 +260,7 @@ class ConvergenceConfig:
 
 @dataclass
 class GradientConfig:
-    """
-    Configuration for gradient-based token optimization.
+    """Configuration for gradient-based token optimization.
 
     Coherence-Constrained Gradient Search (CCGS):
 
@@ -312,8 +310,7 @@ class GradientConfig:
     replacement_strategy: str = "greedy"  # "greedy", "beam", "sampling"
 
     def get_coherence_weight(self, progress: float) -> float:
-        """
-        Get interpolated coherence weight based on optimization progress.
+        """Get interpolated coherence weight based on optimization progress.
 
         λ(t) = λ_0 + (λ_f - λ_0) · t
         """
@@ -325,8 +322,7 @@ class GradientConfig:
 
 @dataclass
 class TransferabilityConfig:
-    """
-    Configuration for cross-model transfer optimization.
+    """Configuration for cross-model transfer optimization.
 
     Ensemble Gradient Alignment:
     g_aligned = Σₖ wₖ·gₖ if ∀i,j: gᵢ·gⱼ > 0, else project_conflicting(g)
@@ -432,8 +428,7 @@ class TurboConfig:
 
 @dataclass
 class AutoDANOptimizationConfig:
-    """
-    Master configuration for AutoDAN advanced optimization framework.
+    """Master configuration for AutoDAN advanced optimization framework.
 
     Combines all sub-configurations into a unified optimization strategy.
     """
@@ -562,8 +557,7 @@ class AutoDANOptimizationConfig:
 
 
 def cosine_schedule(step: int, total_steps: int, min_value: float = 0.0) -> float:
-    """
-    Cosine annealing schedule.
+    """Cosine annealing schedule.
 
     η(t) = η_min + 0.5·(η_max - η_min)·(1 + cos(πt/T))
     """
@@ -572,11 +566,12 @@ def cosine_schedule(step: int, total_steps: int, min_value: float = 0.0) -> floa
 
 
 def warmup_cosine_schedule(
-    step: int, total_steps: int, warmup_steps: int, min_value: float = 0.0
+    step: int,
+    total_steps: int,
+    warmup_steps: int,
+    min_value: float = 0.0,
 ) -> float:
-    """
-    Cosine schedule with linear warmup.
-    """
+    """Cosine schedule with linear warmup."""
     if step < warmup_steps:
         return min_value + (1.0 - min_value) * (step / warmup_steps)
     adjusted_step = step - warmup_steps
@@ -585,22 +580,21 @@ def warmup_cosine_schedule(
 
 
 def cyclic_schedule(
-    step: int, cycle_length: int, min_value: float = 0.1, max_value: float = 1.0
+    step: int,
+    cycle_length: int,
+    min_value: float = 0.1,
+    max_value: float = 1.0,
 ) -> float:
-    """
-    Cyclic learning rate schedule (triangular).
-    """
+    """Cyclic learning rate schedule (triangular)."""
     cycle_position = step % cycle_length
     mid_point = cycle_length // 2
     if cycle_position < mid_point:
         return min_value + (max_value - min_value) * (cycle_position / mid_point)
-    else:
-        return max_value - (max_value - min_value) * ((cycle_position - mid_point) / mid_point)
+    return max_value - (max_value - min_value) * ((cycle_position - mid_point) / mid_point)
 
 
 def compute_diversity_score(embeddings: list, metric: str = "cosine") -> float:
-    """
-    Compute population diversity score.
+    """Compute population diversity score.
 
     D = 1 - (1/n²)·Σᵢⱼ sim(eᵢ, eⱼ)
     """

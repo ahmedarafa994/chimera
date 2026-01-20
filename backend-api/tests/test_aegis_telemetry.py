@@ -1,7 +1,7 @@
 from app.core.telemetry import TelemetryCollector
 
 
-def test_telemetry_collector_aggregates_data():
+def test_telemetry_collector_aggregates_data() -> None:
     """Test that TelemetryCollector correctly aggregates campaign step data."""
     collector = TelemetryCollector(campaign_id="test-campaign")
 
@@ -15,7 +15,7 @@ def test_telemetry_collector_aggregates_data():
     assert summary["steps"][1]["data"]["technique"] == "cipher"
 
 
-def test_telemetry_collector_tracks_total_latency():
+def test_telemetry_collector_tracks_total_latency() -> None:
     """Test that total latency is calculated correctly."""
     collector = TelemetryCollector()
     collector.record_step("step1", {"latency": 1.0})

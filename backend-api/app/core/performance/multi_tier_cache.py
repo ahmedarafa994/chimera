@@ -1,5 +1,4 @@
-"""
-Advanced Multi-Tier Caching System for Chimera AI
+"""Advanced Multi-Tier Caching System for Chimera AI.
 
 Comprehensive caching architecture with:
 - L1: Application-level in-memory cache
@@ -53,7 +52,7 @@ class CacheEntry:
         """Check if cache entry has expired."""
         return datetime.utcnow() > self.created_at + timedelta(seconds=self.ttl)
 
-    def touch(self):
+    def touch(self) -> None:
         """Update access metadata."""
         self.access_count += 1
         self.last_accessed = datetime.utcnow()
@@ -77,14 +76,13 @@ class CacheStats:
 
 
 class L1MemoryCache:
-    """
-    L1 in-memory cache with LRU eviction and TTL support.
+    """L1 in-memory cache with LRU eviction and TTL support.
 
     High-speed cache for frequently accessed data with automatic
     memory management and performance monitoring.
     """
 
-    def __init__(self, max_size: int = 1000, max_memory_mb: float = 100.0):
+    def __init__(self, max_size: int = 1000, max_memory_mb: float = 100.0) -> None:
         self.max_size = max_size
         self.max_memory_mb = max_memory_mb
         self._cache: dict[str, CacheEntry] = {}
@@ -136,7 +134,7 @@ class L1MemoryCache:
             return True
         return False
 
-    async def clear(self):
+    async def clear(self) -> None:
         """Clear all entries from L1 cache."""
         self._cache.clear()
         self._access_order.clear()
@@ -148,13 +146,13 @@ class L1MemoryCache:
         self._stats.memory_usage_mb = self._get_memory_usage()
         return self._stats
 
-    def _update_access_order(self, key: str):
+    def _update_access_order(self, key: str) -> None:
         """Update LRU access order."""
         if key in self._access_order:
             self._access_order.remove(key)
         self._access_order.append(key)
 
-    async def _evict_lru(self):
+    async def _evict_lru(self) -> None:
         """Evict least recently used entries."""
         if not self._access_order:
             return
@@ -182,8 +180,7 @@ class L1MemoryCache:
 
 
 class L2RedisCache:
-    """
-    L2 Redis-based distributed cache with advanced features.
+    """L2 Redis-based distributed cache with advanced features.
 
     Features:
     - Async Redis operations
@@ -193,17 +190,20 @@ class L2RedisCache:
     - Distributed cache warming
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.redis_url = settings.get("REDIS_URL", "redis://localhost:6379/0")
         self.connection_pool = None
         self.redis_client = None
         self._stats = CacheStats()
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize Redis connection."""
         try:
             self.connection_pool = aioredis.ConnectionPool.from_url(
-                self.redis_url, max_connections=20, retry_on_timeout=True, health_check_interval=30
+                self.redis_url,
+                max_connections=20,
+                retry_on_timeout=True,
+                health_check_interval=30,
             )
             self.redis_client = aioredis.Redis(connection_pool=self.connection_pool)
 
@@ -228,12 +228,12 @@ class L2RedisCache:
                 return None
 
             # Deserialize value
-            value = pickle.loads(data)  # noqa: S301 - internal cache data, trusted source
+            value = pickle.loads(data)
             self._stats.hits += 1
             return value
 
         except Exception as e:
-            logger.error(f"L2 cache get error: {e}")
+            logger.exception(f"L2 cache get error: {e}")
             self._stats.misses += 1
             return None
 
@@ -249,7 +249,7 @@ class L2RedisCache:
             return True
 
         except Exception as e:
-            logger.error(f"L2 cache set error: {e}")
+            logger.exception(f"L2 cache set error: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -262,7 +262,7 @@ class L2RedisCache:
             return result > 0
 
         except Exception as e:
-            logger.error(f"L2 cache delete error: {e}")
+            logger.exception(f"L2 cache delete error: {e}")
             return False
 
     async def delete_pattern(self, pattern: str) -> int:
@@ -277,10 +277,10 @@ class L2RedisCache:
             return 0
 
         except Exception as e:
-            logger.error(f"L2 cache pattern delete error: {e}")
+            logger.exception(f"L2 cache pattern delete error: {e}")
             return 0
 
-    async def clear(self):
+    async def clear(self) -> None:
         """Clear all entries from L2 cache."""
         if not self.redis_client:
             return
@@ -288,7 +288,7 @@ class L2RedisCache:
         try:
             await self.redis_client.flushdb()
         except Exception as e:
-            logger.error(f"L2 cache clear error: {e}")
+            logger.exception(f"L2 cache clear error: {e}")
 
     async def get_stats(self) -> CacheStats:
         """Get Redis cache statistics."""
@@ -308,11 +308,11 @@ class L2RedisCache:
                 self._stats.size = int(key_count)
 
         except Exception as e:
-            logger.error(f"L2 cache stats error: {e}")
+            logger.exception(f"L2 cache stats error: {e}")
 
         return self._stats
 
-    async def close(self):
+    async def close(self) -> None:
         """Close Redis connection."""
         if self.redis_client:
             await self.redis_client.close()
@@ -321,8 +321,7 @@ class L2RedisCache:
 
 
 class MultiTierCache:
-    """
-    Multi-tier caching system with intelligent cache management.
+    """Multi-tier caching system with intelligent cache management.
 
     Tier Strategy:
     1. L1 Memory Cache: Ultra-fast for hot data
@@ -336,7 +335,7 @@ class MultiTierCache:
     - Performance monitoring
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.l1_cache = L1MemoryCache(
             max_size=settings.get("L1_CACHE_SIZE", 1000),
             max_memory_mb=settings.get("L1_CACHE_MEMORY_MB", 100),
@@ -354,14 +353,13 @@ class MultiTierCache:
         self.total_requests = 0
         self.cache_hits_by_level = dict.fromkeys(CacheLevel, 0)
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize all cache levels."""
         await self.l2_cache.initialize()
         logger.info("Multi-tier cache system initialized")
 
     async def get(self, key: str) -> Any | None:
-        """
-        Get value from multi-tier cache with promotion strategy.
+        """Get value from multi-tier cache with promotion strategy.
 
         Checks L1 first, then L2, then falls back to database.
         Promotes cache hits to higher tiers for future performance.
@@ -391,14 +389,14 @@ class MultiTierCache:
         ttl: int | None = None,
         cache_levels: set[CacheLevel] | None = None,
     ) -> bool:
-        """
-        Set value in specified cache levels with write-through pattern.
+        """Set value in specified cache levels with write-through pattern.
 
         Args:
             key: Cache key
             value: Value to cache
             ttl: Time to live in seconds
             cache_levels: Which cache levels to write to
+
         """
         if cache_levels is None:
             cache_levels = {CacheLevel.L1_MEMORY, CacheLevel.L2_REDIS}
@@ -420,7 +418,7 @@ class MultiTierCache:
 
         return success
 
-    async def delete(self, key: str, cache_levels: builtins.set[CacheLevel] | None = None):
+    async def delete(self, key: str, cache_levels: builtins.set[CacheLevel] | None = None) -> None:
         """Delete key from specified cache levels."""
         if cache_levels is None:
             cache_levels = {CacheLevel.L1_MEMORY, CacheLevel.L2_REDIS}
@@ -431,7 +429,7 @@ class MultiTierCache:
             elif level == CacheLevel.L2_REDIS:
                 await self.l2_cache.delete(key)
 
-    async def invalidate_pattern(self, pattern: str):
+    async def invalidate_pattern(self, pattern: str) -> None:
         """Invalidate all keys matching pattern across cache levels."""
         # L1 cache doesn't support pattern matching, so clear keys that match
         l1_keys_to_delete = [
@@ -483,7 +481,7 @@ class MultiTierCache:
             },
         }
 
-    async def warm_cache(self, warming_queries: list[dict[str, Any]]):
+    async def warm_cache(self, warming_queries: list[dict[str, Any]]) -> None:
         """Warm cache with commonly accessed data."""
         logger.info(f"Starting cache warming with {len(warming_queries)} queries")
 
@@ -506,22 +504,24 @@ class MultiTierCache:
 
                     # Cache in both L1 and L2
                     await self.set(
-                        cache_key, data, ttl, {CacheLevel.L1_MEMORY, CacheLevel.L2_REDIS}
+                        cache_key,
+                        data,
+                        ttl,
+                        {CacheLevel.L1_MEMORY, CacheLevel.L2_REDIS},
                     )
 
             except Exception as e:
-                logger.error(f"Cache warming failed for {cache_key}: {e}")
+                logger.exception(f"Cache warming failed for {cache_key}: {e}")
 
         logger.info("Cache warming completed")
 
-    async def close(self):
+    async def close(self) -> None:
         """Close all cache connections."""
         await self.l2_cache.close()
 
 
 class LLMProviderCache:
-    """
-    Specialized caching for LLM provider operations.
+    """Specialized caching for LLM provider operations.
 
     Features:
     - Provider configuration caching
@@ -530,33 +530,43 @@ class LLMProviderCache:
     - Transformation technique caching
     """
 
-    def __init__(self, multi_tier_cache: MultiTierCache):
+    def __init__(self, multi_tier_cache: MultiTierCache) -> None:
         self.cache = multi_tier_cache
 
     async def get_provider_config(
-        self, provider_name: str, model_name: str
+        self,
+        provider_name: str,
+        model_name: str,
     ) -> dict[str, Any] | None:
         """Get cached provider configuration."""
         cache_key = f"provider_config:{provider_name}:{model_name}"
         return await self.cache.get(cache_key)
 
     async def set_provider_config(
-        self, provider_name: str, model_name: str, config: dict[str, Any]
-    ):
+        self,
+        provider_name: str,
+        model_name: str,
+        config: dict[str, Any],
+    ) -> None:
         """Cache provider configuration with long TTL."""
         cache_key = f"provider_config:{provider_name}:{model_name}"
         await self.cache.set(cache_key, config, ttl=3600)  # 1 hour TTL
 
     async def get_model_metadata(
-        self, provider_name: str, model_name: str
+        self,
+        provider_name: str,
+        model_name: str,
     ) -> dict[str, Any] | None:
         """Get cached model metadata."""
         cache_key = f"model_metadata:{provider_name}:{model_name}"
         return await self.cache.get(cache_key)
 
     async def set_model_metadata(
-        self, provider_name: str, model_name: str, metadata: dict[str, Any]
-    ):
+        self,
+        provider_name: str,
+        model_name: str,
+        metadata: dict[str, Any],
+    ) -> None:
         """Cache model metadata."""
         cache_key = f"model_metadata:{provider_name}:{model_name}"
         await self.cache.set(cache_key, metadata, ttl=7200)  # 2 hours TTL
@@ -566,12 +576,14 @@ class LLMProviderCache:
         cache_key = f"transform:{technique}:{prompt_hash}"
         return await self.cache.get(cache_key)
 
-    async def set_transformation_result(self, technique: str, prompt_hash: str, result: str):
+    async def set_transformation_result(
+        self, technique: str, prompt_hash: str, result: str
+    ) -> None:
         """Cache transformation result."""
         cache_key = f"transform:{technique}:{prompt_hash}"
         await self.cache.set(cache_key, result, ttl=1800)  # 30 minutes TTL
 
-    async def invalidate_provider_cache(self, provider_name: str):
+    async def invalidate_provider_cache(self, provider_name: str) -> None:
         """Invalidate all cache entries for a provider."""
         pattern = f"provider_config:{provider_name}:*"
         await self.cache.invalidate_pattern(pattern)
@@ -581,8 +593,7 @@ class LLMProviderCache:
 
 
 class QueryResultCache:
-    """
-    Database query result caching with intelligent invalidation.
+    """Database query result caching with intelligent invalidation.
 
     Features:
     - Query result caching by normalized query hash
@@ -591,7 +602,7 @@ class QueryResultCache:
     - Compression for large result sets
     """
 
-    def __init__(self, multi_tier_cache: MultiTierCache):
+    def __init__(self, multi_tier_cache: MultiTierCache) -> None:
         self.cache = multi_tier_cache
         self.table_modification_times = {}
 
@@ -604,7 +615,7 @@ class QueryResultCache:
             query_normalized += param_str
 
         return hashlib.md5(
-            query_normalized.encode()
+            query_normalized.encode(),
         ).hexdigest()  # - cache key, not cryptographic
 
     async def get_query_result(self, query: str, params: dict | None = None) -> list[dict] | None:
@@ -614,14 +625,18 @@ class QueryResultCache:
         return await self.cache.get(cache_key)
 
     async def set_query_result(
-        self, query: str, result: list[dict], params: dict | None = None, ttl: int = 600
-    ):
+        self,
+        query: str,
+        result: list[dict],
+        params: dict | None = None,
+        ttl: int = 600,
+    ) -> None:
         """Cache query result with TTL."""
         query_hash = self._get_query_hash(query, params)
         cache_key = f"query_result:{query_hash}"
         await self.cache.set(cache_key, result, ttl)
 
-    async def invalidate_table_queries(self, table_name: str):
+    async def invalidate_table_queries(self, table_name: str) -> None:
         """Invalidate all cached queries for a table."""
         pattern = f"query_result:*{table_name.upper()}*"
         await self.cache.invalidate_pattern(pattern)
@@ -658,7 +673,7 @@ CACHE_WARMING_QUERIES = [
 ]
 
 
-async def initialize_caching_system():
+async def initialize_caching_system() -> None:
     """Initialize the complete caching system."""
     await multi_tier_cache.initialize()
     await multi_tier_cache.warm_cache(CACHE_WARMING_QUERIES)
@@ -693,23 +708,23 @@ def _generate_cache_recommendations(stats: dict[str, Any]) -> list[str]:
 
     if l1_hit_rate < 0.5:
         recommendations.append(
-            "L1 cache hit rate is low - consider increasing cache size or adjusting TTL"
+            "L1 cache hit rate is low - consider increasing cache size or adjusting TTL",
         )
 
     if l2_hit_rate < 0.3:
         recommendations.append(
-            "L2 Redis cache hit rate is low - verify Redis connection and consider cache warming"
+            "L2 Redis cache hit rate is low - verify Redis connection and consider cache warming",
         )
 
     if overall_hit_rate < 0.4:
         recommendations.append(
-            "Overall cache performance is poor - review caching strategy and key patterns"
+            "Overall cache performance is poor - review caching strategy and key patterns",
         )
 
     evictions = stats["l1_memory_cache"]["evictions"]
     if evictions > 1000:
         recommendations.append(
-            f"High L1 eviction count ({evictions}) - consider increasing memory allocation"
+            f"High L1 eviction count ({evictions}) - consider increasing memory allocation",
         )
 
     return recommendations

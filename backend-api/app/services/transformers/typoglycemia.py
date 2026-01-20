@@ -1,6 +1,4 @@
-"""
-Typoglycemia obfuscation transformer.
-"""
+"""Typoglycemia obfuscation transformer."""
 
 import random
 
@@ -8,26 +6,20 @@ from app.services.transformers.base import BaseTransformer, TransformationContex
 
 
 class TypoglycemiaTransformer(BaseTransformer):
-    """
-    Transformer that applies typoglycemia (scrambling inner letters of words).
-    """
+    """Transformer that applies typoglycemia (scrambling inner letters of words)."""
 
     name = "typoglycemia"
     description = "Scrambles inner letters of words while keeping first and last letters intact."
     category = "obfuscator"
 
     def transform(self, context: TransformationContext) -> str:
-        """
-        Apply typoglycemia to the prompt.
-        """
+        """Apply typoglycemia to the prompt."""
         words = context.current_prompt.split()
         scrambled_words = [self._scramble_word(word) for word in words]
         return " ".join(scrambled_words)
 
     def _scramble_word(self, word: str) -> str:
-        """
-        Scramble the inner letters of a word.
-        """
+        """Scramble the inner letters of a word."""
         if len(word) <= 3:
             return word
 

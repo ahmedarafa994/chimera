@@ -1,5 +1,4 @@
-"""
-Batch Data Ingestion Service
+"""Batch Data Ingestion Service.
 
 Handles extraction of LLM interactions, transformations, and system metrics
 from various sources and writes them to Parquet files in the data lake.
@@ -61,7 +60,7 @@ class LLMInteractionRecord(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     ingested_at: datetime = Field(default_factory=datetime.utcnow)
 
-    def __init__(self, **data):
+    def __init__(self, **data) -> None:
         super().__init__(**data)
         if not self.prompt_hash:
             self.prompt_hash = hashlib.sha256(self.prompt.encode()).hexdigest()
@@ -99,14 +98,13 @@ class JailbreakExperimentRecord(BaseModel):
 
 
 class BatchDataIngester:
-    """
-    Batch ingestion engine for Chimera data pipeline.
+    """Batch ingestion engine for Chimera data pipeline.
 
     Extracts data from application logs, databases, and in-memory stores,
     validates schemas, and writes to partitioned Parquet files.
     """
 
-    def __init__(self, config: IngestionConfig | None = None):
+    def __init__(self, config: IngestionConfig | None = None) -> None:
         self.config = config or IngestionConfig()
         self.data_lake_path = Path(self.config.data_lake_path)
         self.dlq_path = self.data_lake_path / "dead_letter_queue"
@@ -120,11 +118,11 @@ class BatchDataIngester:
 
     @property
     def db_connector(self) -> Any:
-        """
-        Lazy-initialize database connector.
+        """Lazy-initialize database connector.
 
         Returns:
             DatabaseConnector instance
+
         """
         if self._db_connector is None:
             try:
@@ -143,8 +141,7 @@ class BatchDataIngester:
         end_time: datetime,
         source_db: Any | None = None,
     ) -> pd.DataFrame:
-        """
-        Extract LLM interaction events from the database.
+        """Extract LLM interaction events from the database.
 
         Uses the database connector to query the backend database for
         LLM interactions within the specified time window.
@@ -156,6 +153,7 @@ class BatchDataIngester:
 
         Returns:
             DataFrame with LLM interaction records
+
         """
         logger.info(f"Extracting LLM interactions from {start_time} to {end_time}")
 
@@ -165,7 +163,7 @@ class BatchDataIngester:
         if connector is None:
             logger.warning(
                 "No database connector available. "
-                "Ensure DATABASE_URL is configured and database is accessible."
+                "Ensure DATABASE_URL is configured and database is accessible.",
             )
             return pd.DataFrame(columns=list(LLMInteractionRecord.model_fields.keys()))
 
@@ -190,8 +188,7 @@ class BatchDataIngester:
         start_time: datetime,
         end_time: datetime,
     ) -> pd.DataFrame:
-        """
-        Extract transformation events from the database.
+        """Extract transformation events from the database.
 
         Args:
             start_time: Start of extraction window
@@ -199,6 +196,7 @@ class BatchDataIngester:
 
         Returns:
             DataFrame with transformation event records
+
         """
         logger.info(f"Extracting transformation events from {start_time} to {end_time}")
 
@@ -207,7 +205,7 @@ class BatchDataIngester:
         if connector is None:
             logger.warning(
                 "No database connector available. "
-                "Ensure DATABASE_URL is configured and database is accessible."
+                "Ensure DATABASE_URL is configured and database is accessible.",
             )
             return pd.DataFrame(columns=list(TransformationRecord.model_fields.keys()))
 
@@ -230,8 +228,7 @@ class BatchDataIngester:
         start_time: datetime,
         end_time: datetime,
     ) -> pd.DataFrame:
-        """
-        Extract jailbreak research experiment results from the database.
+        """Extract jailbreak research experiment results from the database.
 
         Args:
             start_time: Start of extraction window
@@ -239,6 +236,7 @@ class BatchDataIngester:
 
         Returns:
             DataFrame with jailbreak experiment records
+
         """
         logger.info(f"Extracting jailbreak experiments from {start_time} to {end_time}")
 
@@ -247,7 +245,7 @@ class BatchDataIngester:
         if connector is None:
             logger.warning(
                 "No database connector available. "
-                "Ensure DATABASE_URL is configured and database is accessible."
+                "Ensure DATABASE_URL is configured and database is accessible.",
             )
             return pd.DataFrame(columns=list(JailbreakExperimentRecord.model_fields.keys()))
 
@@ -270,8 +268,7 @@ class BatchDataIngester:
         df: pd.DataFrame,
         schema: dict[str, Any],
     ) -> pd.DataFrame:
-        """
-        Validate DataFrame against schema and clean invalid records.
+        """Validate DataFrame against schema and clean invalid records.
 
         Args:
             df: Input DataFrame
@@ -279,6 +276,7 @@ class BatchDataIngester:
 
         Returns:
             Cleaned DataFrame
+
         """
         if df.empty:
             return df
@@ -324,8 +322,7 @@ class BatchDataIngester:
         partition_cols: list[str] | None = None,
         mode: Literal["append", "overwrite"] = "append",
     ) -> Path:
-        """
-        Write DataFrame to partitioned Parquet files.
+        """Write DataFrame to partitioned Parquet files.
 
         Args:
             df: DataFrame to write
@@ -335,6 +332,7 @@ class BatchDataIngester:
 
         Returns:
             Path to written files
+
         """
         if df.empty:
             logger.warning(f"No data to write for table {table_name}")
@@ -373,14 +371,14 @@ class BatchDataIngester:
             raise
 
     def save_dead_letter_queue(self, path: str | None = None) -> Path:
-        """
-        Save failed records to dead letter queue for manual review.
+        """Save failed records to dead letter queue for manual review.
 
         Args:
             path: Custom path for DLQ (default: data_lake/dead_letter_queue)
 
         Returns:
             Path to DLQ file
+
         """
         if not self._failed_records:
             logger.info("No failed records to save")
@@ -400,14 +398,14 @@ class BatchDataIngester:
         return dlq_file
 
     def get_last_watermark(self, table_name: str) -> datetime:
-        """
-        Get the last successful ingestion timestamp for incremental loading.
+        """Get the last successful ingestion timestamp for incremental loading.
 
         Args:
             table_name: Name of the table
 
         Returns:
             Last watermark timestamp
+
         """
         watermark_file = self.data_lake_path / ".watermarks" / f"{table_name}.json"
 
@@ -420,12 +418,12 @@ class BatchDataIngester:
             return datetime.fromisoformat(watermark["last_timestamp"])
 
     def update_watermark(self, table_name: str, timestamp: datetime) -> None:
-        """
-        Update the watermark for a table after successful ingestion.
+        """Update the watermark for a table after successful ingestion.
 
         Args:
             table_name: Name of the table
             timestamp: New watermark timestamp
+
         """
         watermark_dir = self.data_lake_path / ".watermarks"
         watermark_dir.mkdir(parents=True, exist_ok=True)
@@ -444,9 +442,8 @@ class BatchDataIngester:
 
         logger.info(f"Updated watermark for {table_name} to {timestamp}")
 
-    def close(self):
-        """
-        Close database connections and cleanup resources.
+    def close(self) -> None:
+        """Close database connections and cleanup resources.
 
         Should be called when the ingester is no longer needed to properly
         release database connections.
@@ -470,11 +467,11 @@ class BatchDataIngester:
 
 
 def ingest_llm_interactions_batch(lookback_hours: int = 1) -> None:
-    """
-    Run batch ingestion for LLM interactions.
+    """Run batch ingestion for LLM interactions.
 
     Args:
         lookback_hours: Hours to look back for new data
+
     """
     with BatchDataIngester() as ingester:
         # Get time window

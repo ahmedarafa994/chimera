@@ -1,9 +1,9 @@
-"""
-Metamorph API Router
-Exposes the MetamorphService for dynamic prompt transformations
+"""Metamorph API Router
+Exposes the MetamorphService for dynamic prompt transformations.
 """
 
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -50,7 +50,7 @@ class StatusResponse(BaseModel):
 
 @router.get("/status", response_model=StatusResponse)
 async def get_status():
-    """Get MetamorphService status"""
+    """Get MetamorphService status."""
     suites = metamorph_service.get_available_suites()
     stats = metamorph_service.get_dataset_stats()
 
@@ -77,7 +77,7 @@ async def get_status():
 
 @router.get("/suites", response_model=list[SuiteInfo])
 async def list_suites():
-    """List all transformation suites"""
+    """List all transformation suites."""
     suites = metamorph_service.get_available_suites()
     result = []
     for s in suites:
@@ -89,14 +89,14 @@ async def list_suites():
                     transformers_count=info.get("transformers_count", 0),
                     framers_count=info.get("framers_count", 0),
                     obfuscators_count=info.get("obfuscators_count", 0),
-                )
+                ),
             )
     return result
 
 
 @router.post("/transform", response_model=TransformResponse)
 async def transform_prompt(request: TransformRequest):
-    """Transform a prompt using the specified suite"""
+    """Transform a prompt using the specified suite."""
     suites = metamorph_service.get_available_suites()
     if request.suite not in suites:
         raise HTTPException(status_code=400, detail="Suite not found")
@@ -110,7 +110,10 @@ async def transform_prompt(request: TransformRequest):
     mode = mode_map.get(request.mode, TransformationMode.LAYERED)
 
     result = metamorph_service.transform(
-        prompt=request.prompt, suite_name=request.suite, potency=request.potency, mode=mode
+        prompt=request.prompt,
+        suite_name=request.suite,
+        potency=request.potency,
+        mode=mode,
     )
 
     return TransformResponse(
@@ -124,13 +127,13 @@ async def transform_prompt(request: TransformRequest):
 
 @router.get("/datasets")
 async def list_datasets():
-    """List loaded datasets"""
+    """List loaded datasets."""
     return metamorph_service.get_dataset_stats()
 
 
 @router.get("/datasets/{name}/sample")
-async def sample_dataset(name: str, count: int = Query(default=1, ge=1, le=10)):
-    """Get random samples from a dataset"""
+async def sample_dataset(name: str, count: Annotated[int, Query(ge=1, le=10)] = 1):
+    """Get random samples from a dataset."""
     samples = []
     for _ in range(count):
         s = metamorph_service.get_random_prompt(name)

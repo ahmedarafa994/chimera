@@ -1,5 +1,4 @@
-"""
-Selection Service - Business logic for provider/model selection management.
+"""Selection Service - Business logic for provider/model selection management.
 
 This module provides high-level operations for managing user and session
 selections, including validation, caching, and coordination with the
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class SelectionService:
-    """
-    Service layer for selection management.
+    """Service layer for selection management.
 
     Provides business logic for creating, retrieving, updating, and deleting
     selections with validation and coordination with the provider registry.
@@ -30,8 +28,7 @@ class SelectionService:
         session_id: str,
         session: AsyncSession,
     ) -> Selection | None:
-        """
-        Get selection for a session.
+        """Get selection for a session.
 
         Args:
             session_id: Session identifier
@@ -39,6 +36,7 @@ class SelectionService:
 
         Returns:
             Selection if found and valid, None otherwise
+
         """
         try:
             repository = get_selection_repository(session)
@@ -48,16 +46,15 @@ class SelectionService:
                 # Validate selection is still valid
                 if self._validate_selection(selection):
                     logger.debug(
-                        f"Retrieved valid session selection: {selection.provider_id}/{selection.model_id}"
+                        f"Retrieved valid session selection: {selection.provider_id}/{selection.model_id}",
                     )
                     return selection
-                else:
-                    logger.warning(
-                        f"Session selection {selection.provider_id}/{selection.model_id} is no longer valid. "
-                        "Deleting from database."
-                    )
-                    await repository.delete_by_session_id(session_id)
-                    return None
+                logger.warning(
+                    f"Session selection {selection.provider_id}/{selection.model_id} is no longer valid. "
+                    "Deleting from database.",
+                )
+                await repository.delete_by_session_id(session_id)
+                return None
 
             return None
 
@@ -70,8 +67,7 @@ class SelectionService:
         user_id: str,
         session: AsyncSession,
     ) -> Selection | None:
-        """
-        Get default selection for a user.
+        """Get default selection for a user.
 
         Args:
             user_id: User identifier
@@ -79,6 +75,7 @@ class SelectionService:
 
         Returns:
             Selection if found and valid, None otherwise
+
         """
         try:
             repository = get_selection_repository(session)
@@ -88,16 +85,15 @@ class SelectionService:
                 # Validate selection is still valid
                 if self._validate_selection(selection):
                     logger.debug(
-                        f"Retrieved valid user selection: {selection.provider_id}/{selection.model_id}"
+                        f"Retrieved valid user selection: {selection.provider_id}/{selection.model_id}",
                     )
                     return selection
-                else:
-                    logger.warning(
-                        f"User selection {selection.provider_id}/{selection.model_id} is no longer valid. "
-                        "Deleting from database."
-                    )
-                    await repository.delete_by_user_id(user_id)
-                    return None
+                logger.warning(
+                    f"User selection {selection.provider_id}/{selection.model_id} is no longer valid. "
+                    "Deleting from database.",
+                )
+                await repository.delete_by_user_id(user_id)
+                return None
 
             return None
 
@@ -113,8 +109,7 @@ class SelectionService:
         session: AsyncSession,
         user_id: str | None = None,
     ) -> Selection:
-        """
-        Set selection for a session.
+        """Set selection for a session.
 
         Args:
             session_id: Session identifier
@@ -128,12 +123,16 @@ class SelectionService:
 
         Raises:
             ValueError: If provider/model combination is invalid
+
         """
         # Validate selection
         if not unified_registry.validate_selection(provider_id, model_id):
-            raise ValueError(
+            msg = (
                 f"Invalid provider/model combination: {provider_id}/{model_id}. "
                 "Provider or model may not be registered or enabled."
+            )
+            raise ValueError(
+                msg,
             )
 
         try:
@@ -159,8 +158,7 @@ class SelectionService:
         model_id: str,
         session: AsyncSession,
     ) -> Selection:
-        """
-        Set default selection for a user.
+        """Set default selection for a user.
 
         Args:
             user_id: User identifier
@@ -173,12 +171,16 @@ class SelectionService:
 
         Raises:
             ValueError: If provider/model combination is invalid
+
         """
         # Validate selection
         if not unified_registry.validate_selection(provider_id, model_id):
-            raise ValueError(
+            msg = (
                 f"Invalid provider/model combination: {provider_id}/{model_id}. "
                 "Provider or model may not be registered or enabled."
+            )
+            raise ValueError(
+                msg,
             )
 
         try:
@@ -201,8 +203,7 @@ class SelectionService:
         session_id: str,
         session: AsyncSession,
     ) -> bool:
-        """
-        Delete selection for a session.
+        """Delete selection for a session.
 
         Args:
             session_id: Session identifier
@@ -210,6 +211,7 @@ class SelectionService:
 
         Returns:
             True if deleted, False if not found
+
         """
         try:
             repository = get_selection_repository(session)
@@ -231,8 +233,7 @@ class SelectionService:
         user_id: str,
         session: AsyncSession,
     ) -> bool:
-        """
-        Delete default selection for a user.
+        """Delete default selection for a user.
 
         Args:
             user_id: User identifier
@@ -240,6 +241,7 @@ class SelectionService:
 
         Returns:
             True if deleted, False if not found
+
         """
         try:
             repository = get_selection_repository(session)
@@ -257,8 +259,7 @@ class SelectionService:
             return False
 
     def _validate_selection(self, selection: Selection) -> bool:
-        """
-        Validate that a selection is still valid.
+        """Validate that a selection is still valid.
 
         Checks that the provider and model are still registered and enabled.
 
@@ -267,6 +268,7 @@ class SelectionService:
 
         Returns:
             True if valid, False otherwise
+
         """
         try:
             return unified_registry.validate_selection(selection.provider_id, selection.model_id)

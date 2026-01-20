@@ -1,5 +1,4 @@
-"""
-Advanced Database Performance Profiler for Chimera AI System
+"""Advanced Database Performance Profiler for Chimera AI System.
 
 Comprehensive profiling solution with:
 - Real-time query performance monitoring
@@ -47,7 +46,9 @@ class QueryMetrics:
     first_seen: datetime = field(default_factory=datetime.utcnow)
     last_seen: datetime = field(default_factory=datetime.utcnow)
 
-    def update(self, execution_time_ms: float, rows_examined: int = 0, rows_returned: int = 0):
+    def update(
+        self, execution_time_ms: float, rows_examined: int = 0, rows_returned: int = 0
+    ) -> None:
         """Update metrics with new execution data."""
         self.execution_count += 1
         self.total_time_ms += execution_time_ms
@@ -91,8 +92,7 @@ class ConnectionPoolMetrics:
 
 
 class DatabaseProfiler:
-    """
-    Advanced database profiler for comprehensive performance monitoring.
+    """Advanced database profiler for comprehensive performance monitoring.
 
     Features:
     - Real-time query execution tracking
@@ -102,7 +102,7 @@ class DatabaseProfiler:
     - LLM provider query optimization
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = settings.get("DB_PROFILER_ENABLED", True)
         self.slow_query_threshold_ms = settings.get("DB_SLOW_QUERY_THRESHOLD_MS", 100)
         self.n_plus_one_threshold = settings.get("DB_N_PLUS_ONE_THRESHOLD", 10)
@@ -124,13 +124,13 @@ class DatabaseProfiler:
 
         self._setup_event_listeners()
 
-    def _setup_event_listeners(self):
+    def _setup_event_listeners(self) -> None:
         """Setup SQLAlchemy event listeners for comprehensive monitoring."""
         if not self.enabled:
             return
 
         @event.listens_for(Pool, "connect")
-        def on_pool_connect(dbapi_connection, connection_record):
+        def on_pool_connect(dbapi_connection, connection_record) -> None:
             """Track new connections."""
             pool_name = "default"  # Could be enhanced to track multiple pools
             if pool_name not in self.pool_metrics:
@@ -145,7 +145,7 @@ class DatabaseProfiler:
             self.pool_metrics[pool_name].total_connections_created += 1
 
         @event.listens_for(Pool, "checkout")
-        def on_pool_checkout(dbapi_connection, connection_record, connection_proxy):
+        def on_pool_checkout(dbapi_connection, connection_record, connection_proxy) -> None:
             """Track connection checkout with timing."""
             pool_name = "default"
             if pool_name in self.pool_metrics:
@@ -156,12 +156,13 @@ class DatabaseProfiler:
                 )
 
         @event.listens_for(Pool, "checkin")
-        def on_pool_checkin(dbapi_connection, connection_record):
+        def on_pool_checkin(dbapi_connection, connection_record) -> None:
             """Track connection checkin."""
             pool_name = "default"
             if pool_name in self.pool_metrics:
                 self.pool_metrics[pool_name].checked_out = max(
-                    0, self.pool_metrics[pool_name].checked_out - 1
+                    0,
+                    self.pool_metrics[pool_name].checked_out - 1,
                 )
                 self.pool_metrics[pool_name].checked_in += 1
 
@@ -174,20 +175,20 @@ class DatabaseProfiler:
         normalized = re.sub(r"= \$?\d+", "= ?", normalized)
         normalized = re.sub(r"IN \([^)]+\)", "IN (?)", normalized)
         normalized = re.sub(r"'[^']+'", "'?'", normalized)
-        normalized = re.sub(r"\d+", "?", normalized)
-
-        return normalized
+        return re.sub(r"\d+", "?", normalized)
 
     def _get_query_hash(self, query: str) -> str:
         """Generate consistent hash for query patterns."""
         normalized = self._normalize_query(query)
         return hashlib.md5(
-            normalized.encode()
+            normalized.encode(),
         ).hexdigest()  # - cache key, not cryptographic
 
     @asynccontextmanager
     async def profile_query_execution(
-        self, query: str, params: dict | None = None
+        self,
+        query: str,
+        params: dict | None = None,
     ) -> AsyncGenerator[None, None]:
         """Context manager for profiling individual query execution."""
         if not self.enabled:
@@ -212,7 +213,11 @@ class DatabaseProfiler:
             # Record failed execution
             execution_time_ms = (time.perf_counter() - start_time) * 1000
             self._record_query_execution(
-                query_hash, query, execution_time_ms, success=False, error=str(e)
+                query_hash,
+                query,
+                execution_time_ms,
+                success=False,
+                error=str(e),
             )
             raise
         finally:
@@ -229,13 +234,13 @@ class DatabaseProfiler:
         error: str | None = None,
         rows_examined: int = 0,
         rows_returned: int = 0,
-    ):
+    ) -> None:
         """Record query execution metrics and detect patterns."""
-
         # Update or create query metrics
         if query_hash not in self.query_metrics:
             self.query_metrics[query_hash] = QueryMetrics(
-                query_hash=query_hash, query_sql=query[:500]  # Truncate for storage
+                query_hash=query_hash,
+                query_sql=query[:500],  # Truncate for storage
             )
 
         self.query_metrics[query_hash].update(execution_time_ms, rows_examined, rows_returned)
@@ -259,7 +264,7 @@ class DatabaseProfiler:
         if execution_time_ms > self.slow_query_threshold_ms:
             self._analyze_slow_query(query_hash, query, execution_time_ms)
 
-    def _detect_n_plus_one_pattern(self, query_hash: str, query: str):
+    def _detect_n_plus_one_pattern(self, query_hash: str, query: str) -> None:
         """Detect N+1 query patterns based on recent execution history."""
         if len(self.recent_queries) < 2:
             return
@@ -293,21 +298,20 @@ class DatabaseProfiler:
             pattern.severity = self._calculate_n_plus_one_severity(consecutive_count)
 
             logger.warning(
-                f"N+1 query pattern detected: {consecutive_count} consecutive executions of query {query_hash}"
+                f"N+1 query pattern detected: {consecutive_count} consecutive executions of query {query_hash}",
             )
 
     def _calculate_n_plus_one_severity(self, count: int) -> str:
         """Calculate severity of N+1 pattern based on occurrence count."""
         if count >= 100:
             return "CRITICAL"
-        elif count >= 50:
+        if count >= 50:
             return "HIGH"
-        elif count >= 20:
+        if count >= 20:
             return "MEDIUM"
-        else:
-            return "LOW"
+        return "LOW"
 
-    def _analyze_slow_query(self, query_hash: str, query: str, execution_time_ms: float):
+    def _analyze_slow_query(self, query_hash: str, query: str, execution_time_ms: float) -> None:
         """Analyze slow query and generate optimization recommendations."""
         recommendations = []
 
@@ -321,7 +325,7 @@ class DatabaseProfiler:
                         "type": "missing_limit",
                         "message": "Consider adding LIMIT to ORDER BY queries to improve performance",
                         "severity": "MEDIUM",
-                    }
+                    },
                 )
 
             if "WHERE" not in query_upper:
@@ -330,7 +334,7 @@ class DatabaseProfiler:
                         "type": "missing_where",
                         "message": "Full table scan detected - consider adding WHERE clause",
                         "severity": "HIGH",
-                    }
+                    },
                 )
 
             if "JOIN" in query_upper and "INDEX" not in query_upper:
@@ -339,7 +343,7 @@ class DatabaseProfiler:
                         "type": "join_optimization",
                         "message": "JOIN operation without explicit index usage - verify indexes exist",
                         "severity": "MEDIUM",
-                    }
+                    },
                 )
 
         # Store recommendations
@@ -349,7 +353,7 @@ class DatabaseProfiler:
                     "query_hash": query_hash,
                     "execution_time_ms": execution_time_ms,
                     "timestamp": datetime.utcnow(),
-                }
+                },
             )
             self.recommendations.append(rec)
 
@@ -399,7 +403,7 @@ class DatabaseProfiler:
                         m
                         for m in self.query_metrics.values()
                         if m.avg_time_ms > self.slow_query_threshold_ms
-                    ]
+                    ],
                 ),
                 "n_plus_one_patterns": len(recent_n_plus_one),
             },
@@ -462,7 +466,7 @@ class DatabaseProfiler:
                         "execution_count": metrics.execution_count,
                         "avg_time_ms": round(metrics.avg_time_ms, 2),
                         "total_time_ms": round(metrics.total_time_ms, 2),
-                    }
+                    },
                 )
 
         return {
@@ -489,7 +493,7 @@ class DatabaseProfiler:
                     "description": "Frequent LLM provider config lookups detected - implement caching",
                     "priority": "HIGH",
                     "queries_affected": len(config_queries),
-                }
+                },
             )
 
         # Check for repetitive jailbreak queries
@@ -506,12 +510,12 @@ class DatabaseProfiler:
                     "description": "High volume of individual jailbreak queries - consider batch operations",
                     "priority": "MEDIUM",
                     "queries_affected": len(jailbreak_queries),
-                }
+                },
             )
 
         return optimizations
 
-    def clear_metrics(self, older_than_hours: int = 24):
+    def clear_metrics(self, older_than_hours: int = 24) -> None:
         """Clear old metrics to prevent memory bloat."""
         cutoff = datetime.utcnow() - timedelta(hours=older_than_hours)
 
@@ -539,7 +543,7 @@ class DatabaseProfiler:
         ]
 
         logger.info(
-            f"Cleared {len(old_queries)} old query metrics, {len(old_patterns)} old N+1 patterns"
+            f"Cleared {len(old_queries)} old query metrics, {len(old_patterns)} old N+1 patterns",
         )
 
 
@@ -571,13 +575,16 @@ def profile_db_operation(operation_name: str):
                 execution_time = (time.perf_counter() - start_time) * 1000
                 hash_ = db_profiler._get_query_hash(query_info)
                 db_profiler._record_query_execution(
-                    hash_, query_info, execution_time, success=False, error=str(e)
+                    hash_,
+                    query_info,
+                    execution_time,
+                    success=False,
+                    error=str(e),
                 )
                 raise
 
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator

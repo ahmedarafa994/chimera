@@ -1,5 +1,4 @@
-"""
-Embedding Service with Config-Driven Provider Selection
+"""Embedding Service with Config-Driven Provider Selection.
 
 Provides centralized embedding generation with:
 - Config-driven provider/model selection
@@ -111,8 +110,7 @@ class EmbeddingStats:
 
 
 class EmbeddingService:
-    """
-    Config-driven embedding generation service.
+    """Config-driven embedding generation service.
 
     Features:
     - Config-driven provider selection for embeddings
@@ -140,14 +138,14 @@ class EmbeddingService:
         cache_ttl_seconds: int = 3600,
         default_batch_size: int = 100,
         enable_cache: bool = True,
-    ):
-        """
-        Initialize the embedding service.
+    ) -> None:
+        """Initialize the embedding service.
 
         Args:
             cache_ttl_seconds: TTL for cached embeddings (default: 1 hour)
             default_batch_size: Default batch size for batch operations
             enable_cache: Whether to enable embedding caching
+
         """
         self._config_manager = None
         self._embedding_cache: dict[str, CacheEntry] = {}
@@ -160,7 +158,7 @@ class EmbeddingService:
 
         logger.info(
             f"EmbeddingService initialized: cache_ttl={cache_ttl_seconds}s, "
-            f"batch_size={default_batch_size}, cache_enabled={enable_cache}"
+            f"batch_size={default_batch_size}, cache_enabled={enable_cache}",
         )
 
     # =========================================================================
@@ -180,8 +178,7 @@ class EmbeddingService:
         return self._config_manager
 
     def _get_embedding_provider(self) -> str | None:
-        """
-        Get best provider with embedding capability.
+        """Get best provider with embedding capability.
 
         Returns provider ID or None if no embedding-capable providers.
         """
@@ -212,15 +209,15 @@ class EmbeddingService:
             return embedding_providers[0][0]
 
         except Exception as e:
-            logger.error(f"Error getting embedding provider: {e}")
+            logger.exception(f"Error getting embedding provider: {e}")
             return "openai"  # Fallback
 
     def get_embedding_providers(self) -> list[str]:
-        """
-        Get list of providers supporting embeddings from config.
+        """Get list of providers supporting embeddings from config.
 
         Returns:
             List of provider IDs that support embeddings
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -240,18 +237,18 @@ class EmbeddingService:
             return providers
 
         except Exception as e:
-            logger.error(f"Error getting embedding providers: {e}")
+            logger.exception(f"Error getting embedding providers: {e}")
             return list(EMBEDDING_MODELS.keys())
 
     def get_embedding_model(self, provider: str) -> str | None:
-        """
-        Get default embedding model for provider from config.
+        """Get default embedding model for provider from config.
 
         Args:
             provider: Provider ID
 
         Returns:
             Default embedding model name or None
+
         """
         # Check static config first
         if provider in EMBEDDING_MODELS:
@@ -260,8 +257,7 @@ class EmbeddingService:
         return None
 
     def get_embedding_dimensions(self, provider: str, model: str | None = None) -> int:
-        """
-        Get embedding dimensions for a provider/model combination.
+        """Get embedding dimensions for a provider/model combination.
 
         Args:
             provider: Provider ID
@@ -269,6 +265,7 @@ class EmbeddingService:
 
         Returns:
             Embedding dimensions
+
         """
         if provider not in EMBEDDING_MODELS:
             return 1536  # Common default
@@ -292,8 +289,7 @@ class EmbeddingService:
         model: str | None = None,
         use_cache: bool | None = None,
     ) -> list[float]:
-        """
-        Generate embedding using config-driven provider selection.
+        """Generate embedding using config-driven provider selection.
 
         Args:
             text: Text to embed
@@ -307,6 +303,7 @@ class EmbeddingService:
         Raises:
             ValueError: If no embedding-capable providers available
             RuntimeError: If embedding generation fails
+
         """
         self._stats.total_requests += 1
         use_cache = use_cache if use_cache is not None else self._enable_cache
@@ -314,7 +311,8 @@ class EmbeddingService:
         # Resolve provider
         actual_provider = provider or self._get_embedding_provider()
         if not actual_provider:
-            raise ValueError("No embedding-capable providers available")
+            msg = "No embedding-capable providers available"
+            raise ValueError(msg)
 
         # Resolve model
         actual_model = model or self.get_embedding_model(actual_provider)
@@ -343,7 +341,8 @@ class EmbeddingService:
             self._stats.total_tokens_used += tokens
             if actual_provider in EMBEDDING_MODELS:
                 model_info = EMBEDDING_MODELS[actual_provider].get(
-                    actual_model or EMBEDDING_MODELS[actual_provider].get("default", ""), {}
+                    actual_model or EMBEDDING_MODELS[actual_provider].get("default", ""),
+                    {},
                 )
                 price = model_info.get("price_per_1k_tokens", 0)
                 self._stats.total_cost += (tokens / 1000) * price
@@ -356,7 +355,7 @@ class EmbeddingService:
 
         except Exception as e:
             self._stats.errors += 1
-            logger.error(f"Embedding generation failed: {e}")
+            logger.exception(f"Embedding generation failed: {e}")
 
             # Try fallback provider
             fallback = self._get_fallback_provider(actual_provider)
@@ -364,7 +363,8 @@ class EmbeddingService:
                 logger.info(f"Trying fallback provider: {fallback}")
                 return await self.generate_embedding(text, provider=fallback, model=None)
 
-            raise RuntimeError(f"Embedding generation failed: {e}")
+            msg = f"Embedding generation failed: {e}"
+            raise RuntimeError(msg)
 
     async def generate_batch_embeddings(
         self,
@@ -374,8 +374,7 @@ class EmbeddingService:
         model: str | None = None,
         use_cache: bool | None = None,
     ) -> list[list[float]]:
-        """
-        Batch embedding generation with config-driven batching.
+        """Batch embedding generation with config-driven batching.
 
         Args:
             texts: List of texts to embed
@@ -386,6 +385,7 @@ class EmbeddingService:
 
         Returns:
             List of embedding vectors
+
         """
         if not texts:
             return []
@@ -423,7 +423,9 @@ class EmbeddingService:
 
             try:
                 batch_embeddings = await self._generate_batch_impl(
-                    batch_texts, actual_provider, actual_model
+                    batch_texts,
+                    actual_provider,
+                    actual_model,
                 )
 
                 for i, embedding in zip(batch_indices, batch_embeddings, strict=False):
@@ -440,17 +442,19 @@ class EmbeddingService:
                 self._stats.total_embeddings_generated += len(batch_embeddings)
 
             except Exception as e:
-                logger.error(f"Batch embedding failed: {e}")
+                logger.exception(f"Batch embedding failed: {e}")
                 self._stats.errors += 1
 
                 # Fall back to individual generation
                 for idx, text in zip(batch_indices, batch_texts, strict=False):
                     try:
                         results[idx] = await self.generate_embedding(
-                            text, provider=actual_provider, model=actual_model
+                            text,
+                            provider=actual_provider,
+                            model=actual_model,
                         )
                     except Exception as inner_e:
-                        logger.error(f"Individual fallback failed: {inner_e}")
+                        logger.exception(f"Individual fallback failed: {inner_e}")
                         # Return zero vector as last resort
                         dims = self.get_embedding_dimensions(actual_provider, actual_model)
                         results[idx] = [0.0] * dims
@@ -463,8 +467,7 @@ class EmbeddingService:
         text2: str,
         provider: str | None = None,
     ) -> float:
-        """
-        Compute cosine similarity between two texts.
+        """Compute cosine similarity between two texts.
 
         Args:
             text1: First text
@@ -473,6 +476,7 @@ class EmbeddingService:
 
         Returns:
             Cosine similarity score (-1 to 1)
+
         """
         embedding1 = await self.generate_embedding(text1, provider=provider)
         embedding2 = await self.generate_embedding(text2, provider=provider)
@@ -489,8 +493,7 @@ class EmbeddingService:
         provider: str,
         model: str | None = None,
     ) -> EmbeddingCostEstimate:
-        """
-        Estimate cost for embedding texts using config pricing.
+        """Estimate cost for embedding texts using config pricing.
 
         Args:
             texts: List of texts to estimate for
@@ -499,6 +502,7 @@ class EmbeddingService:
 
         Returns:
             EmbeddingCostEstimate with cost details
+
         """
         actual_model = model or self.get_embedding_model(provider)
 
@@ -535,15 +539,14 @@ class EmbeddingService:
         """Generate embedding using the specified provider."""
         if provider == "openai":
             return await self._openai_embedding(text, model)
-        elif provider in ("gemini", "google"):
+        if provider in ("gemini", "google"):
             return await self._gemini_embedding(text, model)
-        elif provider == "qwen":
+        if provider == "qwen":
             return await self._qwen_embedding(text, model)
-        elif provider == "bigmodel":
+        if provider == "bigmodel":
             return await self._bigmodel_embedding(text, model)
-        else:
-            # Try OpenAI-compatible endpoint
-            return await self._openai_compatible_embedding(text, model, provider)
+        # Try OpenAI-compatible endpoint
+        return await self._openai_compatible_embedding(text, model, provider)
 
     async def _generate_batch_impl(
         self,
@@ -554,12 +557,11 @@ class EmbeddingService:
         """Generate batch embeddings using the specified provider."""
         if provider == "openai":
             return await self._openai_batch_embedding(texts, model)
-        elif provider in ("gemini", "google"):
+        if provider in ("gemini", "google"):
             # Gemini doesn't support batch, generate individually
             return [await self._gemini_embedding(text, model) for text in texts]
-        else:
-            # Generate individually as fallback
-            return [await self._generate_embedding_impl(text, provider, model) for text in texts]
+        # Generate individually as fallback
+        return [await self._generate_embedding_impl(text, provider, model) for text in texts]
 
     async def _openai_embedding(self, text: str, model: str | None) -> list[float]:
         """Generate embedding using OpenAI."""
@@ -578,10 +580,10 @@ class EmbeddingService:
             return response.data[0].embedding
 
         except ImportError:
-            logger.error("OpenAI library not installed")
+            logger.exception("OpenAI library not installed")
             raise
         except Exception as e:
-            logger.error(f"OpenAI embedding failed: {e}")
+            logger.exception(f"OpenAI embedding failed: {e}")
             raise
 
     async def _openai_batch_embedding(
@@ -607,10 +609,10 @@ class EmbeddingService:
             return [item.embedding for item in sorted_data]
 
         except ImportError:
-            logger.error("OpenAI library not installed")
+            logger.exception("OpenAI library not installed")
             raise
         except Exception as e:
-            logger.error(f"OpenAI batch embedding failed: {e}")
+            logger.exception(f"OpenAI batch embedding failed: {e}")
             raise
 
     async def _gemini_embedding(self, text: str, model: str | None) -> list[float]:
@@ -632,10 +634,10 @@ class EmbeddingService:
             return result["embedding"]
 
         except ImportError:
-            logger.error("Google Generative AI library not installed")
+            logger.exception("Google Generative AI library not installed")
             raise
         except Exception as e:
-            logger.error(f"Gemini embedding failed: {e}")
+            logger.exception(f"Gemini embedding failed: {e}")
             raise
 
     async def _qwen_embedding(self, text: str, model: str | None) -> list[float]:
@@ -656,14 +658,14 @@ class EmbeddingService:
 
             if response.status_code == 200:
                 return response.output["embeddings"][0]["embedding"]
-            else:
-                raise RuntimeError(f"Qwen embedding failed: {response.message}")
+            msg = f"Qwen embedding failed: {response.message}"
+            raise RuntimeError(msg)
 
         except ImportError:
-            logger.error("DashScope library not installed")
+            logger.exception("DashScope library not installed")
             raise
         except Exception as e:
-            logger.error(f"Qwen embedding failed: {e}")
+            logger.exception(f"Qwen embedding failed: {e}")
             raise
 
     async def _bigmodel_embedding(self, text: str, model: str | None) -> list[float]:
@@ -684,10 +686,10 @@ class EmbeddingService:
             return response.data[0].embedding
 
         except ImportError:
-            logger.error("ZhipuAI library not installed")
+            logger.exception("ZhipuAI library not installed")
             raise
         except Exception as e:
-            logger.error(f"BigModel embedding failed: {e}")
+            logger.exception(f"BigModel embedding failed: {e}")
             raise
 
     async def _openai_compatible_embedding(
@@ -699,12 +701,14 @@ class EmbeddingService:
         """Generate embedding using OpenAI-compatible endpoint."""
         config_manager = self._get_config_manager()
         if not config_manager:
-            raise RuntimeError(f"Cannot get config for provider {provider}")
+            msg = f"Cannot get config for provider {provider}"
+            raise RuntimeError(msg)
 
         try:
             provider_config = config_manager.get_provider(provider)
             if not provider_config:
-                raise ValueError(f"Provider {provider} not found in config")
+                msg = f"Provider {provider} not found in config"
+                raise ValueError(msg)
 
             import openai
 
@@ -721,7 +725,7 @@ class EmbeddingService:
             return response.data[0].embedding
 
         except Exception as e:
-            logger.error(f"OpenAI-compatible embedding failed for {provider}: {e}")
+            logger.exception(f"OpenAI-compatible embedding failed for {provider}: {e}")
             raise
 
     # =========================================================================

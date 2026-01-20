@@ -1,5 +1,4 @@
-"""
-Provider Failover Tests
+"""Provider Failover Tests.
 
 This module tests LLM provider failover behavior when primary providers fail.
 P1 Test Coverage: Provider availability and automatic failover.
@@ -15,7 +14,7 @@ class TestProviderFailover:
     """Test automatic provider failover functionality."""
 
     @pytest.mark.asyncio
-    async def test_failover_to_secondary_on_primary_failure(self):
+    async def test_failover_to_secondary_on_primary_failure(self) -> None:
         """Test failover to secondary provider when primary fails."""
         from app.services.llm_service import LLMService
 
@@ -35,7 +34,7 @@ class TestProviderFailover:
             assert mock_call.call_count >= 1
 
     @pytest.mark.asyncio
-    async def test_failover_chain_all_providers(self):
+    async def test_failover_chain_all_providers(self) -> None:
         """Test failover through all configured providers."""
         from app.services.llm_service import LLMService
 
@@ -56,20 +55,20 @@ class TestProviderFailover:
             assert mock_call.call_count >= 1
 
     @pytest.mark.asyncio
-    async def test_raises_when_all_providers_fail(self):
+    async def test_raises_when_all_providers_fail(self) -> None:
         """Test error raised when all providers fail."""
         from app.services.llm_service import LLMService
 
         service = LLMService()
 
         with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
-            mock_call.side_effect = Exception("All providers failed")
+            mock_call.side_effect = RuntimeError("All providers failed")
 
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError, match="All providers failed"):
                 await service.generate(prompt="test", provider="openai", model="gpt-4")
 
     @pytest.mark.asyncio
-    async def test_failover_preserves_request_parameters(self):
+    async def test_failover_preserves_request_parameters(self) -> None:
         """Test failover preserves original request parameters."""
         from app.services.llm_service import LLMService
 
@@ -80,12 +79,16 @@ class TestProviderFailover:
         async def capture_call(*args, **kwargs):
             call_args.append(kwargs)
             if len(call_args) == 1:
-                raise Exception("First provider failed")
+                msg = "First provider failed"
+                raise Exception(msg)
             return Mock(content="success")
 
         with patch.object(service, "_call_provider", side_effect=capture_call):
             await service.generate(
-                prompt="test prompt", provider="openai", temperature=0.7, max_tokens=100
+                prompt="test prompt",
+                provider="openai",
+                temperature=0.7,
+                max_tokens=100,
             )
 
             # All calls should have same parameters
@@ -99,7 +102,7 @@ class TestProviderHealthCheck:
     """Test provider health checking functionality."""
 
     @pytest.mark.asyncio
-    async def test_health_check_healthy_provider(self):
+    async def test_health_check_healthy_provider(self) -> None:
         """Test health check for healthy provider."""
         from app.services.llm_service import llm_service
 
@@ -111,7 +114,7 @@ class TestProviderHealthCheck:
             assert is_healthy is True
 
     @pytest.mark.asyncio
-    async def test_health_check_unhealthy_provider(self):
+    async def test_health_check_unhealthy_provider(self) -> None:
         """Test health check for unhealthy provider."""
         from app.services.llm_service import llm_service
 
@@ -122,7 +125,7 @@ class TestProviderHealthCheck:
             assert is_healthy is False
 
     @pytest.mark.asyncio
-    async def test_get_available_providers(self):
+    async def test_get_available_providers(self) -> None:
         """Test getting list of available providers."""
         from app.services.llm_service import llm_service
 
@@ -136,7 +139,7 @@ class TestProviderHealthCheck:
 class TestProviderPriority:
     """Test provider priority and selection."""
 
-    def test_provider_priority_order(self):
+    def test_provider_priority_order(self) -> None:
         """Test providers are tried in priority order."""
         from app.services.llm_service import LLMService
 
@@ -150,17 +153,17 @@ class TestProviderPriority:
         )
 
     @pytest.mark.asyncio
-    async def test_explicit_provider_selection(self):
+    async def test_explicit_provider_selection(self) -> None:
         """Test explicit provider selection bypasses failover."""
         from app.services.llm_service import LLMService
 
         service = LLMService()
 
         with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
-            mock_call.side_effect = Exception("Provider failed")
+            mock_call.side_effect = RuntimeError("Provider failed")
 
             # With explicit provider, may not failover
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError, match="Provider failed"):
                 await service.generate(
                     prompt="test",
                     provider="openai",
@@ -168,7 +171,7 @@ class TestProviderPriority:
                     allow_failover=False,  # If supported
                 )
 
-    def test_provider_configuration(self):
+    def test_provider_configuration(self) -> None:
         """Test provider configuration is valid."""
         from app.core.config import config
 
@@ -189,7 +192,7 @@ class TestProviderRateLimiting:
     """Test provider rate limiting and throttling."""
 
     @pytest.mark.asyncio
-    async def test_rate_limit_triggers_failover(self):
+    async def test_rate_limit_triggers_failover(self) -> None:
         """Test rate limit error triggers failover."""
         from app.services.llm_service import LLMService
 
@@ -209,7 +212,7 @@ class TestProviderRateLimiting:
                 await service.generate(prompt="test", provider="openai", model="gpt-4")
 
     @pytest.mark.asyncio
-    async def test_retry_after_rate_limit(self):
+    async def test_retry_after_rate_limit(self) -> None:
         """Test retry behavior after rate limit."""
         from app.services.llm_service import LLMService
 
@@ -221,7 +224,8 @@ class TestProviderRateLimiting:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise Exception("Rate limited")
+                msg = "Rate limited"
+                raise Exception(msg)
             return Mock(content="Success")
 
         with (
@@ -235,7 +239,7 @@ class TestProviderMetrics:
     """Test provider metrics collection."""
 
     @pytest.mark.asyncio
-    async def test_metrics_recorded_on_success(self):
+    async def test_metrics_recorded_on_success(self) -> None:
         """Test metrics are recorded on successful call."""
         from app.services.llm_service import LLMService
 
@@ -243,7 +247,8 @@ class TestProviderMetrics:
 
         with patch.object(service, "_call_provider", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = Mock(
-                content="Success", usage={"prompt_tokens": 10, "completion_tokens": 20}
+                content="Success",
+                usage={"prompt_tokens": 10, "completion_tokens": 20},
             )
 
             await service.generate(prompt="test", provider="openai", model="gpt-4")
@@ -251,7 +256,7 @@ class TestProviderMetrics:
             # Check metrics were recorded (implementation-specific)
 
     @pytest.mark.asyncio
-    async def test_metrics_recorded_on_failure(self):
+    async def test_metrics_recorded_on_failure(self) -> None:
         """Test metrics are recorded on failed call."""
         from app.services.llm_service import LLMService
 
@@ -265,7 +270,7 @@ class TestProviderMetrics:
 
             # Check error metrics were recorded
 
-    def test_get_provider_stats(self):
+    def test_get_provider_stats(self) -> None:
         """Test getting provider statistics."""
         from app.services.llm_service import llm_service
 
@@ -279,7 +284,7 @@ class TestProviderTimeout:
     """Test provider timeout handling."""
 
     @pytest.mark.asyncio
-    async def test_timeout_triggers_failover(self):
+    async def test_timeout_triggers_failover(self) -> None:
         """Test timeout triggers failover to next provider."""
         import asyncio
 
@@ -295,7 +300,7 @@ class TestProviderTimeout:
         # Implementation-specific test
 
     @pytest.mark.asyncio
-    async def test_configurable_timeout(self):
+    async def test_configurable_timeout(self) -> None:
         """Test timeout is configurable per request."""
         from app.services.llm_service import LLMService
 
@@ -309,7 +314,7 @@ class TestProviderSpecificBehavior:
     """Test provider-specific behavior and edge cases."""
 
     @pytest.mark.asyncio
-    async def test_openai_specific_handling(self):
+    async def test_openai_specific_handling(self) -> None:
         """Test OpenAI-specific error handling."""
         from app.services.llm_service import LLMService
 
@@ -327,48 +332,44 @@ class TestProviderSpecificBehavior:
             pass
 
     @pytest.mark.asyncio
-    async def test_google_specific_handling(self):
+    async def test_google_specific_handling(self) -> None:
         """Test Google AI-specific error handling."""
         from app.services.llm_service import LLMService
 
         LLMService()
 
         # Test Google-specific errors
-        pass
 
     @pytest.mark.asyncio
-    async def test_anthropic_specific_handling(self):
+    async def test_anthropic_specific_handling(self) -> None:
         """Test Anthropic-specific error handling."""
         from app.services.llm_service import LLMService
 
         LLMService()
 
         # Test Anthropic-specific errors
-        pass
 
 
 class TestStreamingFailover:
     """Test failover behavior during streaming responses."""
 
     @pytest.mark.asyncio
-    async def test_streaming_failover_on_disconnect(self):
+    async def test_streaming_failover_on_disconnect(self) -> None:
         """Test failover when streaming connection is lost."""
         from app.services.llm_service import LLMService
 
         LLMService()
 
         # Test streaming-specific failover behavior
-        pass
 
     @pytest.mark.asyncio
-    async def test_streaming_partial_response_handling(self):
+    async def test_streaming_partial_response_handling(self) -> None:
         """Test handling of partial responses before failover."""
         from app.services.llm_service import LLMService
 
         LLMService()
 
         # Test partial response handling
-        pass
 
 
 if __name__ == "__main__":

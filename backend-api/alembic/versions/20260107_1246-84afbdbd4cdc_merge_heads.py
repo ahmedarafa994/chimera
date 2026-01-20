@@ -1,4 +1,4 @@
-"""merge heads
+"""merge heads.
 
 Revision ID: 84afbdbd4cdc
 Revises: d1d2c3b4e5f6
@@ -17,9 +17,7 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    pass
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    pass

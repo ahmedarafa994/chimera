@@ -19,7 +19,7 @@ interface UseEnhancedTransitionOptions {
 }
 
 export function useEnhancedTransition(options: UseEnhancedTransitionOptions = {}) {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, reactStartTransition] = useTransition();
   const [error, setError] = useState<Error | null>(null);
   const [isTimedOut, setIsTimedOut] = useState(false);
 
@@ -40,7 +40,7 @@ export function useEnhancedTransition(options: UseEnhancedTransitionOptions = {}
       setIsTimedOut(true);
     }, timeoutMs);
 
-    startTransition(() => {
+    reactStartTransition(() => {
       try {
         Promise.resolve(fn()).then(() => {
           clearTimeout(timeoutId);
@@ -57,7 +57,7 @@ export function useEnhancedTransition(options: UseEnhancedTransitionOptions = {}
         onError?.(error);
       }
     });
-  }, [timeoutMs, onStart, onComplete, onError]);
+  }, [timeoutMs, onStart, onComplete, onError, reactStartTransition]);
 
   return {
     isPending,

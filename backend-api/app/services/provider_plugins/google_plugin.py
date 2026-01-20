@@ -1,5 +1,4 @@
-"""
-Google/Gemini Provider Plugin for Project Chimera.
+"""Google/Gemini Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for Google AI (Gemini) integration,
 supporting Gemini 3, Gemini 2.5, Gemini 2.0, and Gemini 1.5 models.
@@ -27,8 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class GooglePlugin(BaseProviderPlugin):
-    """
-    Provider plugin for Google AI (Gemini) API.
+    """Provider plugin for Google AI (Gemini) API.
 
     Supports Gemini 3 Pro, Gemini 2.5 Pro/Flash, Gemini 2.0, Gemini 1.5, etc.
     Handles both "google" and "gemini" as aliases.
@@ -53,7 +51,8 @@ class GooglePlugin(BaseProviderPlugin):
     @property
     def base_url(self) -> str:
         return os.environ.get(
-            "DIRECT_GOOGLE_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
+            "DIRECT_GOOGLE_BASE_URL",
+            "https://generativelanguage.googleapis.com/v1beta",
         )
 
     @property
@@ -234,8 +233,7 @@ class GooglePlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available Google AI models.
+        """List available Google AI models.
 
         Attempts to fetch from API, falls back to static list on failure.
         """
@@ -286,7 +284,7 @@ class GooglePlugin(BaseProviderPlugin):
                             max_output_tokens=getattr(model, "output_token_limit", None),
                             supports_streaming=True,
                             capabilities=["chat"],
-                        )
+                        ),
                     )
 
             # Add any static models not in API response
@@ -298,7 +296,7 @@ class GooglePlugin(BaseProviderPlugin):
             return models
 
         except Exception as e:
-            logger.error(f"Error fetching Google models: {e}")
+            logger.exception(f"Error fetching Google models: {e}")
             raise
 
     async def validate_api_key(self, api_key: str) -> bool:
@@ -316,7 +314,9 @@ class GooglePlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using Google AI API."""
         from google import genai
@@ -324,7 +324,8 @@ class GooglePlugin(BaseProviderPlugin):
 
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Google API key is required")
+            msg = "Google API key is required"
+            raise ValueError(msg)
 
         client = genai.Client(api_key=key)
         model = request.model or self.get_default_model()
@@ -379,7 +380,9 @@ class GooglePlugin(BaseProviderPlugin):
                 usage = {
                     "prompt_tokens": getattr(response.usage_metadata, "prompt_token_count", 0),
                     "completion_tokens": getattr(
-                        response.usage_metadata, "candidates_token_count", 0
+                        response.usage_metadata,
+                        "candidates_token_count",
+                        0,
                     ),
                     "total_tokens": getattr(response.usage_metadata, "total_token_count", 0),
                 }
@@ -389,17 +392,21 @@ class GooglePlugin(BaseProviderPlugin):
                 model_used=model,
                 provider="google",
                 finish_reason=getattr(
-                    response.candidates[0] if response.candidates else None, "finish_reason", None
+                    response.candidates[0] if response.candidates else None,
+                    "finish_reason",
+                    None,
                 ),
                 usage=usage,
                 latency_ms=latency_ms,
             )
         except Exception as e:
-            logger.error(f"Google generation error: {e}")
+            logger.exception(f"Google generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Google AI API."""
         from google import genai
@@ -407,7 +414,8 @@ class GooglePlugin(BaseProviderPlugin):
 
         key = self._get_api_key(api_key)
         if not key:
-            raise ValueError("Google API key is required")
+            msg = "Google API key is required"
+            raise ValueError(msg)
 
         client = genai.Client(api_key=key)
         model = request.model or self.get_default_model()
@@ -465,5 +473,5 @@ class GooglePlugin(BaseProviderPlugin):
                 is_final=True,
             )
         except Exception as e:
-            logger.error(f"Google streaming error: {e}")
+            logger.exception(f"Google streaming error: {e}")
             raise

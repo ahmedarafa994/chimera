@@ -1,5 +1,4 @@
-"""
-Real-Time Metrics Aggregation with Redis TimeSeries
+"""Real-Time Metrics Aggregation with Redis TimeSeries.
 
 This module provides real-time metrics aggregation using Redis TimeSeries module
 for sub-second latency analytics and monitoring dashboards.
@@ -63,7 +62,7 @@ LABEL_TENANT = "tenant_id"
 
 
 class MetricType(Enum):
-    """Types of metrics tracked"""
+    """Types of metrics tracked."""
 
     REQUEST_COUNT = "request_count"
     TOKEN_USAGE = "token_usage"
@@ -72,7 +71,7 @@ class MetricType(Enum):
 
 
 class AggregationType(Enum):
-    """Redis TimeSeries aggregation types"""
+    """Redis TimeSeries aggregation types."""
 
     AVG = "avg"
     SUM = "sum"
@@ -85,14 +84,14 @@ class AggregationType(Enum):
 
 @dataclass
 class MetricDataPoint:
-    """Single metric data point"""
+    """Single metric data point."""
 
     timestamp: datetime
     value: float
     labels: dict[str, str]
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary"""
+        """Convert to dictionary."""
         return {
             "timestamp": self.timestamp.isoformat(),
             "value": self.value,
@@ -102,7 +101,7 @@ class MetricDataPoint:
 
 @dataclass
 class MetricQueryResult:
-    """Result of a metric query"""
+    """Result of a metric query."""
 
     metric_type: MetricType
     labels: dict[str, str]
@@ -111,7 +110,7 @@ class MetricQueryResult:
     bucket_size_ms: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary"""
+        """Convert to dictionary."""
         return {
             "metric_type": self.metric_type.value,
             "labels": self.labels,
@@ -122,8 +121,7 @@ class MetricQueryResult:
 
 
 class RealtimeMetrics:
-    """
-    Real-Time Metrics Aggregation with Redis TimeSeries
+    """Real-Time Metrics Aggregation with Redis TimeSeries.
 
     Features:
     - Sub-second metric recording and querying
@@ -155,6 +153,7 @@ class RealtimeMetrics:
         )
 
         await metrics.close()
+
     """
 
     # Default retention and downsampling rules
@@ -165,12 +164,12 @@ class RealtimeMetrics:
     def __init__(
         self,
         redis_url: str | None = None,
-    ):
-        """
-        Initialize the real-time metrics service
+    ) -> None:
+        """Initialize the real-time metrics service.
 
         Args:
             redis_url: Redis connection URL (default: from settings)
+
         """
         self.redis_url = redis_url or self._get_redis_url()
 
@@ -181,17 +180,17 @@ class RealtimeMetrics:
 
     @staticmethod
     def _get_redis_url() -> str:
-        """Get Redis URL from settings with fallback"""
+        """Get Redis URL from settings with fallback."""
         if hasattr(settings, "REDIS_URL"):
             return settings.REDIS_URL
         return "redis://localhost:6379/0"
 
     async def initialize(self) -> None:
-        """
-        Initialize Redis connection and create TimeSeries
+        """Initialize Redis connection and create TimeSeries.
 
         Raises:
             RedisError: If initialization fails
+
         """
         try:
             # Create connection pool
@@ -222,11 +221,11 @@ class RealtimeMetrics:
             logger.info(f"Real-time metrics initialized: {self.redis_url}")
 
         except RedisError as e:
-            logger.error(f"Failed to initialize real-time metrics: {e}")
+            logger.exception(f"Failed to initialize real-time metrics: {e}")
             raise
 
     async def close(self) -> None:
-        """Close Redis connection and cleanup resources"""
+        """Close Redis connection and cleanup resources."""
         if self._redis:
             await self._redis.close()
         if self._pool:
@@ -236,7 +235,7 @@ class RealtimeMetrics:
         logger.info("Real-time metrics closed")
 
     async def _create_timeseries(self) -> None:
-        """Create TimeSeries keys with labels and retention rules"""
+        """Create TimeSeries keys with labels and retention rules."""
         try:
             # Request count TimeSeries
             await self._redis.execute_command(
@@ -304,7 +303,7 @@ class RealtimeMetrics:
             if "already exists" in str(e):
                 logger.debug("TimeSeries already exists")
             else:
-                logger.error(f"Failed to create TimeSeries: {e}")
+                logger.exception(f"Failed to create TimeSeries: {e}")
 
     async def record_llm_request(
         self,
@@ -316,8 +315,7 @@ class RealtimeMetrics:
         tenant_id: str = "default",
         timestamp: datetime | None = None,
     ) -> bool:
-        """
-        Record LLM request metrics
+        """Record LLM request metrics.
 
         Args:
             provider: LLM provider (google, openai, anthropic, etc.)
@@ -330,6 +328,7 @@ class RealtimeMetrics:
 
         Returns:
             True if successful, False otherwise
+
         """
         if not self._is_initialized:
             logger.warning("Real-time metrics not initialized")
@@ -410,7 +409,7 @@ class RealtimeMetrics:
             return True
 
         except RedisError as e:
-            logger.error(f"Failed to record LLM request metrics: {e}")
+            logger.exception(f"Failed to record LLM request metrics: {e}")
             return False
 
     async def get_provider_metrics(
@@ -422,8 +421,7 @@ class RealtimeMetrics:
         aggregation_type: AggregationType | None = None,
         bucket_size_ms: int | None = None,
     ) -> MetricQueryResult:
-        """
-        Get metrics for a specific provider
+        """Get metrics for a specific provider.
 
         Args:
             provider: LLM provider to query
@@ -444,6 +442,7 @@ class RealtimeMetrics:
                 aggregation_type=AggregationType.AVG,
                 bucket_size_ms=60000  # 1 minute buckets
             )
+
         """
         if not self._is_initialized:
             return MetricQueryResult(
@@ -494,7 +493,7 @@ class RealtimeMetrics:
             )
 
         except RedisError as e:
-            logger.error(f"Failed to get provider metrics: {e}")
+            logger.exception(f"Failed to get provider metrics: {e}")
             return MetricQueryResult(
                 metric_type=metric_type,
                 labels={LABEL_PROVIDER: provider},
@@ -510,7 +509,7 @@ class RealtimeMetrics:
         aggregation_type: AggregationType | None = None,
         bucket_size_ms: int | None = None,
     ) -> MetricQueryResult:
-        """Get metrics for a specific model"""
+        """Get metrics for a specific model."""
         if not self._is_initialized:
             return MetricQueryResult(
                 metric_type=metric_type,
@@ -556,7 +555,7 @@ class RealtimeMetrics:
             )
 
         except RedisError as e:
-            logger.error(f"Failed to get model metrics: {e}")
+            logger.exception(f"Failed to get model metrics: {e}")
             return MetricQueryResult(
                 metric_type=metric_type,
                 labels={LABEL_PROVIDER: provider, LABEL_MODEL: model},
@@ -571,8 +570,7 @@ class RealtimeMetrics:
         bucket_size_ms: int = 60000,
         group_by: list[str] | None = None,
     ) -> list[MetricQueryResult]:
-        """
-        Get aggregate metrics grouped by labels
+        """Get aggregate metrics grouped by labels.
 
         Args:
             metric_type: Type of metric
@@ -592,6 +590,7 @@ class RealtimeMetrics:
                 bucket_size_ms=300000,  # 5 minutes
                 group_by=["provider", "model"]
             )
+
         """
         if not self._is_initialized:
             return []
@@ -622,11 +621,11 @@ class RealtimeMetrics:
             return self._parse_mr_result(result, metric_type, aggregation_type, bucket_size_ms)
 
         except RedisError as e:
-            logger.error(f"Failed to get aggregate metrics: {e}")
+            logger.exception(f"Failed to get aggregate metrics: {e}")
             return []
 
     def _get_ts_key(self, metric_type: MetricType) -> str:
-        """Map metric type to TimeSeries key"""
+        """Map metric type to TimeSeries key."""
         mapping = {
             MetricType.REQUEST_COUNT: TS_REQUEST_COUNT,
             MetricType.TOKEN_USAGE: TS_TOKEN_USAGE,
@@ -636,14 +635,14 @@ class RealtimeMetrics:
         return mapping.get(metric_type, TS_REQUEST_COUNT)
 
     def _parse_ts_result(self, result: list) -> list[MetricDataPoint]:
-        """
-        Parse TimeSeries query result
+        """Parse TimeSeries query result.
 
         Args:
             result: Raw TimeSeries result
 
         Returns:
             List of MetricDataPoint objects
+
         """
         data_points = []
 
@@ -658,7 +657,7 @@ class RealtimeMetrics:
                         timestamp=timestamp,
                         value=float(value),
                         labels={},  # Labels are filtered at query time
-                    )
+                    ),
                 )
             except (ValueError, TypeError) as e:
                 logger.warning(f"Failed to parse data point: {e}")
@@ -672,7 +671,7 @@ class RealtimeMetrics:
         aggregation: AggregationType,
         bucket_size_ms: int,
     ) -> list[MetricQueryResult]:
-        """Parse TS.MRANGE multi-key result"""
+        """Parse TS.MRANGE multi-key result."""
         query_results = []
 
         if not result:
@@ -688,7 +687,7 @@ class RealtimeMetrics:
                             timestamp=timestamp,
                             value=float(value),
                             labels=labels,
-                        )
+                        ),
                     )
                 except (ValueError, TypeError):
                     pass
@@ -700,17 +699,17 @@ class RealtimeMetrics:
                     data_points=parsed_points,
                     aggregation=aggregation,
                     bucket_size_ms=bucket_size_ms,
-                )
+                ),
             )
 
         return query_results
 
     async def get_series_info(self) -> dict[str, Any]:
-        """
-        Get information about all TimeSeries
+        """Get information about all TimeSeries.
 
         Returns:
             Dictionary with series information
+
         """
         if not self._is_initialized:
             return {}
@@ -740,7 +739,7 @@ class RealtimeMetrics:
             return series_info
 
         except RedisError as e:
-            logger.error(f"Failed to get series info: {e}")
+            logger.exception(f"Failed to get series info: {e}")
             return {}
 
 
@@ -749,7 +748,7 @@ _metrics: RealtimeMetrics | None = None
 
 
 async def get_metrics() -> RealtimeMetrics:
-    """Get or create singleton metrics instance"""
+    """Get or create singleton metrics instance."""
     global _metrics
 
     if _metrics is None:
@@ -760,7 +759,7 @@ async def get_metrics() -> RealtimeMetrics:
 
 
 async def close_metrics() -> None:
-    """Close singleton metrics instance"""
+    """Close singleton metrics instance."""
     global _metrics
 
     if _metrics:

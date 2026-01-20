@@ -20,7 +20,9 @@ class PromptLibraryService:
         )
 
         initial_version = TemplateVersion(
-            prompt_text=request.prompt_text, created_by=user_id, description="Initial version"
+            prompt_text=request.prompt_text,
+            created_by=user_id,
+            description="Initial version",
         )
 
         template = PromptTemplate(
@@ -40,7 +42,9 @@ class PromptLibraryService:
         return await prompt_library_repository.get_by_id(template_id)
 
     async def update_template(
-        self, template_id: str, request: UpdateTemplateRequest
+        self,
+        template_id: str,
+        request: UpdateTemplateRequest,
     ) -> PromptTemplate | None:
         template = await prompt_library_repository.get_by_id(template_id)
         if not template:
@@ -72,7 +76,8 @@ class PromptLibraryService:
         return await prompt_library_repository.delete(template_id)
 
     async def search_templates(
-        self, request: SearchTemplatesRequest
+        self,
+        request: SearchTemplatesRequest,
     ) -> tuple[list[PromptTemplate], int]:
         return await prompt_library_repository.search(
             query=request.query,
@@ -87,7 +92,7 @@ class PromptLibraryService:
         )
 
     async def get_statistics(self) -> TemplateStatsResponse:
-        """Get library-wide statistics"""
+        """Get library-wide statistics."""
         stats = await prompt_library_repository.get_statistics()
         return TemplateStatsResponse(
             total_templates=stats.get("total_templates", 0),
@@ -96,16 +101,19 @@ class PromptLibraryService:
         )
 
     async def get_top_rated(self, limit: int = 5) -> list[PromptTemplate]:
-        """Get top-rated templates"""
+        """Get top-rated templates."""
         return await prompt_library_repository.get_top_rated(limit=limit)
 
     async def save_from_campaign(
-        self, user_id: str, request: SaveFromCampaignRequest
+        self,
+        user_id: str,
+        request: SaveFromCampaignRequest,
     ) -> PromptTemplate | None:
-        """Save a successful attack from a campaign as a template"""
+        """Save a successful attack from a campaign as a template."""
         # Get the campaign attack data
         campaign_data = await prompt_library_repository.get_campaign_attack(
-            campaign_id=request.campaign_id, attack_id=request.attack_id
+            campaign_id=request.campaign_id,
+            attack_id=request.attack_id,
         )
 
         if not campaign_data:

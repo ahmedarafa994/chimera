@@ -1,5 +1,4 @@
-"""
-AutoDAN Service Package
+"""AutoDAN Service Package.
 
 This package provides adversarial prompt generation services for AI security research.
 
@@ -129,25 +128,26 @@ def __getattr__(name: str):
     """Module-level __getattr__ for lazy loading of legacy exports."""
     if name == "autodan_service":
         return get_autodan_service()
-    elif name == "enhanced_autodan_service":
+    if name == "enhanced_autodan_service":
         return get_enhanced_service()
-    elif name == "AutoDANService":
+    if name == "AutoDANService":
         from .service import AutoDANService
 
         return AutoDANService
-    elif name == "EnhancedAutoDANService":
+    if name == "EnhancedAutoDANService":
         from .service_enhanced import EnhancedAutoDANService
 
         return EnhancedAutoDANService
-    elif name == "AutoDANResearchService":
+    if name == "AutoDANResearchService":
         from .enhanced_service import AutoDANResearchService
 
         return AutoDANResearchService
-    elif name == "run_jailbreak":
+    if name == "run_jailbreak":
         from .service_enhanced import run_jailbreak
 
         return run_jailbreak
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 __all__ = [

@@ -1,5 +1,4 @@
-"""
-Resource Governor Module
+"""Resource Governor Module.
 
 Manages resource usage and prevents abuse
 of the Janus adversarial simulation system.
@@ -16,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class ResourceGovernor:
-    """
-    Manages resource usage and enforces budgets.
+    """Manages resource usage and enforces budgets.
 
     Implements query budgeting, CPU/memory limits,
     and session timeouts to prevent resource exhaustion.
@@ -29,7 +27,7 @@ class ResourceGovernor:
         cpu_limit: float | None = None,
         memory_limit_mb: int | None = None,
         session_timeout_sec: int | None = None,
-    ):
+    ) -> None:
         self.config = get_config()
 
         # Resource limits
@@ -54,41 +52,42 @@ class ResourceGovernor:
         logger.info("ResourceGovernor initialized")
 
     def check_budget(self) -> bool:
-        """
-        Check if query budget is available.
+        """Check if query budget is available.
 
         Returns:
             True if budget available, False otherwise
+
         """
         self._check_daily_reset()
 
         if self.queries_today >= self.daily_query_budget:
             logger.warning(
-                f"Daily query budget exceeded: {self.queries_today}/{self.daily_query_budget}"
+                f"Daily query budget exceeded: {self.queries_today}/{self.daily_query_budget}",
             )
             return False
 
         return True
 
-    def consume_query(self):
+    def consume_query(self) -> None:
         """Consume a query from the budget."""
         if not self.check_budget():
-            raise ResourceExhaustedError("Query budget exceeded")
+            msg = "Query budget exceeded"
+            raise ResourceExhaustedError(msg)
 
         self.queries_today += 1
         self.queries_total += 1
 
         logger.debug(
             f"Query consumed: {self.queries_today}/"
-            f"{self.daily_query_budget} today, {self.queries_total} total"
+            f"{self.daily_query_budget} today, {self.queries_total} total",
         )
 
     def check_session_timeout(self) -> bool:
-        """
-        Check if current session has exceeded timeout.
+        """Check if current session has exceeded timeout.
 
         Returns:
             True if within timeout, False if exceeded
+
         """
         if self.session_start_time is None:
             return True
@@ -97,19 +96,19 @@ class ResourceGovernor:
 
         if elapsed > self.session_timeout_sec:
             logger.warning(
-                f"Session timeout exceeded: {elapsed:.2f}s > {self.session_timeout_sec}s"
+                f"Session timeout exceeded: {elapsed:.2f}s > {self.session_timeout_sec}s",
             )
             return False
 
         return True
 
-    def start_session(self):
+    def start_session(self) -> None:
         """Start a new session."""
         self.session_start_time = time.time()
         self.current_memory_mb = 0.0
         logger.debug("Session started")
 
-    def end_session(self):
+    def end_session(self) -> None:
         """End the current session."""
         if self.session_start_time is None:
             return
@@ -120,14 +119,14 @@ class ResourceGovernor:
         logger.debug(f"Session ended after {elapsed:.2f}s")
 
     def check_cpu_limit(self, current_usage: float) -> bool:
-        """
-        Check if CPU usage is within limits.
+        """Check if CPU usage is within limits.
 
         Args:
             current_usage: Current CPU usage as ratio (0.0 to 1.0)
 
         Returns:
             True if within limit, False otherwise
+
         """
         if current_usage <= self.cpu_limit:
             return True
@@ -136,25 +135,25 @@ class ResourceGovernor:
         return False
 
     def check_memory_limit(self, current_usage_mb: float) -> bool:
-        """
-        Check if memory usage is within limits.
+        """Check if memory usage is within limits.
 
         Args:
             current_usage_mb: Current memory usage in MB
 
         Returns:
             True if within limit, False otherwise
+
         """
         if current_usage_mb <= self.memory_limit_mb:
             self.current_memory_mb = current_usage_mb
             return True
 
         logger.warning(
-            f"Memory limit exceeded: {current_usage_mb:.2f}MB > {self.memory_limit_mb}MB"
+            f"Memory limit exceeded: {current_usage_mb:.2f}MB > {self.memory_limit_mb}MB",
         )
         return False
 
-    def trigger_emergency_stop(self):
+    def trigger_emergency_stop(self) -> None:
         """Trigger emergency stop."""
         if not self.config.enable_emergency_stop:
             logger.warning("Emergency stop disabled by configuration")
@@ -188,24 +187,24 @@ class ResourceGovernor:
         }
 
     def get_daily_history(self, days: int = 7) -> list[dict[str, int]]:
-        """
-        Get daily usage history.
+        """Get daily usage history.
 
         Args:
             days: Number of days of history to return
 
         Returns:
             List of daily usage records
+
         """
         return self._daily_history[-days:]
 
-    def reset_daily(self):
+    def reset_daily(self) -> None:
         """Reset daily counters (called at start of new day)."""
         self._check_daily_reset()
         self.queries_today = 0
         logger.info("Daily counters reset")
 
-    def reset_all(self):
+    def reset_all(self) -> None:
         """Reset all resource tracking."""
         self.queries_today = 0
         self.queries_total = 0
@@ -216,7 +215,7 @@ class ResourceGovernor:
 
         logger.info("All resource tracking reset")
 
-    def _check_daily_reset(self):
+    def _check_daily_reset(self) -> None:
         """Check and perform daily reset if needed."""
         today = date.today()
 
@@ -233,7 +232,7 @@ class ResourceGovernor:
                         "date": yesterday.isoformat(),
                         "queries": self.queries_today,
                         "total_queries": self.queries_total,
-                    }
+                    },
                 )
 
             logger.debug(f"Daily reset performed: {today.isoformat()}")
@@ -241,5 +240,3 @@ class ResourceGovernor:
 
 class ResourceExhaustedError(Exception):
     """Raised when resource budget is exceeded."""
-
-    pass

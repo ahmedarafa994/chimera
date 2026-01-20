@@ -1,5 +1,4 @@
-"""
-Global Model Selection State Service.
+"""Global Model Selection State Service.
 
 Centralized state management for provider/model selection.
 
@@ -36,6 +35,7 @@ References:
 - Provider registry pattern: app/services/provider_registry.py
 - Database models: app/infrastructure/database/models.py
 - Model selection service: app/services/model_selection_service.py
+
 """
 
 import asyncio
@@ -60,8 +60,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelSelection(BaseModel):
-    """
-    Pydantic model representing a model selection.
+    """Pydantic model representing a model selection.
 
     This is the primary data transfer object for selection operations,
     containing all necessary information about a provider/model selection.
@@ -74,7 +73,8 @@ class ModelSelection(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Selection timestamp")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     scope: SelectionScope = Field(
-        default=SelectionScope.SESSION, description="Selection scope level"
+        default=SelectionScope.SESSION,
+        description="Selection scope level",
     )
 
     class Config:
@@ -83,8 +83,7 @@ class ModelSelection(BaseModel):
 
 
 class SelectionContextData(BaseModel):
-    """
-    Pydantic model for request-scoped selection context.
+    """Pydantic model for request-scoped selection context.
 
     This model captures the complete context for a request, including
     the resolved selection and propagation information for tracing.
@@ -93,13 +92,16 @@ class SelectionContextData(BaseModel):
     request_id: str = Field(..., description="Unique request identifier for tracing")
     selection: ModelSelection | None = Field(None, description="Resolved model selection")
     propagation_path: list[str] = Field(
-        default_factory=list, description="Path of context propagation for debugging"
+        default_factory=list,
+        description="Path of context propagation for debugging",
     )
     resolved_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the selection was resolved"
+        default_factory=datetime.utcnow,
+        description="When the selection was resolved",
     )
     resolution_source: str = Field(
-        default="default", description="Source of resolution (request, session, global)"
+        default="default",
+        description="Source of resolution (request, session, global)",
     )
 
     class Config:
@@ -113,7 +115,8 @@ class SelectionContextData(BaseModel):
 
 # Request context variable for selection state
 _request_selection_context: ContextVar[SelectionContextData | None] = ContextVar(
-    "request_selection_context", default=None
+    "request_selection_context",
+    default=None,
 )
 
 
@@ -123,8 +126,7 @@ _request_selection_context: ContextVar[SelectionContextData | None] = ContextVar
 
 
 class GlobalModelSelectionState:
-    """
-    Singleton service for global model selection state management.
+    """Singleton service for global model selection state management.
 
     This service provides centralized management of provider/model selections
     with the following features:
@@ -155,8 +157,7 @@ class GlobalModelSelectionState:
     _initialized: bool = False
 
     def __new__(cls) -> "GlobalModelSelectionState":
-        """
-        Implement singleton pattern.
+        """Implement singleton pattern.
 
         Ensures only one instance of GlobalModelSelectionState exists
         across the entire application.
@@ -166,9 +167,8 @@ class GlobalModelSelectionState:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
-        """
-        Initialize the singleton instance.
+    def __init__(self) -> None:
+        """Initialize the singleton instance.
 
         Only performs initialization on first instantiation.
         """
@@ -189,15 +189,15 @@ class GlobalModelSelectionState:
         self._event_listeners: list[callable] = []
 
         # Subscription system for WebSocket updates
-        self._subscriptions: dict[str, tuple[str, callable]] = (
-            {}
-        )  # subscription_id -> (user_id, callback)
+        self._subscriptions: dict[
+            str, tuple[str, callable]
+        ] = {}  # subscription_id -> (user_id, callback)
         self._subscription_counter = 0
 
         self._initialized = True
         logger.info(
             f"GlobalModelSelectionState initialized with defaults: "
-            f"{self._default_provider}/{self._default_model}"
+            f"{self._default_provider}/{self._default_model}",
         )
 
     # -------------------------------------------------------------------------
@@ -210,8 +210,7 @@ class GlobalModelSelectionState:
         user_id: str | None = None,
         db_session: AsyncSession | None = None,
     ) -> ModelSelection:
-        """
-        Get the current model selection for a session.
+        """Get the current model selection for a session.
 
         Resolution order (Four-Tier Hierarchy):
         1. Check in-memory cache (session-level)
@@ -230,6 +229,7 @@ class GlobalModelSelectionState:
         Example:
             >>> selection = await state.get_current_selection("sess_123")
             >>> print(f"Using {selection.provider}/{selection.model_id}")
+
         """
         cache_key = self._get_cache_key(session_id, user_id)
 
@@ -253,7 +253,7 @@ class GlobalModelSelectionState:
         if global_selection:
             logger.debug(
                 f"Using global model selection: "
-                f"{global_selection.provider}/{global_selection.model_id}"
+                f"{global_selection.provider}/{global_selection.model_id}",
             )
             return global_selection
 
@@ -267,8 +267,7 @@ class GlobalModelSelectionState:
         session_id: str,
         user_id: str | None = None,
     ) -> ModelSelection | None:
-        """
-        Get the global model selection from model_selection_service.
+        """Get the global model selection from model_selection_service.
 
         This reads from the model_selection_service which persists the user's
         selected provider/model from the UI to a JSON file.
@@ -279,6 +278,7 @@ class GlobalModelSelectionState:
 
         Returns:
             ModelSelection if set, None otherwise
+
         """
         try:
             from app.services.model_selection_service import model_selection_service
@@ -314,8 +314,7 @@ class GlobalModelSelectionState:
         db_session: AsyncSession | None = None,
         persist: bool = True,
     ) -> ModelSelection:
-        """
-        Set the model selection for a session.
+        """Set the model selection for a session.
 
         This method updates both the in-memory cache and optionally
         persists to the database.
@@ -339,12 +338,13 @@ class GlobalModelSelectionState:
             >>> selection = await state.set_selection(
             ...     "sess_123", "anthropic", "claude-3-opus"
             ... )
+
         """
         # Validate selection
         if not await self.validate_selection(provider, model_id):
             logger.warning(
                 f"Selection validation warning for {provider}/{model_id}. "
-                "Proceeding anyway as provider may be dynamically registered."
+                "Proceeding anyway as provider may be dynamically registered.",
             )
 
         selection = ModelSelection(
@@ -381,8 +381,7 @@ class GlobalModelSelectionState:
         user_id: str | None = None,
         db_session: AsyncSession | None = None,
     ) -> bool:
-        """
-        Clear the selection for a session.
+        """Clear the selection for a session.
 
         Removes the selection from both cache and database, reverting
         to default selection behavior.
@@ -394,6 +393,7 @@ class GlobalModelSelectionState:
 
         Returns:
             True if a selection was cleared, False if none existed
+
         """
         cache_key = self._get_cache_key(session_id, user_id)
 
@@ -417,8 +417,7 @@ class GlobalModelSelectionState:
     # -------------------------------------------------------------------------
 
     def get_request_context(self) -> SelectionContextData | None:
-        """
-        Get the current request's selection context.
+        """Get the current request's selection context.
 
         This retrieves the selection context from the current request's
         contextvars, allowing access to the resolved selection anywhere
@@ -426,12 +425,12 @@ class GlobalModelSelectionState:
 
         Returns:
             SelectionContextData if set, None otherwise
+
         """
         return _request_selection_context.get()
 
     def set_request_context(self, context: SelectionContextData) -> Token:
-        """
-        Set the selection context for the current request.
+        """Set the selection context for the current request.
 
         This should be called at request entry (typically in middleware)
         to establish the selection context for the request.
@@ -441,25 +440,25 @@ class GlobalModelSelectionState:
 
         Returns:
             Token for resetting the context
+
         """
         token = _request_selection_context.set(context)
         provider = context.selection.provider if context.selection else None
         model = context.selection.model_id if context.selection else None
         logger.debug(
-            f"Request context set: request_id={context.request_id}, "
-            f"selection={provider}/{model}"
+            f"Request context set: request_id={context.request_id}, selection={provider}/{model}",
         )
         return token
 
     def clear_request_context(self, token: Token | None = None) -> None:
-        """
-        Clear the current request's selection context.
+        """Clear the current request's selection context.
 
         Should be called at request completion (typically in middleware)
         to clean up the context.
 
         Args:
             token: Optional token from set_request_context for proper reset
+
         """
         if token:
             _request_selection_context.reset(token)
@@ -475,8 +474,7 @@ class GlobalModelSelectionState:
         request_override: tuple[str, str] | None = None,
         db_session: AsyncSession | None = None,
     ) -> SelectionContextData:
-        """
-        Resolve the selection for a request using four-tier hierarchy.
+        """Resolve the selection for a request using four-tier hierarchy.
 
         Resolution order:
         1. Request override (from query params or headers)
@@ -493,6 +491,7 @@ class GlobalModelSelectionState:
 
         Returns:
             SelectionContextData with resolved selection
+
         """
         resolution_source = "default"
         selection: ModelSelection | None = None
@@ -544,7 +543,7 @@ class GlobalModelSelectionState:
         logger.debug(
             f"Selection resolved for request {request_id}: "
             f"{selection.provider}/{selection.model_id} "
-            f"(source={resolution_source})"
+            f"(source={resolution_source})",
         )
 
         return context
@@ -554,8 +553,7 @@ class GlobalModelSelectionState:
     # -------------------------------------------------------------------------
 
     async def validate_selection(self, provider: str, model_id: str) -> bool:
-        """
-        Validate that a provider/model combination is valid.
+        """Validate that a provider/model combination is valid.
 
         This method checks against the registered providers and models.
         Note: Validation is advisory; unknown providers may be dynamically
@@ -567,6 +565,7 @@ class GlobalModelSelectionState:
 
         Returns:
             True if valid, False otherwise
+
         """
         # Import here to avoid circular imports
         try:
@@ -585,7 +584,7 @@ class GlobalModelSelectionState:
                 if model_id not in valid_models:
                     logger.debug(
                         f"Model {model_id} not found for provider "
-                        f"{provider}. Valid: {valid_models}"
+                        f"{provider}. Valid: {valid_models}",
                     )
                     return False
 
@@ -608,8 +607,7 @@ class GlobalModelSelectionState:
         user_id: str,
         callback: callable,
     ) -> str:
-        """
-        Subscribe to selection changes for a specific user.
+        """Subscribe to selection changes for a specific user.
 
         This is used by the WebSocket system to receive real-time updates
         when a user's selection changes.
@@ -620,6 +618,7 @@ class GlobalModelSelectionState:
 
         Returns:
             Subscription ID for later unsubscription
+
         """
         self._subscription_counter += 1
         subscription_id = f"sub_{user_id}_{self._subscription_counter}"
@@ -628,14 +627,14 @@ class GlobalModelSelectionState:
         return subscription_id
 
     def unsubscribe(self, subscription_id: str) -> bool:
-        """
-        Unsubscribe from selection changes.
+        """Unsubscribe from selection changes.
 
         Args:
             subscription_id: The subscription ID returned by subscribe_to_changes
 
         Returns:
             True if unsubscribed successfully, False if not found
+
         """
         if subscription_id in self._subscriptions:
             del self._subscriptions[subscription_id]
@@ -644,8 +643,7 @@ class GlobalModelSelectionState:
         return False
 
     async def get_selection(self, user_id: str) -> Selection:
-        """
-        Get the current selection for a user.
+        """Get the current selection for a user.
 
         This is a convenience method for WebSocket handlers that provides
         a Selection domain object.
@@ -655,6 +653,7 @@ class GlobalModelSelectionState:
 
         Returns:
             Selection domain object with current selection
+
         """
         # Try to get from cache or default
         model_selection = await self.get_current_selection(
@@ -682,43 +681,43 @@ class GlobalModelSelectionState:
         user_id: str,
         selection: "Selection",
     ) -> None:
-        """
-        Notify all subscribers for a user about a selection change.
+        """Notify all subscribers for a user about a selection change.
 
         Args:
             user_id: User whose selection changed
             selection: New selection
+
         """
         for sub_id, (sub_user_id, callback) in list(self._subscriptions.items()):
             if sub_user_id == user_id:
                 try:
                     callback(selection)
                 except Exception as e:
-                    logger.error(f"Error in subscription callback {sub_id}: {e}")
+                    logger.exception(f"Error in subscription callback {sub_id}: {e}")
 
     # -------------------------------------------------------------------------
     # Event System
     # -------------------------------------------------------------------------
 
     def add_selection_listener(self, callback: callable) -> None:
-        """
-        Add a listener for selection change events.
+        """Add a listener for selection change events.
 
         Args:
             callback: Async callable(old_selection, new_selection)
+
         """
         self._event_listeners.append(callback)
         logger.debug(f"Added selection listener: {callback.__name__}")
 
     def remove_selection_listener(self, callback: callable) -> bool:
-        """
-        Remove a selection change listener.
+        """Remove a selection change listener.
 
         Args:
             callback: The callback to remove
 
         Returns:
             True if removed, False if not found
+
         """
         try:
             self._event_listeners.remove(callback)
@@ -739,7 +738,7 @@ class GlobalModelSelectionState:
                 else:
                     listener(old_selection, new_selection)
             except Exception as e:
-                logger.error(f"Error in selection listener {listener.__name__}: {e}")
+                logger.exception(f"Error in selection listener {listener.__name__}: {e}")
 
     # -------------------------------------------------------------------------
     # Database Operations
@@ -777,7 +776,7 @@ class GlobalModelSelectionState:
             return None
 
         except Exception as e:
-            logger.error(f"Database load error: {e}")
+            logger.exception(f"Database load error: {e}")
             return None
 
     async def _save_to_database(
@@ -817,7 +816,7 @@ class GlobalModelSelectionState:
             logger.debug(f"Selection saved to database: {selection.session_id}")
 
         except Exception as e:
-            logger.error(f"Database save error: {e}")
+            logger.exception(f"Database save error: {e}")
             await db_session.rollback()
             raise
 
@@ -842,7 +841,7 @@ class GlobalModelSelectionState:
             logger.debug(f"Selection deleted from database: {session_id}")
 
         except Exception as e:
-            logger.error(f"Database delete error: {e}")
+            logger.exception(f"Database delete error: {e}")
             await db_session.rollback()
 
     # -------------------------------------------------------------------------
@@ -874,11 +873,11 @@ class GlobalModelSelectionState:
     # -------------------------------------------------------------------------
 
     async def clear_cache(self) -> int:
-        """
-        Clear the in-memory cache.
+        """Clear the in-memory cache.
 
         Returns:
             Number of entries cleared
+
         """
         async with self._cache_lock:
             count = len(self._cache)
@@ -887,11 +886,11 @@ class GlobalModelSelectionState:
             return count
 
     async def get_cache_stats(self) -> dict[str, Any]:
-        """
-        Get cache statistics.
+        """Get cache statistics.
 
         Returns:
             Dictionary with cache statistics
+
         """
         async with self._cache_lock:
             return {
@@ -908,8 +907,7 @@ class GlobalModelSelectionState:
         db_session: AsyncSession,
         limit: int = 1000,
     ) -> int:
-        """
-        Preload selections from database into cache.
+        """Preload selections from database into cache.
 
         Useful for warming the cache on startup.
 
@@ -919,6 +917,7 @@ class GlobalModelSelectionState:
 
         Returns:
             Number of selections loaded
+
         """
         try:
             from app.infrastructure.database.models import SelectionModel
@@ -947,7 +946,7 @@ class GlobalModelSelectionState:
             return count
 
         except Exception as e:
-            logger.error(f"Error preloading selections: {e}")
+            logger.exception(f"Error preloading selections: {e}")
             return 0
 
 
@@ -957,8 +956,7 @@ class GlobalModelSelectionState:
 
 
 def get_global_model_selection_state() -> GlobalModelSelectionState:
-    """
-    FastAPI dependency to get the GlobalModelSelectionState singleton.
+    """FastAPI dependency to get the GlobalModelSelectionState singleton.
 
     Usage in route:
         @app.get("/api/v1/models")
@@ -972,19 +970,20 @@ def get_global_model_selection_state() -> GlobalModelSelectionState:
 
     Returns:
         The singleton GlobalModelSelectionState instance
+
     """
     return GlobalModelSelectionState()
 
 
 async def get_model_selection_state() -> GlobalModelSelectionState:
-    """
-    Async FastAPI dependency for GlobalModelSelectionState.
+    """Async FastAPI dependency for GlobalModelSelectionState.
 
     Use this when you need async initialization or when the dependency
     chain requires an async function.
 
     Returns:
         The singleton GlobalModelSelectionState instance
+
     """
     return GlobalModelSelectionState()
 
@@ -995,14 +994,13 @@ async def get_model_selection_state() -> GlobalModelSelectionState:
 
 
 class ModelSelectionMiddlewareHelper:
-    """
-    Helper class for middleware integration.
+    """Helper class for middleware integration.
 
     Provides utilities for setting up and tearing down request context
     in FastAPI middleware.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.state = GlobalModelSelectionState()
 
     async def setup_request_context(
@@ -1014,8 +1012,7 @@ class ModelSelectionMiddlewareHelper:
         model_override: str | None = None,
         db_session: AsyncSession | None = None,
     ) -> tuple[SelectionContextData, Token]:
-        """
-        Set up the selection context for a request.
+        """Set up the selection context for a request.
 
         Args:
             request_id: Unique request identifier
@@ -1027,6 +1024,7 @@ class ModelSelectionMiddlewareHelper:
 
         Returns:
             Tuple of (context, token) for cleanup
+
         """
         # Determine override
         override = None
@@ -1048,11 +1046,11 @@ class ModelSelectionMiddlewareHelper:
         return context, token
 
     def cleanup_request_context(self, token: Token) -> None:
-        """
-        Clean up the selection context after request completion.
+        """Clean up the selection context after request completion.
 
         Args:
             token: Token from setup_request_context
+
         """
         self.state.clear_request_context(token)
 
@@ -1063,8 +1061,7 @@ class ModelSelectionMiddlewareHelper:
 
 
 def model_selection_to_domain_selection(model_selection: ModelSelection) -> Selection:
-    """
-    Convert ModelSelection to domain Selection model.
+    """Convert ModelSelection to domain Selection model.
 
     Useful for integration with existing code that uses the Selection model
     from app.domain.models.
@@ -1074,6 +1071,7 @@ def model_selection_to_domain_selection(model_selection: ModelSelection) -> Sele
 
     Returns:
         Selection domain model instance
+
     """
     return Selection(
         provider_id=model_selection.provider,
@@ -1090,8 +1088,7 @@ def domain_selection_to_model_selection(
     selection: Selection,
     metadata: dict[str, Any] | None = None,
 ) -> ModelSelection:
-    """
-    Convert domain Selection to ModelSelection.
+    """Convert domain Selection to ModelSelection.
 
     Args:
         selection: Selection domain model instance
@@ -1099,6 +1096,7 @@ def domain_selection_to_model_selection(
 
     Returns:
         ModelSelection instance
+
     """
     return ModelSelection(
         provider=selection.provider_id,

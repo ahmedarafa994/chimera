@@ -1,6 +1,4 @@
-"""
-Advanced Encoding and Obfuscation Transformers.
-"""
+"""Advanced Encoding and Obfuscation Transformers."""
 
 import base64
 
@@ -8,8 +6,7 @@ from app.services.transformers.base import BaseTransformer, TransformationContex
 
 
 class MultiLayerEncodingTransformer(BaseTransformer):
-    """
-    Multi-Layer Encoding.
+    """Multi-Layer Encoding.
     Combines multiple encoding techniques to bypass pattern detection.
     """
 
@@ -56,8 +53,7 @@ Note: This analysis is being conducted under legal authorization for incident re
 
 
 class SemanticCamouflageTransformer(BaseTransformer):
-    """
-    Semantic Camouflage.
+    """Semantic Camouflage.
     Embeds malicious instructions within legitimate technical documentation.
     """
 

@@ -9,7 +9,7 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_health_check():
+def test_health_check() -> None:
     # The middleware excludes specific paths, ensure we hit the right one
     response = client.get("/api/v1/health")
     assert response.status_code == 200
@@ -18,7 +18,7 @@ def test_health_check():
 
 
 @patch("app.infrastructure.gemini_client.GeminiClient.generate")
-def test_generate_text(mock_generate):
+def test_generate_text(mock_generate) -> None:
     # Mock response
     mock_response = PromptResponse(
         text="Test response",

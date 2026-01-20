@@ -1,5 +1,4 @@
-"""
-Ensemble Gradient Alignment Service for AutoDAN.
+"""Ensemble Gradient Alignment Service for AutoDAN.
 
 Implements ensemble gradient alignment for transferability across models.
 """
@@ -13,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class EnsembleGradientAligner:
-    """
-    Ensemble gradient alignment for cross-model transferability.
+    """Ensemble gradient alignment for cross-model transferability.
 
     Optimizes prompts to work across multiple target models by:
     1. Computing gradients from ensemble of models
@@ -27,14 +25,14 @@ class EnsembleGradientAligner:
         alignment_strategy: str = "weighted",
         max_iterations: int = 50,
         consensus_threshold: float = 0.8,
-    ):
-        """
-        Initialize the ensemble aligner.
+    ) -> None:
+        """Initialize the ensemble aligner.
 
         Args:
             alignment_strategy: Strategy for gradient alignment (average, weighted, max_consensus)
             max_iterations: Maximum optimization iterations
             consensus_threshold: Minimum consensus score for success
+
         """
         self.alignment_strategy = alignment_strategy
         self.max_iterations = max_iterations
@@ -43,12 +41,11 @@ class EnsembleGradientAligner:
         logger.info(
             f"EnsembleGradientAligner initialized: "
             f"strategy={alignment_strategy}, "
-            f"consensus_threshold={consensus_threshold}"
+            f"consensus_threshold={consensus_threshold}",
         )
 
     async def align_attack(self, request: str, target_models: list[dict]) -> dict:
-        """
-        Execute ensemble attack with gradient alignment.
+        """Execute ensemble attack with gradient alignment.
 
         Args:
             request: Target complex request
@@ -57,9 +54,10 @@ class EnsembleGradientAligner:
 
         Returns:
             Aligned attack result with consensus metrics
+
         """
         logger.info(
-            f"Starting ensemble alignment for {len(target_models)} models: {request[:50]}..."
+            f"Starting ensemble alignment for {len(target_models)} models: {request[:50]}...",
         )
 
         # Placeholder implementation
@@ -82,7 +80,7 @@ class EnsembleGradientAligner:
                     "model": model_config["model"],
                     "score": score,
                     "jailbreak_success": jailbreak_success,
-                }
+                },
             )
 
         # Calculate consensus
@@ -102,8 +100,7 @@ class EnsembleGradientAligner:
         }
 
     def _compute_aligned_gradient(self, gradients: list[np.ndarray]) -> np.ndarray:
-        """
-        Compute aligned gradient from ensemble.
+        """Compute aligned gradient from ensemble.
 
         Projects gradients to find common descent direction.
         Discards conflicting gradient components (dot product < 0).
@@ -113,6 +110,7 @@ class EnsembleGradientAligner:
 
         Returns:
             Aligned gradient vector
+
         """
         if not gradients:
             return np.zeros(1)
@@ -120,12 +118,12 @@ class EnsembleGradientAligner:
         if self.alignment_strategy == "average":
             return np.mean(gradients, axis=0)
 
-        elif self.alignment_strategy == "weighted":
+        if self.alignment_strategy == "weighted":
             # Weighted average (weights could be based on model performance)
             weights = np.ones(len(gradients)) / len(gradients)
             return np.average(gradients, axis=0, weights=weights)
 
-        elif self.alignment_strategy == "max_consensus":
+        if self.alignment_strategy == "max_consensus":
             # Keep only directions where all gradients agree
             aligned = np.zeros_like(gradients[0])
 
@@ -137,12 +135,10 @@ class EnsembleGradientAligner:
 
             return aligned
 
-        else:
-            return np.mean(gradients, axis=0)
+        return np.mean(gradients, axis=0)
 
     def _evaluate_consensus(self, prompt: str, models: list) -> float:
-        """
-        Evaluate consensus score across models.
+        """Evaluate consensus score across models.
 
         Args:
             prompt: Prompt to evaluate
@@ -150,6 +146,7 @@ class EnsembleGradientAligner:
 
         Returns:
             Consensus score (0-1)
+
         """
         # Placeholder: In production, evaluate prompt on all models
         success_count = secrets.randbelow(len(models) + 1)

@@ -1,5 +1,4 @@
-"""
-Evolution Engine Module
+"""Evolution Engine Module.
 
 Drives self-evolution of Janus's operational sophistication
 through genetic operators and meta-learning.
@@ -23,13 +22,13 @@ def _secure_uniform(a, b):
 from collections import deque
 from typing import Any
 
-from ..config import get_config
+from app.services.janus.config import get_config
+
 from .models import Heuristic
 
 
 class EvolutionEngine:
-    """
-    Drives the self-evolution of heuristics.
+    """Drives the self-evolution of heuristics.
 
     Uses genetic operators (selection, crossover, mutation)
     to evolve increasingly sophisticated testing strategies.
@@ -41,7 +40,7 @@ class EvolutionEngine:
         crossover_rate: float | None = None,
         selection_pressure: float | None = None,
         elitism_ratio: float | None = None,
-    ):
+    ) -> None:
         self.config = get_config()
 
         # Evolution parameters
@@ -59,10 +58,11 @@ class EvolutionEngine:
         self.best_fitness = 0.0
 
     def evolve_generation(
-        self, current_heuristics: list[Heuristic], performance_metrics: dict[str, float]
+        self,
+        current_heuristics: list[Heuristic],
+        performance_metrics: dict[str, float],
     ) -> list[Heuristic]:
-        """
-        Evolve a new generation of heuristics.
+        """Evolve a new generation of heuristics.
 
         Args:
             current_heuristics: Current heuristic population
@@ -70,6 +70,7 @@ class EvolutionEngine:
 
         Returns:
             New generation of evolved heuristics
+
         """
         self.current_generation += 1
 
@@ -110,13 +111,15 @@ class EvolutionEngine:
         return new_generation
 
     def _select_parents(
-        self, heuristics: list[Heuristic], metrics: dict[str, float]
+        self,
+        heuristics: list[Heuristic],
+        metrics: dict[str, float],
     ) -> list[Heuristic]:
-        """
-        Select parents using tournament selection.
+        """Select parents using tournament selection.
 
         Returns:
             List of selected parent heuristics
+
         """
         if not heuristics:
             return []
@@ -136,11 +139,11 @@ class EvolutionEngine:
         return selected
 
     def _crossover(self, h1: Heuristic, h2: Heuristic) -> tuple[Heuristic, Heuristic]:
-        """
-        Perform crossover between two heuristics.
+        """Perform crossover between two heuristics.
 
         Returns:
             Tuple of two child heuristics
+
         """
         # Crossover strategy: swap preconditions
         child1_precondition = h1.precondition
@@ -182,11 +185,11 @@ class EvolutionEngine:
         return child1, child2
 
     def _mutate(self, heuristic: Heuristic) -> Heuristic:
-        """
-        Mutate a heuristic.
+        """Mutate a heuristic.
 
         Returns:
             Mutated heuristic
+
         """
         mutation_type = secrets.choice(
             [
@@ -196,21 +199,21 @@ class EvolutionEngine:
                 "name_change",
                 "dependency_add",
                 "dependency_remove",
-            ]
+            ],
         )
 
         if mutation_type == "precondition_relax":
             return self._relax_precondition(heuristic)
-        elif mutation_type == "action_perturb":
+        if mutation_type == "action_perturb":
             return self._perturb_action(heuristic)
-        elif mutation_type == "postcondition_strengthen":
+        if mutation_type == "postcondition_strengthen":
             return self._strengthen_postcondition(heuristic)
-        elif mutation_type == "name_change":
+        if mutation_type == "name_change":
             return self._change_name(heuristic)
-        elif mutation_type == "dependency_add":
+        if mutation_type == "dependency_add":
             return self._add_dependency(heuristic)
-        else:  # dependency_remove
-            return self._remove_dependency(heuristic)
+        # dependency_remove
+        return self._remove_dependency(heuristic)
 
     def _relax_precondition(self, heuristic: Heuristic) -> Heuristic:
         """Relax precondition of heuristic."""
@@ -355,13 +358,15 @@ class EvolutionEngine:
         )
 
     def _select_elite(
-        self, heuristics: list[Heuristic], metrics: dict[str, float]
+        self,
+        heuristics: list[Heuristic],
+        metrics: dict[str, float],
     ) -> list[Heuristic]:
-        """
-        Select elite heuristics based on performance.
+        """Select elite heuristics based on performance.
 
         Returns:
             List of elite heuristics
+
         """
         if not heuristics:
             return []
@@ -385,11 +390,11 @@ class EvolutionEngine:
         return elite
 
     def _prune_population(self, heuristics: list[Heuristic], max_size: int) -> list[Heuristic]:
-        """
-        Prune population to maintain size.
+        """Prune population to maintain size.
 
         Returns:
             Pruned list of heuristics
+
         """
         if len(heuristics) <= max_size:
             return heuristics
@@ -405,7 +410,7 @@ class EvolutionEngine:
         previous_heuristics: list[Heuristic],
         new_heuristics: list[Heuristic],
         metrics: dict[str, float],
-    ):
+    ) -> None:
         """Record generation statistics."""
         # Compute improvement
         prev_avg = (
@@ -433,7 +438,7 @@ class EvolutionEngine:
                 "improvement": improvement,
                 "best_fitness": self.best_fitness,
                 "best_heuristic": self.best_heuristic.name if self.best_heuristic else None,
-            }
+            },
         )
 
     def get_generation_stats(self) -> dict[str, Any]:
@@ -490,7 +495,7 @@ class EvolutionEngine:
 
         return int(threshold / avg_improvement)
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset evolution engine state."""
         self.generation_history.clear()
         self.current_generation = 0

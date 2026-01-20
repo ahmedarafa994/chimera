@@ -1,5 +1,4 @@
-"""
-Provider Resolution Service for Project Chimera.
+"""Provider Resolution Service for Project Chimera.
 
 This service provides centralized provider/model resolution using a
 priority-based hierarchy. It ensures that all services use the correct
@@ -18,6 +17,7 @@ References:
 - Design doc: docs/UNIFIED_PROVIDER_SYSTEM_DESIGN.md
 - GlobalModelSelectionState: app/services/global_model_selection_state.py
 - Provider plugins: app/services/provider_plugins/__init__.py
+
 """
 
 import logging
@@ -41,8 +41,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ResolutionResult:
-    """
-    Result of provider/model resolution.
+    """Result of provider/model resolution.
 
     Contains the resolved provider and model along with metadata about
     how the resolution was performed.
@@ -98,8 +97,7 @@ class ResolutionStrategy:
         raise NotImplementedError
 
     async def resolve(self, context: dict[str, Any]) -> tuple[str, str] | None:
-        """
-        Attempt to resolve provider/model.
+        """Attempt to resolve provider/model.
 
         Returns (provider, model_id) or None.
         """
@@ -129,7 +127,7 @@ class RequestContextStrategy(ResolutionStrategy):
     priority = 2
     name = "request_context"
 
-    def __init__(self, state: GlobalModelSelectionState):
+    def __init__(self, state: GlobalModelSelectionState) -> None:
         self.state = state
 
     async def can_resolve(self, context: dict[str, Any]) -> bool:
@@ -155,7 +153,7 @@ class RequestContextStrategy(ResolutionStrategy):
             selection = SelectionContext.get_selection()
             if selection:
                 logger.debug(
-                    f"Using SelectionContext: {selection.provider_id}/{selection.model_id}"
+                    f"Using SelectionContext: {selection.provider_id}/{selection.model_id}",
                 )
                 return (selection.provider_id, selection.model_id)
         except Exception:
@@ -178,7 +176,7 @@ class SessionSelectionStrategy(ResolutionStrategy):
         self,
         state: GlobalModelSelectionState,
         session_service: SessionService | None = None,
-    ):
+    ) -> None:
         self.state = state
         self.session_service = session_service
 
@@ -219,8 +217,7 @@ class SessionSelectionStrategy(ResolutionStrategy):
 
 
 class GlobalModelSelectionStrategy(ResolutionStrategy):
-    """
-    Resolution from model_selection_service (user's UI selection).
+    """Resolution from model_selection_service (user's UI selection).
 
     This reads from the model_selection_service which persists the user's
     selected provider/model from the UI to a JSON file. This is tier 3.5
@@ -237,8 +234,7 @@ class GlobalModelSelectionStrategy(ResolutionStrategy):
             selection = model_selection_service.get_selection()
             can_resolve = selection is not None
             logger.info(
-                f"GlobalModelSelectionStrategy.can_resolve: {can_resolve}, "
-                f"selection={selection}"
+                f"GlobalModelSelectionStrategy.can_resolve: {can_resolve}, selection={selection}",
             )
             return can_resolve
         except Exception as e:
@@ -253,7 +249,7 @@ class GlobalModelSelectionStrategy(ResolutionStrategy):
             if selection:
                 logger.info(
                     f"GlobalModelSelectionStrategy.resolve: "
-                    f"returning {selection.provider}/{selection.model}"
+                    f"returning {selection.provider}/{selection.model}",
                 )
                 return (selection.provider, selection.model)
             logger.info("GlobalModelSelectionStrategy.resolve: no selection found")
@@ -310,8 +306,7 @@ class GlobalDefaultStrategy(ResolutionStrategy):
 
 
 class ProviderResolutionService:
-    """
-    Resolves the active provider/model for a given context.
+    """Resolves the active provider/model for a given context.
 
     This service implements the priority-based resolution hierarchy:
     1. Explicit parameters (if provided)
@@ -342,7 +337,7 @@ class ProviderResolutionService:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the resolution service."""
         if self._initialized:
             return
@@ -386,8 +381,7 @@ class ProviderResolutionService:
         db_session: AsyncSession | None = None,
         use_cache: bool = True,
     ) -> tuple[str, str]:
-        """
-        Resolve provider/model using priority hierarchy.
+        """Resolve provider/model using priority hierarchy.
 
         Args:
             explicit_provider: Explicit provider override (highest priority)
@@ -406,6 +400,7 @@ class ProviderResolutionService:
             ...     explicit_provider="anthropic",
             ...     explicit_model="claude-3-opus",
             ... )
+
         """
         result = await self.resolve_with_metadata(
             explicit_provider=explicit_provider,
@@ -427,8 +422,7 @@ class ProviderResolutionService:
         db_session: AsyncSession | None = None,
         use_cache: bool = True,
     ) -> ResolutionResult:
-        """
-        Resolve provider/model with full resolution metadata.
+        """Resolve provider/model with full resolution metadata.
 
         Returns a ResolutionResult containing the resolved provider/model
         along with information about how the resolution was performed.
@@ -443,6 +437,7 @@ class ProviderResolutionService:
 
         Returns:
             ResolutionResult with full resolution details
+
         """
         # Build context for strategies
         context: dict[str, Any] = {
@@ -462,14 +457,12 @@ class ProviderResolutionService:
             if age < self._cache_ttl_seconds:
                 logger.info(
                     f"Using cached resolution: {cached.to_tuple()}, "
-                    f"age={age:.1f}s, source={cached.resolution_source}"
+                    f"age={age:.1f}s, source={cached.resolution_source}",
                 )
                 return cached
-            else:
-                logger.info(f"Cache expired (age={age:.1f}s > {self._cache_ttl_seconds}s)")
-        else:
-            if use_cache:
-                logger.info("Cache miss - no cached resolution found")
+            logger.info(f"Cache expired (age={age:.1f}s > {self._cache_ttl_seconds}s)")
+        elif use_cache:
+            logger.info("Cache miss - no cached resolution found")
 
         # Try each strategy in priority order
         for strategy in self._strategies:
@@ -499,12 +492,12 @@ class ProviderResolutionService:
                         logger.info(
                             f"Resolved provider/model: {provider}/{model_id} "
                             f"(source={strategy.name}, "
-                            f"priority={strategy.priority})"
+                            f"priority={strategy.priority})",
                         )
 
                         return resolution
             except Exception as e:
-                logger.error(f"Strategy {strategy.name} failed: {e}")
+                logger.exception(f"Strategy {strategy.name} failed: {e}")
                 continue
 
         # Should never reach here due to GlobalDefaultStrategy
@@ -533,8 +526,7 @@ class ProviderResolutionService:
         session_id: str | None = None,
         user_id: str | None = None,
     ) -> int:
-        """
-        Invalidate cached resolutions.
+        """Invalidate cached resolutions.
 
         Args:
             session_id: If provided, only invalidate for this session
@@ -542,6 +534,7 @@ class ProviderResolutionService:
 
         Returns:
             Number of cache entries invalidated
+
         """
         if not session_id and not user_id:
             count = len(self._resolution_cache)
@@ -564,8 +557,7 @@ class ProviderResolutionService:
         return len(keys_to_remove)
 
     def get_resolution_from_context(self) -> tuple[str, str] | None:
-        """
-        Get provider/model from current request context (sync method).
+        """Get provider/model from current request context (sync method).
 
         This is a convenience method for getting the selection from
         the request context without performing full resolution.
@@ -573,6 +565,7 @@ class ProviderResolutionService:
 
         Returns:
             Tuple of (provider, model_id) if context exists, None otherwise
+
         """
         context = self._state.get_request_context()
         if context and context.selection:
@@ -584,8 +577,7 @@ class ProviderResolutionService:
         fallback_session_id: str | None = None,
         fallback_user_id: str | None = None,
     ) -> tuple[str, str]:
-        """
-        Get the current selection from request context or resolve.
+        """Get the current selection from request context or resolve.
 
         This method first checks the request context (set by middleware),
         and falls back to full resolution if no context exists.
@@ -596,6 +588,7 @@ class ProviderResolutionService:
 
         Returns:
             Tuple of (provider, model_id)
+
         """
         # Try request context first (fastest)
         context_result = self.get_resolution_from_context()
@@ -621,11 +614,11 @@ _provider_resolution_service: ProviderResolutionService | None = None
 
 
 def get_provider_resolution_service() -> ProviderResolutionService:
-    """
-    Get the singleton ProviderResolutionService instance.
+    """Get the singleton ProviderResolutionService instance.
 
     Returns:
         The global ProviderResolutionService instance
+
     """
     global _provider_resolution_service
     if _provider_resolution_service is None:
@@ -634,8 +627,7 @@ def get_provider_resolution_service() -> ProviderResolutionService:
 
 
 async def get_provider_resolution_service_async() -> ProviderResolutionService:
-    """
-    Async factory for ProviderResolutionService.
+    """Async factory for ProviderResolutionService.
 
     Use this as a FastAPI dependency:
         @router.get("/endpoint")
@@ -648,6 +640,7 @@ async def get_provider_resolution_service_async() -> ProviderResolutionService:
 
     Returns:
         The global ProviderResolutionService instance
+
     """
     return get_provider_resolution_service()
 

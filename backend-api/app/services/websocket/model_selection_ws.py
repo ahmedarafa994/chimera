@@ -1,5 +1,4 @@
-"""
-WebSocket Server for Model Selection
+"""WebSocket Server for Model Selection.
 
 Provides real-time updates for model selection changes via WebSocket.
 
@@ -40,14 +39,14 @@ logger = logging.getLogger(__name__)
 
 
 class WebSocketMessage(BaseModel):
-    """Base WebSocket message"""
+    """Base WebSocket message."""
 
     type: str
     data: dict
 
 
 class SelectionChangedData(BaseModel):
-    """Data for SELECTION_CHANGED event"""
+    """Data for SELECTION_CHANGED event."""
 
     user_id: str
     provider: str
@@ -56,7 +55,7 @@ class SelectionChangedData(BaseModel):
 
 
 class ProviderStatusData(BaseModel):
-    """Data for PROVIDER_STATUS event"""
+    """Data for PROVIDER_STATUS event."""
 
     provider_id: str
     is_available: bool
@@ -64,7 +63,7 @@ class ProviderStatusData(BaseModel):
 
 
 class ModelValidationData(BaseModel):
-    """Data for MODEL_VALIDATION event"""
+    """Data for MODEL_VALIDATION event."""
 
     provider: str
     model: str
@@ -78,26 +77,25 @@ class ModelValidationData(BaseModel):
 
 
 class ConnectionManager:
-    """
-    Manages WebSocket connections and broadcasts.
+    """Manages WebSocket connections and broadcasts.
 
     Allows multiple clients to connect and receive real-time updates
     about model selection changes.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the connection manager."""
         self.active_connections: dict[str, set[WebSocket]] = {}
         self._lock = asyncio.Lock()
         self._subscription_ids: dict[str, str] = {}  # WebSocket -> subscription_id
 
-    async def connect(self, websocket: WebSocket, user_id: str):
-        """
-        Register a new WebSocket connection.
+    async def connect(self, websocket: WebSocket, user_id: str) -> None:
+        """Register a new WebSocket connection.
 
         Args:
             websocket: WebSocket connection
             user_id: User identifier
+
         """
         await websocket.accept()
 
@@ -112,23 +110,23 @@ class ConnectionManager:
         subscription_id = state.subscribe_to_changes(
             user_id,
             lambda selection: asyncio.create_task(
-                self._broadcast_selection_change(user_id, selection)
+                self._broadcast_selection_change(user_id, selection),
             ),
         )
 
         self._subscription_ids[id(websocket)] = subscription_id
 
         logger.info(
-            f"WebSocket connected for user {user_id}, total connections: {len(self.active_connections.get(user_id, []))}"
+            f"WebSocket connected for user {user_id}, total connections: {len(self.active_connections.get(user_id, []))}",
         )
 
-    async def disconnect(self, websocket: WebSocket, user_id: str):
-        """
-        Unregister a WebSocket connection.
+    async def disconnect(self, websocket: WebSocket, user_id: str) -> None:
+        """Unregister a WebSocket connection.
 
         Args:
             websocket: WebSocket connection
             user_id: User identifier
+
         """
         async with self._lock:
             if user_id in self.active_connections:
@@ -147,26 +145,26 @@ class ConnectionManager:
 
         logger.info(f"WebSocket disconnected for user {user_id}")
 
-    async def send_personal_message(self, message: dict, websocket: WebSocket):
-        """
-        Send a message to a specific WebSocket connection.
+    async def send_personal_message(self, message: dict, websocket: WebSocket) -> None:
+        """Send a message to a specific WebSocket connection.
 
         Args:
             message: Message dictionary
             websocket: Target WebSocket
+
         """
         try:
             await websocket.send_json(message)
         except Exception as e:
-            logger.error(f"Failed to send message: {e}")
+            logger.exception(f"Failed to send message: {e}")
 
-    async def broadcast_to_user(self, message: dict, user_id: str):
-        """
-        Broadcast a message to all connections for a specific user.
+    async def broadcast_to_user(self, message: dict, user_id: str) -> None:
+        """Broadcast a message to all connections for a specific user.
 
         Args:
             message: Message dictionary
             user_id: Target user
+
         """
         if user_id not in self.active_connections:
             return
@@ -178,13 +176,12 @@ class ConnectionManager:
             try:
                 await self.send_personal_message(message, connection)
             except Exception as e:
-                logger.error(f"Failed to broadcast to user {user_id}: {e}")
+                logger.exception(f"Failed to broadcast to user {user_id}: {e}")
                 # Connection is dead, remove it
                 await self.disconnect(connection, user_id)
 
-    async def _broadcast_selection_change(self, user_id: str, selection: Selection):
-        """
-        Broadcast selection change event to all user connections.
+    async def _broadcast_selection_change(self, user_id: str, selection: Selection) -> None:
+        """Broadcast selection change event to all user connections.
 
         This is called automatically by the subscription system when
         the user's selection changes.
@@ -192,6 +189,7 @@ class ConnectionManager:
         Args:
             user_id: User whose selection changed
             selection: New selection
+
         """
         message = {
             "type": "SELECTION_CHANGED",
@@ -207,15 +205,18 @@ class ConnectionManager:
         logger.debug(f"Broadcasted selection change to user {user_id}")
 
     async def broadcast_provider_status(
-        self, provider_id: str, is_available: bool, health_score: float
-    ):
-        """
-        Broadcast provider status update to all connected clients.
+        self,
+        provider_id: str,
+        is_available: bool,
+        health_score: float,
+    ) -> None:
+        """Broadcast provider status update to all connected clients.
 
         Args:
             provider_id: Provider ID
             is_available: Availability status
             health_score: Health score (0.0 to 1.0)
+
         """
         message = {
             "type": "PROVIDER_STATUS",
@@ -238,9 +239,8 @@ class ConnectionManager:
         model: str,
         is_valid: bool,
         error_message: str | None = None,
-    ):
-        """
-        Send validation result to a specific connection.
+    ) -> None:
+        """Send validation result to a specific connection.
 
         Args:
             websocket: Target WebSocket
@@ -248,6 +248,7 @@ class ConnectionManager:
             model: Model ID
             is_valid: Validation result
             error_message: Error message if invalid
+
         """
         message = {
             "type": "MODEL_VALIDATION",
@@ -272,9 +273,8 @@ connection_manager = ConnectionManager()
 # ============================================================================
 
 
-async def websocket_endpoint(websocket: WebSocket, user_id: str):
-    """
-    WebSocket endpoint for real-time model selection updates.
+async def websocket_endpoint(websocket: WebSocket, user_id: str) -> None:
+    """WebSocket endpoint for real-time model selection updates.
 
     Args:
         websocket: WebSocket connection
@@ -289,6 +289,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
     - PROVIDER_STATUS: Provider availability/health changed
     - MODEL_VALIDATION: Validation result
     - PONG: Response to PING
+
     """
     await connection_manager.connect(websocket, user_id)
 
@@ -321,7 +322,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 if message_type == "PING":
                     # Respond to ping
                     await connection_manager.send_personal_message(
-                        {"type": "PONG", "data": {}}, websocket
+                        {"type": "PONG", "data": {}},
+                        websocket,
                     )
 
                 elif message_type == "VALIDATE":

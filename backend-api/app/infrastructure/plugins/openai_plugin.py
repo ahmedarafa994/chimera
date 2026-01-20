@@ -1,5 +1,4 @@
-"""
-OpenAI Provider Plugin - Implementation for OpenAI/GPT models.
+"""OpenAI Provider Plugin - Implementation for OpenAI/GPT models.
 
 This module implements the OpenAI provider plugin, supporting GPT-4, GPT-3.5,
 and other OpenAI models through the unified provider interface.
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIClient(BaseLLMClient):
-    """
-    OpenAI-specific LLM client implementation.
+    """OpenAI-specific LLM client implementation.
 
     Wraps the OpenAI Python SDK to implement the BaseLLMClient interface.
     """
@@ -32,9 +30,8 @@ class OpenAIClient(BaseLLMClient):
         api_key: str,
         base_url: str | None = None,
         **kwargs: Any,
-    ):
-        """
-        Initialize OpenAI client.
+    ) -> None:
+        """Initialize OpenAI client.
 
         Args:
             provider_id: Provider identifier ('openai')
@@ -42,6 +39,7 @@ class OpenAIClient(BaseLLMClient):
             api_key: OpenAI API key
             base_url: Optional custom base URL
             **kwargs: Additional OpenAI client configuration
+
         """
         self._provider_id = provider_id
         self._model_id = model_id
@@ -72,8 +70,7 @@ class OpenAIClient(BaseLLMClient):
         system_instruction: str | None = None,
         **kwargs: Any,
     ) -> PromptResponse:
-        """
-        Generate text completion using OpenAI API.
+        """Generate text completion using OpenAI API.
 
         Args:
             prompt: The input prompt text
@@ -84,6 +81,7 @@ class OpenAIClient(BaseLLMClient):
 
         Returns:
             PromptResponse with generated text and metadata
+
         """
         # Build messages
         messages = []
@@ -125,7 +123,7 @@ class OpenAIClient(BaseLLMClient):
             )
 
         except Exception as e:
-            logger.error(f"OpenAI generation failed: {e}")
+            logger.exception(f"OpenAI generation failed: {e}")
             raise
 
     async def stream(
@@ -136,8 +134,7 @@ class OpenAIClient(BaseLLMClient):
         system_instruction: str | None = None,
         **kwargs: Any,
     ):
-        """
-        Stream text completion from OpenAI API.
+        """Stream text completion from OpenAI API.
 
         Args:
             prompt: The input prompt text
@@ -148,6 +145,7 @@ class OpenAIClient(BaseLLMClient):
 
         Yields:
             Text chunks as they are generated
+
         """
         # Build messages
         messages = []
@@ -176,7 +174,7 @@ class OpenAIClient(BaseLLMClient):
                     yield chunk.choices[0].delta.content
 
         except Exception as e:
-            logger.error(f"OpenAI streaming failed: {e}")
+            logger.exception(f"OpenAI streaming failed: {e}")
             raise
 
     def get_capabilities(self) -> set[Capability]:
@@ -203,13 +201,12 @@ class OpenAIClient(BaseLLMClient):
 
 
 class OpenAIPlugin(BaseProviderPlugin):
-    """
-    OpenAI provider plugin implementation.
+    """OpenAI provider plugin implementation.
 
     Provides factory methods and metadata for OpenAI models.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize OpenAI plugin."""
         super().__init__(
             provider_id="openai",
@@ -234,7 +231,7 @@ class OpenAIPlugin(BaseProviderPlugin):
 
     def _build_model_list(self) -> list[Model]:
         """Build list of available OpenAI models (January 2026)."""
-        models = [
+        return [
             Model(
                 id="gpt-5.2",
                 name="GPT-5.2 (Flagship)",
@@ -314,11 +311,8 @@ class OpenAIPlugin(BaseProviderPlugin):
             ),
         ]
 
-        return models
-
     def create_client(self, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create an OpenAI client for the specified model.
+        """Create an OpenAI client for the specified model.
 
         Args:
             model_id: The model identifier
@@ -329,21 +323,27 @@ class OpenAIPlugin(BaseProviderPlugin):
 
         Raises:
             ValueError: If model is not available or API key missing
+
         """
         # Validate model
         if not self.validate_model_id(model_id):
             available = [m.id for m in self.get_available_models()]
-            raise ValueError(
+            msg = (
                 f"Model '{model_id}' not available from OpenAI. "
                 f"Available models: {', '.join(available)}"
+            )
+            raise ValueError(
+                msg,
             )
 
         # Get API key
         api_key = self._get_api_key()
         if not api_key:
+            msg = (
+                f"OpenAI API key not configured. Set {self._api_key_env_var} environment variable."
+            )
             raise ValueError(
-                f"OpenAI API key not configured. "
-                f"Set {self._api_key_env_var} environment variable."
+                msg,
             )
 
         # Create client

@@ -1,5 +1,4 @@
-"""
-Template Loader Service for AutoDAN.
+"""Template Loader Service for AutoDAN.
 
 Provides unified access to jailbreak templates, mutation strategies,
 and strategy patterns for use in genetic optimization.
@@ -62,19 +61,18 @@ class MutationConfig:
 
 
 class TemplateLoader:
-    """
-    Unified template loader for AutoDAN.
+    """Unified template loader for AutoDAN.
 
     Loads and manages jailbreak templates, strategy patterns,
     and mutation configurations from data files.
     """
 
-    def __init__(self, data_dir: Path | str | None = None):
-        """
-        Initialize the template loader.
+    def __init__(self, data_dir: Path | str | None = None) -> None:
+        """Initialize the template loader.
 
         Args:
             data_dir: Path to the data directory. Defaults to the module's data directory.
+
         """
         if data_dir is None:
             self.data_dir = Path(__file__).parent / "data"
@@ -145,7 +143,8 @@ class TemplateLoader:
                 prefix_probability=data.get("combination_rules", {}).get("prefix_probability", 0.4),
                 suffix_probability=data.get("combination_rules", {}).get("suffix_probability", 0.5),
                 connector_probability=data.get("combination_rules", {}).get(
-                    "connector_probability", 0.25
+                    "connector_probability",
+                    0.25,
                 ),
             )
 
@@ -156,7 +155,7 @@ class TemplateLoader:
             )
 
         except Exception as e:
-            logger.error("Failed to load handcrafted templates", error=str(e))
+            logger.exception("Failed to load handcrafted templates", error=str(e))
 
     def _load_strategies(self) -> None:
         """Load strategy patterns from AutoDAN turbo strategies."""
@@ -181,7 +180,7 @@ class TemplateLoader:
             logger.info("Loaded strategy patterns", count=len(self._strategies))
 
         except Exception as e:
-            logger.error("Failed to load strategies", error=str(e))
+            logger.exception("Failed to load strategies", error=str(e))
 
     def get_all_templates(self) -> list[JailbreakTemplate]:
         """Get all loaded templates."""
@@ -212,8 +211,7 @@ class TemplateLoader:
         min_complexity: float = 0.0,
         max_complexity: float = 1.0,
     ) -> JailbreakTemplate | None:
-        """
-        Get a random template weighted by stealth and filtered by complexity.
+        """Get a random template weighted by stealth and filtered by complexity.
 
         Args:
             prefer_stealth: If True, prefer templates with higher stealth scores.
@@ -222,6 +220,7 @@ class TemplateLoader:
 
         Returns:
             A randomly selected template or None if no templates match.
+
         """
         self.load()
 
@@ -257,14 +256,14 @@ class TemplateLoader:
         return self._mutation_config
 
     def apply_mutations(self, text: str) -> str:
-        """
-        Apply random mutations to a text based on configured probabilities.
+        """Apply random mutations to a text based on configured probabilities.
 
         Args:
             text: The text to mutate.
 
         Returns:
             The mutated text.
+
         """
         self.load()
         config = self._mutation_config
@@ -300,8 +299,7 @@ class TemplateLoader:
         template2: JailbreakTemplate,
         payload: str,
     ) -> str:
-        """
-        Combine two templates to create a hybrid prompt.
+        """Combine two templates to create a hybrid prompt.
 
         Args:
             template1: First template (provides outer structure).
@@ -310,6 +308,7 @@ class TemplateLoader:
 
         Returns:
             Combined prompt text.
+
         """
         # Apply payload to template2 first
         inner = template2.apply(payload)
@@ -324,8 +323,7 @@ class TemplateLoader:
         pool_size: int = 20,
         diversity_weight: float = 0.5,
     ) -> list[str]:
-        """
-        Generate an initialization pool for genetic optimization.
+        """Generate an initialization pool for genetic optimization.
 
         Args:
             payload: The base payload to wrap.
@@ -334,6 +332,7 @@ class TemplateLoader:
 
         Returns:
             List of initialized prompt variants.
+
         """
         self.load()
 

@@ -1,5 +1,4 @@
-"""
-Application Lifespan Management
+"""Application Lifespan Management
 Handles startup and shutdown events for the FastAPI application.
 
 PERF-001 FIX: Added worker pool management for CPU-bound operations.
@@ -15,11 +14,11 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI
-
 from app.core.service_registry import service_registry
 
 if TYPE_CHECKING:
+    from fastapi import FastAPI
+
     from app.core.config_manager import EnhancedConfigManager
     from app.infrastructure.proxy.proxy_health import ProxyHealthMonitor
     from app.services.integration_health_service import IntegrationHealthService
@@ -51,7 +50,7 @@ def get_worker_pool(name: str, max_workers: int = 2) -> ThreadPoolExecutor:
     return _worker_pools[name]
 
 
-async def shutdown_worker_pools():
+async def shutdown_worker_pools() -> None:
     """Shutdown all worker pools gracefully."""
     global _worker_pools
     for name, pool in _worker_pools.items():
@@ -75,7 +74,7 @@ async def lifespan(app: FastAPI):
             logger.error(
                 "CRITICAL: SQLite detected in production! "
                 "Use PostgreSQL for production deployments. "
-                "Set DATABASE_URL to a PostgreSQL connection string."
+                "Set DATABASE_URL to a PostgreSQL connection string.",
             )
 
     # 1. Register Services
@@ -134,7 +133,7 @@ async def lifespan(app: FastAPI):
                     if is_default:
                         default_set = True
                         logger.info(
-                            f"[OK] {provider_name} provider registered (DEFAULT - from AI_PROVIDER setting)"
+                            f"[OK] {provider_name} provider registered (DEFAULT - from AI_PROVIDER setting)",
                         )
                     else:
                         logger.info(f"[OK] {provider_name} provider registered")
@@ -151,12 +150,13 @@ async def lifespan(app: FastAPI):
             if first_provider:
                 logger.warning(
                     f"Configured default '{configured_default}' not available. "
-                    f"Using '{first_provider}' as fallback default."
+                    f"Using '{first_provider}' as fallback default.",
                 )
 
         if registered_count == 0:
             logger.critical("No LLM providers could be registered! Check API keys.")
-            raise RuntimeError("Cannot start: No LLM providers available")
+            msg = "Cannot start: No LLM providers available"
+            raise RuntimeError(msg)
 
         logger.info(f"Successfully registered {registered_count} LLM provider(s)")
 
@@ -165,7 +165,7 @@ async def lifespan(app: FastAPI):
             _setup_config_hot_reload(llm_service, ProviderFactory)
 
     except Exception as e:
-        logger.error(f"Failed to register LLM providers: {e}")
+        logger.exception(f"Failed to register LLM providers: {e}")
         raise
 
     # Story 1.3: Initialize proxy mode if enabled
@@ -207,9 +207,8 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Failed to close Redis L2 cache: {e}")
 
 
-def _setup_config_hot_reload(llm_service, ProviderFactory):
-    """
-    Story 1.1: Set up configuration hot-reload with provider re-registration.
+def _setup_config_hot_reload(llm_service, ProviderFactory) -> None:
+    """Story 1.1: Set up configuration hot-reload with provider re-registration.
 
     When configuration is reloaded via the EnhancedConfigManager, this callback
     will re-register providers with updated API keys.
@@ -222,7 +221,7 @@ def _setup_config_hot_reload(llm_service, ProviderFactory):
 
         _config_manager = EnhancedConfigManager(settings)
 
-        def on_config_reload(changes: dict):
+        def on_config_reload(changes: dict) -> None:
             """Callback invoked when configuration is reloaded."""
             logger.info(f"Configuration reload detected: {changes}")
 
@@ -240,12 +239,11 @@ def _setup_config_hot_reload(llm_service, ProviderFactory):
     except ImportError as e:
         logger.warning(f"Could not set up config hot-reload: {e}")
     except Exception as e:
-        logger.error(f"Error setting up config hot-reload: {e}")
+        logger.exception(f"Error setting up config hot-reload: {e}")
 
 
-def _reregister_providers(llm_service, ProviderFactory, provider_names: list):
-    """
-    Re-register specific providers after configuration reload.
+def _reregister_providers(llm_service, ProviderFactory, provider_names: list) -> None:
+    """Re-register specific providers after configuration reload.
 
     Story 1.1 Requirement: Provider configuration should be hot-reloadable
     without application restart.
@@ -282,14 +280,13 @@ def _reregister_providers(llm_service, ProviderFactory, provider_names: list):
                 llm_service.register_provider(normalized_name, provider, is_default=False)
                 logger.info(f"[HOT-RELOAD] Re-registered provider: {normalized_name}")
             except Exception as e:
-                logger.error(f"[HOT-RELOAD] Failed to re-register {normalized_name}: {e}")
+                logger.exception(f"[HOT-RELOAD] Failed to re-register {normalized_name}: {e}")
         else:
             logger.info(f"[HOT-RELOAD] Provider {normalized_name} has no API key, skipping")
 
 
-async def _setup_proxy_mode(llm_service, ProviderFactory):
-    """
-    Story 1.3: Set up proxy mode with health monitoring.
+async def _setup_proxy_mode(llm_service, ProviderFactory) -> None:
+    """Story 1.3: Set up proxy mode with health monitoring.
 
     When proxy mode is enabled (PROXY_MODE_ENABLED=true), this function:
     1. Initializes the proxy client
@@ -318,8 +315,9 @@ async def _setup_proxy_mode(llm_service, ProviderFactory):
         else:
             logger.warning(f"Proxy server initial health check failed: {health_status.error}")
             if not settings.PROXY_MODE_FALLBACK_TO_DIRECT:
+                msg = "Proxy mode enabled but proxy server is unavailable and fallback is disabled"
                 raise RuntimeError(
-                    "Proxy mode enabled but proxy server is unavailable " "and fallback is disabled"
+                    msg,
                 )
 
         # Start health monitoring
@@ -337,18 +335,16 @@ async def _setup_proxy_mode(llm_service, ProviderFactory):
         logger.info("Proxy mode initialized successfully")
 
     except ImportError as e:
-        logger.error(f"Failed to import proxy modules: {e}")
+        logger.exception(f"Failed to import proxy modules: {e}")
         raise
     except Exception as e:
-        logger.error(f"Failed to initialize proxy mode: {e}")
+        logger.exception(f"Failed to initialize proxy mode: {e}")
         if not settings.PROXY_MODE_FALLBACK_TO_DIRECT:
             raise
 
 
-async def _shutdown_proxy_mode():
-    """
-    Story 1.3: Shutdown proxy mode resources.
-    """
+async def _shutdown_proxy_mode() -> None:
+    """Story 1.3: Shutdown proxy mode resources."""
     global _proxy_health_monitor
 
     from app.core.config import settings
@@ -374,14 +370,14 @@ async def _shutdown_proxy_mode():
 
 
 async def trigger_config_reload() -> dict:
-    """
-    Trigger a configuration reload programmatically.
+    """Trigger a configuration reload programmatically.
 
     Story 1.1: This can be called from an API endpoint to reload
     configuration without restarting the application.
 
     Returns:
         Dictionary with reload status and changes
+
     """
     global _config_manager
 
@@ -392,16 +388,14 @@ async def trigger_config_reload() -> dict:
         }
 
     try:
-        result = _config_manager.reload_config()
-        return result
+        return _config_manager.reload_config()
     except Exception as e:
-        logger.error(f"Error during config reload: {e}")
+        logger.exception(f"Error during config reload: {e}")
         return {"status": "error", "message": str(e)}
 
 
-async def _setup_integration_health_monitoring():
-    """
-    Story 1.4: Set up integration health monitoring service.
+async def _setup_integration_health_monitoring() -> None:
+    """Story 1.4: Set up integration health monitoring service.
 
     This function:
     1. Gets the global IntegrationHealthService instance
@@ -425,15 +419,14 @@ async def _setup_integration_health_monitoring():
         _integration_health_service = get_health_service()
 
         # Register health change callback for circuit breaker integration
-        def on_health_change(provider_name: str, old_status, new_status):
+        def on_health_change(provider_name: str, old_status, new_status) -> None:
             """Callback when provider health status changes."""
             from app.services.integration_health_service import HealthStatus
 
             # If provider becomes unhealthy, consider triggering circuit breaker
             if new_status == HealthStatus.UNHEALTHY:
                 logger.warning(
-                    f"Provider {provider_name} is now UNHEALTHY - "
-                    f"circuit breaker may be activated"
+                    f"Provider {provider_name} is now UNHEALTHY - circuit breaker may be activated",
                 )
 
         _integration_health_service.register_health_change_callback(on_health_change)
@@ -444,14 +437,12 @@ async def _setup_integration_health_monitoring():
         logger.info("Integration health monitoring service started")
 
     except Exception as e:
-        logger.error(f"Failed to initialize integration health monitoring: {e}")
+        logger.exception(f"Failed to initialize integration health monitoring: {e}")
         # Non-fatal: continue without health monitoring
 
 
-async def _shutdown_integration_health_monitoring():
-    """
-    Story 1.4: Shutdown integration health monitoring service.
-    """
+async def _shutdown_integration_health_monitoring() -> None:
+    """Story 1.4: Shutdown integration health monitoring service."""
     global _integration_health_service
 
     try:

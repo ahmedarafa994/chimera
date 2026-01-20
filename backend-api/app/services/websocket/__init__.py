@@ -1,5 +1,4 @@
-"""
-WebSocket Service Package
+"""WebSocket Service Package.
 
 Provides real-time event streaming for Deep Team + AutoDAN sessions
 and Aegis campaign telemetry.
@@ -16,29 +15,29 @@ from .aegis_broadcaster import AegisTelemetryBroadcaster, aegis_telemetry_broadc
 from .broadcaster import EventBroadcaster, event_broadcaster
 from .connection_manager import ConnectionManager, connection_manager
 from .integrations import (
-                                AutoDANWebSocketIntegration,
-                                GPTFuzzWebSocketIntegration,
-                                WebSocketIntegration,
-                                autodan_websocket,
-                                gptfuzz_websocket,
+    AutoDANWebSocketIntegration,
+    GPTFuzzWebSocketIntegration,
+    WebSocketIntegration,
+    autodan_websocket,
+    gptfuzz_websocket,
 )
 from .models import (
-                                AgentStatus,
-                                AgentStatusChangedEvent,
-                                AgentType,
-                                ErrorOccurredEvent,
-                                EvaluationCompleteEvent,
-                                EventType,
-                                GenerationCompleteEvent,
-                                GenerationProgressEvent,
-                                GenerationStartedEvent,
-                                RefinementSuggestedEvent,
-                                SessionCompletedEvent,
-                                SessionFailedEvent,
-                                SessionStartedEvent,
-                                SessionStatus,
-                                WebSocketEvent,
-                                create_websocket_event,
+    AgentStatus,
+    AgentStatusChangedEvent,
+    AgentType,
+    ErrorOccurredEvent,
+    EvaluationCompleteEvent,
+    EventType,
+    GenerationCompleteEvent,
+    GenerationProgressEvent,
+    GenerationStartedEvent,
+    RefinementSuggestedEvent,
+    SessionCompletedEvent,
+    SessionFailedEvent,
+    SessionStartedEvent,
+    SessionStatus,
+    WebSocketEvent,
+    create_websocket_event,
 )
 
 __all__ = [

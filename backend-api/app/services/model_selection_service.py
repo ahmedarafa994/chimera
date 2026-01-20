@@ -15,7 +15,7 @@ class ModelSelection(BaseModel):
     model: str
 
 
-def _invalidate_provider_resolution_cache():
+def _invalidate_provider_resolution_cache() -> None:
     """Invalidate the ProviderResolutionService cache when selection changes."""
     try:
         from app.services.provider_resolution_service import get_provider_resolution_service
@@ -28,8 +28,7 @@ def _invalidate_provider_resolution_cache():
 
 
 class ModelSelectionService:
-    """
-    Service for managing model selection state.
+    """Service for managing model selection state.
 
     This service persists the user's model selection to a JSON file and
     provides methods to get/set the selection. When the selection changes,
@@ -37,31 +36,31 @@ class ModelSelectionService:
     ensure the new selection takes effect immediately.
     """
 
-    def __init__(self, storage_path: str = ".model_selection.json"):
+    def __init__(self, storage_path: str = ".model_selection.json") -> None:
         self.storage_path = Path(storage_path)
         self._current_selection: ModelSelection | None = None
         self._load_selection()
 
-    def _load_selection(self):
+    def _load_selection(self) -> None:
         """Load selection from storage."""
         if self.storage_path.exists():
             try:
                 data = json.loads(self.storage_path.read_text())
                 self._current_selection = ModelSelection(**data)
                 logger.info(
-                    f"Loaded model selection: {self._current_selection.provider}/{self._current_selection.model}"
+                    f"Loaded model selection: {self._current_selection.provider}/{self._current_selection.model}",
                 )
             except Exception as e:
                 logger.warning(f"Failed to load model selection: {e}")
                 self._current_selection = None
 
-    def _save_selection(self):
+    def _save_selection(self) -> None:
         """Save selection to storage."""
         if self._current_selection:
             try:
                 self.storage_path.write_text(self._current_selection.model_dump_json())
                 logger.info(
-                    f"Saved model selection: {self._current_selection.provider}/{self._current_selection.model}"
+                    f"Saved model selection: {self._current_selection.provider}/{self._current_selection.model}",
                 )
             except Exception as e:
                 logger.error(f"Failed to save model selection: {e}")
@@ -71,8 +70,7 @@ class ModelSelectionService:
         return self._current_selection
 
     def set_selection(self, provider: str, model: str) -> ModelSelection:
-        """
-        Set current model selection.
+        """Set current model selection.
 
         This also invalidates the ProviderResolutionService cache to ensure
         the new selection takes effect immediately for all subsequent requests.
@@ -87,12 +85,12 @@ class ModelSelectionService:
         logger.info(
             f"Model selection changed: "
             f"{old_selection.provider}/{old_selection.model if old_selection else 'None'} -> "
-            f"{provider}/{model}"
+            f"{provider}/{model}",
         )
 
         return self._current_selection
 
-    def clear_selection(self):
+    def clear_selection(self) -> None:
         """Clear current selection."""
         self._current_selection = None
         if self.storage_path.exists():

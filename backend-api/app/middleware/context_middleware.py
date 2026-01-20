@@ -1,5 +1,4 @@
-"""
-Context Propagation Middleware
+"""Context Propagation Middleware.
 
 FastAPI middleware that creates and injects request context at the API boundary.
 The context flows through all layers automatically via contextvars.
@@ -32,8 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContextPropagationMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware that creates and propagates request context.
+    """Middleware that creates and propagates request context.
 
     For every incoming request:
     - Creates a unique request_id
@@ -47,14 +45,13 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
     - Creates RequestContext and runs request within it
     """
 
-    def __init__(self, app, excluded_paths: list[str] | None = None):
+    def __init__(self, app, excluded_paths: list[str] | None = None) -> None:
         super().__init__(app)
         self.excluded_paths = excluded_paths or []
         self.excluded_paths = [path.rstrip("/") for path in self.excluded_paths]
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """
-        Process request with context propagation.
+        """Process request with context propagation.
 
         Args:
             request: Incoming FastAPI request
@@ -62,6 +59,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Response from handler
+
         """
         start_time = time.time()
         start_time = time.time()
@@ -99,7 +97,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
             # Log context creation
             logger.debug(
                 f"Created request context: request_id={request_id}, "
-                f"user_id={user_id}, provider={provider}, model={model}"
+                f"user_id={user_id}, provider={provider}, model={model}",
             )
 
             # Run request within context
@@ -118,14 +116,15 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
             logger.info(
                 f"Request completed: request_id={request_id}, "
                 f"user_id={user_id}, provider={provider}, model={model}, "
-                f"status={response.status_code}, duration_ms={duration_ms:.2f}"
+                f"status={response.status_code}, duration_ms={duration_ms:.2f}",
             )
 
             return response
 
         except Exception as e:
             logger.error(
-                f"Context middleware error: request_id={request_id}, error={e!s}", exc_info=True
+                f"Context middleware error: request_id={request_id}, error={e!s}",
+                exc_info=True,
             )
 
             # Even on error, try to add request ID to response
@@ -134,8 +133,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
             return response
 
     def _extract_user_id(self, request: Request) -> str:
-        """
-        Extract user ID from request.
+        """Extract user ID from request.
 
         Tries multiple sources:
         1. request.state.user (set by auth middleware)
@@ -148,13 +146,14 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
 
         Returns:
             User ID string
+
         """
         # Try request state (set by auth middleware)
         if hasattr(request.state, "user"):
             user = request.state.user
             if hasattr(user, "id"):
                 return str(user.id)
-            elif isinstance(user, dict) and "id" in user:
+            if isinstance(user, dict) and "id" in user:
                 return str(user["id"])
 
         # Try header
@@ -171,14 +170,14 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
         return anonymous_id
 
     def _extract_session_id(self, request: Request) -> str:
-        """
-        Extract session ID from request.
+        """Extract session ID from request.
 
         Args:
             request: FastAPI request
 
         Returns:
             Session ID string
+
         """
         # Try header
         if "X-Session-ID" in request.headers:
@@ -196,8 +195,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
         return str(uuid.uuid4())
 
     async def _get_provider_model_selection(self, session_id: str, user_id: str) -> tuple[str, str]:
-        """
-        Get the current provider/model selection for a user/session.
+        """Get the current provider/model selection for a user/session.
 
         Uses the GlobalModelSelectionState service to resolve selection
         using the three-tier hierarchy: request -> session -> global.
@@ -208,6 +206,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
 
         Returns:
             Tuple of (provider, model)
+
         """
         try:
             state = get_global_model_selection_state()
@@ -218,8 +217,8 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
             )
             return selection.provider, selection.model_id
         except Exception as e:
-            logger.error(
-                f"Failed to get selection for session {session_id}, " f"user {user_id}: {e}"
+            logger.exception(
+                f"Failed to get selection for session {session_id}, user {user_id}: {e}",
             )
             # Return default
             return "openai", "gpt-4o"

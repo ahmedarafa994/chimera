@@ -1,5 +1,4 @@
-"""
-ProxyHealthMonitor for continuous proxy server health monitoring.
+"""ProxyHealthMonitor for continuous proxy server health monitoring.
 
 STORY-1.3: Provides background health monitoring and status tracking
 for the AIClient-2-API proxy server.
@@ -50,8 +49,7 @@ class ProxyHealthMetrics:
 
 
 class ProxyHealthMonitor:
-    """
-    Monitors the health of the proxy server with background checks.
+    """Monitors the health of the proxy server with background checks.
 
     Provides continuous monitoring, health history, and metrics
     for the AIClient-2-API proxy server.
@@ -67,14 +65,14 @@ class ProxyHealthMonitor:
         proxy_client: ProxyClient | None = None,
         check_interval: int | None = None,
         history_size: int | None = None,
-    ):
-        """
-        Initialize the health monitor.
+    ) -> None:
+        """Initialize the health monitor.
 
         Args:
             proxy_client: ProxyClient instance to monitor
             check_interval: Interval between health checks (seconds)
             history_size: Maximum number of results to keep in history
+
         """
         self._client = proxy_client or get_proxy_client()
         self._check_interval = (
@@ -93,7 +91,7 @@ class ProxyHealthMonitor:
 
         logger.info(
             f"ProxyHealthMonitor initialized: "
-            f"interval={self._check_interval}s, history_size={self._history_size}"
+            f"interval={self._check_interval}s, history_size={self._history_size}",
         )
 
     @property
@@ -222,7 +220,7 @@ class ProxyHealthMonitor:
 
             if self._consecutive_failures >= self.UNHEALTHY_THRESHOLD:
                 logger.warning(
-                    f"Proxy unhealthy: {self._consecutive_failures} " f"consecutive failures"
+                    f"Proxy unhealthy: {self._consecutive_failures} consecutive failures",
                 )
 
     def get_status(self) -> dict[str, Any]:

@@ -1,5 +1,4 @@
-"""
-Tests for Routeway Provider Implementation
+"""Tests for Routeway Provider Implementation.
 
 Story 1.2: Direct API Integration
 
@@ -40,19 +39,19 @@ def provider(mock_settings):
 class TestRoutewayProviderInitialization:
     """Tests for Routeway provider initialization."""
 
-    def test_provider_name(self, provider):
+    def test_provider_name(self, provider) -> None:
         """Test that provider name is set correctly."""
         assert provider.provider_name == "routeway"
 
-    def test_base_url(self, provider):
+    def test_base_url(self, provider) -> None:
         """Test that base URL is correct."""
         assert provider._BASE_URL == "https://api.routeway.ai/v1"
 
-    def test_default_model(self, provider):
+    def test_default_model(self, provider) -> None:
         """Test that default model is gpt-4o-mini."""
         assert provider._DEFAULT_MODEL == "gpt-4o-mini"
 
-    def test_available_models(self, provider):
+    def test_available_models(self, provider) -> None:
         """Test that available models list is populated."""
         assert len(provider._AVAILABLE_MODELS) > 0
         assert "gpt-4o" in provider._AVAILABLE_MODELS
@@ -60,7 +59,7 @@ class TestRoutewayProviderInitialization:
         assert "claude-3-5-sonnet-20241022" in provider._AVAILABLE_MODELS
         assert "llama-4-scout-17b-16e-instruct" in provider._AVAILABLE_MODELS
 
-    def test_free_tier_models_available(self, provider):
+    def test_free_tier_models_available(self, provider) -> None:
         """Test that free tier models (with :free suffix) are listed."""
         free_models = [m for m in provider._AVAILABLE_MODELS if ":free" in m]
         assert len(free_models) > 0
@@ -70,17 +69,17 @@ class TestRoutewayProviderInitialization:
 class TestRoutewayProviderConfiguration:
     """Tests for Routeway provider configuration."""
 
-    def test_get_api_key(self, provider, mock_settings):
+    def test_get_api_key(self, provider, mock_settings) -> None:
         """Test API key retrieval."""
         assert provider._get_api_key() == "clsk-test-api-key-123456789"
 
-    def test_get_default_model_from_config(self, mock_settings):
+    def test_get_default_model_from_config(self, mock_settings) -> None:
         """Test getting default model from config."""
         mock_settings.routeway_model = "gpt-4o"
         provider = RoutewayProvider(config=mock_settings)
         assert provider._get_default_model() == "gpt-4o"
 
-    def test_get_default_model_fallback(self):
+    def test_get_default_model_fallback(self) -> None:
         """Test default model fallback when not in config."""
         settings = MagicMock()
         settings.ROUTEWAY_API_KEY = "clsk-test-key-12345678901234567890"
@@ -92,7 +91,7 @@ class TestRoutewayProviderConfiguration:
 class TestRoutewayProviderBuildConfig:
     """Tests for generation config building."""
 
-    def test_build_config_with_temperature(self, provider):
+    def test_build_config_with_temperature(self, provider) -> None:
         """Test generation config with temperature."""
         request = PromptRequest(
             prompt="test",
@@ -101,7 +100,7 @@ class TestRoutewayProviderBuildConfig:
         config = provider._build_generation_config(request)
         assert config["temperature"] == 0.5
 
-    def test_build_config_temperature_clamping(self, provider):
+    def test_build_config_temperature_clamping(self, provider) -> None:
         """Test that temperature values are respected."""
         # Test with max valid temperature
         request = PromptRequest(
@@ -111,7 +110,7 @@ class TestRoutewayProviderBuildConfig:
         config = provider._build_generation_config(request)
         assert config["temperature"] == 1.0
 
-    def test_build_config_top_p(self, provider):
+    def test_build_config_top_p(self, provider) -> None:
         """Test that top_p is correctly passed."""
         request = PromptRequest(
             prompt="test",
@@ -120,7 +119,7 @@ class TestRoutewayProviderBuildConfig:
         config = provider._build_generation_config(request)
         assert config["top_p"] == 0.9
 
-    def test_build_config_defaults(self, provider):
+    def test_build_config_defaults(self, provider) -> None:
         """Test config values when no explicit config is provided."""
         request = PromptRequest(prompt="test")
         config = provider._build_generation_config(request)
@@ -128,7 +127,7 @@ class TestRoutewayProviderBuildConfig:
         assert config["temperature"] == 0.7  # GenerationConfig default
         assert config["max_tokens"] == 2048  # GenerationConfig max_output_tokens default
 
-    def test_build_config_with_max_output_tokens(self, provider):
+    def test_build_config_with_max_output_tokens(self, provider) -> None:
         """Test generation config with max_output_tokens."""
         request = PromptRequest(
             prompt="test",
@@ -137,7 +136,7 @@ class TestRoutewayProviderBuildConfig:
         config = provider._build_generation_config(request)
         assert config["max_tokens"] == 4096
 
-    def test_build_config_with_stop_sequences(self, provider):
+    def test_build_config_with_stop_sequences(self, provider) -> None:
         """Test generation config with stop sequences."""
         request = PromptRequest(
             prompt="test",
@@ -151,7 +150,7 @@ class TestRoutewayProviderGeneration:
     """Tests for Routeway generation functionality."""
 
     @pytest.mark.asyncio
-    async def test_generate_success(self, provider):
+    async def test_generate_success(self, provider) -> None:
         """Test successful generation."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -168,7 +167,7 @@ class TestRoutewayProviderGeneration:
                         "content": "Hello! How can I help you today?",
                     },
                     "finish_reason": "stop",
-                }
+                },
             ],
             "usage": {
                 "prompt_tokens": 12,
@@ -197,7 +196,7 @@ class TestRoutewayProviderHealthCheck:
     """Tests for Routeway health check."""
 
     @pytest.mark.asyncio
-    async def test_health_check_success(self, provider):
+    async def test_health_check_success(self, provider) -> None:
         """Test successful health check."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -213,7 +212,7 @@ class TestRoutewayProviderHealthCheck:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_health_check_failure(self, provider):
+    async def test_health_check_failure(self, provider) -> None:
         """Test failed health check."""
         client = MagicMock(spec=httpx.AsyncClient)
         client.get = AsyncMock(side_effect=httpx.RequestError("Connection error"))
@@ -226,13 +225,13 @@ class TestRoutewayProviderContextManager:
     """Tests for async context manager functionality."""
 
     @pytest.mark.asyncio
-    async def test_context_manager(self, provider):
+    async def test_context_manager(self, provider) -> None:
         """Test async context manager."""
         async with provider as p:
             assert p is provider
 
     @pytest.mark.asyncio
-    async def test_context_manager_cleanup(self, provider):
+    async def test_context_manager_cleanup(self, provider) -> None:
         """Test that context manager cleans up HTTP client."""
         mock_client = MagicMock(spec=httpx.AsyncClient)
         mock_client.aclose = AsyncMock()
@@ -247,16 +246,18 @@ class TestRoutewayProviderErrorHandling:
     """Tests for error handling."""
 
     @pytest.mark.asyncio
-    async def test_handle_401_error(self, provider):
+    async def test_handle_401_error(self, provider) -> None:
         """Test handling of 401 Unauthorized error."""
         mock_response = MagicMock()
         mock_response.status_code = 401
         mock_response.json.return_value = {
-            "error": {"message": "Invalid or missing API key", "type": "error", "code": 401}
+            "error": {"message": "Invalid or missing API key", "type": "error", "code": 401},
         }
 
         error = httpx.HTTPStatusError(
-            message="401 Unauthorized", request=MagicMock(), response=mock_response
+            message="401 Unauthorized",
+            request=MagicMock(),
+            response=mock_response,
         )
 
         with pytest.raises(Exception) as exc_info:
@@ -265,16 +266,18 @@ class TestRoutewayProviderErrorHandling:
         assert "authentication failed" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_handle_429_error(self, provider):
+    async def test_handle_429_error(self, provider) -> None:
         """Test handling of 429 Rate Limit error."""
         mock_response = MagicMock()
         mock_response.status_code = 429
         mock_response.json.return_value = {
-            "error": {"message": "You have used up your free quota", "type": "error", "code": 429}
+            "error": {"message": "You have used up your free quota", "type": "error", "code": 429},
         }
 
         error = httpx.HTTPStatusError(
-            message="429 Too Many Requests", request=MagicMock(), response=mock_response
+            message="429 Too Many Requests",
+            request=MagicMock(),
+            response=mock_response,
         )
 
         with pytest.raises(Exception) as exc_info:

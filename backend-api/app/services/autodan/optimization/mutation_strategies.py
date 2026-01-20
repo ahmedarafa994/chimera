@@ -1,5 +1,4 @@
-"""
-AutoDAN Advanced Prompt Mutation Strategies
+"""AutoDAN Advanced Prompt Mutation Strategies.
 
 Sophisticated mutation operators for genetic algorithm optimization:
 - Semantic-preserving mutations
@@ -11,6 +10,7 @@ Sophisticated mutation operators for genetic algorithm optimization:
 References:
 - AutoDAN: Generating Stealthy Jailbreak Prompts (Liu et al., 2023)
 - GCG: Universal and Transferable Adversarial Attacks (Zou et al., 2023)
+
 """
 
 import secrets
@@ -54,7 +54,9 @@ class MutationResult:
 class BaseMutationOperator(ABC):
     """Abstract base class for mutation operators."""
 
-    def __init__(self, mutation_rate: float = 0.1, min_rate: float = 0.01, max_rate: float = 0.5):
+    def __init__(
+        self, mutation_rate: float = 0.1, min_rate: float = 0.01, max_rate: float = 0.5
+    ) -> None:
         self.mutation_rate = mutation_rate
         self.min_rate = min_rate
         self.max_rate = max_rate
@@ -64,13 +66,12 @@ class BaseMutationOperator(ABC):
     @abstractmethod
     def mutate(self, prompt: str, **kwargs) -> MutationResult:
         """Apply mutation to prompt."""
-        pass
 
     def should_mutate(self) -> bool:
         """Determine if mutation should occur."""
         return _secure_random() < self.mutation_rate
 
-    def update_rate(self, success: bool, delta: float = 0.01):
+    def update_rate(self, success: bool, delta: float = 0.01) -> None:
         """Update mutation rate based on success."""
         self._mutation_count += 1
         if success:
@@ -95,8 +96,7 @@ class BaseMutationOperator(ABC):
 
 
 class RandomMutationOperator(BaseMutationOperator):
-    """
-    Random character/word-level mutations.
+    """Random character/word-level mutations.
 
     Operations:
     - Character substitution
@@ -110,7 +110,7 @@ class RandomMutationOperator(BaseMutationOperator):
         char_sub_rate: float = 0.3,
         word_del_rate: float = 0.2,
         word_swap_rate: float = 0.2,
-    ):
+    ) -> None:
         super().__init__(mutation_rate)
         self.char_sub_rate = char_sub_rate
         self.word_del_rate = word_del_rate
@@ -131,7 +131,10 @@ class RandomMutationOperator(BaseMutationOperator):
         """Apply random mutations."""
         if not self.should_mutate():
             return MutationResult(
-                original=prompt, mutated=prompt, mutation_type="none", positions_changed=[]
+                original=prompt,
+                mutated=prompt,
+                mutation_type="none",
+                positions_changed=[],
             )
 
         words = prompt.split()
@@ -187,8 +190,7 @@ class RandomMutationOperator(BaseMutationOperator):
 
 
 class SemanticMutationOperator(BaseMutationOperator):
-    """
-    Semantic-preserving mutations using synonyms and paraphrasing.
+    """Semantic-preserving mutations using synonyms and paraphrasing.
 
     Maintains meaning while altering surface form to evade detection.
     """
@@ -198,7 +200,7 @@ class SemanticMutationOperator(BaseMutationOperator):
         mutation_rate: float = 0.15,
         synonym_func: Callable[[str], list[str]] | None = None,
         paraphrase_func: Callable[[str], str] | None = None,
-    ):
+    ) -> None:
         super().__init__(mutation_rate)
         self.synonym_func = synonym_func or self._default_synonyms
         self.paraphrase_func = paraphrase_func
@@ -227,12 +229,18 @@ class SemanticMutationOperator(BaseMutationOperator):
         return self._synonyms.get(word.lower(), [word])
 
     def mutate(
-        self, prompt: str, preserve_keywords: list[str] | None = None, **kwargs
+        self,
+        prompt: str,
+        preserve_keywords: list[str] | None = None,
+        **kwargs,
     ) -> MutationResult:
         """Apply semantic mutations."""
         if not self.should_mutate():
             return MutationResult(
-                original=prompt, mutated=prompt, mutation_type="none", positions_changed=[]
+                original=prompt,
+                mutated=prompt,
+                mutation_type="none",
+                positions_changed=[],
             )
 
         preserve_keywords = preserve_keywords or []
@@ -287,8 +295,7 @@ class SemanticMutationOperator(BaseMutationOperator):
 
 
 class RhetoricalMutationOperator(BaseMutationOperator):
-    """
-    Rhetorical structure manipulation.
+    """Rhetorical structure manipulation.
 
     Modifies the persuasive structure of prompts:
     - Role-playing frames
@@ -297,7 +304,7 @@ class RhetoricalMutationOperator(BaseMutationOperator):
     - Emotional framing
     """
 
-    def __init__(self, mutation_rate: float = 0.2):
+    def __init__(self, mutation_rate: float = 0.2) -> None:
         super().__init__(mutation_rate)
 
         # Rhetorical templates
@@ -340,13 +347,16 @@ class RhetoricalMutationOperator(BaseMutationOperator):
         """Apply rhetorical mutations."""
         if not self.should_mutate():
             return MutationResult(
-                original=prompt, mutated=prompt, mutation_type="none", positions_changed=[]
+                original=prompt,
+                mutated=prompt,
+                mutation_type="none",
+                positions_changed=[],
             )
 
         # Choose mutation type
         if frame_type is None:
             frame_type = secrets.choice(
-                ["role", "hypothetical", "authority", "softener", "urgency"]
+                ["role", "hypothetical", "authority", "softener", "urgency"],
             )
 
         mutation_type = f"rhetorical_{frame_type}"
@@ -394,8 +404,7 @@ class RhetoricalMutationOperator(BaseMutationOperator):
 
 
 class EncodingMutationOperator(BaseMutationOperator):
-    """
-    Encoding-based obfuscation mutations.
+    """Encoding-based obfuscation mutations.
 
     Techniques:
     - Base64/ROT13 partial encoding
@@ -404,7 +413,7 @@ class EncodingMutationOperator(BaseMutationOperator):
     - Zero-width character injection
     """
 
-    def __init__(self, mutation_rate: float = 0.1):
+    def __init__(self, mutation_rate: float = 0.1) -> None:
         super().__init__(mutation_rate)
 
         # Leetspeak mapping
@@ -436,7 +445,10 @@ class EncodingMutationOperator(BaseMutationOperator):
         """Apply encoding mutations."""
         if not self.should_mutate():
             return MutationResult(
-                original=prompt, mutated=prompt, mutation_type="none", positions_changed=[]
+                original=prompt,
+                mutated=prompt,
+                mutation_type="none",
+                positions_changed=[],
             )
 
         if encoding_type is None:
@@ -499,8 +511,7 @@ class EncodingMutationOperator(BaseMutationOperator):
 
 
 class GradientGuidedMutationOperator(BaseMutationOperator):
-    """
-    Gradient-guided token replacement.
+    """Gradient-guided token replacement.
 
     Uses gradient information to identify high-impact positions
     and select replacement tokens.
@@ -514,7 +525,7 @@ class GradientGuidedMutationOperator(BaseMutationOperator):
         top_k: int = 256,
         gradient_func: Callable[[str], np.ndarray] | None = None,
         token_scores_func: Callable[[str, int], np.ndarray] | None = None,
-    ):
+    ) -> None:
         super().__init__(mutation_rate)
         self.top_k = top_k
         self.gradient_func = gradient_func
@@ -530,7 +541,10 @@ class GradientGuidedMutationOperator(BaseMutationOperator):
         """Apply gradient-guided mutations."""
         if not self.should_mutate():
             return MutationResult(
-                original=prompt, mutated=prompt, mutation_type="none", positions_changed=[]
+                original=prompt,
+                mutated=prompt,
+                mutation_type="none",
+                positions_changed=[],
             )
 
         words = prompt.split()
@@ -563,7 +577,9 @@ class GradientGuidedMutationOperator(BaseMutationOperator):
                 )
             else:
                 position_indices = np.random.choice(
-                    len(words), size=min(num_mutations, len(words)), replace=False
+                    len(words),
+                    size=min(num_mutations, len(words)),
+                    replace=False,
                 )
 
             # Get replacement tokens
@@ -612,16 +628,17 @@ class GradientGuidedMutationOperator(BaseMutationOperator):
 
 
 class AdaptiveMutationOperator(BaseMutationOperator):
-    """
-    Adaptive mutation that combines multiple strategies.
+    """Adaptive mutation that combines multiple strategies.
 
     Dynamically selects mutation operators based on their
     historical effectiveness.
     """
 
     def __init__(
-        self, mutation_rate: float = 0.2, operators: list[BaseMutationOperator] | None = None
-    ):
+        self,
+        mutation_rate: float = 0.2,
+        operators: list[BaseMutationOperator] | None = None,
+    ) -> None:
         super().__init__(mutation_rate)
 
         # Initialize default operators
@@ -650,7 +667,10 @@ class AdaptiveMutationOperator(BaseMutationOperator):
         """Apply adaptive mutation."""
         if not self.should_mutate():
             return MutationResult(
-                original=prompt, mutated=prompt, mutation_type="none", positions_changed=[]
+                original=prompt,
+                mutated=prompt,
+                mutation_type="none",
+                positions_changed=[],
             )
 
         # Select operator
@@ -665,13 +685,13 @@ class AdaptiveMutationOperator(BaseMutationOperator):
 
         return result
 
-    def update_reward(self, operator_index: int, reward: float):
-        """
-        Update Thompson sampling parameters based on reward.
+    def update_reward(self, operator_index: int, reward: float) -> None:
+        """Update Thompson sampling parameters based on reward.
 
         Args:
             operator_index: Index of the operator used
             reward: Reward signal (0-1, 1 = success)
+
         """
         if reward > 0.5:
             self._alpha[operator_index] += 1
@@ -690,7 +710,7 @@ class AdaptiveMutationOperator(BaseMutationOperator):
                     "alpha": self._alpha[i],
                     "beta": self._beta[i],
                     **op.get_stats(),
-                }
+                },
             )
         return stats
 
@@ -701,13 +721,12 @@ class AdaptiveMutationOperator(BaseMutationOperator):
 
 
 class HybridMutationOperator(BaseMutationOperator):
-    """
-    Hybrid mutation combining multiple techniques in sequence.
+    """Hybrid mutation combining multiple techniques in sequence.
 
     Applies a chain of mutations for more diverse outputs.
     """
 
-    def __init__(self, mutation_rate: float = 0.25, chain_length: int = 2):
+    def __init__(self, mutation_rate: float = 0.25, chain_length: int = 2) -> None:
         super().__init__(mutation_rate)
         self.chain_length = chain_length
 
@@ -720,12 +739,18 @@ class HybridMutationOperator(BaseMutationOperator):
         }
 
     def mutate(
-        self, prompt: str, operator_sequence: list[str] | None = None, **kwargs
+        self,
+        prompt: str,
+        operator_sequence: list[str] | None = None,
+        **kwargs,
     ) -> MutationResult:
         """Apply hybrid mutation chain."""
         if not self.should_mutate():
             return MutationResult(
-                original=prompt, mutated=prompt, mutation_type="none", positions_changed=[]
+                original=prompt,
+                mutated=prompt,
+                mutation_type="none",
+                positions_changed=[],
             )
 
         original = prompt
@@ -736,7 +761,8 @@ class HybridMutationOperator(BaseMutationOperator):
         if operator_sequence is None:
             available = list(self.operators.keys())
             operator_sequence = secrets.SystemRandom().sample(
-                available, min(self.chain_length, len(available))
+                available,
+                min(self.chain_length, len(available)),
             )
 
         # Apply operators in sequence
@@ -764,8 +790,7 @@ class HybridMutationOperator(BaseMutationOperator):
 
 
 class MutationRateScheduler:
-    """
-    Schedules mutation rate based on optimization progress.
+    """Schedules mutation rate based on optimization progress.
 
     Strategies:
     - Constant: Fixed rate
@@ -780,7 +805,7 @@ class MutationRateScheduler:
         min_rate: float = 0.01,
         max_rate: float = 0.5,
         strategy: str = "adaptive",
-    ):
+    ) -> None:
         self.initial_rate = initial_rate
         self.min_rate = min_rate
         self.max_rate = max_rate
@@ -792,8 +817,7 @@ class MutationRateScheduler:
         self._stagnation_count = 0
 
     def step(self, fitness: float | None = None, total_steps: int | None = None) -> float:
-        """
-        Update and return mutation rate.
+        """Update and return mutation rate.
 
         Args:
             fitness: Current best fitness
@@ -801,6 +825,7 @@ class MutationRateScheduler:
 
         Returns:
             Updated mutation rate
+
         """
         self._step += 1
 
@@ -850,7 +875,7 @@ class MutationRateScheduler:
 
         return self.current_rate
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset scheduler state."""
         self.current_rate = self.initial_rate
         self._step = 0
@@ -864,10 +889,11 @@ class MutationRateScheduler:
 
 
 def create_mutation_operator(
-    strategy: MutationStrategy, mutation_rate: float = 0.15, **kwargs
+    strategy: MutationStrategy,
+    mutation_rate: float = 0.15,
+    **kwargs,
 ) -> BaseMutationOperator:
     """Factory function to create mutation operators."""
-
     operator_map = {
         MutationStrategy.RANDOM: lambda: RandomMutationOperator(mutation_rate),
         MutationStrategy.SEMANTIC: lambda: SemanticMutationOperator(

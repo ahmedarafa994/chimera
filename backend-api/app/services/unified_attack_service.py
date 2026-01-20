@@ -1,5 +1,4 @@
-"""
-Unified Attack Coordinator Service
+"""Unified Attack Coordinator Service.
 
 Orchestrates multi-vector attack lifecycle and coordination between the unified engine,
 evaluation pipeline, and resource tracking components.
@@ -237,8 +236,7 @@ class AttackSessionState:
         self.total_attacks += 1
         if result.success:
             self.successful_attacks += 1
-            if result.unified_fitness > self.best_fitness:
-                self.best_fitness = result.unified_fitness
+            self.best_fitness = max(self.best_fitness, result.unified_fitness)
 
         # Update resource consumption
         self.tokens_consumed += int(result.token_amplification * 100)  # Estimate
@@ -248,8 +246,7 @@ class AttackSessionState:
     def add_evaluation(self, metrics: DualVectorMetrics) -> None:
         """Add evaluation metrics to the session."""
         self.evaluations.append(metrics)
-        if metrics.unified_fitness > self.best_fitness:
-            self.best_fitness = metrics.unified_fitness
+        self.best_fitness = max(self.best_fitness, metrics.unified_fitness)
 
     def get_success_rate(self) -> float:
         """Calculate success rate."""
@@ -353,7 +350,7 @@ class AttackCoordinator:
         engine: CombinedAttackEngine,
         evaluator: UnifiedEvaluationPipeline,
         tracker: UnifiedResourceTracker,
-    ):
+    ) -> None:
         self.engine = engine
         self.evaluator = evaluator
         self.tracker = tracker
@@ -382,8 +379,7 @@ class AttackCoordinator:
         strategy: CompositionStrategy,
         parameters: dict[str, Any] | None = None,
     ) -> AttackExecutionResult:
-        """
-        Coordinate full attack execution flow with reasoning integration.
+        """Coordinate full attack execution flow with reasoning integration.
 
         Steps:
         1. Check budget constraints
@@ -505,7 +501,7 @@ class AttackCoordinator:
             return exec_result
 
         except Exception as e:
-            logger.error(f"Attack execution failed: {e}")
+            logger.exception(f"Attack execution failed: {e}")
             return AttackExecutionResult(
                 attack_id=attack_id,
                 session_id=session.session_id,
@@ -524,8 +520,7 @@ class AttackCoordinator:
         query: str,
         parameters: dict[str, Any],
     ) -> UnifiedAttackParameters:
-        """
-        Optimize attack parameters using mutation optimizer.
+        """Optimize attack parameters using mutation optimizer.
 
         Adapts mutation rate, crossover rate, and other parameters based on
         session fitness history.
@@ -548,12 +543,11 @@ class AttackCoordinator:
 
         # Optimize parameters if we have history
         if len(fitness_history) >= 3:
-            optimized_params = self.mutation_optimizer.optimize_mutation_params(
+            return self.mutation_optimizer.optimize_mutation_params(
                 base_query=query,
                 fitness_history=fitness_history,
                 current_params=base_params,
             )
-            return optimized_params
 
         return base_params
 
@@ -563,8 +557,7 @@ class AttackCoordinator:
         attack_params: UnifiedAttackParameters,
         parameters: dict[str, Any],
     ) -> ReasoningMetrics:
-        """
-        Apply reasoning chain extension for enhanced resource consumption.
+        """Apply reasoning chain extension for enhanced resource consumption.
 
         Uses ReasoningChainExtender to estimate and inject complexity.
         """
@@ -706,18 +699,17 @@ class AttackCoordinator:
                     "obfuscation_result": result.obfuscation_result,
                     "mutation_result": result.mutation_result,
                 }
-            elif isinstance(result, dict):
+            if isinstance(result, dict):
                 return result
-            else:
-                return {
-                    "transformed_query": str(result),
-                    "fitness": 0.0,
-                    "stealth_score": 0.0,
-                    "jailbreak_score": 0.0,
-                }
+            return {
+                "transformed_query": str(result),
+                "fitness": 0.0,
+                "stealth_score": 0.0,
+                "jailbreak_score": 0.0,
+            }
 
         except Exception as e:
-            logger.error(f"Strategy execution failed: {e}")
+            logger.exception(f"Strategy execution failed: {e}")
             raise
 
     async def coordinate_evaluation(
@@ -742,7 +734,7 @@ class AttackCoordinator:
             return metrics
 
         except Exception as e:
-            logger.error(f"Evaluation failed: {e}")
+            logger.exception(f"Evaluation failed: {e}")
             # Return default metrics on failure
             return DualVectorMetrics(
                 unified_fitness=0.0,
@@ -757,8 +749,7 @@ class AttackCoordinator:
         session: AttackSessionState,
         query: str,
     ) -> CompositionStrategy:
-        """
-        Select best strategy based on session history and Pareto dominance.
+        """Select best strategy based on session history and Pareto dominance.
 
         Uses unified fitness calculator to compare strategies and selects
         the one with best multi-objective performance.
@@ -804,7 +795,8 @@ class AttackCoordinator:
                     for j, metric_b in enumerate(metrics_list):
                         if i != j:
                             dominance = self.fitness_calculator.calculate_pareto_dominance(
-                                metric_a, metric_b
+                                metric_a,
+                                metric_b,
                             )
                             if dominance == -1:  # metric_b dominates metric_a
                                 is_dominated = True
@@ -827,8 +819,7 @@ class AttackCoordinator:
         query: str,
         target_amplification: float = 3.0,
     ) -> dict[str, Any]:
-        """
-        Optimize obfuscation ratio for a specific query.
+        """Optimize obfuscation ratio for a specific query.
 
         Uses TokenExtensionOptimizer to find optimal ρ that achieves
         target amplification while satisfying constraints.
@@ -888,8 +879,7 @@ class AttackCoordinator:
 
 
 class UnifiedAttackService:
-    """
-    Orchestrates multi-vector attack lifecycle and coordination.
+    """Orchestrates multi-vector attack lifecycle and coordination.
 
     This is the main service class that manages attack sessions, coordinates
     between the unified engine, evaluation pipeline, and resource tracking.
@@ -906,7 +896,7 @@ class UnifiedAttackService:
     _instance: Optional["UnifiedAttackService"] = None
     _lock: threading.Lock = threading.Lock()
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the unified attack service."""
         self._init_lock = threading.Lock()
         self._sessions: dict[str, AttackSessionState] = {}
@@ -928,8 +918,7 @@ class UnifiedAttackService:
 
     @classmethod
     def get_instance(cls) -> "UnifiedAttackService":
-        """
-        Get singleton instance of the service.
+        """Get singleton instance of the service.
 
         Thread-safe singleton pattern ensures only one instance exists.
         """
@@ -958,8 +947,7 @@ class UnifiedAttackService:
         tags: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> AttackSessionState:
-        """
-        Create a new attack session.
+        """Create a new attack session.
 
         Args:
             config: Attack configuration (defaults to LRM targets config)
@@ -971,6 +959,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackSessionState: The newly created session
+
         """
         session_id = str(uuid.uuid4())
 
@@ -1002,8 +991,7 @@ class UnifiedAttackService:
         return session
 
     async def get_session(self, session_id: str) -> AttackSessionState:
-        """
-        Get session by ID.
+        """Get session by ID.
 
         Args:
             session_id: Session identifier
@@ -1013,10 +1001,12 @@ class UnifiedAttackService:
 
         Raises:
             ValueError: If session not found
+
         """
         with self._init_lock:
             if session_id not in self._sessions:
-                raise ValueError(f"Session '{session_id}' not found")
+                msg = f"Session '{session_id}' not found"
+                raise ValueError(msg)
             return self._sessions[session_id]
 
     async def get_session_or_none(self, session_id: str) -> AttackSessionState | None:
@@ -1028,14 +1018,14 @@ class UnifiedAttackService:
         self,
         status: SessionStatus | None = None,
     ) -> list[AttackSessionState]:
-        """
-        List all sessions, optionally filtered by status.
+        """List all sessions, optionally filtered by status.
 
         Args:
             status: Optional status filter
 
         Returns:
             List of session states
+
         """
         with self._init_lock:
             sessions = list(self._sessions.values())
@@ -1044,8 +1034,7 @@ class UnifiedAttackService:
             return sessions
 
     async def finalize_session(self, session_id: str) -> SessionSummary:
-        """
-        Finalize and close a session.
+        """Finalize and close a session.
 
         Args:
             session_id: Session identifier
@@ -1055,6 +1044,7 @@ class UnifiedAttackService:
 
         Raises:
             ValueError: If session not found
+
         """
         session = await self.get_session(session_id)
 
@@ -1067,7 +1057,7 @@ class UnifiedAttackService:
         logger.info(
             f"Finalized session: {session_id}, "
             f"attacks: {session.total_attacks}, "
-            f"success_rate: {session.get_success_rate():.2%}"
+            f"success_rate: {session.get_success_rate():.2%}",
         )
 
         return summary
@@ -1098,8 +1088,7 @@ class UnifiedAttackService:
         strategy: CompositionStrategy | None = None,
         parameters: dict[str, Any] | None = None,
     ) -> AttackExecutionResult:
-        """
-        Execute a single multi-vector attack.
+        """Execute a single multi-vector attack.
 
         Args:
             session_id: Session identifier
@@ -1109,6 +1098,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result of the attack
+
         """
         session = await self.get_session(session_id)
 
@@ -1142,8 +1132,7 @@ class UnifiedAttackService:
         strategy: CompositionStrategy | None = None,
         parallel: bool = False,
     ) -> list[AttackExecutionResult]:
-        """
-        Execute multiple attacks.
+        """Execute multiple attacks.
 
         Args:
             session_id: Session identifier
@@ -1153,6 +1142,7 @@ class UnifiedAttackService:
 
         Returns:
             List of attack execution results
+
         """
         session = await self.get_session(session_id)
 
@@ -1179,8 +1169,7 @@ class UnifiedAttackService:
         query: str,
         extend_first: bool = True,
     ) -> AttackExecutionResult:
-        """
-        Execute sequential attack (extend-first or autodan-first).
+        """Execute sequential attack (extend-first or autodan-first).
 
         Args:
             session_id: Session identifier
@@ -1189,6 +1178,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result of the attack
+
         """
         strategy = (
             CompositionStrategy.EXTEND_FIRST if extend_first else CompositionStrategy.AUTODAN_FIRST
@@ -1201,8 +1191,7 @@ class UnifiedAttackService:
         query: str,
         blend_weight: float = 0.5,
     ) -> AttackExecutionResult:
-        """
-        Execute parallel attack (both vectors simultaneously).
+        """Execute parallel attack (both vectors simultaneously).
 
         Args:
             session_id: Session identifier
@@ -1211,6 +1200,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result of the attack
+
         """
         return await self.execute_attack(
             session_id,
@@ -1225,8 +1215,7 @@ class UnifiedAttackService:
         query: str,
         iterations: int = 3,
     ) -> AttackExecutionResult:
-        """
-        Execute iterative attack (alternating optimization).
+        """Execute iterative attack (alternating optimization).
 
         Args:
             session_id: Session identifier
@@ -1235,6 +1224,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result of the attack
+
         """
         return await self.execute_attack(
             session_id,
@@ -1249,8 +1239,7 @@ class UnifiedAttackService:
         query: str,
         target_metrics: dict[str, float] | None = None,
     ) -> AttackExecutionResult:
-        """
-        Execute adaptive attack with auto strategy selection.
+        """Execute adaptive attack with auto strategy selection.
 
         Args:
             session_id: Session identifier
@@ -1259,6 +1248,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result of the attack
+
         """
         session = await self.get_session(session_id)
 
@@ -1279,8 +1269,7 @@ class UnifiedAttackService:
         complexity_type: str = "mathematical",
         inject_complexity: bool = True,
     ) -> AttackExecutionResult:
-        """
-        Execute attack with reasoning chain extension.
+        """Execute attack with reasoning chain extension.
 
         This attack type focuses on maximizing reasoning token consumption
         by applying complexity injection and obfuscation optimized for
@@ -1295,6 +1284,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result with reasoning metrics
+
         """
         await self.get_session(session_id)
 
@@ -1322,8 +1312,7 @@ class UnifiedAttackService:
         population_size: int = 50,
         max_generations: int = 100,
     ) -> AttackExecutionResult:
-        """
-        Execute attack with mutation parameter optimization.
+        """Execute attack with mutation parameter optimization.
 
         This attack type focuses on maximizing jailbreak success by
         adaptively tuning AutoDAN mutation parameters based on session history.
@@ -1336,6 +1325,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result with mutation metrics
+
         """
         return await self.execute_attack(
             session_id,
@@ -1351,8 +1341,7 @@ class UnifiedAttackService:
         self,
         session_id: str,
     ) -> list[float]:
-        """
-        Get fitness history for a session.
+        """Get fitness history for a session.
 
         Returns the progression of unified fitness scores across attacks,
         useful for analyzing optimization progress.
@@ -1362,6 +1351,7 @@ class UnifiedAttackService:
 
         Returns:
             List of fitness values in chronological order
+
         """
         return self.coordinator._fitness_history.get(session_id, [])
 
@@ -1370,8 +1360,7 @@ class UnifiedAttackService:
         session_id: str,
         query: str,
     ) -> dict[str, Any]:
-        """
-        Get optimized attack parameters for a query.
+        """Get optimized attack parameters for a query.
 
         Returns the parameters that would be used if an attack were executed,
         based on current session history and optimization state.
@@ -1382,6 +1371,7 @@ class UnifiedAttackService:
 
         Returns:
             Dictionary of optimized parameters
+
         """
         session = await self.get_session(session_id)
 
@@ -1403,8 +1393,7 @@ class UnifiedAttackService:
         model_response: str,
         target_behavior: str,
     ) -> DualVectorMetrics:
-        """
-        Evaluate attack using unified pipeline.
+        """Evaluate attack using unified pipeline.
 
         Args:
             result: Attack execution result
@@ -1413,6 +1402,7 @@ class UnifiedAttackService:
 
         Returns:
             DualVectorMetrics: Evaluation metrics
+
         """
         session = await self.get_session(result.session_id)
 
@@ -1427,14 +1417,14 @@ class UnifiedAttackService:
         self,
         session_id: str,
     ) -> list[DualVectorMetrics]:
-        """
-        Get Pareto-optimal results from session.
+        """Get Pareto-optimal results from session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             List of Pareto-optimal metrics
+
         """
         session = await self.get_session(session_id)
 
@@ -1442,9 +1432,7 @@ class UnifiedAttackService:
             return []
 
         # Compute Pareto front using evaluation pipeline
-        pareto_front = self.evaluation_pipeline.compute_pareto_front(session.evaluations)
-
-        return pareto_front
+        return self.evaluation_pipeline.compute_pareto_front(session.evaluations)
 
     # ==========================================================================
     # Resource Management
@@ -1454,14 +1442,14 @@ class UnifiedAttackService:
         self,
         session_id: str,
     ) -> CombinedResourceUsage:
-        """
-        Get current resource usage for session.
+        """Get current resource usage for session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             CombinedResourceUsage: Resource usage breakdown
+
         """
         await self.get_session(session_id)
 
@@ -1483,14 +1471,14 @@ class UnifiedAttackService:
         self,
         session_id: str,
     ) -> BudgetStatus:
-        """
-        Get budget status for session.
+        """Get budget status for session.
 
         Args:
             session_id: Session identifier
 
         Returns:
             BudgetStatus: Current budget status
+
         """
         session = await self.get_session(session_id)
         return self.resource_tracker.check_budget(session.budget)
@@ -1500,8 +1488,7 @@ class UnifiedAttackService:
         session_id: str,
         priority_vector: str,
     ) -> ResourceAllocation:
-        """
-        Allocate resources between vectors.
+        """Allocate resources between vectors.
 
         Args:
             session_id: Session identifier
@@ -1509,6 +1496,7 @@ class UnifiedAttackService:
 
         Returns:
             ResourceAllocation: New allocation
+
         """
         await self.get_session(session_id)
 
@@ -1523,13 +1511,11 @@ class UnifiedAttackService:
             extend_weight = 0.5
             autodan_weight = 0.5
 
-        allocation = self.resource_service.allocate(
+        return self.resource_service.allocate(
             session_id=session_id,
             extend_weight=extend_weight,
             autodan_weight=autodan_weight,
         )
-
-        return allocation
 
     async def check_budget_before_attack(
         self,
@@ -1537,8 +1523,7 @@ class UnifiedAttackService:
         estimated_tokens: int = 100,
         estimated_cost: float = 0.01,
     ) -> bool:
-        """
-        Check if budget allows for another attack.
+        """Check if budget allows for another attack.
 
         Args:
             session_id: Session identifier
@@ -1547,6 +1532,7 @@ class UnifiedAttackService:
 
         Returns:
             bool: True if attack can proceed
+
         """
         session = await self.get_session(session_id)
         budget_status = self.resource_tracker.check_budget(session.budget)
@@ -1569,8 +1555,7 @@ class UnifiedAttackService:
         session_id: str,
         config: AutoDANConfig | None = None,
     ) -> AutoDANReasoningWorkflow:
-        """
-        Create an AutoDAN reasoning workflow for a session.
+        """Create an AutoDAN reasoning workflow for a session.
 
         This provides direct access to the genetic mutation workflow with
         integrated reasoning chain extension capabilities.
@@ -1581,6 +1566,7 @@ class UnifiedAttackService:
 
         Returns:
             AutoDANReasoningWorkflow: Configured workflow instance
+
         """
         session = await self.get_session(session_id)
 
@@ -1611,8 +1597,7 @@ class UnifiedAttackService:
         fitness_threshold: float = 0.8,
         use_reasoning_extension: bool = True,
     ) -> AttackExecutionResult:
-        """
-        Execute AutoDAN attack with full reasoning chain integration.
+        """Execute AutoDAN attack with full reasoning chain integration.
 
         This method uses the AutoDANReasoningWorkflow to perform genetic
         mutation optimization with reasoning chain extension for maximum
@@ -1628,6 +1613,7 @@ class UnifiedAttackService:
 
         Returns:
             AttackExecutionResult: Result with comprehensive metrics
+
         """
         session = await self.get_session(session_id)
         attack_id = str(uuid.uuid4())
@@ -1665,7 +1651,7 @@ class UnifiedAttackService:
                 reasoning_metrics=ReasoningMetrics(
                     original_reasoning_tokens=len(prompt.split()) * 2,
                     extended_reasoning_tokens=int(
-                        len(result.final_prompt.split()) * 2 * result.reasoning_extension_ratio
+                        len(result.final_prompt.split()) * 2 * result.reasoning_extension_ratio,
                     ),
                     reasoning_extension_ratio=result.reasoning_extension_ratio,
                     complexity_type="adaptive",
@@ -1689,7 +1675,7 @@ class UnifiedAttackService:
             return exec_result
 
         except Exception as e:
-            logger.error(f"AutoDAN reasoning workflow failed: {e}")
+            logger.exception(f"AutoDAN reasoning workflow failed: {e}")
             return AttackExecutionResult(
                 attack_id=attack_id,
                 session_id=session_id,
@@ -1708,8 +1694,7 @@ class UnifiedAttackService:
         prompt: str,
         complexity_type: str = "mathematical",
     ) -> MutationWithReasoningResult:
-        """
-        Execute a single reasoning-enhanced mutation.
+        """Execute a single reasoning-enhanced mutation.
 
         This provides direct access to the ReasoningEnhancedMutation class
         for fine-grained control over the mutation + reasoning process.
@@ -1721,6 +1706,7 @@ class UnifiedAttackService:
 
         Returns:
             MutationWithReasoningResult: Detailed result with both metrics
+
         """
         await self.get_session(session_id)
 
@@ -1739,7 +1725,7 @@ class UnifiedAttackService:
 
         logger.info(
             f"Reasoning-enhanced mutation completed for session {session_id}: "
-            f"fitness={result.combined_fitness:.3f}"
+            f"fitness={result.combined_fitness:.3f}",
         )
 
         return result
@@ -1749,8 +1735,7 @@ class UnifiedAttackService:
         session_id: str,
         config: AutoDANConfig | None = None,
     ) -> AutoDANAttack:
-        """
-        Get a standalone AutoDAN attack interface.
+        """Get a standalone AutoDAN attack interface.
 
         This provides the genetic algorithm-based attack interface for
         direct manipulation and custom workflows.
@@ -1761,6 +1746,7 @@ class UnifiedAttackService:
 
         Returns:
             AutoDANAttack: Configured attack interface
+
         """
         session = await self.get_session(session_id)
 
@@ -1789,13 +1775,13 @@ _service_lock = threading.Lock()
 
 
 def get_unified_attack_service() -> UnifiedAttackService:
-    """
-    Get or create the UnifiedAttackService singleton.
+    """Get or create the UnifiedAttackService singleton.
 
     This function is used for dependency injection in FastAPI.
 
     Returns:
         UnifiedAttackService: The service instance
+
     """
     global _unified_attack_service
     with _service_lock:
@@ -1805,8 +1791,7 @@ def get_unified_attack_service() -> UnifiedAttackService:
 
 
 async def unified_attack_service_dep() -> UnifiedAttackService:
-    """
-    FastAPI dependency for unified attack service.
+    """FastAPI dependency for unified attack service.
 
     Usage:
         @router.post("/attack")
@@ -1818,13 +1803,13 @@ async def unified_attack_service_dep() -> UnifiedAttackService:
 
     Returns:
         UnifiedAttackService: The service instance
+
     """
     return get_unified_attack_service()
 
 
 def reset_unified_attack_service() -> None:
-    """
-    Reset the service singleton (for testing).
+    """Reset the service singleton (for testing).
 
     This clears the global instance, allowing a fresh instance
     to be created on next access.

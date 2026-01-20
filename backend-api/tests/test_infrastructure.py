@@ -1,5 +1,4 @@
-"""
-Comprehensive Infrastructure Tests for Chimera Backend
+"""Comprehensive Infrastructure Tests for Chimera Backend.
 
 Tests for:
 1. Structured Logging System
@@ -21,9 +20,9 @@ sys.path.insert(0, str(__file__).rsplit("tests", 1)[0])
 
 
 class TestStructuredLogging:
-    """Tests for backend-api/app/core/structured_logging.py"""
+    """Tests for backend-api/app/core/structured_logging.py."""
 
-    def test_structured_log_formatter_json_output(self):
+    def test_structured_log_formatter_json_output(self) -> None:
         """Verify JSON log formatting with proper field structure."""
         from app.core.structured_logging import StructuredLogFormatter
 
@@ -51,14 +50,15 @@ class TestStructuredLogging:
         assert "service" in log_data
         assert "version" in log_data
 
-    def test_structured_log_formatter_with_exception(self):
+    def test_structured_log_formatter_with_exception(self) -> None:
         """Verify exception info is properly formatted."""
         from app.core.structured_logging import StructuredLogFormatter
 
         formatter = StructuredLogFormatter()
 
         try:
-            raise ValueError("Test error")
+            msg = "Test error"
+            raise ValueError(msg)
         except ValueError:
             exc_info = sys.exc_info()
 
@@ -79,7 +79,7 @@ class TestStructuredLogging:
         assert log_data["exception"]["type"] == "ValueError"
         assert "Test error" in log_data["exception"]["message"]
 
-    def test_request_context_variables(self):
+    def test_request_context_variables(self) -> None:
         """Test request tracing with correlation IDs."""
         from app.core.structured_logging import (
             clear_request_context,
@@ -103,14 +103,15 @@ class TestStructuredLogging:
         clear_request_context()
         assert request_id_var.get() == ""
 
-    def test_error_tracker_capture_exception(self):
+    def test_error_tracker_capture_exception(self) -> None:
         """Test Sentry-compatible error tracking integration."""
         from app.core.structured_logging import ErrorTracker
 
         tracker = ErrorTracker()
 
         try:
-            raise RuntimeError("Test runtime error")
+            msg = "Test runtime error"
+            raise RuntimeError(msg)
         except RuntimeError as e:
             event_id = tracker.capture_exception(
                 exception=e,
@@ -126,7 +127,7 @@ class TestStructuredLogging:
         assert len(recent_errors) == 1
         assert recent_errors[0]["exception"]["type"] == "RuntimeError"
 
-    def test_log_level_from_environment(self):
+    def test_log_level_from_environment(self) -> None:
         """Validate log level configuration from environment variables."""
         from app.core.config import settings
 
@@ -134,9 +135,9 @@ class TestStructuredLogging:
 
 
 class TestLoggingMiddleware:
-    """Tests for backend-api/app/middleware/request_logging.py"""
+    """Tests for backend-api/app/middleware/request_logging.py."""
 
-    def test_metrics_middleware_get_metrics(self):
+    def test_metrics_middleware_get_metrics(self) -> None:
         """Test metrics retrieval."""
         from fastapi import FastAPI
 
@@ -153,7 +154,7 @@ class TestLoggingMiddleware:
         assert "status_codes" in metrics
         assert "endpoints" in metrics
 
-    def test_metrics_middleware_reset(self):
+    def test_metrics_middleware_reset(self) -> None:
         """Test metrics reset functionality."""
         from fastapi import FastAPI
 
@@ -171,9 +172,9 @@ class TestLoggingMiddleware:
 
 
 class TestHealthCheckSystem:
-    """Tests for backend-api/app/core/health.py"""
+    """Tests for backend-api/app/core/health.py."""
 
-    def test_health_status_enum(self):
+    def test_health_status_enum(self) -> None:
         """Test health status values."""
         from app.core.health import HealthStatus
 
@@ -182,7 +183,7 @@ class TestHealthCheckSystem:
         assert HealthStatus.UNHEALTHY.value == "unhealthy"
         assert HealthStatus.UNKNOWN.value == "unknown"
 
-    def test_health_check_result_to_dict(self):
+    def test_health_check_result_to_dict(self) -> None:
         """Test HealthCheckResult serialization."""
         from app.core.health import HealthCheckResult, HealthStatus
 
@@ -200,7 +201,7 @@ class TestHealthCheckSystem:
         assert data["latency_ms"] == 15.5
         assert "timestamp" in data
 
-    def test_health_checker_initialization(self):
+    def test_health_checker_initialization(self) -> None:
         """Test HealthChecker initializes with default checks."""
         from app.core.health import HealthChecker
 
@@ -211,7 +212,7 @@ class TestHealthCheckSystem:
         assert "cache" in checker._checks
 
     @pytest.mark.asyncio
-    async def test_health_checker_run_single_check(self):
+    async def test_health_checker_run_single_check(self) -> None:
         """Test running a single health check."""
         from app.core.health import HealthChecker, HealthCheckResult, HealthStatus
 
@@ -227,7 +228,7 @@ class TestHealthCheckSystem:
         assert result.latency_ms >= 0
 
     @pytest.mark.asyncio
-    async def test_liveness_check(self):
+    async def test_liveness_check(self) -> None:
         """Test liveness probe."""
         from app.core.health import HealthChecker, HealthStatus
 
@@ -240,7 +241,7 @@ class TestHealthCheckSystem:
 
 
 class TestHealthEndpoints:
-    """Tests for backend-api/app/api/v1/endpoints/health.py"""
+    """Tests for backend-api/app/api/v1/endpoints/health.py."""
 
     @pytest.fixture
     def client(self):
@@ -253,7 +254,7 @@ class TestHealthEndpoints:
         app.include_router(router)
         return TestClient(app)
 
-    def test_health_endpoint_returns_status(self, client):
+    def test_health_endpoint_returns_status(self, client) -> None:
         """Test /health endpoint returns correct status."""
         response = client.get("/health")
         assert response.status_code == 200
@@ -263,7 +264,7 @@ class TestHealthEndpoints:
         assert "version" in data
         assert "checks" in data
 
-    def test_health_live_endpoint(self, client):
+    def test_health_live_endpoint(self, client) -> None:
         """Test /health/live endpoint for liveness probes."""
         response = client.get("/health/live")
         assert response.status_code in [200, 503]
@@ -271,7 +272,7 @@ class TestHealthEndpoints:
         data = response.json()
         assert data["name"] == "liveness"
 
-    def test_health_ready_endpoint(self, client):
+    def test_health_ready_endpoint(self, client) -> None:
         """Test /health/ready endpoint for readiness probes."""
         response = client.get("/health/ready")
         assert response.status_code in [200, 503]
@@ -279,7 +280,7 @@ class TestHealthEndpoints:
         data = response.json()
         assert data["name"] == "readiness"
 
-    def test_list_health_checks_endpoint(self, client):
+    def test_list_health_checks_endpoint(self, client) -> None:
         """Test /health/checks endpoint lists all checks."""
         response = client.get("/health/checks")
         assert response.status_code == 200
@@ -289,7 +290,7 @@ class TestHealthEndpoints:
         assert isinstance(data["checks"], list)
         assert "last_results" in data
 
-    def test_individual_health_check_endpoint(self, client):
+    def test_individual_health_check_endpoint(self, client) -> None:
         """Test /health/{check_name} endpoint for specific check."""
         response = client.get("/health/cache")
         # May return 200, 404 (unknown check), or 503 (unhealthy)
@@ -301,9 +302,9 @@ class TestHealthEndpoints:
 
 
 class TestConfiguration:
-    """Tests for backend-api/app/core/config.py"""
+    """Tests for backend-api/app/core/config.py."""
 
-    def test_settings_loads_defaults(self):
+    def test_settings_loads_defaults(self) -> None:
         """Validate environment variable loading."""
         from app.core.config import settings
 
@@ -311,7 +312,7 @@ class TestConfiguration:
         assert settings.PROJECT_NAME == "Chimera Backend"
         assert settings.VERSION is not None
 
-    def test_settings_cache_configuration(self):
+    def test_settings_cache_configuration(self) -> None:
         """Test cache configuration defaults."""
         from app.core.config import settings
 
@@ -319,14 +320,14 @@ class TestConfiguration:
         assert settings.CACHE_MAX_MEMORY_ITEMS > 0
         assert settings.CACHE_DEFAULT_TTL > 0
 
-    def test_settings_redis_configuration(self):
+    def test_settings_redis_configuration(self) -> None:
         """Test Redis configuration."""
         from app.core.config import settings
 
         assert settings.REDIS_URL is not None
         assert settings.REDIS_CONNECTION_TIMEOUT > 0
 
-    def test_settings_provider_models(self):
+    def test_settings_provider_models(self) -> None:
         """Test provider models configuration."""
         from app.core.config import settings
 
@@ -335,7 +336,7 @@ class TestConfiguration:
         assert "anthropic" in models
         assert "openai" in models
 
-    def test_get_settings_function(self):
+    def test_get_settings_function(self) -> None:
         """Test get_settings returns singleton."""
         from app.core.config import get_settings, settings
 
@@ -343,9 +344,9 @@ class TestConfiguration:
 
 
 class TestCSRFMiddleware:
-    """Tests for backend-api/app/core/middleware.py"""
+    """Tests for backend-api/app/core/middleware.py."""
 
-    def test_csrf_middleware_allows_safe_methods(self):
+    def test_csrf_middleware_allows_safe_methods(self) -> None:
         """Test CSRF middleware allows GET, HEAD, OPTIONS."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
@@ -363,7 +364,7 @@ class TestCSRFMiddleware:
         response = client.get("/test")
         assert response.status_code == 200
 
-    def test_csrf_middleware_allows_api_key_auth(self):
+    def test_csrf_middleware_allows_api_key_auth(self) -> None:
         """Test CSRF middleware allows requests with API key."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient

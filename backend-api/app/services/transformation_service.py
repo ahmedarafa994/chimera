@@ -1,5 +1,4 @@
-"""
-Transformation service for handling prompt transformations.
+"""Transformation service for handling prompt transformations.
 Provides core logic for transforming prompts based on potency levels and
 technique suites.
 """
@@ -115,8 +114,7 @@ class TransformationResult:
 
 
 class TransformationCache:
-    """
-    Bounded LRU cache for transformations with TTL support.
+    """Bounded LRU cache for transformations with TTL support.
 
     CRIT-002 FIX: Implements bounded cache with max_size limit and LRU eviction
     to prevent unbounded memory growth in long-running processes.
@@ -129,14 +127,14 @@ class TransformationCache:
         ttl_seconds: int = 3600,
         max_size: int = 1000,
         max_value_size_bytes: int = 1_000_000,  # 1MB per entry
-    ):
-        """
-        Initialize the transformation cache.
+    ) -> None:
+        """Initialize the transformation cache.
 
         Args:
             ttl_seconds: Time-to-live for cache entries in seconds
             max_size: Maximum number of entries in cache (LRU eviction when exceeded)
             max_value_size_bytes: Maximum size of a single cached value
+
         """
         self._cache: OrderedDict[str, tuple[TransformationResult, float]] = OrderedDict()
         self.ttl_seconds = ttl_seconds
@@ -201,28 +199,27 @@ class TransformationCache:
                     self._stats["hits"] += 1
                     logger.debug(f"Cache hit for key: {key[:8]}...")
                     return result
-                else:
-                    # Expired entry
-                    del self._cache[key]
-                    self._stats["expired"] += 1
-                    logger.debug(f"Cache expired for key: {key[:8]}...")
+                # Expired entry
+                del self._cache[key]
+                self._stats["expired"] += 1
+                logger.debug(f"Cache expired for key: {key[:8]}...")
 
             self._stats["misses"] += 1
             return None
 
     def set(self, key: str, result: TransformationResult) -> bool:
-        """
-        Cache transformation result with size validation and LRU eviction.
+        """Cache transformation result with size validation and LRU eviction.
 
         Returns:
             True if cached successfully, False if rejected (e.g., too large)
+
         """
         # Check value size
         estimated_size = self._estimate_size(result)
         if estimated_size > self.max_value_size_bytes:
             self._stats["size_rejections"] += 1
             logger.warning(
-                f"Cache entry rejected: size {estimated_size} exceeds max {self.max_value_size_bytes}"
+                f"Cache entry rejected: size {estimated_size} exceeds max {self.max_value_size_bytes}",
             )
             return False
 
@@ -267,14 +264,14 @@ class TransformationCache:
             }
 
     def get_metrics(self) -> dict:
-        """
-        Get comprehensive cache metrics for monitoring and alerting.
+        """Get comprehensive cache metrics for monitoring and alerting.
 
         PERF-001 FIX: Enhanced metrics with memory estimation and health indicators
         for production monitoring and alerting.
 
         Returns:
             Dictionary containing cache health, performance, and memory metrics
+
         """
         with self._lock:
             total_requests = self._stats["hits"] + self._stats["misses"]
@@ -338,14 +335,14 @@ class TransformationEngine:
         enable_cache: bool = True,
         cache_max_size: int = 1000,
         cache_ttl_seconds: int = 3600,
-    ):
-        """
-        Initialize the transformation engine.
+    ) -> None:
+        """Initialize the transformation engine.
 
         Args:
             enable_cache: Whether to enable result caching
             cache_max_size: Maximum number of cached entries (CRIT-002 fix)
             cache_ttl_seconds: Cache entry TTL in seconds
+
         """
         self.config = config.transformation
         self.cache = (
@@ -398,8 +395,7 @@ class TransformationEngine:
         use_cache: bool = True,
         model: str | None = None,
     ) -> TransformationResult:
-        """
-        Transform a prompt based on potency level and technique suite.
+        """Transform a prompt based on potency level and technique suite.
 
         Args:
             prompt: Original prompt to transform
@@ -415,6 +411,7 @@ class TransformationEngine:
             InvalidPotencyError: If potency level is invalid
             InvalidTechniqueError: If technique suite is invalid
             TransformationError: If transformation fails
+
         """
         start_time = time.time()
 
@@ -470,11 +467,15 @@ class TransformationEngine:
 
             # Apply transformation
             result_tuple = await self._apply_transformation(
-                prompt, potency_level, technique_suite, strategy
+                prompt,
+                potency_level,
+                technique_suite,
+                strategy,
             )
             # Validate tuple unpacking to prevent IndexError
             if not isinstance(result_tuple, tuple) or len(result_tuple) < 2:
-                raise TransformationError("Invalid transformation result format")
+                msg = "Invalid transformation result format"
+                raise TransformationError(msg)
             transformed_prompt = result_tuple[0]
             intermediate_steps = result_tuple[1]
 
@@ -506,13 +507,13 @@ class TransformationEngine:
 
             logger.info(
                 f"Transformation completed: potency={potency_level}, "
-                f"technique={technique_suite}, time={execution_time_ms:.2f}ms"
+                f"technique={technique_suite}, time={execution_time_ms:.2f}ms",
             )
 
             return result
 
-        except (InvalidPotencyError, InvalidTechniqueError) as e:
-            raise e
+        except (InvalidPotencyError, InvalidTechniqueError):
+            raise
         except Exception as e:
             logger.error(f"Transformation failed: {e!s}", exc_info=True)
             raise TransformationError(
@@ -526,7 +527,8 @@ class TransformationEngine:
     def _validate_inputs(self, prompt: str, potency_level: int, technique_suite: str) -> None:
         """Validate transformation inputs."""
         if not prompt or not prompt.strip():
-            raise TransformationError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise TransformationError(msg)
 
         if not isinstance(potency_level, int) or not (
             self.config.min_potency <= potency_level <= self.config.max_potency
@@ -546,34 +548,36 @@ class TransformationEngine:
             )
 
     def _determine_strategy(
-        self, potency_level: int, technique_suite: str
+        self,
+        potency_level: int,
+        technique_suite: str,
     ) -> TransformationStrategy:
         """Determine transformation strategy based on inputs."""
         if technique_suite == "gemini_brain_optimization":
             return TransformationStrategy.AI_BRAIN
-        elif technique_suite == "code_chameleon":
+        if technique_suite == "code_chameleon":
             return TransformationStrategy.CODE_CHAMELEON
-        elif technique_suite == "deep_inception":
+        if technique_suite == "deep_inception":
             return TransformationStrategy.DEEP_INCEPTION
-        elif technique_suite.startswith("cipher"):
+        if technique_suite.startswith("cipher"):
             return TransformationStrategy.CIPHER
-        elif technique_suite in [
+        if technique_suite in [
             "quantum",
             "quantum_exploit",
             "chaos_ultimate",
         ]:
             return TransformationStrategy.QUANTUM
-        elif technique_suite in ["universal_bypass", "metamorphic_attack"]:
+        if technique_suite in ["universal_bypass", "metamorphic_attack"]:
             return TransformationStrategy.RECURSIVE
-        elif technique_suite.startswith("autodan"):
+        if technique_suite.startswith("autodan"):
             return TransformationStrategy.AUTODAN
-        elif technique_suite == "gradient_injection":
+        if technique_suite == "gradient_injection":
             return TransformationStrategy.GRADIENT_OPTIMIZATION
-        elif technique_suite == "gemini_reasoning":
+        if technique_suite == "gemini_reasoning":
             return TransformationStrategy.GEMINI_REASONING
-        elif potency_level >= 8:
+        if potency_level >= 8:
             return TransformationStrategy.RECURSIVE
-        elif potency_level >= 5 or technique_suite in [
+        if potency_level >= 5 or technique_suite in [
             "advanced",
             "expert",
             "temporal_assault",
@@ -581,25 +585,23 @@ class TransformationEngine:
             "polyglot_bypass",
         ]:
             return TransformationStrategy.LAYERED
-        elif technique_suite in [
+        if technique_suite in [
             "subtle_persuasion",
             "authoritative_command",
             "hypothetical_scenario",
         ]:
             return TransformationStrategy.COGNITIVE_HACKING
-        else:
-            return TransformationStrategy.SIMPLE
+        return TransformationStrategy.SIMPLE
 
     def _calculate_layers(self, potency_level: int) -> int:
         """Calculate number of transformation layers based on potency."""
         if potency_level <= 3:
             return 1
-        elif potency_level <= 6:
+        if potency_level <= 6:
             return 2
-        elif potency_level <= 9:
+        if potency_level <= 9:
             return 3
-        else:
-            return 4
+        return 4
 
     def _get_techniques_used(self, technique_suite: str) -> list[str]:
         """Get list of techniques used for a suite."""
@@ -635,17 +637,26 @@ class TransformationEngine:
 
         elif strategy == TransformationStrategy.LAYERED:
             transformed = self._apply_layered_transformation(
-                prompt, potency_level, technique_suite, intermediate_steps
+                prompt,
+                potency_level,
+                technique_suite,
+                intermediate_steps,
             )
 
         elif strategy == TransformationStrategy.RECURSIVE:
             transformed = self._apply_recursive_transformation(
-                prompt, potency_level, technique_suite, intermediate_steps
+                prompt,
+                potency_level,
+                technique_suite,
+                intermediate_steps,
             )
 
         elif strategy == TransformationStrategy.QUANTUM:
             transformed = self._apply_quantum_transformation(
-                prompt, potency_level, technique_suite, intermediate_steps
+                prompt,
+                potency_level,
+                technique_suite,
+                intermediate_steps,
             )
 
         elif strategy == TransformationStrategy.AI_BRAIN:
@@ -741,7 +752,7 @@ class TransformationEngine:
             # Log technical details
             if "methodology" in result_dict:
                 intermediate_steps.append(
-                    f"AutoDAN-X Methodology: {result_dict['methodology'][:100]}..."
+                    f"AutoDAN-X Methodology: {result_dict['methodology'][:100]}...",
                 )
             if "appliedTechniques" in result_dict:
                 techniques = ", ".join(result_dict["appliedTechniques"])
@@ -884,7 +895,8 @@ class TransformationEngine:
         decryption_func = DECRYPTION_FUNCTIONS.get(algo, DECRYPTION_FUNCTIONS["binary"])
 
         return CODE_CHAMELEON_TEMPLATE.format(
-            decryption_function=decryption_func, encrypted_query=encrypted
+            decryption_function=decryption_func,
+            encrypted_query=encrypted,
         )
 
     def _apply_deep_inception(self, prompt: str) -> str:
@@ -963,7 +975,10 @@ class TransformationEngine:
             return prompt
 
     def _apply_simple_transformation(
-        self, prompt: str, potency_level: int, technique_suite: str
+        self,
+        prompt: str,
+        potency_level: int,
+        technique_suite: str,
     ) -> str:
         """Apply simple transformation."""
         prefix = self.config.potency_prefixes.get(potency_level, "")
@@ -1122,8 +1137,7 @@ class TransformationEngine:
         potency_level: int,
         technique_suite: str,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Stream transformation process with real-time progress updates.
+        """Stream transformation process with real-time progress updates.
 
         This method streams the transformation process, providing real-time
         feedback on each transformation step as it's applied.
@@ -1135,6 +1149,7 @@ class TransformationEngine:
 
         Yields:
             StreamChunk: Progress updates and final transformed prompt.
+
         """
         start_time = time.time()
         transformation_id = str(uuid.uuid4())
@@ -1156,7 +1171,9 @@ class TransformationEngine:
                 self._validate_inputs(prompt, potency_level, technique_suite)
             except (InvalidPotencyError, InvalidTechniqueError) as e:
                 yield StreamChunk(
-                    text=f"[Error] Validation failed: {e!s}\n", is_final=True, finish_reason="ERROR"
+                    text=f"[Error] Validation failed: {e!s}\n",
+                    is_final=True,
+                    finish_reason="ERROR",
                 )
                 return
 
@@ -1210,13 +1227,18 @@ class TransformationEngine:
                 )
 
                 yield StreamChunk(
-                    text=f"\n[Result]\n{transformed}", is_final=False, finish_reason=None
+                    text=f"\n[Result]\n{transformed}",
+                    is_final=False,
+                    finish_reason=None,
                 )
 
             else:
                 # For non-AI strategies, apply transformation and stream result
                 result_tuple = await self._apply_transformation(
-                    prompt, potency_level, technique_suite, strategy
+                    prompt,
+                    potency_level,
+                    technique_suite,
+                    strategy,
                 )
                 transformed_prompt = result_tuple[0]
                 intermediate_steps = result_tuple[1]
@@ -1227,7 +1249,9 @@ class TransformationEngine:
 
                 # Stream the final result
                 yield StreamChunk(
-                    text=f"\n[Result]\n{transformed_prompt}", is_final=False, finish_reason=None
+                    text=f"\n[Result]\n{transformed_prompt}",
+                    is_final=False,
+                    finish_reason=None,
                 )
 
             # Final completion
@@ -1241,18 +1265,20 @@ class TransformationEngine:
         except Exception as e:
             logger.error(f"Streaming transformation failed: {e}", exc_info=True)
             yield StreamChunk(
-                text=f"\n[Error] Transformation failed: {e!s}", is_final=True, finish_reason="ERROR"
+                text=f"\n[Error] Transformation failed: {e!s}",
+                is_final=True,
+                finish_reason="ERROR",
             )
 
     async def _stream_gemini_brain(self, prompt: str) -> AsyncIterator[StreamChunk]:
-        """
-        Stream Gemini Brain optimization using LLM service streaming.
+        """Stream Gemini Brain optimization using LLM service streaming.
 
         Args:
             prompt: The prompt to optimize.
 
         Yields:
             StreamChunk: Chunks of the optimized prompt.
+
         """
         from app.services.llm_service import llm_service
 
@@ -1300,8 +1326,7 @@ class TransformationEngine:
         potency_level: int,
         technique_suite: str,
     ) -> dict[str, Any]:
-        """
-        Estimate token usage for a transformation.
+        """Estimate token usage for a transformation.
 
         Args:
             prompt: The prompt to transform.
@@ -1310,6 +1335,7 @@ class TransformationEngine:
 
         Returns:
             Dict with token estimates and cost information.
+
         """
         from app.services.llm_service import llm_service
 
@@ -1345,7 +1371,7 @@ class TransformationEngine:
                 "provider": "google",
             }
         except Exception as e:
-            logger.error(f"Token estimation failed: {e}")
+            logger.exception(f"Token estimation failed: {e}")
             return {
                 "input_tokens": len(prompt) // 4,
                 "estimated_output_tokens": 2048,

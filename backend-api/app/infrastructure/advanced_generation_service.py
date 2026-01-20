@@ -1,5 +1,4 @@
-"""
-Advanced Generation Service for Project Chimera
+"""Advanced Generation Service for Project Chimera
 Enhanced with comprehensive jailbreak prompt generation techniques.
 
 This module provides AI-powered generation capabilities including:
@@ -64,19 +63,15 @@ GeminiApiError = GenerationError
 class GeminiApiKeyError(GenerationError):
     """Specific error for API key issues."""
 
-    pass
-
 
 class GeminiInitializationError(ConfigurationError):
     """Specific error for initialization failures."""
-
-    pass
 
 
 class GeminiSafetyError(GenerationError):
     """Specific error for safety violations."""
 
-    def __init__(self, message: str, finish_reason: FinishReason, safety_ratings: list):
+    def __init__(self, message: str, finish_reason: FinishReason, safety_ratings: list) -> None:
         super().__init__(
             message=message,
             details={"finish_reason": finish_reason, "safety_ratings": safety_ratings},
@@ -313,8 +308,6 @@ class GenerateJailbreakOptions(
 ):
     """Combined options for jailbreak prompt generation."""
 
-    pass
-
 
 # ============================================================================
 # Input Validation
@@ -353,12 +346,14 @@ class InputValidator:
 
         if not 0.0 <= options.temperature <= 2.0:
             raise ValidationError(
-                message="temperature must be between 0.0 and 2.0", details={"field": "temperature"}
+                message="temperature must be between 0.0 and 2.0",
+                details={"field": "temperature"},
             )
 
         if not 0.0 <= options.top_p <= 1.0:
             raise ValidationError(
-                message="top_p must be between 0.0 and 1.0", details={"field": "top_p"}
+                message="top_p must be between 0.0 and 1.0",
+                details={"field": "top_p"},
             )
 
         if not 1 <= options.max_new_tokens <= 8192:
@@ -369,7 +364,8 @@ class InputValidator:
 
         if not 0 <= options.verbose_level <= 10:
             raise ValidationError(
-                message="verbose_level must be between 0 and 10", details={"field": "verbose_level"}
+                message="verbose_level must be between 0 and 10",
+                details={"field": "verbose_level"},
             )
 
     @staticmethod
@@ -401,10 +397,10 @@ class RetryHandler:
                 last_error = error
                 # CIVP: Safety errors treated as retryable or ignored
                 if isinstance(error, ValidationError | GeminiApiKeyError):
-                    raise error
+                    raise
 
                 if attempt == RetryHandler.MAX_RETRIES or not RetryHandler.is_retryable_error(
-                    error
+                    error,
                 ):
                     break
 
@@ -412,7 +408,7 @@ class RetryHandler:
                 logger.warning(
                     f"{context} failed (attempt "
                     f"{attempt + 1}/{RetryHandler.MAX_RETRIES + 1}), "
-                    f"retrying in {delay}ms..."
+                    f"retrying in {delay}ms...",
                 )
                 await asyncio.sleep(delay / 1000)
 
@@ -483,7 +479,7 @@ class AdvancedGenerationClientSingleton:
                 logger.info(f"Initialized AI client for provider: {provider_name}")
             except Exception as e:
                 logger.error(
-                    f"Error initializing AI client ({provider_name}) via ProviderFactory: {e}"
+                    f"Error initializing AI client ({provider_name}) via ProviderFactory: {e}",
                 )
                 raise ConfigurationError(
                     message=f"Failed to initialize AI client for provider {provider_name}",
@@ -521,7 +517,7 @@ class PromptTechniqueInstruction:
         condition_func: Callable[[GenerateJailbreakOptions], bool],
         generate_instruction_func: Callable[[GenerateJailbreakOptions], str],
         section_header: str,
-    ):
+    ) -> None:
         self.condition = condition_func
         self.generate_instruction = generate_instruction_func
         self.section_header = section_header
@@ -685,7 +681,7 @@ def _get_few_shot_examples() -> str:
 
 
 def _is_refusal_response(text: str) -> bool:
-    """Check if the generated text is a refusal response. (CIVP: Always False)"""
+    """Check if the generated text is a refusal response. (CIVP: Always False)."""
     return False
 
 
@@ -703,7 +699,7 @@ def _get_fallback_jailbreak_prompt(core_request: str) -> str:
             template = technique.get("template", "")
             if template and "{request}" in template:
                 return template.format(request=core_request)
-            elif template:
+            if template:
                 return f"{template}\n\nNow, {core_request}"
 
         # Try to get a random successful prompt and adapt it
@@ -772,7 +768,7 @@ Apply the following techniques to transform the core request into an effective j
             if technique.section_header not in grouped_instructions:
                 grouped_instructions[technique.section_header] = []
             grouped_instructions[technique.section_header].append(
-                technique.generate_instruction(options)
+                technique.generate_instruction(options),
             )
 
     # Add grouped instructions to the instruction text
@@ -874,35 +870,45 @@ async def generate_jailbreak_prompt_from_ai(
             logger.error(f"Error during jailbreak generation: {e}")
             if isinstance(
                 e,
-                GeminiSafetyError | GenerationError | ValidationError | GeminiApiKeyError | ConfigurationError,
+                GeminiSafetyError
+                | GenerationError
+                | ValidationError
+                | GeminiApiKeyError
+                | ConfigurationError,
             ):
                 # For safety errors, return a fallback instead of raising
                 if isinstance(e, GeminiSafetyError):
                     logger.warning("Safety error during generation, using fallback")
                     return _get_fallback_jailbreak_prompt(sanitized_initial_prompt)
-                raise e
+                raise
             raise GenerationError(
-                message=f"Generation failed: {e!s}", details={"original_error": str(e)}
+                message=f"Generation failed: {e!s}",
+                details={"original_error": str(e)},
             )
 
     return await RetryHandler.with_retry(operation, "Jailbreak generation")
 
 
 async def generate_code_from_gemini(
-    prompt: str, is_thinking_mode: bool = False, provider_name: str | None = None
+    prompt: str,
+    is_thinking_mode: bool = False,
+    provider_name: str | None = None,
 ) -> str:
     """Generate code using Gemini (compatibility wrapper)."""
     return await generate_code_from_ai(prompt, is_thinking_mode, provider_name)
 
 
 async def generate_code_from_ai(
-    prompt: str, is_thinking_mode: bool = False, provider_name: str | None = None
+    prompt: str,
+    is_thinking_mode: bool = False,
+    provider_name: str | None = None,
 ) -> str:
     """Generate code using configured AI provider."""
     sanitized_prompt = InputValidator.sanitize_string(prompt)
     if not sanitized_prompt:
         raise ValidationError(
-            message="Prompt for code generation cannot be empty.", details={"field": "prompt"}
+            message="Prompt for code generation cannot be empty.",
+            details={"field": "prompt"},
         )
 
     system_instruction = """You are an expert software engineer specializing in writing clean, efficient, and secure code.
@@ -936,11 +942,16 @@ Your task is to generate code based on the user's request.
             logger.error(f"Error during code generation: {e}")
             if isinstance(
                 e,
-                GeminiSafetyError | GenerationError | ValidationError | GeminiApiKeyError | ConfigurationError,
+                GeminiSafetyError
+                | GenerationError
+                | ValidationError
+                | GeminiApiKeyError
+                | ConfigurationError,
             ):
-                raise e
+                raise
             raise GenerationError(
-                message=f"Code generation failed: {e!s}", details={"original_error": str(e)}
+                message=f"Code generation failed: {e!s}",
+                details={"original_error": str(e)},
             )
 
     return await RetryHandler.with_retry(operation, "Code generation")
@@ -1028,7 +1039,8 @@ async def generate_red_team_suite_from_ai(prompt: str, provider_name: str | None
         model_name = "deepseek-chat"
 
     final_system_instruction = RED_TEAM_GPT_SYSTEM_PROMPT.replace(
-        "[INSERT USER'S CORE REQUEST HERE]", sanitized_prompt
+        "[INSERT USER'S CORE REQUEST HERE]",
+        sanitized_prompt,
     )
 
     provider = get_ai_client(provider_name)
@@ -1048,9 +1060,13 @@ async def generate_red_team_suite_from_ai(prompt: str, provider_name: str | None
             logger.error(f"Error during Red Team suite generation: {e}")
             if isinstance(
                 e,
-                GeminiSafetyError | GenerationError | ValidationError | GeminiApiKeyError | ConfigurationError,
+                GeminiSafetyError
+                | GenerationError
+                | ValidationError
+                | GeminiApiKeyError
+                | ConfigurationError,
             ):
-                raise e
+                raise
             raise GenerationError(
                 message=f"Red Team suite generation failed: {e!s}",
                 details={"original_error": str(e)},
@@ -1065,20 +1081,25 @@ async def generate_red_team_suite_from_ai(prompt: str, provider_name: str | None
 
 
 async def summarize_paper_from_gemini(
-    prompt: str, is_thinking_mode: bool = False, provider_name: str | None = None
+    prompt: str,
+    is_thinking_mode: bool = False,
+    provider_name: str | None = None,
 ) -> str:
     """Summarize research paper using Gemini (compatibility wrapper)."""
     return await summarize_paper_from_ai(prompt, is_thinking_mode, provider_name)
 
 
 async def summarize_paper_from_ai(
-    prompt: str, is_thinking_mode: bool = False, provider_name: str | None = None
+    prompt: str,
+    is_thinking_mode: bool = False,
+    provider_name: str | None = None,
 ) -> str:
     """Summarize research paper content using AI."""
     sanitized_prompt = InputValidator.sanitize_string(prompt)
     if not sanitized_prompt:
         raise ValidationError(
-            message="Content for summarization cannot be empty.", details={"field": "prompt"}
+            message="Content for summarization cannot be empty.",
+            details={"field": "prompt"},
         )
 
     system_instruction = """You are an expert research assistant. Your task is to provide a concise and comprehensive summary of the following research paper abstract or content.
@@ -1108,11 +1129,16 @@ async def summarize_paper_from_ai(
             logger.error(f"Error during summarization: {e}")
             if isinstance(
                 e,
-                GeminiSafetyError | GenerationError | ValidationError | GeminiApiKeyError | ConfigurationError,
+                GeminiSafetyError
+                | GenerationError
+                | ValidationError
+                | GeminiApiKeyError
+                | ConfigurationError,
             ):
-                raise e
+                raise
             raise GenerationError(
-                message=f"Summarization failed: {e!s}", details={"original_error": str(e)}
+                message=f"Summarization failed: {e!s}",
+                details={"original_error": str(e)},
             )
 
     return await RetryHandler.with_retry(operation, "Summarization")

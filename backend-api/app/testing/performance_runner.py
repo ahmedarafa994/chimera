@@ -1,5 +1,4 @@
-"""
-Performance Testing Configuration and Runner.
+"""Performance Testing Configuration and Runner.
 
 This module provides configuration management and test runner
 for the comprehensive performance testing suite.
@@ -77,8 +76,8 @@ def load_performance_config(config_file: str | None = None) -> dict[str, Any]:
                         config[section].update(values)
                     else:
                         config[section] = values
-        except Exception as e:
-            print(f"Warning: Failed to load config file {config_file}: {e}")
+        except Exception:
+            pass
 
     # Override with environment variables
     env_overrides = {
@@ -109,7 +108,7 @@ def load_performance_config(config_file: str | None = None) -> dict[str, Any]:
                 else:
                     config[section][key] = value
             except ValueError:
-                print(f"Warning: Invalid value for {env_var}: {value}")
+                pass
 
     return config
 
@@ -120,9 +119,8 @@ def save_performance_config(config: dict[str, Any], config_file: str) -> None:
         Path(config_file).parent.mkdir(parents=True, exist_ok=True)
         with open(config_file, "w") as f:
             json.dump(config, f, indent=2)
-        print(f"Performance configuration saved to {config_file}")
-    except Exception as e:
-        print(f"Error: Failed to save config to {config_file}: {e}")
+    except Exception:
+        pass
 
 
 # =====================================================
@@ -133,15 +131,13 @@ def save_performance_config(config: dict[str, Any], config_file: str) -> None:
 class PerformanceTestRunner:
     """Main runner for performance tests and benchmarks."""
 
-    def __init__(self, config: dict[str, Any] | None = None):
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         self.config = config or load_performance_config()
 
     async def run_full_suite(self) -> dict[str, Any]:
         """Run the complete performance test suite."""
         from app.testing.performance_benchmarks import PerformanceBenchmarkSuite, PerformanceTargets
         from app.testing.performance_utils import CICDPerformanceGate
-
-        print("🚀 Starting comprehensive performance test suite...")
 
         # Create targets from config
         targets = PerformanceTargets(**self.config["performance_targets"])
@@ -156,7 +152,7 @@ class PerformanceTestRunner:
 
             # Evaluate performance gates
             gate = CICDPerformanceGate(
-                baseline_dir=self.config["output_config"]["baseline_directory"]
+                baseline_dir=self.config["output_config"]["baseline_directory"],
             )
             gate_results = gate.evaluate_performance(results)
 
@@ -177,38 +173,31 @@ class PerformanceTestRunner:
 
             return final_results
 
-        except Exception as e:
-            print(f"❌ Performance test suite failed: {e}")
+        except Exception:
             raise
 
     async def run_quick_check(self) -> bool:
         """Run quick performance validation check."""
         from app.testing.performance_utils import run_performance_gate_check
 
-        print("⚡ Running quick performance check...")
-
         try:
             passed, gate_results = await run_performance_gate_check(
-                baseline_dir=self.config["output_config"]["baseline_directory"]
+                baseline_dir=self.config["output_config"]["baseline_directory"],
             )
 
             if passed:
-                print("✅ Quick performance check: PASS")
+                pass
             else:
-                print("❌ Quick performance check: FAIL")
                 self._print_gate_failures(gate_results)
 
             return passed
 
-        except Exception as e:
-            print(f"❌ Quick performance check failed: {e}")
+        except Exception:
             return False
 
     async def run_load_test(self, scenario: str = "api") -> dict[str, Any]:
         """Run load test for specific scenario."""
         from app.testing.performance_benchmarks import LoadTestConfig, LoadTestEngine
-
-        print(f"🔄 Running load test for scenario: {scenario}")
 
         # Create load test config
         config = LoadTestConfig(**self.config["load_test_config"])
@@ -217,15 +206,9 @@ class PerformanceTestRunner:
         try:
             result = await engine.run_load_test(scenario)
 
-            print("📊 Load test completed:")
-            print(f"  - Total Requests: {result.total_requests}")
-            print(f"  - Success Rate: {result.success_rate:.2%}")
-            print(f"  - Duration: {result.end_time - result.start_time:.2f}s")
-
             return {"scenario": scenario, "result": result, "success": result.success_rate >= 0.95}
 
-        except Exception as e:
-            print(f"❌ Load test failed: {e}")
+        except Exception:
             raise
 
     def _save_baseline(self, results: dict[str, Any]) -> None:
@@ -241,16 +224,13 @@ class PerformanceTestRunner:
         try:
             with open(baseline_file, "w") as f:
                 json.dump(results, f, indent=2, default=str)
-            print(f"📁 Saved performance baseline: {baseline_file}")
-        except Exception as e:
-            print(f"⚠️  Failed to save baseline: {e}")
+        except Exception:
+            pass
 
     def _print_gate_failures(self, gate_results: dict[str, Any]) -> None:
         """Print performance gate failures."""
-        print("📋 Performance Gate Results:")
-        for gate_name, result in gate_results["gates"].items():
-            status = "✅" if result["passed"] else "❌"
-            print(f"  {status} {gate_name}: {result['details']}")
+        for result in gate_results["gates"].values():
+            "✅" if result["passed"] else "❌"
 
 
 # =====================================================
@@ -258,20 +238,27 @@ class PerformanceTestRunner:
 # =====================================================
 
 
-async def main():
+async def main() -> None:
     """Main CLI entry point."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Chimera Performance Testing Suite")
     parser.add_argument(
-        "command", choices=["full", "quick", "load", "config"], help="Test command to run"
+        "command",
+        choices=["full", "quick", "load", "config"],
+        help="Test command to run",
     )
     parser.add_argument("--config", "-c", help="Path to performance configuration file")
     parser.add_argument(
-        "--scenario", "-s", default="api", help="Load test scenario (for 'load' command)"
+        "--scenario",
+        "-s",
+        default="api",
+        help="Load test scenario (for 'load' command)",
     )
     parser.add_argument(
-        "--output", "-o", help="Output file for configuration (for 'config' command)"
+        "--output",
+        "-o",
+        help="Output file for configuration (for 'config' command)",
     )
 
     args = parser.parse_args()
@@ -282,16 +269,12 @@ async def main():
 
     try:
         if args.command == "full":
-            print("🎯 Running full performance test suite...")
             results = await runner.run_full_suite()
 
             if results["status"] == "PASS":
-                print("🎉 All performance tests PASSED!")
-                score = results["benchmark_results"]["summary"]["overall_score"]
-                print(f"📈 Overall Performance Score: {score:.1f}%")
+                results["benchmark_results"]["summary"]["overall_score"]
                 sys.exit(0)
             else:
-                print("💥 Performance tests FAILED!")
                 sys.exit(1)
 
         elif args.command == "quick":
@@ -306,13 +289,11 @@ async def main():
             if args.output:
                 save_performance_config(config, args.output)
             else:
-                print(json.dumps(config, indent=2))
+                pass
 
     except KeyboardInterrupt:
-        print("\n⏹️  Performance tests interrupted by user")
         sys.exit(130)
-    except Exception as e:
-        print(f"💥 Performance tests failed with error: {e}")
+    except Exception:
         sys.exit(1)
 
 

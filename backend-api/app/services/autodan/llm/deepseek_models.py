@@ -2,7 +2,7 @@ from openai import OpenAI
 
 
 class DeepSeekModel:
-    def __init__(self, api_key, model):
+    def __init__(self, api_key, model) -> None:
         self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
         self.model = model
 

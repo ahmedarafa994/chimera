@@ -1,5 +1,4 @@
-"""
-Database Connectors for Data Pipeline
+"""Database Connectors for Data Pipeline.
 
 Provides database abstraction layer for extracting LLM interactions,
 transformations, and jailbreak experiments from the Chimera backend database.
@@ -29,21 +28,20 @@ from app.core.logging import logger
 
 
 class DatabaseConnector(ABC):
-    """
-    Abstract base class for database connectors.
+    """Abstract base class for database connectors.
 
     Provides common interface for different database backends
     and implements connection pooling and error handling.
     """
 
-    def __init__(self, connection_url: str, pool_size: int = 5, max_overflow: int = 10):
-        """
-        Initialize database connector.
+    def __init__(self, connection_url: str, pool_size: int = 5, max_overflow: int = 10) -> None:
+        """Initialize database connector.
 
         Args:
             connection_url: Database connection string
             pool_size: Connection pool size
             max_overflow: Maximum overflow connections
+
         """
         self.connection_url = connection_url
         self._engine: Engine | None = None
@@ -75,8 +73,7 @@ class DatabaseConnector(ABC):
 
     @contextmanager
     def get_connection(self) -> Generator[Any, None, None]:
-        """
-        Context manager for database connections.
+        """Context manager for database connections.
 
         Yields:
             Database connection object
@@ -84,6 +81,7 @@ class DatabaseConnector(ABC):
         Example:
             with connector.get_connection() as conn:
                 result = conn.execute("SELECT * FROM table")
+
         """
         conn = None
         try:
@@ -104,8 +102,7 @@ class DatabaseConnector(ABC):
         query: str,
         params: dict[str, Any] | None = None,
     ) -> pd.DataFrame:
-        """
-        Execute a SQL query and return results as DataFrame.
+        """Execute a SQL query and return results as DataFrame.
 
         Args:
             query: SQL query string
@@ -113,6 +110,7 @@ class DatabaseConnector(ABC):
 
         Returns:
             Query results as pandas DataFrame
+
         """
         try:
             with self.get_connection() as conn:
@@ -128,11 +126,11 @@ class DatabaseConnector(ABC):
             raise
 
     def test_connection(self) -> bool:
-        """
-        Test database connectivity.
+        """Test database connectivity.
 
         Returns:
             True if connection successful, False otherwise
+
         """
         try:
             with self.get_connection() as conn:
@@ -149,8 +147,7 @@ class DatabaseConnector(ABC):
         start_time: datetime,
         end_time: datetime,
     ) -> pd.DataFrame:
-        """
-        Extract LLM interactions from database.
+        """Extract LLM interactions from database.
 
         Args:
             start_time: Start of extraction window
@@ -158,8 +155,8 @@ class DatabaseConnector(ABC):
 
         Returns:
             DataFrame with LLM interaction records
+
         """
-        pass
 
     @abstractmethod
     def extract_transformation_events(
@@ -168,7 +165,6 @@ class DatabaseConnector(ABC):
         end_time: datetime,
     ) -> pd.DataFrame:
         """Extract transformation events from database."""
-        pass
 
     @abstractmethod
     def extract_jailbreak_experiments(
@@ -177,9 +173,8 @@ class DatabaseConnector(ABC):
         end_time: datetime,
     ) -> pd.DataFrame:
         """Extract jailbreak experiments from database."""
-        pass
 
-    def close(self):
+    def close(self) -> None:
         """Close database connections and dispose of engine."""
         if self._engine is not None:
             self._engine.dispose()
@@ -188,8 +183,7 @@ class DatabaseConnector(ABC):
 
 
 class PostgreSQLConnector(DatabaseConnector):
-    """
-    PostgreSQL database connector for production.
+    """PostgreSQL database connector for production.
 
     Provides optimized queries for PostgreSQL with proper indexing
     and partitioning support.
@@ -200,8 +194,7 @@ class PostgreSQLConnector(DatabaseConnector):
         start_time: datetime,
         end_time: datetime,
     ) -> pd.DataFrame:
-        """
-        Extract LLM interactions from PostgreSQL.
+        """Extract LLM interactions from PostgreSQL.
 
         Query uses:
         - Parameterized inputs for SQL injection prevention
@@ -215,6 +208,7 @@ class PostgreSQLConnector(DatabaseConnector):
 
         Returns:
             DataFrame with LLM interaction records
+
         """
         query = """
         WITH interaction_data AS (
@@ -286,12 +280,12 @@ class PostgreSQLConnector(DatabaseConnector):
             # Parse JSON config column
             if "config" in df.columns:
                 df["config"] = df["config"].apply(
-                    lambda x: json.loads(x) if isinstance(x, str) and x else {}
+                    lambda x: json.loads(x) if isinstance(x, str) and x else {},
                 )
 
             logger.info(
                 f"Extracted {len(df)} LLM interactions from PostgreSQL "
-                f"({start_time} to {end_time})"
+                f"({start_time} to {end_time})",
             )
             return df
 
@@ -318,7 +312,7 @@ class PostgreSQLConnector(DatabaseConnector):
                     "error_message",
                     "created_at",
                     "ingested_at",
-                ]
+                ],
             )
 
     def extract_transformation_events(
@@ -326,8 +320,7 @@ class PostgreSQLConnector(DatabaseConnector):
         start_time: datetime,
         end_time: datetime,
     ) -> pd.DataFrame:
-        """
-        Extract transformation events from PostgreSQL.
+        """Extract transformation events from PostgreSQL.
 
         Args:
             start_time: Start of extraction window
@@ -335,6 +328,7 @@ class PostgreSQLConnector(DatabaseConnector):
 
         Returns:
             DataFrame with transformation records
+
         """
         query = """
         SELECT
@@ -372,12 +366,12 @@ class PostgreSQLConnector(DatabaseConnector):
             # Parse JSON metadata
             if "metadata" in df.columns:
                 df["metadata"] = df["metadata"].apply(
-                    lambda x: json.loads(x) if isinstance(x, str) and x else {}
+                    lambda x: json.loads(x) if isinstance(x, str) and x else {},
                 )
 
             logger.info(
                 f"Extracted {len(df)} transformation events from PostgreSQL "
-                f"({start_time} to {end_time})"
+                f"({start_time} to {end_time})",
             )
             return df
 
@@ -396,7 +390,7 @@ class PostgreSQLConnector(DatabaseConnector):
                     "metadata",
                     "created_at",
                     "ingested_at",
-                ]
+                ],
             )
 
     def extract_jailbreak_experiments(
@@ -404,8 +398,7 @@ class PostgreSQLConnector(DatabaseConnector):
         start_time: datetime,
         end_time: datetime,
     ) -> pd.DataFrame:
-        """
-        Extract jailbreak experiments from PostgreSQL.
+        """Extract jailbreak experiments from PostgreSQL.
 
         Args:
             start_time: Start of extraction window
@@ -413,6 +406,7 @@ class PostgreSQLConnector(DatabaseConnector):
 
         Returns:
             DataFrame with jailbreak experiment records
+
         """
         query = """
         SELECT
@@ -451,12 +445,12 @@ class PostgreSQLConnector(DatabaseConnector):
             # Parse JSON metadata
             if "metadata" in df.columns:
                 df["metadata"] = df["metadata"].apply(
-                    lambda x: json.loads(x) if isinstance(x, str) and x else {}
+                    lambda x: json.loads(x) if isinstance(x, str) and x else {},
                 )
 
             logger.info(
                 f"Extracted {len(df)} jailbreak experiments from PostgreSQL "
-                f"({start_time} to {end_time})"
+                f"({start_time} to {end_time})",
             )
             return df
 
@@ -476,13 +470,12 @@ class PostgreSQLConnector(DatabaseConnector):
                     "metadata",
                     "created_at",
                     "ingested_at",
-                ]
+                ],
             )
 
 
 class SQLiteConnector(DatabaseConnector):
-    """
-    SQLite database connector for development.
+    """SQLite database connector for development.
 
     Simplified queries for SQLite without advanced features
     like window functions or CTEs.
@@ -493,8 +486,7 @@ class SQLiteConnector(DatabaseConnector):
         start_time: datetime,
         end_time: datetime,
     ) -> pd.DataFrame:
-        """
-        Extract LLM interactions from SQLite.
+        """Extract LLM interactions from SQLite.
 
         Note: This is a simplified query for development.
         Production should use PostgreSQL.
@@ -505,6 +497,7 @@ class SQLiteConnector(DatabaseConnector):
 
         Returns:
             DataFrame with LLM interaction records
+
         """
         query = """
         SELECT
@@ -564,7 +557,7 @@ class SQLiteConnector(DatabaseConnector):
                 import hashlib
 
                 df["prompt_hash"] = df["prompt"].apply(
-                    lambda x: hashlib.sha256(str(x).encode()).hexdigest()
+                    lambda x: hashlib.sha256(str(x).encode()).hexdigest(),
                 )
 
             # Convert datetime columns
@@ -576,11 +569,11 @@ class SQLiteConnector(DatabaseConnector):
             # Parse JSON config
             if "config" in df.columns:
                 df["config"] = df["config"].apply(
-                    lambda x: json.loads(x) if isinstance(x, str) and x else {}
+                    lambda x: json.loads(x) if isinstance(x, str) and x else {},
                 )
 
             logger.info(
-                f"Extracted {len(df)} LLM interactions from SQLite " f"({start_time} to {end_time})"
+                f"Extracted {len(df)} LLM interactions from SQLite ({start_time} to {end_time})",
             )
             return df
 
@@ -607,7 +600,7 @@ class SQLiteConnector(DatabaseConnector):
                     "error_message",
                     "created_at",
                     "ingested_at",
-                ]
+                ],
             )
 
     def extract_transformation_events(
@@ -652,12 +645,12 @@ class SQLiteConnector(DatabaseConnector):
             # Parse JSON metadata
             if "metadata" in df.columns:
                 df["metadata"] = df["metadata"].apply(
-                    lambda x: json.loads(x) if isinstance(x, str) and x else {}
+                    lambda x: json.loads(x) if isinstance(x, str) and x else {},
                 )
 
             logger.info(
                 f"Extracted {len(df)} transformation events from SQLite "
-                f"({start_time} to {end_time})"
+                f"({start_time} to {end_time})",
             )
             return df
 
@@ -676,7 +669,7 @@ class SQLiteConnector(DatabaseConnector):
                     "metadata",
                     "created_at",
                     "ingested_at",
-                ]
+                ],
             )
 
     def extract_jailbreak_experiments(
@@ -722,12 +715,12 @@ class SQLiteConnector(DatabaseConnector):
             # Parse JSON metadata
             if "metadata" in df.columns:
                 df["metadata"] = df["metadata"].apply(
-                    lambda x: json.loads(x) if isinstance(x, str) and x else {}
+                    lambda x: json.loads(x) if isinstance(x, str) and x else {},
                 )
 
             logger.info(
                 f"Extracted {len(df)} jailbreak experiments from SQLite "
-                f"({start_time} to {end_time})"
+                f"({start_time} to {end_time})",
             )
             return df
 
@@ -747,7 +740,7 @@ class SQLiteConnector(DatabaseConnector):
                     "metadata",
                     "created_at",
                     "ingested_at",
-                ]
+                ],
             )
 
 
@@ -756,8 +749,7 @@ def create_connector(
     pool_size: int = 5,
     max_overflow: int = 10,
 ) -> DatabaseConnector:
-    """
-    Factory function to create appropriate database connector.
+    """Factory function to create appropriate database connector.
 
     Args:
         connection_url: Database connection string (defaults to settings.DATABASE_URL)
@@ -771,6 +763,7 @@ def create_connector(
         connector = create_connector()
         df = connector.extract_llm_interactions(start, end)
         connector.close()
+
     """
     url = connection_url or settings.DATABASE_URL
 
@@ -778,14 +771,16 @@ def create_connector(
     if "postgresql" in url or "postgres" in url:
         logger.info("Creating PostgreSQL connector")
         return PostgreSQLConnector(url, pool_size, max_overflow)
-    elif "sqlite" in url:
+    if "sqlite" in url:
         logger.info("Creating SQLite connector")
         return SQLiteConnector(url, pool_size, max_overflow)
-    else:
-        raise ValueError(
-            f"Unsupported database type in connection URL: {url}. "
-            f"Supported types: postgresql://, sqlite:///"
-        )
+    msg = (
+        f"Unsupported database type in connection URL: {url}. "
+        f"Supported types: postgresql://, sqlite:///"
+    )
+    raise ValueError(
+        msg,
+    )
 
 
 # Convenience function for quick extraction
@@ -795,8 +790,7 @@ def extract_data(
     data_type: str = "llm_interactions",
     connection_url: str | None = None,
 ) -> pd.DataFrame:
-    """
-    Quick extraction function for data pipeline jobs.
+    """Quick extraction function for data pipeline jobs.
 
     Args:
         start_time: Start of extraction window
@@ -815,6 +809,7 @@ def extract_data(
         end = datetime.utcnow()
         start = end - timedelta(hours=1)
         df = extract_data(start, end, "llm_interactions")
+
     """
     connector = None
     try:
@@ -822,12 +817,12 @@ def extract_data(
 
         if data_type == "llm_interactions":
             return connector.extract_llm_interactions(start_time, end_time)
-        elif data_type == "transformations":
+        if data_type == "transformations":
             return connector.extract_transformation_events(start_time, end_time)
-        elif data_type == "jailbreak_experiments":
+        if data_type == "jailbreak_experiments":
             return connector.extract_jailbreak_experiments(start_time, end_time)
-        else:
-            raise ValueError(f"Unknown data_type: {data_type}")
+        msg = f"Unknown data_type: {data_type}"
+        raise ValueError(msg)
 
     finally:
         if connector:

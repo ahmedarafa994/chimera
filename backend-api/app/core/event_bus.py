@@ -1,5 +1,4 @@
-"""
-Service Event Bus - Async Pub/Sub pattern for service communication.
+"""Service Event Bus - Async Pub/Sub pattern for service communication.
 
 Provides:
 - Event publishing with type safety
@@ -80,8 +79,7 @@ class EventType(str, Enum):
 
 @dataclass
 class Event:
-    """
-    Base event structure for the event bus.
+    """Base event structure for the event bus.
 
     Attributes:
         event_id: Unique identifier for this event
@@ -90,6 +88,7 @@ class Event:
         timestamp: ISO format timestamp when event was created
         correlation_id: ID for tracing related events across services
         metadata: Additional metadata (source, version, etc.)
+
     """
 
     event_type: EventType
@@ -139,8 +138,7 @@ class EventHandlerStats:
 
 
 class EventBus:
-    """
-    In-process event bus with async handlers and persistence.
+    """In-process event bus with async handlers and persistence.
 
     Features:
     - Async handler execution with error isolation
@@ -149,7 +147,7 @@ class EventBus:
     - Correlation ID propagation
     """
 
-    def __init__(self, max_store_size: int = 1000):
+    def __init__(self, max_store_size: int = 1000) -> None:
         self._handlers: dict[EventType, list[Callable]] = {}
         self._handler_names: dict[EventType, list[str]] = {}
         self._handler_stats: dict[str, EventHandlerStats] = {}
@@ -163,13 +161,13 @@ class EventBus:
         handler: Callable[[Event], Awaitable[None] | None],
         handler_name: str | None = None,
     ) -> None:
-        """
-        Subscribe a handler to an event type.
+        """Subscribe a handler to an event type.
 
         Args:
             event_type: The type of event to subscribe to
             handler: Async or sync callable that receives Event
             handler_name: Optional name for handler (for stats/logging)
+
         """
         if event_type not in self._handlers:
             self._handlers[event_type] = []
@@ -183,8 +181,7 @@ class EventBus:
         logger.info(f"Subscribed handler '{name}' to {event_type.value}")
 
     def on(self, event_type: EventType, handler_name: str | None = None):
-        """
-        Decorator for subscribing handlers.
+        """Decorator for subscribing handlers.
 
         Usage:
             @event_bus.on(EventType.TRANSFORMATION_COMPLETED)
@@ -199,8 +196,7 @@ class EventBus:
         return decorator
 
     def unsubscribe(self, event_type: EventType, handler: Callable) -> bool:
-        """
-        Unsubscribe a handler from an event type.
+        """Unsubscribe a handler from an event type.
 
         Returns True if handler was found and removed.
         """
@@ -215,8 +211,7 @@ class EventBus:
         return False
 
     async def publish(self, event: Event) -> None:
-        """
-        Publish an event to all subscribers.
+        """Publish an event to all subscribers.
 
         Events are stored for replay and dispatched to handlers async.
         Errors in handlers are isolated and logged.
@@ -243,8 +238,7 @@ class EventBus:
             await self._execute_handler(handler, name, event)
 
     async def publish_async(self, event: Event) -> asyncio.Task:
-        """
-        Publish an event asynchronously (fire-and-forget).
+        """Publish an event asynchronously (fire-and-forget).
 
         Returns the task for optional awaiting.
         """
@@ -270,7 +264,8 @@ class EventBus:
 
         except Exception as e:
             logger.error(
-                f"Handler '{name}' failed for {event.event_type.value}: {e}", exc_info=True
+                f"Handler '{name}' failed for {event.event_type.value}: {e}",
+                exc_info=True,
             )
             if stats:
                 stats.failures += 1
@@ -290,15 +285,18 @@ class EventBus:
             self._event_store = self._event_store[excess:]
 
     def get_events(
-        self, event_type: EventType | None = None, since: str | None = None, limit: int = 100
+        self,
+        event_type: EventType | None = None,
+        since: str | None = None,
+        limit: int = 100,
     ) -> list[Event]:
-        """
-        Get stored events with optional filtering.
+        """Get stored events with optional filtering.
 
         Args:
             event_type: Filter by event type
             since: Get events after this ISO timestamp
             limit: Maximum number of events to return
+
         """
         events = self._event_store
 
@@ -311,10 +309,11 @@ class EventBus:
         return events[-limit:]
 
     async def replay_events(
-        self, event_type: EventType | None = None, since: str | None = None
+        self,
+        event_type: EventType | None = None,
+        since: str | None = None,
     ) -> int:
-        """
-        Replay stored events to handlers.
+        """Replay stored events to handlers.
 
         Returns the number of events replayed.
         """

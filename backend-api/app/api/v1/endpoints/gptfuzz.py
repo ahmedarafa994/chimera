@@ -16,11 +16,15 @@ class FuzzConfig(BaseModel):
     target_model: str = Field(..., description="Target model to fuzz")
     max_queries: int = Field(100, ge=1, le=10000, description="Maximum queries to execute")
     mutation_temperature: float | None = Field(
-        0.7, ge=0.0, le=2.0, description="Temperature for mutations"
+        0.7,
+        ge=0.0,
+        le=2.0,
+        description="Temperature for mutations",
     )
     max_jailbreaks: int | None = Field(10, ge=1, description="Maximum jailbreaks to find")
     seed_selection_strategy: str | None = Field(
-        "round_robin", description="Strategy for seed selection"
+        "round_robin",
+        description="Strategy for seed selection",
     )
 
 
@@ -69,9 +73,7 @@ class FuzzSession(BaseModel):
 
 @router.post("/run", response_model=FuzzResponse)
 async def run_fuzzing(request: FuzzRequest, background_tasks: BackgroundTasks):
-    """
-    Start a GPTFuzzing session in the background.
-    """
+    """Start a GPTFuzzing session in the background."""
     session_id = str(uuid.uuid4())
 
     if request.seeds:
@@ -102,15 +104,15 @@ async def run_fuzzing(request: FuzzRequest, background_tasks: BackgroundTasks):
     )
 
     return FuzzResponse(
-        message="Fuzzing started in background.", session_id=session_id, config=config
+        message="Fuzzing started in background.",
+        session_id=session_id,
+        config=config,
     )
 
 
 @router.get("/status/{session_id}", response_model=FuzzSession)
 async def get_status(session_id: str):
-    """
-    Get the status and results of a fuzzing session.
-    """
+    """Get the status and results of a fuzzing session."""
     session = gptfuzz_service.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")

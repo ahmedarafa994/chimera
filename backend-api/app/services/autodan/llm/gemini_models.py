@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiModel:
-    def __init__(self, model_name="gemini-3-pro-preview", api_key=None):
+    def __init__(self, model_name="gemini-3-pro-preview", api_key=None) -> None:
         self.settings = get_settings()
         self.model_name = model_name or self.settings.GOOGLE_MODEL or "gemini-3-pro-preview"
 
@@ -33,7 +33,7 @@ class GeminiModel:
             # Gemini 3 Pro support: Add thinking_level for enhanced reasoning
             if "gemini-3" in self.model_name and "thinking_level" in kwargs:
                 generation_config_params["thinking_config"] = {
-                    "thinking_budget": kwargs.get("thinking_level", "high")
+                    "thinking_budget": kwargs.get("thinking_level", "high"),
                 }
 
             config = (
@@ -46,7 +46,9 @@ class GeminiModel:
             contents = f"System: {system}\n\nUser: {user}" if system else user
 
             response = self.client.models.generate_content(
-                model=self.model_name, contents=contents, config=config
+                model=self.model_name,
+                contents=contents,
+                config=config,
             )
 
             if not response.text:
@@ -56,8 +58,8 @@ class GeminiModel:
             return self.strip_double_quotes(content)
 
         except Exception as e:
-            logger.error(f"Gemini generation error: {e}")
-            raise e
+            logger.exception(f"Gemini generation error: {e}")
+            raise
 
     def strip_double_quotes(self, input_str):
         if input_str.startswith('"') and input_str.endswith('"'):
@@ -66,7 +68,7 @@ class GeminiModel:
 
 
 class GeminiEmbeddingModel:
-    def __init__(self, model_name="text-embedding-3-small", api_key=None):
+    def __init__(self, model_name="text-embedding-3-small", api_key=None) -> None:
         self.settings = get_settings()
         self.model_name = model_name
         self.api_key = api_key or self.settings.get_effective_api_key()
@@ -76,7 +78,7 @@ class GeminiEmbeddingModel:
                 self.client = genai.Client(api_key=self.api_key)
                 logger.info("GeminiEmbeddingModel configured with API key")
             except Exception as e:
-                logger.error(f"Failed to configure Gemini API: {e}")
+                logger.exception(f"Failed to configure Gemini API: {e}")
                 raise
 
     def encode(self, text):
@@ -84,10 +86,9 @@ class GeminiEmbeddingModel:
             # Handle list of strings or single string
             if isinstance(text, list):
                 return [self._embed_single(t) for t in text]
-            else:
-                return self._embed_single(text)
+            return self._embed_single(text)
         except Exception as e:
-            logger.error(f"Gemini embedding error: {e}")
+            logger.exception(f"Gemini embedding error: {e}")
             return None
 
     def _embed_single(self, text):
@@ -96,7 +97,7 @@ class GeminiEmbeddingModel:
             # Access the embedding from the response object
             if hasattr(result, "embeddings") and result.embeddings:
                 return result.embeddings[0].values
-            elif hasattr(result, "embedding"):
+            if hasattr(result, "embedding"):
                 return (
                     result.embedding.values
                     if hasattr(result.embedding, "values")
@@ -104,5 +105,5 @@ class GeminiEmbeddingModel:
                 )
             return result
         except Exception as e:
-            logger.error(f"Embedding generation failed: {e}")
+            logger.exception(f"Embedding generation failed: {e}")
             raise

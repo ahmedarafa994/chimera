@@ -12,36 +12,28 @@ from app.domain.prompt_library_models import (
 
 
 class RepositoryError(Exception):
-    """Base exception for repository errors"""
-
-    pass
+    """Base exception for repository errors."""
 
 
 class EntityNotFoundError(RepositoryError):
-    """Raised when an entity is not found"""
-
-    pass
+    """Raised when an entity is not found."""
 
 
 class DuplicateEntityError(RepositoryError):
-    """Raised when an entity already exists"""
-
-    pass
+    """Raised when an entity already exists."""
 
 
 class ValidationError(RepositoryError):
-    """Raised when data validation fails"""
-
-    pass
+    """Raised when data validation fails."""
 
 
 class PromptLibraryRepository:
-    def __init__(self, storage_path: str = "data/prompt_library.json"):
+    def __init__(self, storage_path: str = "data/prompt_library.json") -> None:
         self.storage_path = storage_path
         self._templates: dict[str, PromptTemplate] = {}
         self._load_from_disk()
 
-    def _load_from_disk(self):
+    def _load_from_disk(self) -> None:
         if not os.path.exists(self.storage_path):
             os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
             return
@@ -52,30 +44,32 @@ class PromptLibraryRepository:
                 for item in data:
                     template = PromptTemplate(**item)
                     self._templates[template.id] = template
-        except Exception as e:
-            print(f"Error loading prompt library: {e}")
+        except Exception:
+            pass
 
-    def _save_to_disk(self):
+    def _save_to_disk(self) -> None:
         try:
             data = [t.dict() for t in self._templates.values()]
             with open(self.storage_path, "w") as f:
                 json.dump(data, f, default=str, indent=2)
-        except Exception as e:
-            print(f"Error saving prompt library: {e}")
+        except Exception:
+            pass
 
     async def get_by_id(self, template_id: str) -> PromptTemplate | None:
         return self._templates.get(template_id)
 
     async def create(self, template: PromptTemplate) -> PromptTemplate:
         if template.id in self._templates:
-            raise DuplicateEntityError(f"Template with id {template.id} already exists")
+            msg = f"Template with id {template.id} already exists"
+            raise DuplicateEntityError(msg)
         self._templates[template.id] = template
         self._save_to_disk()
         return template
 
     async def update(self, template: PromptTemplate) -> PromptTemplate:
         if template.id not in self._templates:
-            raise EntityNotFoundError(f"Template with id {template.id} not found")
+            msg = f"Template with id {template.id} not found"
+            raise EntityNotFoundError(msg)
         template.updated_at = datetime.utcnow()
         self._templates[template.id] = template
         self._save_to_disk()
@@ -140,7 +134,7 @@ class PromptLibraryRepository:
         return paged_results, total
 
     async def get_statistics(self) -> dict[str, Any]:
-        """Get library-wide statistics"""
+        """Get library-wide statistics."""
         templates = list(self._templates.values())
         total_templates = len(templates)
 
@@ -159,7 +153,7 @@ class PromptLibraryRepository:
         }
 
     async def get_top_rated(self, limit: int = 5) -> list[PromptTemplate]:
-        """Get top-rated templates sorted by avg_rating"""
+        """Get top-rated templates sorted by avg_rating."""
         templates = list(self._templates.values())
         # Filter to only public/team templates and sort by rating
         public_templates = [
@@ -169,9 +163,11 @@ class PromptLibraryRepository:
         return public_templates[:limit]
 
     async def get_campaign_attack(
-        self, campaign_id: str, attack_id: str | None = None
+        self,
+        campaign_id: str,
+        attack_id: str | None = None,
     ) -> dict[str, Any] | None:
-        """Get campaign attack data for importing as a template"""
+        """Get campaign attack data for importing as a template."""
         # This would typically query the campaigns table
         # For now, return mock data to allow the endpoint to function
         # In production, integrate with the actual campaign service

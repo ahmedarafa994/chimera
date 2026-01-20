@@ -1,5 +1,4 @@
-"""
-Google Gemini Provider Implementation for Direct API Integration
+"""Google Gemini Provider Implementation for Direct API Integration.
 
 Story 1.2: Direct API Integration
 Implements native API format for Google Gemini with streaming support.
@@ -26,8 +25,7 @@ from app.infrastructure.providers.base import BaseProvider, is_retryable_error
 
 
 class GoogleProvider(BaseProvider):
-    """
-    Google Gemini provider implementation using native API.
+    """Google Gemini provider implementation using native API.
 
     Features:
     - Direct API integration with Google Generative Language API
@@ -49,12 +47,12 @@ class GoogleProvider(BaseProvider):
         "gemini-1.5-flash",
     ]
 
-    def __init__(self, config: Settings | None = None):
-        """
-        Initialize the Google Gemini provider.
+    def __init__(self, config: Settings | None = None) -> None:
+        """Initialize the Google Gemini provider.
 
         Args:
             config: Optional configuration settings.
+
         """
         super().__init__("google", config)
         self._http_client: httpx.AsyncClient | None = None
@@ -64,14 +62,14 @@ class GoogleProvider(BaseProvider):
     # =========================================================================
 
     def _initialize_client(self, api_key: str) -> httpx.AsyncClient:
-        """
-        Initialize the Google API HTTP client.
+        """Initialize the Google API HTTP client.
 
         Args:
             api_key: The API key for authentication.
 
         Returns:
             The initialized httpx async client.
+
         """
         return httpx.AsyncClient(
             base_url=self._BASE_URL,
@@ -84,22 +82,22 @@ class GoogleProvider(BaseProvider):
         )
 
     def _get_default_model(self) -> str:
-        """
-        Get the default model name for Google Gemini.
+        """Get the default model name for Google Gemini.
 
         Returns:
             The default model name.
+
         """
         # Check config first, then use class default
         model = getattr(self.config, "google_model", None)
         return model or self._DEFAULT_MODEL
 
     def _get_api_key(self) -> str | None:
-        """
-        Get the Google API key from configuration.
+        """Get the Google API key from configuration.
 
         Returns:
             The API key, or None if not configured.
+
         """
         return getattr(self.config, "google_api_key", None)
 
@@ -109,8 +107,7 @@ class GoogleProvider(BaseProvider):
         request: PromptRequest,
         model_name: str,
     ) -> PromptResponse:
-        """
-        Generate text using Google Gemini API.
+        """Generate text using Google Gemini API.
 
         Args:
             client: The httpx client instance.
@@ -122,12 +119,13 @@ class GoogleProvider(BaseProvider):
 
         Raises:
             AppError: If generation fails.
+
         """
         # Build request payload following Google's API format
         contents = []
         if request.system_instruction:
             contents.append(
-                {"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]}
+                {"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]},
             )
 
         contents.append({"role": "user", "parts": [{"text": request.prompt}]})
@@ -155,8 +153,9 @@ class GoogleProvider(BaseProvider):
 
             # Parse response
             if "candidates" not in data or not data["candidates"]:
+                msg = "No candidates in Google response"
                 raise AppError(
-                    "No candidates in Google response",
+                    msg,
                     status_code=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -188,38 +187,41 @@ class GoogleProvider(BaseProvider):
             # Map error status codes
             status_code = e.response.status_code
             if status_code == 401:
+                msg = "Invalid Google API key"
                 raise AppError(
-                    "Invalid Google API key",
+                    msg,
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 ) from e
-            elif status_code == 429:
+            if status_code == 429:
+                msg = "Google rate limit exceeded"
                 raise AppError(
-                    "Google rate limit exceeded",
+                    msg,
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 ) from e
-            else:
-                raise AppError(
-                    f"Google API error: {e.response.text}",
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                ) from e
+            msg = f"Google API error: {e.response.text}"
+            raise AppError(
+                msg,
+                status_code=status.HTTP_502_BAD_GATEWAY,
+            ) from e
 
         except httpx.RequestError as e:
             if is_retryable_error(e):
+                msg = f"Google API connection error: {e}"
                 raise AppError(
-                    f"Google API connection error: {e}",
+                    msg,
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 ) from e
             raise
 
     async def _check_health_impl(self, client: httpx.AsyncClient) -> bool:
-        """
-        Check Google API health with a minimal request.
+        """Check Google API health with a minimal request.
 
         Args:
             client: The httpx client instance.
 
         Returns:
             True if the provider is healthy.
+
         """
         try:
             # Use a simple models list endpoint for health check
@@ -234,14 +236,14 @@ class GoogleProvider(BaseProvider):
     # =========================================================================
 
     def _build_generation_config(self, request: PromptRequest) -> dict[str, Any]:
-        """
-        Build generation config from request parameters.
+        """Build generation config from request parameters.
 
         Args:
             request: The prompt request.
 
         Returns:
             Generation config dict for Google API.
+
         """
         config = {}
 
@@ -275,8 +277,7 @@ class GoogleProvider(BaseProvider):
     # =========================================================================
 
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation from Google Gemini API.
+        """Stream text generation from Google Gemini API.
 
         Args:
             request: The prompt request.
@@ -286,6 +287,7 @@ class GoogleProvider(BaseProvider):
 
         Raises:
             AppError: If streaming fails.
+
         """
         client = self._get_client(request.api_key)
         model_name = request.model or self._get_default_model()
@@ -294,7 +296,7 @@ class GoogleProvider(BaseProvider):
         contents = []
         if request.system_instruction:
             contents.append(
-                {"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]}
+                {"role": "user", "parts": [{"text": f"System: {request.system_instruction}"}]},
             )
         contents.append({"role": "user", "parts": [{"text": request.prompt}]})
 
@@ -351,13 +353,15 @@ class GoogleProvider(BaseProvider):
                             continue
 
         except httpx.HTTPStatusError as e:
+            msg = f"Google streaming error: {e.response.text}"
             raise AppError(
-                f"Google streaming error: {e.response.text}",
+                msg,
                 status_code=e.response.status_code,
             ) from e
         except Exception as e:
+            msg = f"Google streaming failed: {e}"
             raise AppError(
-                f"Google streaming failed: {e}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             ) from e
 

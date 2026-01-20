@@ -1,5 +1,4 @@
-"""
-Synchronization Domain Models
+"""Synchronization Domain Models.
 
 Models for provider/model synchronization between backend and frontend including:
 - Sync state and metadata
@@ -16,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class SyncEventType(str, Enum):
-    """Types of synchronization events"""
+    """Types of synchronization events."""
 
     # Full sync events
     FULL_SYNC = "full_sync"
@@ -46,7 +45,7 @@ class SyncEventType(str, Enum):
 
 
 class SyncStatus(str, Enum):
-    """Synchronization status"""
+    """Synchronization status."""
 
     SYNCED = "synced"
     SYNCING = "syncing"
@@ -56,7 +55,7 @@ class SyncStatus(str, Enum):
 
 
 class ModelDeprecationStatus(str, Enum):
-    """Model deprecation status"""
+    """Model deprecation status."""
 
     ACTIVE = "active"
     DEPRECATED = "deprecated"
@@ -65,7 +64,7 @@ class ModelDeprecationStatus(str, Enum):
 
 
 class ModelSpecification(BaseModel):
-    """Detailed model specification for sync"""
+    """Detailed model specification for sync."""
 
     id: str
     name: str
@@ -108,7 +107,7 @@ class ModelSpecification(BaseModel):
 
 
 class ProviderSyncInfo(BaseModel):
-    """Provider information optimized for sync"""
+    """Provider information optimized for sync."""
 
     id: str
     provider_type: str
@@ -150,7 +149,7 @@ class ProviderSyncInfo(BaseModel):
 
 
 class SyncMetadata(BaseModel):
-    """Metadata for synchronization state"""
+    """Metadata for synchronization state."""
 
     version: int = 1
     last_sync: datetime = Field(default_factory=datetime.utcnow)
@@ -167,7 +166,7 @@ class SyncMetadata(BaseModel):
 
 
 class SyncState(BaseModel):
-    """Complete synchronization state"""
+    """Complete synchronization state."""
 
     metadata: SyncMetadata = Field(default_factory=SyncMetadata)
 
@@ -191,7 +190,7 @@ class SyncState(BaseModel):
 
 
 class SyncEvent(BaseModel):
-    """Event for real-time synchronization updates"""
+    """Event for real-time synchronization updates."""
 
     type: SyncEventType
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -214,7 +213,7 @@ class SyncEvent(BaseModel):
 
 
 class SyncRequest(BaseModel):
-    """Request for sync operations"""
+    """Request for sync operations."""
 
     client_version: int = 0
     last_sync: datetime | None = None
@@ -224,7 +223,7 @@ class SyncRequest(BaseModel):
 
 
 class SyncResponse(BaseModel):
-    """Response for sync operations"""
+    """Response for sync operations."""
 
     success: bool
     sync_type: str = "full"  # "full" or "incremental"
@@ -241,7 +240,7 @@ class SyncResponse(BaseModel):
 
 
 class ProviderAvailabilityInfo(BaseModel):
-    """Provider availability information for UI"""
+    """Provider availability information for UI."""
 
     provider_id: str
     is_available: bool
@@ -258,7 +257,7 @@ class ProviderAvailabilityInfo(BaseModel):
 
 
 class ModelAvailabilityInfo(BaseModel):
-    """Model availability information for UI"""
+    """Model availability information for UI."""
 
     model_id: str
     provider_id: str

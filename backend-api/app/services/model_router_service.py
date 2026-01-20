@@ -1,5 +1,4 @@
-"""
-Model Router Service for Multi-Provider AI Model Selection
+"""Model Router Service for Multi-Provider AI Model Selection.
 
 This service handles dynamic routing of LLM requests to the correct provider
 (Google Gemini or DeepSeek) based on user session selection. It integrates
@@ -23,8 +22,7 @@ from app.domain.models import GenerationConfig, LLMProviderType, PromptRequest, 
 
 
 def _get_config_manager():
-    """
-    Get AIConfigManager instance with graceful fallback.
+    """Get AIConfigManager instance with graceful fallback.
 
     Returns None if config manager is not available.
     """
@@ -41,7 +39,7 @@ def _get_config_manager():
 
 @dataclass
 class ProviderHealth:
-    """Health status for a provider"""
+    """Health status for a provider."""
 
     provider: str
     is_healthy: bool
@@ -56,7 +54,7 @@ class ProviderHealth:
 
 @dataclass
 class ModelSelectionEvent:
-    """Event emitted when model selection changes"""
+    """Event emitted when model selection changes."""
 
     session_id: str
     provider: str
@@ -67,8 +65,7 @@ class ModelSelectionEvent:
 
 
 class ModelRouterService:
-    """
-    Routes LLM requests to the correct provider based on user selection.
+    """Routes LLM requests to the correct provider based on user selection.
 
     Features:
     - Dynamic provider routing (Gemini/DeepSeek)
@@ -112,15 +109,15 @@ class ModelRouterService:
         "anthropic": "anthropic",
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._provider_health: dict[str, ProviderHealth] = {}
         self._selection_listeners: set[Callable[[ModelSelectionEvent], Any]] = set()
         self._initialized = False
         # Named failover chains from config
         self._failover_chains: dict[str, list[tuple[str, str]]] = {}
 
-    async def initialize(self):
-        """Initialize the router service"""
+    async def initialize(self) -> None:
+        """Initialize the router service."""
         if self._initialized:
             return
 
@@ -135,7 +132,7 @@ class ModelRouterService:
 
         self._initialized = True
         logger.info(
-            f"ModelRouterService initialized with providers: " f"{', '.join(providers_to_init)}"
+            f"ModelRouterService initialized with providers: {', '.join(providers_to_init)}",
         )
 
     def _load_config_settings(self) -> None:
@@ -157,7 +154,7 @@ class ModelRouterService:
             for chain_name, chain_def in config.failover_chains.items():
                 self._failover_chains[chain_name] = chain_def.chain
 
-            logger.info(f"Loaded {len(self._failover_chains)} failover chains " f"from config")
+            logger.info(f"Loaded {len(self._failover_chains)} failover chains from config")
         except Exception as e:
             logger.warning(f"Failed to load config settings: {e}")
 
@@ -201,8 +198,7 @@ class ModelRouterService:
         )
 
     def _normalize_provider(self, provider: str) -> str:
-        """
-        Normalize provider name to canonical form.
+        """Normalize provider name to canonical form.
 
         Uses config aliases if available.
         """
@@ -218,13 +214,13 @@ class ModelRouterService:
         return self.PROVIDER_ALIASES.get(provider.lower(), provider.lower())
 
     def _get_llm_service(self):
-        """Lazy import to avoid circular dependencies"""
+        """Lazy import to avoid circular dependencies."""
         from app.services.llm_service import llm_service
 
         return llm_service
 
     def _get_session_service(self):
-        """Lazy import to avoid circular dependencies"""
+        """Lazy import to avoid circular dependencies."""
         from app.services.session_service import session_service
 
         return session_service
@@ -234,8 +230,7 @@ class ModelRouterService:
         request: PromptRequest,
         session_id: str | None = None,
     ) -> PromptResponse:
-        """
-        Route a request to the appropriate provider based on session selection.
+        """Route a request to the appropriate provider based on session selection.
 
         Args:
             request: The prompt request to process
@@ -243,6 +238,7 @@ class ModelRouterService:
 
         Returns:
             PromptResponse from the selected provider
+
         """
         llm_service = self._get_llm_service()
         session_service = self._get_session_service()
@@ -299,7 +295,9 @@ class ModelRouterService:
         # Execute with circuit breaker protection
         try:
             response = await self._execute_with_tracking(
-                provider_name, llm_service.generate_text, final_request
+                provider_name,
+                llm_service.generate_text,
+                final_request,
             )
 
             # Update health on success
@@ -321,9 +319,13 @@ class ModelRouterService:
             raise
 
     async def _execute_with_tracking(
-        self, provider_name: str, func: Callable, *args, **kwargs
+        self,
+        provider_name: str,
+        func: Callable,
+        *args,
+        **kwargs,
     ) -> Any:
-        """Execute a function with latency tracking"""
+        """Execute a function with latency tracking."""
         start_time = datetime.utcnow()
 
         try:
@@ -340,8 +342,7 @@ class ModelRouterService:
             raise
 
     async def _is_provider_healthy(self, provider: str) -> bool:
-        """
-        Check if a provider is healthy.
+        """Check if a provider is healthy.
 
         Uses config-driven failure threshold.
         """
@@ -354,9 +355,12 @@ class ModelRouterService:
         return health.consecutive_failures < threshold
 
     async def _update_provider_health(
-        self, provider: str, success: bool, error_message: str | None = None
-    ):
-        """Update provider health status"""
+        self,
+        provider: str,
+        success: bool,
+        error_message: str | None = None,
+    ) -> None:
+        """Update provider health status."""
         if provider not in self._provider_health:
             self._provider_health[provider] = ProviderHealth(
                 provider=provider,
@@ -376,8 +380,7 @@ class ModelRouterService:
             health.error_message = error_message
 
     async def _get_fallback_provider(self, failed_provider: str) -> str | None:
-        """
-        Get a fallback provider when the primary fails.
+        """Get a fallback provider when the primary fails.
 
         Uses config-driven failover chains if available.
         """
@@ -390,7 +393,7 @@ class ModelRouterService:
                 if chain:
                     for provider, _model in chain:
                         if provider != failed_provider and await self._is_provider_healthy(
-                            provider
+                            provider,
                         ):
                             return provider
             except Exception as e:
@@ -411,14 +414,14 @@ class ModelRouterService:
         return None
 
     def get_failover_chain(self, chain_name: str) -> list[tuple[str, str]] | None:
-        """
-        Get a named failover chain from config.
+        """Get a named failover chain from config.
 
         Args:
             chain_name: Name of the chain (e.g., "premium", "cost_optimized")
 
         Returns:
             List of (provider, model) tuples or None if not found
+
         """
         # Check cached chains first
         if chain_name in self._failover_chains:
@@ -443,8 +446,7 @@ class ModelRouterService:
         chain_name: str,
         session_id: str | None = None,
     ) -> PromptResponse:
-        """
-        Route a request using a named failover chain.
+        """Route a request using a named failover chain.
 
         Args:
             request: The prompt request
@@ -453,19 +455,20 @@ class ModelRouterService:
 
         Returns:
             PromptResponse from first successful provider
+
         """
         llm_service = self._get_llm_service()
         chain = self.get_failover_chain(chain_name)
 
         if not chain:
-            logger.warning(f"Failover chain '{chain_name}' not found, " "using default routing")
+            logger.warning(f"Failover chain '{chain_name}' not found, using default routing")
             return await self.route_request(request, session_id)
 
         last_error = None
         for provider_name, model_name in chain:
             if not await self._is_provider_healthy(provider_name):
                 logger.debug(
-                    f"Skipping unhealthy provider {provider_name} " f"in chain {chain_name}"
+                    f"Skipping unhealthy provider {provider_name} in chain {chain_name}",
                 )
                 continue
 
@@ -484,10 +487,12 @@ class ModelRouterService:
                     api_key=request.api_key,
                 )
 
-                logger.info(f"Routing via chain '{chain_name}' to " f"{provider_name}/{model_name}")
+                logger.info(f"Routing via chain '{chain_name}' to {provider_name}/{model_name}")
 
                 response = await self._execute_with_tracking(
-                    provider_name, llm_service.generate_text, final_request
+                    provider_name,
+                    llm_service.generate_text,
+                    final_request,
                 )
                 await self._update_provider_health(provider_name, True)
                 return response
@@ -495,12 +500,13 @@ class ModelRouterService:
             except Exception as e:
                 last_error = e
                 await self._update_provider_health(provider_name, False, str(e))
-                logger.warning(f"Provider {provider_name} in chain " f"'{chain_name}' failed: {e}")
+                logger.warning(f"Provider {provider_name} in chain '{chain_name}' failed: {e}")
                 continue
 
         # All providers in chain failed
+        msg = f"All providers in chain '{chain_name}' failed. Last error: {last_error}"
         raise RuntimeError(
-            f"All providers in chain '{chain_name}' failed. " f"Last error: {last_error}"
+            msg,
         )
 
     async def select_model(
@@ -509,8 +515,7 @@ class ModelRouterService:
         provider: str,
         model: str,
     ) -> tuple[bool, str, dict[str, Any]]:
-        """
-        Select a model for a session and broadcast the change.
+        """Select a model for a session and broadcast the change.
 
         Args:
             session_id: The session to update
@@ -519,6 +524,7 @@ class ModelRouterService:
 
         Returns:
             Tuple of (success, message, session_info)
+
         """
         session_service = self._get_session_service()
 
@@ -556,7 +562,9 @@ class ModelRouterService:
 
         # Update session with the session-compatible provider name
         success, message, session = session_service.update_session_model(
-            session_id=session_id, provider=session_provider, model=model
+            session_id=session_id,
+            provider=session_provider,
+            model=model,
         )
 
         if success and session:
@@ -584,26 +592,27 @@ class ModelRouterService:
         return (success, message, {})
 
     def subscribe_to_selection_changes(
-        self, callback: Callable[[ModelSelectionEvent], Any]
+        self,
+        callback: Callable[[ModelSelectionEvent], Any],
     ) -> Callable[[], None]:
-        """
-        Subscribe to model selection change events.
+        """Subscribe to model selection change events.
 
         Args:
             callback: Function to call when selection changes
 
         Returns:
             Unsubscribe function
+
         """
         self._selection_listeners.add(callback)
 
-        def unsubscribe():
+        def unsubscribe() -> None:
             self._selection_listeners.discard(callback)
 
         return unsubscribe
 
-    async def _broadcast_selection_change(self, event: ModelSelectionEvent):
-        """Broadcast a selection change to all listeners"""
+    async def _broadcast_selection_change(self, event: ModelSelectionEvent) -> None:
+        """Broadcast a selection change to all listeners."""
         for listener in self._selection_listeners:
             try:
                 result = listener(event)
@@ -613,7 +622,7 @@ class ModelRouterService:
                 logger.error(f"Error in selection change listener: {e}")
 
     def get_provider_health(self) -> list[dict[str, Any]]:
-        """Get health status for all providers"""
+        """Get health status for all providers."""
         return [
             {
                 "provider": health.provider,
@@ -627,8 +636,7 @@ class ModelRouterService:
         ]
 
     def get_supported_providers(self) -> list[dict[str, Any]]:
-        """
-        Get list of supported providers with their models.
+        """Get list of supported providers with their models.
 
         Uses config-driven provider list with fallback to settings.
         """
@@ -676,7 +684,7 @@ class ModelRouterService:
                         "vision": provider_cfg.capabilities.supports_vision,
                         "function_calling": (provider_cfg.capabilities.supports_function_calling),
                     },
-                }
+                },
             )
 
         # Sort by priority
@@ -713,14 +721,13 @@ class ModelRouterService:
                     "default_model": models[0] if models else None,
                     "is_healthy": health.is_healthy if health else True,
                     "status": ("active" if (health and health.is_healthy) else "unknown"),
-                }
+                },
             )
 
         return result
 
     def get_available_failover_chains(self) -> dict[str, list[str]]:
-        """
-        Get available failover chain names and their provider sequences.
+        """Get available failover chain names and their provider sequences.
 
         Returns dict mapping chain name to list of provider names.
         """
@@ -739,8 +746,7 @@ class ModelRouterService:
             return {}
 
     def get_config_priority_order(self) -> list[str]:
-        """
-        Get providers ordered by config priority.
+        """Get providers ordered by config priority.
 
         Returns list of provider IDs ordered by priority (lowest first).
         """
@@ -763,5 +769,5 @@ model_router_service = ModelRouterService()
 
 
 def get_model_router_service() -> ModelRouterService:
-    """Get the model router service singleton"""
+    """Get the model router service singleton."""
     return model_router_service

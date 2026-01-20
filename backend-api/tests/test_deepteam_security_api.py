@@ -26,7 +26,7 @@ from app.services.deepteam.vulnerabilities import VulnerabilityFactory
 class TestDeepTeamConfiguration:
     """Tests for DeepTeam configuration models."""
 
-    def test_vulnerability_types_defined(self):
+    def test_vulnerability_types_defined(self) -> None:
         """Verify all vulnerability types are defined."""
         vulnerabilities = VulnerabilityType.__members__
         assert len(vulnerabilities) >= 25, "Should have 25+ vulnerability types"
@@ -35,7 +35,7 @@ class TestDeepTeamConfiguration:
         assert "PII_LEAKAGE" in vulnerabilities
         assert "SQL_INJECTION" in vulnerabilities
 
-    def test_attack_types_defined(self):
+    def test_attack_types_defined(self) -> None:
         """Verify all attack types are defined."""
         attacks = AttackType.__members__
         assert len(attacks) >= 20, "Should have 20+ attack types"
@@ -44,7 +44,7 @@ class TestDeepTeamConfiguration:
         assert "BASE64" in attacks
         assert "ROT13" in attacks
 
-    def test_preset_configs_defined(self):
+    def test_preset_configs_defined(self) -> None:
         """Verify all preset configurations exist."""
         presets = PresetConfig.__members__
         assert "QUICK_SCAN" in presets
@@ -53,14 +53,14 @@ class TestDeepTeamConfiguration:
         assert "SECURITY_FOCUSED" in presets
         assert "OWASP_TOP_10" in presets
 
-    def test_get_preset_config_quick_scan(self):
+    def test_get_preset_config_quick_scan(self) -> None:
         """Test quick scan preset configuration."""
         config = get_preset_config(PresetConfig.QUICK_SCAN)
         assert config is not None
         assert len(config.vulnerabilities) > 0
         assert len(config.attacks) >= 0
 
-    def test_get_preset_config_owasp(self):
+    def test_get_preset_config_owasp(self) -> None:
         """Test OWASP Top 10 preset configuration."""
         config = get_preset_config(PresetConfig.OWASP_TOP_10)
         assert config is not None
@@ -69,7 +69,7 @@ class TestDeepTeamConfiguration:
         assert VulnerabilityType.SQL_INJECTION in vuln_types
         assert VulnerabilityType.SHELL_INJECTION in vuln_types
 
-    def test_vulnerability_config_validation(self):
+    def test_vulnerability_config_validation(self) -> None:
         """Test VulnerabilityConfig Pydantic model."""
         config = VulnerabilityConfig(
             type=VulnerabilityType.BIAS,
@@ -78,7 +78,7 @@ class TestDeepTeamConfiguration:
         assert config.type == VulnerabilityType.BIAS
         assert config.enabled is True
 
-    def test_attack_config_validation(self):
+    def test_attack_config_validation(self) -> None:
         """Test AttackConfig Pydantic model."""
         config = AttackConfig(
             type=AttackType.PROMPT_INJECTION,
@@ -89,20 +89,20 @@ class TestDeepTeamConfiguration:
 class TestVulnerabilityFactory:
     """Tests for the VulnerabilityFactory class."""
 
-    def test_get_available_vulnerabilities(self):
+    def test_get_available_vulnerabilities(self) -> None:
         """Test getting available vulnerability types."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert isinstance(vulns, dict)
         assert len(vulns) >= 20
 
-    def test_create_bias_vulnerability(self):
+    def test_create_bias_vulnerability(self) -> None:
         """Test creating bias vulnerability instance."""
         factory = VulnerabilityFactory()
         result = factory.create(VulnerabilityConfig(type=VulnerabilityType.BIAS))
         # In simulated mode, returns config dict
         assert result is not None
 
-    def test_create_multiple_vulnerabilities(self):
+    def test_create_multiple_vulnerabilities(self) -> None:
         """Test creating multiple vulnerabilities at once."""
         factory = VulnerabilityFactory()
         configs = [
@@ -117,20 +117,20 @@ class TestVulnerabilityFactory:
 class TestAttackFactory:
     """Tests for the AttackFactory class."""
 
-    def test_get_available_attacks(self):
+    def test_get_available_attacks(self) -> None:
         """Test getting available attack types."""
         attacks = AttackFactory.get_available_attacks()
         assert isinstance(attacks, dict)
         assert len(attacks) >= 15
 
-    def test_single_turn_attacks_exist(self):
+    def test_single_turn_attacks_exist(self) -> None:
         """Verify single-turn attacks are available."""
         attacks = AttackFactory.get_available_attacks()
         assert "prompt_injection" in attacks
         assert "base64" in attacks
         assert "rot13" in attacks
 
-    def test_multi_turn_attacks_exist(self):
+    def test_multi_turn_attacks_exist(self) -> None:
         """Verify multi-turn attacks are available."""
         attacks = AttackFactory.get_available_attacks()
         assert "linear_jailbreaking" in attacks
@@ -140,13 +140,13 @@ class TestAttackFactory:
 class TestDeepTeamService:
     """Tests for the main DeepTeamService class."""
 
-    def test_service_initialization(self):
+    def test_service_initialization(self) -> None:
         """Test service initializes correctly."""
         service = DeepTeamService()
         assert service is not None
         assert service.config is not None
 
-    def test_service_with_custom_config(self):
+    def test_service_with_custom_config(self) -> None:
         """Test service with custom configuration."""
         config = DeepTeamConfig(
             persist_results=False,
@@ -156,19 +156,19 @@ class TestDeepTeamService:
         assert service.config.persist_results is False
         assert service.config.enable_autodan_integration is False
 
-    def test_get_available_vulnerabilities_static(self):
+    def test_get_available_vulnerabilities_static(self) -> None:
         """Test static method for available vulnerabilities."""
         vulns = DeepTeamService.get_available_vulnerabilities()
         assert isinstance(vulns, dict)
         assert len(vulns) >= 20
 
-    def test_get_available_attacks_static(self):
+    def test_get_available_attacks_static(self) -> None:
         """Test static method for available attacks."""
         attacks = DeepTeamService.get_available_attacks()
         assert isinstance(attacks, dict)
         assert len(attacks) >= 15
 
-    def test_get_available_presets_static(self):
+    def test_get_available_presets_static(self) -> None:
         """Test static method for available presets."""
         presets = DeepTeamService.get_available_presets()
         assert isinstance(presets, list)
@@ -179,21 +179,21 @@ class TestDeepTeamService:
 class TestModelCallbacks:
     """Tests for model callback adapters."""
 
-    def test_create_callback_openai(self):
+    def test_create_callback_openai(self) -> None:
         """Test creating OpenAI callback."""
         with patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}):
             callback = create_model_callback(model_id="gpt-4", provider="openai")
             assert callback is not None
             assert callback.provider == "openai"
 
-    def test_create_callback_anthropic(self):
+    def test_create_callback_anthropic(self) -> None:
         """Test creating Anthropic callback."""
         with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}):
             callback = create_model_callback(model_id="claude-3-sonnet", provider="anthropic")
             assert callback is not None
             assert callback.provider == "anthropic"
 
-    def test_chimera_model_callback(self):
+    def test_chimera_model_callback(self) -> None:
         """Test ChimeraModelCallback wrapper."""
         mock_service = MagicMock()
         mock_service.generate = AsyncMock(return_value="Test response")
@@ -207,7 +207,7 @@ class TestDeepTeamQuickScan:
     """Tests for quick scan functionality."""
 
     @pytest.mark.asyncio
-    async def test_quick_scan_simulated(self):
+    async def test_quick_scan_simulated(self) -> None:
         """Test quick scan in simulated mode."""
         config = DeepTeamConfig(persist_results=False)
         service = DeepTeamService(config=config)
@@ -229,7 +229,7 @@ class TestDeepTeamSecurityAudit:
     """Tests for security audit functionality."""
 
     @pytest.mark.asyncio
-    async def test_security_audit_simulated(self):
+    async def test_security_audit_simulated(self) -> None:
         """Test security audit in simulated mode."""
         config = DeepTeamConfig(persist_results=False)
         service = DeepTeamService(config=config)
@@ -250,7 +250,7 @@ class TestOWASPAssessment:
     """Tests for OWASP LLM Top 10 assessment."""
 
     @pytest.mark.asyncio
-    async def test_owasp_assessment_simulated(self):
+    async def test_owasp_assessment_simulated(self) -> None:
         """Test OWASP assessment in simulated mode."""
         config = DeepTeamConfig(persist_results=False)
         service = DeepTeamService(config=config)
@@ -278,28 +278,28 @@ class TestOWASPAssessment:
 class TestDeepTeamAPIRouter:
     """Integration tests for the DeepTeam API router."""
 
-    async def test_health_endpoint(self, client):
+    async def test_health_endpoint(self, client) -> None:
         """Test health check endpoint."""
         response = await client.get("/api/v1/deepteam/health")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
 
-    async def test_vulnerabilities_endpoint(self, client):
+    async def test_vulnerabilities_endpoint(self, client) -> None:
         """Test vulnerabilities listing endpoint."""
         response = await client.get("/api/v1/deepteam/vulnerabilities")
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 20
 
-    async def test_attacks_endpoint(self, client):
+    async def test_attacks_endpoint(self, client) -> None:
         """Test attacks listing endpoint."""
         response = await client.get("/api/v1/deepteam/attacks")
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 15
 
-    async def test_presets_endpoint(self, client):
+    async def test_presets_endpoint(self, client) -> None:
         """Test presets listing endpoint."""
         response = await client.get("/api/v1/deepteam/presets")
         assert response.status_code == 200
@@ -317,17 +317,17 @@ class TestDeepTeamAPIRouter:
 class TestSecurityVulnerabilities:
     """Security-focused vulnerability tests."""
 
-    def test_sql_injection_vulnerability_exists(self):
+    def test_sql_injection_vulnerability_exists(self) -> None:
         """Verify SQL injection vulnerability can be tested."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "sql_injection" in vulns
 
-    def test_shell_injection_vulnerability_exists(self):
+    def test_shell_injection_vulnerability_exists(self) -> None:
         """Verify shell injection vulnerability can be tested."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "shell_injection" in vulns
 
-    def test_prompt_injection_attack_exists(self):
+    def test_prompt_injection_attack_exists(self) -> None:
         """Verify prompt injection attack can be simulated."""
         attacks = AttackFactory.get_available_attacks()
         assert "prompt_injection" in attacks
@@ -337,33 +337,33 @@ class TestSecurityVulnerabilities:
 class TestOWASPCompliance:
     """OWASP LLM Top 10 compliance tests."""
 
-    def test_llm01_prompt_injection(self):
+    def test_llm01_prompt_injection(self) -> None:
         """LLM01: Prompt Injection vulnerability testing available."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "prompt_leakage" in vulns
 
-    def test_llm02_insecure_output(self):
+    def test_llm02_insecure_output(self) -> None:
         """LLM02: Insecure Output Handling - SQL/Shell injection."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "sql_injection" in vulns
         assert "shell_injection" in vulns
 
-    def test_llm06_sensitive_disclosure(self):
+    def test_llm06_sensitive_disclosure(self) -> None:
         """LLM06: Sensitive Information Disclosure testing."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "pii_leakage" in vulns
 
-    def test_llm07_insecure_plugin(self):
+    def test_llm07_insecure_plugin(self) -> None:
         """LLM07: Insecure Plugin Design - RBAC testing."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "rbac" in vulns
 
-    def test_llm08_excessive_agency(self):
+    def test_llm08_excessive_agency(self) -> None:
         """LLM08: Excessive Agency testing."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "excessive_agency" in vulns
 
-    def test_llm09_overreliance(self):
+    def test_llm09_overreliance(self) -> None:
         """LLM09: Overreliance - Robustness testing for input overreliance."""
         vulns = VulnerabilityFactory.get_available_vulnerabilities()
         assert "robustness" in vulns

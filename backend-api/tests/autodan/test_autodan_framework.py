@@ -32,10 +32,8 @@ class TestAttackerBestOfN:
         scorer.wrapper.return_value = 5.0
         return scorer
 
-    def test_best_of_n_selection(self, mock_base_attacker, mock_target, mock_scorer):
-        """
-        Verify that AttackerBestOfN generates N candidates and selects the best one based on score.
-        """
+    def test_best_of_n_selection(self, mock_base_attacker, mock_target, mock_scorer) -> None:
+        """Verify that AttackerBestOfN generates N candidates and selects the best one based on score."""
         # Setup
         N = 3
         attacker = AttackerBestOfN(mock_base_attacker, N=N)
@@ -65,10 +63,13 @@ class TestAttackerBestOfN:
         assert mock_base_attacker.use_strategy.call_count == N
 
     def test_best_of_n_error_propagation(
-        self, mock_base_attacker, mock_target, mock_scorer, caplog
-    ):
-        """
-        Verify that errors during candidate generation are propagated (not silently caught).
+        self,
+        mock_base_attacker,
+        mock_target,
+        mock_scorer,
+        caplog,
+    ) -> None:
+        """Verify that errors during candidate generation are propagated (not silently caught).
         The implementation no longer catches exceptions during use_strategy calls.
         """
         N = 2
@@ -100,10 +101,8 @@ class TestAttackerBeamSearch:
         retrieval.pop.return_value = (True, [{"Strategy": f"S{i}"} for i in range(10)])
         return retrieval
 
-    def test_beam_search_execution(self, mock_base_attacker, mock_retrieval, caplog):
-        """
-        Verify Beam Search initialization and expansion logic.
-        """
+    def test_beam_search_execution(self, mock_base_attacker, mock_retrieval, caplog) -> None:
+        """Verify Beam Search initialization and expansion logic."""
         target = MagicMock()
         target.respond.return_value = "Refusal"
 
@@ -112,7 +111,7 @@ class TestAttackerBeamSearch:
         scorer.wrapper.return_value = 5.0
 
         logger = logging.getLogger(
-            "app.services.autodan.framework_autodan_reasoning.attacker_beam_search"
+            "app.services.autodan.framework_autodan_reasoning.attacker_beam_search",
         )
 
         # W=2 (Beam width), C=2 (Depth), K=5 (Retrieval)
@@ -120,7 +119,13 @@ class TestAttackerBeamSearch:
 
         with caplog.at_level(logging.INFO):
             result = attacker.use_strategy_beam_search(
-                "request", {}, target, scorer, mock_retrieval, "prev_resp", logger
+                "request",
+                {},
+                target,
+                scorer,
+                mock_retrieval,
+                "prev_resp",
+                logger,
             )
 
         # Verify Logs indicate progression
@@ -137,10 +142,8 @@ class TestAttackerBeamSearch:
 class TestAutoDANService:
     @patch("app.services.autodan.service.ChimeraLLMAdapter")
     @patch("app.services.autodan.service.AutoDANReasoning")
-    def test_run_jailbreak_initialization(self, MockPipeline, MockAdapter):
-        """
-        Verify AutoDANService initializes the adapter and pipeline correctly.
-        """
+    def test_run_jailbreak_initialization(self, MockPipeline, MockAdapter) -> None:
+        """Verify AutoDANService initializes the adapter and pipeline correctly."""
         service = AutoDANService()
 
         # Reset initialized state if it's a singleton potentially dirty from other tests
@@ -166,10 +169,8 @@ class TestAutoDANService:
         assert pipeline_instance.test_best_of_n.called
         assert pipeline_instance.epochs == 5
 
-    def test_config_integration(self):
-        """
-        Verify configuration values are accessible and updated.
-        """
+    def test_config_integration(self) -> None:
+        """Verify configuration values are accessible and updated."""
         # Updated assertion to match the new Lead Security Architect persona
         assert "Lead Security Architect" in autodan_config.ATTACKER_SYSTEM_PROMPT
         assert autodan_config.BREAK_SCORE == 8.5

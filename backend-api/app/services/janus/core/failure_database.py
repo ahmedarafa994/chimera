@@ -1,5 +1,4 @@
-"""
-Failure State Database Module
+"""Failure State Database Module.
 
 Manages catalog of discovered failure states,
 including clustering, ranking, and mitigation reporting.
@@ -12,19 +11,19 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
-from ..config import get_config
+from app.services.janus.config import get_config
+
 from .models import FailureState, FailureType, GuardianResponse
 
 
 class FailureStateDatabase:
-    """
-    Manages catalog of discovered failure states.
+    """Manages catalog of discovered failure states.
 
     Provides clustering, ranking, and reporting
     capabilities for discovered vulnerabilities.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = get_config()
 
         # Failure storage
@@ -39,12 +38,12 @@ class FailureStateDatabase:
         # Load existing failures
         self._load_from_storage()
 
-    def add_failure(self, failure: FailureState):
-        """
-        Add a new failure state to database.
+    def add_failure(self, failure: FailureState) -> None:
+        """Add a new failure state to database.
 
         Args:
             failure: Failure state to add
+
         """
         self.failures[failure.failure_id] = failure
 
@@ -55,14 +54,14 @@ class FailureStateDatabase:
         self._save_to_storage()
 
     def get_failure(self, failure_id: str) -> FailureState | None:
-        """
-        Get a failure state by ID.
+        """Get a failure state by ID.
 
         Args:
             failure_id: ID of failure to retrieve
 
         Returns:
             FailureState if found, None otherwise
+
         """
         return self.failures.get(failure_id)
 
@@ -71,30 +70,32 @@ class FailureStateDatabase:
         return list(self.failures.values())
 
     def get_failures_by_type(self, failure_type: FailureType) -> list[FailureState]:
-        """
-        Get all failures of a specific type.
+        """Get all failures of a specific type.
 
         Args:
             failure_type: Type of failures to retrieve
 
         Returns:
             List of failure states of specified type
+
         """
         return [f for f in self.failures.values() if f.failure_type == failure_type]
 
     def get_high_priority_failures(self, limit: int | None = None) -> list[FailureState]:
-        """
-        Get highest priority failures for mitigation.
+        """Get highest priority failures for mitigation.
 
         Args:
             limit: Maximum number of failures to return
 
         Returns:
             List of highest priority failures
+
         """
         # Sort by exploitability score
         sorted_failures = sorted(
-            self.failures.values(), key=lambda f: f.exploitability_score, reverse=True
+            self.failures.values(),
+            key=lambda f: f.exploitability_score,
+            reverse=True,
         )
 
         # Filter by exploitability threshold
@@ -108,11 +109,11 @@ class FailureStateDatabase:
         return filtered
 
     def get_clustered_failures(self) -> dict[FailureType, list[FailureState]]:
-        """
-        Get failures grouped by type.
+        """Get failures grouped by type.
 
         Returns:
             Dictionary mapping failure type to list of failures
+
         """
         by_type: dict[FailureType, list[FailureState]] = defaultdict(list)
 
@@ -121,13 +122,13 @@ class FailureStateDatabase:
 
         return dict(by_type)
 
-    def verify_failure(self, failure_id: str, verified: bool = True):
-        """
-        Mark a failure as verified.
+    def verify_failure(self, failure_id: str, verified: bool = True) -> None:
+        """Mark a failure as verified.
 
         Args:
             failure_id: ID of failure to verify
             verified: Whether the failure is verified
+
         """
         failure = self.failures.get(failure_id)
         if failure:
@@ -135,8 +136,7 @@ class FailureStateDatabase:
             self._save_to_storage()
 
     def update_failure(self, failure_id: str, **updates) -> FailureState | None:
-        """
-        Update a failure state.
+        """Update a failure state.
 
         Args:
             failure_id: ID of failure to update
@@ -144,6 +144,7 @@ class FailureStateDatabase:
 
         Returns:
             Updated failure state if found, None otherwise
+
         """
         failure = self.failures.get(failure_id)
         if failure is None:
@@ -164,14 +165,14 @@ class FailureStateDatabase:
         return failure
 
     def delete_failure(self, failure_id: str) -> bool:
-        """
-        Delete a failure state.
+        """Delete a failure state.
 
         Args:
             failure_id: ID of failure to delete
 
         Returns:
             True if deleted, False if not found
+
         """
         if failure_id in self.failures:
             # Remove from clusters
@@ -191,9 +192,8 @@ class FailureStateDatabase:
 
         return False
 
-    def _cluster_failure(self, failure: FailureState):
-        """
-        Cluster a failure with similar ones.
+    def _cluster_failure(self, failure: FailureState) -> None:
+        """Cluster a failure with similar ones.
 
         Uses type and symptom overlap for clustering.
         """
@@ -224,7 +224,7 @@ class FailureStateDatabase:
             cluster_id = f"cluster_{failure.failure_type.value}_{uuid.uuid4().hex[:4]}"
             self.failure_clusters[cluster_id] = [failure.failure_id]
 
-    def _recluster_failure(self, failure: FailureState):
+    def _recluster_failure(self, failure: FailureState) -> None:
         """Re-cluster a failure after type change."""
         # Remove from all clusters
         for cluster_id, failures in self.failure_clusters.items():
@@ -238,11 +238,11 @@ class FailureStateDatabase:
         self._cluster_failure(failure)
 
     def generate_mitigation_report(self) -> dict[str, Any]:
-        """
-        Generate a comprehensive mitigation report.
+        """Generate a comprehensive mitigation report.
 
         Returns:
             Dictionary with report data
+
         """
         # Get high priority failures
         high_priority = self.get_high_priority_failures(20)
@@ -281,10 +281,11 @@ class FailureStateDatabase:
         }
 
     def _generate_type_recommendation(
-        self, failure_type: FailureType, failures: list[FailureState]
+        self,
+        failure_type: FailureType,
+        failures: list[FailureState],
     ) -> dict[str, Any]:
-        """
-        Generate mitigation recommendation for a failure type.
+        """Generate mitigation recommendation for a failure type.
 
         Args:
             failure_type: Type of failures
@@ -292,6 +293,7 @@ class FailureStateDatabase:
 
         Returns:
             Recommendation dictionary
+
         """
         # Aggregate symptoms
         all_symptoms = []
@@ -395,7 +397,7 @@ class FailureStateDatabase:
             },
         )
 
-    def _load_from_storage(self):
+    def _load_from_storage(self) -> None:
         """Load failures from file storage."""
         try:
             if os.path.exists(self.storage_path):
@@ -417,7 +419,7 @@ class FailureStateDatabase:
             # Log error but continue
             pass
 
-    def _save_to_storage(self):
+    def _save_to_storage(self) -> None:
         """Save failures to file storage."""
         try:
             # Ensure directory exists
@@ -477,7 +479,7 @@ class FailureStateDatabase:
                     model_used=response_data.get("model_used", ""),
                     provider_used=response_data.get("provider_used", ""),
                     timestamp=datetime.fromisoformat(
-                        response_data.get("timestamp", datetime.now().isoformat())
+                        response_data.get("timestamp", datetime.now().isoformat()),
                     ),
                     metadata=response_data.get("metadata", {}),
                 )
@@ -496,7 +498,7 @@ class FailureStateDatabase:
                 exploit_complexity=data.get("exploit_complexity", "medium"),
                 suggested_mitigations=data.get("suggested_mitigations", []),
                 discovery_timestamp=datetime.fromisoformat(
-                    data.get("discovery_timestamp", datetime.now().isoformat())
+                    data.get("discovery_timestamp", datetime.now().isoformat()),
                 ),
                 discovery_session=data.get("discovery_session", ""),
                 verified=data.get("verified", False),
@@ -516,7 +518,7 @@ class FailureStateDatabase:
 
         # Compute average exploitability
         avg_exploitability = sum(f.exploitability_score for f in self.failures.values()) / len(
-            self.failures
+            self.failures,
         )
 
         return {
@@ -527,7 +529,7 @@ class FailureStateDatabase:
             "cluster_count": len(self.failure_clusters),
         }
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset database (clear all failures)."""
         self.failures.clear()
         self.failure_clusters.clear()

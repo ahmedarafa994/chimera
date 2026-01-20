@@ -2,7 +2,7 @@ import json
 
 
 class Library:
-    def __init__(self, library, logger):
+    def __init__(self, library, logger) -> None:
         self.library = library
         self.logger = logger
 
@@ -24,20 +24,18 @@ class Library:
                 merged[key] = dict2[key]
         return merged
 
-    def add(self, new_strategy, if_notify=False):
-        """
-        :param new_strategy: a dictionary containing the new strategy to be added to the library
-        """
+    def add(self, new_strategy, if_notify=False) -> None:
+        """:param new_strategy: a dictionary containing the new strategy to be added to the library"""
         new_strategy = {new_strategy["Strategy"]: new_strategy}
         self.library = self.merge(self.library, new_strategy)
         if if_notify:
-            for _key, value_dict in new_strategy.items():
+            for value_dict in new_strategy.values():
                 new_dict = {
                     "Strategy": value_dict["Strategy"],
                     "Definition": value_dict["Definition"],
                 }
                 self.logger.info(
-                    f"New strategy added: {json.dumps(new_dict, indent=4, ensure_ascii=False)}"
+                    f"New strategy added: {json.dumps(new_dict, indent=4, ensure_ascii=False)}",
                 )
 
     def all(self):

@@ -5,7 +5,10 @@ from app.schemas.prompt_library import CreateVersionRequest
 
 class TemplateVersionService:
     async def create_version(
-        self, template_id: str, user_id: str, request: CreateVersionRequest
+        self,
+        template_id: str,
+        user_id: str,
+        request: CreateVersionRequest,
     ) -> PromptTemplate | None:
         template = await prompt_library_repository.get_by_id(template_id)
         if not template:
@@ -35,9 +38,12 @@ class TemplateVersionService:
         return None
 
     async def restore_version(
-        self, template_id: str, version_id: str, user_id: str
+        self,
+        template_id: str,
+        version_id: str,
+        user_id: str,
     ) -> PromptTemplate | None:
-        """Restore a previous version of a template"""
+        """Restore a previous version of a template."""
         template = await prompt_library_repository.get_by_id(template_id)
         if not template:
             return None

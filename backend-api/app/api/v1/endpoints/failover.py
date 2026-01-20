@@ -10,7 +10,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -36,10 +36,13 @@ class ProviderFailoverStatusResponse(BaseModel):
     primary_key_id: str | None = Field(default=None, description="Primary key ID")
     is_using_backup: bool = Field(default=False, description="Whether currently using a backup key")
     last_failover_at: str | None = Field(
-        default=None, description="When last failover occurred (ISO format)"
+        default=None,
+        description="When last failover occurred (ISO format)",
     )
     failover_count: int = Field(
-        default=0, ge=0, description="Total failover count for this provider"
+        default=0,
+        ge=0,
+        description="Total failover count for this provider",
     )
     strategy: str = Field(
         default="priority",
@@ -47,7 +50,8 @@ class ProviderFailoverStatusResponse(BaseModel):
     )
     config: dict[str, Any] = Field(default_factory=dict, description="Failover configuration")
     key_cooldowns: list[dict[str, Any]] = Field(
-        default_factory=list, description="Key cooldown states"
+        default_factory=list,
+        description="Key cooldown states",
     )
 
 
@@ -55,7 +59,8 @@ class AllFailoverStatusResponse(BaseModel):
     """Failover status for all providers."""
 
     providers: dict[str, ProviderFailoverStatusResponse] = Field(
-        default_factory=dict, description="Failover status per provider"
+        default_factory=dict,
+        description="Failover status per provider",
     )
     summary: dict[str, Any] = Field(default_factory=dict, description="Summary statistics")
     updated_at: str = Field(..., description="Last update time (ISO format)")
@@ -70,11 +75,13 @@ class FailoverEventResponse(BaseModel):
     to_key_id: str | None = Field(default=None, description="Key that was failed over to")
     reason: str = Field(..., description="Reason for failover")
     error_message: str | None = Field(
-        default=None, description="Error message that triggered failover"
+        default=None,
+        description="Error message that triggered failover",
     )
     triggered_at: str = Field(..., description="When failover occurred (ISO format)")
     cooldown_until: str | None = Field(
-        default=None, description="When the from_key will be available again"
+        default=None,
+        description="When the from_key will be available again",
     )
     success: bool = Field(..., description="Whether failover succeeded")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional event metadata")
@@ -84,7 +91,8 @@ class FailoverHistoryResponse(BaseModel):
     """Failover event history response."""
 
     events: list[FailoverEventResponse] = Field(
-        default_factory=list, description="List of failover events"
+        default_factory=list,
+        description="List of failover events",
     )
     total_count: int = Field(default=0, ge=0, description="Total number of events returned")
     provider_id: str | None = Field(default=None, description="Provider filter (if specified)")
@@ -117,22 +125,36 @@ class FailoverConfigUpdateRequest(BaseModel):
         description="Failover strategy: priority, round_robin, least_used, random",
     )
     rate_limit_cooldown_seconds: int = Field(
-        default=60, ge=5, le=3600, description="Cooldown for rate limit errors"
+        default=60,
+        ge=5,
+        le=3600,
+        description="Cooldown for rate limit errors",
     )
     error_cooldown_seconds: int = Field(
-        default=30, ge=5, le=3600, description="Cooldown for transient errors"
+        default=30,
+        ge=5,
+        le=3600,
+        description="Cooldown for transient errors",
     )
     max_cooldown_seconds: int = Field(
-        default=600, ge=60, le=7200, description="Maximum cooldown duration"
+        default=600,
+        ge=60,
+        le=7200,
+        description="Maximum cooldown duration",
     )
     use_exponential_backoff: bool = Field(
-        default=True, description="Use exponential backoff for cooldown"
+        default=True,
+        description="Use exponential backoff for cooldown",
     )
     max_consecutive_failures: int = Field(
-        default=5, ge=1, le=20, description="Max consecutive failures before permanent block"
+        default=5,
+        ge=1,
+        le=20,
+        description="Max consecutive failures before permanent block",
     )
     auto_recover: bool = Field(
-        default=True, description="Automatically try to recover to primary key"
+        default=True,
+        description="Automatically try to recover to primary key",
     )
 
 
@@ -163,7 +185,6 @@ def get_failover_service():
 
 @router.get(
     "/status",
-    response_model=AllFailoverStatusResponse,
     summary="Current failover state for all providers",
     description="""
 Get the current failover status for all configured providers.
@@ -188,7 +209,7 @@ Returns per-provider information including:
     },
 )
 async def get_all_failover_status(
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> AllFailoverStatusResponse:
     """Get current failover state for all providers."""
     logger.debug(f"Getting all failover status for user {user.sub}")
@@ -234,7 +255,6 @@ async def get_all_failover_status(
 
 @router.get(
     "/status/{provider_id}",
-    response_model=ProviderFailoverStatusResponse,
     summary="Failover status for a specific provider",
     description="""
 Get the current failover status for a specific provider.
@@ -255,7 +275,7 @@ key cooldowns and configuration.
 )
 async def get_provider_failover_status(
     provider_id: str,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> ProviderFailoverStatusResponse:
     """Get failover status for a specific provider."""
     logger.debug(f"Getting failover status for provider {provider_id} by user {user.sub}")
@@ -292,7 +312,6 @@ async def get_provider_failover_status(
 
 @router.get(
     "/history",
-    response_model=FailoverHistoryResponse,
     summary="Recent failover events",
     description="""
 Get recent failover event history.
@@ -313,17 +332,19 @@ Query Parameters:
     },
 )
 async def get_failover_history(
-    provider_id: str | None = Query(None, description="Filter by provider ID"),
-    reason: str | None = Query(
-        None,
-        description="Filter by reason (rate_limited, error, timeout, circuit_breaker_open, key_inactive, key_expired, manual)",
-    ),
-    limit: int = Query(50, ge=1, le=200, description="Maximum events to return"),
+    provider_id: Annotated[str | None, Query(description="Filter by provider ID")] = None,
+    reason: Annotated[
+        str | None,
+        Query(
+            description="Filter by reason (rate_limited, error, timeout, circuit_breaker_open, key_inactive, key_expired, manual)"
+        ),
+    ] = None,
+    limit: Annotated[int, Query(ge=1, le=200, description="Maximum events to return")] = 50,
     user: TokenPayload = Depends(get_current_user),
 ) -> FailoverHistoryResponse:
     """Get recent failover events."""
     logger.debug(
-        f"Getting failover history for user {user.sub}, provider={provider_id}, reason={reason}"
+        f"Getting failover history for user {user.sub}, provider={provider_id}, reason={reason}",
     )
 
     try:
@@ -387,7 +408,6 @@ async def get_failover_history(
 
 @router.post(
     "/reset/{provider_id}",
-    response_model=ProviderResetResponse,
     summary="Reset provider to primary key",
     description="""
 Reset a provider to its primary key.
@@ -411,7 +431,7 @@ This operation:
 )
 async def reset_provider_failover(
     provider_id: str,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> ProviderResetResponse:
     """Reset a provider to its primary key."""
     logger.info(f"Resetting failover for provider {provider_id} by user {user.sub}")
@@ -445,7 +465,6 @@ async def reset_provider_failover(
 
 @router.post(
     "/clear-cooldown/{key_id}",
-    response_model=CooldownClearResponse,
     summary="Clear cooldown for a specific key",
     description="""
 Clear the cooldown state for a specific API key.
@@ -468,7 +487,7 @@ This operation:
 )
 async def clear_key_cooldown(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> CooldownClearResponse:
     """Clear cooldown for a specific key."""
     logger.info(f"Clearing cooldown for key {key_id} by user {user.sub}")
@@ -506,7 +525,6 @@ async def clear_key_cooldown(
 
 @router.put(
     "/config/{provider_id}",
-    response_model=FailoverConfigResponse,
     summary="Update failover configuration",
     description="""
 Update the failover configuration for a provider.
@@ -535,7 +553,7 @@ Configurable options include:
 async def update_failover_config(
     provider_id: str,
     config: FailoverConfigUpdateRequest,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> FailoverConfigResponse:
     """Update failover configuration for a provider."""
     logger.info(f"Updating failover config for provider {provider_id} by user {user.sub}")
@@ -590,7 +608,6 @@ async def update_failover_config(
 
 @router.get(
     "/cooldown/{key_id}",
-    response_model=dict[str, Any],
     summary="Get cooldown info for a key",
     description="""
 Get detailed cooldown information for a specific API key.
@@ -614,7 +631,7 @@ Returns:
 )
 async def get_key_cooldown_info(
     key_id: str,
-    user: TokenPayload = Depends(get_current_user),
+    user: Annotated[TokenPayload, Depends(get_current_user)],
 ) -> dict[str, Any]:
     """Get cooldown info for a specific key."""
     logger.debug(f"Getting cooldown info for key {key_id} by user {user.sub}")

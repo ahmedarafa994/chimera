@@ -1,5 +1,4 @@
-"""
-ExtendAttack Service
+"""ExtendAttack Service.
 
 Business logic layer for ExtendAttack API.
 Interfaces with meta_prompter/attacks/extend_attack module.
@@ -102,8 +101,7 @@ class ExtendAttackService:
         custom_n_note: str | None = None,
         seed: int | None = None,
     ) -> dict[str, Any]:
-        """
-        Execute single attack.
+        """Execute single attack.
 
         Args:
             query: Original query to obfuscate
@@ -115,6 +113,7 @@ class ExtendAttackService:
 
         Returns:
             Attack result dictionary
+
         """
         # Determine N_note
         if custom_n_note:
@@ -151,8 +150,7 @@ class ExtendAttackService:
         model: str | None = None,
         seed: int | None = None,
     ) -> dict[str, Any]:
-        """
-        Execute batch attack.
+        """Execute batch attack.
 
         Args:
             queries: List of queries to attack
@@ -163,6 +161,7 @@ class ExtendAttackService:
 
         Returns:
             Batch attack result dictionary
+
         """
         # Auto-configure if benchmark specified
         if benchmark:
@@ -212,8 +211,7 @@ class ExtendAttackService:
         target_sections: list[str] | None = None,
         embed_n_note: bool = True,
     ) -> dict[str, Any]:
-        """
-        Execute indirect prompt injection.
+        """Execute indirect prompt injection.
 
         Args:
             document: Document to poison
@@ -223,6 +221,7 @@ class ExtendAttackService:
 
         Returns:
             Indirect injection result dictionary
+
         """
         attacker = ExtendAttack(obfuscation_ratio=injection_ratio)
         result = attacker.indirect_injection(document)
@@ -249,8 +248,7 @@ class ExtendAttackService:
         baseline_latency_ms: float | None = None,
         attack_latency_ms: float | None = None,
     ) -> dict[str, Any]:
-        """
-        Evaluate attack effectiveness.
+        """Evaluate attack effectiveness.
 
         Args:
             original_query: Original benign query
@@ -263,6 +261,7 @@ class ExtendAttackService:
 
         Returns:
             Evaluation metrics dictionary
+
         """
         metrics: dict[str, Any] = {
             "query_length_original": len(original_query),
@@ -331,7 +330,7 @@ class ExtendAttackService:
                         "default_rho": config.default_rho,
                         "model_specific_rho": config.model_specific_rho,
                         "recommended_n_note": config.recommended_n_note.value,
-                    }
+                    },
                 )
             except Exception:
                 continue
@@ -364,14 +363,14 @@ class ExtendAttackService:
         return templates
 
     def decode_obfuscated(self, text: str) -> dict[str, Any]:
-        """
-        Decode obfuscated text.
+        """Decode obfuscated text.
 
         Args:
             text: Obfuscated text to decode
 
         Returns:
             Decoded text result
+
         """
         # Count patterns before decoding
         patterns = re.findall(r"<\(\d+\)[^>]+>", text)
@@ -392,8 +391,7 @@ class ExtendAttackService:
         attack_tokens: int,
         model: str,
     ) -> dict[str, Any]:
-        """
-        Calculate resource exhaustion metrics.
+        """Calculate resource exhaustion metrics.
 
         Args:
             baseline_tokens: Token count for baseline response
@@ -402,6 +400,7 @@ class ExtendAttackService:
 
         Returns:
             Resource metrics dictionary
+
         """
         # Get pricing for model (default to o3 if unknown)
         model_lower = model.lower()

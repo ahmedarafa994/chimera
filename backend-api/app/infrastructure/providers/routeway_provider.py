@@ -1,5 +1,4 @@
-"""
-Routeway Provider Implementation
+"""Routeway Provider Implementation.
 
 A unified AI gateway that provides access to multiple LLM providers through
 a single OpenAI-compatible API. Supports both free and premium models.
@@ -19,23 +18,25 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 import httpx
 from fastapi import status
 
-from app.core.config import Settings
 from app.core.errors import AppError
 from app.domain.models import PromptRequest, PromptResponse, StreamChunk
 from app.infrastructure.providers.base import BaseProvider
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
 
 class RoutewayProvider(BaseProvider):
-    """
-    Routeway Provider for multi-model AI gateway.
+    """Routeway Provider for multi-model AI gateway.
 
     Routeway provides a unified API gateway to access multiple LLM providers
     including OpenAI, Anthropic, Meta (Llama), and others through a single
@@ -83,7 +84,7 @@ class RoutewayProvider(BaseProvider):
         "gemini-1.5-flash:free",
     ]
 
-    def __init__(self, config: Settings | None = None):
+    def __init__(self, config: Settings | None = None) -> None:
         """Initialize Routeway provider."""
         super().__init__("routeway", config)
         self._http_client: httpx.AsyncClient | None = None
@@ -93,8 +94,7 @@ class RoutewayProvider(BaseProvider):
     # =========================================================================
 
     def _initialize_client(self, api_key: str) -> httpx.AsyncClient:
-        """
-        Initialize HTTP client for Routeway API.
+        """Initialize HTTP client for Routeway API.
 
         Uses Bearer token authentication as specified in the documentation.
         """
@@ -126,8 +126,7 @@ class RoutewayProvider(BaseProvider):
         request: PromptRequest,
         model_name: str,
     ) -> PromptResponse:
-        """
-        Generate text using Routeway's chat completions API.
+        """Generate text using Routeway's chat completions API.
 
         Uses OpenAI-compatible format for requests and responses.
         """
@@ -153,8 +152,9 @@ class RoutewayProvider(BaseProvider):
 
             # Parse response (OpenAI format)
             if "choices" not in data or not data["choices"]:
+                msg = "No choices in Routeway response"
                 raise AppError(
-                    "No choices in Routeway response",
+                    msg,
                     status_code=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -184,15 +184,15 @@ class RoutewayProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             await self._handle_http_error(e)
         except httpx.RequestError as e:
-            logger.error(f"[routeway] Request error: {e}")
+            logger.exception(f"[routeway] Request error: {e}")
+            msg = f"Routeway request failed: {e!s}"
             raise AppError(
-                f"Routeway request failed: {e!s}",
+                msg,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
     async def _check_health_impl(self, client: httpx.AsyncClient) -> bool:
-        """
-        Check health by making a minimal request to the models endpoint.
+        """Check health by making a minimal request to the models endpoint.
 
         Routeway provides a GET /models endpoint that can be used for health checks.
         """
@@ -208,8 +208,7 @@ class RoutewayProvider(BaseProvider):
     # =========================================================================
 
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Generate streaming response using Routeway's SSE endpoint.
+        """Generate streaming response using Routeway's SSE endpoint.
 
         Uses Server-Sent Events (SSE) format compatible with OpenAI streaming.
         """
@@ -279,9 +278,10 @@ class RoutewayProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             await self._handle_http_error(e)
         except Exception as e:
-            logger.error(f"[routeway] Stream error: {e}")
+            logger.exception(f"[routeway] Stream error: {e}")
+            msg = f"Routeway streaming failed: {e!s}"
             raise AppError(
-                f"Routeway streaming failed: {e!s}",
+                msg,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
@@ -290,8 +290,7 @@ class RoutewayProvider(BaseProvider):
     # =========================================================================
 
     def _build_generation_config(self, request: PromptRequest) -> dict[str, Any]:
-        """
-        Build generation configuration for Routeway API.
+        """Build generation configuration for Routeway API.
 
         Maps PromptRequest parameters to OpenAI-compatible parameters.
         """
@@ -335,48 +334,53 @@ class RoutewayProvider(BaseProvider):
         logger.error(f"[routeway] HTTP {status_code}: {error_message} (type: {error_type})")
 
         if status_code == 401:
+            msg = "Routeway authentication failed. Check your API key."
             raise AppError(
-                "Routeway authentication failed. Check your API key.",
+                msg,
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
-        elif status_code == 403:
+        if status_code == 403:
+            msg = "Routeway access forbidden. Your API key may not have access to this resource."
             raise AppError(
-                "Routeway access forbidden. Your API key may not have access to this resource.",
+                msg,
                 status_code=status.HTTP_403_FORBIDDEN,
             )
-        elif status_code == 429:
+        if status_code == 429:
+            msg = f"Routeway rate limit exceeded: {error_message}"
             raise AppError(
-                f"Routeway rate limit exceeded: {error_message}",
+                msg,
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             )
-        elif status_code == 400:
+        if status_code == 400:
+            msg = f"Routeway bad request: {error_message}"
             raise AppError(
-                f"Routeway bad request: {error_message}",
+                msg,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        elif status_code == 404:
+        if status_code == 404:
+            msg = f"Routeway resource not found: {error_message}"
             raise AppError(
-                f"Routeway resource not found: {error_message}",
+                msg,
                 status_code=status.HTTP_404_NOT_FOUND,
             )
-        elif status_code == 422:
+        if status_code == 422:
+            msg = f"Routeway unprocessable entity: {error_message}"
             raise AppError(
-                f"Routeway unprocessable entity: {error_message}",
+                msg,
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
-        else:
-            raise AppError(
-                f"Routeway API error ({status_code}): {error_message}",
-                status_code=status.HTTP_502_BAD_GATEWAY,
-            )
+        msg = f"Routeway API error ({status_code}): {error_message}"
+        raise AppError(
+            msg,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
 
     # =========================================================================
     # Model Discovery
     # =========================================================================
 
     async def list_models(self) -> list[dict[str, Any]]:
-        """
-        Fetch available models from Routeway API.
+        """Fetch available models from Routeway API.
 
         Returns a list of model information including pricing and availability.
         """
@@ -388,14 +392,14 @@ class RoutewayProvider(BaseProvider):
             data = response.json()
             return data.get("data", [])
         except Exception as e:
-            logger.error(f"[routeway] Failed to list models: {e}")
+            logger.exception(f"[routeway] Failed to list models: {e}")
             return []
 
     # =========================================================================
     # Context Manager
     # =========================================================================
 
-    async def __aenter__(self) -> RoutewayProvider:
+    async def __aenter__(self) -> Self:
         """Async context manager entry."""
         return self
 

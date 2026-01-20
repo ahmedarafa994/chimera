@@ -1,5 +1,4 @@
-"""
-Bounded cache manager for jailbreak service.
+"""Bounded cache manager for jailbreak service.
 
 This module provides a production-ready cache manager with bounded memory usage,
 LRU eviction, and Redis backend support to prevent memory exhaustion attacks.
@@ -15,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BoundedCacheManager:
-    """
-    Jailbreak service cache manager with bounded memory and Redis backend.
+    """Jailbreak service cache manager with bounded memory and Redis backend.
 
     Wraps HybridCache to provide jailbreak-specific caching semantics
     with protection against memory exhaustion attacks.
@@ -41,9 +39,10 @@ class BoundedCacheManager:
         config: CacheConfig | None = None,
         max_items: int = 5000,
         max_value_size: int | None = None,
-    ):
+    ) -> None:
         cache_config = config or CacheConfig(
-            max_memory_items=max_items, key_prefix="chimera:jailbreak:"
+            max_memory_items=max_items,
+            key_prefix="chimera:jailbreak:",
         )
         self._cache = HybridCache(cache_config)
         self._initialized = False
@@ -77,8 +76,7 @@ class BoundedCacheManager:
         return await self._cache.get(full_key)
 
     async def set(self, key: str, value: Any, ttl_seconds: int | None = None) -> bool:
-        """
-        Set value in cache with size validation.
+        """Set value in cache with size validation.
 
         Returns False if value exceeds size limit.
         """

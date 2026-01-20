@@ -1,5 +1,4 @@
-"""
-LLM Service with optimized caching, request deduplication, and provider failover.
+"""LLM Service with optimized caching, request deduplication, and provider failover.
 
 PERF-047: Phase 3 LLM service optimizations including:
 - Response caching for identical prompts
@@ -61,8 +60,7 @@ from app.domain.models import (
 
 
 def _get_provider_resolution_service():
-    """
-    Get ProviderResolutionService instance with graceful fallback.
+    """Get ProviderResolutionService instance with graceful fallback.
 
     Returns None if resolution service is not available.
     """
@@ -76,8 +74,7 @@ def _get_provider_resolution_service():
 
 
 def _get_global_model_selection_state():
-    """
-    Get GlobalModelSelectionState instance with graceful fallback.
+    """Get GlobalModelSelectionState instance with graceful fallback.
 
     Returns None if selection state service is not available.
     """
@@ -91,8 +88,7 @@ def _get_global_model_selection_state():
 
 
 def _get_config_manager():
-    """
-    Get AIConfigManager instance with graceful fallback.
+    """Get AIConfigManager instance with graceful fallback.
 
     Returns None if config manager is not available.
     """
@@ -108,8 +104,7 @@ def _get_config_manager():
 
 
 def _get_api_key_failover_service():
-    """
-    Get ApiKeyFailoverService instance with graceful fallback.
+    """Get ApiKeyFailoverService instance with graceful fallback.
 
     Returns None if failover service is not available.
     """
@@ -123,8 +118,7 @@ def _get_api_key_failover_service():
 
 
 def _get_provider_health_service():
-    """
-    Get ProviderHealthService instance with graceful fallback.
+    """Get ProviderHealthService instance with graceful fallback.
 
     Returns None if health service is not available.
     """
@@ -138,8 +132,7 @@ def _get_provider_health_service():
 
 
 def _get_quota_tracking_service():
-    """
-    Get QuotaTrackingService instance with graceful fallback.
+    """Get QuotaTrackingService instance with graceful fallback.
 
     Returns None if quota service is not available.
     """
@@ -158,13 +151,12 @@ def _get_quota_tracking_service():
 
 
 class LLMResponseCache:
-    """
-    Cache for LLM responses with TTL and size limits.
+    """Cache for LLM responses with TTL and size limits.
 
     PERF-048: Caches identical prompt responses to avoid redundant API calls.
     """
 
-    def __init__(self, max_size: int = 500, default_ttl: int = 300):
+    def __init__(self, max_size: int = 500, default_ttl: int = 300) -> None:
         self._cache: dict[str, dict[str, Any]] = {}
         self._max_size = max_size
         self._default_ttl = default_ttl
@@ -197,7 +189,10 @@ class LLMResponseCache:
             return entry["response"]
 
     async def set(
-        self, request: PromptRequest, response: PromptResponse, ttl: int | None = None
+        self,
+        request: PromptRequest,
+        response: PromptResponse,
+        ttl: int | None = None,
     ) -> None:
         """Cache response for request."""
         key = self._generate_key(request)
@@ -239,14 +234,13 @@ class LLMResponseCache:
 
 
 class RequestDeduplicator:
-    """
-    Deduplicates concurrent identical requests.
+    """Deduplicates concurrent identical requests.
 
     PERF-049: When multiple identical requests arrive simultaneously,
     only one actual API call is made and the result is shared.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._pending: dict[str, asyncio.Future] = {}
         self._lock = asyncio.Lock()
         self._deduplicated_count = 0
@@ -257,8 +251,7 @@ class RequestDeduplicator:
         return hashlib.sha256(key_data.encode()).hexdigest()
 
     async def deduplicate(self, request: PromptRequest, execute_fn: Callable[[], Any]) -> Any:
-        """
-        Execute request with deduplication.
+        """Execute request with deduplication.
 
         If an identical request is already in progress, wait for its result
         instead of making a duplicate API call.
@@ -311,8 +304,7 @@ class RequestDeduplicator:
 
 
 class LLMService:
-    """
-    LLM Service with optimized caching, deduplication, circuit breaker,
+    """LLM Service with optimized caching, deduplication, circuit breaker,
     and failover.
 
     PERF-050: Performance optimizations:
@@ -357,7 +349,7 @@ class LLMService:
         "cursor": ["openai", "anthropic", "gemini"],
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._providers: dict[str, LLMProvider] = {}
         self._default_provider: str | None = None
         # Cache for pre-created circuit breaker wrappers (PERF-018)
@@ -403,7 +395,7 @@ class LLMService:
 
             logger.info(
                 f"LLMService loaded config: cache={self._CACHE_ENABLED}, "
-                f"failover={self._FAILOVER_ENABLED}"
+                f"failover={self._FAILOVER_ENABLED}",
             )
         except Exception as e:
             logger.warning(f"Failed to load config settings: {e}")
@@ -422,8 +414,7 @@ class LLMService:
         return lowered
 
     def _resolve_registered_provider_name(self, name: str | None) -> str | None:
-        """
-        Resolve a requested provider name to a registered provider key.
+        """Resolve a requested provider name to a registered provider key.
 
         This keeps backwards compatibility between "google" and "gemini" naming,
         while allowing the provider registry to register only one of them.
@@ -445,7 +436,7 @@ class LLMService:
 
         return normalized
 
-    def register_provider(self, name: str, provider: LLMProvider, is_default: bool = False):
+    def register_provider(self, name: str, provider: LLMProvider, is_default: bool = False) -> None:
         normalized_name = self._normalize_provider_name(name) or name
         self._providers[normalized_name] = provider
         if is_default:
@@ -457,12 +448,11 @@ class LLMService:
         # Debug: Log instance ID to track if same instance is being used
         logger.info(
             f"Registered provider: {normalized_name} (default={is_default}) "
-            f"[instance_id={id(self)}, providers_count={len(self._providers)}]"
+            f"[instance_id={id(self)}, providers_count={len(self._providers)}]",
         )
 
     def _create_circuit_breaker_wrapper(self, provider_name: str) -> None:
-        """
-        Pre-create a circuit breaker wrapper for a provider (PERF-020).
+        """Pre-create a circuit breaker wrapper for a provider (PERF-020).
 
         PERF-001 FIX: Added timeout support from TimeoutConfig to prevent hanging requests.
 
@@ -490,7 +480,7 @@ class LLMService:
         self._circuit_breaker_cache[provider_name] = circuit_breaker_wrapper
         logger.debug(
             f"Created circuit breaker wrapper for provider: {provider_name} "
-            f"(timeout={llm_timeout}s)"
+            f"(timeout={llm_timeout}s)",
         )
 
     def get_provider(self, name: str | None = None) -> LLMProvider:
@@ -502,8 +492,7 @@ class LLMService:
         return self._providers[provider_name]
 
     def _get_failover_providers(self, primary: str) -> list[str]:
-        """
-        Get ordered list of failover providers for a primary provider.
+        """Get ordered list of failover providers for a primary provider.
 
         Returns providers from custom chain, config chain, or default chain,
         filtered to only include actually registered providers.
@@ -523,8 +512,7 @@ class LLMService:
         ]
 
     def get_failover_chain(self, chain_name: str) -> list[str]:
-        """
-        Get a failover chain by name from AIConfigManager.
+        """Get a failover chain by name from AIConfigManager.
 
         Args:
             chain_name: Named chain (e.g., "premium", "cost_optimized")
@@ -532,6 +520,7 @@ class LLMService:
 
         Returns:
             List of provider IDs in failover order
+
         """
         config_manager = _get_config_manager()
         if config_manager:
@@ -547,12 +536,12 @@ class LLMService:
         return self._DEFAULT_FAILOVER_CHAIN.get(chain_name, [])
 
     def set_failover_chain(self, provider: str, failover_providers: list[str]) -> None:
-        """
-        Set a custom failover chain for a provider.
+        """Set a custom failover chain for a provider.
 
         Args:
             provider: The primary provider name
             failover_providers: Ordered list of providers to try on failure
+
         """
         self._failover_chains[provider] = failover_providers
         logger.info(f"Set failover chain for {provider}: {failover_providers}")
@@ -562,8 +551,7 @@ class LLMService:
         fallback_session_id: str | None = None,
         fallback_user_id: str | None = None,
     ) -> tuple[str, str]:
-        """
-        Get the current provider/model selection from request context.
+        """Get the current provider/model selection from request context.
 
         This method checks the request context (set by middleware) first,
         and falls back to ProviderResolutionService for full resolution.
@@ -580,6 +568,7 @@ class LLMService:
 
         Returns:
             Tuple of (provider, model_id)
+
         """
         # Try request context first (fastest, set by middleware)
         state = _get_global_model_selection_state()
@@ -617,7 +606,7 @@ class LLMService:
             selection = model_selection_service.get_selection()
             if selection:
                 logger.debug(
-                    f"Using model_selection_service: " f"{selection.provider}/{selection.model}"
+                    f"Using model_selection_service: {selection.provider}/{selection.model}",
                 )
                 return (selection.provider, selection.model)
         except Exception as e:
@@ -634,8 +623,7 @@ class LLMService:
         self,
         request: PromptRequest,
     ) -> tuple[str, str | None]:
-        """
-        Resolve provider and model for a request.
+        """Resolve provider and model for a request.
 
         Uses the following priority:
         1. Explicit provider/model from request
@@ -647,12 +635,13 @@ class LLMService:
 
         Returns:
             Tuple of (provider_name, model_name)
+
         """
         # Check if request has explicit provider
         if request.provider:
             provider_name = request.provider.value
             model_name = request.model
-            logger.debug(f"Using explicit request selection: " f"{provider_name}/{model_name}")
+            logger.debug(f"Using explicit request selection: {provider_name}/{model_name}")
             return (provider_name, model_name)
 
         # Check if global selection should be used
@@ -672,8 +661,7 @@ class LLMService:
         return (default_provider, default_model)
 
     async def generate_text(self, request: PromptRequest) -> PromptResponse:
-        """
-        Generate text with caching, deduplication, circuit breaker,
+        """Generate text with caching, deduplication, circuit breaker,
         and failover.
 
         PERF-051: Request flow:
@@ -771,9 +759,9 @@ class LLMService:
                         "output_tokens": output_tokens,
                         "cost": cost,
                         "timestamp": time.time(),
-                    }
+                    },
                 )
-                logger.debug(f"Request cost: ${cost:.6f} " f"(total: ${self._total_cost:.4f})")
+                logger.debug(f"Request cost: ${cost:.6f} (total: ${self._total_cost:.4f})")
         except Exception as e:
             logger.debug(f"Cost tracking failed: {e}")
 
@@ -783,8 +771,7 @@ class LLMService:
         primary_provider: str,
         provider: LLMProvider,
     ) -> PromptResponse:
-        """
-        Execute request with automatic failover on circuit breaker open and rate limits.
+        """Execute request with automatic failover on circuit breaker open and rate limits.
 
         STORY-1.2: Tries failover providers in order when primary fails.
 
@@ -833,7 +820,9 @@ class LLMService:
                     logger.debug(f"Could not get managed API key: {e}")
 
             response = await self._call_with_circuit_breaker(
-                primary_provider, provider.generate, request
+                primary_provider,
+                provider.generate,
+                request,
             )
 
             # Record success with services
@@ -858,7 +847,7 @@ class LLMService:
         except CircuitBreakerOpen as e:
             last_error = e
             logger.warning(
-                f"Circuit breaker open for provider '{e.name}'. " f"Attempting failover..."
+                f"Circuit breaker open for provider '{e.name}'. Attempting failover...",
             )
 
             # Record failure with health service
@@ -887,7 +876,9 @@ class LLMService:
                         fallback_request = self._create_fallback_request(request, fallback_name)
 
                         response = await self._call_with_circuit_breaker(
-                            fallback_name, fallback_provider.generate, fallback_request
+                            fallback_name,
+                            fallback_provider.generate,
+                            fallback_request,
                         )
 
                         # Mark response as served by failover
@@ -944,7 +935,7 @@ class LLMService:
             if is_rate_limit and failover_service and current_key_id:
                 logger.warning(
                     f"Rate limit detected for {primary_provider} with key {current_key_id[:20]}..., "
-                    f"attempting API key failover..."
+                    f"attempting API key failover...",
                 )
 
                 # Handle the error and get backup key
@@ -957,7 +948,7 @@ class LLMService:
 
                 if new_key_id and new_api_key:
                     logger.info(
-                        f"API key failover: {current_key_id[:20]}... -> {new_key_id[:20]}..."
+                        f"API key failover: {current_key_id[:20]}... -> {new_key_id[:20]}...",
                     )
 
                     # Retry with backup key
@@ -973,7 +964,9 @@ class LLMService:
                         )
 
                         response = await self._call_with_circuit_breaker(
-                            primary_provider, provider.generate, retry_request
+                            primary_provider,
+                            provider.generate,
+                            retry_request,
                         )
 
                         # Record success with failover
@@ -997,7 +990,7 @@ class LLMService:
                         self._last_failover_info = failover_info
 
                         logger.info(
-                            f"Request succeeded after API key failover for {primary_provider}"
+                            f"Request succeeded after API key failover for {primary_provider}",
                         )
                         return response
 
@@ -1011,14 +1004,14 @@ class LLMService:
             raise
 
     def _is_rate_limit_error(self, error_message: str) -> bool:
-        """
-        Check if an error message indicates a rate limit.
+        """Check if an error message indicates a rate limit.
 
         Args:
             error_message: Error message from provider
 
         Returns:
             True if this is a rate limit error
+
         """
         if not error_message:
             return False
@@ -1051,8 +1044,7 @@ class LLMService:
         health_service,
         quota_service,
     ) -> None:
-        """
-        Record successful request with all tracking services.
+        """Record successful request with all tracking services.
 
         Args:
             provider_id: Provider identifier
@@ -1062,6 +1054,7 @@ class LLMService:
             failover_service: ApiKeyFailoverService instance
             health_service: ProviderHealthService instance
             quota_service: QuotaTrackingService instance
+
         """
         # Record success with failover service
         if failover_service and key_id:
@@ -1096,7 +1089,9 @@ class LLMService:
                 logger.debug(f"Failed to record with quota service: {e}")
 
     def _create_fallback_request(
-        self, original: PromptRequest, fallback_provider: str
+        self,
+        original: PromptRequest,
+        fallback_provider: str,
     ) -> PromptRequest:
         """Create a request adapted for the fallback provider."""
         # Check if fallback_provider is valid enum value
@@ -1134,15 +1129,14 @@ class LLMService:
         # Fallback: create wrapper on-demand (shouldn't happen in normal flow)
         logger.warning(
             f"Circuit breaker wrapper not pre-created for provider: {provider_name}. "
-            "Creating on-demand (performance impact)."
+            "Creating on-demand (performance impact).",
         )
         self._create_circuit_breaker_wrapper(provider_name)
         wrapper = self._circuit_breaker_cache[provider_name]
         return await wrapper(func, *args, **kwargs)
 
     async def generate(self, prompt: str, provider: str | None = None, **kwargs) -> Any:
-        """
-        Generate text from an LLM provider.
+        """Generate text from an LLM provider.
 
         Args:
             prompt: The text prompt to send to the LLM
@@ -1154,6 +1148,7 @@ class LLMService:
 
         Raises:
             ProviderNotAvailableError: When provider is unavailable or circuit is open
+
         """
         from app.domain.models import GenerationConfig, PromptRequest
 
@@ -1187,7 +1182,7 @@ class LLMService:
             # HIGH-003 FIX: Handle circuit breaker open in generate() method too
             logger.warning(
                 f"Circuit breaker open for provider '{e.name}' in generate(). "
-                f"Retry after {e.retry_after:.1f}s"
+                f"Retry after {e.retry_after:.1f}s",
             )
             raise ProviderNotAvailableError(
                 provider=e.name,
@@ -1205,7 +1200,7 @@ class LLMService:
         import uuid
 
         class LLMResponse:
-            def __init__(self, resp: PromptResponse):
+            def __init__(self, resp: PromptResponse) -> None:
                 self.request_id = str(uuid.uuid4())
                 self.content = resp.text
                 self.model = resp.model_used
@@ -1215,7 +1210,7 @@ class LLMService:
 
                 # Usage info
                 class Usage:
-                    def __init__(self, metadata):
+                    def __init__(self, metadata) -> None:
                         self.total_tokens = metadata.get("total_token_count", 0) if metadata else 0
                         self.prompt_tokens = (
                             metadata.get("prompt_token_count", 0) if metadata else 0
@@ -1234,7 +1229,7 @@ class LLMService:
         providers_info = []
         provider_models = settings.get_provider_models()
 
-        for name, _provider in self._providers.items():
+        for name in self._providers:
             # Get available models from config
             available_models = provider_models.get(
                 name,
@@ -1251,7 +1246,7 @@ class LLMService:
                     status="active",
                     model=available_models[0] if available_models else "unknown",
                     available_models=available_models,
-                )
+                ),
             )
 
         return ProviderListResponse(
@@ -1266,7 +1261,7 @@ class LLMService:
         # Debug: Log instance ID to track if same instance as registration
         logger.info(
             f"get_available_providers called: {providers} "
-            f"[instance_id={id(self)}, providers_count={len(self._providers)}]"
+            f"[instance_id={id(self)}, providers_count={len(self._providers)}]",
         )
         return providers
 
@@ -1292,7 +1287,9 @@ class LLMService:
                 (
                     "google"
                     if resolved == "gemini"
-                    else "gemini" if resolved == "google" else resolved
+                    else "gemini"
+                    if resolved == "google"
+                    else resolved
                 ),
                 [],
             ),
@@ -1313,8 +1310,7 @@ class LLMService:
         return LLMProviderType(self._default_provider)
 
     def get_performance_stats(self) -> dict[str, Any]:
-        """
-        Get performance statistics for the LLM service (PERF-052).
+        """Get performance statistics for the LLM service (PERF-052).
 
         Returns cache hit rates, deduplication stats, provider info,
         failover config, cost tracking, and API key failover status.
@@ -1344,8 +1340,7 @@ class LLMService:
         provider_name: str,
         model_name: str | None = None,
     ) -> bool:
-        """
-        Switch to a different provider at runtime.
+        """Switch to a different provider at runtime.
 
         Args:
             provider_name: Provider to switch to
@@ -1353,6 +1348,7 @@ class LLMService:
 
         Returns:
             True if switch was successful
+
         """
         resolved = self._resolve_registered_provider_name(provider_name)
         if not resolved or resolved not in self._providers:
@@ -1409,24 +1405,24 @@ class LLMService:
         logger.info(f"Global model selection {'enabled' if enabled else 'disabled'}")
 
     def enable_api_key_failover(self, enabled: bool = True) -> None:
-        """
-        Enable or disable automatic API key failover on rate limits.
+        """Enable or disable automatic API key failover on rate limits.
 
         When enabled, the service will automatically switch to backup API keys
         when the primary key hits rate limits, and retry the request transparently.
 
         Args:
             enabled: Whether API key failover should be enabled
+
         """
         self._api_key_failover_enabled = enabled
         logger.info(f"API key failover {'enabled' if enabled else 'disabled'}")
 
     def get_last_failover_info(self) -> dict[str, Any]:
-        """
-        Get information about the last failover event.
+        """Get information about the last failover event.
 
         Returns:
             Dictionary with failover details or empty dict if no failover occurred
+
         """
         return self._last_failover_info.copy()
 
@@ -1435,11 +1431,11 @@ class LLMService:
         self._last_failover_info.clear()
 
     def get_api_key_failover_status(self) -> dict[str, Any]:
-        """
-        Get the current API key failover status for all providers.
+        """Get the current API key failover status for all providers.
 
         Returns:
             Dictionary with failover status per provider
+
         """
         failover_service = _get_api_key_failover_service()
         if not failover_service:
@@ -1466,8 +1462,7 @@ class LLMService:
     # =========================================================================
 
     async def generate_text_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
-        """
-        Stream text generation with circuit breaker protection.
+        """Stream text generation with circuit breaker protection.
 
         This method provides real-time token-by-token streaming from LLM providers.
         Note: Streaming responses are NOT cached as they are meant for real-time use.
@@ -1481,6 +1476,7 @@ class LLMService:
         Raises:
             ProviderNotAvailableError: When provider is unavailable or doesn't support streaming.
             NotImplementedError: When the provider doesn't implement streaming.
+
         """
         # Determine provider from request or default
         provider_name = None
@@ -1511,7 +1507,7 @@ class LLMService:
         except CircuitBreakerOpen as e:
             logger.warning(
                 f"Circuit breaker open for provider '{e.name}' during streaming. "
-                f"Retry after {e.retry_after:.1f}s"
+                f"Retry after {e.retry_after:.1f}s",
             )
             raise ProviderNotAvailableError(
                 provider=e.name,
@@ -1526,10 +1522,12 @@ class LLMService:
             )
 
     async def stream_generate(
-        self, prompt: str, provider: str | None = None, **kwargs
+        self,
+        prompt: str,
+        provider: str | None = None,
+        **kwargs,
     ) -> AsyncIterator[StreamChunk]:
-        """
-        Convenience method for streaming text generation.
+        """Convenience method for streaming text generation.
 
         Args:
             prompt: The text prompt to send to the LLM.
@@ -1538,6 +1536,7 @@ class LLMService:
 
         Yields:
             StreamChunk: Individual chunks of generated text.
+
         """
         from app.domain.models import GenerationConfig
 
@@ -1565,10 +1564,12 @@ class LLMService:
     # =========================================================================
 
     async def count_tokens(
-        self, text: str, provider: str | None = None, model: str | None = None
+        self,
+        text: str,
+        provider: str | None = None,
+        model: str | None = None,
     ) -> int:
-        """
-        Count tokens in text using the specified provider's tokenizer.
+        """Count tokens in text using the specified provider's tokenizer.
 
         Args:
             text: The text to count tokens for.
@@ -1581,6 +1582,7 @@ class LLMService:
         Raises:
             ProviderNotAvailableError: When provider is unavailable.
             NotImplementedError: When the provider doesn't support token counting.
+
         """
         llm_provider = self.get_provider(provider)
         provider_name = provider or self._default_provider
@@ -1596,8 +1598,7 @@ class LLMService:
             )
 
     async def estimate_tokens(self, text: str, provider: str | None = None) -> dict[str, Any]:
-        """
-        Estimate token count with additional metadata.
+        """Estimate token count with additional metadata.
 
         This is a higher-level method that provides token count along with
         cost estimation and context window information.
@@ -1608,6 +1609,7 @@ class LLMService:
 
         Returns:
             dict with token_count, estimated_cost, and context_info.
+
         """
         provider_name = provider or self._default_provider
 
@@ -1657,14 +1659,14 @@ class LLMService:
             }
 
     def supports_streaming(self, provider: str | None = None) -> bool:
-        """
-        Check if a provider supports streaming.
+        """Check if a provider supports streaming.
 
         Args:
             provider: The provider name to check.
 
         Returns:
             bool: True if the provider supports streaming.
+
         """
         try:
             llm_provider = self.get_provider(provider)
@@ -1677,14 +1679,14 @@ class LLMService:
             return False
 
     def supports_token_counting(self, provider: str | None = None) -> bool:
-        """
-        Check if a provider supports token counting.
+        """Check if a provider supports token counting.
 
         Args:
             provider: The provider name to check.
 
         Returns:
             bool: True if the provider supports token counting.
+
         """
         try:
             llm_provider = self.get_provider(provider)
@@ -1703,5 +1705,5 @@ logger.info(f"llm_service singleton created: instance_id={id(llm_service)}, modu
 
 
 def get_llm_service() -> LLMService:
-    """Dependency provider for LLMService"""
+    """Dependency provider for LLMService."""
     return llm_service

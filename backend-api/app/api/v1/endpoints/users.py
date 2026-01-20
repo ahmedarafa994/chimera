@@ -1,5 +1,4 @@
-"""
-User Profile Management API Endpoints
+"""User Profile Management API Endpoints.
 
 Provides user profile endpoints:
 - GET /me - Get current user profile
@@ -17,6 +16,7 @@ import logging
 import re
 import secrets
 from datetime import datetime, timedelta
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
@@ -43,8 +43,7 @@ router = APIRouter()
 
 
 async def get_db_session() -> AsyncSession:
-    """
-    Get an async database session for the request.
+    """Get an async database session for the request.
 
     Yields a session and ensures proper cleanup.
     """
@@ -85,7 +84,7 @@ class UserProfileResponse(BaseModel):
                 "created_at": "2024-01-15T10:30:00Z",
                 "updated_at": "2024-01-20T14:45:00Z",
                 "last_login": "2024-01-25T09:00:00Z",
-            }
+            },
         }
 
 
@@ -109,10 +108,12 @@ class UserProfileUpdateRequest(BaseModel):
 
         # Allow alphanumeric, underscores, and hyphens
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError("Username can only contain letters, numbers, underscores, and hyphens")
+            msg = "Username can only contain letters, numbers, underscores, and hyphens"
+            raise ValueError(msg)
         # Cannot start with a number
         if v[0].isdigit():
-            raise ValueError("Username cannot start with a number")
+            msg = "Username cannot start with a number"
+            raise ValueError(msg)
         return v.lower()  # Normalize to lowercase
 
 
@@ -153,7 +154,7 @@ class ChangePasswordRequest(BaseModel):
             "example": {
                 "current_password": "MyCurrentP@ssw0rd!",
                 "new_password": "MyNewSecureP@ssw0rd123!",
-            }
+            },
         }
 
 
@@ -186,11 +187,11 @@ CHANGE_PASSWORD_RATE_LIMIT = RateLimitConfig(
 
 
 async def _check_change_password_rate_limit(request: Request) -> None:
-    """
-    Check rate limit for change password requests.
+    """Check rate limit for change password requests.
 
     Raises:
         HTTPException: If rate limit is exceeded
+
     """
     rate_limiter = get_rate_limiter()
     key = get_rate_limit_key(request, prefix="change_password")
@@ -210,8 +211,7 @@ async def _check_change_password_rate_limit(request: Request) -> None:
 
 
 def _user_to_profile_response(user: User) -> UserProfileResponse:
-    """
-    Convert a User model to a UserProfileResponse.
+    """Convert a User model to a UserProfileResponse.
 
     Sanitizes user data by excluding sensitive fields like password hash.
 
@@ -220,6 +220,7 @@ def _user_to_profile_response(user: User) -> UserProfileResponse:
 
     Returns:
         UserProfileResponse with safe user data
+
     """
     return UserProfileResponse(
         id=user.id,
@@ -238,8 +239,7 @@ async def _get_authenticated_user(
     current_user: TokenPayload,
     session: AsyncSession,
 ) -> User:
-    """
-    Get the authenticated database user from the JWT token.
+    """Get the authenticated database user from the JWT token.
 
     Args:
         current_user: Token payload from JWT authentication
@@ -250,6 +250,7 @@ async def _get_authenticated_user(
 
     Raises:
         HTTPException: If user not found or is API client
+
     """
     # Check if this is an API client (not a database user)
     if current_user.type == "api_key" or current_user.sub == "api_client":
@@ -298,7 +299,6 @@ async def _get_authenticated_user(
 @router.get(
     "/me",
     status_code=status.HTTP_200_OK,
-    response_model=UserProfileResponse,
     summary="Get current user profile",
     description="""
 Get the profile information for the currently authenticated user.
@@ -342,11 +342,10 @@ Get the profile information for the currently authenticated user.
     tags=["users", "profile"],
 )
 async def get_current_user_profile(
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> UserProfileResponse:
-    """
-    Get the current authenticated user's profile.
+    """Get the current authenticated user's profile.
 
     Returns sanitized user information (no password hash).
     """
@@ -360,7 +359,6 @@ async def get_current_user_profile(
 @router.put(
     "/me",
     status_code=status.HTTP_200_OK,
-    response_model=UserProfileUpdateResponse,
     summary="Update current user profile",
     description="""
 Update the profile information for the currently authenticated user.
@@ -429,11 +427,10 @@ Update the profile information for the currently authenticated user.
 async def update_current_user_profile(
     request_data: UserProfileUpdateRequest,
     request: Request,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> UserProfileUpdateResponse:
-    """
-    Update the current authenticated user's profile.
+    """Update the current authenticated user's profile.
 
     Only allows updating safe fields (username).
     Email changes require re-verification and are handled separately.
@@ -486,7 +483,7 @@ async def update_current_user_profile(
                         }
                         if request_data.username
                         else None
-                    )
+                    ),
                 },
             },
             ip_address=client_ip,
@@ -537,7 +534,6 @@ async def update_current_user_profile(
 @router.post(
     "/me/change-password",
     status_code=status.HTTP_200_OK,
-    response_model=ChangePasswordResponse,
     summary="Change user password",
     description="""
 Change the password for the currently authenticated user.
@@ -596,11 +592,10 @@ Change the password for the currently authenticated user.
 async def change_password(
     request_data: ChangePasswordRequest,
     request: Request,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ChangePasswordResponse:
-    """
-    Change the current authenticated user's password.
+    """Change the current authenticated user's password.
 
     Requires current password verification and validates new password strength.
     """
@@ -659,7 +654,7 @@ async def change_password(
                 )
 
                 logger.info(
-                    f"Password change failed: incorrect current password for user {user.id}"
+                    f"Password change failed: incorrect current password for user {user.id}",
                 )
 
                 raise HTTPException(
@@ -757,7 +752,7 @@ class APIKeyResponse(BaseModel):
                 "usage_count": 42,
                 "created_at": "2024-01-01T00:00:00Z",
                 "revoked_at": None,
-            }
+            },
         }
 
 
@@ -833,7 +828,7 @@ class CreateAPIKeyResponse(BaseModel):
                     "created_at": "2024-01-01T00:00:00Z",
                     "revoked_at": None,
                 },
-            }
+            },
         }
 
 
@@ -868,11 +863,11 @@ API_KEY_PREFIX = "chim_"
 
 
 def _generate_api_key() -> tuple[str, str, str]:
-    """
-    Generate a new API key with prefix.
+    """Generate a new API key with prefix.
 
     Returns:
         Tuple of (full_key, hashed_key, key_prefix)
+
     """
     # Generate 32 bytes of random data (256 bits of entropy)
     random_part = secrets.token_urlsafe(32)
@@ -888,14 +883,14 @@ def _generate_api_key() -> tuple[str, str, str]:
 
 
 def _api_key_to_response(api_key: UserAPIKey) -> APIKeyResponse:
-    """
-    Convert a UserAPIKey model to an APIKeyResponse.
+    """Convert a UserAPIKey model to an APIKeyResponse.
 
     Args:
         api_key: UserAPIKey model from database
 
     Returns:
         APIKeyResponse with safe key data
+
     """
     return APIKeyResponse(
         id=api_key.id,
@@ -918,7 +913,6 @@ def _api_key_to_response(api_key: UserAPIKey) -> APIKeyResponse:
 @router.get(
     "/me/api-keys",
     status_code=status.HTTP_200_OK,
-    response_model=APIKeyListResponse,
     summary="List user's API keys",
     description="""
 List all API keys for the currently authenticated user.
@@ -965,11 +959,10 @@ Only the key prefix is shown for identification.
     tags=["users", "api-keys"],
 )
 async def list_api_keys(
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> APIKeyListResponse:
-    """
-    List all API keys for the current user.
+    """List all API keys for the current user.
 
     Returns masked API key data (only prefix shown).
     """
@@ -1000,7 +993,6 @@ async def list_api_keys(
 @router.post(
     "/me/api-keys",
     status_code=status.HTTP_201_CREATED,
-    response_model=CreateAPIKeyResponse,
     summary="Create a new API key",
     description="""
 Create a new API key for the currently authenticated user.
@@ -1060,11 +1052,10 @@ Copy and store it securely - it cannot be retrieved again.
 async def create_api_key(
     request_data: CreateAPIKeyRequest,
     request: Request,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> CreateAPIKeyResponse:
-    """
-    Create a new API key for the current user.
+    """Create a new API key for the current user.
 
     The full API key is only returned once - store it securely.
     """
@@ -1078,7 +1069,7 @@ async def create_api_key(
     active_key_count = await user_repo.count_active_api_keys(user.id)
     if active_key_count >= MAX_API_KEYS_PER_USER:
         logger.warning(
-            f"User {user.id} exceeded API key limit ({active_key_count}/{MAX_API_KEYS_PER_USER})"
+            f"User {user.id} exceeded API key limit ({active_key_count}/{MAX_API_KEYS_PER_USER})",
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1144,7 +1135,6 @@ async def create_api_key(
 @router.delete(
     "/me/api-keys/{key_id}",
     status_code=status.HTTP_200_OK,
-    response_model=DeleteAPIKeyResponse,
     summary="Revoke/delete an API key",
     description="""
 Revoke (soft-delete) an API key owned by the current user.
@@ -1187,11 +1177,10 @@ for authentication. The key record is kept for audit purposes.
 async def delete_api_key(
     key_id: int,
     request: Request,
-    current_user: TokenPayload = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db_session),
+    current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> DeleteAPIKeyResponse:
-    """
-    Revoke (soft-delete) an API key.
+    """Revoke (soft-delete) an API key.
 
     The key is deactivated but the record is kept for audit purposes.
     """

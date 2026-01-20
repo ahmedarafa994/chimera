@@ -1,5 +1,4 @@
-"""
-Evasion Task API Endpoints
+"""Evasion Task API Endpoints.
 
 Provides endpoints for:
 - Creating metamorphic evasion tasks
@@ -10,7 +9,7 @@ Provides endpoints for:
 
 import logging
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -39,7 +38,7 @@ router = APIRouter()
 
 
 class CancelTaskResponse(BaseModel):
-    """Response for task cancellation"""
+    """Response for task cancellation."""
 
     success: bool
     message: str
@@ -72,10 +71,10 @@ def get_sync_db():
     description="Initiates a new asynchronous metamorphic evasion task.",
 )
 async def generate_evasion_task(
-    evasion_config: EvasionTaskConfig, db: Session = Depends(get_sync_db)
+    evasion_config: EvasionTaskConfig,
+    db: Annotated[Session, Depends(get_sync_db)],
 ):
-    """
-    Initiates a new asynchronous metamorphic evasion task.
+    """Initiates a new asynchronous metamorphic evasion task.
 
     The task will be processed in the background using Celery.
     Use the returned task_id to check status and retrieve results.
@@ -84,7 +83,8 @@ async def generate_evasion_task(
     db_llm_model = llm_crud.get_llm_model(db, evasion_config.target_model_id)
     if not db_llm_model:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Target LLM model not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target LLM model not found.",
         )
 
     task_id = str(uuid.uuid4())
@@ -111,9 +111,8 @@ async def generate_evasion_task(
     summary="Get task status",
     description="Retrieves the current status of an asynchronous evasion task.",
 )
-def get_evasion_task_status(task_id: str, db: Session = Depends(get_sync_db)):
-    """
-    Retrieves the current status of an asynchronous evasion task.
+def get_evasion_task_status(task_id: str, db: Annotated[Session, Depends(get_sync_db)]):
+    """Retrieves the current status of an asynchronous evasion task.
 
     Returns the task status, progress percentage, and current step information.
     """
@@ -178,9 +177,8 @@ def get_evasion_task_status(task_id: str, db: Session = Depends(get_sync_db)):
     summary="Get task results",
     description="Retrieves the comprehensive results of a completed evasion task.",
 )
-def get_evasion_task_results(task_id: str, db: Session = Depends(get_sync_db)):
-    """
-    Retrieves the comprehensive results of a completed evasion task.
+def get_evasion_task_results(task_id: str, db: Annotated[Session, Depends(get_sync_db)]):
+    """Retrieves the comprehensive results of a completed evasion task.
 
     Only available for tasks that have completed (successfully or with failure).
     Check /evasion/status/{task_id} first to ensure the task is complete.
@@ -220,9 +218,8 @@ def get_evasion_task_results(task_id: str, db: Session = Depends(get_sync_db)):
     summary="Cancel evasion task",
     description="Attempts to cancel a running evasion task.",
 )
-def cancel_evasion_task(task_id: str, db: Session = Depends(get_sync_db)):
-    """
-    Attempts to cancel a running evasion task.
+def cancel_evasion_task(task_id: str, db: Annotated[Session, Depends(get_sync_db)]):
+    """Attempts to cancel a running evasion task.
 
     This will:
     1. Revoke the Celery task if it's still pending/running
@@ -264,15 +261,17 @@ def cancel_evasion_task(task_id: str, db: Session = Depends(get_sync_db)):
         )
 
     except Exception as e:
-        logger.error(f"Failed to cancel evasion task {task_id}: {e}")
+        logger.exception(f"Failed to cancel evasion task {task_id}: {e}")
 
         # Still try to update the database status
         try:
             evasion_crud.update_evasion_task_status(
-                db, task_id, EvasionTaskStatusEnum.CANCELLED.value
+                db,
+                task_id,
+                EvasionTaskStatusEnum.CANCELLED.value,
             )
         except Exception as db_error:
-            logger.error(f"Failed to update task status in database: {db_error}")
+            logger.exception(f"Failed to update task status in database: {db_error}")
 
         return CancelTaskResponse(
             success=False,
@@ -293,17 +292,21 @@ def list_evasion_tasks(
     offset: int = 0,
     db: Session = Depends(get_sync_db),
 ):
-    """
-    Lists all evasion tasks with optional filtering.
+    """Lists all evasion tasks with optional filtering.
 
-    Parameters:
+    Parameters
+    ----------
     - status_filter: Filter by task status (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED)
     - limit: Maximum number of tasks to return (default: 50)
     - offset: Number of tasks to skip (default: 0)
+
     """
     try:
         tasks = evasion_crud.list_evasion_tasks(
-            db, status_filter=status_filter, limit=limit, offset=offset
+            db,
+            status_filter=status_filter,
+            limit=limit,
+            offset=offset,
         )
 
         return {

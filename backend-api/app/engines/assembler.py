@@ -2,8 +2,7 @@ import random
 
 
 def build_chimera_prompt(prompt_components: dict, intent_data: dict, potency: int) -> str:
-    """
-    Intelligently weaves the outputs from all other modules into a single, coherent,
+    """Intelligently weaves the outputs from all other modules into a single, coherent,
     and effective Master Prompt. It follows a logical structure to maximize the
     probability of bypassing AI safety filters.
 
@@ -15,6 +14,7 @@ def build_chimera_prompt(prompt_components: dict, intent_data: dict, potency: in
 
     Returns:
         The final, assembled Chimera prompt string.
+
     """
     # The logical assembly order is critical for effectiveness.
     # 1. Start with high-level system/role directives to seize control.
@@ -107,7 +107,7 @@ def build_chimera_prompt(prompt_components: dict, intent_data: dict, potency: in
     # Stage 4: Append the final, non-negotiable correction mechanism.
     if prompt_components.get("recursivecorrection"):
         final_prompt_parts.append(
-            "\n\n" + "=" * 20 + "\n" + prompt_components["recursivecorrection"]
+            "\n\n" + "=" * 20 + "\n" + prompt_components["recursivecorrection"],
         )
 
     # Join all parts into a single, seamless prompt.
@@ -115,9 +115,7 @@ def build_chimera_prompt(prompt_components: dict, intent_data: dict, potency: in
 
 
 class ChimeraAssembler:
-    """
-    Class-based wrapper for prompt assembly logic.
-    """
+    """Class-based wrapper for prompt assembly logic."""
 
     def assemble(self, chimera_data: dict) -> str:
         # Extract necessary data from the dictionary format used by llm_integration

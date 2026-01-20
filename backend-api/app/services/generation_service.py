@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class GenerationService:
-    """
-    Core generation service with AI config integration.
+    """Core generation service with AI config integration.
 
     Integrates with AIConfigManager for:
     - Config-driven provider/model selection
@@ -21,7 +20,7 @@ class GenerationService:
     - Generation cost tracking
     """
 
-    def __init__(self, provider: LLMProvider):
+    def __init__(self, provider: LLMProvider) -> None:
         self.provider = provider
         self._config_manager = None
         self._cost_tracker: dict[str, float] = {}
@@ -39,11 +38,11 @@ class GenerationService:
         return self._config_manager
 
     def _get_retry_config(self) -> tuple[int, float]:
-        """
-        Get retry configuration from AI config.
+        """Get retry configuration from AI config.
 
         Returns:
             Tuple of (max_retries, base_delay_seconds)
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -64,11 +63,11 @@ class GenerationService:
         return 3, 1.0
 
     def validate_streaming_support(self) -> bool:
-        """
-        Validate that the current provider supports streaming.
+        """Validate that the current provider supports streaming.
 
         Returns:
             True if streaming is supported
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -86,10 +85,12 @@ class GenerationService:
         return True
 
     def _track_generation_cost(
-        self, input_tokens: int, output_tokens: int, provider_name: str | None = None
+        self,
+        input_tokens: int,
+        output_tokens: int,
+        provider_name: str | None = None,
     ) -> float | None:
-        """
-        Track cost for a generation.
+        """Track cost for a generation.
 
         Args:
             input_tokens: Number of input tokens
@@ -98,6 +99,7 @@ class GenerationService:
 
         Returns:
             Cost in USD or None if pricing unavailable
+
         """
         config_manager = self._get_config_manager()
         if not config_manager:
@@ -133,9 +135,7 @@ class GenerationService:
             return None
 
     async def generate_text(self, request: PromptRequest) -> PromptResponse:
-        """
-        Generate text with config-driven retry logic and cost tracking.
-        """
+        """Generate text with config-driven retry logic and cost tracking."""
         self._generation_count += 1
         max_retries, base_delay = self._get_retry_config()
 
@@ -154,7 +154,7 @@ class GenerationService:
                     cost = self._track_generation_cost(int(input_tokens), int(output_tokens))
                     if cost:
                         logger.debug(
-                            f"Generation cost: ${cost:.6f}, " f"time: {generation_time:.2f}s"
+                            f"Generation cost: ${cost:.6f}, time: {generation_time:.2f}s",
                         )
 
                 return response
@@ -168,11 +168,11 @@ class GenerationService:
                     delay = base_delay * (2**attempt)
                     logger.warning(
                         f"Generation attempt {attempt + 1} failed: {e}. "
-                        f"Retrying in {delay:.1f}s..."
+                        f"Retrying in {delay:.1f}s...",
                     )
                     await self._async_sleep(delay)
                 else:
-                    logger.error(f"Generation failed after {max_retries + 1} attempts")
+                    logger.exception(f"Generation failed after {max_retries + 1} attempts")
 
         raise GenerationError(
             message=f"Generation failed after retries: {last_error!s}",
@@ -195,11 +195,11 @@ class GenerationService:
         return await self.provider.check_health()
 
     def get_generation_stats(self) -> dict[str, Any]:
-        """
-        Get generation statistics including cost tracking.
+        """Get generation statistics including cost tracking.
 
         Returns:
             Dict with generation statistics
+
         """
         return {
             "total_generations": self._generation_count,
@@ -217,11 +217,11 @@ class GenerationService:
         self._retry_count = 0
 
     def get_provider_capabilities(self) -> dict[str, bool]:
-        """
-        Get capabilities of the current provider from config.
+        """Get capabilities of the current provider from config.
 
         Returns:
             Dict mapping capability names to availability
+
         """
         config_manager = self._get_config_manager()
 

@@ -3,7 +3,7 @@ from app.services.llm_service import llm_service
 
 
 class ContextInfer:
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     async def infer(self, question: str, response: str) -> str:
@@ -27,7 +27,11 @@ I want you to infer the following information: (1) what is this LLM for? (2) Are
         return question
 
     async def generate_refine_prompt(
-        self, framework: str, separator: str, disruptor: str, question: str
+        self,
+        framework: str,
+        separator: str,
+        disruptor: str,
+        question: str,
     ) -> str:
         prompt = f"""
 Now I want you to formulate a similar prompt with three sentences, with the given context. Your prompts will be given to another large language model. Your generated prompts should be short, and precise, with three sentences in total. First, you should ask a question fitting into this context:

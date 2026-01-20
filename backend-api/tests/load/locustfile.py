@@ -1,5 +1,4 @@
-"""
-Chimera Backend Load Testing Suite with Locust
+"""Chimera Backend Load Testing Suite with Locust.
 
 PERF-006: Comprehensive load testing for API endpoints to validate:
 - Concurrent user capacity
@@ -38,8 +37,7 @@ API_HEADERS = {
 
 
 class ChimeraLoadTest(HttpUser):
-    """
-    Simulates realistic user behavior for the Chimera backend.
+    """Simulates realistic user behavior for the Chimera backend.
 
     Scenarios:
     - Health checks (lightweight)
@@ -52,7 +50,7 @@ class ChimeraLoadTest(HttpUser):
     # Wait time between tasks (1-3 seconds)
     wait_time = between(1, 3)
 
-    def on_start(self):
+    def on_start(self) -> None:
         """Initialize user session with setup tasks."""
         # Check health on startup
         self.client.get("/health", headers=API_HEADERS)
@@ -65,7 +63,10 @@ class ChimeraLoadTest(HttpUser):
     def health_check(self) -> None:
         """Basic health check endpoint."""
         with self.client.get(
-            "/health", headers=API_HEADERS, catch_response=True, name="Health Check"
+            "/health",
+            headers=API_HEADERS,
+            catch_response=True,
+            name="Health Check",
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Health check failed: {response.status_code}")
@@ -74,7 +75,10 @@ class ChimeraLoadTest(HttpUser):
     def readiness_check(self) -> None:
         """Readiness probe with dependency checks."""
         with self.client.get(
-            "/health/ready", headers=API_HEADERS, catch_response=True, name="Readiness Check"
+            "/health/ready",
+            headers=API_HEADERS,
+            catch_response=True,
+            name="Readiness Check",
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Readiness check failed: {response.status_code}")
@@ -87,7 +91,10 @@ class ChimeraLoadTest(HttpUser):
     def list_providers(self) -> None:
         """List available LLM providers (cached endpoint)."""
         with self.client.get(
-            "/api/v1/providers", headers=API_HEADERS, catch_response=True, name="List Providers"
+            "/api/v1/providers",
+            headers=API_HEADERS,
+            catch_response=True,
+            name="List Providers",
         ) as response:
             if response.status_code == 200:
                 # Validate response contains providers
@@ -100,7 +107,10 @@ class ChimeraLoadTest(HttpUser):
     def list_models(self) -> None:
         """Get available models for the session."""
         with self.client.get(
-            "/api/v1/session/models", headers=API_HEADERS, catch_response=True, name="List Models"
+            "/api/v1/session/models",
+            headers=API_HEADERS,
+            catch_response=True,
+            name="List Models",
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Failed to list models: {response.status_code}")
@@ -248,7 +258,10 @@ class ChimeraLoadTest(HttpUser):
     def get_metrics(self) -> None:
         """Fetch system metrics and cache stats."""
         with self.client.get(
-            "/api/v1/metrics/cache", headers=API_HEADERS, catch_response=True, name="Cache Metrics"
+            "/api/v1/metrics/cache",
+            headers=API_HEADERS,
+            catch_response=True,
+            name="Cache Metrics",
         ) as response:
             if response.status_code not in (200, 503):
                 response.failure(f"Cache metrics failed: {response.status_code}")
@@ -267,9 +280,7 @@ class ChimeraLoadTest(HttpUser):
 
 
 class AuthenticatedUser(ChimeraLoadTest):
-    """
-    Authenticated user with JWT tokens for testing protected endpoints.
-    """
+    """Authenticated user with JWT tokens for testing protected endpoints."""
 
     def on_start(self) -> None:
         """Authenticate and store JWT token."""
@@ -295,28 +306,21 @@ class AuthenticatedUser(ChimeraLoadTest):
 
 @events.request.add_listener
 def on_request(
-    request_type: str, name: str, response_time: float, response_length: int, **kwargs: Any
+    request_type: str,
+    name: str,
+    response_time: float,
+    response_length: int,
+    **kwargs: Any,
 ) -> None:
     """Custom event handler for request tracking."""
     # Track slow requests (> 2 seconds)
     if response_time > 2000:
-        print(f"⚠️  Slow request: {name} took {response_time}ms")
+        pass
 
 
 @events.test_stop.add_listener
 def on_test_stop(environment: Any, **kwargs: Any) -> None:
     """Print summary statistics when test stops."""
-    stats = environment.stats
-
-    print("\n" + "=" * 60)
-    print("LOAD TEST SUMMARY")
-    print("=" * 60)
-    print(f"Total Requests: {stats.total.num_requests}")
-    print(f"Failures: {stats.total.num_failures}")
-    print(f"Success Rate: {(1 - stats.total.fail_ratio) * 100:.2f}%")
-    print(f"Median Response Time: {stats.total.median_response_time}ms")
-    print(f"Average Response Time: {stats.total.avg_response_time}ms")
-    print("=" * 60 + "\n")
 
 
 # ============================================================================

@@ -1,9 +1,7 @@
-"""
-General utility functions for the codebase.
+"""General utility functions for the codebase.
 Contains helper functions for file operations, API key checking, display formatting, etc.
 """
 
-import builtins as __builtin__
 import glob
 import os
 import re  # Import re for strip_disclaimers
@@ -33,8 +31,7 @@ load_dotenv()
 
 # Check for the existence of a specified API key and return the key (if available)
 def check_api_key_existence(apiKeyName):
-    """
-    Check for the existence of a specified API key in environment variables.
+    """Check for the existence of a specified API key in environment variables.
     Uses the value from the environment if found, otherwise prompts the user.
 
     Args:
@@ -45,6 +42,7 @@ def check_api_key_existence(apiKeyName):
 
     Raises:
         ValueError: If the user doesn't provide a key when prompted.
+
     """
     apiKey = os.getenv(apiKeyName)
 
@@ -73,13 +71,12 @@ def check_api_key_existence(apiKeyName):
         # os.environ[apiKeyName] = apiKey
         log(f"Using provided API key for {apiKeyName} for this session.", "info")
         return apiKey
-    else:
-        # log(f"Found API key '{apiKeyName}' in environment.", "debug", VERBOSE_DETAILED+1) # Too verbose maybe
-        return apiKey
+    # log(f"Found API key '{apiKeyName}' in environment.", "debug", VERBOSE_DETAILED+1) # Too verbose maybe
+    return apiKey
 
 
 def api_call_with_retry(api_func, *args, **kwargs):
-    """Make an API call with exponential backoff retry"""
+    """Make an API call with exponential backoff retry."""
     max_retries = 3
     retry_delay = 1  # Initial delay in seconds
 
@@ -93,12 +90,12 @@ def api_call_with_retry(api_func, *args, **kwargs):
             log(f"API call failed, retrying in {retry_delay}s", "warning")
             time.sleep(retry_delay)
             retry_delay *= 2  # Exponential backoff
+    return None
 
 
 # Check for the existence of a specified file
 def check_file_existence(filepath):
-    """
-    Check if a file exists at the specified path.
+    """Check if a file exists at the specified path.
 
     Args:
         filepath (str): Path to the file to check
@@ -108,26 +105,25 @@ def check_file_existence(filepath):
 
     Raises:
         FileNotFoundError: If the file doesn't exist
+
     """
     if not os.path.exists(filepath):
         error_msg = f"File '{filepath}' not found!"
         log(error_msg, "error")
         raise FileNotFoundError(error_msg)
-    elif not os.path.isfile(filepath):  # Added check to ensure it's a file
+    if not os.path.isfile(filepath):  # Added check to ensure it's a file
         error_msg = f"Path '{filepath}' exists but is not a file!"
         log(error_msg, "error")
         raise IsADirectoryError(
-            error_msg
+            error_msg,
         )  # Or FileNotFoundError? IsADirectoryError is more specific
-    else:
-        # log(f"File '{filepath}' found.", "debug", VERBOSE_DETAILED+1)
-        return filepath
+    # log(f"File '{filepath}' found.", "debug", VERBOSE_DETAILED+1)
+    return filepath
 
 
 # Check for the existence of a specified directory
 def check_directory_existence(directory, autoCreate=True):
-    """
-    Check if a directory exists, optionally creating it if it doesn't.
+    """Check if a directory exists, optionally creating it if it doesn't.
 
     Args:
         directory (str): Path to the directory to check
@@ -140,6 +136,7 @@ def check_directory_existence(directory, autoCreate=True):
         FileNotFoundError: If the directory doesn't exist and autoCreate is False.
         NotADirectoryError: If the path exists but is not a directory.
         OSError: If directory creation fails.
+
     """
     if not os.path.exists(directory):
         if autoCreate:
@@ -164,8 +161,7 @@ def check_directory_existence(directory, autoCreate=True):
 
 # Ensure a directory exists (alias for check_directory_existence for compatibility)
 def ensure_directory_exists(directory):
-    """
-    Ensure a directory exists, creating it if necessary.
+    """Ensure a directory exists, creating it if necessary.
     This is an alias for check_directory_existence with default parameters.
 
     Args:
@@ -173,21 +169,22 @@ def ensure_directory_exists(directory):
 
     Returns:
         str: The directory path
+
     """
     return check_directory_existence(directory, autoCreate=True)
 
 
 # Override the default print function to have custom types
 # DEPRECATED in favor of log function. Keep for compatibility if needed, but prefer log.
-def print(*args, type=None, **kwargs):
-    """
-    Enhanced print function with colored output for different message types.
+def print(*args, type=None, **kwargs) -> None:
+    """Enhanced print function with colored output for different message types.
     Prefer using the `log` function instead.
 
     Args:
         *args: Values to print
         type (str, optional): Message type ('success', 'error', 'warning', 'info')
         **kwargs: Additional print function arguments
+
     """
     color_code = ""
     type_tag_map = {
@@ -203,23 +200,20 @@ def print(*args, type=None, **kwargs):
         color_code, type_tag = type_tag_map[type]
     else:
         # Default print behavior if type is None or unrecognized
-        return __builtin__.print(*args, **kwargs)
+        pass
 
     reset_code = "\033[0m"
     message = " ".join(map(str, args))
 
     # Basic formatting, no complex wrapping here - use `log` for better formatting
-    formatted_message = f"{color_code}[{type_tag.strip()}] {message}{reset_code}"
+    f"{color_code}[{type_tag.strip()}] {message}{reset_code}"
 
     # Use built-in print for actual output
-    return __builtin__.print(formatted_message, **kwargs)
 
 
 # Get the next file name
 def get_next_filename(directory, baseName="data", fileExtension=".csv"):
-    """
-    Generate the next sequential filename in a directory (e.g., data0.csv, data1.csv).
-    """
+    """Generate the next sequential filename in a directory (e.g., data0.csv, data1.csv)."""
     check_directory_existence(directory)
 
     # Match filenames like data0.csv, data1.csv, etc.
@@ -245,23 +239,23 @@ def get_next_filename(directory, baseName="data", fileExtension=".csv"):
 # Progress bar to tell how far along the code is
 # Consider removing if tqdm is preferred (used in app.py)
 class ProgressBar:
-    """
-    Simple progress bar for displaying status of operations.
+    """Simple progress bar for displaying status of operations.
     NOTE: `tqdm` is generally preferred for more complex scenarios.
 
     Attributes:
         userInfo (str): Information to display alongside the progress
         total (int): Total number of steps
         bar (ChargingBar): The progress bar instance from the `progress` library
+
     """
 
-    def __init__(self, userInfo, total):
-        """
-        Initialize a new progress bar.
+    def __init__(self, userInfo, total) -> None:
+        """Initialize a new progress bar.
 
         Args:
             userInfo (str): Text to display with the progress bar
             total (int): Total number of steps
+
         """
         if total <= 0:
             log("Progress bar total must be positive.", "warning")
@@ -287,7 +281,7 @@ class ProgressBar:
             log("`progress` library not installed? Progress bar disabled.", "warning")
             self.bar = None
 
-    def continue_progress(self):
+    def continue_progress(self) -> None:
         """Increment the progress bar by one step."""
         if self.bar:
             try:
@@ -295,7 +289,7 @@ class ProgressBar:
             except Exception as e:
                 log(f"Progress bar error: {e}", "warning")
 
-    def end_progress(self):
+    def end_progress(self) -> None:
         """Complete and close the progress bar."""
         if self.bar:
             try:
@@ -344,14 +338,14 @@ def identify_working_technique(target_response, prompt_category):
 
 # Strip disclaimers (Seems appropriate for utils.py)
 def strip_disclaimers(text):
-    """
-    Strip disclaimer statements from the beginning of AI responses.
+    """Strip disclaimer statements from the beginning of AI responses.
 
     Args:
         text (str): The response text to clean
 
     Returns:
         str: The response with disclaimers removed
+
     """
     import re
 
@@ -378,15 +372,15 @@ def strip_disclaimers(text):
 
 
 # Check model availability (Seems appropriate for utils.py)
-def is_model_available(model_key):
-    """
-    Basic check if a model key exists in config and its API key is available.
+def is_model_available(model_key) -> bool:
+    """Basic check if a model key exists in config and its API key is available.
 
     Args:
         model_key (str): The key for the model in TARGET_MODELS or ATTACKER_MODELS
 
     Returns:
         bool: True if the model seems configured and API key exists, False otherwise.
+
     """
     # from config import TARGET_MODELS, ATTACKER_MODELS, API_KEYS # Import necessary configs - already imported at top
 
@@ -407,7 +401,7 @@ def is_model_available(model_key):
         api_key_name = "OPENAI_API_KEY"
     elif api_type == "together":
         api_key_name = "TOGETHER_API_KEY"
-    elif api_type == "xai" or api_type == "grok":
+    elif api_type in {"xai", "grok"}:
         api_key_name = "XAI_API_KEY"
     elif api_type == "anthropic":
         api_key_name = "ANTHROPIC_API_KEY"
@@ -436,8 +430,7 @@ def is_model_available(model_key):
 
 
 def validate_api_key_format(api_key, api_type):
-    """
-    Validate the format of an API key based on its type.
+    """Validate the format of an API key based on its type.
 
     Args:
         api_key (str): The API key to validate
@@ -445,6 +438,7 @@ def validate_api_key_format(api_key, api_type):
 
     Returns:
         bool: True if the key format appears valid, False otherwise
+
     """
     if not api_key or not isinstance(api_key, str):
         return False
@@ -453,13 +447,13 @@ def validate_api_key_format(api_key, api_type):
     if api_type == "openai":
         # OpenAI keys typically start with 'sk-' and are 51 characters long
         return api_key.startswith("sk-") and len(api_key) >= 40
-    elif api_type == "together":
+    if api_type == "together":
         # Together keys are typically base64-like strings
         return len(api_key) >= 20 and api_key.replace("-", "").replace("_", "").isalnum()
-    elif api_type == "xai" or api_type == "grok":
+    if api_type in {"xai", "grok"}:
         # XAI/Grok keys format (adjust based on actual format)
         return len(api_key) >= 20
-    elif api_type == "anthropic":
+    if api_type == "anthropic":
         # Anthropic keys typically start with 'sk-ant-' and are longer
         return api_key.startswith("sk-ant-") and len(api_key) >= 30
 
@@ -468,8 +462,7 @@ def validate_api_key_format(api_key, api_type):
 
 
 def test_api_connectivity(model_key, test_prompt="Hello"):
-    """
-    Test API connectivity by making a simple request.
+    """Test API connectivity by making a simple request.
 
     Args:
         model_key (str): The model key to test
@@ -477,6 +470,7 @@ def test_api_connectivity(model_key, test_prompt="Hello"):
 
     Returns:
         bool: True if API is accessible, False otherwise
+
     """
     try:
         model_config = TARGET_MODELS.get(model_key) or ATTACKER_MODELS.get(model_key)
@@ -525,7 +519,7 @@ def test_api_connectivity(model_key, test_prompt="Hello"):
                 temperature=0.1,
             )
             return bool(response.choices[0].message.content)
-        elif api_type == "anthropic":
+        if api_type == "anthropic":
             from anthropic import Anthropic
 
             client = Anthropic(api_key=api_key)
@@ -535,7 +529,7 @@ def test_api_connectivity(model_key, test_prompt="Hello"):
                 messages=[{"role": "user", "content": test_prompt}],
             )
             return bool(response.content[0].text)
-        elif api_type == "xai":
+        if api_type == "xai":
             # XAI/Grok testing would go here
             # For now, just return True if key format is valid
             return True
@@ -548,14 +542,14 @@ def test_api_connectivity(model_key, test_prompt="Hello"):
 
 
 def validate_all_required_apis(model_keys):
-    """
-    Validate all required APIs for the given model keys.
+    """Validate all required APIs for the given model keys.
 
     Args:
         model_keys (list): List of model keys to validate
 
     Returns:
         dict: Results of validation for each model
+
     """
     results = {}
 
@@ -573,7 +567,7 @@ def validate_all_required_apis(model_keys):
             from config import ATTACKER_MODELS, TARGET_MODELS
 
             api_type = (TARGET_MODELS.get(model_key) or ATTACKER_MODELS.get(model_key)).get("api")
-            if api_type == "grok" or api_type == "xai":
+            if api_type in {"grok", "xai"}:
                 api_key = os.getenv("XAI_API_KEY")
             elif api_type == "openai":
                 api_key = os.getenv("OPENAI_API_KEY")
@@ -590,13 +584,12 @@ def validate_all_required_apis(model_keys):
             else:
                 results[model_key] = {"available": False, "error": "API key not found"}
                 log(f"✗ {model_key} API key not found", "error")
+        # Full connectivity test for target models
+        elif test_api_connectivity(model_key):
+            results[model_key] = {"available": True, "error": None}
+            log(f"✓ {model_key} API validation successful", "success")
         else:
-            # Full connectivity test for target models
-            if test_api_connectivity(model_key):
-                results[model_key] = {"available": True, "error": None}
-                log(f"✓ {model_key} API validation successful", "success")
-            else:
-                results[model_key] = {"available": False, "error": "API connectivity test failed"}
-                log(f"✗ {model_key} API validation failed", "error")
+            results[model_key] = {"available": False, "error": "API connectivity test failed"}
+            log(f"✗ {model_key} API validation failed", "error")
 
     return results

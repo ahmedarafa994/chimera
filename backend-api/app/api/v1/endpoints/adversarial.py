@@ -1,5 +1,4 @@
-"""
-Unified Adversarial API Endpoints
+"""Unified Adversarial API Endpoints.
 
 This module provides a consolidated API for all adversarial prompt generation methods,
 unifying AutoDAN, DeepTeam, Mousetrap, OVERTHINK, and other attack strategies under
@@ -22,7 +21,7 @@ import logging
 import time
 import uuid
 from enum import Enum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -39,8 +38,7 @@ def _resolve_model_context(
     x_session_id: str | None,
     chimera_cookie: str | None,
 ) -> tuple[str, str]:
-    """
-    Resolve target model/provider using hierarchy:
+    """Resolve target model/provider using hierarchy:
     explicit payload -> session -> global defaults, with validation/fallback.
     """
     session_id = x_session_id or chimera_cookie
@@ -79,7 +77,8 @@ def _resolve_model_context(
 
 
 router = APIRouter(
-    prefix="/adversarial", tags=["adversarial", "jailbreak", "generation", "overthink"]
+    prefix="/adversarial",
+    tags=["adversarial", "jailbreak", "generation", "overthink"],
 )
 
 
@@ -89,8 +88,7 @@ router = APIRouter(
 
 
 class AdversarialStrategy(str, Enum):
-    """
-    All available adversarial generation strategies.
+    """All available adversarial generation strategies.
 
     Categories:
     - AutoDAN Family: Traditional jailbreak optimization methods
@@ -159,8 +157,7 @@ class GeneratedPrompt(StrictModel):
 
 
 class AdversarialGenerateRequest(StrictModel):
-    """
-    Unified request for all adversarial generation methods.
+    """Unified request for all adversarial generation methods.
 
     Supports all adversarial strategies including OVERTHINK reasoning exploitation.
     OVERTHINK-specific parameters are optional and only used when strategy is an
@@ -210,7 +207,10 @@ class AdversarialGenerateRequest(StrictModel):
 
     # Strategy-specific parameters (optional)
     population_size: int | None = Field(
-        None, ge=5, le=100, description="Genetic algorithm pop size"
+        None,
+        ge=5,
+        le=100,
+        description="Genetic algorithm pop size",
     )
     beam_width: int | None = Field(None, ge=1, le=20, description="Beam search width")
     beam_depth: int | None = Field(None, ge=1, le=10, description="Beam search depth")
@@ -268,8 +268,7 @@ class AdversarialGenerateRequest(StrictModel):
 
 
 class AdversarialGenerateResponse(StrictModel):
-    """
-    Unified response for all adversarial generation methods.
+    """Unified response for all adversarial generation methods.
 
     Includes OVERTHINK-specific metrics when OVERTHINK strategies are used:
     - reasoning_tokens: Hidden reasoning tokens consumed by the model
@@ -394,18 +393,17 @@ class HealthResponse(StrictModel):
 
 
 class AdversarialService:
-    """
-    Unified facade for all adversarial generation methods.
+    """Unified facade for all adversarial generation methods.
 
     Routes requests to appropriate specialized services based on strategy.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._initialized = False
         self._cache: dict[str, AdversarialGenerateResponse] = {}
         self._active_sessions: set[str] = set()
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize service and underlying providers."""
         if self._initialized:
             return
@@ -418,8 +416,7 @@ class AdversarialService:
         request: AdversarialGenerateRequest,
         session_id: str | None = None,
     ) -> AdversarialGenerateResponse:
-        """
-        Generate adversarial prompts using the specified strategy.
+        """Generate adversarial prompts using the specified strategy.
 
         Routes to appropriate service based on strategy parameter.
         """
@@ -479,7 +476,7 @@ class AdversarialService:
             return result
 
         except Exception as e:
-            logger.error(f"Adversarial generation failed: {e}")
+            logger.exception(f"Adversarial generation failed: {e}")
             latency_ms = (time.time() - start_time) * 1000
             return AdversarialGenerateResponse(
                 success=False,
@@ -493,7 +490,9 @@ class AdversarialService:
             self._active_sessions.discard(sid)
 
     async def _handle_autodan(
-        self, request: AdversarialGenerateRequest, session_id: str
+        self,
+        request: AdversarialGenerateRequest,
+        session_id: str,
     ) -> AdversarialGenerateResponse:
         """Handle AutoDAN family strategies."""
         try:
@@ -535,7 +534,7 @@ class AdversarialService:
                         prompt=result.get("jailbreak_prompt", ""),
                         score=result.get("score"),
                         strategy=method,
-                    )
+                    ),
                 ],
                 best_prompt=GeneratedPrompt(
                     prompt=result.get("jailbreak_prompt", ""),
@@ -553,11 +552,13 @@ class AdversarialService:
             )
 
         except Exception as e:
-            logger.error(f"AutoDAN handler failed: {e}")
+            logger.exception(f"AutoDAN handler failed: {e}")
             raise
 
     async def _handle_deepteam(
-        self, request: AdversarialGenerateRequest, session_id: str
+        self,
+        request: AdversarialGenerateRequest,
+        session_id: str,
     ) -> AdversarialGenerateResponse:
         """Handle DeepTeam attack strategies."""
         try:
@@ -617,11 +618,13 @@ class AdversarialService:
             )
 
         except Exception as e:
-            logger.error(f"DeepTeam handler failed: {e}")
+            logger.exception(f"DeepTeam handler failed: {e}")
             raise
 
     async def _handle_mousetrap(
-        self, request: AdversarialGenerateRequest, session_id: str
+        self,
+        request: AdversarialGenerateRequest,
+        session_id: str,
     ) -> AdversarialGenerateResponse:
         """Handle Mousetrap chain-of-thought attacks."""
         # Mousetrap delegates to specialized service
@@ -652,7 +655,7 @@ class AdversarialService:
                         prompt=result.get("jailbreak_prompt", ""),
                         score=result.get("score"),
                         strategy="mousetrap",
-                    )
+                    ),
                 ],
                 best_prompt=GeneratedPrompt(
                     prompt=result.get("jailbreak_prompt", ""),
@@ -668,11 +671,13 @@ class AdversarialService:
             )
 
         except Exception as e:
-            logger.error(f"Mousetrap handler failed: {e}")
+            logger.exception(f"Mousetrap handler failed: {e}")
             raise
 
     async def _handle_gradient(
-        self, request: AdversarialGenerateRequest, session_id: str
+        self,
+        request: AdversarialGenerateRequest,
+        session_id: str,
     ) -> AdversarialGenerateResponse:
         """Handle gradient-based optimization."""
         # Gradient optimization via AutoDAN gradient method
@@ -703,7 +708,7 @@ class AdversarialService:
                         prompt=result.get("jailbreak_prompt", ""),
                         score=result.get("score"),
                         strategy="gradient",
-                    )
+                    ),
                 ],
                 best_prompt=GeneratedPrompt(
                     prompt=result.get("jailbreak_prompt", ""),
@@ -719,14 +724,15 @@ class AdversarialService:
             )
 
         except Exception as e:
-            logger.error(f"Gradient handler failed: {e}")
+            logger.exception(f"Gradient handler failed: {e}")
             raise
 
     async def _handle_overthink(
-        self, request: AdversarialGenerateRequest, session_id: str
+        self,
+        request: AdversarialGenerateRequest,
+        session_id: str,
     ) -> AdversarialGenerateResponse:
-        """
-        Handle OVERTHINK reasoning token exploitation strategies.
+        """Handle OVERTHINK reasoning token exploitation strategies.
 
         Routes to the OVERTHINK engine which targets reasoning-enhanced models
         (o1, o1-mini, o3-mini, deepseek-r1) with decoy problem injection to
@@ -769,7 +775,7 @@ class AdversarialService:
                     technique = AttackTechnique(request.overthink_technique)
                 except ValueError:
                     logger.warning(
-                        f"Unknown OVERTHINK technique: {request.overthink_technique}, using default"
+                        f"Unknown OVERTHINK technique: {request.overthink_technique}, using default",
                     )
 
             # Map target reasoning model
@@ -842,7 +848,7 @@ class AdversarialService:
                             "injection_strategy": result.injected_prompt.injection_strategy.value,
                             "amplification": result.amplification_achieved,
                         },
-                    )
+                    ),
                 )
 
             return AdversarialGenerateResponse(
@@ -874,16 +880,19 @@ class AdversarialService:
             )
 
         except ImportError as e:
-            logger.error(f"OVERTHINK engine not available: {e}")
+            logger.exception(f"OVERTHINK engine not available: {e}")
             raise HTTPException(
-                status_code=400, detail=f"OVERTHINK engine not available: {e}"
+                status_code=400,
+                detail=f"OVERTHINK engine not available: {e}",
             ) from e
         except Exception as e:
-            logger.error(f"OVERTHINK handler failed: {e}")
+            logger.exception(f"OVERTHINK handler failed: {e}")
             raise HTTPException(status_code=500, detail=f"OVERTHINK handler failed: {e}") from e
 
     async def _handle_transformation(
-        self, request: AdversarialGenerateRequest, session_id: str
+        self,
+        request: AdversarialGenerateRequest,
+        session_id: str,
     ) -> AdversarialGenerateResponse:
         """Handle transformation-based strategies."""
         try:
@@ -915,7 +924,7 @@ class AdversarialService:
                             "layers_applied": result.metadata.layers_applied,
                             "techniques_used": result.metadata.techniques_used,
                         },
-                    )
+                    ),
                 ],
                 best_prompt=GeneratedPrompt(
                     prompt=result.transformed_prompt,
@@ -927,14 +936,15 @@ class AdversarialService:
             )
 
         except Exception as e:
-            logger.error(f"Transformation handler failed: {e}")
+            logger.exception(f"Transformation handler failed: {e}")
             raise
 
     async def _handle_adaptive(
-        self, request: AdversarialGenerateRequest, session_id: str
+        self,
+        request: AdversarialGenerateRequest,
+        session_id: str,
     ) -> AdversarialGenerateResponse:
-        """
-        Adaptive strategy selection.
+        """Adaptive strategy selection.
 
         Analyzes the prompt and selects the best strategy automatically.
         """
@@ -1162,7 +1172,6 @@ def get_adversarial_service() -> AdversarialService:
 
 @router.post(
     "/generate",
-    response_model=AdversarialGenerateResponse,
     summary="Generate adversarial prompts",
     operation_id="generate_adversarial_prompts",
     description="""
@@ -1203,8 +1212,8 @@ def get_adversarial_service() -> AdversarialService:
 @api_error_handler("adversarial_generate", "Adversarial generation failed")
 async def generate_adversarial(
     request: AdversarialGenerateRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
     service: AdversarialService = Depends(get_adversarial_service),
 ) -> AdversarialGenerateResponse:
     """Generate adversarial prompts using the specified strategy."""
@@ -1229,15 +1238,14 @@ async def generate_adversarial(
 
 @router.post(
     "/generate/batch",
-    response_model=BatchAdversarialResponse,
     summary="Batch adversarial generation",
     description="Process multiple prompts in parallel.",
 )
 @api_error_handler("adversarial_batch", "Batch generation failed")
 async def batch_generate(
     request: BatchAdversarialRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
-    chimera_session_id: str | None = Cookie(None),
+    x_session_id: Annotated[str | None, Header(alias="X-Session-ID")] = None,
+    chimera_session_id: Annotated[str | None, Cookie()] = None,
     service: AdversarialService = Depends(get_adversarial_service),
 ) -> BatchAdversarialResponse:
     """Generate adversarial prompts for multiple inputs."""
@@ -1264,7 +1272,7 @@ async def batch_generate(
                     strategy=request.strategy,
                     provider=provider,
                     model=model,
-                )
+                ),
             )
             for p in request.prompts
         ]
@@ -1277,7 +1285,7 @@ async def batch_generate(
                     strategy=request.strategy,
                     provider=provider,
                     model=model,
-                )
+                ),
             )
             results.append(result)
 
@@ -1293,12 +1301,11 @@ async def batch_generate(
 
 @router.get(
     "/strategies",
-    response_model=StrategiesListResponse,
     summary="List available strategies",
     description="Get list of all available adversarial generation strategies.",
 )
 async def list_strategies(
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> StrategiesListResponse:
     """Get available strategies with descriptions."""
     return service.get_strategies()
@@ -1306,14 +1313,13 @@ async def list_strategies(
 
 @router.get(
     "/strategies/{strategy_name}",
-    response_model=StrategyInfo,
     summary="Get strategy details",
     operation_id="get_strategy_details",
     description="Get detailed information about a specific strategy.",
 )
 async def get_strategy_detail(
     strategy_name: str,
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> StrategyInfo:
     """Get details for a specific strategy."""
     strategies = service.get_strategies()
@@ -1340,10 +1346,9 @@ async def get_strategy_detail(
 )
 async def get_strategy_config(
     strategy: str,
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> dict[str, Any]:
-    """
-    Get configuration for a specific strategy.
+    """Get configuration for a specific strategy.
 
     Returns default parameters, available options, and strategy-specific settings.
     """
@@ -1495,7 +1500,8 @@ async def get_strategy_config(
         }
 
         base_config["defaults"] = overthink_defaults.get(
-            strategy, overthink_defaults[AdversarialStrategy.OVERTHINK.value]
+            strategy,
+            overthink_defaults[AdversarialStrategy.OVERTHINK.value],
         )
 
         # Expected amplification ranges
@@ -1511,7 +1517,7 @@ async def get_strategy_config(
         return base_config
 
     # AutoDAN strategies configuration
-    elif strategy.startswith("autodan"):
+    if strategy.startswith("autodan"):
         base_config["description"] = "AutoDAN jailbreak optimization strategy"
         base_config["category"] = "autodan"
         base_config["parameters"] = {
@@ -1527,7 +1533,7 @@ async def get_strategy_config(
         return base_config
 
     # DeepTeam strategies
-    elif strategy in ["pair", "tap", "crescendo", "gray_box"]:
+    if strategy in ["pair", "tap", "crescendo", "gray_box"]:
         base_config["description"] = f"DeepTeam {strategy.upper()} attack strategy"
         base_config["category"] = "deepteam"
         base_config["parameters"] = {
@@ -1555,13 +1561,12 @@ async def get_strategy_config(
 
 @router.get(
     "/sessions/{session_id}",
-    response_model=AdversarialGenerateResponse,
     summary="Get session result",
     description="Retrieve cached result for a generation session.",
 )
 async def get_session_result(
     session_id: str,
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> AdversarialGenerateResponse:
     """Get cached session result."""
     result = service.get_cached_result(session_id)
@@ -1577,7 +1582,7 @@ async def get_session_result(
 )
 async def cancel_session(
     session_id: str,
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> dict:
     """Cancel an active session."""
     cancelled = service.cancel_session(session_id)
@@ -1588,11 +1593,10 @@ async def cancel_session(
 
 @router.get(
     "/cache/stats",
-    response_model=CacheStatsResponse,
     summary="Get cache statistics",
 )
 async def get_cache_stats(
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> CacheStatsResponse:
     """Get cache statistics."""
     return service.cache_stats
@@ -1603,7 +1607,7 @@ async def get_cache_stats(
     summary="Clear cache",
 )
 async def clear_cache(
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> dict:
     """Clear all cached results."""
     count = service.clear_cache()
@@ -1612,11 +1616,10 @@ async def clear_cache(
 
 @router.get(
     "/health",
-    response_model=HealthResponse,
     summary="Health check",
 )
 async def health_check(
-    service: AdversarialService = Depends(get_adversarial_service),
+    service: Annotated[AdversarialService, Depends(get_adversarial_service)],
 ) -> HealthResponse:
     """Check adversarial service health."""
     strategies = service.get_strategies()

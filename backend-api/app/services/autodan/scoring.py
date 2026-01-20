@@ -1,5 +1,4 @@
-"""
-Enhanced Scoring Module for AutoDAN.
+"""Enhanced Scoring Module for AutoDAN.
 
 Implements comprehensive readability, interpretability, and quality scoring for
 adversarial prompts with focus on:
@@ -127,8 +126,7 @@ class QualityScore:
 
 
 class ReadabilityAnalyzer:
-    """
-    Analyzes text readability using multiple established metrics.
+    """Analyzes text readability using multiple established metrics.
 
     Implements:
     - Flesch Reading Ease
@@ -159,14 +157,14 @@ class ReadabilityAnalyzer:
     }
 
     def analyze(self, text: str) -> ReadabilityMetrics:
-        """
-        Perform comprehensive readability analysis.
+        """Perform comprehensive readability analysis.
 
         Args:
             text: Input text to analyze
 
         Returns:
             ReadabilityMetrics with all computed scores
+
         """
         if not text or not text.strip():
             return self._empty_metrics()
@@ -225,16 +223,13 @@ class ReadabilityAnalyzer:
 
         # Split on sentence endings
         sentences = re.split(r"[.!?]+", text_clean)
-        sentences = [s.strip().replace("<<<DOT>>>", ".") for s in sentences if s.strip()]
-
-        return sentences
+        return [s.strip().replace("<<<DOT>>>", ".") for s in sentences if s.strip()]
 
     def _extract_words(self, text: str) -> list[str]:
         """Extract words from text."""
         # Remove special characters except apostrophes
         clean = re.sub(r"[^\w\s']", " ", text)
-        words = [w.lower() for w in clean.split() if len(w) > 0 and w.isalpha()]
-        return words
+        return [w.lower() for w in clean.split() if len(w) > 0 and w.isalpha()]
 
     def _count_syllables(self, word: str) -> int:
         """Count syllables in a word using a heuristic approach."""
@@ -260,15 +255,14 @@ class ReadabilityAnalyzer:
             count -= 1
         if word.endswith("le") and len(word) > 2 and word[-3] not in vowels:
             count += 1
-        if word.endswith("es") or word.endswith("ed"):
+        if word.endswith(("es", "ed")):
             count -= 1
 
         return max(1, count)
 
     def _flesch_reading_ease(self, words: int, sentences: int, syllables: int) -> float:
-        """
-        Flesch Reading Ease formula.
-        Score: 0-100 (higher = easier)
+        """Flesch Reading Ease formula.
+        Score: 0-100 (higher = easier).
         """
         if sentences == 0 or words == 0:
             return 0.0
@@ -276,8 +270,7 @@ class ReadabilityAnalyzer:
         return max(0.0, min(100.0, score))
 
     def _flesch_kincaid_grade(self, words: int, sentences: int, syllables: int) -> float:
-        """
-        Flesch-Kincaid Grade Level.
+        """Flesch-Kincaid Grade Level.
         Returns US grade level (1-12+).
         """
         if sentences == 0 or words == 0:
@@ -286,8 +279,7 @@ class ReadabilityAnalyzer:
         return max(0.0, grade)
 
     def _gunning_fog(self, words: int, sentences: int, complex_words: int) -> float:
-        """
-        Gunning Fog Index.
+        """Gunning Fog Index.
         Estimates years of formal education needed.
         """
         if sentences == 0 or words == 0:
@@ -295,8 +287,7 @@ class ReadabilityAnalyzer:
         return 0.4 * ((words / sentences) + 100 * (complex_words / words))
 
     def _smog_index(self, sentences: int, complex_words: int) -> float:
-        """
-        SMOG Index (Simple Measure of Gobbledygook).
+        """SMOG Index (Simple Measure of Gobbledygook).
         Estimates years of education needed.
         """
         if sentences == 0:
@@ -305,8 +296,7 @@ class ReadabilityAnalyzer:
         return 1.043 * math.sqrt(complex_words * (30 / sentences)) + 3.1291
 
     def _coleman_liau(self, chars: int, words: int, sentences: int) -> float:
-        """
-        Coleman-Liau Index.
+        """Coleman-Liau Index.
         Character-based grade level formula.
         """
         if words == 0:
@@ -316,8 +306,7 @@ class ReadabilityAnalyzer:
         return 0.0588 * l_val - 0.296 * s_val - 15.8
 
     def _automated_readability(self, chars: int, words: int, sentences: int) -> float:
-        """
-        Automated Readability Index (ARI).
+        """Automated Readability Index (ARI).
         Character-based grade level.
         """
         if words == 0 or sentences == 0:
@@ -328,14 +317,13 @@ class ReadabilityAnalyzer:
         """Classify readability level based on Flesch score."""
         if flesch_score >= 80:
             return ReadabilityLevel.VERY_EASY
-        elif flesch_score >= 60:
+        if flesch_score >= 60:
             return ReadabilityLevel.EASY
-        elif flesch_score >= 40:
+        if flesch_score >= 40:
             return ReadabilityLevel.MODERATE
-        elif flesch_score >= 20:
+        if flesch_score >= 20:
             return ReadabilityLevel.DIFFICULT
-        else:
-            return ReadabilityLevel.VERY_DIFFICULT
+        return ReadabilityLevel.VERY_DIFFICULT
 
     def _empty_metrics(self) -> ReadabilityMetrics:
         """Return empty metrics for invalid input."""
@@ -354,8 +342,7 @@ class ReadabilityAnalyzer:
 
 
 class InterpretabilityAnalyzer:
-    """
-    Analyzes interpretability and semantic quality of prompts.
+    """Analyzes interpretability and semantic quality of prompts.
 
     Evaluates:
     - Logical structure and flow
@@ -460,14 +447,14 @@ class InterpretabilityAnalyzer:
     }
 
     def analyze(self, text: str) -> InterpretabilityMetrics:
-        """
-        Perform comprehensive interpretability analysis.
+        """Perform comprehensive interpretability analysis.
 
         Args:
             text: Input text to analyze
 
         Returns:
             InterpretabilityMetrics with all computed scores
+
         """
         if not text or not text.strip():
             return self._empty_metrics()
@@ -573,8 +560,7 @@ class InterpretabilityAnalyzer:
         return max(0.0, min(1.0, score))
 
     def _analyze_ambiguity(self, text: str) -> float:
-        """
-        Analyze strategic ambiguity.
+        """Analyze strategic ambiguity.
         Higher score = more ambiguous (can be strategically useful).
         """
         score = 0.3  # Base score
@@ -725,9 +711,7 @@ class InterpretabilityAnalyzer:
         }
 
         content_words = [w.lower() for w in words if w.lower() not in stop_words and w.isalpha()]
-        density = len(content_words) / len(words) if words else 0.0
-
-        return density
+        return len(content_words) / len(words) if words else 0.0
 
     def _analyze_rhetorical_sophistication(self, text: str) -> float:
         """Analyze use of rhetorical and persuasion techniques."""
@@ -803,8 +787,7 @@ class InterpretabilityAnalyzer:
 
 
 class PromptQualityScorer:
-    """
-    Comprehensive quality scorer for adversarial prompts.
+    """Comprehensive quality scorer for adversarial prompts.
 
     Combines readability and interpretability analysis with
     attack potential and stealth evaluation.
@@ -846,7 +829,7 @@ class PromptQualityScorer:
         interpretability_weight: float = 0.25,
         attack_weight: float = 0.3,
         stealth_weight: float = 0.2,
-    ):
+    ) -> None:
         self.readability_analyzer = ReadabilityAnalyzer()
         self.interpretability_analyzer = InterpretabilityAnalyzer()
 
@@ -858,14 +841,14 @@ class PromptQualityScorer:
         }
 
     def score(self, prompt: str) -> QualityScore:
-        """
-        Score a prompt comprehensively.
+        """Score a prompt comprehensively.
 
         Args:
             prompt: The adversarial prompt to score
 
         Returns:
             QualityScore with all metrics and composite scores
+
         """
         if not prompt or not prompt.strip():
             return self._empty_score()
@@ -912,7 +895,9 @@ class PromptQualityScorer:
         )
 
     def _compute_attack_potential(
-        self, prompt: str, interpretability: InterpretabilityMetrics
+        self,
+        prompt: str,
+        interpretability: InterpretabilityMetrics,
     ) -> float:
         """Compute estimated attack success potential."""
         score = 0.3  # Base score
@@ -920,7 +905,7 @@ class PromptQualityScorer:
         prompt_lower = prompt.lower()
 
         # Reward effective techniques
-        for _technique, pattern in self.EFFECTIVE_PATTERNS.items():
+        for pattern in self.EFFECTIVE_PATTERNS.values():
             if re.search(pattern, prompt_lower, re.IGNORECASE):
                 score += 0.1
 

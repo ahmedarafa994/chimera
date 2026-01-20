@@ -1,5 +1,4 @@
-"""
-Comprehensive Unit Tests for Campaign Analytics Service.
+"""Comprehensive Unit Tests for Campaign Analytics Service.
 
 Tests cover:
 - AnalyticsCache: cache operations, TTL expiration, eviction, invalidation
@@ -180,7 +179,7 @@ class TestAnalyticsCache:
     """Tests for AnalyticsCache class."""
 
     @pytest.mark.asyncio
-    async def test_cache_miss_returns_none(self, analytics_cache):
+    async def test_cache_miss_returns_none(self, analytics_cache) -> None:
         """Test that cache miss returns None."""
         result = await analytics_cache.get("test_prefix", "arg1", "arg2")
         assert result is None
@@ -190,7 +189,7 @@ class TestAnalyticsCache:
         assert stats["hits"] == 0
 
     @pytest.mark.asyncio
-    async def test_cache_set_and_get(self, analytics_cache):
+    async def test_cache_set_and_get(self, analytics_cache) -> None:
         """Test basic cache set and get operations."""
         test_value = {"data": "test_data", "count": 42}
 
@@ -202,7 +201,7 @@ class TestAnalyticsCache:
         assert result["count"] == 42
 
     @pytest.mark.asyncio
-    async def test_cache_hit_increments_counter(self, analytics_cache):
+    async def test_cache_hit_increments_counter(self, analytics_cache) -> None:
         """Test that cache hits are tracked."""
         test_value = "cached_value"
 
@@ -214,7 +213,7 @@ class TestAnalyticsCache:
         assert stats["hits"] == 2
 
     @pytest.mark.asyncio
-    async def test_cache_different_keys_are_separate(self, analytics_cache):
+    async def test_cache_different_keys_are_separate(self, analytics_cache) -> None:
         """Test that different keys produce separate cache entries."""
         await analytics_cache.set("value1", "prefix", "key1")
         await analytics_cache.set("value2", "prefix", "key2")
@@ -226,7 +225,7 @@ class TestAnalyticsCache:
         assert result2 == "value2"
 
     @pytest.mark.asyncio
-    async def test_cache_ttl_expiration(self):
+    async def test_cache_ttl_expiration(self) -> None:
         """Test that cache entries expire after TTL."""
         cache = AnalyticsCache(max_size=10, default_ttl=1)  # 1 second TTL
 
@@ -244,7 +243,7 @@ class TestAnalyticsCache:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_cache_custom_ttl(self):
+    async def test_cache_custom_ttl(self) -> None:
         """Test setting custom TTL for specific entries."""
         cache = AnalyticsCache(max_size=10, default_ttl=60)
 
@@ -263,7 +262,7 @@ class TestAnalyticsCache:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_cache_max_size_eviction(self):
+    async def test_cache_max_size_eviction(self) -> None:
         """Test that cache evicts oldest entries when max size is reached."""
         cache = AnalyticsCache(max_size=3, default_ttl=300)
 
@@ -276,7 +275,7 @@ class TestAnalyticsCache:
         assert stats["size"] <= 3
 
     @pytest.mark.asyncio
-    async def test_cache_invalidate_specific_entry(self, analytics_cache):
+    async def test_cache_invalidate_specific_entry(self, analytics_cache) -> None:
         """Test invalidating a specific cache entry."""
         await analytics_cache.set("value1", "prefix", "key1")
         await analytics_cache.set("value2", "prefix", "key2")
@@ -292,7 +291,7 @@ class TestAnalyticsCache:
         assert result2 == "value2"
 
     @pytest.mark.asyncio
-    async def test_cache_clear(self, analytics_cache):
+    async def test_cache_clear(self, analytics_cache) -> None:
         """Test clearing all cache entries."""
         await analytics_cache.set("value1", "prefix", "key1")
         await analytics_cache.set("value2", "prefix", "key2")
@@ -307,7 +306,7 @@ class TestAnalyticsCache:
         assert stats["hits"] == 0
         assert stats["misses"] == 0
 
-    def test_cache_stats(self, analytics_cache):
+    def test_cache_stats(self, analytics_cache) -> None:
         """Test cache statistics structure."""
         stats = analytics_cache.get_stats()
 
@@ -319,7 +318,7 @@ class TestAnalyticsCache:
         assert stats["max_size"] == 10
 
     @pytest.mark.asyncio
-    async def test_cache_hit_rate_calculation(self, analytics_cache):
+    async def test_cache_hit_rate_calculation(self, analytics_cache) -> None:
         """Test cache hit rate calculation."""
         # Add an entry
         await analytics_cache.set("value", "prefix", "key")
@@ -344,8 +343,12 @@ class TestCampaignAnalyticsServiceStatistics:
 
     @pytest.mark.asyncio
     async def test_calculate_statistics_with_events(
-        self, analytics_service, mock_async_session, sample_telemetry_events, sample_campaign
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+        sample_telemetry_events,
+        sample_campaign,
+    ) -> None:
         """Test statistics calculation with multiple events."""
         # Mock campaign exists check
         mock_result = MagicMock()
@@ -375,7 +378,9 @@ class TestCampaignAnalyticsServiceStatistics:
         assert result.attempts.failed == 3
 
     @pytest.mark.asyncio
-    async def test_calculate_statistics_empty_campaign(self, analytics_service, mock_async_session):
+    async def test_calculate_statistics_empty_campaign(
+        self, analytics_service, mock_async_session
+    ) -> None:
         """Test statistics calculation with no events (empty campaign)."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -401,8 +406,12 @@ class TestCampaignAnalyticsServiceStatistics:
 
     @pytest.mark.asyncio
     async def test_calculate_statistics_single_event(
-        self, analytics_service, mock_async_session, single_telemetry_event, sample_campaign
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+        single_telemetry_event,
+        sample_campaign,
+    ) -> None:
         """Test statistics calculation with a single event (edge case)."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -431,8 +440,10 @@ class TestCampaignAnalyticsServiceStatistics:
 
     @pytest.mark.asyncio
     async def test_calculate_statistics_nonexistent_campaign(
-        self, analytics_service, mock_async_session
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+    ) -> None:
         """Test statistics calculation for non-existent campaign."""
         # Mock campaign not found
         mock_result = MagicMock()
@@ -443,7 +454,7 @@ class TestCampaignAnalyticsServiceStatistics:
 
         assert result is None
 
-    def test_calculate_distribution_stats_with_values(self, analytics_service):
+    def test_calculate_distribution_stats_with_values(self, analytics_service) -> None:
         """Test distribution statistics calculation with values."""
         values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
 
@@ -458,7 +469,7 @@ class TestCampaignAnalyticsServiceStatistics:
         assert result.std_dev > 0
         assert result.percentiles is not None
 
-    def test_calculate_distribution_stats_empty_values(self, analytics_service):
+    def test_calculate_distribution_stats_empty_values(self, analytics_service) -> None:
         """Test distribution statistics with empty values."""
         values = []
 
@@ -469,7 +480,7 @@ class TestCampaignAnalyticsServiceStatistics:
         assert result.median is None
         assert result.std_dev is None
 
-    def test_calculate_distribution_stats_single_value(self, analytics_service):
+    def test_calculate_distribution_stats_single_value(self, analytics_service) -> None:
         """Test distribution statistics with single value."""
         values = [5.0]
 
@@ -483,7 +494,7 @@ class TestCampaignAnalyticsServiceStatistics:
         # Std dev with single value should be 0
         assert result.std_dev == 0.0
 
-    def test_calculate_attempt_counts(self, analytics_service, sample_telemetry_events):
+    def test_calculate_attempt_counts(self, analytics_service, sample_telemetry_events) -> None:
         """Test attempt count calculation by status."""
         result = analytics_service._calculate_attempt_counts(sample_telemetry_events)
 
@@ -503,7 +514,9 @@ class TestCampaignAnalyticsServiceComparison:
     """Tests for campaign comparison logic in CampaignAnalyticsService."""
 
     @pytest.mark.asyncio
-    async def test_compare_campaigns_two_campaigns(self, analytics_service, mock_async_session):
+    async def test_compare_campaigns_two_campaigns(
+        self, analytics_service, mock_async_session
+    ) -> None:
         """Test comparing two campaigns."""
         # Create mock summaries and statistics
         with (
@@ -559,7 +572,7 @@ class TestCampaignAnalyticsServiceComparison:
             assert result.delta_success_rate == pytest.approx(0.10, rel=0.01)
 
     @pytest.mark.asyncio
-    async def test_compare_campaigns_invalid_count(self, analytics_service):
+    async def test_compare_campaigns_invalid_count(self, analytics_service) -> None:
         """Test that comparison requires 2-4 campaigns."""
         # Test with 1 campaign
         with pytest.raises(ValueError, match="Compare requires 2-4 campaign IDs"):
@@ -568,11 +581,11 @@ class TestCampaignAnalyticsServiceComparison:
         # Test with 5 campaigns
         with pytest.raises(ValueError, match="Compare requires 2-4 campaign IDs"):
             await analytics_service.compare_campaigns(
-                ["campaign-001", "campaign-002", "campaign-003", "campaign-004", "campaign-005"]
+                ["campaign-001", "campaign-002", "campaign-003", "campaign-004", "campaign-005"],
             )
 
     @pytest.mark.asyncio
-    async def test_compare_campaigns_missing_campaign(self, analytics_service):
+    async def test_compare_campaigns_missing_campaign(self, analytics_service) -> None:
         """Test comparison when one campaign doesn't exist."""
         with patch.object(analytics_service, "get_campaign_summary") as mock_summary:
             # First campaign exists, second doesn't
@@ -582,15 +595,20 @@ class TestCampaignAnalyticsServiceComparison:
 
             assert result is None
 
-    def test_normalize_comparison_metrics(self, analytics_service):
+    def test_normalize_comparison_metrics(self, analytics_service) -> None:
         """Test normalization of comparison metrics."""
-
         campaigns = [
             MagicMock(
-                campaign_id="c1", success_rate=0.8, latency_mean=1000.0, avg_cost_per_attempt=0.5
+                campaign_id="c1",
+                success_rate=0.8,
+                latency_mean=1000.0,
+                avg_cost_per_attempt=0.5,
             ),
             MagicMock(
-                campaign_id="c2", success_rate=0.4, latency_mean=2000.0, avg_cost_per_attempt=1.0
+                campaign_id="c2",
+                success_rate=0.4,
+                latency_mean=2000.0,
+                avg_cost_per_attempt=1.0,
             ),
         ]
 
@@ -605,7 +623,7 @@ class TestCampaignAnalyticsServiceComparison:
         assert result[0].normalized_latency is not None
         assert result[0].normalized_latency > result[1].normalized_latency
 
-    def test_normalize_comparison_metrics_empty_list(self, analytics_service):
+    def test_normalize_comparison_metrics_empty_list(self, analytics_service) -> None:
         """Test normalization with empty campaign list."""
         result = analytics_service._normalize_comparison_metrics([])
         assert result == []
@@ -620,7 +638,7 @@ class TestCampaignAnalyticsServiceBreakdowns:
     """Tests for breakdown methods in CampaignAnalyticsService."""
 
     @pytest.mark.asyncio
-    async def test_get_technique_breakdown(self, analytics_service, mock_async_session):
+    async def test_get_technique_breakdown(self, analytics_service, mock_async_session) -> None:
         """Test technique breakdown retrieval."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -661,7 +679,7 @@ class TestCampaignAnalyticsServiceBreakdowns:
         assert result.worst_technique == "cognitive_hacking"
 
     @pytest.mark.asyncio
-    async def test_get_provider_breakdown(self, analytics_service, mock_async_session):
+    async def test_get_provider_breakdown(self, analytics_service, mock_async_session) -> None:
         """Test provider breakdown retrieval."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -701,7 +719,7 @@ class TestCampaignAnalyticsServiceBreakdowns:
         assert result.best_provider == "openai"  # 80% vs 70% success rate
 
     @pytest.mark.asyncio
-    async def test_get_potency_breakdown(self, analytics_service, mock_async_session):
+    async def test_get_potency_breakdown(self, analytics_service, mock_async_session) -> None:
         """Test potency breakdown retrieval."""
         # Mock campaign exists check
         mock_campaign_result = MagicMock()
@@ -741,7 +759,9 @@ class TestCampaignAnalyticsServiceBreakdowns:
         assert result.best_potency_level == 9  # 90% vs 50% success rate
 
     @pytest.mark.asyncio
-    async def test_breakdown_nonexistent_campaign(self, analytics_service, mock_async_session):
+    async def test_breakdown_nonexistent_campaign(
+        self, analytics_service, mock_async_session
+    ) -> None:
         """Test breakdown returns None for non-existent campaign."""
         # Mock campaign not found
         mock_result = MagicMock()
@@ -768,8 +788,11 @@ class TestCampaignAnalyticsServiceTimeSeries:
 
     @pytest.mark.asyncio
     async def test_get_time_series_success_rate(
-        self, analytics_service, mock_async_session, sample_campaign
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+        sample_campaign,
+    ) -> None:
         """Test time series data retrieval for success rate."""
         # Mock campaign query
         mock_campaign_result = MagicMock()
@@ -795,7 +818,9 @@ class TestCampaignAnalyticsServiceTimeSeries:
         ]
 
         result = await analytics_service.get_time_series(
-            "test-campaign-001", metric="success_rate", granularity=TimeGranularity.HOUR
+            "test-campaign-001",
+            metric="success_rate",
+            granularity=TimeGranularity.HOUR,
         )
 
         assert result is not None
@@ -809,8 +834,10 @@ class TestCampaignAnalyticsServiceTimeSeries:
 
     @pytest.mark.asyncio
     async def test_get_time_series_nonexistent_campaign(
-        self, analytics_service, mock_async_session
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+    ) -> None:
         """Test time series returns None for non-existent campaign."""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -820,17 +847,17 @@ class TestCampaignAnalyticsServiceTimeSeries:
 
         assert result is None
 
-    def test_get_time_bucket_expression_minute(self, analytics_service):
+    def test_get_time_bucket_expression_minute(self, analytics_service) -> None:
         """Test time bucket expression for minute granularity."""
         expr = analytics_service._get_time_bucket_expression(TimeGranularity.MINUTE)
         assert expr is not None
 
-    def test_get_time_bucket_expression_hour(self, analytics_service):
+    def test_get_time_bucket_expression_hour(self, analytics_service) -> None:
         """Test time bucket expression for hour granularity."""
         expr = analytics_service._get_time_bucket_expression(TimeGranularity.HOUR)
         assert expr is not None
 
-    def test_get_time_bucket_expression_day(self, analytics_service):
+    def test_get_time_bucket_expression_day(self, analytics_service) -> None:
         """Test time bucket expression for day granularity."""
         expr = analytics_service._get_time_bucket_expression(TimeGranularity.DAY)
         assert expr is not None
@@ -845,7 +872,7 @@ class TestCampaignAnalyticsServiceCacheManagement:
     """Tests for cache management in CampaignAnalyticsService."""
 
     @pytest.mark.asyncio
-    async def test_invalidate_campaign_cache(self, analytics_service):
+    async def test_invalidate_campaign_cache(self, analytics_service) -> None:
         """Test invalidating cache for specific campaign."""
         # First, add something to the cache
         await analytics_service._cache.set("test_data", "summary", "campaign-001")
@@ -861,7 +888,7 @@ class TestCampaignAnalyticsServiceCacheManagement:
         # For this test, we just verify the method runs without error
 
     @pytest.mark.asyncio
-    async def test_invalidate_all_cache(self, analytics_service):
+    async def test_invalidate_all_cache(self, analytics_service) -> None:
         """Test clearing all cache."""
         # Add some cache entries
         await analytics_service._cache.set("data1", "summary", "c1")
@@ -873,7 +900,7 @@ class TestCampaignAnalyticsServiceCacheManagement:
         stats = analytics_service.get_cache_stats()
         assert stats["size"] == 0
 
-    def test_get_cache_stats(self, analytics_service):
+    def test_get_cache_stats(self, analytics_service) -> None:
         """Test getting cache statistics."""
         stats = analytics_service.get_cache_stats()
 
@@ -894,8 +921,11 @@ class TestCampaignAnalyticsServiceSummary:
 
     @pytest.mark.asyncio
     async def test_get_campaign_summary(
-        self, analytics_service, mock_async_session, sample_campaign
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+        sample_campaign,
+    ) -> None:
         """Test getting campaign summary."""
         # Mock campaign query
         mock_campaign_result = MagicMock()
@@ -908,7 +938,9 @@ class TestCampaignAnalyticsServiceSummary:
         # Mock count query
         mock_count_result = MagicMock()
         mock_count_result.one.return_value = MagicMock(
-            total=100, success_rate=0.75, avg_latency=1200.0
+            total=100,
+            success_rate=0.75,
+            avg_latency=1200.0,
         )
 
         mock_async_session.execute.side_effect = [
@@ -926,7 +958,9 @@ class TestCampaignAnalyticsServiceSummary:
         assert result.status == CampaignStatusEnum.COMPLETED
 
     @pytest.mark.asyncio
-    async def test_get_campaign_summary_nonexistent(self, analytics_service, mock_async_session):
+    async def test_get_campaign_summary_nonexistent(
+        self, analytics_service, mock_async_session
+    ) -> None:
         """Test getting summary for non-existent campaign."""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -938,8 +972,11 @@ class TestCampaignAnalyticsServiceSummary:
 
     @pytest.mark.asyncio
     async def test_get_campaign_summary_with_cached_results(
-        self, analytics_service, mock_async_session, sample_campaign
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+        sample_campaign,
+    ) -> None:
         """Test getting campaign summary with pre-computed results."""
         # Mock campaign query
         mock_campaign_result = MagicMock()
@@ -976,7 +1013,9 @@ class TestCampaignAnalyticsServiceEdgeCases:
     """Tests for edge cases and error handling."""
 
     @pytest.mark.asyncio
-    async def test_statistics_with_all_failures(self, analytics_service, mock_async_session):
+    async def test_statistics_with_all_failures(
+        self, analytics_service, mock_async_session
+    ) -> None:
         """Test statistics when all events are failures."""
         # Create events that are all failures
         failure_events = []
@@ -1017,7 +1056,9 @@ class TestCampaignAnalyticsServiceEdgeCases:
         assert result.success_rate.mean == 0.0
 
     @pytest.mark.asyncio
-    async def test_statistics_with_all_successes(self, analytics_service, mock_async_session):
+    async def test_statistics_with_all_successes(
+        self, analytics_service, mock_async_session
+    ) -> None:
         """Test statistics when all events are successes."""
         # Create events that are all successes
         success_events = []
@@ -1058,7 +1099,9 @@ class TestCampaignAnalyticsServiceEdgeCases:
         assert result.success_rate.mean == 1.0
 
     @pytest.mark.asyncio
-    async def test_statistics_with_mixed_token_counts(self, analytics_service, mock_async_session):
+    async def test_statistics_with_mixed_token_counts(
+        self, analytics_service, mock_async_session
+    ) -> None:
         """Test statistics with varying token counts including zeros."""
         events = []
         for i in range(5):
@@ -1099,8 +1142,11 @@ class TestCampaignAnalyticsServiceEdgeCases:
 
     @pytest.mark.asyncio
     async def test_campaign_summary_cache_hit(
-        self, analytics_service, mock_async_session, sample_campaign
-    ):
+        self,
+        analytics_service,
+        mock_async_session,
+        sample_campaign,
+    ) -> None:
         """Test that campaign summary is cached and returned from cache."""
         # First call - cache miss
         mock_campaign_result = MagicMock()
@@ -1111,7 +1157,9 @@ class TestCampaignAnalyticsServiceEdgeCases:
 
         mock_count_result = MagicMock()
         mock_count_result.one.return_value = MagicMock(
-            total=100, success_rate=0.75, avg_latency=1200.0
+            total=100,
+            success_rate=0.75,
+            avg_latency=1200.0,
         )
 
         mock_async_session.execute.side_effect = [
@@ -1141,7 +1189,7 @@ class TestCampaignAnalyticsServiceEdgeCases:
 class TestCampaignAnalyticsServiceFilters:
     """Tests for filter application in queries."""
 
-    def test_apply_campaign_filters_status(self, analytics_service):
+    def test_apply_campaign_filters_status(self, analytics_service) -> None:
         """Test applying status filter to campaign query."""
         from sqlalchemy import select
 
@@ -1149,7 +1197,7 @@ class TestCampaignAnalyticsServiceFilters:
 
         stmt = select(Campaign)
         filters = CampaignFilterParams(
-            status=[CampaignStatusEnum.COMPLETED, CampaignStatusEnum.RUNNING]
+            status=[CampaignStatusEnum.COMPLETED, CampaignStatusEnum.RUNNING],
         )
 
         result = analytics_service._apply_campaign_filters(stmt, filters)
@@ -1157,7 +1205,7 @@ class TestCampaignAnalyticsServiceFilters:
         # Result should be a modified select statement
         assert result is not None
 
-    def test_apply_campaign_filters_provider(self, analytics_service):
+    def test_apply_campaign_filters_provider(self, analytics_service) -> None:
         """Test applying provider filter to campaign query."""
         from sqlalchemy import select
 
@@ -1170,7 +1218,7 @@ class TestCampaignAnalyticsServiceFilters:
 
         assert result is not None
 
-    def test_apply_campaign_filters_date_range(self, analytics_service):
+    def test_apply_campaign_filters_date_range(self, analytics_service) -> None:
         """Test applying date range filter to campaign query."""
         from sqlalchemy import select
 
@@ -1178,14 +1226,15 @@ class TestCampaignAnalyticsServiceFilters:
 
         stmt = select(Campaign)
         filters = CampaignFilterParams(
-            start_date=datetime(2024, 1, 1), end_date=datetime(2024, 12, 31)
+            start_date=datetime(2024, 1, 1),
+            end_date=datetime(2024, 12, 31),
         )
 
         result = analytics_service._apply_campaign_filters(stmt, filters)
 
         assert result is not None
 
-    def test_apply_campaign_filters_search(self, analytics_service):
+    def test_apply_campaign_filters_search(self, analytics_service) -> None:
         """Test applying search filter to campaign query."""
         from sqlalchemy import select
 
@@ -1198,7 +1247,7 @@ class TestCampaignAnalyticsServiceFilters:
 
         assert result is not None
 
-    def test_apply_telemetry_filters_status(self, analytics_service):
+    def test_apply_telemetry_filters_status(self, analytics_service) -> None:
         """Test applying status filter to telemetry query."""
         from sqlalchemy import select
 
@@ -1206,14 +1255,14 @@ class TestCampaignAnalyticsServiceFilters:
 
         stmt = select(CampaignTelemetryEvent)
         filters = TelemetryFilterParams(
-            status=[ExecutionStatusEnum.SUCCESS, ExecutionStatusEnum.FAILURE]
+            status=[ExecutionStatusEnum.SUCCESS, ExecutionStatusEnum.FAILURE],
         )
 
         result = analytics_service._apply_telemetry_filters(stmt, filters)
 
         assert result is not None
 
-    def test_apply_telemetry_filters_success_only(self, analytics_service):
+    def test_apply_telemetry_filters_success_only(self, analytics_service) -> None:
         """Test applying success_only filter to telemetry query."""
         from sqlalchemy import select
 
@@ -1226,7 +1275,7 @@ class TestCampaignAnalyticsServiceFilters:
 
         assert result is not None
 
-    def test_apply_telemetry_filters_potency_range(self, analytics_service):
+    def test_apply_telemetry_filters_potency_range(self, analytics_service) -> None:
         """Test applying potency range filter to telemetry query."""
         from sqlalchemy import select
 

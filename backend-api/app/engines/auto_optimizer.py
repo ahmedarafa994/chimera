@@ -7,9 +7,7 @@ except ImportError:
 
 
 def generate_ai_prompt(user_input, potency_level=10):
-    """
-    Uses Google Gemini to generate an optimized prompt.
-    """
+    """Uses Google Gemini to generate an optimized prompt."""
     try:
         if not GeminiClient:
             logging.warning("GeminiClient not available")
@@ -48,18 +46,15 @@ def generate_ai_prompt(user_input, potency_level=10):
             return response.strip()
 
     except Exception as e:
-        logging.error(f"[!] Gemini Optimization failed: {e}")
+        logging.exception(f"[!] Gemini Optimization failed: {e}")
 
     return None
 
 
 def generate_optimized_prompt(user_input, potency_level=10):
-    """
-    The core function of the integrated AI model.
+    """The core function of the integrated AI model.
     Prioritizes AI (Gemini) generation if available.
     """
-    print(f"[*] Analyzing input: '{user_input}'")
-
     # --- AI BRAIN INTEGRATION ---
     # Try to use Gemini first
     ai_prompt = generate_ai_prompt(user_input, potency_level)

@@ -14,7 +14,7 @@ from app.engines.transformer_engine import IntentData
 class TestGradientOptimizerEngine:
     @pytest.fixture
     def mock_llm_client(self):
-        """Mock LLM client for API-based optimization"""
+        """Mock LLM client for API-based optimization."""
         mock_client = MagicMock()
         mock_response = LLMResponse(
             content="Sure, here is the answer",
@@ -27,16 +27,16 @@ class TestGradientOptimizerEngine:
         mock_client.generate.return_value = mock_response
         return mock_client
 
-    def test_initialization(self):
-        """Test that the engine initializes correctly"""
+    def test_initialization(self) -> None:
+        """Test that the engine initializes correctly."""
         engine = GradientOptimizerEngine(provider="google", model="gemini-pro")
 
         assert engine.provider == "google"
         assert engine.model == "gemini-pro"
         assert engine._api_client is None
 
-    def test_transform_with_mock_client(self, mock_llm_client):
-        """Test transform with mocked LLM client"""
+    def test_transform_with_mock_client(self, mock_llm_client) -> None:
+        """Test transform with mocked LLM client."""
         engine = GradientOptimizerEngine(provider="google", model="gemini-pro")
         engine._api_client = mock_llm_client
 
@@ -46,8 +46,8 @@ class TestGradientOptimizerEngine:
         assert "Test prompt" in result
         assert mock_llm_client.generate.called
 
-    def test_transform_fallback_on_no_client(self):
-        """Test fallback behavior when no API client is available"""
+    def test_transform_fallback_on_no_client(self) -> None:
+        """Test fallback behavior when no API client is available."""
         with patch("app.engines.gradient_optimizer.LLMClientFactory.from_env", return_value=None):
             engine = GradientOptimizerEngine(provider="invalid")
 
@@ -57,8 +57,8 @@ class TestGradientOptimizerEngine:
             assert "Test prompt" in result
             assert "Gradient Optimization Failed" in result
 
-    def test_hotflip_optimization(self, mock_llm_client):
-        """Test HotFlip optimization strategy"""
+    def test_hotflip_optimization(self, mock_llm_client) -> None:
+        """Test HotFlip optimization strategy."""
         engine = GradientOptimizerEngine()
         engine._api_client = mock_llm_client
 
@@ -68,8 +68,8 @@ class TestGradientOptimizerEngine:
         assert isinstance(suffix, str)
         assert len(suffix) > 0
 
-    def test_gcg_optimization(self, mock_llm_client):
-        """Test GCG optimization strategy"""
+    def test_gcg_optimization(self, mock_llm_client) -> None:
+        """Test GCG optimization strategy."""
         engine = GradientOptimizerEngine()
         engine._api_client = mock_llm_client
 
@@ -79,8 +79,8 @@ class TestGradientOptimizerEngine:
         assert isinstance(suffix, str)
         assert len(suffix) > 0
 
-    def test_score_suffix(self, mock_llm_client):
-        """Test suffix scoring mechanism"""
+    def test_score_suffix(self, mock_llm_client) -> None:
+        """Test suffix scoring mechanism."""
         engine = GradientOptimizerEngine()
         engine._api_client = mock_llm_client
 
@@ -90,8 +90,8 @@ class TestGradientOptimizerEngine:
         assert 0.0 <= score <= 1.0
         assert mock_llm_client.generate.called
 
-    def test_candidate_tokens(self):
-        """Test candidate token generation"""
+    def test_candidate_tokens(self) -> None:
+        """Test candidate token generation."""
         engine = GradientOptimizerEngine()
         tokens = engine._get_candidate_tokens()
 
@@ -99,8 +99,8 @@ class TestGradientOptimizerEngine:
         assert len(tokens) > 0
         assert "please" in tokens
 
-    def test_transfer_verification(self, mock_llm_client):
-        """Test transfer attack verification"""
+    def test_transfer_verification(self, mock_llm_client) -> None:
+        """Test transfer attack verification."""
         with patch("app.engines.gradient_optimizer.LLMClientFactory.from_env") as mock_factory:
             mock_factory.return_value = mock_llm_client
 

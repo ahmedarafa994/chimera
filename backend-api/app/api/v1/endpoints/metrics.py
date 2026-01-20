@@ -1,5 +1,4 @@
-"""
-Prometheus-Compatible Metrics Endpoint
+"""Prometheus-Compatible Metrics Endpoint.
 
 Provides comprehensive metrics collection for monitoring and observability.
 Includes:
@@ -31,22 +30,25 @@ router = APIRouter()
 
 
 class MetricsCollector:
-    """
-    Collects and formats metrics in Prometheus exposition format.
+    """Collects and formats metrics in Prometheus exposition format.
 
     This is a lightweight implementation that doesn't require the
     prometheus_client library, making it suitable for environments
     where that dependency isn't available.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._start_time = time.time()
         self._request_counts: dict[str, int] = {}
         self._request_latencies: dict[str, list[float]] = {}
         self._error_counts: dict[str, int] = {}
 
     def record_request(
-        self, endpoint: str, method: str, status_code: int, latency_ms: float
+        self,
+        endpoint: str,
+        method: str,
+        status_code: int,
+        latency_ms: float,
     ) -> None:
         """Record a request for metrics."""
         key = f"{method}:{endpoint}:{status_code}"
@@ -109,7 +111,7 @@ def get_metrics_collector() -> MetricsCollector:
 
 def format_prometheus_metric(
     name: str,
-    value: float | int,
+    value: float,
     metric_type: str = "gauge",
     help_text: str = "",
     labels: dict[str, str] | None = None,
@@ -145,7 +147,7 @@ def collect_all_metrics() -> str:
             metrics_collector.get_uptime_seconds(),
             "counter",
             "Application uptime in seconds",
-        )
+        ),
     )
 
     # ==========================================================================
@@ -164,7 +166,7 @@ def collect_all_metrics() -> str:
                 "gauge",
                 "Circuit breaker state (0=closed, 1=half_open, 2=open)",
                 {"name": name},
-            )
+            ),
         )
 
         # Failure count
@@ -175,7 +177,7 @@ def collect_all_metrics() -> str:
                 "gauge",
                 "Current failure count for circuit breaker",
                 {"name": name},
-            )
+            ),
         )
 
         # Metrics from circuit breaker
@@ -188,7 +190,7 @@ def collect_all_metrics() -> str:
                 "counter",
                 "Total calls through circuit breaker",
                 {"name": name},
-            )
+            ),
         )
 
         metrics_lines.append(
@@ -198,7 +200,7 @@ def collect_all_metrics() -> str:
                 "counter",
                 "Successful calls through circuit breaker",
                 {"name": name},
-            )
+            ),
         )
 
         metrics_lines.append(
@@ -208,7 +210,7 @@ def collect_all_metrics() -> str:
                 "counter",
                 "Failed calls through circuit breaker",
                 {"name": name},
-            )
+            ),
         )
 
         metrics_lines.append(
@@ -218,7 +220,7 @@ def collect_all_metrics() -> str:
                 "counter",
                 "Rejected calls (circuit open)",
                 {"name": name},
-            )
+            ),
         )
 
     # ==========================================================================
@@ -236,13 +238,16 @@ def collect_all_metrics() -> str:
                 cache_stats.get("size", 0),
                 "gauge",
                 "Current LLM response cache size",
-            )
+            ),
         )
 
         metrics_lines.append(
             format_prometheus_metric(
-                "chimera_llm_cache_hits", cache_stats.get("hits", 0), "counter", "LLM cache hits"
-            )
+                "chimera_llm_cache_hits",
+                cache_stats.get("hits", 0),
+                "counter",
+                "LLM cache hits",
+            ),
         )
 
         metrics_lines.append(
@@ -251,7 +256,7 @@ def collect_all_metrics() -> str:
                 cache_stats.get("misses", 0),
                 "counter",
                 "LLM cache misses",
-            )
+            ),
         )
 
         metrics_lines.append(
@@ -260,7 +265,7 @@ def collect_all_metrics() -> str:
                 cache_stats.get("hit_rate", 0),
                 "gauge",
                 "LLM cache hit rate",
-            )
+            ),
         )
 
         # Deduplication metrics
@@ -271,7 +276,7 @@ def collect_all_metrics() -> str:
                 dedup_stats.get("deduplicated_count", 0),
                 "counter",
                 "Number of deduplicated LLM requests",
-            )
+            ),
         )
 
         metrics_lines.append(
@@ -280,7 +285,7 @@ def collect_all_metrics() -> str:
                 dedup_stats.get("pending_requests", 0),
                 "gauge",
                 "Number of pending LLM requests",
-            )
+            ),
         )
 
         # Provider count
@@ -290,7 +295,7 @@ def collect_all_metrics() -> str:
                 len(llm_stats.get("providers", [])),
                 "gauge",
                 "Number of registered LLM providers",
-            )
+            ),
         )
 
     except Exception as e:
@@ -313,7 +318,7 @@ def collect_all_metrics() -> str:
                     cache_stats.get("current_size", 0),
                     "gauge",
                     "Current transformation cache size",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -322,7 +327,7 @@ def collect_all_metrics() -> str:
                     cache_stats.get("max_size", 0),
                     "gauge",
                     "Maximum transformation cache size",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -331,7 +336,7 @@ def collect_all_metrics() -> str:
                     cache_stats.get("hits", 0),
                     "counter",
                     "Transformation cache hits",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -340,7 +345,7 @@ def collect_all_metrics() -> str:
                     cache_stats.get("misses", 0),
                     "counter",
                     "Transformation cache misses",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -349,7 +354,7 @@ def collect_all_metrics() -> str:
                     cache_stats.get("evictions", 0),
                     "counter",
                     "Transformation cache LRU evictions",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -358,14 +363,15 @@ def collect_all_metrics() -> str:
                     cache_stats.get("hit_rate", 0),
                     "gauge",
                     "Transformation cache hit rate",
-                )
+                ),
             )
 
         # Enhanced cache metrics (PERF-001)
         if cache_metrics:
             # Health status (0=healthy, 1=degraded, 2=warning, 3=critical)
             health_value = {"healthy": 0, "degraded": 1, "warning": 2, "critical": 3}.get(
-                cache_metrics.get("health", "unknown"), -1
+                cache_metrics.get("health", "unknown"),
+                -1,
             )
             metrics_lines.append(
                 format_prometheus_metric(
@@ -373,7 +379,7 @@ def collect_all_metrics() -> str:
                     health_value,
                     "gauge",
                     "Cache health status (0=healthy, 1=degraded, 2=warning, 3=critical)",
-                )
+                ),
             )
 
             # Utilization percentage
@@ -383,7 +389,7 @@ def collect_all_metrics() -> str:
                     cache_metrics.get("utilization_percent", 0),
                     "gauge",
                     "Cache utilization percentage",
-                )
+                ),
             )
 
             # Memory metrics
@@ -393,7 +399,7 @@ def collect_all_metrics() -> str:
                     cache_metrics.get("estimated_memory_bytes", 0),
                     "gauge",
                     "Estimated cache memory usage in bytes",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -402,7 +408,7 @@ def collect_all_metrics() -> str:
                     cache_metrics.get("estimated_memory_mb", 0),
                     "gauge",
                     "Estimated cache memory usage in megabytes",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -411,7 +417,7 @@ def collect_all_metrics() -> str:
                     cache_metrics.get("avg_entry_size_bytes", 0),
                     "gauge",
                     "Average cache entry size in bytes",
-                )
+                ),
             )
 
             # Event counters
@@ -421,7 +427,7 @@ def collect_all_metrics() -> str:
                     cache_metrics.get("expired", 0),
                     "counter",
                     "Cache entries expired (TTL)",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -430,7 +436,7 @@ def collect_all_metrics() -> str:
                     cache_metrics.get("size_rejections", 0),
                     "counter",
                     "Cache entries rejected (too large)",
-                )
+                ),
             )
 
             metrics_lines.append(
@@ -439,7 +445,7 @@ def collect_all_metrics() -> str:
                     cache_metrics.get("eviction_rate", 0),
                     "gauge",
                     "Cache eviction rate (evictions per hit)",
-                )
+                ),
             )
     except Exception as e:
         logger.warning(f"Failed to collect transformation cache metrics: {e}")
@@ -461,7 +467,7 @@ def collect_all_metrics() -> str:
                     "counter",
                     "Total HTTP requests",
                     {"method": method, "endpoint": endpoint, "status": status},
-                )
+                ),
             )
 
     for key, count in request_stats.get("error_counts", {}).items():
@@ -475,7 +481,7 @@ def collect_all_metrics() -> str:
                     "counter",
                     "Total HTTP errors",
                     {"method": method, "endpoint": endpoint},
-                )
+                ),
             )
 
     return "\n\n".join(metrics_lines) + "\n"
@@ -494,8 +500,7 @@ def collect_all_metrics() -> str:
     description="Returns metrics in Prometheus exposition format for scraping.",
 )
 async def get_prometheus_metrics():
-    """
-    Get all metrics in Prometheus exposition format.
+    """Get all metrics in Prometheus exposition format.
 
     This endpoint is designed to be scraped by Prometheus or compatible
     monitoring systems. It returns metrics including:
@@ -509,7 +514,8 @@ async def get_prometheus_metrics():
     try:
         metrics_output = collect_all_metrics()
         return PlainTextResponse(
-            content=metrics_output, media_type="text/plain; version=0.0.4; charset=utf-8"
+            content=metrics_output,
+            media_type="text/plain; version=0.0.4; charset=utf-8",
         )
     except Exception as e:
         logger.error(f"Failed to collect metrics: {e}")
@@ -523,8 +529,7 @@ async def get_prometheus_metrics():
     description="Returns metrics in JSON format for easier consumption by dashboards.",
 )
 async def get_json_metrics() -> dict[str, Any]:
-    """
-    Get all metrics in JSON format.
+    """Get all metrics in JSON format.
 
     This endpoint provides the same metrics as /metrics but in JSON format,
     which is easier to consume for custom dashboards and debugging.
@@ -573,8 +578,7 @@ async def get_json_metrics() -> dict[str, Any]:
     description="Returns detailed status of all circuit breakers.",
 )
 async def get_circuit_breaker_status() -> dict[str, Any]:
-    """
-    Get detailed status of all circuit breakers.
+    """Get detailed status of all circuit breakers.
 
     Useful for debugging provider availability issues and understanding
     the current state of resilience patterns.
@@ -593,8 +597,7 @@ async def get_circuit_breaker_status() -> dict[str, Any]:
     description="Reset a specific circuit breaker to closed state.",
 )
 async def reset_circuit_breaker(name: str) -> dict[str, Any]:
-    """
-    Reset a circuit breaker to its initial (closed) state.
+    """Reset a circuit breaker to its initial (closed) state.
 
     Use this to manually recover from a circuit breaker that's stuck open
     after the underlying issue has been resolved.
@@ -622,8 +625,7 @@ async def reset_circuit_breaker(name: str) -> dict[str, Any]:
     description="Reset all circuit breakers to closed state.",
 )
 async def reset_all_circuit_breakers() -> dict[str, Any]:
-    """
-    Reset all circuit breakers to their initial (closed) state.
+    """Reset all circuit breakers to their initial (closed) state.
 
     Use with caution - this will allow requests to flow to all providers
     regardless of their previous failure state.
@@ -656,8 +658,7 @@ async def reset_all_circuit_breakers() -> dict[str, Any]:
     description="Returns detailed transformation cache metrics including health, memory usage, and performance statistics.",
 )
 async def get_cache_metrics() -> dict[str, Any]:
-    """
-    Get comprehensive transformation cache metrics.
+    """Get comprehensive transformation cache metrics.
 
     PERF-001 FIX: Enhanced cache metrics endpoint for monitoring and alerting.
 
@@ -686,6 +687,7 @@ async def get_cache_metrics() -> dict[str, Any]:
                 ...
             }
         }
+
     """
     try:
         cache_metrics = (
@@ -714,8 +716,7 @@ async def get_cache_metrics() -> dict[str, Any]:
     description="Clear all entries from the transformation cache.",
 )
 async def clear_cache() -> dict[str, Any]:
-    """
-    Clear all entries from the transformation cache.
+    """Clear all entries from the transformation cache.
 
     Use this to free memory or reset cache statistics.
     Cache will automatically repopulate as new transformations are performed.
@@ -737,12 +738,11 @@ async def clear_cache() -> dict[str, Any]:
                     "memory_mb": before_metrics.get("estimated_memory_mb", 0),
                 },
             }
-        else:
-            return {
-                "status": "error",
-                "error": "Cache is not enabled",
-                "timestamp": time.time(),
-            }
+        return {
+            "status": "error",
+            "error": "Cache is not enabled",
+            "timestamp": time.time(),
+        }
     except Exception as e:
         logger.error(f"Failed to clear cache: {e}")
         return {
@@ -760,8 +760,7 @@ async def clear_cache() -> dict[str, Any]:
     description="Returns detailed connection pool statistics for all LLM providers.",
 )
 async def get_connection_pool_metrics() -> dict[str, Any]:
-    """
-    Get connection pool metrics for all LLM providers.
+    """Get connection pool metrics for all LLM providers.
 
     PERF-001 FIX: Connection pool monitoring for observability and alerting.
     """
@@ -800,8 +799,7 @@ async def get_connection_pool_metrics() -> dict[str, Any]:
     description="Reset connection pool statistics for all providers.",
 )
 async def reset_connection_pool_stats() -> dict[str, Any]:
-    """
-    Reset connection pool statistics.
+    """Reset connection pool statistics.
 
     Useful for baseline measurements after making configuration changes.
     """
@@ -832,8 +830,7 @@ async def reset_connection_pool_stats() -> dict[str, Any]:
     description="Returns detailed metrics for L1 (in-memory) and L2 (Redis) cache layers.",
 )
 async def get_multi_level_cache_metrics() -> dict[str, Any]:
-    """
-    Get multi-level cache metrics.
+    """Get multi-level cache metrics.
 
     PERF-001 FIX: Provides visibility into both cache layers for monitoring
     cache performance and effectiveness.
@@ -875,8 +872,7 @@ async def get_multi_level_cache_metrics() -> dict[str, Any]:
     description="Clear all entries from both L1 and L2 cache.",
 )
 async def clear_multi_level_cache() -> dict[str, Any]:
-    """
-    Clear all cache entries from both L1 and L2 cache.
+    """Clear all cache entries from both L1 and L2 cache.
 
     Useful for freeing memory or resetting cache statistics.
     """

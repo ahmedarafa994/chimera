@@ -1,5 +1,4 @@
-"""
-Local Provider Plugin for Project Chimera.
+"""Local Provider Plugin for Project Chimera.
 
 Implements the ProviderPlugin protocol for local/self-hosted models,
 supporting various local inference servers with OpenAI-compatible APIs.
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class LocalPlugin(BaseProviderPlugin):
-    """
-    Provider plugin for local/self-hosted inference servers.
+    """Provider plugin for local/self-hosted inference servers.
 
     Supports any OpenAI-compatible local server including:
     - vLLM
@@ -70,8 +68,7 @@ class LocalPlugin(BaseProviderPlugin):
         return os.environ.get("LOCAL_DEFAULT_MODEL", "default")
 
     def _get_static_models(self) -> list[ModelInfo]:
-        """
-        Return placeholder model definitions.
+        """Return placeholder model definitions.
 
         Actual models depend on what's loaded in the local server.
         """
@@ -88,8 +85,7 @@ class LocalPlugin(BaseProviderPlugin):
         ]
 
     async def list_models(self, api_key: str | None = None) -> list[ModelInfo]:
-        """
-        List available models from local server.
+        """List available models from local server.
 
         Queries the local server for available models.
         """
@@ -126,14 +122,13 @@ class LocalPlugin(BaseProviderPlugin):
                     max_output_tokens=model.get("max_tokens", 2048),
                     supports_streaming=True,
                     capabilities=["chat"],
-                )
+                ),
             )
 
         return models if models else self._get_static_models()
 
     async def validate_api_key(self, api_key: str) -> bool:
-        """
-        Validate connection to local server.
+        """Validate connection to local server.
 
         For local servers, this checks if the server is reachable.
         """
@@ -153,7 +148,9 @@ class LocalPlugin(BaseProviderPlugin):
             return False
 
     async def generate(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> GenerationResponse:
         """Generate text using local server (OpenAI-compatible)."""
         model = request.model or self.get_default_model()
@@ -223,14 +220,16 @@ class LocalPlugin(BaseProviderPlugin):
                 latency_ms=latency_ms,
             )
         except httpx.HTTPStatusError as e:
-            logger.error(f"Local server API error: {e.response.status_code}")
+            logger.exception(f"Local server API error: {e.response.status_code}")
             raise
         except Exception as e:
-            logger.error(f"Local server generation error: {e}")
+            logger.exception(f"Local server generation error: {e}")
             raise
 
     async def generate_stream(
-        self, request: GenerationRequest, api_key: str | None = None
+        self,
+        request: GenerationRequest,
+        api_key: str | None = None,
     ) -> AsyncIterator[StreamChunk]:
         """Stream text generation from local server."""
         model = request.model or self.get_default_model()
@@ -306,5 +305,5 @@ class LocalPlugin(BaseProviderPlugin):
                             logger.warning(f"Parse error: {e}")
                             continue
         except Exception as e:
-            logger.error(f"Local server streaming error: {e}")
+            logger.exception(f"Local server streaming error: {e}")
             raise

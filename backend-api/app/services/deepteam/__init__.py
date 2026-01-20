@@ -1,5 +1,4 @@
-"""
-DeepTeam Integration Module
+"""DeepTeam Integration Module.
 
 This module provides comprehensive integration with the DeepTeam red-teaming framework
 for adversarial AI security testing, including:
@@ -13,57 +12,57 @@ for adversarial AI security testing, including:
 
 # Core service layer
 from .config import (
-                     AttackConfig,
-                     AttackType,
-                     DeepTeamConfig,
-                     PresetConfig,
-                     RedTeamSessionConfig,
-                     RiskAssessmentResult,
-                     VulnerabilityConfig,
-                     VulnerabilityType,
-                     get_preset_config,
+    AttackConfig,
+    AttackType,
+    DeepTeamConfig,
+    PresetConfig,
+    RedTeamSessionConfig,
+    RiskAssessmentResult,
+    VulnerabilityConfig,
+    VulnerabilityType,
+    get_preset_config,
 )
 
 # Service layer
 from .jailbreak_service import (  # Request/Response models; Service; WebSocket events; Helpers
-                     GenerationCompleteEvent,
-                     GenerationErrorEvent,
-                     GenerationProgressEvent,
-                     GenerationStartEvent,
-                     JailbreakBatchRequest,
-                     JailbreakGenerateRequest,
-                     JailbreakGenerateResponse,
-                     JailbreakService,
-                     PromptGeneratedEvent,
-                     StrategiesResponse,
-                     StrategyInfo,
-                     WebSocketEvent,
-                     WebSocketHandler,
-                     configure_jailbreak_service,
-                     get_jailbreak_service,
-                     stream_to_sse,
+    GenerationCompleteEvent,
+    GenerationErrorEvent,
+    GenerationProgressEvent,
+    GenerationStartEvent,
+    JailbreakBatchRequest,
+    JailbreakGenerateRequest,
+    JailbreakGenerateResponse,
+    JailbreakService,
+    PromptGeneratedEvent,
+    StrategiesResponse,
+    StrategyInfo,
+    WebSocketEvent,
+    WebSocketHandler,
+    configure_jailbreak_service,
+    get_jailbreak_service,
+    stream_to_sse,
 )
 
 # Core prompt generator
 from .prompt_generator import (  # Strategies; Config models; Enums; Prompt models; Callbacks; Main generator; Factory
-                     AttackStrategy,
-                     AttackStrategyConfig,
-                     AttackStrategyType,
-                     AutoDANStrategy,
-                     AutoDANTurboStrategy,
-                     CrescendoStrategy,
-                     GeneratedPrompt,
-                     GenerationCallbacks,
-                     GenerationProgress,
-                     GenerationResult,
-                     GenerationStatus,
-                     GeneratorConfig,
-                     GrayBoxStrategy,
-                     JailbreakPromptGenerator,
-                     PAIRStrategy,
-                     StrategyFactory,
-                     TAPStrategy,
-                     VulnerabilityCategory,
+    AttackStrategy,
+    AttackStrategyConfig,
+    AttackStrategyType,
+    AutoDANStrategy,
+    AutoDANTurboStrategy,
+    CrescendoStrategy,
+    GeneratedPrompt,
+    GenerationCallbacks,
+    GenerationProgress,
+    GenerationResult,
+    GenerationStatus,
+    GeneratorConfig,
+    GrayBoxStrategy,
+    JailbreakPromptGenerator,
+    PAIRStrategy,
+    StrategyFactory,
+    TAPStrategy,
+    VulnerabilityCategory,
 )
 from .service import DeepTeamService
 

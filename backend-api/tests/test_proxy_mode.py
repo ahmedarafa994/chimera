@@ -1,5 +1,4 @@
-"""
-Tests for Proxy Mode Integration (Story 1.3).
+"""Tests for Proxy Mode Integration (Story 1.3).
 
 Tests cover:
 - ProxyClient: HTTP communication, connection pooling, retries
@@ -35,7 +34,7 @@ class TestProxyClient:
         )
 
     @pytest.mark.asyncio
-    async def test_initialization(self, proxy_client):
+    async def test_initialization(self, proxy_client) -> None:
         """Test ProxyClient initializes correctly."""
         assert proxy_client.endpoint == "http://localhost:8080"
         assert proxy_client._timeout == 10.0
@@ -43,7 +42,7 @@ class TestProxyClient:
         assert not proxy_client.is_healthy
 
     @pytest.mark.asyncio
-    async def test_get_stats(self, proxy_client):
+    async def test_get_stats(self, proxy_client) -> None:
         """Test stats retrieval."""
         stats = proxy_client.get_stats()
 
@@ -55,7 +54,7 @@ class TestProxyClient:
         assert stats["request_count"] == 0
 
     @pytest.mark.asyncio
-    async def test_send_request_success(self, proxy_client):
+    async def test_send_request_success(self, proxy_client) -> None:
         """Test successful request through proxy."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -80,7 +79,7 @@ class TestProxyClient:
             assert result["model"] == "gpt-4"
 
     @pytest.mark.asyncio
-    async def test_send_request_connection_error(self, proxy_client):
+    async def test_send_request_connection_error(self, proxy_client) -> None:
         """Test handling of connection errors."""
         from app.infrastructure.proxy.proxy_client import ProxyConnectionError
 
@@ -102,7 +101,7 @@ class TestProxyClient:
             )
 
     @pytest.mark.asyncio
-    async def test_send_request_timeout(self, proxy_client):
+    async def test_send_request_timeout(self, proxy_client) -> None:
         """Test handling of timeout errors."""
         from app.infrastructure.proxy.proxy_client import ProxyTimeoutError
 
@@ -124,7 +123,7 @@ class TestProxyClient:
             )
 
     @pytest.mark.asyncio
-    async def test_health_check_success(self, proxy_client):
+    async def test_health_check_success(self, proxy_client) -> None:
         """Test successful health check."""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -145,7 +144,7 @@ class TestProxyClient:
             assert status.consecutive_failures == 0
 
     @pytest.mark.asyncio
-    async def test_health_check_failure(self, proxy_client):
+    async def test_health_check_failure(self, proxy_client) -> None:
         """Test failed health check."""
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=httpx.ConnectError("Connection refused"))
@@ -163,7 +162,7 @@ class TestProxyClient:
             assert status.consecutive_failures >= 1
 
     @pytest.mark.asyncio
-    async def test_retry_on_server_error(self, proxy_client):
+    async def test_retry_on_server_error(self, proxy_client) -> None:
         """Test retry logic on 5xx errors."""
         error_response = MagicMock()
         error_response.status_code = 503
@@ -194,7 +193,7 @@ class TestProxyClient:
             assert result["text"] == "Success"
 
     @pytest.mark.asyncio
-    async def test_close_client(self, proxy_client):
+    async def test_close_client(self, proxy_client) -> None:
         """Test closing the client."""
         mock_client = AsyncMock()
         mock_client.is_closed = False
@@ -226,7 +225,7 @@ class TestProxyProviderAdapter:
                 "text": "Generated text",
                 "model": "gpt-4",
                 "usage": {"total_tokens": 50},
-            }
+            },
         )
         return client
 
@@ -240,7 +239,7 @@ class TestProxyProviderAdapter:
                 model_used="fallback-model",
                 provider="fallback",
                 latency_ms=100.0,
-            )
+            ),
         )
         provider.generate_stream = AsyncMock()
         provider.count_tokens = AsyncMock(return_value=10)
@@ -259,7 +258,7 @@ class TestProxyProviderAdapter:
         )
 
     @pytest.mark.asyncio
-    async def test_generate_success(self, adapter, mock_proxy_client):
+    async def test_generate_success(self, adapter, mock_proxy_client) -> None:
         """Test successful generation through proxy."""
         request = PromptRequest(
             prompt="Hello, world!",
@@ -274,13 +273,16 @@ class TestProxyProviderAdapter:
 
     @pytest.mark.asyncio
     async def test_generate_fallback_on_connection_error(
-        self, adapter, mock_proxy_client, mock_fallback_provider
-    ):
+        self,
+        adapter,
+        mock_proxy_client,
+        mock_fallback_provider,
+    ) -> None:
         """Test fallback to direct mode on connection error."""
         from app.infrastructure.proxy.proxy_client import ProxyConnectionError
 
         mock_proxy_client.send_request = AsyncMock(
-            side_effect=ProxyConnectionError("Connection failed")
+            side_effect=ProxyConnectionError("Connection failed"),
         )
 
         request = PromptRequest(prompt="Test prompt")
@@ -293,7 +295,7 @@ class TestProxyProviderAdapter:
             mock_fallback_provider.generate.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_check_health(self, adapter, mock_proxy_client):
+    async def test_check_health(self, adapter, mock_proxy_client) -> None:
         """Test health check through proxy."""
         is_healthy = await adapter.check_health()
 
@@ -301,7 +303,7 @@ class TestProxyProviderAdapter:
         mock_proxy_client.check_health.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_count_tokens_with_fallback(self, adapter, mock_fallback_provider):
+    async def test_count_tokens_with_fallback(self, adapter, mock_fallback_provider) -> None:
         """Test token counting using fallback provider."""
         count = await adapter.count_tokens("Test text", "gpt-4")
 
@@ -309,7 +311,7 @@ class TestProxyProviderAdapter:
         mock_fallback_provider.count_tokens.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_count_tokens_without_fallback(self, mock_proxy_client):
+    async def test_count_tokens_without_fallback(self, mock_proxy_client) -> None:
         """Test token counting estimation without fallback."""
         from app.infrastructure.proxy.proxy_provider_adapter import ProxyProviderAdapter
 
@@ -324,7 +326,7 @@ class TestProxyProviderAdapter:
         # Should use character-based estimation
         assert count > 0
 
-    def test_get_stats(self, adapter):
+    def test_get_stats(self, adapter) -> None:
         """Test statistics retrieval."""
         stats = adapter.get_stats()
 
@@ -355,7 +357,7 @@ class TestProxyHealthMonitor:
                 latency_ms=50.0,
                 last_check=0,
                 connection_state=ProxyConnectionState.CONNECTED,
-            )
+            ),
         )
         client.get_stats = MagicMock(return_value={"request_count": 0})
         return client
@@ -372,7 +374,7 @@ class TestProxyHealthMonitor:
         )
 
     @pytest.mark.asyncio
-    async def test_check_now(self, health_monitor, mock_proxy_client):
+    async def test_check_now(self, health_monitor, mock_proxy_client) -> None:
         """Test immediate health check."""
         status = await health_monitor.check_now()
 
@@ -380,7 +382,7 @@ class TestProxyHealthMonitor:
         mock_proxy_client.check_health.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_metrics_tracking(self, health_monitor, mock_proxy_client):
+    async def test_metrics_tracking(self, health_monitor, mock_proxy_client) -> None:
         """Test that metrics are tracked correctly."""
         # Perform multiple health checks
         await health_monitor.check_now()
@@ -394,7 +396,7 @@ class TestProxyHealthMonitor:
         assert metrics.uptime_percent == 100.0
 
     @pytest.mark.asyncio
-    async def test_history_tracking(self, health_monitor):
+    async def test_history_tracking(self, health_monitor) -> None:
         """Test that history is maintained."""
         await health_monitor.check_now()
         await health_monitor.check_now()
@@ -405,7 +407,7 @@ class TestProxyHealthMonitor:
         assert all(r.is_healthy for r in history)
 
     @pytest.mark.asyncio
-    async def test_history_size_limit(self, health_monitor, mock_proxy_client):
+    async def test_history_size_limit(self, health_monitor, mock_proxy_client) -> None:
         """Test that history respects size limit."""
         # Perform more checks than history size
         for _ in range(15):
@@ -417,7 +419,7 @@ class TestProxyHealthMonitor:
         assert len(history) == 10
 
     @pytest.mark.asyncio
-    async def test_start_stop(self, health_monitor):
+    async def test_start_stop(self, health_monitor) -> None:
         """Test starting and stopping the monitor."""
         await health_monitor.start()
         assert health_monitor.is_running
@@ -426,7 +428,7 @@ class TestProxyHealthMonitor:
         assert not health_monitor.is_running
 
     @pytest.mark.asyncio
-    async def test_get_status(self, health_monitor):
+    async def test_get_status(self, health_monitor) -> None:
         """Test comprehensive status report."""
         await health_monitor.check_now()
 
@@ -438,7 +440,7 @@ class TestProxyHealthMonitor:
         assert "client" in status
         assert "recent_checks" in status
 
-    def test_reset_metrics(self, health_monitor):
+    def test_reset_metrics(self, health_monitor) -> None:
         """Test resetting metrics."""
         health_monitor._metrics.total_checks = 10
         health_monitor._metrics.successful_checks = 8
@@ -467,7 +469,7 @@ class TestProxyHealthEndpoints:
         return TestClient(app)
 
     @pytest.mark.asyncio
-    async def test_get_proxy_health_disabled(self):
+    async def test_get_proxy_health_disabled(self) -> None:
         """Test health endpoint when proxy mode is disabled."""
         from app.api.v1.endpoints.proxy_health import get_proxy_health
 
@@ -483,7 +485,7 @@ class TestProxyHealthEndpoints:
             assert response.connection_state == "disabled"
 
     @pytest.mark.asyncio
-    async def test_get_proxy_health_enabled(self):
+    async def test_get_proxy_health_enabled(self) -> None:
         """Test health endpoint when proxy mode is enabled."""
         from app.api.v1.endpoints.proxy_health import get_proxy_health
         from app.infrastructure.proxy.proxy_client import ProxyConnectionState, ProxyHealthStatus
@@ -496,7 +498,7 @@ class TestProxyHealthEndpoints:
                 latency_ms=25.0,
                 last_check=0,
                 connection_state=ProxyConnectionState.CONNECTED,
-            )
+            ),
         )
 
         with patch("app.api.v1.endpoints.proxy_health.settings") as mock_settings:
@@ -523,7 +525,7 @@ class TestProxyModeIntegration:
     """Integration tests for proxy mode."""
 
     @pytest.mark.asyncio
-    async def test_proxy_client_global_instance(self):
+    async def test_proxy_client_global_instance(self) -> None:
         """Test global proxy client instance management."""
         from app.infrastructure.proxy.proxy_client import close_proxy_client, get_proxy_client
 
@@ -545,7 +547,7 @@ class TestProxyModeIntegration:
         await close_proxy_client()
 
     @pytest.mark.asyncio
-    async def test_health_monitor_global_instance(self):
+    async def test_health_monitor_global_instance(self) -> None:
         """Test global health monitor instance management."""
         from app.infrastructure.proxy.proxy_health import (
             get_health_monitor,
@@ -566,7 +568,7 @@ class TestProxyModeIntegration:
         await stop_health_monitoring()
 
     @pytest.mark.asyncio
-    async def test_create_proxy_adapter_factory(self):
+    async def test_create_proxy_adapter_factory(self) -> None:
         """Test proxy adapter factory function."""
         from app.infrastructure.proxy.proxy_provider_adapter import create_proxy_adapter
 
@@ -589,7 +591,7 @@ class TestProxyErrorHandling:
     """Tests for proxy error handling scenarios."""
 
     @pytest.mark.asyncio
-    async def test_proxy_response_error_400(self):
+    async def test_proxy_response_error_400(self) -> None:
         """Test handling of 4xx errors from proxy."""
         from app.infrastructure.proxy.proxy_client import ProxyClient, ProxyResponseError
 
@@ -616,7 +618,7 @@ class TestProxyErrorHandling:
         await client.close()
 
     @pytest.mark.asyncio
-    async def test_proxy_rate_limit_error(self):
+    async def test_proxy_rate_limit_error(self) -> None:
         """Test handling of rate limit errors (429)."""
         from app.infrastructure.proxy.proxy_client import ProxyClient, ProxyResponseError
 
@@ -645,7 +647,7 @@ class TestProxyErrorHandling:
         await client.close()
 
     @pytest.mark.asyncio
-    async def test_consecutive_failures_tracking(self):
+    async def test_consecutive_failures_tracking(self) -> None:
         """Test tracking of consecutive health check failures."""
         from app.infrastructure.proxy.proxy_client import ProxyConnectionState, ProxyHealthStatus
         from app.infrastructure.proxy.proxy_health import ProxyHealthMonitor

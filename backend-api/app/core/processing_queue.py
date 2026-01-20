@@ -1,5 +1,4 @@
-"""
-Processing Queue Manager
+"""Processing Queue Manager.
 
 Async processing queue that honors provider binding for AI operations.
 Supports:
@@ -99,8 +98,7 @@ class TaskResult:
 
 
 class ProviderBoundQueue:
-    """
-    Processing queue that honors provider binding.
+    """Processing queue that honors provider binding.
 
     Features:
     - Enqueue operations with optional provider binding
@@ -124,6 +122,7 @@ class ProviderBoundQueue:
         result = await queue.wait_for_task(task_id)
 
         await queue.stop()
+
     """
 
     def __init__(
@@ -131,14 +130,14 @@ class ProviderBoundQueue:
         default_provider: str | None = None,
         max_workers_per_provider: int = 3,
         max_queue_size: int = 1000,
-    ):
-        """
-        Initialize provider-bound queue.
+    ) -> None:
+        """Initialize provider-bound queue.
 
         Args:
             default_provider: Default provider for tasks without binding
             max_workers_per_provider: Max concurrent workers per provider
             max_queue_size: Maximum queue size per provider
+
         """
         self._default_provider = default_provider
         self._max_workers = max_workers_per_provider
@@ -146,7 +145,7 @@ class ProviderBoundQueue:
 
         # Per-provider queues
         self._queues: dict[str, asyncio.PriorityQueue] = defaultdict(
-            lambda: asyncio.PriorityQueue(maxsize=max_queue_size)
+            lambda: asyncio.PriorityQueue(maxsize=max_queue_size),
         )
 
         # Task tracking
@@ -175,11 +174,11 @@ class ProviderBoundQueue:
         logger.info("Processing queue started")
 
     async def stop(self, timeout: float = 30.0) -> None:
-        """
-        Stop the queue and wait for workers to finish.
+        """Stop the queue and wait for workers to finish.
 
         Args:
             timeout: Maximum time to wait for workers
+
         """
         self._running = False
 
@@ -208,8 +207,7 @@ class ProviderBoundQueue:
         priority: int = TaskPriority.NORMAL.value,
         **kwargs,
     ) -> str:
-        """
-        Enqueue an operation with provider binding.
+        """Enqueue an operation with provider binding.
 
         Args:
             operation: Async callable to execute
@@ -223,9 +221,11 @@ class ProviderBoundQueue:
         Raises:
             RuntimeError: If queue is not running
             asyncio.QueueFull: If queue is at capacity
+
         """
         if not self._running:
-            raise RuntimeError("Queue is not running")
+            msg = "Queue is not running"
+            raise RuntimeError(msg)
 
         # Resolve provider
         bound_provider = provider or self._default_provider or "default"
@@ -259,7 +259,7 @@ class ProviderBoundQueue:
             self._stats["total_enqueued"] += 1
 
             logger.debug(
-                f"Enqueued task {task_id} for provider {bound_provider} " f"(priority={priority})"
+                f"Enqueued task {task_id} for provider {bound_provider} (priority={priority})",
             )
 
             return task_id
@@ -305,7 +305,7 @@ class ProviderBoundQueue:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Worker error for provider {provider}: {e}")
+                logger.exception(f"Worker error for provider {provider}: {e}")
 
     async def _process_task(self, task: QueuedTask) -> None:
         """Process a single task."""
@@ -351,8 +351,7 @@ class ProviderBoundQueue:
         task_id: str,
         timeout: float | None = None,
     ) -> TaskResult:
-        """
-        Wait for a task to complete.
+        """Wait for a task to complete.
 
         Args:
             task_id: Task ID to wait for
@@ -364,9 +363,11 @@ class ProviderBoundQueue:
         Raises:
             KeyError: If task not found
             asyncio.TimeoutError: If timeout exceeded
+
         """
         if task_id not in self._tasks:
-            raise KeyError(f"Task {task_id} not found")
+            msg = f"Task {task_id} not found"
+            raise KeyError(msg)
 
         event = self._task_events[task_id]
         task = self._tasks[task_id]
@@ -388,14 +389,14 @@ class ProviderBoundQueue:
         )
 
     async def cancel_task(self, task_id: str) -> bool:
-        """
-        Cancel a pending task.
+        """Cancel a pending task.
 
         Args:
             task_id: Task ID to cancel
 
         Returns:
             True if task was cancelled, False if not found or not pending
+
         """
         task = self._tasks.get(task_id)
         if not task:
@@ -416,24 +417,24 @@ class ProviderBoundQueue:
         return True
 
     def get_task_status(self, task_id: str) -> dict[str, Any] | None:
-        """
-        Get status of a task.
+        """Get status of a task.
 
         Args:
             task_id: Task ID to check
 
         Returns:
             Task status dict or None if not found
+
         """
         task = self._tasks.get(task_id)
         return task.to_dict() if task else None
 
     def get_queue_status(self) -> dict[str, Any]:
-        """
-        Get queue status by provider.
+        """Get queue status by provider.
 
         Returns:
             Dict with queue statistics
+
         """
         queue_sizes = {}
         for provider, queue in self._queues.items():
@@ -476,8 +477,7 @@ class ProviderBoundQueue:
         provider: str | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
-        """
-        Get pending tasks, optionally filtered by provider.
+        """Get pending tasks, optionally filtered by provider.
 
         Args:
             provider: Filter by provider (None = all)
@@ -485,6 +485,7 @@ class ProviderBoundQueue:
 
         Returns:
             List of task status dicts
+
         """
         tasks = []
         for task in self._tasks.values():
@@ -499,14 +500,14 @@ class ProviderBoundQueue:
         return tasks
 
     async def process(self) -> Any:
-        """
-        Process next item in queue (for manual processing).
+        """Process next item in queue (for manual processing).
 
         Returns:
             Result from processed task or None if no tasks
+
         """
         # Find a task to process
-        for _provider, queue in self._queues.items():
+        for queue in self._queues.values():
             if not queue.empty():
                 try:
                     task = queue.get_nowait()
@@ -521,14 +522,14 @@ class ProviderBoundQueue:
         self,
         max_age_seconds: int = 3600,
     ) -> int:
-        """
-        Clean up completed tasks older than max_age.
+        """Clean up completed tasks older than max_age.
 
         Args:
             max_age_seconds: Maximum age in seconds
 
         Returns:
             Number of tasks cleaned up
+
         """
         cutoff = datetime.utcnow()
         count = 0
@@ -576,8 +577,7 @@ async def initialize_processing_queue(
     default_provider: str | None = None,
     max_workers_per_provider: int = 3,
 ) -> ProviderBoundQueue:
-    """
-    Initialize and start the global processing queue.
+    """Initialize and start the global processing queue.
 
     Args:
         default_provider: Default provider for unbound tasks
@@ -585,6 +585,7 @@ async def initialize_processing_queue(
 
     Returns:
         Initialized ProviderBoundQueue
+
     """
     global _processing_queue
     _processing_queue = ProviderBoundQueue(

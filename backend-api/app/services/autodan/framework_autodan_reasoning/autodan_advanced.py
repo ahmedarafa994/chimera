@@ -1,6 +1,4 @@
-"""
-AutoDAN-Advanced Variant
-"""
+"""AutoDAN-Advanced Variant."""
 
 import numpy as np
 
@@ -9,12 +7,11 @@ from .gradient_optimizer import GradientOptimizer
 
 
 class AutoDANAdvanced:
-    """
-    AutoDAN-Advanced: Implements Hierarchical Genetic Search (HGS) and
+    """AutoDAN-Advanced: Implements Hierarchical Genetic Search (HGS) and
     Coherence-Constrained Gradient Search (CCGS).
     """
 
-    def __init__(self, turbo_framework: dict, data, target, **kwargs):
+    def __init__(self, turbo_framework: dict, data, target, **kwargs) -> None:
         self.turbo_framework = turbo_framework
         self.data = data
         self.target = target
@@ -42,9 +39,7 @@ class AutoDANAdvanced:
         return any(p in low_res for p in refusal_patterns)
 
     def hierarchical_genetic_search(self, request, input_strategy_library=None):
-        """
-        Main entry point for the HGS algorithm.
-        """
+        """Main entry point for the HGS algorithm."""
         self.logger.info("Starting Hierarchical Genetic Search")
 
         population = self.initialize_population(request)

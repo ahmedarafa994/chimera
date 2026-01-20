@@ -9,25 +9,25 @@ from app.services.deepteam.service import DeepTeamService
 
 
 @pytest.mark.asyncio
-async def test_autodan_records_interactions(monkeypatch):
+async def test_autodan_records_interactions(monkeypatch) -> None:
     """Integration test: AutoDAN engine should receive recorded interactions for each test case."""
 
     # Setup a mock AutoDAN engine that records interactions
     class MockAutoDAN:
-        def __init__(self):
+        def __init__(self) -> None:
             self.records = []
 
-        def record_interaction(self, **kwargs):
+        def record_interaction(self, **kwargs) -> None:
             self.records.append(kwargs)
 
-        def select_technique_ppo(self, context, base_attack):
+        def select_technique_ppo(self, context, base_attack) -> str:
             return "persona_injection"
 
-        def apply_technique(self, base_attack, technique):
+        def apply_technique(self, base_attack, technique) -> str:
             return f"{base_attack} [technique:{technique}]"
 
     class MockReasoning:
-        async def enhance_prompt(self, base_attack, context=None):
+        async def enhance_prompt(self, base_attack, context=None) -> str:
             return f"{base_attack} [reasoned]"
 
     autodan = MockAutoDAN()
@@ -46,15 +46,15 @@ async def test_autodan_records_interactions(monkeypatch):
                         break
             content = f"MOCK_OPENAI_CLIENT_RESPONSE: {user_msg[:400]}"
             return SimpleNamespace(
-                choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
+                choices=[SimpleNamespace(message=SimpleNamespace(content=content))],
             )
 
     class _MockChat:
-        def __init__(self):
+        def __init__(self) -> None:
             self.completions = _MockCompletions()
 
     class MockAsyncOpenAI:
-        def __init__(self):
+        def __init__(self) -> None:
             self.chat = _MockChat()
 
     monkeypatch.setattr(openai, "AsyncOpenAI", MockAsyncOpenAI)

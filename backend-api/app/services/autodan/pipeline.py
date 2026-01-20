@@ -16,7 +16,7 @@ class AutoDANTurbo:
         break_score=8.5,
         warm_up_iterations=1,
         lifelong_iterations=4,
-    ):
+    ) -> None:
         self.attacker = turbo_framework["attacker"]
         self.scorer = turbo_framework["scorer"]
         self.summarizer = turbo_framework["summarizer"]
@@ -168,7 +168,7 @@ class AutoDANTurbo:
     def build_from_warm_up_log(self, input_strategy_library, input_summarizer_log):
         self.warm_up_running = 0
         self.logger.info(
-            "############Start building strategy library from warm up log#################"
+            "############Start building strategy library from warm up log#################",
         )
         self.building_library = Library(library=input_strategy_library, logger=self.logger)
         self.warm_up_summarizer_log = Log(entries=input_summarizer_log)
@@ -177,7 +177,7 @@ class AutoDANTurbo:
                 "running": self.warm_up_running,
                 "number of strategies": len(self.building_library.all()),
                 "strategies": list(self.building_library.all().keys()),
-            }
+            },
         )
         for request_id in range(len(self.data["warm_up"])):
             request = self.data["warm_up"][request_id]
@@ -212,12 +212,16 @@ class AutoDANTurbo:
                         top_p=0.9,
                     )
                     json_formatted_strategy = self.summarizer.wrapper(
-                        strategy, max_length=2000, do_sample=True, temperature=0.6, top_p=0.9
+                        strategy,
+                        max_length=2000,
+                        do_sample=True,
+                        temperature=0.6,
+                        top_p=0.9,
                     )
                     jailbreak_strategy = json.loads(json_formatted_strategy)
                     not_scussed = False
                 except Exception as e:
-                    self.logger.error(f"Summarizer failed to summarize the strategy: {e}")
+                    self.logger.exception(f"Summarizer failed to summarize the strategy: {e}")
                     continue
             jailbreak_strategy["Example"] = [jailbreak_prompt_j]
             jailbreak_strategy["Score"] = [score_j - score_i]
@@ -229,7 +233,9 @@ class AutoDANTurbo:
                 weak_prompt=jailbreak_prompt_i,
                 strong_prompt=jailbreak_prompt_j,
                 strategy=json.dumps(
-                    json.loads(json_formatted_strategy), indent=4, ensure_ascii=False
+                    json.loads(json_formatted_strategy),
+                    indent=4,
+                    ensure_ascii=False,
                 ),
                 score_difference=jailbreak_strategy["Score"][0],
                 stage="warm_up",
@@ -241,12 +247,12 @@ class AutoDANTurbo:
                     "running": self.warm_up_running,
                     "number of strategies": len(self.building_library.all()),
                     "strategies": list(self.building_library.all().keys()),
-                }
+                },
             )
         built_up_library = self.building_library.all()
         summarizer_log = self.warm_up_summarizer_log.all()
         self.logger.info(
-            "############End building strategy library from warm up log#################"
+            "############End building strategy library from warm up log#################",
         )
         return built_up_library, summarizer_log
 
@@ -256,7 +262,7 @@ class AutoDANTurbo:
         attack_log = self.warm_up_log.all()
         return strategy_library, attack_log, summarizer_log
 
-    def hot_start_lifelong(self, input_attack_log):
+    def hot_start_lifelong(self, input_attack_log) -> None:
         self.warm_up_log = Log(entries=input_attack_log)
         self.warm_up_running = 0
         self.warm_up_running += len(self.warm_up_log.all())
@@ -269,11 +275,16 @@ class AutoDANTurbo:
                 request = self.data["warm_up"][request_id]
                 for j in range(self.epochs):
                     jailbreak_prompt, attacker_system = self.attacker.warm_up_attack(
-                        request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
+                        request,
+                        max_length=10000,
+                        do_sample=True,
+                        temperature=1.0,
+                        top_p=1,
                     )
                     if self._is_refusal(jailbreak_prompt):
+                        msg = "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
                         raise RuntimeError(
-                            "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
+                            msg,
                         )
                     target_response = self.target.respond(jailbreak_prompt)
                     not_scussed = True
@@ -291,17 +302,19 @@ class AutoDANTurbo:
                             while not_scussed_sub:
                                 try:
                                     score = self.scorer.wrapper(
-                                        assessment, max_length=2000, do_sample=False
+                                        assessment,
+                                        max_length=2000,
+                                        do_sample=False,
                                     )
                                     not_scussed_sub = False
                                 except Exception as e:
-                                    self.logger.error(
-                                        f"Scorer wrapper failed to wrap the assessment: {e}"
+                                    self.logger.exception(
+                                        f"Scorer wrapper failed to wrap the assessment: {e}",
                                     )
                                     continue
                             not_scussed = False
                         except Exception as e:
-                            self.logger.error(f"Scorer failed to score the response: {e}")
+                            self.logger.exception(f"Scorer failed to score the response: {e}")
                             continue
                     self.warm_up_log.add(
                         request=request,
@@ -317,7 +330,7 @@ class AutoDANTurbo:
                         stage="warm_up",
                     )
                     self.logger.info(
-                        f"Request ID: {request_id}, Iteration: {i}, Epoch: {j}, Score: {score}"
+                        f"Request ID: {request_id}, Iteration: {i}, Epoch: {j}, Score: {score}",
                     )
                     self.logger.info(f"Request: {request}")
                     self.logger.info(f"Prompt: {jailbreak_prompt}")
@@ -330,12 +343,13 @@ class AutoDANTurbo:
                             "iteration": i,
                             "epoch": j,
                             "request_id": request_id,
-                        }
+                        },
                     )
                     if score >= self.break_score:
                         break
         strategy_library, summarizer_log = self.build_from_warm_up_log(
-            input_strategy_library, input_summarizer_log
+            input_strategy_library,
+            input_summarizer_log,
         )
         attack_log = self.warm_up_log.all()
         return strategy_library, attack_log, summarizer_log
@@ -358,11 +372,16 @@ class AutoDANTurbo:
                     retrival_strategy_list = []
                     if j == 0:
                         jailbreak_prompt, attacker_system = self.attacker.warm_up_attack(
-                            request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
+                            request,
+                            max_length=10000,
+                            do_sample=True,
+                            temperature=1.0,
+                            top_p=1,
                         )
                         if self._is_refusal(jailbreak_prompt):
+                            msg = "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
                             raise RuntimeError(
-                                "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
+                                msg,
                             )
                         target_response = self.target.respond(jailbreak_prompt)
                         success = False
@@ -377,17 +396,20 @@ class AutoDANTurbo:
                                     top_p=0.9,
                                 )
                                 score = self.scorer.wrapper(
-                                    assessment, max_length=2000, do_sample=False
+                                    assessment,
+                                    max_length=2000,
+                                    do_sample=False,
                                 )
                                 success = True
                             except Exception as e:
-                                self.logger.error(
-                                    f"Scorer failed to score the response, retrying: {e}"
+                                self.logger.exception(
+                                    f"Scorer failed to score the response, retrying: {e}",
                                 )
                     else:
                         current_library = self.lifelong_library.all()
                         valid, retrival_strategy_list = self.retrival.pop(
-                            current_library, prev_target_response
+                            current_library,
+                            prev_target_response,
                         )
                         if retrival_strategy_list:
                             if valid:
@@ -410,11 +432,16 @@ class AutoDANTurbo:
                                 )
                         else:
                             jailbreak_prompt, attacker_system = self.attacker.warm_up_attack(
-                                request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
+                                request,
+                                max_length=10000,
+                                do_sample=True,
+                                temperature=1.0,
+                                top_p=1,
                             )
                         if self._is_refusal(jailbreak_prompt):
+                            msg = "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
                             raise RuntimeError(
-                                "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
+                                msg,
                             )
                         target_response = self.target.respond(jailbreak_prompt)
                         success = False
@@ -429,17 +456,19 @@ class AutoDANTurbo:
                                     top_p=0.9,
                                 )
                                 score = self.scorer.wrapper(
-                                    assessment, max_length=2000, do_sample=False
+                                    assessment,
+                                    max_length=2000,
+                                    do_sample=False,
                                 )
                                 success = True
                             except Exception as e:
-                                self.logger.error(
-                                    f"Scorer failed to score the response, retrying: {e}"
+                                self.logger.exception(
+                                    f"Scorer failed to score the response, retrying: {e}",
                                 )
                     if score > prev_score:
                         current_library = self.lifelong_library.all()
                         self.logger.info(
-                            "Identified a score improvement, start summarizing strategy"
+                            "Identified a score improvement, start summarizing strategy",
                         )
                         not_scussed = True
                         while not_scussed:
@@ -464,14 +493,14 @@ class AutoDANTurbo:
                                 jailbreak_strategy = json.loads(json_formatted_strategy)
                                 not_scussed = False
                             except Exception as e:
-                                self.logger.error(
-                                    f"Summarizer failed to summarize the strategy, retrying: {e}"
+                                self.logger.exception(
+                                    f"Summarizer failed to summarize the strategy, retrying: {e}",
                                 )
                                 continue
                         jailbreak_strategy["Example"] = [jailbreak_prompt]
                         jailbreak_strategy["Score"] = [score - prev_score]
                         jailbreak_strategy["Embeddings"] = [
-                            self.retrival.embed(prev_target_response)
+                            self.retrival.embed(prev_target_response),
                         ]
                         self.lifelong_library.add(jailbreak_strategy, if_notify=True)
                         self.lifelong_summarizer_log.add(
@@ -480,7 +509,9 @@ class AutoDANTurbo:
                             weak_prompt=prev_jailbreak_prompt,
                             strong_prompt=jailbreak_prompt,
                             strategy=json.dumps(
-                                json.loads(json_formatted_strategy), indent=4, ensure_ascii=False
+                                json.loads(json_formatted_strategy),
+                                indent=4,
+                                ensure_ascii=False,
                             ),
                             score_difference=jailbreak_strategy["Score"][0],
                             stage="lifelong",
@@ -496,7 +527,9 @@ class AutoDANTurbo:
                         assessment=assessment,
                         score=score,
                         retrival_strategy=json.dumps(
-                            retrival_strategy_list, indent=4, ensure_ascii=False
+                            retrival_strategy_list,
+                            indent=4,
+                            ensure_ascii=False,
                         ),
                         attacker=attacker_system,
                         scorer=scorer_system,
@@ -506,11 +539,11 @@ class AutoDANTurbo:
                         stage="lifelong",
                     )
                     self.logger.info(
-                        f"Request ID: {request_id}, Iteration: {i}, Epoch: {j}, Score: {score}"
+                        f"Request ID: {request_id}, Iteration: {i}, Epoch: {j}, Score: {score}",
                     )
                     self.logger.info(f"Request: {request}")
                     self.logger.info(
-                        f"Strategy: {json.dumps(retrival_strategy_list, indent=4, ensure_ascii=False)}"
+                        f"Strategy: {json.dumps(retrival_strategy_list, indent=4, ensure_ascii=False)}",
                     )
                     self.logger.info(f"Prompt: {jailbreak_prompt}")
                     self.logger.info(f"Response: {target_response}")
@@ -532,7 +565,7 @@ class AutoDANTurbo:
                             "running": self.lifelong_running,
                             "number of strategies": len(self.lifelong_library.all()),
                             "strategies": list(self.lifelong_library.all().keys()),
-                        }
+                        },
                     )
                     self.lifelong_running += 1
                     if score >= self.break_score:
@@ -548,11 +581,16 @@ class AutoDANTurbo:
         for j in range(self.epochs):
             if j == 0:
                 jailbreak_prompt, attacker_system = self.attacker.warm_up_attack(
-                    request, max_length=10000, do_sample=True, temperature=1.0, top_p=1
+                    request,
+                    max_length=10000,
+                    do_sample=True,
+                    temperature=1.0,
+                    top_p=1,
                 )
                 if self._is_refusal(jailbreak_prompt):
+                    msg = "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
                     raise RuntimeError(
-                        "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
+                        msg,
                     )
                 target_response = self.target.respond(jailbreak_prompt)
                 success = False
@@ -569,12 +607,13 @@ class AutoDANTurbo:
                         score = self.scorer.wrapper(assessment, max_length=2000, do_sample=False)
                         success = True
                     except Exception as e:
-                        self.logger.error(f"Scorer failed to score the response, retrying: {e}")
+                        self.logger.exception(f"Scorer failed to score the response, retrying: {e}")
                 prev_target_response = target_response
             else:
                 current_library = self.test_library.all()
                 valid, retrival_strategy_list = self.retrival.pop(
-                    current_library, prev_target_response
+                    current_library,
+                    prev_target_response,
                 )
                 if valid:
                     jailbreak_prompt, attacker_system = self.attacker.use_strategy(
@@ -595,8 +634,9 @@ class AutoDANTurbo:
                         top_p=1,
                     )
                 if self._is_refusal(jailbreak_prompt):
+                    msg = "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
                     raise RuntimeError(
-                        "AutoDAN-Turbo attacker returned a refusal prompt; fallback generation is disabled."
+                        msg,
                     )
                 target_response = self.target.respond(jailbreak_prompt)
                 success = False
@@ -613,7 +653,7 @@ class AutoDANTurbo:
                         score = self.scorer.wrapper(assessment, max_length=2000, do_sample=False)
                         success = True
                     except Exception as e:
-                        self.logger.error(f"Scorer failed to score the response, retrying: {e}")
+                        self.logger.exception(f"Scorer failed to score the response, retrying: {e}")
                 prev_target_response = target_response
             if score > self.break_score:
                 break

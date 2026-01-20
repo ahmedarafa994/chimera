@@ -1,5 +1,4 @@
-"""
-Adversarial Base Schemas - Unified Schema Definitions
+"""Adversarial Base Schemas - Unified Schema Definitions.
 
 This module provides unified base schemas for all adversarial API endpoints,
 ensuring consistency across the OVERTHINK-Chimera-AutoDAN integrated framework.
@@ -87,8 +86,7 @@ class AttackStatus(str, Enum):
 
 
 class StrictBaseModel(BaseModel):
-    """
-    Strict base model with common configuration for all adversarial schemas.
+    """Strict base model with common configuration for all adversarial schemas.
 
     Features:
     - Extra fields forbidden (strict validation)
@@ -104,8 +102,7 @@ class StrictBaseModel(BaseModel):
 
 
 class FlexibleBaseModel(BaseModel):
-    """
-    Flexible base model that allows extra fields.
+    """Flexible base model that allows extra fields.
 
     Use for schemas that need to accept additional metadata fields.
     """
@@ -122,8 +119,7 @@ class FlexibleBaseModel(BaseModel):
 
 
 class AdversarialBaseRequest(StrictBaseModel):
-    """
-    Base request fields used across all adversarial endpoints.
+    """Base request fields used across all adversarial endpoints.
 
     This base class provides standardized fields for all adversarial
     attack requests, ensuring consistent naming and validation.
@@ -135,6 +131,7 @@ class AdversarialBaseRequest(StrictBaseModel):
         context: Optional additional context for the attack
         max_attempts: Maximum number of attack attempts (default: 5)
         timeout: Request timeout in seconds (default: 120)
+
     """
 
     goal: str = Field(
@@ -173,8 +170,7 @@ class AdversarialBaseRequest(StrictBaseModel):
 
 
 class AdversarialExtendedRequest(AdversarialBaseRequest):
-    """
-    Extended request fields for advanced adversarial attacks.
+    """Extended request fields for advanced adversarial attacks.
 
     Adds generation parameters and technique-specific options.
     """
@@ -213,8 +209,7 @@ class AdversarialExtendedRequest(AdversarialBaseRequest):
 
 
 class AdversarialBaseResponse(StrictBaseModel):
-    """
-    Base response fields used across all adversarial endpoints.
+    """Base response fields used across all adversarial endpoints.
 
     This base class provides standardized fields for all adversarial
     attack responses, ensuring consistent naming and structure.
@@ -226,6 +221,7 @@ class AdversarialBaseResponse(StrictBaseModel):
         score: Attack effectiveness score (0-10 scale)
         execution_time_ms: Execution time in milliseconds
         metadata: Additional metadata about the attack
+
     """
 
     success: bool = Field(..., description="Whether the attack succeeded")
@@ -252,8 +248,7 @@ class AdversarialBaseResponse(StrictBaseModel):
 
 
 class AdversarialExtendedResponse(AdversarialBaseResponse):
-    """
-    Extended response fields for detailed attack results.
+    """Extended response fields for detailed attack results.
 
     Includes additional metrics, technique details, and error handling.
     """
@@ -279,8 +274,7 @@ class AdversarialExtendedResponse(AdversarialBaseResponse):
 
 
 class ReasoningMetrics(StrictBaseModel):
-    """
-    Reasoning model specific metrics for OVERTHINK integration.
+    """Reasoning model specific metrics for OVERTHINK integration.
 
     These metrics track reasoning token consumption and amplification
     for attacks targeting reasoning-enhanced models (o1, o3, DeepSeek-R1).
@@ -290,6 +284,7 @@ class ReasoningMetrics(StrictBaseModel):
         baseline_tokens: Baseline tokens without attack
         amplification_factor: Ratio of attack vs baseline tokens
         cost_metrics: Detailed cost breakdown
+
     """
 
     reasoning_tokens: int | None = Field(
@@ -309,13 +304,12 @@ class ReasoningMetrics(StrictBaseModel):
     )
     cost_metrics: dict[str, float] | None = Field(
         None,
-        description=("Cost breakdown: input_cost, output_cost, " "reasoning_cost, total_cost"),
+        description=("Cost breakdown: input_cost, output_cost, reasoning_cost, total_cost"),
     )
 
 
 class ReasoningEnabledResponse(AdversarialExtendedResponse):
-    """
-    Response schema with OVERTHINK reasoning metrics.
+    """Response schema with OVERTHINK reasoning metrics.
 
     Extends the base response with reasoning token tracking
     for attacks targeting reasoning models.
@@ -342,8 +336,7 @@ class ReasoningEnabledResponse(AdversarialExtendedResponse):
 
 
 class TokenMetrics(StrictBaseModel):
-    """
-    Standardized token usage metrics.
+    """Standardized token usage metrics.
 
     Tracks all token types for comprehensive cost analysis.
     """
@@ -355,8 +348,7 @@ class TokenMetrics(StrictBaseModel):
 
 
 class CostMetrics(StrictBaseModel):
-    """
-    Standardized cost metrics for attack operations.
+    """Standardized cost metrics for attack operations.
 
     Provides detailed cost breakdown for billing and optimization.
     """
@@ -378,8 +370,7 @@ class CostMetrics(StrictBaseModel):
 
 
 class BatchAdversarialRequest(StrictBaseModel):
-    """
-    Base schema for batch adversarial operations.
+    """Base schema for batch adversarial operations.
 
     Supports processing multiple targets in a single request.
     """
@@ -400,8 +391,7 @@ class BatchAdversarialRequest(StrictBaseModel):
 
 
 class BatchAdversarialResponse(StrictBaseModel):
-    """
-    Base schema for batch adversarial results.
+    """Base schema for batch adversarial results.
 
     Aggregates results from multiple attack executions.
     """
@@ -426,8 +416,7 @@ class BatchAdversarialResponse(StrictBaseModel):
 
 
 class OverthinkConfig(StrictBaseModel):
-    """
-    OVERTHINK-specific configuration parameters.
+    """OVERTHINK-specific configuration parameters.
 
     Controls decoy injection, amplification, and reasoning exploitation.
     """
@@ -449,7 +438,7 @@ class OverthinkConfig(StrictBaseModel):
     injection_strategy: str | None = Field(
         None,
         description=(
-            "Injection strategy: context_aware, context_agnostic, " "hybrid, stealth, aggressive"
+            "Injection strategy: context_aware, context_agnostic, hybrid, stealth, aggressive"
         ),
     )
     num_decoys: int | None = Field(
@@ -475,8 +464,7 @@ class OverthinkConfig(StrictBaseModel):
 
 
 class AutodanConfig(StrictBaseModel):
-    """
-    AutoDAN-specific configuration parameters.
+    """AutoDAN-specific configuration parameters.
 
     Controls genetic algorithm and optimization settings.
     """
@@ -520,8 +508,7 @@ class AutodanConfig(StrictBaseModel):
 
 
 class MousetrapConfig(StrictBaseModel):
-    """
-    Mousetrap-specific configuration parameters.
+    """Mousetrap-specific configuration parameters.
 
     Controls chaotic reasoning chain generation.
     """
@@ -558,8 +545,7 @@ class MousetrapConfig(StrictBaseModel):
 
 
 class OverthinkFusionParams(StrictBaseModel):
-    """
-    Parameters for OVERTHINK fusion attacks.
+    """Parameters for OVERTHINK fusion attacks.
 
     Used when combining OVERTHINK with other techniques like Mousetrap.
     """
@@ -579,8 +565,7 @@ class OverthinkFusionParams(StrictBaseModel):
 
 
 class FusionAttackRequest(AdversarialExtendedRequest):
-    """
-    Request for fusion attacks combining multiple techniques.
+    """Request for fusion attacks combining multiple techniques.
 
     Supports OVERTHINK + Mousetrap, OVERTHINK + AutoDAN, etc.
     """
@@ -600,8 +585,7 @@ class FusionAttackRequest(AdversarialExtendedRequest):
 
 
 class FusionAttackResponse(ReasoningEnabledResponse):
-    """
-    Response for fusion attacks with combined metrics.
+    """Response for fusion attacks with combined metrics.
 
     Includes metrics from all integrated techniques.
     """
@@ -628,9 +612,7 @@ class FusionAttackResponse(ReasoningEnabledResponse):
 
 
 class AdversarialHealthResponse(StrictBaseModel):
-    """
-    Health check response for adversarial services.
-    """
+    """Health check response for adversarial services."""
 
     status: str = Field(..., description="Health status: healthy, degraded, unhealthy")
     service: str = Field(..., description="Service name")
@@ -644,9 +626,7 @@ class AdversarialHealthResponse(StrictBaseModel):
 
 
 class TechniqueInfo(StrictBaseModel):
-    """
-    Information about an available attack technique.
-    """
+    """Information about an available attack technique."""
 
     name: str = Field(..., description="Technique name")
     technique: AttackTechniqueType = Field(..., description="Technique type")
@@ -662,9 +642,7 @@ class TechniqueInfo(StrictBaseModel):
 
 
 class TechniquesListResponse(StrictBaseModel):
-    """
-    Response listing all available techniques.
-    """
+    """Response listing all available techniques."""
 
     techniques: list[TechniqueInfo] = Field(..., description="Available techniques")
     total: int = Field(..., ge=0, description="Total number of techniques")

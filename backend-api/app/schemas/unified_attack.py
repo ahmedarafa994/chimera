@@ -1,5 +1,4 @@
-"""
-Unified Multi-Vector Attack API Schemas
+"""Unified Multi-Vector Attack API Schemas.
 
 Pydantic schemas for the consolidated multi-vector attack framework
 combining ExtendAttack and AutoDAN capabilities.
@@ -179,7 +178,8 @@ class ParallelAttackRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=10000)
     parameters: AttackParametersInput | None = Field(default=None)
     combination_method: str = Field(
-        default="best", description="How to combine: best, merge, ensemble"
+        default="best",
+        description="How to combine: best, merge, ensemble",
     )
 
 
@@ -267,7 +267,7 @@ class BenchmarkRequest(BaseModel):
     session_id: str | None = Field(default=None, description="Optional session to use")
     dataset_id: str = Field(..., description="Benchmark dataset identifier")
     strategies: list[CompositionStrategyEnum] = Field(
-        default_factory=lambda: [CompositionStrategyEnum.ADAPTIVE]
+        default_factory=lambda: [CompositionStrategyEnum.ADAPTIVE],
     )
     sample_size: int | None = Field(default=None, ge=1, le=1000)
     parameters: AttackParametersInput | None = Field(default=None)

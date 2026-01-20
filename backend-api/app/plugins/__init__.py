@@ -1,5 +1,4 @@
-"""
-Plugin System for Project Chimera
+"""Plugin System for Project Chimera.
 
 This package provides an extensible plugin architecture for adding custom
 jailbreak techniques without modifying core code.

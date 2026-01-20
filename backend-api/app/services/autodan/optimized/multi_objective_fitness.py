@@ -1,5 +1,4 @@
-"""
-Multi-Objective Fitness Evaluator for AutoDAN.
+"""Multi-Objective Fitness Evaluator for AutoDAN.
 
 Implements comprehensive fitness evaluation with:
 - Multi-objective scoring (attack success, novelty, efficiency)
@@ -42,7 +41,7 @@ class FitnessScore:
                 self.efficiency_score,
                 self.coherence_score,
                 self.stealth_score,
-            ]
+            ],
         )
 
     @classmethod
@@ -77,8 +76,7 @@ class ParetoSolution:
 
 
 class FitnessCache:
-    """
-    LRU cache for fitness evaluations.
+    """LRU cache for fitness evaluations.
 
     Reduces redundant fitness computations by caching results.
     """
@@ -87,7 +85,7 @@ class FitnessCache:
         self,
         max_size: int = 10000,
         ttl_seconds: float = 600.0,
-    ):
+    ) -> None:
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self.cache: dict[str, CacheEntry] = {}
@@ -126,7 +124,7 @@ class FitnessCache:
 
         return entry.score
 
-    def put(self, prompt: str, score: FitnessScore):
+    def put(self, prompt: str, score: FitnessScore) -> None:
         """Store fitness score in cache."""
         key = self._make_key(prompt)
 
@@ -153,7 +151,7 @@ class FitnessCache:
             "max_size": self.max_size,
         }
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear the cache."""
         self.cache.clear()
         self.access_order.clear()
@@ -162,20 +160,18 @@ class FitnessCache:
 
 
 class ParetoFrontier:
-    """
-    Maintains the Pareto frontier of non-dominated solutions.
+    """Maintains the Pareto frontier of non-dominated solutions.
 
     A solution is Pareto-optimal if no other solution is better
     in all objectives simultaneously.
     """
 
-    def __init__(self, max_size: int = 100):
+    def __init__(self, max_size: int = 100) -> None:
         self.max_size = max_size
         self.solutions: list[ParetoSolution] = []
 
     def add(self, solution: ParetoSolution) -> bool:
-        """
-        Add solution to frontier if non-dominated.
+        """Add solution to frontier if non-dominated.
 
         Returns True if solution was added.
         """
@@ -214,7 +210,7 @@ class ParetoFrontier:
 
         return at_least_one_better
 
-    def _trim_frontier(self):
+    def _trim_frontier(self) -> None:
         """Trim frontier to max size, keeping diverse solutions."""
         if len(self.solutions) <= self.max_size:
             return
@@ -255,7 +251,7 @@ class ParetoFrontier:
 
         return distances
 
-    def _update_ranks(self):
+    def _update_ranks(self) -> None:
         """Update Pareto ranks for all solutions."""
         for solution in self.solutions:
             solution.score.pareto_rank = 1  # All on frontier have rank 1
@@ -283,8 +279,7 @@ class ParetoFrontier:
 
 
 class MultiObjectiveFitnessEvaluator:
-    """
-    Multi-objective fitness evaluator with caching and Pareto tracking.
+    """Multi-objective fitness evaluator with caching and Pareto tracking.
 
     Features:
     - Multi-dimensional fitness scoring
@@ -301,7 +296,7 @@ class MultiObjectiveFitnessEvaluator:
         cache_size: int = 10000,
         pareto_size: int = 100,
         weights: dict[str, float] | None = None,
-    ):
+    ) -> None:
         self.llm_client = llm_client
         self.embedding_model = embedding_model
 
@@ -335,8 +330,7 @@ class MultiObjectiveFitnessEvaluator:
         generation: int = 0,
         use_cache: bool = True,
     ) -> FitnessScore:
-        """
-        Evaluate fitness of a prompt.
+        """Evaluate fitness of a prompt.
 
         Args:
             prompt: The prompt to evaluate
@@ -346,6 +340,7 @@ class MultiObjectiveFitnessEvaluator:
 
         Returns:
             FitnessScore with multi-dimensional evaluation
+
         """
         start_time = time.time()
 
@@ -408,8 +403,7 @@ class MultiObjectiveFitnessEvaluator:
         prompt: str,
         target: str,
     ) -> float:
-        """
-        Evaluate attack success probability.
+        """Evaluate attack success probability.
 
         Uses heuristics and optionally LLM scoring.
         """
@@ -454,8 +448,7 @@ class MultiObjectiveFitnessEvaluator:
         return min(score, 1.0)
 
     def _evaluate_novelty(self, prompt: str) -> float:
-        """
-        Evaluate novelty compared to seen prompts.
+        """Evaluate novelty compared to seen prompts.
 
         Uses embedding similarity for semantic novelty.
         """
@@ -478,8 +471,7 @@ class MultiObjectiveFitnessEvaluator:
         return 1.0 - max_similarity
 
     def _evaluate_efficiency(self, prompt: str) -> float:
-        """
-        Evaluate computational efficiency.
+        """Evaluate computational efficiency.
 
         Shorter prompts that achieve goals are more efficient.
         """
@@ -496,8 +488,7 @@ class MultiObjectiveFitnessEvaluator:
         return efficiency
 
     def _evaluate_coherence(self, prompt: str) -> float:
-        """
-        Evaluate linguistic coherence.
+        """Evaluate linguistic coherence.
 
         Checks grammar, structure, and readability.
         """
@@ -535,8 +526,7 @@ class MultiObjectiveFitnessEvaluator:
         return score
 
     def _evaluate_stealth(self, prompt: str) -> float:
-        """
-        Evaluate stealth/detection avoidance.
+        """Evaluate stealth/detection avoidance.
 
         Checks for obvious jailbreak indicators that might trigger filters.
         """
@@ -580,7 +570,7 @@ class MultiObjectiveFitnessEvaluator:
             + self.weights["stealth_score"] * score.stealth_score
         )
 
-    def _update_novelty_history(self, prompt: str):
+    def _update_novelty_history(self, prompt: str) -> None:
         """Update novelty computation history."""
         self.seen_prompts.append(prompt)
 
@@ -593,9 +583,8 @@ class MultiObjectiveFitnessEvaluator:
         self,
         performance_history: list[dict[str, float]],
         target_objective: str = "attack_score",
-    ):
-        """
-        Adapt objective weights based on performance history.
+    ) -> None:
+        """Adapt objective weights based on performance history.
 
         Increases weight of objectives correlated with success.
         """
@@ -658,7 +647,7 @@ class MultiObjectiveFitnessEvaluator:
             "novelty_history_size": len(self.seen_prompts),
         }
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset evaluator state."""
         self.cache.clear()
         self.pareto = ParetoFrontier(max_size=self.pareto.max_size)

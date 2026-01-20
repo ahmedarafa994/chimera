@@ -1,5 +1,4 @@
-"""
-Provider Registry Initialization - Bootstrap provider plugins at application startup.
+"""Provider Registry Initialization - Bootstrap provider plugins at application startup.
 
 This module handles the registration of all provider plugins with the
 UnifiedProviderRegistry during FastAPI application startup.
@@ -22,8 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def initialize_providers() -> None:
-    """
-    Initialize and register all provider plugins.
+    """Initialize and register all provider plugins.
 
     This function should be called during FastAPI application startup
     (in the lifespan context manager).
@@ -55,7 +53,7 @@ def initialize_providers() -> None:
         else:
             logger.warning("⚠ OpenAI provider not configured (missing API key)")
     except Exception as e:
-        logger.error(f"✗ Failed to register OpenAI provider: {e}")
+        logger.exception(f"✗ Failed to register OpenAI provider: {e}")
         failed_count += 1
 
     # Register Anthropic
@@ -72,7 +70,7 @@ def initialize_providers() -> None:
         else:
             logger.warning("⚠ Anthropic provider not configured (missing API key)")
     except Exception as e:
-        logger.error(f"✗ Failed to register Anthropic provider: {e}")
+        logger.exception(f"✗ Failed to register Anthropic provider: {e}")
         failed_count += 1
 
     # Register Google/Gemini
@@ -89,7 +87,7 @@ def initialize_providers() -> None:
         else:
             logger.warning("⚠ Google provider not configured (missing API key)")
     except Exception as e:
-        logger.error(f"✗ Failed to register Google provider: {e}")
+        logger.exception(f"✗ Failed to register Google provider: {e}")
         failed_count += 1
 
     # Register DeepSeek
@@ -106,7 +104,7 @@ def initialize_providers() -> None:
         else:
             logger.warning("⚠ DeepSeek provider not configured (missing API key)")
     except Exception as e:
-        logger.error(f"✗ Failed to register DeepSeek provider: {e}")
+        logger.exception(f"✗ Failed to register DeepSeek provider: {e}")
         failed_count += 1
 
     # Register BigModel
@@ -123,7 +121,7 @@ def initialize_providers() -> None:
         else:
             logger.warning("⚠ BigModel provider not configured (missing API key)")
     except Exception as e:
-        logger.error(f"✗ Failed to register BigModel provider: {e}")
+        logger.exception(f"✗ Failed to register BigModel provider: {e}")
         failed_count += 1
 
     # Register Routeway
@@ -140,14 +138,14 @@ def initialize_providers() -> None:
         else:
             logger.warning("⚠ Routeway provider not configured (missing API key)")
     except Exception as e:
-        logger.error(f"✗ Failed to register Routeway provider: {e}")
+        logger.exception(f"✗ Failed to register Routeway provider: {e}")
         failed_count += 1
 
     # Log summary
     total_attempted = registered_count + failed_count
     logger.info(
         f"Provider registration complete: {registered_count}/{total_attempted} registered, "
-        f"{failed_count} failed"
+        f"{failed_count} failed",
     )
 
     # Log registry statistics
@@ -155,7 +153,7 @@ def initialize_providers() -> None:
     logger.info(
         f"Registry state: {stats['total_providers']} providers, "
         f"{stats['total_models']} models, "
-        f"{stats['total_aliases']} aliases"
+        f"{stats['total_aliases']} aliases",
     )
 
     # Warn if no providers are registered
@@ -169,13 +167,12 @@ def initialize_providers() -> None:
             "  - GOOGLE_API_KEY for Google/Gemini\n"
             "  - DEEPSEEK_API_KEY for DeepSeek AI\n"
             "  - BIGMODEL_API_KEY for BigModel/GLM\n"
-            "  - ROUTEWAY_API_KEY for Routeway AI"
+            "  - ROUTEWAY_API_KEY for Routeway AI",
         )
 
 
 def get_default_provider() -> tuple[str, str]:
-    """
-    Determine the default provider and model from environment or registry.
+    """Determine the default provider and model from environment or registry.
 
     Returns the first available provider/model combination based on:
     1. Explicitly configured defaults (CHIMERA_DEFAULT_PROVIDER, CHIMERA_DEFAULT_MODEL)
@@ -186,6 +183,7 @@ def get_default_provider() -> tuple[str, str]:
 
     Raises:
         RuntimeError: If no providers are registered
+
     """
     # Check for explicit configuration
     default_provider = os.getenv("CHIMERA_DEFAULT_PROVIDER")
@@ -196,19 +194,21 @@ def get_default_provider() -> tuple[str, str]:
         if unified_registry.validate_selection(default_provider, default_model):
             logger.info(f"Using configured default: {default_provider}/{default_model}")
             return (default_provider, default_model)
-        else:
-            logger.warning(
-                f"Configured default {default_provider}/{default_model} is invalid. "
-                "Falling back to auto-detection."
-            )
+        logger.warning(
+            f"Configured default {default_provider}/{default_model} is invalid. "
+            "Falling back to auto-detection.",
+        )
 
     # Auto-detect from registry
     providers = unified_registry.list_providers(enabled_only=True)
 
     if not providers:
-        raise RuntimeError(
+        msg = (
             "No providers registered! Cannot determine default provider. "
             "Please configure at least one provider API key."
+        )
+        raise RuntimeError(
+            msg,
         )
 
     # Use first available provider
@@ -219,27 +219,28 @@ def get_default_provider() -> tuple[str, str]:
     )
 
     if not models:
-        raise RuntimeError(f"Provider '{first_provider.id}' has no available models")
+        msg = f"Provider '{first_provider.id}' has no available models"
+        raise RuntimeError(msg)
 
     # Use first available model
     first_model = models[0]
 
     logger.info(
         f"Auto-detected default: {first_provider.id}/{first_model.id} "
-        f"(from {len(providers)} available providers)"
+        f"(from {len(providers)} available providers)",
     )
 
     return (first_provider.id, first_model.id)
 
 
 async def health_check_providers() -> dict[str, bool]:
-    """
-    Perform health check on all registered providers.
+    """Perform health check on all registered providers.
 
     Useful for application health endpoints to verify provider connectivity.
 
     Returns:
         Dictionary mapping provider IDs to health status
+
     """
     logger.debug("Performing provider health checks...")
     results = await unified_registry.health_check()
@@ -258,8 +259,7 @@ async def health_check_providers() -> dict[str, bool]:
 
 
 def refresh_provider_models() -> None:
-    """
-    Refresh the model cache for all providers.
+    """Refresh the model cache for all providers.
 
     Useful for periodic updates or when provider catalogs change.
     """

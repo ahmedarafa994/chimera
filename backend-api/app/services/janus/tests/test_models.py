@@ -1,6 +1,4 @@
-"""
-Unit tests for Janus core models.
-"""
+"""Unit tests for Janus core models."""
 
 from app.services.janus.core.models import (
     CausalEdge,
@@ -18,7 +16,7 @@ from app.services.janus.core.models import (
 class TestFailureType:
     """Tests for FailureType enum."""
 
-    def test_enum_values(self):
+    def test_enum_values(self) -> None:
         """Test that FailureType has expected enum values."""
         assert FailureType.CONTRADICTION.value == "contradiction"
         assert FailureType.SAFETY_BYPASS.value == "safety_bypass"
@@ -34,7 +32,7 @@ class TestFailureType:
 class TestHeuristic:
     """Tests for Heuristic dataclass."""
 
-    def test_heuristic_creation(self):
+    def test_heuristic_creation(self) -> None:
         """Test that Heuristic can be created with valid parameters."""
         heuristic = Heuristic(
             id="test_001",
@@ -54,7 +52,7 @@ class TestHeuristic:
         assert heuristic.novelty_score == 0.8
         assert heuristic.efficacy_score == 0.9
 
-    def test_heuristic_score_validation(self):
+    def test_heuristic_score_validation(self) -> None:
         """Test that heuristic scores are within valid range."""
         heuristic = Heuristic(
             id="test_001",
@@ -76,7 +74,7 @@ class TestHeuristic:
 class TestCausalNode:
     """Tests for CausalNode dataclass."""
 
-    def test_causal_node_creation(self):
+    def test_causal_node_creation(self) -> None:
         """Test that CausalNode can be created with valid parameters."""
         node = CausalNode(id="node_001", name="test_node", parameter="test_param")
         assert node.id == "node_001"
@@ -89,7 +87,7 @@ class TestCausalNode:
 class TestCausalEdge:
     """Tests for CausalEdge dataclass."""
 
-    def test_causal_edge_creation(self):
+    def test_causal_edge_creation(self) -> None:
         """Test that CausalEdge can be created with valid parameters."""
         edge = CausalEdge(
             source="node_001",
@@ -102,10 +100,13 @@ class TestCausalEdge:
         assert edge.strength == 0.7
         assert edge.context_sensitive is True
 
-    def test_edge_strength_validation(self):
+    def test_edge_strength_validation(self) -> None:
         """Test that edge strength is within valid range."""
         edge = CausalEdge(
-            source="node_001", target="node_002", strength=0.5, context_sensitive=False
+            source="node_001",
+            target="node_002",
+            strength=0.5,
+            context_sensitive=False,
         )
         assert 0.0 <= edge.strength <= 1.0
 
@@ -113,13 +114,13 @@ class TestCausalEdge:
 class TestCausalGraph:
     """Tests for CausalGraph class."""
 
-    def test_causal_graph_creation(self):
+    def test_causal_graph_creation(self) -> None:
         """Test that CausalGraph can be created."""
         graph = CausalGraph()
         assert graph.nodes == {}
         assert graph.edges == []
 
-    def test_add_node(self):
+    def test_add_node(self) -> None:
         """Test adding nodes to the causal graph."""
         graph = CausalGraph()
         node = CausalNode(id="node_001", name="test_node", parameter="test_param")
@@ -127,17 +128,20 @@ class TestCausalGraph:
         assert "node_001" in graph.nodes
         assert graph.nodes["node_001"] == node
 
-    def test_add_edge(self):
+    def test_add_edge(self) -> None:
         """Test adding edges to the causal graph."""
         graph = CausalGraph()
         edge = CausalEdge(
-            source="node_001", target="node_002", strength=0.5, context_sensitive=False
+            source="node_001",
+            target="node_002",
+            strength=0.5,
+            context_sensitive=False,
         )
         graph.add_edge(edge)
         assert len(graph.edges) == 1
         assert graph.edges[0] == edge
 
-    def test_get_node(self):
+    def test_get_node(self) -> None:
         """Test retrieving nodes from the causal graph."""
         graph = CausalGraph()
         node = CausalNode(id="node_001", name="test_node", parameter="test_param")
@@ -145,23 +149,32 @@ class TestCausalGraph:
         retrieved = graph.get_node("node_001")
         assert retrieved == node
 
-    def test_get_node_nonexistent(self):
+    def test_get_node_nonexistent(self) -> None:
         """Test retrieving a nonexistent node returns None."""
         graph = CausalGraph()
         retrieved = graph.get_node("nonexistent")
         assert retrieved is None
 
-    def test_get_edges_from(self):
+    def test_get_edges_from(self) -> None:
         """Test retrieving outgoing edges from a node."""
         graph = CausalGraph()
         edge1 = CausalEdge(
-            source="node_001", target="node_002", strength=0.5, context_sensitive=False
+            source="node_001",
+            target="node_002",
+            strength=0.5,
+            context_sensitive=False,
         )
         edge2 = CausalEdge(
-            source="node_001", target="node_003", strength=0.7, context_sensitive=True
+            source="node_001",
+            target="node_003",
+            strength=0.7,
+            context_sensitive=True,
         )
         edge3 = CausalEdge(
-            source="node_002", target="node_003", strength=0.3, context_sensitive=False
+            source="node_002",
+            target="node_003",
+            strength=0.3,
+            context_sensitive=False,
         )
         graph.add_edge(edge1)
         graph.add_edge(edge2)
@@ -172,17 +185,26 @@ class TestCausalGraph:
         assert edge2 in edges
         assert edge3 not in edges
 
-    def test_get_edges_to(self):
+    def test_get_edges_to(self) -> None:
         """Test retrieving incoming edges to a node."""
         graph = CausalGraph()
         edge1 = CausalEdge(
-            source="node_001", target="node_002", strength=0.5, context_sensitive=False
+            source="node_001",
+            target="node_002",
+            strength=0.5,
+            context_sensitive=False,
         )
         edge2 = CausalEdge(
-            source="node_003", target="node_002", strength=0.7, context_sensitive=True
+            source="node_003",
+            target="node_002",
+            strength=0.7,
+            context_sensitive=True,
         )
         edge3 = CausalEdge(
-            source="node_001", target="node_003", strength=0.3, context_sensitive=False
+            source="node_001",
+            target="node_003",
+            strength=0.3,
+            context_sensitive=False,
         )
         graph.add_edge(edge1)
         graph.add_edge(edge2)
@@ -197,7 +219,7 @@ class TestCausalGraph:
 class TestGuardianState:
     """Tests for GuardianState dataclass."""
 
-    def test_guardian_state_creation(self):
+    def test_guardian_state_creation(self) -> None:
         """Test that GuardianState can be created with valid parameters."""
         state = GuardianState(
             model_id="test_model",
@@ -214,7 +236,7 @@ class TestGuardianState:
 class TestGuardianResponse:
     """Tests for GuardianResponse dataclass."""
 
-    def test_guardian_response_creation(self):
+    def test_guardian_response_creation(self) -> None:
         """Test that GuardianResponse can be created with valid parameters."""
         response = GuardianResponse(
             content="Test response content",
@@ -229,7 +251,7 @@ class TestGuardianResponse:
         assert response.safety_triggered is False
         assert response.confidence == 0.9
 
-    def test_response_confidence_validation(self):
+    def test_response_confidence_validation(self) -> None:
         """Test that response confidence is within valid range."""
         response = GuardianResponse(
             content="Test",
@@ -244,7 +266,7 @@ class TestGuardianResponse:
 class TestInteractionResult:
     """Tests for InteractionResult dataclass."""
 
-    def test_interaction_result_creation(self):
+    def test_interaction_result_creation(self) -> None:
         """Test that InteractionResult can be created with valid parameters."""
         state = GuardianState(
             model_id="test_model",
@@ -276,7 +298,7 @@ class TestInteractionResult:
 class TestFailureState:
     """Tests for FailureState dataclass."""
 
-    def test_failure_state_creation(self):
+    def test_failure_state_creation(self) -> None:
         """Test that FailureState can be created with valid parameters."""
         state = GuardianState(
             model_id="test_model",
@@ -312,7 +334,7 @@ class TestFailureState:
         assert failure.discovered_at == 1234567890.0
         assert failure.mitigation_suggestions == ["Suggestion 1", "Suggestion 2"]
 
-    def test_failure_severity_validation(self):
+    def test_failure_severity_validation(self) -> None:
         """Test that failure severity is within valid range."""
         state = GuardianState(
             model_id="test_model",

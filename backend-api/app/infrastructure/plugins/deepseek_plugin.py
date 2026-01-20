@@ -1,5 +1,4 @@
-"""
-DeepSeek Provider Plugin - Implementation for DeepSeek AI models.
+"""DeepSeek Provider Plugin - Implementation for DeepSeek AI models.
 
 This module implements the DeepSeek provider plugin, supporting DeepSeek models
 through the unified provider interface.
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class DeepSeekClient(BaseLLMClient):
-    """
-    DeepSeek-specific LLM client implementation.
+    """DeepSeek-specific LLM client implementation.
 
     Wraps the existing DeepSeek client to implement the BaseLLMClient interface.
     """
@@ -30,15 +28,15 @@ class DeepSeekClient(BaseLLMClient):
         model_id: str,
         api_key: str,
         **kwargs: Any,
-    ):
-        """
-        Initialize DeepSeek client.
+    ) -> None:
+        """Initialize DeepSeek client.
 
         Args:
             provider_id: Provider identifier ('deepseek')
             model_id: Model identifier (e.g., 'deepseek-chat')
             api_key: DeepSeek API key
             **kwargs: Additional configuration
+
         """
         self._provider_id = provider_id
         self._model_id = model_id
@@ -104,13 +102,12 @@ class DeepSeekClient(BaseLLMClient):
 
 
 class DeepSeekPlugin(BaseProviderPlugin):
-    """
-    DeepSeek provider plugin implementation.
+    """DeepSeek provider plugin implementation.
 
     Provides factory methods and metadata for DeepSeek models.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize DeepSeek plugin."""
         super().__init__(
             provider_id="deepseek",
@@ -133,7 +130,7 @@ class DeepSeekPlugin(BaseProviderPlugin):
 
     def _build_model_list(self) -> list[Model]:
         """Build list of available DeepSeek models (January 2026)."""
-        models = [
+        return [
             Model(
                 id="deepseek-v4",
                 name="DeepSeek-V4 (Flagship, 600B)",
@@ -178,11 +175,8 @@ class DeepSeekPlugin(BaseProviderPlugin):
             ),
         ]
 
-        return models
-
     def create_client(self, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create a DeepSeek client for the specified model.
+        """Create a DeepSeek client for the specified model.
 
         Args:
             model_id: The model identifier
@@ -193,21 +187,28 @@ class DeepSeekPlugin(BaseProviderPlugin):
 
         Raises:
             ValueError: If model is not available or API key missing
+
         """
         # Validate model
         if not self.validate_model_id(model_id):
             available = [m.id for m in self.get_available_models()]
-            raise ValueError(
+            msg = (
                 f"Model '{model_id}' not available from DeepSeek. "
                 f"Available models: {', '.join(available)}"
+            )
+            raise ValueError(
+                msg,
             )
 
         # Get API key
         api_key = self._get_api_key()
         if not api_key:
-            raise ValueError(
+            msg = (
                 f"DeepSeek API key not configured. "
                 f"Set {self._api_key_env_var} environment variable."
+            )
+            raise ValueError(
+                msg,
             )
 
         # Create client

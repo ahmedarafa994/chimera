@@ -1,5 +1,4 @@
-"""
-Validation Error Schemas for Provider/Model Selection System.
+"""Validation Error Schemas for Provider/Model Selection System.
 
 This module defines standardized error response schemas for selection validation
 failures, ensuring consistent error handling across all API endpoints.
@@ -38,8 +37,7 @@ class ValidationErrorType(str, Enum):
 
 
 class SelectionValidationError(BaseModel):
-    """
-    Standardized error response for selection validation failures.
+    """Standardized error response for selection validation failures.
 
     This schema provides comprehensive error information including:
     - Error type for programmatic handling
@@ -54,14 +52,17 @@ class SelectionValidationError(BaseModel):
     provider: str | None = Field(None, description="The provider that failed validation")
     model: str | None = Field(None, description="The model that failed validation")
     available_providers: list[str] | None = Field(
-        None, description="List of available provider IDs"
+        None,
+        description="List of available provider IDs",
     )
     available_models: list[str] | None = Field(
-        None, description="List of available model IDs for the provider"
+        None,
+        description="List of available model IDs for the provider",
     )
     request_id: str | None = Field(None, description="Request ID for tracing")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When the error occurred"
+        default_factory=datetime.utcnow,
+        description="When the error occurred",
     )
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional error metadata")
 
@@ -81,13 +82,12 @@ class SelectionValidationError(BaseModel):
                 "request_id": self.request_id,
                 "timestamp": self.timestamp.isoformat() if self.timestamp else None,
                 "metadata": self.metadata,
-            }
+            },
         }
 
 
 class ValidationResult(BaseModel):
-    """
-    Result of a selection validation operation.
+    """Result of a selection validation operation.
 
     Captures whether validation passed, any errors encountered,
     and diagnostic information.
@@ -97,22 +97,28 @@ class ValidationResult(BaseModel):
     provider: str = Field(..., description="Provider ID that was validated")
     model: str = Field(..., description="Model ID that was validated")
     errors: list[SelectionValidationError] = Field(
-        default_factory=list, description="List of validation errors (if any)"
+        default_factory=list,
+        description="List of validation errors (if any)",
     )
     warnings: list[str] = Field(
-        default_factory=list, description="Non-fatal warnings about the selection"
+        default_factory=list,
+        description="Non-fatal warnings about the selection",
     )
     validation_time_ms: float = Field(
-        default=0.0, description="Time taken to validate (milliseconds)"
+        default=0.0,
+        description="Time taken to validate (milliseconds)",
     )
     source: str = Field(
-        default="unknown", description="Source of the selection (request, session, global)"
+        default="unknown",
+        description="Source of the selection (request, session, global)",
     )
     provider_health: str | None = Field(
-        None, description="Health status of the provider (healthy, degraded, unhealthy)"
+        None,
+        description="Health status of the provider (healthy, degraded, unhealthy)",
     )
     api_key_configured: bool | None = Field(
-        None, description="Whether API key is configured for the provider"
+        None,
+        description="Whether API key is configured for the provider",
     )
 
     @property
@@ -145,8 +151,7 @@ class ValidationResult(BaseModel):
 
 
 class BoundaryValidationResult(BaseModel):
-    """
-    Result of provider boundary validation.
+    """Result of provider boundary validation.
 
     Used by ProviderBoundaryGuard to track selection consistency
     at service boundaries.
@@ -162,8 +167,7 @@ class BoundaryValidationResult(BaseModel):
 
 
 class ValidationMetrics(BaseModel):
-    """
-    Aggregated validation metrics.
+    """Aggregated validation metrics.
 
     Used for monitoring and observability.
     """
@@ -172,19 +176,24 @@ class ValidationMetrics(BaseModel):
     successful_validations: int = Field(default=0, description="Number of successful validations")
     failed_validations: int = Field(default=0, description="Number of failed validations")
     error_counts: dict[str, int] = Field(
-        default_factory=dict, description="Count of each error type"
+        default_factory=dict,
+        description="Count of each error type",
     )
     source_distribution: dict[str, int] = Field(
-        default_factory=dict, description="Distribution of selection sources"
+        default_factory=dict,
+        description="Distribution of selection sources",
     )
     provider_health_at_validation: dict[str, int] = Field(
-        default_factory=dict, description="Provider health status counts at validation time"
+        default_factory=dict,
+        description="Provider health status counts at validation time",
     )
     avg_validation_time_ms: float = Field(
-        default=0.0, description="Average validation time in milliseconds"
+        default=0.0,
+        description="Average validation time in milliseconds",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="When metrics were last updated"
+        default_factory=datetime.utcnow,
+        description="When metrics were last updated",
     )
 
     def record_validation(self, result: ValidationResult) -> None:

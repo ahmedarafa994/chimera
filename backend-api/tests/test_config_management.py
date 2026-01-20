@@ -16,10 +16,10 @@ from app.core.encryption import EncryptionError, decrypt_api_key, encrypt_api_ke
 
 
 class TestAPIKeyEncryption:
-    """Test API key encryption functionality"""
+    """Test API key encryption functionality."""
 
-    def test_encrypt_api_key(self):
-        """Test API key encryption works correctly"""
+    def test_encrypt_api_key(self) -> None:
+        """Test API key encryption works correctly."""
         api_key = "sk-test1234567890abcdef"
         encrypted = encrypt_api_key(api_key)
 
@@ -27,38 +27,38 @@ class TestAPIKeyEncryption:
         assert encrypted != api_key
         assert len(encrypted) > len(api_key)
 
-    def test_decrypt_api_key(self):
-        """Test API key decryption works correctly"""
+    def test_decrypt_api_key(self) -> None:
+        """Test API key decryption works correctly."""
         api_key = "sk-test1234567890abcdef"
         encrypted = encrypt_api_key(api_key)
         decrypted = decrypt_api_key(encrypted)
 
         assert decrypted == api_key
 
-    def test_is_encrypted_detection(self):
-        """Test detection of encrypted vs plaintext keys"""
+    def test_is_encrypted_detection(self) -> None:
+        """Test detection of encrypted vs plaintext keys."""
         plaintext = "sk-test1234567890abcdef"
         encrypted = encrypt_api_key(plaintext)
 
         assert not is_encrypted(plaintext)
         assert is_encrypted(encrypted)
 
-    def test_decrypt_plaintext_key_returns_as_is(self):
-        """Test that decrypting plaintext key returns it unchanged"""
+    def test_decrypt_plaintext_key_returns_as_is(self) -> None:
+        """Test that decrypting plaintext key returns it unchanged."""
         plaintext = "sk-test1234567890abcdef"
         result = decrypt_api_key(plaintext)
 
         assert result == plaintext
 
-    def test_empty_key_handling(self):
-        """Test handling of empty or None keys"""
+    def test_empty_key_handling(self) -> None:
+        """Test handling of empty or None keys."""
         assert encrypt_api_key("") == ""
         assert encrypt_api_key(None) is None
         assert decrypt_api_key("") == ""
         assert decrypt_api_key(None) is None
 
-    def test_encryption_error_handling(self):
-        """Test error handling for invalid encrypted keys"""
+    def test_encryption_error_handling(self) -> None:
+        """Test error handling for invalid encrypted keys."""
         invalid_encrypted = "enc:invalid_base64_data"
 
         with pytest.raises(EncryptionError):
@@ -66,15 +66,15 @@ class TestAPIKeyEncryption:
 
 
 class TestProviderConfigValidator:
-    """Test provider configuration validation"""
+    """Test provider configuration validation."""
 
-    def setup_method(self):
-        """Setup test environment"""
+    def setup_method(self) -> None:
+        """Setup test environment."""
         self.validator = ProviderConfigValidator()
 
     @pytest.mark.asyncio
-    async def test_validate_openai_api_key_format(self):
-        """Test OpenAI API key format validation"""
+    async def test_validate_openai_api_key_format(self) -> None:
+        """Test OpenAI API key format validation."""
         # Valid OpenAI key
         valid_key = "sk-1234567890abcdef1234567890abcdef"
         is_valid, error = await self.validator.validate_api_key_format("openai", valid_key)
@@ -88,8 +88,8 @@ class TestProviderConfigValidator:
         assert "Expected pattern" in error  # Updated assertion to match actual error message
 
     @pytest.mark.asyncio
-    async def test_validate_anthropic_api_key_format(self):
-        """Test Anthropic API key format validation"""
+    async def test_validate_anthropic_api_key_format(self) -> None:
+        """Test Anthropic API key format validation."""
         # Valid Anthropic key
         valid_key = "sk-ant-api03-abcdef1234567890123456789012345678901234567890"
         is_valid, _error = await self.validator.validate_api_key_format("anthropic", valid_key)
@@ -101,8 +101,8 @@ class TestProviderConfigValidator:
         assert not is_valid
 
     @pytest.mark.asyncio
-    async def test_validate_encrypted_api_key(self):
-        """Test validation of encrypted API keys"""
+    async def test_validate_encrypted_api_key(self) -> None:
+        """Test validation of encrypted API keys."""
         # Encrypt a valid key
         plaintext_key = "sk-1234567890abcdef1234567890abcdef"
         encrypted_key = encrypt_api_key(plaintext_key)
@@ -112,16 +112,16 @@ class TestProviderConfigValidator:
         assert error == ""
 
     @pytest.mark.asyncio
-    async def test_validate_empty_api_key(self):
-        """Test validation of empty API key"""
+    async def test_validate_empty_api_key(self) -> None:
+        """Test validation of empty API key."""
         is_valid, error = await self.validator.validate_api_key_format("openai", "")
         assert not is_valid
         assert "API key is required" in error
 
     @pytest.mark.asyncio
     @patch("aiohttp.ClientSession")
-    async def test_validate_connectivity_success(self, mock_session):
-        """Test successful connectivity validation"""
+    async def test_validate_connectivity_success(self, mock_session) -> None:
+        """Test successful connectivity validation."""
         # Mock successful HTTP response
         mock_response = AsyncMock()
         mock_response.status = 200
@@ -135,7 +135,9 @@ class TestProviderConfigValidator:
         mock_session.return_value = mock_session_instance
 
         is_connected, error = await self.validator.validate_connectivity(
-            "openai", "sk-test1234567890abcdef", "https://api.openai.com/v1"
+            "openai",
+            "sk-test1234567890abcdef",
+            "https://api.openai.com/v1",
         )
 
         assert is_connected
@@ -143,8 +145,8 @@ class TestProviderConfigValidator:
 
     @pytest.mark.asyncio
     @patch("aiohttp.ClientSession")
-    async def test_validate_connectivity_failure(self, mock_session):
-        """Test connectivity validation failure"""
+    async def test_validate_connectivity_failure(self, mock_session) -> None:
+        """Test connectivity validation failure."""
         # Mock failed HTTP response
         mock_response = AsyncMock()
         mock_response.status = 500
@@ -159,15 +161,17 @@ class TestProviderConfigValidator:
         mock_session.return_value = mock_session_instance
 
         is_connected, error = await self.validator.validate_connectivity(
-            "openai", "sk-test1234567890abcdef", "https://api.openai.com/v1"
+            "openai",
+            "sk-test1234567890abcdef",
+            "https://api.openai.com/v1",
         )
 
         assert not is_connected
         assert "HTTP 500" in error
 
     @pytest.mark.asyncio
-    async def test_validate_provider_config_complete(self):
-        """Test complete provider configuration validation"""
+    async def test_validate_provider_config_complete(self) -> None:
+        """Test complete provider configuration validation."""
         with patch.object(self.validator, "validate_connectivity", return_value=(True, "")):
             result = await self.validator.validate_provider_config(
                 provider="openai",
@@ -182,14 +186,14 @@ class TestProviderConfigValidator:
 
 
 class TestEnhancedSettings:
-    """Test enhanced Settings class functionality"""
+    """Test enhanced Settings class functionality."""
 
-    def setup_method(self):
-        """Setup test environment"""
+    def setup_method(self) -> None:
+        """Setup test environment."""
         self.settings = Settings()
 
-    def test_get_decrypted_api_key(self):
-        """Test getting decrypted API key"""
+    def test_get_decrypted_api_key(self) -> None:
+        """Test getting decrypted API key."""
         # Set an encrypted key
         test_key = "sk-test1234567890abcdef"
         encrypted_key = encrypt_api_key(test_key)
@@ -198,8 +202,8 @@ class TestEnhancedSettings:
             decrypted = self.settings.get_decrypted_api_key("openai")
             assert decrypted == test_key
 
-    def test_set_encrypted_api_key(self):
-        """Test setting encrypted API key"""
+    def test_set_encrypted_api_key(self) -> None:
+        """Test setting encrypted API key."""
         test_key = "sk-test1234567890abcdef"
 
         # Mock encryption setting
@@ -211,8 +215,8 @@ class TestEnhancedSettings:
             stored_key = self.settings.OPENAI_API_KEY
             assert is_encrypted(stored_key)
 
-    def test_validate_api_key_format(self):
-        """Test API key format validation in settings"""
+    def test_validate_api_key_format(self) -> None:
+        """Test API key format validation in settings."""
         # Valid key
         valid_key = "sk-1234567890abcdef1234567890abcdef"
         is_valid, error = self.settings.validate_api_key_format("openai", valid_key)
@@ -225,8 +229,8 @@ class TestEnhancedSettings:
         assert not is_valid
         assert error != ""
 
-    def test_get_provider_config_dict(self):
-        """Test getting provider configuration dictionary"""
+    def test_get_provider_config_dict(self) -> None:
+        """Test getting provider configuration dictionary."""
         with patch.object(self.settings, "OPENAI_API_KEY", "sk-test123"):
             config_dict = self.settings.get_provider_config_dict()
 
@@ -234,12 +238,12 @@ class TestEnhancedSettings:
             assert config_dict["openai"]["name"] == "openai"
             assert config_dict["openai"]["api_key"] == "sk-test123"
 
-    def test_get_connection_mode(self):
-        """Test getting connection mode"""
+    def test_get_connection_mode(self) -> None:
+        """Test getting connection mode."""
         assert self.settings.get_connection_mode() == APIConnectionMode.DIRECT
 
-    def test_get_proxy_config(self):
-        """Test getting proxy configuration"""
+    def test_get_proxy_config(self) -> None:
+        """Test getting proxy configuration."""
         proxy_config = self.settings.get_proxy_config()
 
         assert "enabled" in proxy_config
@@ -248,8 +252,8 @@ class TestEnhancedSettings:
         assert "timeout" in proxy_config
 
     @pytest.mark.asyncio
-    async def test_reload_configuration(self):
-        """Test configuration hot-reload functionality"""
+    async def test_reload_configuration(self) -> None:
+        """Test configuration hot-reload functionality."""
         # Mock environment changes
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-new-key-123"}):
             result = await self.settings.reload_configuration()
@@ -260,15 +264,15 @@ class TestEnhancedSettings:
 
 
 class TestEnhancedConfigManager:
-    """Test enhanced configuration manager"""
+    """Test enhanced configuration manager."""
 
-    def setup_method(self):
-        """Setup test environment"""
+    def setup_method(self) -> None:
+        """Setup test environment."""
         self.config_manager = EnhancedConfigManager()
 
     @pytest.mark.asyncio
-    async def test_reload_config(self):
-        """Test configuration reload"""
+    async def test_reload_config(self) -> None:
+        """Test configuration reload."""
         result = await self.config_manager.reload_config()
 
         assert "status" in result
@@ -276,8 +280,8 @@ class TestEnhancedConfigManager:
         assert "changes" in result
 
     @pytest.mark.asyncio
-    async def test_validate_proxy_mode_config_disabled(self):
-        """Test proxy mode validation when disabled"""
+    async def test_validate_proxy_mode_config_disabled(self) -> None:
+        """Test proxy mode validation when disabled."""
         with patch("app.core.config.settings.API_CONNECTION_MODE", APIConnectionMode.DIRECT):
             result = await self.config_manager.validate_proxy_mode_config()
 
@@ -286,8 +290,8 @@ class TestEnhancedConfigManager:
 
     @pytest.mark.asyncio
     @patch("aiohttp.ClientSession")
-    async def test_validate_proxy_mode_config_enabled_success(self, mock_session):
-        """Test proxy mode validation when enabled and proxy is reachable"""
+    async def test_validate_proxy_mode_config_enabled_success(self, mock_session) -> None:
+        """Test proxy mode validation when enabled and proxy is reachable."""
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.__aenter__.return_value = mock_response
@@ -303,8 +307,8 @@ class TestEnhancedConfigManager:
             assert result["is_valid"]
 
     @pytest.mark.asyncio
-    async def test_get_provider_config_summary(self):
-        """Test getting provider configuration summary"""
+    async def test_get_provider_config_summary(self) -> None:
+        """Test getting provider configuration summary."""
         summary = await self.config_manager.get_provider_config_summary()
 
         assert "total_providers" in summary
@@ -312,11 +316,11 @@ class TestEnhancedConfigManager:
         assert "connection_mode" in summary
         assert "proxy_config" in summary
 
-    def test_add_remove_reload_callback(self):
-        """Test adding and removing reload callbacks"""
+    def test_add_remove_reload_callback(self) -> None:
+        """Test adding and removing reload callbacks."""
         callback_called = False
 
-        def test_callback():
+        def test_callback() -> None:
             nonlocal callback_called
             callback_called = True
 
@@ -330,11 +334,11 @@ class TestEnhancedConfigManager:
 
 
 class TestConfigurationIntegration:
-    """Integration tests for configuration system"""
+    """Integration tests for configuration system."""
 
     @pytest.mark.asyncio
-    async def test_end_to_end_provider_configuration(self):
-        """Test complete provider configuration flow"""
+    async def test_end_to_end_provider_configuration(self) -> None:
+        """Test complete provider configuration flow."""
         settings = Settings()
         validator = ProviderConfigValidator()
 
@@ -358,8 +362,8 @@ class TestConfigurationIntegration:
         assert "openai" in config_dict
 
     @pytest.mark.asyncio
-    async def test_configuration_validation_with_errors(self):
-        """Test configuration validation with various error scenarios"""
+    async def test_configuration_validation_with_errors(self) -> None:
+        """Test configuration validation with various error scenarios."""
         validator = ProviderConfigValidator()
 
         # Test invalid API key format
@@ -375,8 +379,8 @@ class TestConfigurationIntegration:
         assert len(result["recommendations"]) > 0
 
     @pytest.mark.asyncio
-    async def test_proxy_mode_configuration(self):
-        """Test proxy mode configuration end-to-end"""
+    async def test_proxy_mode_configuration(self) -> None:
+        """Test proxy mode configuration end-to-end."""
         settings = Settings()
 
         # Test proxy config retrieval
@@ -392,10 +396,10 @@ class TestConfigurationIntegration:
 
 
 class TestConfigurationEdgeCases:
-    """Test edge cases and error scenarios"""
+    """Test edge cases and error scenarios."""
 
-    def test_unknown_provider_handling(self):
-        """Test handling of unknown provider names"""
+    def test_unknown_provider_handling(self) -> None:
+        """Test handling of unknown provider names."""
         settings = Settings()
 
         # Should return None for unknown provider
@@ -407,8 +411,8 @@ class TestConfigurationEdgeCases:
         assert not success
 
     @pytest.mark.asyncio
-    async def test_validation_with_network_errors(self):
-        """Test validation behavior with network connectivity issues"""
+    async def test_validation_with_network_errors(self) -> None:
+        """Test validation behavior with network connectivity issues."""
         validator = ProviderConfigValidator()
 
         # Test with unreachable URL
@@ -422,8 +426,8 @@ class TestConfigurationEdgeCases:
         assert not result["is_valid"]
         assert any("Connection" in error for error in result["errors"])
 
-    def test_encryption_with_malformed_keys(self):
-        """Test encryption with malformed keys"""
+    def test_encryption_with_malformed_keys(self) -> None:
+        """Test encryption with malformed keys."""
         # Test with malformed encrypted key
         malformed = "enc:not_valid_base64!@#"
 
@@ -431,8 +435,8 @@ class TestConfigurationEdgeCases:
             decrypt_api_key(malformed)
 
     @pytest.mark.asyncio
-    async def test_hot_reload_with_no_changes(self):
-        """Test hot-reload when no configuration changes occurred"""
+    async def test_hot_reload_with_no_changes(self) -> None:
+        """Test hot-reload when no configuration changes occurred."""
         config_manager = EnhancedConfigManager()
 
         # First reload

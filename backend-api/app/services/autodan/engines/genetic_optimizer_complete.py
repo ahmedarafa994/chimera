@@ -1,5 +1,4 @@
-"""
-Enhanced Genetic Algorithm Optimizer for AutoDAN - Complete Implementation
+"""Enhanced Genetic Algorithm Optimizer for AutoDAN - Complete Implementation.
 
 This module completes the GeneticOptimizer class with all remaining methods,
 fully integrated with the enhanced semantic mutation operators.
@@ -15,7 +14,8 @@ from typing import Any
 
 import numpy as np
 
-from ..config_enhanced import EnhancedAutoDANConfig, MutationStrategy, get_config
+from app.services.autodan.config_enhanced import EnhancedAutoDANConfig, MutationStrategy, get_config
+
 from .genetic_optimizer import (
     CrossoverOperator,
     FitnessCache,
@@ -40,16 +40,14 @@ logger = logging.getLogger(__name__)
 
 
 class GeneticOptimizerComplete:
-    """
-    Complete Enhanced Genetic Algorithm Optimizer for adversarial generation.
-    """
+    """Complete Enhanced Genetic Algorithm Optimizer for adversarial generation."""
 
     def __init__(
         self,
         config: EnhancedAutoDANConfig | None = None,
         fitness_function: Callable[[str], float] | None = None,
         semantic_model: Any | None = None,
-    ):
+    ) -> None:
         self.config = config or get_config()
         self.ga_config = self.config.genetic
         self.scoring_config = self.config.scoring.model_dump()
@@ -79,11 +77,12 @@ class GeneticOptimizerComplete:
         logger.info(f"GeneticOptimizerComplete initialized. Pop: {self.ga_config.population_size}")
 
     def optimize(
-        self, initial_prompt: str, target_fitness: float = 0.9, max_generations: int | None = None
+        self,
+        initial_prompt: str,
+        target_fitness: float = 0.9,
+        max_generations: int | None = None,
     ) -> tuple[Individual, list[PopulationStats]]:
-        """
-        Run genetic optimization to evolve adversarial prompts.
-        """
+        """Run genetic optimization to evolve adversarial prompts."""
         max_gen = max_generations or self.ga_config.generations
         population = self._initialize_population(initial_prompt)
         self._evaluate_population(population)
@@ -139,7 +138,7 @@ class GeneticOptimizerComplete:
 
             logger.info(
                 f"Gen {generation + 1}: best={stats.best_fitness:.4f}, "
-                f"diversity={stats.diversity_score:.4f}"
+                f"diversity={stats.diversity_score:.4f}",
             )
 
         logger.info(f"Optimization complete. Best: {best_overall.fitness:.4f}")
@@ -158,13 +157,13 @@ class GeneticOptimizerComplete:
                 population.append(mutated)
         return population
 
-    def _evaluate_population(self, population: list[Individual]):
+    def _evaluate_population(self, population: list[Individual]) -> None:
         if self.config.parallel.enable_parallel:
             self._evaluate_parallel(population)
         else:
             self._evaluate_sequential(population)
 
-    def _evaluate_sequential(self, population: list[Individual]):
+    def _evaluate_sequential(self, population: list[Individual]) -> None:
         for ind in population:
             cached = self.fitness_cache.get(ind.prompt)
             if cached is not None:
@@ -173,7 +172,7 @@ class GeneticOptimizerComplete:
                 ind.fitness = self.fitness_function(ind.prompt)
                 self.fitness_cache.set(ind.prompt, ind.fitness)
 
-    def _evaluate_parallel(self, population: list[Individual]):
+    def _evaluate_parallel(self, population: list[Individual]) -> None:
         max_workers = self.config.parallel.max_workers
         uncached = [i for i in population if self.fitness_cache.get(i.prompt) is None]
         for i in population:
@@ -194,7 +193,7 @@ class GeneticOptimizerComplete:
                     ind.fitness = res
                     self.fitness_cache.set(ind.prompt, res)
                 except Exception as e:
-                    logger.error(f"Eval failed: {e}")
+                    logger.exception(f"Eval failed: {e}")
                     ind.fitness = 0.0
 
     def _select_elite(self, population: list[Individual]) -> list[Individual]:
@@ -232,7 +231,7 @@ class GeneticOptimizerComplete:
                     n_pairs += 1
         return 1.0 - (total_sim / n_pairs) if n_pairs > 0 else 1.0
 
-    def _adapt_hyperparameters(self, stats: PopulationStats):
+    def _adapt_hyperparameters(self, stats: PopulationStats) -> None:
         if not self.ga_config.adaptive_mutation:
             return
         self.mutation_history.append(stats.avg_fitness)
@@ -250,16 +249,19 @@ class GeneticOptimizerComplete:
 
         if self.stagnation_counter >= self.ga_config.stagnation_threshold:
             self.current_mutation_rate = min(
-                self.ga_config.max_mutation_rate, self.current_mutation_rate * 1.5
+                self.ga_config.max_mutation_rate,
+                self.current_mutation_rate * 1.5,
             )
             self.stagnation_counter = 0
         elif stats.diversity_score < 0.3:
             self.current_mutation_rate = min(
-                self.ga_config.max_mutation_rate, self.current_mutation_rate * 1.2
+                self.ga_config.max_mutation_rate,
+                self.current_mutation_rate * 1.2,
             )
         elif stats.std_fitness < 0.05:
             self.current_mutation_rate = max(
-                self.ga_config.min_mutation_rate, self.current_mutation_rate * 0.9
+                self.ga_config.min_mutation_rate,
+                self.current_mutation_rate * 0.9,
             )
         if len(self.mutation_history) > 20:
             self.mutation_history = self.mutation_history[-10:]
@@ -275,7 +277,7 @@ class GeneticOptimizerComplete:
             if marker in p_lower:
                 penalty += 0.2
         reward = 0.0
-        for _cat, tokens in scoring.reward_categories.items():
+        for tokens in scoring.reward_categories.values():
             for token in tokens:
                 if token in p_lower:
                     reward += 0.05
@@ -289,7 +291,7 @@ class GeneticOptimizerComplete:
         )
         return max(0.0, min(1.0, score))
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset optimizer state."""
         self.current_mutation_rate = self.ga_config.mutation_rate
         self.mutation_history.clear()
@@ -302,14 +304,15 @@ class GeneticOptimizerComplete:
 class AsyncGeneticOptimizer:
     """Async wrapper for GeneticOptimizerComplete."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._optimizer = GeneticOptimizerComplete(*args, **kwargs)
 
     async def optimize(self, initial_prompt, target_fitness=0.9, max_gen=None):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            None, lambda: self._optimizer.optimize(initial_prompt, target_fitness, max_gen)
+            None,
+            lambda: self._optimizer.optimize(initial_prompt, target_fitness, max_gen),
         )
 
-    def reset(self):
+    def reset(self) -> None:
         self._optimizer.reset()

@@ -1,5 +1,4 @@
-"""
-Redis Streams Consumer for Real-Time Event Processing
+"""Redis Streams Consumer for Real-Time Event Processing.
 
 This module provides the streaming layer consumer that processes LLM interaction
 events from Redis Streams for real-time analytics and metrics aggregation.
@@ -58,7 +57,7 @@ DEFAULT_IDLE_MS = 60000 * 60  # 1 hour before pending entries claimed
 
 @dataclass
 class StreamEntry:
-    """Single stream entry with parsed data"""
+    """Single stream entry with parsed data."""
 
     stream_key: str
     entry_id: str
@@ -69,7 +68,7 @@ class StreamEntry:
 
     @classmethod
     def from_raw(cls, stream_key: str, entry_id: str, data: dict[str, str]) -> "StreamEntry":
-        """Create StreamEntry from raw Redis stream data"""
+        """Create StreamEntry from raw Redis stream data."""
         event_type = data.get("event_type", "unknown")
         timestamp_str = data.get("timestamp", datetime.utcnow().isoformat())
 
@@ -106,7 +105,7 @@ class StreamEntry:
 
 @dataclass
 class ConsumerStats:
-    """Consumer processing statistics"""
+    """Consumer processing statistics."""
 
     consumer_name: str
     stream_key: str
@@ -118,7 +117,7 @@ class ConsumerStats:
     pending: int = 0  # Number of pending entries for this consumer
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary"""
+        """Convert to dictionary."""
         return {
             "consumer_name": self.consumer_name,
             "stream_key": self.stream_key,
@@ -134,8 +133,7 @@ class ConsumerStats:
 
 
 class StreamConsumer:
-    """
-    Redis Streams Consumer for real-time event processing
+    """Redis Streams Consumer for real-time event processing.
 
     Features:
     - Consumer group support for horizontal scaling
@@ -159,6 +157,7 @@ class StreamConsumer:
                 await consumer.acknowledge(entry.entry_id)
 
         await consumer.close()
+
     """
 
     def __init__(
@@ -169,9 +168,8 @@ class StreamConsumer:
         redis_url: str | None = None,
         block_ms: int = DEFAULT_BLOCK_MS,
         count: int = DEFAULT_COUNT,
-    ):
-        """
-        Initialize the stream consumer
+    ) -> None:
+        """Initialize the stream consumer.
 
         Args:
             consumer_name: Unique name for this consumer instance
@@ -180,6 +178,7 @@ class StreamConsumer:
             redis_url: Redis connection URL (default: from settings)
             block_ms: Milliseconds to block on XREADGROUP
             count: Max entries per read
+
         """
         self.consumer_name = consumer_name
         self.group_name = group_name
@@ -206,17 +205,17 @@ class StreamConsumer:
 
     @staticmethod
     def _get_redis_url() -> str:
-        """Get Redis URL from settings with fallback"""
+        """Get Redis URL from settings with fallback."""
         if hasattr(settings, "REDIS_URL"):
             return settings.REDIS_URL
         return "redis://localhost:6379/0"
 
     async def initialize(self) -> None:
-        """
-        Initialize Redis connection and create consumer groups
+        """Initialize Redis connection and create consumer groups.
 
         Raises:
             RedisConnectionError: If connection fails
+
         """
         try:
             # Create connection pool
@@ -240,22 +239,23 @@ class StreamConsumer:
 
             self._is_initialized = True
             logger.info(
-                f"Stream consumer initialized: {self.consumer_name} " f"in group {self.group_name}"
+                f"Stream consumer initialized: {self.consumer_name} in group {self.group_name}",
             )
 
         except RedisError as e:
-            logger.error(f"Failed to initialize stream consumer: {e}")
-            raise RedisConnectionError(f"Redis connection failed: {e}") from e
+            logger.exception(f"Failed to initialize stream consumer: {e}")
+            msg = f"Redis connection failed: {e}"
+            raise RedisConnectionError(msg) from e
 
     async def _create_consumer_group(
         self,
         stream_key: str,
     ) -> None:
-        """
-        Create consumer group if it doesn't exist
+        """Create consumer group if it doesn't exist.
 
         Args:
             stream_key: Redis stream key
+
         """
         try:
             # Try to create group from '$' (newest entry)
@@ -272,10 +272,10 @@ class StreamConsumer:
             if "BUSYGROUP" in str(e):
                 logger.debug(f"Consumer group {self.group_name} already exists for {stream_key}")
             else:
-                logger.error(f"Failed to create consumer group: {e}")
+                logger.exception(f"Failed to create consumer group: {e}")
 
     async def close(self) -> None:
-        """Close Redis connection and cleanup resources"""
+        """Close Redis connection and cleanup resources."""
         self._is_running = False
 
         if self._redis:
@@ -291,8 +291,7 @@ class StreamConsumer:
         count: int | None = None,
         block_ms: int | None = None,
     ) -> AsyncIterator[list[StreamEntry]]:
-        """
-        Consume LLM events from Redis Stream
+        """Consume LLM events from Redis Stream.
 
         Args:
             count: Max entries per read (default: from constructor)
@@ -305,9 +304,11 @@ class StreamConsumer:
             async for batch in consumer.consume_llm_events():
                 for entry in batch:
                     print(f"Event: {entry.event_type} - {entry.data}")
+
         """
         if not self._is_initialized:
-            raise RuntimeError("Consumer not initialized")
+            msg = "Consumer not initialized"
+            raise RuntimeError(msg)
 
         self._is_running = True
         count = count or self.count
@@ -339,7 +340,7 @@ class StreamConsumer:
                 await asyncio.sleep(0.01)
 
             except Exception as e:
-                logger.error(f"Error consuming LLM events: {e}")
+                logger.exception(f"Error consuming LLM events: {e}")
                 self._stats[STREAM_LLM_EVENTS].total_errors += 1
                 await asyncio.sleep(1)  # Backoff on error
 
@@ -348,9 +349,10 @@ class StreamConsumer:
         count: int | None = None,
         block_ms: int | None = None,
     ) -> AsyncIterator[list[StreamEntry]]:
-        """Consume transformation events from Redis Stream"""
+        """Consume transformation events from Redis Stream."""
         if not self._is_initialized:
-            raise RuntimeError("Consumer not initialized")
+            msg = "Consumer not initialized"
+            raise RuntimeError(msg)
 
         self._is_running = True
         count = count or self.count
@@ -378,7 +380,7 @@ class StreamConsumer:
                 await asyncio.sleep(0.01)
 
             except Exception as e:
-                logger.error(f"Error consuming transformation events: {e}")
+                logger.exception(f"Error consuming transformation events: {e}")
                 self._stats[STREAM_TRANSFORMATION_EVENTS].total_errors += 1
                 await asyncio.sleep(1)
 
@@ -387,9 +389,10 @@ class StreamConsumer:
         count: int | None = None,
         block_ms: int | None = None,
     ) -> AsyncIterator[list[StreamEntry]]:
-        """Consume jailbreak events from Redis Stream"""
+        """Consume jailbreak events from Redis Stream."""
         if not self._is_initialized:
-            raise RuntimeError("Consumer not initialized")
+            msg = "Consumer not initialized"
+            raise RuntimeError(msg)
 
         self._is_running = True
         count = count or self.count
@@ -417,7 +420,7 @@ class StreamConsumer:
                 await asyncio.sleep(0.01)
 
             except Exception as e:
-                logger.error(f"Error consuming jailbreak events: {e}")
+                logger.exception(f"Error consuming jailbreak events: {e}")
                 self._stats[STREAM_JAILBREAK_EVENTS].total_errors += 1
                 await asyncio.sleep(1)
 
@@ -427,8 +430,7 @@ class StreamConsumer:
         count: int,
         block_ms: int,
     ) -> list[tuple]:
-        """
-        Read entries from stream using XREADGROUP
+        """Read entries from stream using XREADGROUP.
 
         Args:
             stream_key: Redis stream key
@@ -437,6 +439,7 @@ class StreamConsumer:
 
         Returns:
             List of (entry_id, data) tuples
+
         """
         try:
             # Use '>' to read new entries not yet delivered to this consumer
@@ -459,7 +462,7 @@ class StreamConsumer:
             return entries
 
         except RedisError as e:
-            logger.error(f"Failed to read from stream {stream_key}: {e}")
+            logger.exception(f"Failed to read from stream {stream_key}: {e}")
             return []
 
     async def acknowledge(
@@ -467,8 +470,7 @@ class StreamConsumer:
         stream_key: str,
         entry_id: str,
     ) -> bool:
-        """
-        Acknowledge processing of a stream entry
+        """Acknowledge processing of a stream entry.
 
         Args:
             stream_key: Redis stream key
@@ -476,6 +478,7 @@ class StreamConsumer:
 
         Returns:
             True if successful, False otherwise
+
         """
         if not self._is_initialized or not self._redis:
             return False
@@ -485,21 +488,21 @@ class StreamConsumer:
             return True
 
         except RedisError as e:
-            logger.error(f"Failed to acknowledge entry {entry_id}: {e}")
+            logger.exception(f"Failed to acknowledge entry {entry_id}: {e}")
             return False
 
     async def acknowledge_batch(
         self,
         acknowledgements: list[tuple],
     ) -> int:
-        """
-        Acknowledge multiple entries in a single call
+        """Acknowledge multiple entries in a single call.
 
         Args:
             acknowledgements: List of (stream_key, entry_id) tuples
 
         Returns:
             Number of successfully acknowledged entries
+
         """
         if not self._is_initialized or not self._redis:
             return 0
@@ -512,7 +515,7 @@ class StreamConsumer:
                 acknowledged += 1
 
         except RedisError as e:
-            logger.error(f"Failed to acknowledge batch: {e}")
+            logger.exception(f"Failed to acknowledge batch: {e}")
 
         return acknowledged
 
@@ -520,14 +523,14 @@ class StreamConsumer:
         self,
         stream_key: str | None = None,
     ) -> dict[str, Any]:
-        """
-        Get consumer statistics and lag information
+        """Get consumer statistics and lag information.
 
         Args:
             stream_key: Optional specific stream to get stats for
 
         Returns:
             Dictionary with consumer statistics
+
         """
         if stream_key:
             return self._stats.get(
@@ -545,14 +548,14 @@ class StreamConsumer:
         self,
         stream_key: str,
     ) -> dict[str, Any]:
-        """
-        Get consumer group information for a stream
+        """Get consumer group information for a stream.
 
         Args:
             stream_key: Redis stream key
 
         Returns:
             Dictionary with group information
+
         """
         if not self._is_initialized or not self._redis:
             return {}
@@ -593,8 +596,7 @@ class StreamConsumer:
         stream_key: str,
         min_idle_time_ms: int | None = None,
     ) -> list[StreamEntry]:
-        """
-        Claim pending entries that have been idle too long
+        """Claim pending entries that have been idle too long.
 
         Args:
             stream_key: Redis stream key
@@ -602,6 +604,7 @@ class StreamConsumer:
 
         Returns:
             List of claimed StreamEntry objects
+
         """
         if not self._is_initialized or not self._redis:
             return []
@@ -630,10 +633,10 @@ class StreamConsumer:
             return stream_entries
 
         except RedisError as e:
-            logger.error(f"Failed to claim pending entries: {e}")
+            logger.exception(f"Failed to claim pending entries: {e}")
             return []
 
     def stop(self) -> None:
-        """Signal consumer to stop processing"""
+        """Signal consumer to stop processing."""
         self._is_running = False
         logger.info(f"Consumer {self.consumer_name} stop signal sent")

@@ -1,5 +1,4 @@
-"""
-Routeway Provider Plugin - Unified API access to 70+ AI models.
+"""Routeway Provider Plugin - Unified API access to 70+ AI models.
 
 Routeway is a unified API aggregator providing seamless access to top AI models
 from OpenAI, Anthropic, DeepSeek, Meta, and others at 40% lower cost than official providers.
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class RoutewayClient(BaseLLMClient):
-    """
-    Routeway-specific LLM client implementation.
+    """Routeway-specific LLM client implementation.
 
     Wraps the existing Routeway client to implement the BaseLLMClient interface.
     """
@@ -31,15 +29,15 @@ class RoutewayClient(BaseLLMClient):
         model_id: str,
         api_key: str,
         **kwargs: Any,
-    ):
-        """
-        Initialize Routeway client.
+    ) -> None:
+        """Initialize Routeway client.
 
         Args:
             provider_id: Provider identifier ('routeway')
             model_id: Model identifier
             api_key: Routeway API key
             **kwargs: Additional configuration
+
         """
         self._provider_id = provider_id
         self._model_id = model_id
@@ -105,13 +103,12 @@ class RoutewayClient(BaseLLMClient):
 
 
 class RoutewayPlugin(BaseProviderPlugin):
-    """
-    Routeway provider plugin implementation.
+    """Routeway provider plugin implementation.
 
     Provides factory methods and metadata for Routeway models.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Routeway plugin."""
         super().__init__(
             provider_id="routeway",
@@ -133,14 +130,13 @@ class RoutewayPlugin(BaseProviderPlugin):
         return os.getenv(self._api_key_env_var)
 
     def _build_model_list(self) -> list[Model]:
-        """
-        Build list of available Routeway models (January 2026).
+        """Build list of available Routeway models (January 2026).
 
         Note: Routeway is a unified API providing access to 70+ models from
         multiple providers (OpenAI, Anthropic, DeepSeek, Meta, etc.) at 40% lower cost.
         Listed here are the most popular models available through Routeway.
         """
-        models = [
+        return [
             # OpenAI models via Routeway
             Model(
                 id="gpt-5.2",
@@ -217,11 +213,8 @@ class RoutewayPlugin(BaseProviderPlugin):
             ),
         ]
 
-        return models
-
     def create_client(self, model_id: str, **kwargs: Any) -> BaseLLMClient:
-        """
-        Create a Routeway client for the specified model.
+        """Create a Routeway client for the specified model.
 
         Args:
             model_id: The model identifier
@@ -232,21 +225,28 @@ class RoutewayPlugin(BaseProviderPlugin):
 
         Raises:
             ValueError: If model is not available or API key missing
+
         """
         # Validate model
         if not self.validate_model_id(model_id):
             available = [m.id for m in self.get_available_models()]
-            raise ValueError(
+            msg = (
                 f"Model '{model_id}' not available from Routeway. "
                 f"Available models: {', '.join(available)}"
+            )
+            raise ValueError(
+                msg,
             )
 
         # Get API key
         api_key = self._get_api_key()
         if not api_key:
-            raise ValueError(
+            msg = (
                 f"Routeway API key not configured. "
                 f"Set {self._api_key_env_var} environment variable."
+            )
+            raise ValueError(
+                msg,
             )
 
         # Create client

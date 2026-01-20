@@ -1,5 +1,4 @@
-"""
-Provider Infrastructure Package
+"""Provider Infrastructure Package.
 
 Story 1.2: Direct API Integration
 Contains all LLM provider implementations for direct API integration.

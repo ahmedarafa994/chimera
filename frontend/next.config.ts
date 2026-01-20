@@ -61,7 +61,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/proxy/:path*",
-        destination: "http://localhost:8001/api/v1/:path*",
+        destination: "http://localhost:8002/api/v1/:path*",
       },
     ];
   },

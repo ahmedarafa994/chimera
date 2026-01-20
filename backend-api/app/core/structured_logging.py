@@ -1,5 +1,4 @@
-"""
-Enhanced Structured Logging Module for Chimera Backend
+"""Enhanced Structured Logging Module for Chimera Backend.
 
 Provides:
 - JSON-formatted structured logs for production
@@ -30,12 +29,11 @@ session_id_var: ContextVar[str] = ContextVar("session_id", default="")
 
 
 class StructuredLogFormatter(logging.Formatter):
-    """
-    JSON formatter for structured logging.
+    """JSON formatter for structured logging.
     Outputs logs in a format compatible with log aggregation systems.
     """
 
-    def __init__(self, include_timestamp: bool = True, include_level: bool = True):
+    def __init__(self, include_timestamp: bool = True, include_level: bool = True) -> None:
         super().__init__()
         self.include_timestamp = include_timestamp
         self.include_level = include_level
@@ -92,9 +90,7 @@ class StructuredLogFormatter(logging.Formatter):
 
 
 class HumanReadableFormatter(logging.Formatter):
-    """
-    Human-readable formatter for development.
-    """
+    """Human-readable formatter for development."""
 
     COLORS: ClassVar[dict[str, str]] = {
         "DEBUG": "\033[36m",  # Cyan
@@ -128,11 +124,9 @@ class HumanReadableFormatter(logging.Formatter):
 
 
 class StructuredLogger(logging.Logger):
-    """
-    Enhanced logger with structured logging support.
-    """
+    """Enhanced logger with structured logging support."""
 
-    def __init__(self, name: str, level: int = logging.NOTSET):
+    def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         super().__init__(name, level)
 
     def _log_with_extra(
@@ -143,7 +137,7 @@ class StructuredLogger(logging.Logger):
         exc_info: Any = None,
         extra: dict[str, Any] | None = None,
         **kwargs,
-    ):
+    ) -> None:
         """Log with extra structured data."""
         if extra is None:
             extra = {}
@@ -153,31 +147,34 @@ class StructuredLogger(logging.Logger):
         record.extra_data = extra
         self.handle(record)
 
-    def info_with_data(self, msg: str, **data):
+    def info_with_data(self, msg: str, **data) -> None:
         """Log info with structured data."""
         self._log_with_extra(logging.INFO, msg, extra=data)
 
-    def warning_with_data(self, msg: str, **data):
+    def warning_with_data(self, msg: str, **data) -> None:
         """Log warning with structured data."""
         self._log_with_extra(logging.WARNING, msg, extra=data)
 
-    def error_with_data(self, msg: str, exc_info: bool = False, **data):
+    def error_with_data(self, msg: str, exc_info: bool = False, **data) -> None:
         """Log error with structured data."""
         self._log_with_extra(
-            logging.ERROR, msg, exc_info=sys.exc_info() if exc_info else None, extra=data
+            logging.ERROR,
+            msg,
+            exc_info=sys.exc_info() if exc_info else None,
+            extra=data,
         )
 
-    def debug_with_data(self, msg: str, **data):
+    def debug_with_data(self, msg: str, **data) -> None:
         """Log debug with structured data."""
         self._log_with_extra(logging.DEBUG, msg, extra=data)
 
 
 def setup_structured_logging() -> StructuredLogger:
-    """
-    Configure structured logging for the application.
+    """Configure structured logging for the application.
 
     Returns:
         StructuredLogger: Configured logger instance
+
     """
     # Set the custom logger class
     logging.setLoggerClass(StructuredLogger)
@@ -215,8 +212,10 @@ def setup_structured_logging() -> StructuredLogger:
 
 # Request context management
 def set_request_context(
-    request_id: str | None = None, user_id: str | None = None, session_id: str | None = None
-):
+    request_id: str | None = None,
+    user_id: str | None = None,
+    session_id: str | None = None,
+) -> None:
     """Set request context for logging."""
     if request_id:
         request_id_var.set(request_id)
@@ -226,7 +225,7 @@ def set_request_context(
         session_id_var.set(session_id)
 
 
-def clear_request_context():
+def clear_request_context() -> None:
     """Clear request context after request completes."""
     request_id_var.set("")
     user_id_var.set("")
@@ -240,12 +239,12 @@ def generate_request_id() -> str:
 
 # Performance logging decorator
 def log_performance(logger: logging.Logger | None = None, threshold_ms: float = 1000):
-    """
-    Decorator to log function performance.
+    """Decorator to log function performance.
 
     Args:
         logger: Logger instance to use
         threshold_ms: Log warning if execution exceeds this threshold
+
     """
 
     def decorator(func: Callable):
@@ -287,7 +286,7 @@ def log_performance(logger: logging.Logger | None = None, threshold_ms: float = 
                             "function": func.__name__,
                             "elapsed_ms": round(elapsed_ms, 2),
                             "error": str(e),
-                        }
+                        },
                     },
                 )
                 raise
@@ -309,7 +308,7 @@ def log_performance(logger: logging.Logger | None = None, threshold_ms: float = 
                 return result
             except Exception as e:
                 elapsed_ms = (time.perf_counter() - start_time) * 1000
-                log.error(f"Function {func.__name__} failed after {elapsed_ms:.2f}ms: {e}")
+                log.exception(f"Function {func.__name__} failed after {elapsed_ms:.2f}ms: {e}")
                 raise
 
         import asyncio
@@ -323,12 +322,11 @@ def log_performance(logger: logging.Logger | None = None, threshold_ms: float = 
 
 # Error tracking (Sentry-compatible format)
 class ErrorTracker:
-    """
-    Error tracking utility that formats errors in Sentry-compatible format.
+    """Error tracking utility that formats errors in Sentry-compatible format.
     Can be extended to send to actual Sentry or other error tracking services.
     """
 
-    def __init__(self, logger: logging.Logger | None = None):
+    def __init__(self, logger: logging.Logger | None = None) -> None:
         self.logger = logger or logging.getLogger("chimera.errors")
         self._error_count = 0
         self._errors: list[dict] = []
@@ -340,14 +338,14 @@ class ErrorTracker:
         tags: dict[str, str] | None = None,
         user: dict[str, str] | None = None,
     ):
-        """
-        Capture an exception with context.
+        """Capture an exception with context.
 
         Args:
             exception: The exception to capture
             context: Additional context data
             tags: Tags for categorization
             user: User information
+
         """
         self._error_count += 1
 
@@ -395,7 +393,6 @@ class ErrorTracker:
         # Log the error
         self.logger.error(
             f"Captured exception: {type(exception).__name__}: {exception}",
-            exc_info=True,
             extra={"extra_data": error_data},
         )
 

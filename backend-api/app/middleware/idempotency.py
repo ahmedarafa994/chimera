@@ -1,5 +1,4 @@
-"""
-Idempotency Middleware - Request deduplication for POST endpoints.
+"""Idempotency Middleware - Request deduplication for POST endpoints.
 
 Provides:
 - Idempotency key validation and handling
@@ -49,13 +48,12 @@ class IdempotencyLock:
 
 
 class IdempotencyStore:
-    """
-    In-memory storage for idempotency keys.
+    """In-memory storage for idempotency keys.
 
     For production, replace with Redis-backed implementation.
     """
 
-    def __init__(self, ttl: int = 86400, cleanup_interval: int = 3600):
+    def __init__(self, ttl: int = 86400, cleanup_interval: int = 3600) -> None:
         self._responses: dict[str, CachedResponse] = {}
         self._locks: dict[str, IdempotencyLock] = {}
         self._ttl = ttl
@@ -68,13 +66,17 @@ class IdempotencyStore:
         cached = self._responses.get(key)
         if cached and (time.time() - cached.timestamp) < self._ttl:
             return cached
-        elif cached:
+        if cached:
             # Expired, remove it
             del self._responses[key]
         return None
 
     def set_response(
-        self, key: str, body: bytes, status_code: int, headers: dict[str, str]
+        self,
+        key: str,
+        body: bytes,
+        status_code: int,
+        headers: dict[str, str],
     ) -> None:
         """Cache a response for an idempotency key."""
         self._responses[key] = CachedResponse(
@@ -87,8 +89,7 @@ class IdempotencyStore:
         self._locks.pop(key, None)
 
     def acquire_lock(self, key: str, request_hash: str) -> bool:
-        """
-        Acquire a lock for an in-progress request.
+        """Acquire a lock for an in-progress request.
 
         Returns True if lock acquired, False if request already in progress.
         """
@@ -149,8 +150,7 @@ _idempotency_store = IdempotencyStore()
 
 
 class IdempotencyMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for handling idempotent POST/PUT/PATCH requests.
+    """Middleware for handling idempotent POST/PUT/PATCH requests.
 
     When a request includes an Idempotency-Key header:
     1. If we have a cached response for this key, return it
@@ -172,8 +172,11 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
     }
 
     def __init__(
-        self, app, store: IdempotencyStore | None = None, enabled_paths: set[str] | None = None
-    ):
+        self,
+        app,
+        store: IdempotencyStore | None = None,
+        enabled_paths: set[str] | None = None,
+    ) -> None:
         super().__init__(app)
         self._store = store or _idempotency_store
         self._enabled_paths = enabled_paths or self.IDEMPOTENT_PATHS
@@ -289,9 +292,8 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                         "X-Idempotent-Cached": "false",
                     },
                 )
-            else:
-                # Don't cache error responses, but release lock
-                self._store.release_lock(cache_key)
+            # Don't cache error responses, but release lock
+            self._store.release_lock(cache_key)
 
             return response
 

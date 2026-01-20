@@ -1,5 +1,4 @@
-"""
-FAISS-based Strategy Search for AutoDAN
+"""FAISS-based Strategy Search for AutoDAN.
 
 This module provides intelligent semantic search for AutoDAN strategies using FAISS
 vector similarity search. It enables:
@@ -46,7 +45,7 @@ except ImportError:
 
 @dataclass
 class StrategyEntry:
-    """Represents a strategy in the vector index"""
+    """Represents a strategy in the vector index."""
 
     strategy_id: str
     name: str
@@ -62,7 +61,7 @@ class StrategyEntry:
 
 @dataclass
 class StrategySearchResult:
-    """Result from strategy search"""
+    """Result from strategy search."""
 
     strategy: StrategyEntry
     similarity_score: float
@@ -72,7 +71,7 @@ class StrategySearchResult:
 
 @dataclass
 class StrategyCluster:
-    """Cluster of semantically similar strategies"""
+    """Cluster of semantically similar strategies."""
 
     cluster_id: str
     centroid: np.ndarray
@@ -82,7 +81,7 @@ class StrategyCluster:
 
 
 class FAISSStrategyIndex:
-    """FAISS-based vector index for strategy search"""
+    """FAISS-based vector index for strategy search."""
 
     def __init__(
         self,
@@ -91,7 +90,7 @@ class FAISSStrategyIndex:
         nlist: int = 100,
         use_gpu: bool = False,
         similarity_threshold: float = 0.7,
-    ):
+    ) -> None:
         self.dimension = dimension
         self.index_type = index_type
         self.nlist = nlist
@@ -112,8 +111,8 @@ class FAISSStrategyIndex:
 
         logger.info(f"FAISSStrategyIndex initialized: dim={dimension}, type={index_type}")
 
-    async def initialize(self):
-        """Initialize the FAISS index"""
+    async def initialize(self) -> None:
+        """Initialize the FAISS index."""
         if not FAISS_AVAILABLE:
             logger.warning("FAISS not available, using fallback index")
             return
@@ -144,7 +143,7 @@ class FAISSStrategyIndex:
             logger.info(f"FAISS index initialized: {type(self.index).__name__}")
 
     async def add_strategy(self, strategy: StrategyEntry) -> bool:
-        """Add a strategy to the index"""
+        """Add a strategy to the index."""
         if not FAISS_AVAILABLE or self.index is None:
             return False
 
@@ -185,7 +184,7 @@ class FAISSStrategyIndex:
             return True
 
     async def remove_strategy(self, strategy_id: str) -> bool:
-        """Remove a strategy from the index"""
+        """Remove a strategy from the index."""
         async with self._lock:
             if strategy_id not in self.strategy_id_to_faiss_id:
                 return False
@@ -203,9 +202,12 @@ class FAISSStrategyIndex:
             return True
 
     async def search_similar(
-        self, query_embedding: np.ndarray, k: int = 10, min_similarity: float | None = None
+        self,
+        query_embedding: np.ndarray,
+        k: int = 10,
+        min_similarity: float | None = None,
     ) -> list[StrategySearchResult]:
-        """Search for similar strategies"""
+        """Search for similar strategies."""
         if not FAISS_AVAILABLE or self.index is None or self.next_faiss_id == 0:
             return []
 
@@ -221,12 +223,13 @@ class FAISSStrategyIndex:
             # Search in FAISS
             k_search = min(k * 2, self.next_faiss_id)  # Over-fetch for filtering
             similarities, indices = self.index.search(
-                query.reshape(1, -1).astype("float32"), k_search
+                query.reshape(1, -1).astype("float32"),
+                k_search,
             )
 
             results = []
             for rank, (similarity, idx) in enumerate(
-                zip(similarities[0], indices[0], strict=False)
+                zip(similarities[0], indices[0], strict=False),
             ):
                 if idx == -1:  # No more results
                     break
@@ -254,9 +257,13 @@ class FAISSStrategyIndex:
             return results
 
     async def search_by_text(
-        self, query_text: str, embedding_model, k: int = 10, min_similarity: float | None = None
+        self,
+        query_text: str,
+        embedding_model,
+        k: int = 10,
+        min_similarity: float | None = None,
     ) -> list[StrategySearchResult]:
-        """Search for strategies using text query"""
+        """Search for strategies using text query."""
         if not embedding_model:
             logger.warning("No embedding model available for text search")
             return []
@@ -269,9 +276,11 @@ class FAISSStrategyIndex:
         return await self.search_similar(query_embedding, k, min_similarity)
 
     async def get_strategy_clusters(
-        self, n_clusters: int = 5, min_cluster_size: int = 2
+        self,
+        n_clusters: int = 5,
+        min_cluster_size: int = 2,
     ) -> list[StrategyCluster]:
-        """Cluster strategies by semantic similarity"""
+        """Cluster strategies by semantic similarity."""
         if not FAISS_AVAILABLE or len(self.id_to_strategy) < n_clusters:
             return []
 
@@ -340,8 +349,8 @@ class FAISSStrategyIndex:
 
         return clusters
 
-    async def _train_index(self):
-        """Train the FAISS index (for IVF indices)"""
+    async def _train_index(self) -> None:
+        """Train the FAISS index (for IVF indices)."""
         if self.index_type != "IVF" or self.is_trained:
             return
 
@@ -359,18 +368,17 @@ class FAISSStrategyIndex:
             logger.info(f"FAISS index trained with {len(embeddings)} strategies")
 
     async def _get_text_embedding_async(self, text: str, embedding_model) -> np.ndarray | None:
-        """Get embedding for text asynchronously"""
+        """Get embedding for text asynchronously."""
         try:
             loop = asyncio.get_event_loop()
             with ThreadPoolExecutor(max_workers=1) as executor:
-                embedding = await loop.run_in_executor(executor, embedding_model.embed, text)
-                return embedding
+                return await loop.run_in_executor(executor, embedding_model.embed, text)
         except Exception as e:
-            logger.error(f"Failed to generate embedding for text: {e}")
+            logger.exception(f"Failed to generate embedding for text: {e}")
             return None
 
     def _generate_cluster_name(self, strategies: list[StrategyEntry]) -> str:
-        """Generate a name for a strategy cluster"""
+        """Generate a name for a strategy cluster."""
         # Extract key words from strategy names and definitions
         words = []
         for strategy in strategies:
@@ -388,11 +396,10 @@ class FAISSStrategyIndex:
 
         if top_words:
             return " + ".join([word.title() for word, _ in top_words])
-        else:
-            return f"Cluster ({len(strategies)} strategies)"
+        return f"Cluster ({len(strategies)} strategies)"
 
-    async def save_index(self, filepath: Path):
-        """Save the FAISS index and mappings"""
+    async def save_index(self, filepath: Path) -> None:
+        """Save the FAISS index and mappings."""
         if not FAISS_AVAILABLE or self.index is None:
             return
 
@@ -417,10 +424,10 @@ class FAISSStrategyIndex:
 
                 logger.info(f"FAISS index saved to {filepath}")
             except Exception as e:
-                logger.error(f"Failed to save FAISS index: {e}")
+                logger.exception(f"Failed to save FAISS index: {e}")
 
-    async def load_index(self, filepath: Path):
-        """Load the FAISS index and mappings"""
+    async def load_index(self, filepath: Path) -> None:
+        """Load the FAISS index and mappings."""
         if not FAISS_AVAILABLE:
             return
 
@@ -448,11 +455,11 @@ class FAISSStrategyIndex:
                 else:
                     logger.info("No existing FAISS index found, will create new")
             except Exception as e:
-                logger.error(f"Failed to load FAISS index: {e}")
+                logger.exception(f"Failed to load FAISS index: {e}")
 
     @property
     def stats(self) -> dict[str, Any]:
-        """Get index statistics"""
+        """Get index statistics."""
         return {
             "total_strategies": len(self.id_to_strategy),
             "is_trained": self.is_trained,
@@ -464,14 +471,14 @@ class FAISSStrategyIndex:
 
 
 class StrategySearchEngine:
-    """High-level strategy search engine using FAISS"""
+    """High-level strategy search engine using FAISS."""
 
     def __init__(
         self,
         embedding_model=None,
         index_config: dict[str, Any] | None = None,
         cache_dir: Path | None = None,
-    ):
+    ) -> None:
         self.embedding_model = embedding_model
         self.cache_dir = cache_dir or Path("cache/strategy_search")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -493,8 +500,8 @@ class StrategySearchEngine:
 
         logger.info("StrategySearchEngine initialized")
 
-    async def initialize(self, embedding_model=None):
-        """Initialize the search engine"""
+    async def initialize(self, embedding_model=None) -> None:
+        """Initialize the search engine."""
         if embedding_model:
             self.embedding_model = embedding_model
 
@@ -507,9 +514,11 @@ class StrategySearchEngine:
         logger.info("StrategySearchEngine initialized and ready")
 
     async def add_strategies_from_library(
-        self, strategy_library: dict[str, Any], recompute_embeddings: bool = False
+        self,
+        strategy_library: dict[str, Any],
+        recompute_embeddings: bool = False,
     ) -> int:
-        """Add strategies from AutoDAN strategy library"""
+        """Add strategies from AutoDAN strategy library."""
         added_count = 0
 
         for strategy_name, strategy_data in strategy_library.items():
@@ -540,7 +549,8 @@ class StrategySearchEngine:
                         text_for_embedding += " " + " ".join(strategy_entry.examples[:2])
 
                     embedding = await self.faiss_index._get_text_embedding_async(
-                        text_for_embedding, self.embedding_model
+                        text_for_embedding,
+                        self.embedding_model,
                     )
                     strategy_entry.embedding = embedding
 
@@ -551,7 +561,7 @@ class StrategySearchEngine:
                         added_count += 1
 
             except Exception as e:
-                logger.error(f"Failed to add strategy {strategy_name}: {e}")
+                logger.exception(f"Failed to add strategy {strategy_name}: {e}")
 
         logger.info(f"Added {added_count} strategies to search index")
 
@@ -568,13 +578,16 @@ class StrategySearchEngine:
         min_similarity: float | None = None,
         filter_tags: set[str] | None = None,
     ) -> list[StrategySearchResult]:
-        """Search for strategies using text query"""
+        """Search for strategies using text query."""
         if not self.embedding_model:
             logger.warning("No embedding model available for search")
             return []
 
         results = await self.faiss_index.search_by_text(
-            query, self.embedding_model, k * 2, min_similarity  # Over-fetch for filtering
+            query,
+            self.embedding_model,
+            k * 2,
+            min_similarity,  # Over-fetch for filtering
         )
 
         # Apply tag filtering if specified
@@ -597,9 +610,12 @@ class StrategySearchEngine:
         return results
 
     async def get_strategy_recommendations(
-        self, context: str, previous_strategies: list[str] | None = None, k: int = 5
+        self,
+        context: str,
+        previous_strategies: list[str] | None = None,
+        k: int = 5,
     ) -> list[StrategySearchResult]:
-        """Get strategy recommendations based on context"""
+        """Get strategy recommendations based on context."""
         previous_strategies = previous_strategies or []
 
         # Search for strategies similar to context
@@ -615,8 +631,10 @@ class StrategySearchEngine:
 
         return filtered_results
 
-    async def update_strategy_effectiveness(self, strategy_id: str, effectiveness_score: float):
-        """Update the effectiveness score for a strategy"""
+    async def update_strategy_effectiveness(
+        self, strategy_id: str, effectiveness_score: float
+    ) -> None:
+        """Update the effectiveness score for a strategy."""
         if strategy_id in self.strategy_cache:
             strategy = self.strategy_cache[strategy_id]
             strategy.effectiveness_scores.append(effectiveness_score)
@@ -626,21 +644,21 @@ class StrategySearchEngine:
                 strategy.effectiveness_scores = strategy.effectiveness_scores[-100:]
 
     async def get_strategy_clusters(self, n_clusters: int = 5) -> list[StrategyCluster]:
-        """Get strategy clusters for analysis"""
+        """Get strategy clusters for analysis."""
         return await self.faiss_index.get_strategy_clusters(n_clusters)
 
-    async def save_index(self):
-        """Save the search index"""
+    async def save_index(self) -> None:
+        """Save the search index."""
         index_path = self.cache_dir / "strategy_index"
         await self.faiss_index.save_index(index_path)
         self._last_save_time = time.time()
 
     def _generate_strategy_id(self, strategy_name: str) -> str:
-        """Generate a unique ID for a strategy"""
+        """Generate a unique ID for a strategy."""
         return hashlib.md5(strategy_name.encode()).hexdigest()
 
     def _extract_tags(self, strategy_name: str, strategy_data: dict[str, Any]) -> list[str]:
-        """Extract tags from strategy name and data"""
+        """Extract tags from strategy name and data."""
         tags = []
 
         # Extract from name
@@ -669,7 +687,7 @@ class StrategySearchEngine:
 
     @property
     def stats(self) -> dict[str, Any]:
-        """Get search engine statistics"""
+        """Get search engine statistics."""
         return {
             "total_strategies": len(self.strategy_cache),
             "embedding_model_available": self.embedding_model is not None,
@@ -681,7 +699,7 @@ class StrategySearchEngine:
 # Context manager for managed search engine lifecycle
 @asynccontextmanager
 async def managed_strategy_search_engine(embedding_model=None, **kwargs):
-    """Context manager for automatic search engine lifecycle management"""
+    """Context manager for automatic search engine lifecycle management."""
     engine = StrategySearchEngine(embedding_model=embedding_model, **kwargs)
     try:
         await engine.initialize(embedding_model)

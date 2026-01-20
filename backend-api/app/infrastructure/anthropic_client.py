@@ -1,5 +1,4 @@
-"""
-Modern Anthropic Claude client using the official anthropic SDK with native async support.
+"""Modern Anthropic Claude client using the official anthropic SDK with native async support.
 
 Implements the LLMProvider interface with:
 - Native async via AsyncAnthropic
@@ -23,15 +22,14 @@ from app.domain.models import LLMProviderType, PromptRequest, PromptResponse, St
 
 
 class AnthropicClient(LLMProvider):
-    """
-    Modern Anthropic Claude client using the official SDK with:
+    """Modern Anthropic Claude client using the official SDK with:
     - Native async support via AsyncAnthropic
     - Streaming generation
     - Token counting
-    - Proper error handling with x-api-key header
+    - Proper error handling with x-api-key header.
     """
 
-    def __init__(self, config: Settings | None = None):
+    def __init__(self, config: Settings | None = None) -> None:
         self.config = config or get_settings()
         self.endpoint = self.config.get_provider_endpoint("anthropic")
         api_key = self.config.ANTHROPIC_API_KEY
@@ -53,7 +51,8 @@ class AnthropicClient(LLMProvider):
     def _sanitize_prompt(self, prompt: str) -> str:
         """Sanitize user input to prevent injection attacks."""
         if not prompt:
-            raise ValueError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise ValueError(msg)
 
         prompt = re.sub(r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL)
         prompt = re.sub(r"javascript:", "", prompt, flags=re.IGNORECASE)
@@ -70,12 +69,14 @@ class AnthropicClient(LLMProvider):
         """Get client, using override API key if provided."""
         if request.api_key:
             if not self._validate_api_key(request.api_key):
-                raise AppError("Invalid API key format", status_code=status.HTTP_400_BAD_REQUEST)
+                msg = "Invalid API key format"
+                raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
             return AsyncAnthropic(api_key=request.api_key, base_url=self.endpoint)
 
         if not self.client:
+            msg = "Anthropic client not initialized. Check API key."
             raise AppError(
-                "Anthropic client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return self.client
@@ -83,12 +84,15 @@ class AnthropicClient(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         """Generate a response from Anthropic Claude."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
         model_name = request.model or getattr(
-            self.config, "ANTHROPIC_MODEL", "claude-3-opus-20240229"
+            self.config,
+            "ANTHROPIC_MODEL",
+            "claude-3-opus-20240229",
         )
         start_time = time.time()
 
@@ -139,14 +143,16 @@ class AnthropicClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"Anthropic API error: {e.message}")
+            msg = f"Anthropic API error: {e.message}"
             raise AppError(
-                f"Anthropic API error: {e.message}",
+                msg,
                 status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"Anthropic generation failed: {e!s}", exc_info=True)
+            msg = f"Anthropic generation failed: {e!s}"
             raise AppError(
-                f"Anthropic generation failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -166,8 +172,7 @@ class AnthropicClient(LLMProvider):
         return mapping.get(code, status.HTTP_502_BAD_GATEWAY)
 
     async def check_health(self) -> bool:
-        """
-        Check if the Anthropic API is healthy.
+        """Check if the Anthropic API is healthy.
 
         Uses a lightweight token counting request instead of a full generation.
         This should complete in <100ms as required by the PRD.
@@ -191,12 +196,15 @@ class AnthropicClient(LLMProvider):
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Anthropic Claude."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
         model_name = request.model or getattr(
-            self.config, "ANTHROPIC_MODEL", "claude-3-opus-20240229"
+            self.config,
+            "ANTHROPIC_MODEL",
+            "claude-3-opus-20240229",
         )
 
         try:
@@ -222,27 +230,29 @@ class AnthropicClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"Anthropic streaming error: {e.message}")
+            msg = f"Streaming failed: {e.message}"
             raise AppError(
-                f"Streaming failed: {e.message}",
+                msg,
                 status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"Anthropic streaming failed: {e!s}", exc_info=True)
+            msg = f"Streaming failed: {e!s}"
             raise AppError(
-                f"Streaming failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
     async def count_tokens(self, text: str, model: str | None = None) -> int:
-        """
-        Count tokens using Anthropic's token counting API.
+        """Count tokens using Anthropic's token counting API.
 
         Note: Anthropic provides token counting via the messages API.
         """
         try:
             if not self.client:
+                msg = "Anthropic client not initialized"
                 raise AppError(
-                    "Anthropic client not initialized",
+                    msg,
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
@@ -257,7 +267,8 @@ class AnthropicClient(LLMProvider):
 
         except Exception as e:
             logger.error(f"Token counting failed: {e!s}", exc_info=True)
+            msg = f"Token counting failed: {e!s}"
             raise AppError(
-                f"Token counting failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )

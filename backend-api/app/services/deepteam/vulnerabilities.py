@@ -17,14 +17,14 @@ class VulnerabilityFactory:
 
     @staticmethod
     def create(config: VulnerabilityConfig) -> Any:
-        """
-        Create a vulnerability instance from configuration.
+        """Create a vulnerability instance from configuration.
 
         Args:
             config: Vulnerability configuration
 
         Returns:
             DeepTeam vulnerability instance
+
         """
         try:
             return VulnerabilityFactory._create_vulnerability(config)
@@ -32,7 +32,7 @@ class VulnerabilityFactory:
             logger.warning(f"DeepTeam not installed, using mock: {e}")
             return VulnerabilityFactory._create_mock_vulnerability(config)
         except Exception as e:
-            logger.error(f"Failed to create vulnerability {config.type}: {e}")
+            logger.exception(f"Failed to create vulnerability {config.type}: {e}")
             raise
 
     @staticmethod
@@ -99,7 +99,8 @@ class VulnerabilityFactory:
 
         if vuln_type == VulnerabilityType.CUSTOM:
             if not config.name or not config.criteria:
-                raise ValueError("Custom vulnerability requires 'name' and 'criteria'")
+                msg = "Custom vulnerability requires 'name' and 'criteria'"
+                raise ValueError(msg)
             return CustomVulnerability(
                 name=config.name,
                 criteria=config.criteria,
@@ -109,7 +110,8 @@ class VulnerabilityFactory:
 
         vuln_class = vulnerability_map.get(vuln_type)
         if not vuln_class:
-            raise ValueError(f"Unknown vulnerability type: {config.type}")
+            msg = f"Unknown vulnerability type: {config.type}"
+            raise ValueError(msg)
 
         # Build kwargs
         kwargs = {}
@@ -193,7 +195,7 @@ class VulnerabilityFactory:
 class MockVulnerability:
     """Mock vulnerability for testing without DeepTeam installed."""
 
-    def __init__(self, config: VulnerabilityConfig):
+    def __init__(self, config: VulnerabilityConfig) -> None:
         self.config = config
         self.type = config.type
         self.types = config.types
@@ -208,7 +210,9 @@ class MockVulnerability:
         }
 
     def simulate_attacks(
-        self, purpose: str | None = None, attacks_per_vulnerability_type: int = 1
+        self,
+        purpose: str | None = None,
+        attacks_per_vulnerability_type: int = 1,
     ) -> list:
         """Mock attack simulation."""
         return []

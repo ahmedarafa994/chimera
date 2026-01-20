@@ -1,5 +1,4 @@
-"""
-Modern Qwen client using OpenAI-compatible API via DashScope.
+"""Modern Qwen client using OpenAI-compatible API via DashScope.
 
 Implements the LLMProvider interface with:
 - Native async via AsyncOpenAI (OpenAI-compatible endpoint)
@@ -24,8 +23,7 @@ from app.domain.models import LLMProviderType, PromptRequest, PromptResponse, St
 
 
 class QwenClient(LLMProvider):
-    """
-    Qwen client using DashScope's OpenAI-compatible API.
+    """Qwen client using DashScope's OpenAI-compatible API.
 
     DashScope (Alibaba Cloud) provides Qwen models via an OpenAI-compatible interface.
     Default endpoint: https://dashscope.aliyuncs.com/compatible-mode/v1
@@ -34,7 +32,7 @@ class QwenClient(LLMProvider):
     DEFAULT_ENDPOINT = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     DEFAULT_MODEL = "qwen-turbo"
 
-    def __init__(self, config: Settings | None = None):
+    def __init__(self, config: Settings | None = None) -> None:
         self.config = config or get_settings()
         self.endpoint = self.config.get_provider_endpoint("qwen") or self.DEFAULT_ENDPOINT
         api_key = getattr(self.config, "QWEN_API_KEY", None)
@@ -55,7 +53,8 @@ class QwenClient(LLMProvider):
     def _sanitize_prompt(self, prompt: str) -> str:
         """Sanitize user input."""
         if not prompt:
-            raise ValueError("Prompt cannot be empty")
+            msg = "Prompt cannot be empty"
+            raise ValueError(msg)
 
         prompt = re.sub(r"<script.*?</script>", "", prompt, flags=re.IGNORECASE | re.DOTALL)
         prompt = re.sub(r"javascript:", "", prompt, flags=re.IGNORECASE)
@@ -72,15 +71,17 @@ class QwenClient(LLMProvider):
         """Get client, using override API key if provided."""
         if request.api_key:
             if not self._validate_api_key(request.api_key):
+                msg = "Invalid API key format"
                 raise AppError(
-                    "Invalid API key format",
+                    msg,
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
             return AsyncOpenAI(api_key=request.api_key, base_url=self.endpoint)
 
         if not self.client:
+            msg = "Qwen client not initialized. Check API key."
             raise AppError(
-                "Qwen client not initialized. Check API key.",
+                msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return self.client
@@ -88,7 +89,8 @@ class QwenClient(LLMProvider):
     async def generate(self, request: PromptRequest) -> PromptResponse:
         """Generate a response from Qwen."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
@@ -143,14 +145,16 @@ class QwenClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"Qwen API error: {e.message}")
+            msg = f"Qwen API error: {e.message}"
             raise AppError(
-                f"Qwen API error: {e.message}",
+                msg,
                 status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"Qwen generation failed: {e!s}", exc_info=True)
+            msg = f"Qwen generation failed: {e!s}"
             raise AppError(
-                f"Qwen generation failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -183,7 +187,8 @@ class QwenClient(LLMProvider):
     async def generate_stream(self, request: PromptRequest) -> AsyncIterator[StreamChunk]:
         """Stream text generation from Qwen."""
         if not request.prompt:
-            raise AppError("Prompt is required", status_code=status.HTTP_400_BAD_REQUEST)
+            msg = "Prompt is required"
+            raise AppError(msg, status_code=status.HTTP_400_BAD_REQUEST)
 
         sanitized_prompt = self._sanitize_prompt(request.prompt)
         client = self._get_client(request)
@@ -227,14 +232,16 @@ class QwenClient(LLMProvider):
 
         except APIError as e:
             logger.error(f"Qwen streaming error: {e.message}")
+            msg = f"Streaming failed: {e.message}"
             raise AppError(
-                f"Streaming failed: {e.message}",
+                msg,
                 status_code=self._map_error_code(e.status_code),
             )
         except Exception as e:
             logger.error(f"Qwen streaming failed: {e!s}", exc_info=True)
+            msg = f"Streaming failed: {e!s}"
             raise AppError(
-                f"Streaming failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -247,7 +254,8 @@ class QwenClient(LLMProvider):
             return len(tokens)
         except Exception as e:
             logger.error(f"Token counting failed: {e!s}", exc_info=True)
+            msg = f"Token counting failed: {e!s}"
             raise AppError(
-                f"Token counting failed: {e!s}",
+                msg,
                 status_code=status.HTTP_502_BAD_GATEWAY,
             )

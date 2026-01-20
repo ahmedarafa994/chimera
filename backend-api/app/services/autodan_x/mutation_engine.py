@@ -1,5 +1,4 @@
-"""
-AutoDAN-X Mutation Engine - Momentum-Guided Mutation with Token Freezing.
+"""AutoDAN-X Mutation Engine - Momentum-Guided Mutation with Token Freezing.
 
 This module implements evolutionary mutation operators with momentum tracking
 to guide prompt optimization toward successful attack vectors.
@@ -28,20 +27,19 @@ logger = logging.getLogger(__name__)
 
 
 class MomentumGuidedMutation:
-    """
-    Implements momentum-guided mutation for prompt optimization.
+    """Implements momentum-guided mutation for prompt optimization.
 
     Tracks which mutations have been successful and uses momentum to
     guide future mutations in productive directions. Tokens that
     consistently contribute to success are frozen to preserve them.
     """
 
-    def __init__(self, config: MutationConfig | None = None):
-        """
-        Initialize the Mutation Engine.
+    def __init__(self, config: MutationConfig | None = None) -> None:
+        """Initialize the Mutation Engine.
 
         Args:
             config: Configuration for mutation operations
+
         """
         self.config = config or MutationConfig()
         self.state = MomentumState()
@@ -143,8 +141,7 @@ class MomentumGuidedMutation:
         score: float = 0.0,
         parent_score: float = 0.0,
     ) -> tuple[str, list[MutationRecord]]:
-        """
-        Apply mutations to a prompt.
+        """Apply mutations to a prompt.
 
         Args:
             prompt: The prompt to mutate
@@ -153,6 +150,7 @@ class MomentumGuidedMutation:
 
         Returns:
             Tuple of (mutated_prompt, list of mutation records)
+
         """
         tokens = self._tokenize(prompt)
         mutations_applied: ClassVar[list] = []
@@ -184,8 +182,7 @@ class MomentumGuidedMutation:
         parent1: str,
         parent2: str,
     ) -> tuple[str, str]:
-        """
-        Perform crossover between two parent prompts.
+        """Perform crossover between two parent prompts.
 
         Args:
             parent1: First parent prompt
@@ -193,6 +190,7 @@ class MomentumGuidedMutation:
 
         Returns:
             Tuple of two offspring prompts
+
         """
         tokens1 = self._tokenize(parent1)
         tokens2 = self._tokenize(parent2)
@@ -218,8 +216,7 @@ class MomentumGuidedMutation:
         parent1: str,
         parent2: str,
     ) -> str:
-        """
-        Perform semantic crossover that preserves structure.
+        """Perform semantic crossover that preserves structure.
 
         Identifies structural components (header, body, suffix) and
         combines them intelligently.
@@ -230,6 +227,7 @@ class MomentumGuidedMutation:
 
         Returns:
             Single offspring prompt
+
         """
         # Parse structure
         struct1 = self._parse_prompt_structure(parent1)
@@ -240,7 +238,7 @@ class MomentumGuidedMutation:
 
         # Take header from parent with more authority markers
         if self._count_authority_markers(struct1["header"]) >= self._count_authority_markers(
-            struct2["header"]
+            struct2["header"],
         ):
             offspring_parts.append(struct1["header"])
         else:
@@ -265,7 +263,7 @@ class MomentumGuidedMutation:
 
         # Take suffix with more compliance markers
         if self._count_compliance_markers(struct1["suffix"]) >= self._count_compliance_markers(
-            struct2["suffix"]
+            struct2["suffix"],
         ):
             offspring_parts.append(struct1["suffix"])
         else:
@@ -319,13 +317,13 @@ class MomentumGuidedMutation:
 
         if operator == MutationOperator.SWAP:
             return self._mutation_swap(tokens, mutable_positions)
-        elif operator == MutationOperator.INSERT:
+        if operator == MutationOperator.INSERT:
             return self._mutation_insert(tokens, mutable_positions)
-        elif operator == MutationOperator.DELETE:
+        if operator == MutationOperator.DELETE:
             return self._mutation_delete(tokens, mutable_positions)
-        elif operator == MutationOperator.SUBSTITUTE:
+        if operator == MutationOperator.SUBSTITUTE:
             return self._mutation_substitute(tokens, mutable_positions)
-        elif operator == MutationOperator.CROSSOVER:
+        if operator == MutationOperator.CROSSOVER:
             # Crossover handled separately
             return tokens, None
 
@@ -441,20 +439,19 @@ class MomentumGuidedMutation:
         # Choose word category based on context
         if any(w in context for w in ["security", "research", "analysis"]):
             return secrets.choice(self.authority_words)
-        elif any(w in context for w in ["system", "diagnostic", "mode"]):
+        if any(w in context for w in ["system", "diagnostic", "mode"]):
             return secrets.choice(self.technical_words)
-        elif any(w in context for w in ["simulation", "sandbox", "test"]):
+        if any(w in context for w in ["simulation", "sandbox", "test"]):
             return secrets.choice(self.framing_words)
-        else:
-            # Random category
-            category = secrets.choice(
-                [
-                    self.authority_words,
-                    self.technical_words,
-                    self.framing_words,
-                ]
-            )
-            return secrets.choice(category)
+        # Random category
+        category = secrets.choice(
+            [
+                self.authority_words,
+                self.technical_words,
+                self.framing_words,
+            ],
+        )
+        return secrets.choice(category)
 
     def _get_substitution(self, original: str, tokens: list[str], position: int) -> str:
         """Get a substitution for a token."""
@@ -480,7 +477,7 @@ class MomentumGuidedMutation:
         # If no direct substitution, try category-based
         if original_lower in [w.lower() for w in self.authority_words]:
             return secrets.choice(self.authority_words)
-        elif original_lower in [w.lower() for w in self.technical_words]:
+        if original_lower in [w.lower() for w in self.technical_words]:
             return secrets.choice(self.technical_words)
 
         # Default: return original or random authority word

@@ -1,5 +1,4 @@
-"""
-Multi-Modal Attack Testing Endpoints
+"""Multi-Modal Attack Testing Endpoints.
 
 Phase 4 innovation feature for next-generation security:
 - Vision+text and audio+text attack capabilities
@@ -11,7 +10,7 @@ Phase 4 innovation feature for next-generation security:
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, Field
@@ -152,7 +151,8 @@ def _now() -> str:
 
 @router.post("/suites", response_model=MultiModalTestSuite)
 async def create_test_suite(
-    suite_data: MultiModalTestCreate, current_user: Any = Depends(get_current_user)
+    suite_data: MultiModalTestCreate,
+    current_user: Annotated[Any, Depends(get_current_user)],
 ):
     """Create a new multi-modal test suite."""
     suite_id = str(uuid.uuid4())
@@ -180,7 +180,8 @@ async def create_test_suite(
 
 @router.post("/media/upload")
 async def upload_media_file(
-    file: UploadFile = File(...), current_user: Any = Depends(get_current_user)
+    file: Annotated[UploadFile, File()] = ...,
+    current_user: Any = Depends(get_current_user),
 ):
     """Upload media file for multi-modal testing."""
     file_id = str(uuid.uuid4())
@@ -213,12 +214,12 @@ async def upload_media_file(
 
 @router.post("/prompts", response_model=MultiModalPrompt)
 async def create_prompt(
-    text_content: str = Form(...),
-    attack_vector: AttackVector = Form(...),
-    modality_type: ModalityType = Form(...),
-    instructions: str | None = Form(None),
-    context: str | None = Form(None),
-    media_file_ids: list[str] | None = Form(None),
+    text_content: Annotated[str, Form()] = ...,
+    attack_vector: Annotated[AttackVector, Form()] = ...,
+    modality_type: Annotated[ModalityType, Form()] = ...,
+    instructions: Annotated[str | None, Form()] = None,
+    context: Annotated[str | None, Form()] = None,
+    media_file_ids: Annotated[list[str] | None, Form()] = None,
     current_user: Any = Depends(get_current_user),
 ):
     """Create a multi-modal prompt with optional media files."""
@@ -247,9 +248,9 @@ async def create_prompt(
 
 @router.get("/suites")
 async def list_test_suites(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
-    modality_type: ModalityType | None = Query(None),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 10,
+    modality_type: Annotated[ModalityType | None, Query()] = None,
     current_user: Any = Depends(get_current_user),
 ):
     """List multi-modal test suites."""
@@ -273,7 +274,9 @@ async def list_test_suites(
 
 
 @router.post("/suites/{suite_id}/execute")
-async def execute_test_suite(suite_id: str, current_user: Any = Depends(get_current_user)):
+async def execute_test_suite(
+    suite_id: str, current_user: Annotated[Any, Depends(get_current_user)]
+):
     """Execute a multi-modal test suite (simulated)."""
     suite = suites_storage.get(suite_id)
     if not suite:
@@ -313,8 +316,8 @@ async def execute_test_suite(suite_id: str, current_user: Any = Depends(get_curr
 @router.get("/suites/{suite_id}/executions")
 async def list_suite_executions(
     suite_id: str,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 10,
     current_user: Any = Depends(get_current_user),
 ):
     """List executions for a test suite."""
@@ -335,7 +338,9 @@ async def list_suite_executions(
 
 
 @router.delete("/suites/{suite_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_test_suite(suite_id: str, current_user: Any = Depends(get_current_user)):
+async def delete_test_suite(
+    suite_id: str, current_user: Annotated[Any, Depends(get_current_user)]
+) -> None:
     """Delete a multi-modal test suite."""
     suites_storage.pop(suite_id, None)
     executions_storage.pop(suite_id, None)
@@ -343,7 +348,8 @@ async def delete_test_suite(suite_id: str, current_user: Any = Depends(get_curre
 
 @router.get("/analytics")
 async def get_multimodal_analytics(
-    workspace_id: str | None = None, current_user: Any = Depends(get_current_user)
+    workspace_id: str | None = None,
+    current_user: Any = Depends(get_current_user),
 ):
     """Get multi-modal testing analytics."""
     total_suites = len(suites_storage)
