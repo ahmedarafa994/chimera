@@ -347,9 +347,9 @@ class ResultValidationProcessor(BasePipelineProcessor):
 
             # Validate result structure
             required_fields = ["jailbreak_prompt", "method", "score", "success"]
-            for field in required_fields:
-                if field not in result:
-                    msg = f"Missing required field: {field}"
+            for required_field in required_fields:
+                if required_field not in result:
+                    msg = f"Missing required field: {required_field}"
                     raise ValueError(msg)
 
             # Validate score range
