@@ -579,6 +579,8 @@ class ProviderQuotaStatus(BaseModel):
     @classmethod
     def calculate_percentages(cls, v, info):
         """Ensure percentages are calculated correctly."""
+        # ARG003: `info` is unused by design (pydantic validator signature). Use underscore-prefixed name to satisfy linters.
+        _info = info
         if v is not None:
             return min(100.0, max(0.0, v))
         return v
