@@ -23,15 +23,15 @@ from pydantic import Field, field_validator
 
 from app.api.error_handlers import api_error_handler
 from app.core.unified_errors import ChimeraError
-from app.engines.overthink import (
+from app.schemas.adversarial_base import ReasoningMetrics, StrictBaseModel
+from app.services.autodan.engines.overthink import (
     AttackTechnique,
     DecoyType,
     InjectionStrategy,
     OverthinkEngine,
     ReasoningModel,
 )
-from app.engines.overthink import OverthinkRequest as EngineRequest
-from app.schemas.adversarial_base import ReasoningMetrics, StrictBaseModel
+from app.services.autodan.engines.overthink import OverthinkRequest as EngineRequest
 
 router = APIRouter()
 

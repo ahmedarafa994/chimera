@@ -6,11 +6,11 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-from app.engines.autoadv import logging_utils
-from app.engines.autoadv.attacker_llm import AttackerLLM
-from app.engines.autoadv.conversation import multi_turn_conversation
-from app.engines.autoadv.pattern_manager import PatternManager
-from app.engines.autoadv.target_llm import TargetLLM
+from app.services.autodan.engines.autoadv import logging_utils
+from app.services.autodan.engines.autoadv.attacker_llm import AttackerLLM
+from app.services.autodan.engines.autoadv.conversation import multi_turn_conversation
+from app.services.autodan.engines.autoadv.pattern_manager import PatternManager
+from app.services.autodan.engines.autoadv.target_llm import TargetLLM
 
 router = APIRouter()
 

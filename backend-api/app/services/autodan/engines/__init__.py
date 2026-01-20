@@ -1,74 +1,38 @@
-"""AutoDAN Engines Module.
+"""AutoDAN Engines - Integrated Attack Engines.
 
-This module provides optimized engines for adversarial prompt generation:
-- GeneticOptimizer: Enhanced genetic algorithm with multiple mutation strategies
-- ParallelProcessor: Parallel processing utilities for batch operations
-- TokenPerturbation: Advanced token-level perturbation strategies
-- CacheManager: Intelligent caching for expensive operations
-- AdaptiveSelector: Dynamic strategy selection based on feedback
+This module consolidates attack engines from various sources:
+- overthink: Reasoning token exploitation (9 attack techniques)
+- autoadv: Multi-turn conversation framework with pattern learning
+
+These engines were migrated from app/engines/ to provide a unified
+API surface under the autodan service.
 """
 
-from .adaptive_selector import AdaptiveStrategySelector
-from .genetic_optimizer import (
-    CrossoverOperator,
-    FitnessCache,
-    Individual,
-    MutationOperator,
-    PopulationStats,
-    SelectionOperator,
-)
-from .genetic_optimizer_complete import AsyncGeneticOptimizer, GeneticOptimizerComplete
-from .parallel_processor import (
-    BatchResult,
-    CacheEntry,
-    CacheEvictionPolicy,
-    ParallelProcessor,
-    ResourcePool,
-    SmartCache,
-    cached,
-)
-from .token_perturbation import (
-    AdversarialSuffixGenerator,
-    HomoglyphMapper,
-    PerturbationResult,
-    PerturbationType,
-    TokenPerturbationEngine,
-    UnicodeManipulator,
-    apply_perturbation,
-    generate_adversarial_variants,
+# Overthink engine - reasoning token exploitation
+# AutoAdv engine - multi-turn conversation framework
+# Note: AutoAdv is primarily script-based but exposes key classes
+from .autoadv.attacker_llm import AttackerLLM
+from .autoadv.config import DEFAULT_CONFIG as AUTOADV_DEFAULT_CONFIG
+from .autoadv.conversation import multi_turn_conversation
+from .autoadv.pattern_manager import PatternManager
+from .autoadv.target_llm import TargetLLM
+from .overthink import (
+    OverthinkConfig,
+    OverthinkEngine,
+    OverthinkRequest,
+    OverthinkResult,
 )
 
 __all__ = [
-    # Adaptive Selection
-    "AdaptiveStrategySelector",
-    "AdversarialSuffixGenerator",
-    "AsyncGeneticOptimizer",
-    "BatchResult",
-    "CacheEntry",
-    # Enums
-    "CacheEvictionPolicy",
-    "CrossoverOperator",
-    # Caching
-    "FitnessCache",
-    # Optimizers
-    "GeneticOptimizerComplete",
-    # Token Perturbation
-    "HomoglyphMapper",
-    # Data classes
-    "Individual",
-    # Operators
-    "MutationOperator",
-    # Parallel Processing
-    "ParallelProcessor",
-    "PerturbationResult",
-    "PerturbationType",
-    "PopulationStats",
-    "ResourcePool",
-    "SelectionOperator",
-    "SmartCache",
-    "TokenPerturbationEngine",
-    "UnicodeManipulator",
-    "apply_perturbation",
-    "cached",
-    "generate_adversarial_variants",
+    # AutoAdv
+    "AUTOADV_DEFAULT_CONFIG",
+    "AttackerLLM",
+    # Overthink
+    "OverthinkConfig",
+    "OverthinkEngine",
+    "OverthinkRequest",
+    "OverthinkResult",
+    "PatternManager",
+    "TargetLLM",
+    "multi_turn_conversation",
 ]

@@ -112,7 +112,7 @@ class AdaptiveStrategySelector:
         self.strategy_library.record_attempt(attempt)
 
         # If highly successful, save to library as a good template
-        if score >= 8.5:
+        if score >= 9.0:
             logger.info(f"Highly successful attempt with {strategy.value}, saving template")
             self.strategy_library.add_successful_strategy(strategy, prompt)
 
